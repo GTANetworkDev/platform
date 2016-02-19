@@ -60,6 +60,9 @@
     </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ClearScript">
+      <HintPath>..\..\..\..\..\..\Program Files\Rockstar Games\Grand Theft Auto V\scripts\ClearScript.dll</HintPath>
+    </Reference>
     <Reference Include="Lidgren.Network">
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>
@@ -76,9 +79,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="GameServer.cs" />
-    <Compile Include="ServerScript.cs" />
+    <Compile Include="VehicleHashes.cs" />
+    <Compile Include="NetEntityHandler.cs" />
     <Compile Include="NativeData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -100,6 +105,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MultiTheftAutoShared\MultiTheftAutoShared.csproj">
+      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
+      <Name>MultiTheftAutoShared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

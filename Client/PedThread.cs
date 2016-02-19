@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GTA;
 
-namespace GTACoOp
+namespace MTAV
 {
     public class PedThread : Script
     {
@@ -17,7 +17,7 @@ namespace GTACoOp
             if (!Main.IsOnServer()) return;
 
             const int npcThreshold = 5000; // 5 second timeout
-            const int playerThreshold = 60000; // 60 second timeout
+            const int playerThreshold = 60000 * 5; // 60 second timeout
 
             Dictionary<long, SyncPed> localOpps = null;
             lock (Main.Opponents) localOpps = new Dictionary<long, SyncPed>(Main.Opponents);
@@ -50,23 +50,6 @@ namespace GTACoOp
             for (int i = 0; i < localOpps.Count; i++) localOpps.ElementAt(i).Value.DisplayLocally();
 
             for (int i = 0; i < localNpcs.Count; i++) localNpcs.ElementAt(i).Value.DisplayLocally();
-
-            if (Main.SendNpcs)
-            {
-                var list = new List<int>(localNpcs.Where(pair => pair.Value.Character != null).Select(pair => pair.Value.Character.Handle));
-                list.AddRange(localOpps.Where(pair => pair.Value.Character != null).Select(pair => pair.Value.Character.Handle));
-                list.Add(Game.Player.Character.Handle);
-
-                foreach (Ped ped in World.GetAllPeds()
-                    .OrderBy(p => (p.Position - Game.Player.Character.Position).Length())
-                    .Take(Main.PlayerSettings.MaxStreamedNpcs == 0 ? 10 : Main.PlayerSettings.MaxStreamedNpcs))
-                {
-                    if (!list.Contains(ped.Handle))
-                    {
-                        Main.SendPedData(ped);
-                    }
-                }
-            }
 
             Main.SendPlayerData();
         }

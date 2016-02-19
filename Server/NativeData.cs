@@ -41,14 +41,26 @@ namespace GTAServer
     }
 
     [ProtoContract]
+    public class ScriptEventTrigger
+    {
+        [ProtoMember(1)]
+        public string EventName { get; set; }
+
+        [ProtoMember(2)]
+        public List<NativeArgument> Arguments { get; set; }
+    }
+
+    [ProtoContract]
     [ProtoInclude(2, typeof(IntArgument))]
     [ProtoInclude(3, typeof(UIntArgument))]
     [ProtoInclude(4, typeof(StringArgument))]
     [ProtoInclude(5, typeof(FloatArgument))]
     [ProtoInclude(6, typeof(BooleanArgument))]
     [ProtoInclude(7, typeof(LocalPlayerArgument))]
-    [ProtoInclude(8, typeof(Vector3Argument))]
+    [ProtoInclude(8, typeof(EntityArgument))]
     [ProtoInclude(9, typeof(LocalGamePlayerArgument))]
+    [ProtoInclude(10, typeof(Vector3Argument))]
+    [ProtoInclude(11, typeof(EntityPointerArgument))]
     public class NativeArgument
     {
         [ProtoMember(1)]
@@ -71,6 +83,10 @@ namespace GTAServer
         public OpponentPedHandleArgument(long opponentHandle)
         {
             Data = opponentHandle;
+        }
+
+        public OpponentPedHandleArgument()
+        {
         }
 
         [ProtoMember(1)]
@@ -110,6 +126,38 @@ namespace GTAServer
     {
         [ProtoMember(1)]
         public bool Data { get; set; }
+    }
+
+    [ProtoContract]
+    public class EntityArgument : NativeArgument
+    {
+        public EntityArgument()
+        {
+        }
+
+        public EntityArgument(int netHandle)
+        {
+            NetHandle = netHandle;
+        }
+
+        [ProtoMember(1)]
+        public int NetHandle { get; set; }
+    }
+
+    [ProtoContract]
+    public class EntityPointerArgument : NativeArgument
+    {
+        public EntityPointerArgument()
+        {
+        }
+
+        public EntityPointerArgument(int netHandle)
+        {
+            NetHandle = netHandle;
+        }
+
+        [ProtoMember(1)]
+        public int NetHandle { get; set; }
     }
 
     [ProtoContract]

@@ -7,8 +7,8 @@
     <ProjectGuid>{1BC495C9-DC44-478A-9E16-3FC482A8B850}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GTACoOp</RootNamespace>
-    <AssemblyName>GTACoOp</AssemblyName>
+    <RootNamespace>MTAV</RootNamespace>
+    <AssemblyName>MTAV</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -36,6 +36,9 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ClearScript">
+      <HintPath>..\..\..\..\..\..\Program Files\Rockstar Games\Grand Theft Auto V\scripts\ClearScript.dll</HintPath>
+    </Reference>
     <Reference Include="Lidgren.Network">
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>
@@ -65,11 +68,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BiDictionarity.cs" />
     <Compile Include="Chat.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="DebugWindow.cs" />
+    <Compile Include="JavascriptHook.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="NativeData.cs" />
+    <Compile Include="NetEntityHandler.cs" />
     <Compile Include="PedThread.cs" />
     <Compile Include="PlayerSettings.cs" />
     <Compile Include="Program.cs" />
@@ -84,10 +90,15 @@
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MultiTheftAutoShared\MultiTheftAutoShared.csproj">
+      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
+      <Name>MultiTheftAutoShared</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy /y "$(TargetPath)" "A:\Program Files\Rockstar Games\Grand Theft Auto V\scripts\$(TargetFileName)"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

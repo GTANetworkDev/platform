@@ -35,7 +35,7 @@ namespace GTAServer
             ServerInstance.MaxPlayers = settings.MaxPlayers;
             ServerInstance.AllowDisplayNames = settings.AllowDisplayNames;
 
-            ServerInstance.Start(settings.Filterscripts);
+            ServerInstance.Start(settings.Resources);
 
             Console.WriteLine("Started! Waiting for connections.");
 

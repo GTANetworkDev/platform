@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,8 @@ using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
 using Lidgren.Network;
+using Microsoft.ClearScript;
+using Microsoft.ClearScript.Windows;
 using ProtoBuf;
 
 namespace GTAServer
@@ -23,14 +26,19 @@ namespace GTAServer
         public ScriptVersion RemoteScriptVersion { get; set; }
         public int GameVersion { get; set; }
 
-        public Vector3 LastKnownPosition { get; internal set; }
+        public int CurrentVehicle { get; set; }
+        public Vector3 Position { get; internal set; }
+        public Vector3 Rotation { get; internal set; }
         public int Health { get; internal set; }
         public int VehicleHealth { get; internal set; }
         public bool IsInVehicle { get; internal set; }
 
+        public int CharacterHandle { get; set; }
+
         public Client(NetConnection nc)
         {
             NetConnection = nc;
+            CharacterHandle = Program.ServerInstance.NetEntityHandler.GenerateHandle();
         }
     }
 
@@ -90,6 +98,10 @@ namespace GTAServer
             Port = port;
             GamemodeName = gamemodeName;
 
+            _resources = new List<JScriptEngine>();
+            _clientScripts = new List<string>();
+            NetEntityHandler = new NetEntityHandler();
+
             Name = name;
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GTAVOnlineRaces");
@@ -113,12 +125,14 @@ namespace GTAServer
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
 
+        public NetEntityHandler NetEntityHandler { get; set; }
+
         public bool AllowDisplayNames { get; set; }
 
         public readonly ScriptVersion ServerVersion = ScriptVersion.VERSION_0_9;
 
-        private ServerScript _gamemode { get; set; }
-        private List<ServerScript> _filterscripts;
+        private List<JScriptEngine> _resources;
+        private List<string> _clientScripts;
         private DateTime _lastAnnounceDateTime;
 
         public void Start(string[] filterscripts)
@@ -131,83 +145,40 @@ namespace GTAServer
                 Console.WriteLine("Announcing to master server...");
                 AnnounceSelfToMaster();
             }
+            
 
-            if (GamemodeName.ToLower() != "freeroam")
-            {
-                try
-                {
-                    Console.WriteLine("Loading gamemode...");
-
-                    try
-                    {
-                        Program.DeleteFile(Program.Location + "gamemodes" + Path.DirectorySeparatorChar + GamemodeName + ".dll:Zone.Identifier");
-                    }
-                    catch
-                    {
-                    }
-
-                    var asm = Assembly.LoadFrom(Program.Location + "gamemodes" + Path.DirectorySeparatorChar + GamemodeName + ".dll");
-                    var types = asm.GetExportedTypes();
-                    var validTypes = types.Where(t =>
-                        !t.IsInterface &&
-                        !t.IsAbstract)
-                        .Where(t => typeof(ServerScript).IsAssignableFrom(t));
-                    if (!validTypes.Any())
-                    {
-                        Console.WriteLine("ERROR: No classes that inherit from ServerScript have been found in the assembly. Starting freeroam.");
-                        return;
-                    }
-
-                    _gamemode = Activator.CreateInstance(validTypes.ToArray()[0]) as ServerScript;
-                    if (_gamemode == null) Console.WriteLine("Could not create gamemode: it is null.");
-                    else _gamemode.Start();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("ERROR: Error while loading script: " + e.Message + " at " + e.Source +
-                                      ".\nStack Trace:" + e.StackTrace);
-                    Console.WriteLine("Inner Exception: ");
-                    Exception r = e;
-                    while (r != null && r.InnerException != null)
-                    {
-                        Console.WriteLine("at " + r.InnerException);
-                        r = r.InnerException;
-                    }
-                }
-            }
-
-            Console.WriteLine("Loading filterscripts..");
-            var list = new List<ServerScript>();
+            Console.WriteLine("Loading resources...");
+            var list = new List<JScriptEngine>();
             foreach (var path in filterscripts)
             {
                 if (string.IsNullOrWhiteSpace(path)) continue;
 
                 try
                 {
-                    try
+                    var script = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "resources" + Path.DirectorySeparatorChar + path + ".js");
+                    if (script.StartsWith("//local"))
                     {
-                        Program.DeleteFile(Program.Location + "filterscripts" + Path.DirectorySeparatorChar + GamemodeName + ".dll:Zone.Identifier");
+                        _clientScripts.Add(script);
+                        continue;
                     }
-                    catch
-                    {
-                    }
-
-                    var fsAsm = Assembly.LoadFrom(Program.Location + "filterscripts" + Path.DirectorySeparatorChar + path + ".dll");
-                    var fsObj = InstantiateScripts(fsAsm);
-                    list.AddRange(fsObj);
+                    var fsObj = InstantiateScripts(script, path);
+                    list.Add(fsObj);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Failed to load filterscript \"" + path + "\", error: " + ex.Message);
+                    Console.WriteLine("Failed to load resource \"" + path + "\", error: " + ex.Message);
                 }
             }
 
+            Console.WriteLine("Starting resources...");
             list.ForEach(fs =>
             {
-                fs.Start();
-                Console.WriteLine("Starting filterscript " + fs.Name + "...");
+                fs.Script.API.invokeResourceStart();
             });
-            _filterscripts = list;
+            lock (_resources)
+            {
+                _resources = list;
+            }
         }
 
         public void AnnounceSelfToMaster()
@@ -225,23 +196,41 @@ namespace GTAServer
             }
         }
 
-        private IEnumerable<ServerScript> InstantiateScripts(Assembly targetAssembly)
+        private JScriptEngine InstantiateScripts(string script, string resourceName)
         {
-            var types = targetAssembly.GetExportedTypes();
-            var validTypes = types.Where(t =>
-                !t.IsInterface &&
-                !t.IsAbstract)
-                .Where(t => typeof(ServerScript).IsAssignableFrom(t));
-            if (!validTypes.Any())
+            var scriptEngine = new JScriptEngine();
+            scriptEngine.AddHostObject("API", new API());
+            scriptEngine.AddHostObject("host", new HostFunctions());
+            scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
+            scriptEngine.AddHostType("String", typeof(string));
+            scriptEngine.AddHostType("List", typeof (IList));
+            scriptEngine.AddHostType("Client", typeof(Client));
+            scriptEngine.AddHostType("Vector3", typeof(Vector3));
+            scriptEngine.AddHostType("Quaternion", typeof(Quaternion));
+            scriptEngine.AddHostType("Client", typeof(Client));
+            scriptEngine.AddHostType("LocalPlayerArgument", typeof(LocalPlayerArgument));
+            scriptEngine.AddHostType("LocalGamePlayerArgument", typeof(LocalGamePlayerArgument));
+            scriptEngine.AddHostType("EntityArgument", typeof(EntityArgument));
+            scriptEngine.AddHostType("EntityPointerArgument", typeof(EntityPointerArgument));
+            scriptEngine.AddHostType("console", typeof(Console));
+            scriptEngine.AddHostType("VehicleHash", typeof(VehicleHash));
+
+            try
             {
-                yield break;
+                scriptEngine.Execute(script);
             }
-            foreach (var type in validTypes)
+            catch (ScriptEngineException ex)
             {
-                var obj = Activator.CreateInstance(type) as ServerScript;
-                if (obj != null)
-                    yield return obj;
+                LogException(ex, resourceName);
             }
+
+            return scriptEngine;
+        }
+
+        private void LogException(Exception ex, string resourceName)
+        {
+            Console.WriteLine("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
+            Console.WriteLine(ex.StackTrace);
         }
 
         public void Tick()
@@ -332,9 +321,6 @@ namespace GTAServer
                                     client.NetConnection.Deny("Wrong password.");
                                     Console.WriteLine("Player connection refused: wrong password.");
 
-                                    if (_gamemode != null) _gamemode.OnConnectionRefused(client, "Wrong password");
-                                    if (_filterscripts != null) _filterscripts.ForEach(fs => fs.OnConnectionRefused(client, "Wrong password"));
-
                                     Server.Recycle(msg);
 
                                     continue;
@@ -361,12 +347,34 @@ namespace GTAServer
                             if (client.RemoteScriptVersion != (ScriptVersion)connReq.ScriptVersion) client.RemoteScriptVersion = (ScriptVersion)connReq.ScriptVersion;
                             if (client.GameVersion != connReq.GameVersion) client.GameVersion = connReq.GameVersion;
 
+                            var respObj = new ConnectionResponse();
+                            respObj.CharacterHandle = client.CharacterHandle;
+                            respObj.AssignedChannel = GetChannelIdForConnection(client);
+                            respObj.ClientsideScripts = new List<string>(_clientScripts);
+                            respObj.Vehicles = new Dictionary<int, VehicleProperties>();
+                            respObj.Objects = new Dictionary<int, EntityProperties>();
+                            foreach (var pair in NetEntityHandler.ToDict())
+                            {
+                                if (pair.Value is VehicleProperties)
+                                {
+                                    respObj.Vehicles.Add(pair.Key, (VehicleProperties)pair.Value);
+                                }
+                                else if (pair.Value.EntityType == (byte)EntityType.Prop)
+                                {
+                                    respObj.Objects.Add(pair.Key, pair.Value);
+                                }
+                            }
+                            //respO
+
                             var channelHail = Server.CreateMessage();
-                            channelHail.Write(GetChannelIdForConnection(client));
+                            var respBin = SerializeBinary(respObj);
+
+                            channelHail.Write(respBin.Length);
+                            channelHail.Write(respBin);
+                            
                             client.NetConnection.Approve(channelHail);
 
-                            if (_gamemode != null) _gamemode.OnIncomingConnection(client);
-                            if (_filterscripts != null) _filterscripts.ForEach(fs => fs.OnIncomingConnection(client));
+                            if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerBeginConnect(client));
 
                             Console.WriteLine("New incoming connection: " + client.Name + " (" + client.DisplayName + ")");
                         }
@@ -374,8 +382,6 @@ namespace GTAServer
                         {
                             client.NetConnection.Deny("No available player slots.");
                             Console.WriteLine("Player connection refused: server full.");
-                            if (_gamemode != null) _gamemode.OnConnectionRefused(client, "Server is full");
-                            if (_filterscripts != null) _filterscripts.ForEach(fs => fs.OnConnectionRefused(client, "Server is full"));
                         }
                         break;
                     case NetIncomingMessageType.StatusChanged:
@@ -385,11 +391,9 @@ namespace GTAServer
                         {
                             bool sendMsg = true;
 
-                            if (_gamemode != null) sendMsg = sendMsg && _gamemode.OnPlayerConnect(client);
-                            if (_filterscripts != null) _filterscripts.ForEach(fs => sendMsg = sendMsg && fs.OnPlayerConnect(client));
+                            if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerConnected(client));
 
-                            if (sendMsg)
-                                SendNotificationToAll("Player ~h~" + client.DisplayName + "~h~ has connected.");
+                            //if (sendMsg) API.sendNotificationToAll("Player ~h~" + client.DisplayName + "~h~ has connected.");
 
                             Console.WriteLine("New player connected: " + client.Name + " (" + client.DisplayName + ")");
                         }
@@ -401,11 +405,9 @@ namespace GTAServer
                                 {
                                     var sendMsg = true;
 
-                                    if (_gamemode != null) sendMsg = sendMsg && _gamemode.OnPlayerDisconnect(client);
-                                    if (_filterscripts != null) _filterscripts.ForEach(fs => sendMsg = sendMsg && fs.OnPlayerDisconnect(client));
+                                    if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerDisconnected(client));
 
-                                    if (sendMsg)
-                                        SendNotificationToAll("Player ~h~" + client.DisplayName + "~h~ has disconnected.");
+                                    //if (sendMsg) API.sendNotificationToAll("Player ~h~" + client.DisplayName + "~h~ has disconnected.");
 
                                     var dcObj = new PlayerDisconnect()
                                     {
@@ -453,9 +455,15 @@ namespace GTAServer
                                         if (data != null)
                                         {
                                             var pass = true;
-                                            if (_gamemode != null) pass = _gamemode.OnChatMessage(client, data.Message);
+                                            var command = data.Message.StartsWith("/");
 
-                                            if (_filterscripts != null) _filterscripts.ForEach(fs => pass = pass && fs.OnChatMessage(client, data.Message));
+                                            if (command)
+                                            {
+                                                if (_resources != null) _resources.ForEach(fs => pass = pass && !fs.Script.API.invokeChatCommand(client, data.Message));
+                                                break;
+                                            }
+
+                                            if (_resources != null) _resources.ForEach(fs => pass = pass && !fs.Script.API.invokeChatMessage(client, data.Message));
 
                                             if (pass)
                                             {
@@ -483,11 +491,24 @@ namespace GTAServer
                                             data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                             data.Name = client.DisplayName;
                                             data.Latency = client.Latency;
+                                            data.NetHandle = client.CharacterHandle;
 
                                             client.Health = data.PlayerHealth;
-                                            client.LastKnownPosition = data.Position;
+                                            client.Position = data.Position;
                                             client.VehicleHealth = data.VehicleHealth;
                                             client.IsInVehicle = true;
+                                            client.CurrentVehicle = data.VehicleHandle;
+                                            client.Rotation = data.Quaternion;
+
+                                            if (NetEntityHandler.ToDict().ContainsKey(data.VehicleHandle))
+                                            {
+                                                NetEntityHandler.ToDict()[data.VehicleHandle].Position = data.Position;
+                                                NetEntityHandler.ToDict()[data.VehicleHandle].Rotation = data.Quaternion;
+                                                ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle])
+                                                    .PrimaryColor = data.PrimaryColor;
+                                                ((VehicleProperties)NetEntityHandler.ToDict()[data.VehicleHandle])
+                                                    .SecondaryColor = data.SecondaryColor;
+                                            }
 
                                             SendToAll(data, PacketType.VehiclePositionData, false, client);
                                         }
@@ -507,10 +528,13 @@ namespace GTAServer
                                             data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                             data.Name = client.DisplayName;
                                             data.Latency = client.Latency;
+                                            data.NetHandle = client.CharacterHandle;
 
                                             client.Health = data.PlayerHealth;
-                                            client.LastKnownPosition = data.Position;
+                                            client.Position = data.Position;
                                             client.IsInVehicle = false;
+
+                                            client.Rotation = data.Quaternion;
 
                                             SendToAll(data, PacketType.PedPositionData, false, client);
                                         }
@@ -563,6 +587,20 @@ namespace GTAServer
                                     SendToAll(dcObj, PacketType.WorldSharingStop, true);
                                 }
                                 break;
+                            case PacketType.ScriptEventTrigger:
+                                {
+                                    var len = msg.ReadInt32();
+                                    var data =
+                                        DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
+                                    if (data != null)
+                                    {
+                                        _resources.ForEach(
+                                            en =>
+                                                en.Script.invokeClientEvent(data.EventName,
+                                                    DecodeArgumentList(data.Arguments.ToArray()).ToArray()));
+                                    }
+                                }
+                                break;
                             case PacketType.NativeResponse:
                                 {
                                     var len = msg.ReadInt32();
@@ -606,8 +644,7 @@ namespace GTAServer
                                 break;
                             case PacketType.PlayerKilled:
                                 {
-                                    if (_gamemode != null) _gamemode.OnPlayerKilled(client);
-                                    if (_filterscripts != null) _filterscripts.ForEach(fs => fs.OnPlayerKilled(client));
+                                    if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerDeath(client));
                                 }
                                 break;
                         }
@@ -618,18 +655,70 @@ namespace GTAServer
                 }
                 Server.Recycle(msg);
             }
-            if (_gamemode != null) _gamemode.OnTick();
-            if (_filterscripts != null) _filterscripts.ForEach(fs => fs.OnTick());
+            if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokeUpdate());
         }
 
-        public void SendToAll(object newData, PacketType packetType, bool important)
+        public IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
+        {
+            var list = new List<object>();
+
+            foreach (var arg in args)
+            {
+                if (arg is IntArgument)
+                {
+                    list.Add(((IntArgument)arg).Data);
+                }
+                else if (arg is UIntArgument)
+                {
+                    list.Add(((UIntArgument)arg).Data);
+                }
+                else if (arg is StringArgument)
+                {
+                    list.Add(((StringArgument)arg).Data);
+                }
+                else if (arg is FloatArgument)
+                {
+                    list.Add(((FloatArgument)arg).Data);
+                }
+                else if (arg is BooleanArgument)
+                {
+                    list.Add(((BooleanArgument)arg).Data);
+                }
+                else if (arg is Vector3Argument)
+                {
+                    var tmp = (Vector3Argument)arg;
+                    list.Add(new Vector3(tmp.X, tmp.Y, tmp.Z));
+                }
+            }
+
+            return list;
+        }
+
+        public void SendToClient(Client c, object newData, PacketType packetType, bool important)
         {
             var data = SerializeBinary(newData);
             NetOutgoingMessage msg = Server.CreateMessage();
             msg.Write((int)packetType);
             msg.Write(data.Length);
             msg.Write(data);
-            Server.SendToAll(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced);
+            Server.SendMessage(msg, c.NetConnection,
+                important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
+                GetChannelIdForConnection(c));
+        }
+
+        public void SendToAll(object newData, PacketType packetType, bool important)
+        {
+            foreach (var client in Clients)
+            {
+                var data = SerializeBinary(newData);
+                NetOutgoingMessage msg = Server.CreateMessage();
+                msg.Write((int)packetType);
+                msg.Write(data.Length);
+                msg.Write(data);
+                Server.SendMessage(msg, client.NetConnection,
+                    important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
+                    GetChannelIdForConnection(client));
+            }
         }
 
         public void SendToAll(object newData, PacketType packetType, bool important, Client exclude)
@@ -672,7 +761,7 @@ namespace GTAServer
             lock (Clients) return (Clients.IndexOf(conn) % 31) + 1;
         }
 
-        private List<NativeArgument> ParseNativeArguments(params object[] args)
+        public List<NativeArgument> ParseNativeArguments(params object[] args)
         {
             var list = new List<NativeArgument>();
             foreach (var o in args)
@@ -719,6 +808,14 @@ namespace GTAServer
                 {
                     list.Add((LocalGamePlayerArgument)o);
                 }
+                else if (o is EntityArgument)
+                {
+                    list.Add((EntityArgument)o);
+                }
+                else if (o is EntityPointerArgument)
+                {
+                    list.Add((EntityPointerArgument) o);
+                }
             }
 
             return list;
@@ -729,15 +826,12 @@ namespace GTAServer
             var obj = new NativeData();
             obj.Hash = hash;
             obj.Arguments = ParseNativeArguments(arguments);
-
             var bin = SerializeBinary(obj);
 
             var msg = Server.CreateMessage();
-
             msg.Write((int)PacketType.NativeCall);
             msg.Write(bin.Length);
             msg.Write(bin);
-
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
@@ -929,153 +1023,6 @@ namespace GTAServer
 
         // SCRIPTING
 
-        public void SendChatMessageToAll(string message)
-        {
-            SendChatMessageToAll("", message);
-        }
-
-        public void SendChatMessageToAll(string sender, string message)
-        {
-            var chatObj = new ChatData()
-            {
-                Sender = sender,
-                Message = message,
-            };
-
-            SendToAll(chatObj, PacketType.ChatData, true);
-        }
-
-        public void SendChatMessageToPlayer(Client player, string message)
-        {
-            SendChatMessageToPlayer(player, "", message);
-        }
-
-        public void SendChatMessageToPlayer(Client player, string sender, string message)
-        {
-            var chatObj = new ChatData()
-            {
-                Sender = sender,
-                Message = message,
-            };
-
-            var data = SerializeBinary(chatObj);
-
-            NetOutgoingMessage msg = Server.CreateMessage();
-            msg.Write((int)PacketType.ChatData);
-            msg.Write(data.Length);
-            msg.Write(data);
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
-        }
-
-        public void GivePlayerWeapon(Client player, uint weaponHash, int ammo, bool equipNow, bool ammoLoaded)
-        {
-            SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), weaponHash, ammo, equipNow, ammo);
-        }
-
-        public void KickPlayer(Client player, string reason)
-        {
-            player.NetConnection.Disconnect("Kicked: " + reason);
-        }
-
-        public void SetPlayerPosition(Client player, Vector3 newPosition)
-        {
-            SendNativeCallToPlayer(player, 0x06843DA7060A026B, new LocalPlayerArgument(), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
-        }
-
-        public void GetPlayerPosition(Client player, Action<object> callback, string salt = "salt")
-        {
-            GetNativeCallFromPlayer(player,
-                salt,
-                0x3FEF770D40960D5A, new Vector3Argument(), callback, new LocalPlayerArgument(), 0);
-        }
-
-        public void HasPlayerControlBeenPressed(Client player, int controlId, Action<object> callback, string salt = "salt")
-        {
-            GetNativeCallFromPlayer(player, salt,
-                0x580417101DDB492F, new BooleanArgument(), callback, 0, controlId);
-        }
-
-        public void SetPlayerHealth(Client player, int health)
-        {
-            SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
-        }
-
-        public void SendNotificationToPlayer(Client player, string message, bool flashing = false)
-        {
-            for (int i = 0; i < message.Length; i += 99)
-            {
-                SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
-                SendNativeCallToPlayer(player, 0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
-                SendNativeCallToPlayer(player, 0xF020C96915705B3A, flashing, true);
-            }
-        }
-
-        public void SendNotificationToAll(string message, bool flashing = false)
-        {
-            for (int i = 0; i < message.Length; i += 99)
-            {
-                SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
-                SendNativeCallToAllPlayers(0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
-                SendNativeCallToAllPlayers(0xF020C96915705B3A, flashing, true);
-            }
-        }
-
-        public void SendPictureNotificationToPlayer(Client player, string body, NotificationPicType pic, int flash, NotificationIconType iconType, string sender, string subject)
-        {
-            //Crash with new LocalPlayerArgument()!
-            SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
-            SendNativeCallToPlayer(player, 0x6C188BE134E074AA, body);
-            SendNativeCallToPlayer(player, 0x1CCD9A37359072CF, pic.ToString(), pic.ToString(), flash, (int)iconType, sender, subject);
-            SendNativeCallToPlayer(player, 0xF020C96915705B3A, false, true);
-        }
-
-
-        public void SendPictureNotificationToPlayer(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
-        {
-            //Crash with new LocalPlayerArgument()!
-            SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
-            SendNativeCallToPlayer(player, 0x6C188BE134E074AA, body);
-            SendNativeCallToPlayer(player, 0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
-            SendNativeCallToPlayer(player, 0xF020C96915705B3A, false, true);
-        }
-
-        public void SendPictureNotificationToAll(Client player, string body, NotificationPicType pic, int flash, NotificationIconType iconType, string sender, string subject)
-        {
-            //Crash with new LocalPlayerArgument()!
-            SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
-            SendNativeCallToAllPlayers(0x6C188BE134E074AA, body);
-            SendNativeCallToAllPlayers(0x1CCD9A37359072CF, pic.ToString(), pic.ToString(), flash, (int)iconType, sender, subject);
-            SendNativeCallToAllPlayers(0xF020C96915705B3A, false, true);
-        }
-
-        public void SendPictureNotificationToAll(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
-        {
-            //Crash with new LocalPlayerArgument()!
-            SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
-            SendNativeCallToAllPlayers(0x6C188BE134E074AA, body);
-            SendNativeCallToAllPlayers(0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
-            SendNativeCallToAllPlayers(0xF020C96915705B3A, false, true);
-        }
-
-        public void GetPlayerHealth(Client player, Action<object> callback, string salt = "salt")
-        {
-            GetNativeCallFromPlayer(player, salt,
-                0xEEF059FAD016D209, new IntArgument(), callback, new LocalPlayerArgument());
-        }
-		
-	    public void ToggleNightVisionForPlayer(Client player, bool status)
-        {
-            SendNativeCallToPlayer(player, 0x18F621F7A5B1F85D, status);
-        }
-		
-        public void ToggleNightVisionForAll(Client player, bool status)
-        {
-            SendNativeCallToAllPlayers(0x18F621F7A5B1F85D, status);
-        }
-
-        public void IsNightVisionActive(Client player, Action<object> callback, string salt = "salt")
-        {
-            GetNativeCallFromPlayer(player, salt, 0x2202A3F42C8E5F79, new BooleanArgument(), callback, new LocalPlayerArgument());
-        }
+        
     }
 }

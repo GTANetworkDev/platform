@@ -1,6 +1,6 @@
 ﻿using System.Windows.Forms;
 
-namespace GTACoOp
+namespace MTAV
 {
     public class PlayerSettings
     {

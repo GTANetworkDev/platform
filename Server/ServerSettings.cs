@@ -13,7 +13,7 @@
         public bool AllowDisplayNames { get; set; }
 
         public string Gamemode { get; set; }
-        public string[] Filterscripts { get; set; }
+        public string[] Resources { get; set; }
 
         public ServerSettings()
         {
@@ -26,7 +26,7 @@
             Announce = true;
             AllowDisplayNames = true;
             MasterServer = "http://46.101.1.92/";
-            Filterscripts = new string[] { "" };
+            Resources = new string[] { "" };
         }
     }
 }

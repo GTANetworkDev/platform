@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 using ProtoBuf;
 using Control = GTA.Control;
 
-namespace GTACoOp
+namespace MTAV
 {
     public class Main : Script
     {
@@ -28,6 +28,10 @@ namespace GTACoOp
         private readonly UIMenu _playersMenu;
         private readonly UIMenu _settingsMenu;
 
+        
+
+        public static NetEntityHandler NetEntityHandler;
+
         private readonly MenuPool _menuPool;
 
         private string _clientIp;
@@ -37,16 +41,15 @@ namespace GTACoOp
         private static NetPeerConfiguration _config;
 
         public static SynchronizationMode GlobalSyncMode;
+        public static bool LerpRotaion = true;
 
-        public static bool SendNpcs;
         private static int _channel;
 
         private readonly Queue<Action> _threadJumping;
         private string _password;
         private bool _lastDead;
         private bool _wasTyping;
-        private bool _isTrafficEnabled;
-
+        
         private DebugWindow _debug;
 
         // STATS
@@ -61,6 +64,8 @@ namespace GTACoOp
         {
             PlayerSettings = Util.ReadSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
             _threadJumping = new Queue<Action>();
+
+            NetEntityHandler = new NetEntityHandler();
 
             Opponents = new Dictionary<long, SyncPed>();
             Npcs = new Dictionary<string, SyncPed>();
@@ -79,6 +84,12 @@ namespace GTACoOp
                 var message = _chat.CurrentInput;
                 if (!string.IsNullOrEmpty(message))
                 {
+                    if (!JavascriptHook.InvokeMessageEvent(message))
+                    {
+                        _chat.IsFocused = false;
+                        return;
+                    }
+
                     var obj = new ChatData()
                     {
                         Message = message,
@@ -136,7 +147,7 @@ namespace GTACoOp
                 Function.Call(Hash.UNLOCK_MINIMAP_POSITION);
                 Function.Call(Hash.SET_RADAR_ZOOM, 200);
             };
-
+            
             var modeItem = new UIMenuListItem("Sync Mode", new List<dynamic>(Enum.GetNames(typeof(SynchronizationMode))), 0);
 
             modeItem.OnListChanged += (item, index) =>
@@ -144,6 +155,15 @@ namespace GTACoOp
                 GlobalSyncMode = Enum.Parse(typeof(SynchronizationMode), item.IndexToItem(index).ToString());
                 lock (Opponents) if (Opponents != null) Opponents.ToList().ForEach(p => p.Value.SyncMode = GlobalSyncMode);
             };
+
+#if DEBUG
+            var pingItem = new UIMenuListItem("Debug Ping", Enumerable.Range(0, 30).Select(i => (dynamic)(i * 10)).ToList(), 0);
+
+            pingItem.OnListChanged += (item, index) =>
+            {
+                _debugPing = (int) item.IndexToItem(index);
+            };
+#endif
 
             var spawnItem = new UIMenuCheckboxItem("Debug", false);
             spawnItem.CheckboxEvent += (item, check) =>
@@ -218,13 +238,13 @@ namespace GTACoOp
                     if (_client != null) _client.Disconnect("Connection closed by peer.");
                 }
             };
-
-            var chatItem = new UIMenuCheckboxItem("Use Old Chat Input", false);
+            
+            var chatItem = new UIMenuCheckboxItem("Lerp Rotation", LerpRotaion);
             chatItem.CheckboxEvent += (item, check) =>
             {
-                _oldChat = check;
+                LerpRotaion = check;
             };
-
+            /*
             var npcItem = new UIMenuCheckboxItem("Share World With Players", false);
             npcItem.CheckboxEvent += (item, check) =>
             {
@@ -250,6 +270,7 @@ namespace GTACoOp
                 _isTrafficEnabled = check;
             };
 
+            */
 
             var browserItem = new UIMenuItem("Server Browser");
             _mainMenu.BindMenuToItem(_serverBrowserMenu, browserItem);
@@ -272,13 +293,14 @@ namespace GTACoOp
             _mainMenu.AddItem(playersItem);
 
             _settingsMenu.AddItem(nameItem);
-            _settingsMenu.AddItem(npcItem);
-            _settingsMenu.AddItem(trafficItem);
-            _settingsMenu.AddItem(chatItem);
+            //_settingsMenu.AddItem(npcItem);
+            //_settingsMenu.AddItem(trafficItem);
 
             #if DEBUG
             _settingsMenu.AddItem(modeItem);
+            _settingsMenu.AddItem(chatItem);
             _settingsMenu.AddItem(spawnItem);
+            _settingsMenu.AddItem(pingItem);
             #endif
 
             _mainMenu.RefreshIndex();
@@ -479,17 +501,19 @@ namespace GTACoOp
 
                 var obj = new VehicleData();
                 obj.Position = veh.Position.ToLVector();
-                obj.Quaternion = veh.Quaternion.ToLQuaternion();
+                //obj.Quaternion = veh.Quaternion.ToLQuaternion();
+                obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
+                obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
                 obj.VehicleModelHash = veh.Model.Hash;
                 obj.PrimaryColor = (int)veh.PrimaryColor;
                 obj.SecondaryColor = (int)veh.SecondaryColor;
-                obj.PlayerHealth = player.Health;
+                obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.VehicleHealth = veh.Health;
                 obj.VehicleSeat = Util.GetPedSeat(player);
                 obj.IsPressingHorn = Game.Player.IsPressingHorn;
                 obj.IsSirenActive = veh.SirenActive;
-                obj.VehicleMods = CheckPlayerVehicleMods();
+                //obj.VehicleMods = CheckPlayerVehicleMods();
                 obj.Speed = veh.Speed;
 
                 var bin = SerializeBinary(obj);
@@ -499,7 +523,7 @@ namespace GTACoOp
                 msg.Write(bin.Length);
                 msg.Write(bin);
 
-                _client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, _channel);
+                _client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
 
                 _bytesSent += bin.Length;
                 _messagesSent++;
@@ -517,16 +541,18 @@ namespace GTACoOp
                 var obj = new PedData();
                 obj.AimCoords = aimCoord.ToLVector();
                 obj.Position = player.Position.ToLVector();
-                obj.Quaternion = player.Quaternion.ToLQuaternion();
+                obj.Quaternion = player.Rotation.ToLVector();
+
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
-                obj.PlayerHealth = player.Health;
+                obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.IsAiming = aiming;
                 obj.IsShooting = shooting;
                 obj.IsJumping = Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle);
                 obj.IsParachuteOpen = Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 2;
+                obj.Speed = player.Velocity.Length();
 
-                obj.PedProps = CheckPlayerProps();
+                //obj.PedProps = CheckPlayerProps();
 
                 var bin = SerializeBinary(obj);
 
@@ -536,13 +562,13 @@ namespace GTACoOp
                 msg.Write(bin.Length);
                 msg.Write(bin);
 
-                _client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, _channel);
+                _client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
 
                 _bytesSent += bin.Length;
                 _messagesSent++;
             }
         }
-
+        /*
         public static void SendPedData(Ped ped)
         {
             if (ped.IsInVehicle())
@@ -551,7 +577,8 @@ namespace GTACoOp
 
                 var obj = new VehicleData();
                 obj.Position = veh.Position.ToLVector();
-                obj.Quaternion = veh.Quaternion.ToLQuaternion();
+                //obj.Quaternion = veh.Quaternion.ToLQuaternion();
+                obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = ped.Model.Hash;
                 obj.VehicleModelHash = veh.Model.Hash;
                 obj.PrimaryColor = (int)veh.PrimaryColor;
@@ -586,7 +613,9 @@ namespace GTACoOp
                 var obj = new PedData();
                 obj.AimCoords = aimCoord.ToLVector();
                 obj.Position = ped.Position.ToLVector();
-                obj.Quaternion = ped.Quaternion.ToLQuaternion();
+                //obj.Quaternion = ped.Quaternion.ToLQuaternion();
+                obj.Quaternion = ped.Rotation.ToLVector();
+
                 obj.PedModelHash = ped.Model.Hash;
                 obj.WeaponHash = (int)ped.Weapons.Current.Hash;
                 obj.PlayerHealth = ped.Health;
@@ -610,7 +639,7 @@ namespace GTACoOp
                 _messagesSent++;
             }
         }
-
+        */
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
@@ -653,7 +682,7 @@ namespace GTACoOp
                 Game.DisableControl(0, Control.FrontendPauseAlternate);
 
             int time = 1000;
-            if ((time = Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH)) < 50 && !_lastDead)
+            if ((time = Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH)) < 500 && time != -1 && !_lastDead)
             {
                 _lastDead = true;
                 var msg = _client.CreateMessage();
@@ -661,23 +690,31 @@ namespace GTACoOp
                 _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
             }
 
-            if (time > 50 && _lastDead)
+            if (time > 500 && _lastDead)
                 _lastDead = false;
 
-            if ((!_isTrafficEnabled && SendNpcs) || !SendNpcs)
+            
+            Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+
+            Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
+
+            Function.Call((Hash) 0x2F9A292AD0A3BD89);
+            Function.Call((Hash) 0x5F3B7749C112D552);
+
+            foreach (var entity in World.GetAllEntities())
             {
-                Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-
-                Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
-
-                Function.Call((Hash) 0x2F9A292AD0A3BD89);
-                Function.Call((Hash) 0x5F3B7749C112D552);
+                if ((Function.Call<bool>(Hash.IS_ENTITY_A_PED, entity.Handle) || Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, entity.Handle)) && !NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                    entity.Delete();
             }
 
-            Function.Call(Hash.SET_TIME_SCALE, 1f);
+            foreach (var entity in World.GetNearbyEntities(Game.Player.Character.Position, 100000f))
+            {
+                if ((Function.Call<bool>(Hash.IS_ENTITY_A_PED, entity.Handle) || Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, entity.Handle)) && !NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                    entity.Delete();
+            }
 
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
@@ -707,7 +744,8 @@ namespace GTACoOp
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
             _chat.OnKeyDown(e.KeyCode);
-            if (e.KeyCode == PlayerSettings.ActivationKey && !_chat.IsFocused)
+            //if (e.KeyCode == PlayerSettings.ActivationKey && !_chat.IsFocused)
+            if (e.KeyCode == Keys.F10 && !_chat.IsFocused)
             {
                 if (_menuPool.IsAnyMenuOpen())
                 {
@@ -830,10 +868,13 @@ namespace GTACoOp
                                     if (!Opponents.ContainsKey(data.Id))
                                     {
                                         var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            data.Quaternion.ToQuaternion());
+                                            //data.Quaternion.ToQuaternion());
+                                            data.Quaternion.ToVector());
                                         Opponents.Add(data.Id, repr);
                                     }
-
+                                    if (Opponents[data.Id].Character != null)
+                                        NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
+                                    Opponents[data.Id].VehicleNetHandle = data.VehicleHandle;
                                     Opponents[data.Id].Name = data.Name;
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
                                     Opponents[data.Id].VehiclePosition =
@@ -842,7 +883,8 @@ namespace GTACoOp
                                     Opponents[data.Id].VehicleHash =
                                         data.VehicleModelHash;
                                     Opponents[data.Id].VehicleRotation =
-                                        data.Quaternion.ToQuaternion();
+                                        //data.Quaternion.ToQuaternion();
+                                        data.Quaternion.ToVector();
                                     Opponents[data.Id].PedHealth = data.PlayerHealth;
                                     Opponents[data.Id].VehicleHealth = data.VehicleHealth;
                                     Opponents[data.Id].VehiclePrimaryColor = data.PrimaryColor;
@@ -851,7 +893,7 @@ namespace GTACoOp
                                     Opponents[data.Id].IsInVehicle = true;
                                     Opponents[data.Id].Latency = data.Latency;
 
-                                    Opponents[data.Id].VehicleMods = data.VehicleMods;
+                                    //Opponents[data.Id].VehicleMods = data.VehicleMods;
                                     Opponents[data.Id].IsHornPressed = data.IsPressingHorn;
                                     Opponents[data.Id].Speed = data.Speed;
                                     Opponents[data.Id].Siren = data.IsSirenActive;
@@ -869,15 +911,20 @@ namespace GTACoOp
                                     if (!Opponents.ContainsKey(data.Id))
                                     {
                                         var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            data.Quaternion.ToQuaternion());
+                                            data.Quaternion.ToVector());
                                         Opponents.Add(data.Id, repr);
                                     }
 
+                                    if (Opponents[data.Id].Character != null)
+                                        NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
+                                    Opponents[data.Id].Speed = data.Speed;
                                     Opponents[data.Id].Name = data.Name;
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
                                     Opponents[data.Id].Position = data.Position.ToVector();
                                     Opponents[data.Id].ModelHash = data.PedModelHash;
-                                    Opponents[data.Id].Rotation = data.Quaternion.ToQuaternion();
+                                    //Opponents[data.Id].Rotation = data.Quaternion.ToQuaternion();
+                                    Opponents[data.Id].Rotation = data.Quaternion.ToVector();
+
                                     Opponents[data.Id].PedHealth = data.PlayerHealth;
                                     Opponents[data.Id].IsInVehicle = false;
                                     Opponents[data.Id].AimCoords = data.AimCoords.ToVector();
@@ -887,7 +934,7 @@ namespace GTACoOp
                                     Opponents[data.Id].IsShooting = data.IsShooting;
                                     Opponents[data.Id].Latency = data.Latency;
                                     Opponents[data.Id].IsParachuteOpen = data.IsParachuteOpen;
-                                    Opponents[data.Id].PedProps = data.PedProps;
+                                    //Opponents[data.Id].PedProps = data.PedProps;
                                 }
                             }
                             break;
@@ -902,11 +949,14 @@ namespace GTACoOp
                                     if (!Npcs.ContainsKey(data.Name))
                                     {
                                         var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            data.Quaternion.ToQuaternion(), false);
+                                            //data.Quaternion.ToQuaternion(), false);
+                                            data.Quaternion.ToVector(), false);
                                         Npcs.Add(data.Name, repr);
                                         Npcs[data.Name].Name = "";
                                         Npcs[data.Name].Host = data.Id;
                                     }
+                                    if (Npcs[data.Name].Character != null)
+                                        NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
 
                                     Npcs[data.Name].LastUpdateReceived = DateTime.Now;
                                     Npcs[data.Name].VehiclePosition =
@@ -915,7 +965,8 @@ namespace GTACoOp
                                     Npcs[data.Name].VehicleHash =
                                         data.VehicleModelHash;
                                     Npcs[data.Name].VehicleRotation =
-                                        data.Quaternion.ToQuaternion();
+                                        data.Quaternion.ToVector();
+                                        //data.Quaternion.ToQuaternion();
                                     Npcs[data.Name].PedHealth = data.PlayerHealth;
                                     Npcs[data.Name].VehicleHealth = data.VehicleHealth;
                                     Npcs[data.Name].VehiclePrimaryColor = data.PrimaryColor;
@@ -940,16 +991,20 @@ namespace GTACoOp
                                     if (!Npcs.ContainsKey(data.Name))
                                     {
                                         var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            data.Quaternion.ToQuaternion(), false);
+                                            //data.Quaternion.ToQuaternion(), false);
+                                            data.Quaternion.ToVector(), false);
                                         Npcs.Add(data.Name, repr);
                                         Npcs[data.Name].Name = "";
                                         Npcs[data.Name].Host = data.Id;
                                     }
+                                    if (Npcs[data.Name].Character != null)
+                                        NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
 
                                     Npcs[data.Name].LastUpdateReceived = DateTime.Now;
                                     Npcs[data.Name].Position = data.Position.ToVector();
                                     Npcs[data.Name].ModelHash = data.PedModelHash;
-                                    Npcs[data.Name].Rotation = data.Quaternion.ToQuaternion();
+                                    //Npcs[data.Name].Rotation = data.Quaternion.ToVector();
+                                    Npcs[data.Name].Rotation = data.Quaternion.ToVector();
                                     Npcs[data.Name].PedHealth = data.PlayerHealth;
                                     Npcs[data.Name].IsInVehicle = false;
                                     Npcs[data.Name].AimCoords = data.AimCoords.ToVector();
@@ -958,6 +1013,45 @@ namespace GTACoOp
                                     Npcs[data.Name].IsJumping = data.IsJumping;
                                     Npcs[data.Name].IsShooting = data.IsShooting;
                                     Npcs[data.Name].IsParachuteOpen = data.IsParachuteOpen;
+                                }
+                            }
+                            break;
+                        case PacketType.CreateEntity:
+                            {
+                                var len = msg.ReadInt32();
+                                var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
+                                if (data != null)
+                                {
+                                    if (data.EntityType == (byte) EntityType.Vehicle)
+                                    {
+                                        var veh = NetEntityHandler.CreateVehicle(new Model(data.Model), data.Position?.ToVector() ?? new Vector3(),
+                                            data.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
+                                        veh.PrimaryColor = (VehicleColor) data.Color1;
+                                        veh.PrimaryColor = (VehicleColor) data.Color2;
+                                        Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
+                                    }
+                                    else if (data.EntityType == (byte)EntityType.Prop)
+                                        NetEntityHandler.CreateObject(new Model(data.Model), data.Position?.ToVector() ?? new Vector3(),
+                                            data.Rotation?.ToVector() ?? new Vector3(), data.Dynamic, data.NetHandle);
+                                    else if (data.EntityType == (byte) EntityType.Blip)
+                                    {
+                                        NetEntityHandler.CreateBlip(data.Position.ToVector(), data.NetHandle);
+                                    }
+                                }
+                            }
+                            break;
+                        case PacketType.DeleteEntity:
+                            {
+                                var len = msg.ReadInt32();
+                                var data = DeserializeBinary<DeleteEntity>(msg.ReadBytes(len)) as DeleteEntity;
+                                if (data != null)
+                                {
+                                    var entity = NetEntityHandler.NetToEntity(data.NetHandle);
+                                    if (entity != null)
+                                    {
+                                        entity.Delete();
+                                        NetEntityHandler.RemoveByNetHandle(data.NetHandle);
+                                    }
                                 }
                             }
                             break;
@@ -1011,6 +1105,16 @@ namespace GTACoOp
                                         }
                                     }
                                 }
+                            }
+                            break;
+                        case PacketType.ScriptEventTrigger:
+                            {
+                                var len = msg.ReadInt32();
+                                var data = DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
+                                JavascriptHook.ScriptEngines.ForEach(
+                                    en =>
+                                        en.Script.invokeServerEvent(data.EventName,
+                                            DecodeArgumentList(data.Arguments.ToArray()).ToArray()));
                             }
                             break;
                         case PacketType.WorldSharingStop:
@@ -1093,7 +1197,39 @@ namespace GTACoOp
                             break;
                         case NetConnectionStatus.Connected:
                             UI.Notify("Connection successful!");
-                            _channel = msg.SenderConnection.RemoteHailMessage.ReadInt32();
+                            var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
+                            var respObj =
+                                DeserializeBinary<ConnectionResponse>(
+                                    msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
+                            if (respObj == null)
+                            {
+                                UI.Notify("ERROR WHILE READING REMOTE HAIL MESSAGE");
+                                return;
+                            }
+                            _channel = respObj.AssignedChannel;
+                            NetEntityHandler.AddEntity(respObj.CharacterHandle, Game.Player.Character.Handle);
+
+                            if (respObj.Vehicles != null)
+                            foreach (var pair in respObj.Vehicles)
+                            {
+                                var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                                    pair.Value.Rotation.ToVector(), pair.Key);
+                                ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
+                                ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
+                            }
+
+                            if (respObj.Objects != null)
+                                foreach (var pair in respObj.Objects)
+                                {
+                                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                                        pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
+                                }
+
+                            if (respObj.ClientsideScripts != null)
+                            foreach (var scr in respObj.ClientsideScripts)
+                            {
+                                JavascriptHook.StartScript(scr);
+                            }
                             break;
                         case NetConnectionStatus.Disconnected:
                             var reason = msg.ReadString();
@@ -1136,6 +1272,9 @@ namespace GTACoOp
                                 _blipCleanup.ForEach(blip => new Blip(blip).Remove());
                                 _blipCleanup.Clear();
                             }
+
+                            NetEntityHandler.ClearAll();
+                            JavascriptHook.StopAllScripts();
                             break;
                     }
                 }
@@ -1201,40 +1340,32 @@ namespace GTACoOp
         private DateTime _artificialLagCounter = DateTime.MinValue;
         private bool _debugStarted;
         private SyncPed _debugSyncPed;
-
+        private int _debugPing = 30;
         private void Debug()
         {
             var player = Game.Player.Character;
 
-            var debugText = "";
-
-            debugText +=
-                $"{player.CurrentVehicle.Rotation.X}, {player.CurrentVehicle.Rotation.Y}, {player.CurrentVehicle.Rotation.Z}\n";
-            var converted = Util.QuaternionToEuler(player.CurrentVehicle.Quaternion);
-            debugText += $"{converted.X}, {converted.Y}, {converted.Z}";
-
-            new UIResText(debugText, new Point(10, 10), 0.5f).Draw();
-
-
             if (_debugSyncPed == null)
             {
-                _debugSyncPed = new SyncPed(player.Model.Hash, player.Position, player.Quaternion, false);
+                _debugSyncPed = new SyncPed(player.Model.Hash, player.Position, player.Rotation, false);
+                _debugSyncPed.Debug = true;
             }
 
-            if (DateTime.Now.Subtract(_artificialLagCounter).TotalMilliseconds >= 300)
+            if (DateTime.Now.Subtract(_artificialLagCounter).TotalMilliseconds >= _debugPing)
             {
                 _artificialLagCounter = DateTime.Now;
                 if (player.IsInVehicle())
                 {
                     var veh = player.CurrentVehicle;
+                    veh.Alpha = 50;
 
                     _debugSyncPed.VehiclePosition = veh.Position;
-                    _debugSyncPed.VehicleRotation = veh.Quaternion;
+                    _debugSyncPed.VehicleRotation = veh.Rotation;
                     _debugSyncPed.ModelHash = player.Model.Hash;
                     _debugSyncPed.VehicleHash = veh.Model.Hash;
                     _debugSyncPed.VehiclePrimaryColor = (int)veh.PrimaryColor;
                     _debugSyncPed.VehicleSecondaryColor = (int)veh.SecondaryColor;
-                    _debugSyncPed.PedHealth = player.Health;
+                    _debugSyncPed.PedHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                     _debugSyncPed.VehicleHealth = veh.Health;
                     _debugSyncPed.VehicleSeat = Util.GetPedSeat(player);
                     _debugSyncPed.IsHornPressed = Game.Player.IsPressingHorn;
@@ -1254,12 +1385,14 @@ namespace GTACoOp
                         aimCoord = ScreenRelToWorld(GameplayCamera.Position, GameplayCamera.Rotation,
                             new Vector2(0, 0));
 
+                    _debugSyncPed.PedHealth = player.Health;
                     _debugSyncPed.AimCoords = aimCoord;
+                    _debugSyncPed.Speed = player.Velocity.Length();
                     _debugSyncPed.Position = player.Position;
-                    _debugSyncPed.Rotation = player.Quaternion;
+                    _debugSyncPed.Rotation = player.Rotation;
                     _debugSyncPed.ModelHash = player.Model.Hash;
                     _debugSyncPed.CurrentWeapon = (int)player.Weapons.Current.Hash;
-                    _debugSyncPed.PedHealth = player.Health;
+                    _debugSyncPed.PedHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                     _debugSyncPed.IsAiming = aiming;
                     _debugSyncPed.IsShooting = shooting;
                     _debugSyncPed.IsJumping = Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle);
@@ -1289,58 +1422,152 @@ namespace GTACoOp
         
         #endregion
 
-        public void DecodeNativeCall(NativeData obj)
+        public IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {
-            var list = new List<InputArgument>();
+            var list = new List<object>();
 
-            foreach (var arg in obj.Arguments)
+            foreach (var arg in args)
             {
                 if (arg is IntArgument)
                 {
-                    list.Add(new InputArgument(((IntArgument)arg).Data));
+                    list.Add(((IntArgument)arg).Data);
                 }
                 else if (arg is UIntArgument)
                 {
-                    list.Add(new InputArgument(((UIntArgument)arg).Data));
+                    list.Add(((UIntArgument)arg).Data);
                 }
                 else if (arg is StringArgument)
                 {
-                    list.Add(new InputArgument(((StringArgument)arg).Data));
+                    list.Add(((StringArgument)arg).Data);
                 }
                 else if (arg is FloatArgument)
                 {
-                    list.Add(new InputArgument(((FloatArgument)arg).Data));
+                    list.Add(((FloatArgument)arg).Data);
                 }
                 else if (arg is BooleanArgument)
                 {
-                    list.Add(new InputArgument(((BooleanArgument)arg).Data));
+                    list.Add(((BooleanArgument)arg).Data);
                 }
                 else if (arg is LocalPlayerArgument)
                 {
-                    list.Add(new InputArgument(Game.Player.Character.Handle));
+                    list.Add(Game.Player.Character.Handle);
                 }
                 else if (arg is OpponentPedHandleArgument)
                 {
                     var handle = ((OpponentPedHandleArgument)arg).Data;
-                    lock (Opponents) if (Opponents.ContainsKey(handle) && Opponents[handle].Character != null) list.Add(new InputArgument(Opponents[handle].Character.Handle));
+                    lock (Opponents) if (Opponents.ContainsKey(handle) && Opponents[handle].Character != null) list.Add(Opponents[handle].Character.Handle);
                 }
                 else if (arg is Vector3Argument)
                 {
                     var tmp = (Vector3Argument)arg;
-                    list.Add(new InputArgument(tmp.X));
-                    list.Add(new InputArgument(tmp.Y));
-                    list.Add(new InputArgument(tmp.Z));
+                    list.Add(tmp.X);
+                    list.Add(tmp.Y);
+                    list.Add(tmp.Z);
                 }
                 else if (arg is LocalGamePlayerArgument)
                 {
-                    list.Add(new InputArgument(Game.Player.Handle));
+                    list.Add(Game.Player.Handle);
+                }
+                else if (arg is EntityArgument)
+                {
+                    list.Add(NetEntityHandler.NetToEntity(((EntityArgument)arg).NetHandle));
+                }
+                else if (arg is EntityPointerArgument)
+                {
+                    list.Add(new OutputArgument(NetEntityHandler.NetToEntity(((EntityPointerArgument)arg).NetHandle)));
                 }
             }
+
+            return list;
+        }
+
+        public static List<NativeArgument> ParseNativeArguments(params object[] args)
+        {
+            var list = new List<NativeArgument>();
+            foreach (var o in args)
+            {
+                if (o is int)
+                {
+                    list.Add(new IntArgument() { Data = ((int)o) });
+                }
+                else if (o is uint)
+                {
+                    list.Add(new UIntArgument() { Data = ((uint)o) });
+                }
+                else if (o is string)
+                {
+                    list.Add(new StringArgument() { Data = ((string)o) });
+                }
+                else if (o is float)
+                {
+                    list.Add(new FloatArgument() { Data = ((float)o) });
+                }
+                else if (o is bool)
+                {
+                    list.Add(new BooleanArgument() { Data = ((bool)o) });
+                }
+                else if (o is Vector3)
+                {
+                    var tmp = (Vector3)o;
+                    list.Add(new Vector3Argument()
+                    {
+                        X = tmp.X,
+                        Y = tmp.Y,
+                        Z = tmp.Z,
+                    });
+                }
+                else if (o is LocalPlayerArgument)
+                {
+                    list.Add((LocalPlayerArgument)o);
+                }
+                else if (o is OpponentPedHandleArgument)
+                {
+                    list.Add((OpponentPedHandleArgument)o);
+                }
+                else if (o is LocalGamePlayerArgument)
+                {
+                    list.Add((LocalGamePlayerArgument)o);
+                }
+                else if (o is EntityArgument)
+                {
+                    list.Add((EntityArgument)o);
+                }
+                else if (o is EntityPointerArgument)
+                {
+                    list.Add((EntityPointerArgument)o);
+                }
+            }
+
+            return list;
+        }
+
+        public static void TriggerServerEvent(string eventName, params object[] args)
+        {
+            if (!IsOnServer()) return;
+            var packet = new ScriptEventTrigger();
+            packet.EventName = eventName;
+            packet.Arguments = ParseNativeArguments(args);
+            var bin = SerializeBinary(packet);
+
+            var msg = _client.CreateMessage();
+            msg.Write((int)PacketType.ScriptEventTrigger);
+            msg.Write(bin.Length);
+            msg.Write(bin);
+
+            _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
+        }
+
+        public void DecodeNativeCall(NativeData obj)
+        {
+            var list = new List<InputArgument>();
+
+            list.AddRange(DecodeArgumentList(obj.Arguments.ToArray()).Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
 
             var nativeType = CheckNativeHash(obj.Hash);
 
             if ((int)nativeType >= 2)
             {
+                Model model = null;
                 if ((int) nativeType >= 3)
                 {
                     var modelObj = obj.Arguments[(int) nativeType - 3];
@@ -1354,7 +1581,7 @@ namespace GTACoOp
                     {
                         modelHash = ((IntArgument) modelObj).Data;
                     }
-                    var model = new Model(modelHash);
+                    model = new Model(modelHash);
 
                     if (model.IsValid)
                     {
@@ -1368,6 +1595,9 @@ namespace GTACoOp
                 {
                     SendNativeCallResponse(obj.Id, entId);
                 }
+
+                if (model != null)
+                    model.MarkAsNoLongerNeeded();
                 return;
             }
 

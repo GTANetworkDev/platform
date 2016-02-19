@@ -22,6 +22,9 @@ namespace GTAServer
         NativeTickRecall = 13,
         NativeOnDisconnect = 14,
         NativeOnDisconnectRecall = 15,
+        CreateEntity = 16,
+        DeleteEntity = 17,
+        ScriptEventTrigger = 18,
     }
 
     public enum ScriptVersion
@@ -32,6 +35,67 @@ namespace GTAServer
         VERSION_0_7 = 3,
         VERSION_0_8_1 = 4,
         VERSION_0_9 = 5,
+    }
+
+    public enum EntityType
+    {
+        Vehicle = 0,
+        Prop = 1,
+        Blip = 2,
+    }
+
+    [ProtoContract]
+    public class ConnectionResponse
+    {
+        [ProtoMember(1)]
+        public int AssignedChannel { get; set; }
+
+        [ProtoMember(2)]
+        public int CharacterHandle { get; set; }
+
+        [ProtoMember(3)]
+        public Dictionary<int, EntityProperties> Objects { get; set; }
+
+        [ProtoMember(4)]
+        public Dictionary<int, VehicleProperties> Vehicles { get; set; }
+
+        [ProtoMember(5)]
+        public List<string> ClientsideScripts { get; set; }
+    }
+
+    [ProtoContract]
+    public class DeleteEntity
+    {
+        [ProtoMember(1)]
+        public int NetHandle { get; set; }
+    }
+
+    [ProtoContract]
+    public class CreateEntity
+    {
+        [ProtoMember(1)]
+        public int NetHandle { get; set; }
+
+        [ProtoMember(2)]
+        public byte EntityType { get; set; }
+
+        [ProtoMember(3)]
+        public int Model { get; set; }
+
+        [ProtoMember(4)]
+        public Vector3 Position { get; set; }
+
+        [ProtoMember(5)]
+        public Vector3 Rotation { get; set; }
+
+        [ProtoMember(6)]
+        public bool Dynamic { get; set; }
+
+        [ProtoMember(7)]
+        public int Color1 { get; set; }
+
+        [ProtoMember(8)]
+        public int Color2 { get; set; }
     }
 
     [ProtoContract]
@@ -49,6 +113,13 @@ namespace GTAServer
         public int Port { get; set; }
         [ProtoMember(6)]
         public string Gamemode { get; set; }
+    }
+
+    [ProtoContract]
+    public class ScriptCollection
+    {
+        [ProtoMember(1)]
+        public List<string> Scripts { get; set; }
     }
 
     [ProtoContract]
@@ -97,7 +168,8 @@ namespace GTAServer
         [ProtoMember(7)]
         public Vector3 Position { get; set; }
         [ProtoMember(8)]
-        public Quaternion Quaternion { get; set; }
+        public Vector3 Quaternion { get; set; }
+        //public Quaternion Quaternion { get; set; }
 
         [ProtoMember(9)]
         public int VehicleSeat { get; set; }
@@ -112,16 +184,24 @@ namespace GTAServer
         public float Latency { get; set; }
 
         [ProtoMember(13)]
-        public Dictionary<int, int> VehicleMods { get; set; }
-
-        [ProtoMember(14)]
         public bool IsPressingHorn { get; set; }
 
-        [ProtoMember(15)]
+        [ProtoMember(14)]
         public bool IsSirenActive { get; set; }
 
-        [ProtoMember(16)]
+        [ProtoMember(15)]
         public float Speed { get; set; }
+
+        [ProtoMember(16)]
+        public int VehicleHandle { get; set; }
+
+        [ProtoMember(17)]
+        public int NetHandle { get; set; }
+
+        /*
+        [ProtoMember(16)]
+        public Dictionary<int, int> VehicleMods { get; set; }
+        */
     }
 
     [ProtoContract]
@@ -138,7 +218,8 @@ namespace GTAServer
         [ProtoMember(4)]
         public Vector3 Position { get; set; }
         [ProtoMember(5)]
-        public Quaternion Quaternion { get; set; }
+        public Vector3 Quaternion { get; set; }
+        //public Quaternion Quaternion { get; set; }
 
         [ProtoMember(6)]
         public bool IsJumping { get; set; }
@@ -158,10 +239,17 @@ namespace GTAServer
         public float Latency { get; set; }
 
         [ProtoMember(13)]
-        public Dictionary<int, int> PedProps { get; set; }
+        public bool IsParachuteOpen { get; set; }
 
         [ProtoMember(14)]
-        public bool IsParachuteOpen { get; set; }
+        public int NetHandle { get; set; }
+
+        [ProtoMember(15)]
+        public float Speed { get; set; }
+        /*
+        [ProtoMember(14)]
+        public Dictionary<int, int> PedProps { get; set; }
+        */
     }
 
 

@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Xml.Serialization;
-using GTA;
-using GTA.Native;
 using Lidgren.Network;
 using ProtoBuf;
 
-namespace GTACoOp
+namespace MTAV
 {
     public static class Program
     {
