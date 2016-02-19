@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,6 +13,7 @@ using GTA.Math;
 using GTA.Native;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
+using NativeUI;
 
 namespace MTAV
 {
@@ -30,34 +32,25 @@ namespace MTAV
 
         public static List<Action> ThreadJumper;
 
-        public static bool InvokeMessageEvent(string msg)
+        public static void InvokeMessageEvent(string msg)
         {
-            bool cont = false;
-            bool output = true;
             ThreadJumper.Add(() =>
             {
-                bool allow = true;
                 if (msg.StartsWith("/"))
                 {
                     lock (ScriptEngines)
                     {
-                        allow = ScriptEngines.Aggregate(allow, (current, engine) => current && engine.Script.script.invokeChatCommand(msg));
+                        ScriptEngines.ForEach(en => en.Script.script.invokeChatCommand(msg));
                     }
                 }
                 else
                 {
                     lock (ScriptEngines)
                     {
-                        allow = ScriptEngines.Aggregate(allow, (current, engine) => current && engine.Script.script.invokeChatMessage(msg));
+                        ScriptEngines.ForEach(en => en.Script.script.invokeChatMessage(msg));
                     }
                 }
-
-                cont = true;
-                output = allow;
             });
-
-            while (!cont) Script.Yield();
-            return output;
         }
 
         public void OnTick(object sender, EventArgs e)
@@ -134,7 +127,8 @@ namespace MTAV
                 scriptEngine.AddHostType("List", typeof(IList));
                 scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
                 scriptEngine.AddHostType("Keys", typeof(Keys));
-                scriptEngine.AddHostObject("Network", Main.NetEntityHandler);
+                scriptEngine.AddHostType("Point", typeof(Point));
+                scriptEngine.AddHostType("Size", typeof(Size));
                 
                 try
                 {
@@ -246,7 +240,17 @@ namespace MTAV
                     return null;
             }
         }
+
+        public string getResourceFilePath(string resourceName, string fileName)
+        {
+            return FileTransferId._DOWNLOADFOLDER_ + resourceName + "\\" + fileName;
+        }
         
+        public void dxDrawTexture(string path, Point pos, Size size)
+        {
+            Sprite.DrawTexture(path, pos, size);
+        }
+
         public bool isPed(int ent)
         {
             return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
@@ -268,7 +272,8 @@ namespace MTAV
         }
 
         public delegate void ServerEventTrigger(string eventName, object[] arguments);
-        public delegate void ChatEvent(string msg, CancelEventArgs cancelEv);
+        //public delegate void ChatEvent(string msg, CancelEventArgs cancelEv);
+        public delegate void ChatEvent(string msg);
 
         public event EventHandler onResourceStart;
         public event EventHandler onResourceStop;
@@ -278,7 +283,7 @@ namespace MTAV
         public event ServerEventTrigger onServerEventTrigger;
         public event ChatEvent onChatMessage;
         public event ChatEvent onChatCommand;
-
+        /*
         internal bool invokeChatMessage(string msg)
         {
             var cancelEvent = new CancelEventArgs(false);
@@ -291,6 +296,16 @@ namespace MTAV
             var cancelEvent = new CancelEventArgs(false);
             onChatCommand?.Invoke(msg, cancelEvent);
             return !cancelEvent.Cancel;
+        }*/
+
+        internal void invokeChatMessage(string msg)
+        {
+            onChatMessage?.Invoke(msg);
+        }
+
+        internal void invokeChatCommand(string msg)
+        {
+            onChatCommand?.Invoke(msg);
         }
 
         internal void invokeServerEvent(string eventName, object[] arsg)

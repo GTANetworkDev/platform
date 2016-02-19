@@ -20,22 +20,22 @@ namespace GTAServer
 
         static void Main(string[] args)
         {
-            var settings = ReadSettings(Program.Location + "Settings.xml");
+            var settings = ReadSettings(Program.Location + "settings.xml");
 
             Console.WriteLine("Name: " + settings.Name);
             Console.WriteLine("Port: " + settings.Port);
             Console.WriteLine("Player Limit: " + settings.MaxPlayers);
             Console.WriteLine("Starting...");
 
-            ServerInstance = new GameServer(settings.Port, settings.Name, settings.Gamemode);
-            ServerInstance.PasswordProtected = settings.PasswordProtected;
+            ServerInstance = new GameServer(settings.Port, settings.Name);
+            ServerInstance.PasswordProtected = !string.IsNullOrWhiteSpace(settings.Password);
             ServerInstance.Password = settings.Password;
             ServerInstance.AnnounceSelf = settings.Announce;
             ServerInstance.MasterServer = settings.MasterServer;
             ServerInstance.MaxPlayers = settings.MaxPlayers;
-            ServerInstance.AllowDisplayNames = settings.AllowDisplayNames;
+            ServerInstance.AllowDisplayNames = true;
 
-            ServerInstance.Start(settings.Resources);
+            ServerInstance.Start(settings.Resources.Select(r => r.Path).ToArray());
 
             Console.WriteLine("Started! Waiting for connections.");
 

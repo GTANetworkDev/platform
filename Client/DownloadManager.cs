@@ -8,25 +8,50 @@ namespace MTAV
 {
     public static class DownloadManager
     {
+        public static void Log(string txt)
+        {
+            File.AppendAllText("scripts\\download.log", txt + "\r\n");
+        }
+
         private static FileTransferId CurrentFile;
         public static bool StartDownload(int id, string path, FileType type, int len)
         {
-            if (CurrentFile != null) return false;
+            if (CurrentFile != null)
+            {
+                return false;
+            }
             CurrentFile = new FileTransferId(id, path, type, len);
             return true;
         }
 
+        public static void Cancel()
+        {
+            CurrentFile = null;
+        }
+
         public static void DownloadPart(int id, byte[] bytes)
         {
-            if (CurrentFile == null || CurrentFile.Id != id) return;
+            if (CurrentFile == null || CurrentFile.Id != id)
+            {
+                return;
+            }
+            
             CurrentFile.Write(bytes);
+            UI.ShowSubtitle("Downloading " +
+                            (CurrentFile.Type == FileType.Normal
+                                ? CurrentFile.Filename
+                                : CurrentFile.Type.ToString()) + ": " +
+                            (CurrentFile.DataWritten/(float) CurrentFile.Length).ToString("P"));
         }
 
         public static void End(int id)
         {
-            if (CurrentFile == null || CurrentFile.Id != id) return;
-
-            CurrentFile.Dispose();
+            if (CurrentFile == null || CurrentFile.Id != id)
+            {
+                UI.Notify($"END Channel mismatch! We have {CurrentFile?.Id} and supplied was {id}");
+                return;
+            }
+            
             if (CurrentFile.Type == FileType.Map)
             {
                 var obj = Main.DeserializeBinary<ServerMap>(CurrentFile.Data.ToArray()) as ServerMap;
@@ -50,8 +75,10 @@ namespace MTAV
                 {
                     Main.StartClientsideScripts(obj);
                 }
+
             }
 
+            CurrentFile.Dispose();
             CurrentFile = null;
         }
     }
@@ -65,7 +92,7 @@ namespace MTAV
         public FileType Type { get; set; }
         public FileStream Stream { get; set; }
         public int Length { get; set; }
-        
+        public int DataWritten { get; set; }
         public List<byte> Data { get; set; }
 
         public FileTransferId(int id, string name, FileType type, int len)
@@ -96,12 +123,17 @@ namespace MTAV
             {
                 Data.AddRange(data);
             }
+
+            DataWritten += data.Length;
         }
 
         public void Dispose()
         {
-            Stream.Close();
-            Stream.Dispose();
+            if (Stream != null)
+            {
+                Stream.Close();
+                Stream.Dispose();
+            }
         }
     }
 }

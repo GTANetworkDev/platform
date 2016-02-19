@@ -467,8 +467,8 @@ namespace MTAV
 
                 if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
                 {
-                    var wep = Character.Weapons.Give((WeaponHash) CurrentWeapon, 9999, true, true);
-                    Character.Weapons.Select(wep);
+                    Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
+                    Character.Weapons.Select(Character.Weapons[(WeaponHash)CurrentWeapon]);
                 }
 
                 if (!_lastJumping && IsJumping)
@@ -536,7 +536,7 @@ namespace MTAV
                     {
                         Character.Task.AimAt(AimCoords, 100);
                     }
-
+                    /*
                     if (!Character.IsInRangeOf(_position, 0.5f) &&
                         ((IsShooting && !_lastShooting) ||
                             (IsShooting && _lastShooting && _switch%(threshold*2) == 0)))
@@ -548,8 +548,29 @@ namespace MTAV
                     else if ((IsShooting && !_lastShooting) ||
                                 (IsShooting && _lastShooting && _switch%(threshold/2) == 0))
                     {
+
                         Function.Call(Hash.TASK_SHOOT_AT_COORD, Character.Handle, AimCoords.X, AimCoords.Y,
                             AimCoords.Z, 1500, (uint) FiringPattern.FullAuto);
+                    }*/
+
+                    if (IsShooting)
+                    {
+                        if (!Character.IsInRangeOf(_position, 0.5f) && _switch % threshold == 0)
+                        {
+                            Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character.Handle, dest.X, dest.Y,
+                                dest.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 2f, 0, 0x3F000000, 0x40800000, 1, 512, 0,
+                                (uint)FiringPattern.FullAuto);
+                        }
+                        else if (Character.IsInRangeOf(_position, 0.5f))
+                        {
+                            Character.Task.AimAt(AimCoords, 100);
+                        }
+
+                        var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
+                        var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+                        var damage = 25;
+                        Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, AimCoords.X,
+                            AimCoords.Y, AimCoords.Z, damage, true, CurrentWeapon, Character, true, true, 0xbf800000);
                     }
 
                     if (!IsAiming && !IsShooting && !IsJumping)

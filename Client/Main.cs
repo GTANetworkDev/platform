@@ -36,7 +36,7 @@ namespace MTAV
         private readonly MenuPool _menuPool;
 
         private string _clientIp;
-        private readonly Chat _chat;
+        private readonly ClassicChat _chat;
 
         private static NetClient _client;
         private static NetPeerConfiguration _config;
@@ -79,17 +79,13 @@ namespace MTAV
             _emptyVehicleMods = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++) _emptyVehicleMods.Add(i, 0);
 
-            _chat = new Chat();
+            _chat = new ClassicChat();
             _chat.OnComplete += (sender, args) =>
             {
                 var message = _chat.CurrentInput;
                 if (!string.IsNullOrEmpty(message))
                 {
-                    if (!JavascriptHook.InvokeMessageEvent(message))
-                    {
-                        _chat.IsFocused = false;
-                        return;
-                    }
+                    JavascriptHook.InvokeMessageEvent(message);
 
                     var obj = new ChatData()
                     {
@@ -395,8 +391,10 @@ namespace MTAV
                     continue;
                 _client.DiscoverKnownPeer(split[0], port);
             }
-        }
 
+            _client.DiscoverLocalPeers(Port);
+        }
+        
         private void RebuildPlayersList()
         {
             _playersMenu.Clear();
@@ -739,13 +737,7 @@ namespace MTAV
                 if ((Function.Call<bool>(Hash.IS_ENTITY_A_PED, entity.Handle) || Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, entity.Handle)) && !NetEntityHandler.ContainsLocalHandle(entity.Handle))
                     entity.Delete();
             }
-
-            foreach (var entity in World.GetNearbyEntities(Game.Player.Character.Position, 100000f))
-            {
-                if ((Function.Call<bool>(Hash.IS_ENTITY_A_PED, entity.Handle) || Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, entity.Handle)) && !NetEntityHandler.ContainsLocalHandle(entity.Handle))
-                    entity.Delete();
-            }
-
+            
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
                 */
@@ -851,7 +843,7 @@ namespace MTAV
             var msg = _client.CreateMessage();
 
             var obj = new ConnectionRequest();
-            obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Player" : Game.Player.Name; // To be used as identifiers in server files
+            obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Unknown" : Game.Player.Name; // To be used as identifiers in server files
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrEmpty(_password)) obj.Password = _password;
             obj.ScriptVersion = (byte)LocalScriptVersion;
@@ -891,8 +883,9 @@ namespace MTAV
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
+                                UI.ShowSubtitle("Received ped veh data.");
                                 if (data == null) return;
-
+                                UI.ShowSubtitle("ped veh data not null");
                                 lock (Opponents)
                                 {
                                     if (!Opponents.ContainsKey(data.Id))
@@ -932,10 +925,13 @@ namespace MTAV
                             break;
                         case PacketType.PedPositionData:
                             {
+
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
+                                UI.ShowSubtitle("Received ped pos data.");
                                 if (data == null) return;
 
+                                UI.ShowSubtitle("ped pos data not null");
                                 lock (Opponents)
                                 {
                                     if (!Opponents.ContainsKey(data.Id))
@@ -1093,10 +1089,14 @@ namespace MTAV
                                 {
                                     DownloadManager.StartDownload(data.Id, data.ResourceParent + Path.DirectorySeparatorChar + data.FileName, (FileType) data.FileType, data.Length);
                                 }
+                                else
+                                {
+                                    DownloadManager.Log("DATA WAS NULL ON REQUEST");
+                                }
                             }
                             break;
                         case PacketType.FileTransferTick:
-                            {
+                        {
                                 var channel = msg.ReadInt32();
                                 var len = msg.ReadInt32();
                                 var data = msg.ReadBytes(len);
@@ -1104,7 +1104,7 @@ namespace MTAV
                             }
                             break;
                         case PacketType.FileTransferComplete:
-                            {
+                        {
                                 var id = msg.ReadInt32();
                                 DownloadManager.End(id);
                             }
@@ -1117,24 +1117,6 @@ namespace MTAV
                                 {
                                     var sender = string.IsNullOrEmpty(data.Sender) ? "SERVER" : data.Sender;
                                     _chat.AddMessage(sender, data.Message);
-                                    /*lock (_threadJumping)
-                                    {
-                                        _threadJumping.Enqueue(() =>
-                                        {
-                                            if (!string.IsNullOrEmpty(data.Sender))
-                                                for (int i = 0; i < data.Message.Length; i += 97 - data.Sender.Length)
-                                                {
-                                                    UI.Notify(data.Sender + ": " +
-                                                              data.Message.Substring(i,
-                                                                  Math.Min(97 - data.Sender.Length,
-                                                                      data.Message.Length - i)));
-                                                }
-                                            else
-                                                for (int i = 0; i < data.Message.Length; i += 99)
-                                                    UI.Notify(data.Message.Substring(i,
-                                                        Math.Min(99, data.Message.Length - i)));
-                                        });
-                                    }*/
                                 }
                             }
                             break;
@@ -1262,6 +1244,11 @@ namespace MTAV
                             }
                             _channel = respObj.AssignedChannel;
                             NetEntityHandler.AddEntity(respObj.CharacterHandle, Game.Player.Character.Handle);
+
+                            var confirmObj = _client.CreateMessage();
+                            confirmObj.Write((int)PacketType.ConnectionConfirmed);
+                            _client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+
                             break;
                         case NetConnectionStatus.Disconnected:
                             var reason = msg.ReadString();
@@ -1305,8 +1292,11 @@ namespace MTAV
                                 _blipCleanup.Clear();
                             }
 
+                            _chat.Clear();
                             NetEntityHandler.ClearAll();
                             JavascriptHook.StopAllScripts();
+                            DownloadManager.Cancel();
+                            // TODO: FIX
                             break;
                     }
                 }

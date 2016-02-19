@@ -29,6 +29,7 @@ namespace MultiTheftAutoShared
         FileTransferTick = 20,
         FileTransferRequest = 21,
         FileTransferComplete = 22,
+        ConnectionConfirmed = 23,
     }
 
     public enum ScriptVersion

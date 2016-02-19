@@ -69,6 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BiDictionarity.cs" />
+    <Compile Include="ClassicChat.cs" />
     <Compile Include="Chat.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="DebugWindow.cs" />

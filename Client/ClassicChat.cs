@@ -1,22 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using GTA;
 using GTA.Native;
+using NativeUI;
 
 namespace MTAV
 {
-    public class Chat
+    public class ClassicChat
     {
         public event EventHandler OnComplete;
 
-        public Chat()
+        public ClassicChat()
         {
             CurrentInput = "";
             _mainScaleform = new Scaleform(0);
             _mainScaleform.Load("multiplayer_chat");
+            _messages = new List<string>();
         }
 
         public bool HasInitialized;
@@ -55,12 +59,23 @@ namespace MTAV
         private Keys _lastKey;
         private bool _isFocused;
 
+        private List<string> _messages;
+
+        public void Clear()
+        {
+            _messages.Clear();
+        }
+
         public void Tick()
         {
             if (!Main.IsOnServer()) return;
 
             _mainScaleform.Render2D();
 
+            new UIResText(_messages.Count > 0 ? _messages.Aggregate((s, f) => s + "\n" + f) : "", UIMenu.GetSafezoneBounds(), 0.35f)
+            {
+                Outline = true,
+            }.Draw();
             
             if (!IsFocused) return;
             Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
@@ -68,10 +83,17 @@ namespace MTAV
 
         public void AddMessage(string sender, string msg)
         {
-            if (string.IsNullOrEmpty(sender))
+            /*if (string.IsNullOrEmpty(sender))
                 _mainScaleform.CallFunction("ADD_MESSAGE", "", SanitizeString(msg));
             else
-                _mainScaleform.CallFunction("ADD_MESSAGE", SanitizeString(sender) + ":", SanitizeString(msg));
+                _mainScaleform.CallFunction("ADD_MESSAGE", SanitizeString(sender) + ":", SanitizeString(msg));*/
+            if (string.IsNullOrEmpty(sender))
+                _messages.Add(msg);
+            else
+                _messages.Add(sender + ": " + msg);
+
+            if (_messages.Count > 10)
+                _messages.RemoveAt(0);
         }
 
         public static string SanitizeString(string input)
@@ -82,11 +104,11 @@ namespace MTAV
         
         public void OnKeyDown(Keys key)
         {
-            if (key == Keys.PageUp && Main.IsOnServer())
+            /*if (key == Keys.PageUp && Main.IsOnServer())
                 _mainScaleform.CallFunction("PAGE_UP");
 
             else if (key == Keys.PageDown && Main.IsOnServer())
-                _mainScaleform.CallFunction("PAGE_DOWN");
+                _mainScaleform.CallFunction("PAGE_DOWN");*/
 
             if (!IsFocused) return;
 

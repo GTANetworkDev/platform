@@ -51,12 +51,12 @@ namespace GTAServer
         {
             Parent = c;
             ChunkSize = c.NetConnection.Peer.Configuration.MaximumTransmissionUnit - 20;
-            Files = new Queue<StreamedData>();
+            Files = new List<StreamedData>();
         }
 
         public int ChunkSize { get; set; }
         public Client Parent { get; set; }
-        public Queue<StreamedData> Files { get; set; }
+        public List<StreamedData> Files { get; set; }
     }
 
     public class StreamedData
@@ -74,6 +74,7 @@ namespace GTAServer
 
         public FileType Type { get; set; }
         public string Name { get; set; }
+        public string Resource { get; set; }
     }
 
     public enum NotificationIconType
@@ -125,15 +126,16 @@ namespace GTAServer
 
     public class GameServer
     {
-        public GameServer(int port, string name, string gamemodeName)
+        public GameServer(int port, string name)
         {
             Clients = new List<Client>();
             Downloads = new List<StreamingClient>();
+            RunningResources = new List<Resource>();
+
             MaxPlayers = 32;
             Port = port;
-            GamemodeName = gamemodeName;
-
-            _resources = new List<JScriptEngine>();
+            
+            //_resources = new List<JScriptEngine>();
             _clientScripts = new List<string>();
             NetEntityHandler = new NetEntityHandler();
 
@@ -161,13 +163,15 @@ namespace GTAServer
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
 
+        public List<Resource> RunningResources;
+
         public NetEntityHandler NetEntityHandler { get; set; }
 
         public bool AllowDisplayNames { get; set; }
 
         public readonly ScriptVersion ServerVersion = ScriptVersion.VERSION_0_9;
 
-        private List<JScriptEngine> _resources;
+        //private List<JScriptEngine> _resources;
         private List<string> _clientScripts;
         private DateTime _lastAnnounceDateTime;
 
@@ -191,14 +195,7 @@ namespace GTAServer
 
                 try
                 {
-                    var script = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "resources" + Path.DirectorySeparatorChar + path + ".js");
-                    if (script.StartsWith("//local"))
-                    {
-                        _clientScripts.Add(script);
-                        continue;
-                    }
-                    var fsObj = InstantiateScripts(script, path);
-                    list.Add(fsObj);
+                    StartResource(path);
                 }
                 catch (Exception ex)
                 {
@@ -211,10 +208,6 @@ namespace GTAServer
             {
                 fs.Script.API.invokeResourceStart();
             });
-            lock (_resources)
-            {
-                _resources = list;
-            }
         }
 
         public void AnnounceSelfToMaster()
@@ -229,6 +222,51 @@ namespace GTAServer
                 {
                     Console.WriteLine("Failed to announce self: master server is not available at this time.");
                 }
+            }
+        }
+
+        private void StartResource(string resourceName)
+        {
+            try
+            {
+                if (!Directory.Exists("resources" + Path.DirectorySeparatorChar + resourceName))
+                    throw new FileNotFoundException("Resource does not exist.");
+
+                var baseDir = "resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar;
+
+                if (!File.Exists(baseDir + "meta.xml")) 
+                    throw new FileNotFoundException("meta.xml has not been found.");
+
+                var xmlSer = new XmlSerializer(typeof(ResourceInfo));
+                ResourceInfo currentResInfo;
+                using (var str = File.OpenRead(baseDir + "meta.xml"))
+                    currentResInfo = (ResourceInfo)xmlSer.Deserialize(str);
+                
+                var ourResource = new Resource();
+                ourResource.Info = currentResInfo;
+                ourResource.DirectoryName = resourceName;
+                ourResource.Engines = new List<JScriptEngine>();
+
+                
+                foreach (var script in currentResInfo.Scripts)
+                {
+                    var scrTxt = File.ReadAllText(baseDir + script.Path);
+                    if (script.Type == ResourceType.client)
+                    {
+                        _clientScripts.Add(scrTxt);
+                        continue;
+                    }
+
+                    var fsObj = InstantiateScripts(scrTxt, script.Path);
+                    if (fsObj != null) ourResource.Engines.Add(fsObj);
+                }
+
+                RunningResources.Add(ourResource);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR STARTING RESOURCE " + resourceName);
+                Console.WriteLine(ex.Message);
             }
         }
 
@@ -280,29 +318,29 @@ namespace GTAServer
                         if (Downloads[i].Parent.NetConnection.CanSendImmediately(NetDeliveryMethod.ReliableOrdered,
                             GetChannelIdForConnection(Downloads[i].Parent)))
                         {
-                            var ourObj = Downloads[i].Files.Peek();
-                            if (!ourObj.HasStarted)
+                            if (!Downloads[i].Files[0].HasStarted)
                             {
                                 var notifyObj = new DataDownloadStart();
-                                notifyObj.FileType = (byte) ourObj.Type;
-                                notifyObj.ResourceParent = null;
-                                notifyObj.FileName = null;
-                                notifyObj.Length = ourObj.Data.Length;
+                                notifyObj.FileType = (byte)Downloads[i].Files[0].Type;
+                                notifyObj.ResourceParent = Downloads[i].Files[0].Resource;
+                                notifyObj.FileName = Downloads[i].Files[0].Name;
+                                notifyObj.Id = Downloads[i].Files[0].Id;
+                                notifyObj.Length = Downloads[i].Files[0].Data.Length;
                                 SendToClient(Downloads[i].Parent, notifyObj, PacketType.FileTransferRequest, true);
-                                Downloads[i].Files.Peek().HasStarted = true;
+                                Downloads[i].Files[0].HasStarted = true;
                             }
 
-                            var remaining = ourObj.Data.Length - ourObj.BytesSent;
+                            var remaining = Downloads[i].Files[0].Data.Length - Downloads[i].Files[0].BytesSent;
                             int sendBytes = (remaining > Downloads[i].ChunkSize
                                 ? Downloads[i].ChunkSize
                                 : (int) remaining);
 
                             var updateObj = Server.CreateMessage();
                             updateObj.Write((int) PacketType.FileTransferTick);
-                            updateObj.Write(ourObj.Id);
+                            updateObj.Write(Downloads[i].Files[0].Id);
                             updateObj.Write(sendBytes);
-                            updateObj.Write(ourObj.Data, (int) ourObj.BytesSent, sendBytes);
-                            Downloads[i].Files.Peek().BytesSent += sendBytes;
+                            updateObj.Write(Downloads[i].Files[0].Data, (int)Downloads[i].Files[0].BytesSent, sendBytes);
+                            Downloads[i].Files[0].BytesSent += sendBytes;
 
                             Server.SendMessage(updateObj, Downloads[i].Parent.NetConnection,
                                 NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(Downloads[i].Parent));
@@ -311,11 +349,11 @@ namespace GTAServer
                             {
                                 var endObject = Server.CreateMessage();
                                 endObject.Write((int)PacketType.FileTransferComplete);
-                                endObject.Write(ourObj.Id);
+                                endObject.Write(Downloads[i].Files[0].Id);
 
-                                Server.SendMessage(updateObj, Downloads[i].Parent.NetConnection,
+                                Server.SendMessage(endObject, Downloads[i].Parent.NetConnection,
                                     NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(Downloads[i].Parent));
-                                Downloads[i].Files.Dequeue();
+                                Downloads[i].Files.RemoveAt(0);
                             }
                         }
                     }
@@ -444,42 +482,7 @@ namespace GTAServer
                             
                             // TODO: Transfer map.
 
-                            var mapObj = new ServerMap();
-                            mapObj.Vehicles = new Dictionary<int, VehicleProperties>();
-                            mapObj.Objects = new Dictionary<int, EntityProperties>();
-                            foreach (var pair in NetEntityHandler.ToDict())
-                            {
-                                if (pair.Value is VehicleProperties && pair.Value.EntityType == (byte)EntityType.Vehicle)
-                                {
-                                    mapObj.Vehicles.Add(pair.Key, (VehicleProperties)pair.Value);
-                                }
-                                else if (pair.Value.EntityType == (byte)EntityType.Prop)
-                                {
-                                    mapObj.Objects.Add(pair.Key, pair.Value);
-                                }
-                            }
-
-                            // TODO: replace this filth
-                            var r = new Random();
-
-                            var mapData = new StreamedData();
-                            mapData.Id = r.Next(int.MaxValue);
-                            mapData.Data = SerializeBinary(mapObj);
-                            mapData.Type = FileType.Map;
-
-                            var clientScripts = new ScriptCollection();
-                            clientScripts.ClientsideScripts = new List<string>(_clientScripts);
-
-                            var scriptData = new StreamedData();
-                            scriptData.Id = r.Next(int.MaxValue);
-                            scriptData.Data = SerializeBinary(clientScripts);
-                            scriptData.Type = FileType.Script;
                             
-                            var downloader = new StreamingClient(client);
-                            downloader.Files.Enqueue(mapData);
-                            downloader.Files.Enqueue(scriptData);
-
-                            Downloads.Add(downloader);
                             
                             var channelHail = Server.CreateMessage();
                             var respBin = SerializeBinary(respObj);
@@ -489,10 +492,8 @@ namespace GTAServer
                             
                             client.NetConnection.Approve(channelHail);
 
-                            if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerBeginConnect(client));
-
-                            /**/
-
+                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerBeginConnect(client)));
+                            
                             Console.WriteLine("New incoming connection: " + client.SocialClubName + " (" + client.Name + ")");
                         }
                         else
@@ -508,7 +509,7 @@ namespace GTAServer
                         {
                             bool sendMsg = true;
 
-                            if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerConnected(client));
+                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerConnected(client)));
 
                             //if (sendMsg) API.sendNotificationToAll("Player ~h~" + client.Name + "~h~ has connected.");
 
@@ -522,7 +523,7 @@ namespace GTAServer
                                 {
                                     var sendMsg = true;
 
-                                    if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerDisconnected(client));
+                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDisconnected(client)));
 
                                     //if (sendMsg) API.sendNotificationToAll("Player ~h~" + client.Name + "~h~ has disconnected.");
 
@@ -576,11 +577,11 @@ namespace GTAServer
 
                                             if (command)
                                             {
-                                                if (_resources != null) _resources.ForEach(fs => pass = pass && !fs.Script.API.invokeChatCommand(client, data.Message));
+                                                lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokeChatCommand(client, data.Message)));
                                                 break;
                                             }
 
-                                            if (_resources != null) _resources.ForEach(fs => pass = pass && !fs.Script.API.invokeChatMessage(client, data.Message));
+                                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokeChatMessage(client, data.Message)));
 
                                             if (pass)
                                             {
@@ -713,10 +714,11 @@ namespace GTAServer
                                         DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
                                     if (data != null)
                                     {
-                                        _resources.ForEach(
+                                        lock (RunningResources)
+                                        RunningResources.ForEach(
                                             en =>
-                                                en.Script.invokeClientEvent(client, data.EventName,
-                                                    DecodeArgumentList(data.Arguments.ToArray()).ToArray()));
+                                                en.Engines.ForEach(fs => fs.Script.invokeClientEvent(client, data.EventName,
+                                                    DecodeArgumentList(data.Arguments.ToArray()).ToArray())));
                                     }
                                 }
                                 break;
@@ -761,9 +763,67 @@ namespace GTAServer
                                     _callbacks.Remove(data.Id);
                                 }
                                 break;
+                            case PacketType.ConnectionConfirmed:
+                                {
+                                    var mapObj = new ServerMap();
+                                    mapObj.Vehicles = new Dictionary<int, VehicleProperties>();
+                                    mapObj.Objects = new Dictionary<int, EntityProperties>();
+                                    foreach (var pair in NetEntityHandler.ToDict())
+                                    {
+                                        if (pair.Value is VehicleProperties && pair.Value.EntityType == (byte)EntityType.Vehicle)
+                                        {
+                                            mapObj.Vehicles.Add(pair.Key, (VehicleProperties)pair.Value);
+                                        }
+                                        else if (pair.Value.EntityType == (byte)EntityType.Prop)
+                                        {
+                                            mapObj.Objects.Add(pair.Key, pair.Value);
+                                        }
+                                    }
+
+                                    // TODO: replace this filth
+                                    var r = new Random();
+
+                                    var mapData = new StreamedData();
+                                    mapData.Id = r.Next(int.MaxValue);
+                                    mapData.Data = SerializeBinary(mapObj);
+                                    mapData.Type = FileType.Map;
+
+                                    var clientScripts = new ScriptCollection();
+                                    clientScripts.ClientsideScripts = new List<string>(_clientScripts);
+
+                                    var scriptData = new StreamedData();
+                                    scriptData.Id = r.Next(int.MaxValue);
+                                    scriptData.Data = SerializeBinary(clientScripts);
+                                    scriptData.Type = FileType.Script;
+
+                                    var downloader = new StreamingClient(client);
+                                    downloader.Files.Add(mapData);
+                                    downloader.Files.Add(scriptData);
+
+                                    foreach (var resource in RunningResources)
+                                    {
+                                        foreach (var file in resource.Info.Files)
+                                        {
+                                            var fileData = new StreamedData();
+                                            fileData.Id = r.Next(int.MaxValue);
+                                            fileData.Type = FileType.Normal;
+                                            fileData.Data =
+                                                File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
+                                                                  resource.DirectoryName + Path.DirectorySeparatorChar +
+                                                                  file.Path);
+                                            fileData.Name = file.Path;
+                                            fileData.Resource = resource.DirectoryName;
+
+                                            downloader.Files.Add(fileData);
+                                        }
+                                    }
+
+                                    Downloads.Add(downloader);
+                                    break;
+                                }
                             case PacketType.PlayerKilled:
                                 {
-                                    if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokePlayerDeath(client));
+                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDeath(client)));
                                 }
                                 break;
                         }
@@ -774,7 +834,7 @@ namespace GTAServer
                 }
                 Server.Recycle(msg);
             }
-            if (_resources != null) _resources.ForEach(fs => fs.Script.API.invokeUpdate());
+            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokeUpdate()));
         }
 
         public IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
@@ -842,12 +902,18 @@ namespace GTAServer
 
         public void SendToAll(object newData, PacketType packetType, bool important, Client exclude)
         {
-            var data = SerializeBinary(newData);
-            NetOutgoingMessage msg = Server.CreateMessage();
-            msg.Write((int)packetType);
-            msg.Write(data.Length);
-            msg.Write(data);
-            Server.SendToAll(msg, exclude.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, GetChannelIdForConnection(exclude));
+            foreach (var client in Clients)
+            {
+                if (client == exclude) continue;
+                var data = SerializeBinary(newData);
+                NetOutgoingMessage msg = Server.CreateMessage();
+                msg.Write((int)packetType);
+                msg.Write(data.Length);
+                msg.Write(data);
+                Server.SendMessage(msg, client.NetConnection,
+                    important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
+                    GetChannelIdForConnection(client));
+            }
         }
 
         public object DeserializeBinary<T>(byte[] data)
