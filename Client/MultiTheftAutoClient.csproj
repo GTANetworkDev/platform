@@ -72,9 +72,9 @@
     <Compile Include="Chat.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="DebugWindow.cs" />
+    <Compile Include="DownloadManager.cs" />
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="Main.cs" />
-    <Compile Include="NativeData.cs" />
     <Compile Include="NetEntityHandler.cs" />
     <Compile Include="PedThread.cs" />
     <Compile Include="PlayerSettings.cs" />
@@ -82,7 +82,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SyncPed.cs" />
     <Compile Include="Util.cs" />
-    <Compile Include="VehicleData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

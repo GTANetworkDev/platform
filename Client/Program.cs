@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using Lidgren.Network;
+using MultiTheftAutoShared;
 using ProtoBuf;
 
 namespace MTAV

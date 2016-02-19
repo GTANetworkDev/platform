@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GTAServer</RootNamespace>
     <AssemblyName>GTAServer</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
@@ -84,11 +84,9 @@
     <Compile Include="GameServer.cs" />
     <Compile Include="VehicleHashes.cs" />
     <Compile Include="NetEntityHandler.cs" />
-    <Compile Include="NativeData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerSettings.cs" />
-    <Compile Include="VehicleData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

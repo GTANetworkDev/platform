@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using ProtoBuf;
 
-namespace MTAV
+namespace MultiTheftAutoShared
 {
     [ProtoContract]
     public class NativeResponse

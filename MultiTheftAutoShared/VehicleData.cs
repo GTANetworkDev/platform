@@ -2,7 +2,7 @@
 using GTA.Math;
 using ProtoBuf;
 
-namespace MTAV
+namespace MultiTheftAutoShared
 {
     public enum PacketType
     {
@@ -25,6 +25,10 @@ namespace MTAV
         CreateEntity = 16,
         DeleteEntity = 17,
         ScriptEventTrigger = 18,
+        SyncEvent = 19,
+        FileTransferTick = 20,
+        FileTransferRequest = 21,
+        FileTransferComplete = 22,
     }
 
     public enum ScriptVersion
@@ -42,6 +46,13 @@ namespace MTAV
         Vehicle = 0,
         Prop = 1,
         Blip = 2,
+    }
+
+    public enum FileType
+    {
+        Normal = 0,
+        Map = 1,
+        Script = 2,
     }
 
     [ProtoContract]
@@ -75,19 +86,47 @@ namespace MTAV
     public class ConnectionResponse
     {
         [ProtoMember(1)]
-        public int AssignedChannel { get; set; }
+        public byte AssignedChannel { get; set; }
 
         [ProtoMember(2)]
         public int CharacterHandle { get; set; }
+    }
 
-        [ProtoMember(3)]
+    [ProtoContract]
+    public class ServerMap
+    {
+        [ProtoMember(1)]
         public Dictionary<int, EntityProperties> Objects { get; set; }
 
-        [ProtoMember(4)]
+        [ProtoMember(2)]
         public Dictionary<int, VehicleProperties> Vehicles { get; set; }
-            
-        [ProtoMember(5)]
+    }
+
+    [ProtoContract]
+    public class ScriptCollection
+    {
+        [ProtoMember(1)]
         public List<string> ClientsideScripts { get; set; }
+    }
+
+
+    [ProtoContract]
+    public class DataDownloadStart
+    {
+        [ProtoMember(1)]
+        public int Id { get; set; }
+
+        [ProtoMember(2)]
+        public byte FileType { get; set; }
+
+        [ProtoMember(3)]
+        public string FileName { get; set; }
+
+        [ProtoMember(4)]
+        public string ResourceParent { get; set; }
+
+        [ProtoMember(5)]
+        public int Length { get; set; }
     }
 
     [ProtoContract]
@@ -96,14 +135,7 @@ namespace MTAV
         [ProtoMember(1)]
         public int NetHandle { get; set; }
     }
-
-    [ProtoContract]
-    public class ScriptCollection
-    {
-        [ProtoMember(1)]
-        public List<string> Scripts { get; set; }
-    }
-
+    
     [ProtoContract]
     public class CreateEntity
     {
@@ -138,9 +170,9 @@ namespace MTAV
         [ProtoMember(1)]
         public string ServerName { get; set; }
         [ProtoMember(2)]
-        public int MaxPlayers { get; set; }
+        public short MaxPlayers { get; set; }
         [ProtoMember(3)]
-        public int PlayerCount { get; set; }
+        public short PlayerCount { get; set; }
         [ProtoMember(4)]
         public bool PasswordProtected { get; set; }
         [ProtoMember(5)]
@@ -153,7 +185,7 @@ namespace MTAV
     public class ConnectionRequest
     {
         [ProtoMember(1)]
-        public string Name { get; set; }
+        public string SocialClubName { get; set; }
 
         [ProtoMember(2)]
         public string Password { get; set; }
@@ -162,7 +194,7 @@ namespace MTAV
         public string DisplayName { get; set; }
 
         [ProtoMember(4)]
-        public int GameVersion { get; set; }
+        public byte GameVersion { get; set; }
 
         [ProtoMember(5)]
         public byte ScriptVersion { get; set; }
@@ -189,7 +221,6 @@ namespace MTAV
         public LVector3 Position { get; set; }
         [ProtoMember(8)]
         public LVector3 Quaternion { get; set; }
-        //public LQuaternion Quaternion { get; set; }
 
         [ProtoMember(9)]
         public int VehicleSeat { get; set; }
@@ -217,11 +248,6 @@ namespace MTAV
 
         [ProtoMember(17)]
         public int NetHandle { get; set; }
-
-        /*
-        [ProtoMember(16)]
-        public Dictionary<int, int> VehicleMods { get; set; }
-        */
     }
 
     [ProtoContract]
@@ -239,7 +265,6 @@ namespace MTAV
         public LVector3 Position { get; set; }
         [ProtoMember(5)]
         public LVector3 Quaternion { get; set; }
-        //public LQuaternion Quaternion { get; set; }
 
         [ProtoMember(6)]
         public bool IsJumping { get; set; }
@@ -266,11 +291,6 @@ namespace MTAV
 
         [ProtoMember(15)]
         public float Speed { get; set; }
-
-        /*
-        [ProtoMember(13)]
-        public Dictionary<int, int> PedProps { get; set; }
-        */
     }
 
     [ProtoContract]
@@ -294,8 +314,20 @@ namespace MTAV
         {
             return new Vector3(X, Y, Z);
         }
-    }
 
+        public LVector3(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public LVector3()
+        {
+            
+        }
+    }
+    
     [ProtoContract]
     public class LQuaternion
     {

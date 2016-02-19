@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using Lidgren.Network;
+using MultiTheftAutoShared;
 
 namespace GTAServer
 {
@@ -9,7 +10,7 @@ namespace GTAServer
         #region Delegates
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
-        public delegate void ServerEventTrigger(string eventName, params object[] arguments);
+        public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
         #endregion
 
         #region Events
@@ -24,9 +25,9 @@ namespace GTAServer
         public event PlayerEvent onPlayerDeath;
         public event ServerEventTrigger onClientEventTrigger;
 
-        internal void invokeClientEvent(string eventName, params object[] arsg)
+        internal void invokeClientEvent(Client sender, string eventName, params object[] arsg)
         {
-            onClientEventTrigger?.Invoke(eventName, arsg);
+            onClientEventTrigger?.Invoke(sender, eventName, arsg);
         }
 
 
@@ -150,7 +151,7 @@ namespace GTAServer
             player.NetConnection.Disconnect("Kicked: " + reason);
         }
 
-        public void setEntityPosition(int netHandle, Vector3 newPosition)
+        public void setEntityPosition(int netHandle, LVector3 newPosition)
         {
             //Program.ServerInstance.SendNativeCallToPlayer(player, 0x06843DA7060A026B, new LocalPlayerArgument(), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
             Program.ServerInstance.SendNativeCallToAllPlayers(0x06843DA7060A026B, new EntityArgument(netHandle), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
@@ -251,12 +252,12 @@ namespace GTAServer
             Program.ServerInstance.GetNativeCallFromPlayer(player, salt, 0x2202A3F42C8E5F79, new BooleanArgument(), callback, new LocalPlayerArgument());
         }
 
-        public  int createVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2)
+        public  int createVehicle(int model, LVector3 pos, LVector3 rot, int color1, int color2)
         {
             return Program.ServerInstance.NetEntityHandler.CreateVehicle(model, pos, rot, color1, color2);
         }
 
-        public  int createObject(int model, Vector3 pos, Vector3 rot, bool dyn)
+        public  int createObject(int model, LVector3 pos, LVector3 rot, bool dyn)
         {
             return Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot, dyn);
         }

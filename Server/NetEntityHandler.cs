@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MultiTheftAutoShared;
 using ProtoBuf;
 
 namespace GTAServer
@@ -18,7 +19,7 @@ namespace GTAServer
             return ServerEntities;
         }
 
-        public int CreateVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2)
+        public int CreateVehicle(int model, LVector3 pos, LVector3 rot, int color1, int color2)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new VehicleProperties();
@@ -44,7 +45,7 @@ namespace GTAServer
             return localEntityHash;
         }
 
-        public int CreateProp(int model, Vector3 pos, Vector3 rot, bool dynamic)
+        public int CreateProp(int model, LVector3 pos, LVector3 rot, bool dynamic)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new EntityProperties();
@@ -67,7 +68,7 @@ namespace GTAServer
             return localEntityHash;
         }
 
-        public int CreateBlip(Vector3 pos)
+        public int CreateBlip(LVector3 pos)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new EntityProperties();
@@ -103,28 +104,4 @@ namespace GTAServer
             return localHan;
         }
     }
-
-    [ProtoContract]
-    [ProtoInclude(5, typeof(VehicleProperties))]
-    public class EntityProperties
-    {
-        [ProtoMember(1)]
-        public Vector3 Position { get; set; }
-        [ProtoMember(2)]
-        public Vector3 Rotation { get; set; }
-        [ProtoMember(3)]
-        public int ModelHash { get; set; }
-        [ProtoMember(4)]
-        public byte EntityType { get; set; }
-    }
-
-    [ProtoContract]
-    public class VehicleProperties : EntityProperties
-    {
-        [ProtoMember(1)]
-        public int PrimaryColor { get; set; }
-        [ProtoMember(2)]
-        public int SecondaryColor { get; set; }
-    }
-    
 }

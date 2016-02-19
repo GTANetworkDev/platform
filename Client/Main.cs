@@ -13,6 +13,7 @@ using Lidgren.Network;
 using NativeUI;
 using Newtonsoft.Json;
 using ProtoBuf;
+using MultiTheftAutoShared;
 using Control = GTA.Control;
 
 namespace MTAV
@@ -442,6 +443,35 @@ namespace MTAV
         private static Dictionary<int, int> _vehMods = new Dictionary<int, int>();
         private static Dictionary<int, int> _pedClothes = new Dictionary<int, int>();
 
+        public static void AddMap(ServerMap map)
+        {
+
+            if (map.Vehicles != null)
+                foreach (var pair in map.Vehicles)
+                {
+                    var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                        pair.Value.Rotation.ToVector(), pair.Key);
+                    ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
+                    ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
+                }
+
+            if (map.Objects != null)
+                foreach (var pair in map.Objects)
+                {
+                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                        pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
+                }
+        }
+
+        public static void StartClientsideScripts(ScriptCollection scripts)
+        {
+            if (scripts.ClientsideScripts != null)
+                foreach (var scr in scripts.ClientsideScripts)
+                {
+                    JavascriptHook.StartScript(scr);
+                }
+        }
+
         public static Dictionary<int, int> CheckPlayerVehicleMods()
         {
             if (!Game.Player.Character.IsInVehicle()) return null;
@@ -821,11 +851,11 @@ namespace MTAV
             var msg = _client.CreateMessage();
 
             var obj = new ConnectionRequest();
-            obj.Name = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Player" : Game.Player.Name; // To be used as identifiers in server files
-            obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.Name : PlayerSettings.DisplayName.Trim();
+            obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Player" : Game.Player.Name; // To be used as identifiers in server files
+            obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrEmpty(_password)) obj.Password = _password;
             obj.ScriptVersion = (byte)LocalScriptVersion;
-            obj.GameVersion = (int)Game.Version;
+            obj.GameVersion = (byte)Game.Version;
 
             var bin = SerializeBinary(obj);
 
@@ -1055,6 +1085,30 @@ namespace MTAV
                                 }
                             }
                             break;
+                        case PacketType.FileTransferRequest:
+                            {
+                                var len = msg.ReadInt32();
+                                var data = DeserializeBinary<DataDownloadStart>(msg.ReadBytes(len)) as DataDownloadStart;
+                                if (data != null)
+                                {
+                                    DownloadManager.StartDownload(data.Id, data.ResourceParent + Path.DirectorySeparatorChar + data.FileName, (FileType) data.FileType, data.Length);
+                                }
+                            }
+                            break;
+                        case PacketType.FileTransferTick:
+                            {
+                                var channel = msg.ReadInt32();
+                                var len = msg.ReadInt32();
+                                var data = msg.ReadBytes(len);
+                                DownloadManager.DownloadPart(channel, data);
+                            }
+                            break;
+                        case PacketType.FileTransferComplete:
+                            {
+                                var id = msg.ReadInt32();
+                                DownloadManager.End(id);
+                            }
+                            break;
                         case PacketType.ChatData:
                             {
                                 var len = msg.ReadInt32();
@@ -1208,28 +1262,6 @@ namespace MTAV
                             }
                             _channel = respObj.AssignedChannel;
                             NetEntityHandler.AddEntity(respObj.CharacterHandle, Game.Player.Character.Handle);
-
-                            if (respObj.Vehicles != null)
-                            foreach (var pair in respObj.Vehicles)
-                            {
-                                var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
-                                    pair.Value.Rotation.ToVector(), pair.Key);
-                                ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
-                                ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
-                            }
-
-                            if (respObj.Objects != null)
-                                foreach (var pair in respObj.Objects)
-                                {
-                                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
-                                        pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
-                                }
-
-                            if (respObj.ClientsideScripts != null)
-                            foreach (var scr in respObj.ClientsideScripts)
-                            {
-                                JavascriptHook.StartScript(scr);
-                            }
                             break;
                         case NetConnectionStatus.Disconnected:
                             var reason = msg.ReadString();
