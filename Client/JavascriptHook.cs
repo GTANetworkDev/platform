@@ -283,20 +283,6 @@ namespace MTAV
         public event ServerEventTrigger onServerEventTrigger;
         public event ChatEvent onChatMessage;
         public event ChatEvent onChatCommand;
-        /*
-        internal bool invokeChatMessage(string msg)
-        {
-            var cancelEvent = new CancelEventArgs(false);
-            onChatMessage?.Invoke(msg, cancelEvent);
-            return !cancelEvent.Cancel;
-        }
-
-        internal bool invokeChatCommand(string msg)
-        {
-            var cancelEvent = new CancelEventArgs(false);
-            onChatCommand?.Invoke(msg, cancelEvent);
-            return !cancelEvent.Cancel;
-        }*/
 
         internal void invokeChatMessage(string msg)
         {

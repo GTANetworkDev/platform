@@ -17,7 +17,7 @@ namespace MultiTheftAutoShared
         ConnectionRequest = 8,
         NativeCall = 9,
         NativeResponse = 10,
-        PlayerKilled = 11,
+        PlayerRespawned = 11,
         NativeTick = 12,
         NativeTickRecall = 13,
         NativeOnDisconnect = 14,
@@ -30,6 +30,7 @@ namespace MultiTheftAutoShared
         FileTransferRequest = 21,
         FileTransferComplete = 22,
         ConnectionConfirmed = 23,
+        PlayerKilled = 24,
     }
 
     public enum ScriptVersion

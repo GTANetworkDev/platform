@@ -257,7 +257,7 @@ namespace GTAServer
                         continue;
                     }
 
-                    var fsObj = InstantiateScripts(scrTxt, script.Path);
+                    var fsObj = InstantiateScripts(scrTxt, script.Path, currentResInfo.Referenceses.Select(r => r.Name).ToArray());
                     if (fsObj != null) ourResource.Engines.Add(fsObj);
                 }
 
@@ -270,11 +270,17 @@ namespace GTAServer
             }
         }
 
-        private JScriptEngine InstantiateScripts(string script, string resourceName)
+        private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
         {
             var scriptEngine = new JScriptEngine();
+
+            var collect = new HostTypeCollection(refs);
+
+            scriptEngine.AddHostObject("clr", collect);
             scriptEngine.AddHostObject("API", new API());
             scriptEngine.AddHostObject("host", new HostFunctions());
+            scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
+            scriptEngine.AddHostType("xmlParser", typeof(RetardedXMLParser));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
             scriptEngine.AddHostType("String", typeof(string));
             scriptEngine.AddHostType("List", typeof (IList));
@@ -823,7 +829,16 @@ namespace GTAServer
                                 }
                             case PacketType.PlayerKilled:
                                 {
-                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDeath(client)));
+                                    var reason = msg.ReadInt32();
+                                    lock (RunningResources)
+                                    {
+                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDeath(client, reason)));
+                                    }
+                                }
+                                break;
+                            case PacketType.PlayerRespawned:
+                                {
+                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerRespawn(client)));
                                 }
                                 break;
                         }

@@ -49,6 +49,7 @@ namespace MTAV
         private readonly Queue<Action> _threadJumping;
         private string _password;
         private bool _lastDead;
+        private bool _lastKilled;
         private bool _wasTyping;
         
         private DebugWindow _debug;
@@ -709,18 +710,36 @@ namespace MTAV
             if (_wasTyping)
                 Game.DisableControl(0, Control.FrontendPauseAlternate);
 
-            int time = 1000;
-            if ((time = Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH)) < 500 && time != -1 && !_lastDead)
+            var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 && Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != 1 && Game.Player.CanControlCharacter);
+            if (hasRespawned && !_lastDead)
             {
                 _lastDead = true;
                 var msg = _client.CreateMessage();
+                msg.Write((int)PacketType.PlayerRespawned);
+                _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            }
+            
+            _lastDead = hasRespawned;
+
+            var killed = Game.Player.Character.IsDead;
+
+            if (killed && !_lastKilled)
+            {
+                var msg = _client.CreateMessage();
                 msg.Write((int)PacketType.PlayerKilled);
+                var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
+                if (killer == 0)
+                    msg.Write(0);
+                else
+                {
+                    var killerEnt = NetEntityHandler.EntityToNet(killer);
+                    msg.Write(killerEnt);
+                }
+                
                 _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
             }
 
-            if (time > 500 && _lastDead)
-                _lastDead = false;
-
+            _lastKilled = killed;
             
             Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);

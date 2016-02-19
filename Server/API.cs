@@ -10,6 +10,7 @@ namespace GTAServer
         #region Delegates
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
+        public delegate void PlayerKilledEvent(Client player, int entityKiller);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
         #endregion
 
@@ -22,7 +23,8 @@ namespace GTAServer
         public event PlayerEvent OnPlayerBeginConnect;
         public event PlayerEvent onPlayerConnected;
         public event PlayerEvent onPlayerDisconnected;
-        public event PlayerEvent onPlayerDeath;
+        public event PlayerKilledEvent onPlayerDeath;
+        public event PlayerEvent onPlayerRespawn;
         public event ServerEventTrigger onClientEventTrigger;
 
         internal void invokeClientEvent(Client sender, string eventName, params object[] arsg)
@@ -75,9 +77,14 @@ namespace GTAServer
             onPlayerDisconnected?.Invoke(player);
         }
 
-        internal void invokePlayerDeath(Client player)
+        internal void invokePlayerDeath(Client player, int netHandle)
         {
-            onPlayerDeath?.Invoke(player);
+            onPlayerDeath?.Invoke(player, netHandle);
+        }
+
+        internal void invokePlayerRespawn(Client player)
+        {
+            onPlayerRespawn?.Invoke(player);
         }
 
         #endregion
@@ -92,6 +99,11 @@ namespace GTAServer
                 return 0;
             }
             return (int) output;
+        }
+
+        public Client[] getAllPlayers()
+        {
+            return Program.ServerInstance.Clients.ToArray();
         }
 
         public  void triggerClientEvent(Client player, string eventName, params object[] args)

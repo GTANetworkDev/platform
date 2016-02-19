@@ -29,6 +29,16 @@ namespace GTAServer
 
         [XmlElement("file")]
         public List<FilePath> Files { get; set; }
+
+        [XmlElement("assembly")]
+        public List<AssemblyReferences> Referenceses { get; set; }
+    }
+
+    [XmlRoot("assembly")]
+    public class AssemblyReferences
+    {
+        [XmlAttribute("ref")]
+        public string Name { get; set; }
     }
 
     [XmlRoot("script")]
