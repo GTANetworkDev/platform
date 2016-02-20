@@ -250,6 +250,9 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(17)]
         public int NetHandle { get; set; }
+
+        [ProtoMember(18)]
+        public LVector3 Velocity { get; set; }
     }
 
     [ProtoContract]
@@ -322,6 +325,13 @@ namespace MultiTheftAutoShared
             X = x;
             Y = y;
             Z = z;
+        }
+
+        public LVector3(double x, double y, double z)
+        {
+            X = (float)x;
+            Y = (float)y;
+            Z = (float)z;
         }
 
         public LVector3()

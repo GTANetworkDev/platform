@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -47,7 +48,6 @@ namespace MTAV
                 }
 
                 _isFocused = value;
-                
             }
         }
 
@@ -59,6 +59,9 @@ namespace MTAV
         private Keys _lastKey;
         private bool _isFocused;
 
+        private DateTime _lastMsg = DateTime.MinValue;
+        private DateTime _focusStart = DateTime.MinValue;
+        private bool _lastFadedOut;
         private List<string> _messages;
 
         public void Clear()
@@ -70,12 +73,47 @@ namespace MTAV
         {
             if (!Main.IsOnServer()) return;
 
-            _mainScaleform.Render2D();
+            var timePassed = Math.Min(DateTime.Now.Subtract(_focusStart).TotalMilliseconds, DateTime.Now.Subtract(_lastMsg).TotalMilliseconds);
 
-            new UIResText(_messages.Count > 0 ? _messages.Aggregate((s, f) => s + "\n" + f) : "", UIMenu.GetSafezoneBounds(), 0.35f)
+            int alpha = 100;
+            if (timePassed > 15000 && !_isFocused)
+                alpha = (int)MiscExtensions.QuadraticEasingLerp(100f, 0f, (int)Math.Min(timePassed - 15000, 2000), 2000);
+            if (timePassed < 300 && _lastFadedOut)
+                alpha = (int)MiscExtensions.QuadraticEasingLerp(0f, 100f, (int)Math.Min(timePassed, 300), 300);
+
+            int maxWidth = 0;
+            if (_messages.Count > 0)
             {
-                Outline = true,
-            }.Draw();
+                maxWidth = _messages.Max(f => StringMeasurer.MeasureString(f));
+            }
+
+
+            //new UIResRectangle(UIMenu.GetSafezoneBounds() - new Size(5, 5), new Size(Math.Max(680, maxWidth + 6), 264), Color.FromArgb(alpha, 10, 90, 250)).Draw();
+
+            var safezone = UIMenu.GetSafezoneBounds();
+            var res = UIMenu.GetScreenResolutionMantainRatio();
+
+            var converted = new PointF((safezone.X/res.Width) * UI.WIDTH, (safezone.Y/res.Height) * UI.HEIGHT);
+
+            //new PointF(-766f, -480f)
+
+            _mainScaleform.Render2DScreenSpace(new PointF(-795f + converted.X, -505f + converted.Y), new PointF(UI.WIDTH, UI.HEIGHT));
+
+            var textAlpha = (alpha/100f)*126 + 126;
+            var c = 0;
+            foreach (var msg in _messages)
+            {
+                string output = msg;
+                var limit = UIMenu.GetScreenResolutionMantainRatio().Width - UIMenu.GetSafezoneBounds().X;
+                while (StringMeasurer.MeasureString(output) > limit)
+                    output = output.Substring(0, output.Length - 5);
+
+                new UIResText(output, UIMenu.GetSafezoneBounds() + new Size(0, 25 * c), 0.35f, Color.FromArgb((int)textAlpha, 255, 255, 255))
+                {
+                    Outline = true,
+                }.Draw();
+                c++;
+            }
             
             if (!IsFocused) return;
             Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
@@ -83,10 +121,6 @@ namespace MTAV
 
         public void AddMessage(string sender, string msg)
         {
-            /*if (string.IsNullOrEmpty(sender))
-                _mainScaleform.CallFunction("ADD_MESSAGE", "", SanitizeString(msg));
-            else
-                _mainScaleform.CallFunction("ADD_MESSAGE", SanitizeString(sender) + ":", SanitizeString(msg));*/
             if (string.IsNullOrEmpty(sender))
                 _messages.Add(msg);
             else
@@ -94,6 +128,8 @@ namespace MTAV
 
             if (_messages.Count > 10)
                 _messages.RemoveAt(0);
+            _lastFadedOut = DateTime.Now.Subtract(_lastMsg).TotalMilliseconds > 15000;
+            _lastMsg = DateTime.Now;
         }
 
         public static string SanitizeString(string input)
@@ -163,6 +199,9 @@ namespace MTAV
         [DllImport("user32.dll")]
         public static extern int ActivateKeyboardLayout(int hkl, uint flags);
 
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true, CallingConvention = CallingConvention.Winapi)]
+        public static extern short GetKeyState(int keyCode);
+
         public static string GetCharFromKey(Keys key, bool shift, bool altGr)
         {
             var buf = new StringBuilder(256);
@@ -176,7 +215,7 @@ namespace MTAV
             }
 
             ToUnicodeEx((uint)key, 0, keyboardState, buf, 256, 0, InputLanguage.CurrentInputLanguage.Handle);
-            return buf.ToString();
+            return ((((ushort)GetKeyState(0x14)) & 0xffff) != 0) ? buf.ToString().ToUpper() : buf.ToString();
         }
     }
 }

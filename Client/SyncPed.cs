@@ -15,6 +15,8 @@ namespace MTAV
         Dynamic,
         EntityLerping,
         DeadReckoning,
+        Experimental,
+        Teleport
     }
 
     public class SyncPed
@@ -24,7 +26,6 @@ namespace MTAV
         public Ped Character;
         public Vector3 _position;
         public int VehicleNetHandle;
-        //public Quaternion Rotation;
         public Vector3 _rotation;
         public bool IsInVehicle;
         public bool IsJumping;
@@ -50,6 +51,7 @@ namespace MTAV
 
         public bool Debug;
 
+        private DateTime _stopTime;
         public float Speed
         {
             get { return _speed; }
@@ -104,6 +106,7 @@ namespace MTAV
         }
 
         private Vector3 _lastVehiclePos;
+        private Vector3 _carPosOnUpdate;
         public Vector3 VehiclePosition
         {
             get { return _vehiclePosition; }
@@ -111,6 +114,20 @@ namespace MTAV
             {
                 _lastVehiclePos = _vehiclePosition;
                 _vehiclePosition = value;
+
+                if (MainVehicle != null)
+                    _carPosOnUpdate = MainVehicle.Position;
+            }
+        }
+
+        private Vector3 _lastVehVel;
+        public Vector3 VehicleVelocity
+        {
+            get { return _vehicleVelocity; }
+            set
+            {
+                _lastVehVel = _vehicleVelocity;
+                _vehicleVelocity = value; 
             }
         }
 
@@ -196,6 +213,7 @@ namespace MTAV
         private int _clothSwitch = 0;
         private DateTime _lastUpdateReceived;
         private float _speed;
+        private Vector3 _vehicleVelocity;
 
         public void DisplayLocally()
         {
@@ -414,16 +432,74 @@ namespace MTAV
 
                     if (syncMode == SynchronizationMode.DeadReckoning)
                     {
-                        
-                        var target = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
+                        var vdir = VehicleVelocity - _lastVehVel;
+                        var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
                             (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, target.X, target.Y, target.Z, 0, 0, 0, 0);
+
+                        var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        if (Speed > 0.5f)
+                        {
+                            MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
+                            _stopTime = DateTime.Now;
+                            _carPosOnUpdate = MainVehicle.Position;
+                        }
+                        else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+                        {
+                            posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
+                            (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
+                        }
+                        else
+                        {
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X, VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
+                        }
                     }
                     else if (syncMode == SynchronizationMode.EntityLerping)
                     {
-                        var target = Util.LinearVectorLerp(_lastVehiclePos, VehiclePosition,
-                            (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
-                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, target.X, target.Y, target.Z, 0, 0, 0, 0);
+                        var target = Util.LinearVectorLerp(_lastVehVel, VehicleVelocity,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        var posTarget = Util.LinearVectorLerp(_lastVehiclePos, VehiclePosition,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        if (Speed > 0)
+                        { 
+                            MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
+                            _stopTime = DateTime.Now;
+                            _carPosOnUpdate = MainVehicle.Position;
+                        }
+                        else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+                        {
+                            posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
+                            (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
+                        }
+                        else
+                        {
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X, VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
+                        }
+                    }
+                    else if (syncMode == SynchronizationMode.Experimental)
+                    {
+                        var vdir = VehicleVelocity - _lastVehVel;
+                        var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        if (Speed > 0)
+                            MainVehicle.Velocity = target + 2*(posTarget - MainVehicle.Position);
+                        else
+                        {
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
+                        }
+                    }
+                    else if (syncMode == SynchronizationMode.Teleport)
+                    {
+                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X, VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
                     }
 
                     if (Main.LerpRotaion)
@@ -478,6 +554,7 @@ namespace MTAV
 
                 if (IsParachuteOpen)
                 {
+
                     if (_parachuteProp == null)
                     {
                         _parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,

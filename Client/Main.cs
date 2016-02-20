@@ -83,7 +83,7 @@ namespace MTAV
             _chat = new ClassicChat();
             _chat.OnComplete += (sender, args) =>
             {
-                var message = _chat.CurrentInput;
+                var message = Chat.SanitizeString(_chat.CurrentInput);
                 if (!string.IsNullOrEmpty(message))
                 {
                     JavascriptHook.InvokeMessageEvent(message);
@@ -530,7 +530,6 @@ namespace MTAV
 
                 var obj = new VehicleData();
                 obj.Position = veh.Position.ToLVector();
-                //obj.Quaternion = veh.Quaternion.ToLQuaternion();
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
@@ -542,8 +541,8 @@ namespace MTAV
                 obj.VehicleSeat = Util.GetPedSeat(player);
                 obj.IsPressingHorn = Game.Player.IsPressingHorn;
                 obj.IsSirenActive = veh.SirenActive;
-                //obj.VehicleMods = CheckPlayerVehicleMods();
                 obj.Speed = veh.Speed;
+                obj.Velocity = veh.Velocity.ToLVector();
 
                 var bin = SerializeBinary(obj);
 
@@ -701,6 +700,14 @@ namespace MTAV
                 _debug.Visible = true;
                 _debug.Draw();
             }
+            
+            if (Game.IsControlJustPressed(0, Control.Context))
+            {
+                var dest = World.GetCrosshairCoordinates().HitCoords;
+                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
+                    dest.X, dest.Y, dest.Z, 25, true, (int)Game.Player.Character.Weapons.Current.Hash, Game.Player.Character, true, true, 0xbf800000);
+            }
+
             #endif
             ProcessMessages();
 
@@ -710,7 +717,13 @@ namespace MTAV
             if (_wasTyping)
                 Game.DisableControl(0, Control.FrontendPauseAlternate);
 
-            var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 && Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != 1 && Game.Player.CanControlCharacter);
+            Game.DisableControl(0, Control.SpecialAbility);
+            Game.DisableControl(0, Control.SpecialAbilityPC);
+            Game.DisableControl(0, Control.SpecialAbilitySecondary);
+
+            var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
+                                Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
+                                Game.Player.CanControlCharacter);
             if (hasRespawned && !_lastDead)
             {
                 _lastDead = true;
@@ -728,14 +741,12 @@ namespace MTAV
                 var msg = _client.CreateMessage();
                 msg.Write((int)PacketType.PlayerKilled);
                 var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
-                if (killer == 0)
-                    msg.Write(0);
-                else
-                {
-                    var killerEnt = NetEntityHandler.EntityToNet(killer);
-                    msg.Write(killerEnt);
-                }
-                
+                var weapon = Function.Call<int>(Hash.GET_PED_CAUSE_OF_DEATH, Game.Player.Character);
+
+                var killerEnt = NetEntityHandler.EntityToNet(killer);
+                msg.Write(killerEnt);
+                msg.Write(weapon);
+
                 _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
             }
 
@@ -902,9 +913,7 @@ namespace MTAV
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
-                                UI.ShowSubtitle("Received ped veh data.");
                                 if (data == null) return;
-                                UI.ShowSubtitle("ped veh data not null");
                                 lock (Opponents)
                                 {
                                     if (!Opponents.ContainsKey(data.Id))
@@ -921,6 +930,7 @@ namespace MTAV
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
                                     Opponents[data.Id].VehiclePosition =
                                         data.Position.ToVector();
+                                    Opponents[data.Id].VehicleVelocity = data.Velocity.ToVector();
                                     Opponents[data.Id].ModelHash = data.PedModelHash;
                                     Opponents[data.Id].VehicleHash =
                                         data.VehicleModelHash;
@@ -947,10 +957,7 @@ namespace MTAV
 
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
-                                UI.ShowSubtitle("Received ped pos data.");
                                 if (data == null) return;
-
-                                UI.ShowSubtitle("ped pos data not null");
                                 lock (Opponents)
                                 {
                                     if (!Opponents.ContainsKey(data.Id))
@@ -1064,9 +1071,12 @@ namespace MTAV
                         case PacketType.CreateEntity:
                             {
                                 var len = msg.ReadInt32();
+                                DownloadManager.Log("Received CreateEntity");
                                 var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
                                 if (data != null)
                                 {
+                                    DownloadManager.Log("CreateEntity was not null. Type: " + data.EntityType);
+                                    DownloadManager.Log("Model: " + data.Model);
                                     if (data.EntityType == (byte) EntityType.Vehicle)
                                     {
                                         var veh = NetEntityHandler.CreateVehicle(new Model(data.Model), data.Position?.ToVector() ?? new Vector3(),
@@ -1076,8 +1086,11 @@ namespace MTAV
                                         Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
                                     }
                                     else if (data.EntityType == (byte)EntityType.Prop)
+                                    {
+                                        DownloadManager.Log("It was a prop. Spawning...");
                                         NetEntityHandler.CreateObject(new Model(data.Model), data.Position?.ToVector() ?? new Vector3(),
                                             data.Rotation?.ToVector() ?? new Vector3(), data.Dynamic, data.NetHandle);
+                                    }
                                     else if (data.EntityType == (byte) EntityType.Blip)
                                     {
                                         NetEntityHandler.CreateBlip(data.Position.ToVector(), data.NetHandle);
@@ -1382,6 +1395,8 @@ namespace MTAV
         private bool _debugStarted;
         private SyncPed _debugSyncPed;
         private int _debugPing = 30;
+        private int _debugFluctuation = 0;
+        private Random _r = new Random();
         private void Debug()
         {
             var player = Game.Player.Character;
@@ -1392,9 +1407,10 @@ namespace MTAV
                 _debugSyncPed.Debug = true;
             }
 
-            if (DateTime.Now.Subtract(_artificialLagCounter).TotalMilliseconds >= _debugPing)
+            if (DateTime.Now.Subtract(_artificialLagCounter).TotalMilliseconds >= (_debugPing + _debugFluctuation))
             {
                 _artificialLagCounter = DateTime.Now;
+                _debugFluctuation = _r.Next(10) - 5;
                 if (player.IsInVehicle())
                 {
                     var veh = player.CurrentVehicle;
@@ -1402,6 +1418,7 @@ namespace MTAV
 
                     _debugSyncPed.VehiclePosition = veh.Position;
                     _debugSyncPed.VehicleRotation = veh.Rotation;
+                    _debugSyncPed.VehicleVelocity = veh.Velocity;
                     _debugSyncPed.ModelHash = player.Model.Hash;
                     _debugSyncPed.VehicleHash = veh.Model.Hash;
                     _debugSyncPed.VehiclePrimaryColor = (int)veh.PrimaryColor;
@@ -1542,6 +1559,10 @@ namespace MTAV
                 else if (o is float)
                 {
                     list.Add(new FloatArgument() { Data = ((float)o) });
+                }
+                else if (o is double)
+                {
+                    list.Add(new FloatArgument() { Data = ((float)(double)o) });
                 }
                 else if (o is bool)
                 {

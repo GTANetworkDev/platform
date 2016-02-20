@@ -96,11 +96,21 @@ namespace MTAV
 
         public Prop CreateObject(Model model, Vector3 position, Vector3 rotation, bool dynamic, int netHash)
         {
-            if (model == null) return null;
+            if (model == null)
+            {
+                DownloadManager.Log("Model was null?");
+                return null;
+            }
 
+            DownloadManager.Log("Requesting...");
             model.Request(10000);
+            DownloadManager.Log("Available: " + model.IsLoaded);
+
+            DownloadManager.Log("Pos: " + position);
+            DownloadManager.Log("NetHash: " + netHash);
 
             var veh = World.CreateProp(model, position, rotation, dynamic, false);
+            DownloadManager.Log("Prop null: " + (veh == null) + " exists: " + veh?.Exists());
             veh.Rotation = rotation;
             veh.Position = position;
             if (!dynamic)
@@ -109,6 +119,8 @@ namespace MTAV
             lock (HandleMap)
                 if (!HandleMap.Reverse.ContainsKey(veh.Handle))
                     HandleMap.Reverse.Add(veh.Handle, netHash);
+
+            model.MarkAsNoLongerNeeded();
             return veh;
         }
 

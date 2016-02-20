@@ -171,7 +171,6 @@ namespace GTAServer
 
         public readonly ScriptVersion ServerVersion = ScriptVersion.VERSION_0_9;
 
-        //private List<JScriptEngine> _resources;
         private List<string> _clientScripts;
         private DateTime _lastAnnounceDateTime;
 
@@ -283,7 +282,7 @@ namespace GTAServer
             scriptEngine.AddHostType("xmlParser", typeof(RetardedXMLParser));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
             scriptEngine.AddHostType("String", typeof(string));
-            scriptEngine.AddHostType("List", typeof (IList));
+            scriptEngine.AddHostType("List", typeof (List<>));
             scriptEngine.AddHostType("Client", typeof(Client));
             scriptEngine.AddHostType("Vector3", typeof(LVector3));
             scriptEngine.AddHostType("Quaternion", typeof(LVector3));
@@ -294,7 +293,7 @@ namespace GTAServer
             scriptEngine.AddHostType("EntityPointerArgument", typeof(EntityPointerArgument));
             scriptEngine.AddHostType("console", typeof(Console));
             scriptEngine.AddHostType("VehicleHash", typeof(VehicleHash));
-
+            scriptEngine.AddHostType("Int32", typeof(int));
             try
             {
                 scriptEngine.Execute(script);
@@ -830,9 +829,10 @@ namespace GTAServer
                             case PacketType.PlayerKilled:
                                 {
                                     var reason = msg.ReadInt32();
+                                    var weapon = msg.ReadInt32();
                                     lock (RunningResources)
                                     {
-                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDeath(client, reason)));
+                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDeath(client, reason, weapon)));
                                     }
                                 }
                                 break;
@@ -981,6 +981,10 @@ namespace GTAServer
                 else if (o is float)
                 {
                     list.Add(new FloatArgument() { Data = ((float)o) });
+                }
+                else if (o is double)
+                {
+                    list.Add(new FloatArgument() { Data = ((float)(double)o) });
                 }
                 else if (o is bool)
                 {

@@ -93,6 +93,8 @@ namespace GTAServer
             var packet = new DeleteEntity();
             packet.NetHandle = netId;
             Program.ServerInstance.SendToAll(packet, PacketType.DeleteEntity, true);
+
+            ServerEntities.Remove(netId);
         }
 
         public int GenerateHandle()

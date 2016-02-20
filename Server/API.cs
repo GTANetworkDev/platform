@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Lidgren.Network;
 using MultiTheftAutoShared;
@@ -10,7 +11,7 @@ namespace GTAServer
         #region Delegates
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
-        public delegate void PlayerKilledEvent(Client player, int entityKiller);
+        public delegate void PlayerKilledEvent(Client player, int entityKiller, int weapon);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
         #endregion
 
@@ -77,9 +78,9 @@ namespace GTAServer
             onPlayerDisconnected?.Invoke(player);
         }
 
-        internal void invokePlayerDeath(Client player, int netHandle)
+        internal void invokePlayerDeath(Client player, int netHandle, int weapon)
         {
-            onPlayerDeath?.Invoke(player, netHandle);
+            onPlayerDeath?.Invoke(player, netHandle, weapon);
         }
 
         internal void invokePlayerRespawn(Client player)
@@ -101,9 +102,9 @@ namespace GTAServer
             return (int) output;
         }
 
-        public Client[] getAllPlayers()
+        public List<Client> getAllPlayers()
         {
-            return Program.ServerInstance.Clients.ToArray();
+            return Program.ServerInstance.Clients;
         }
 
         public  void triggerClientEvent(Client player, string eventName, params object[] args)
