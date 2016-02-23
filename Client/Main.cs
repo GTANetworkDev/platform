@@ -84,7 +84,7 @@ namespace MTAV
             _chat.OnComplete += (sender, args) =>
             {
                 var message = Chat.SanitizeString(_chat.CurrentInput);
-                if (!string.IsNullOrEmpty(message))
+                if (!string.IsNullOrWhiteSpace(message))
                 {
                     JavascriptHook.InvokeMessageEvent(message);
 
@@ -452,6 +452,8 @@ namespace MTAV
                         pair.Value.Rotation.ToVector(), pair.Key);
                     ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
                     ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
+                    ourVeh.PearlescentColor = (VehicleColor) 0;
+                    ourVeh.RimColor = (VehicleColor)0;
                 }
 
             if (map.Objects != null)
@@ -543,6 +545,7 @@ namespace MTAV
                 obj.IsSirenActive = veh.SirenActive;
                 obj.Speed = veh.Speed;
                 obj.Velocity = veh.Velocity.ToLVector();
+                obj.PedArmor = player.Armor;
 
                 var bin = SerializeBinary(obj);
 
@@ -570,7 +573,8 @@ namespace MTAV
                 obj.AimCoords = aimCoord.ToLVector();
                 obj.Position = player.Position.ToLVector();
                 obj.Quaternion = player.Rotation.ToLVector();
-
+                obj.PedArmor = player.Armor;
+                obj.IsRagdoll = player.IsRagdoll;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
@@ -668,12 +672,20 @@ namespace MTAV
             }
         }
         */
+
+#if DEBUG
+        private bool _firstBool;
+        private bool _secondBool;
+        private bool _thirdBool;
+#endif
+
+        private Vehicle _lastPlayerCar;
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
             _menuPool.ProcessMenus();
             _chat.Tick();
-
+            
             if (_isGoingToCar && Game.IsControlJustPressed(0, Control.PhoneCancel))
             {
                 Game.Player.Character.Task.ClearAll();
@@ -700,16 +712,45 @@ namespace MTAV
                 _debug.Visible = true;
                 _debug.Draw();
             }
-            
+
+            if (Game.IsKeyPressed(Keys.D1))
+            {
+                _firstBool = !_firstBool;
+                UI.ShowSubtitle("FIRST BOOL: " + _firstBool);
+            }
+
+            if (Game.IsKeyPressed(Keys.D2))
+            {
+                _secondBool = !_secondBool;
+                UI.ShowSubtitle("SECOND BOOL: " + _secondBool);
+            }
+
+            if (Game.IsKeyPressed(Keys.D3))
+            {
+                _thirdBool = !_thirdBool;
+                UI.ShowSubtitle("THIRD BOOL: " + _thirdBool);
+            }
+
             if (Game.IsControlJustPressed(0, Control.Context))
             {
                 var dest = World.GetCrosshairCoordinates().HitCoords;
-                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
-                    dest.X, dest.Y, dest.Z, 25, true, (int)Game.Player.Character.Weapons.Current.Hash, Game.Player.Character, true, true, 0xbf800000);
+                /*Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
+                    dest.X, dest.Y, dest.Z, 25, _firstBool, (int)Game.Player.Character.Weapons.Current.Hash, Game.Player.Character, _secondBool, _thirdBool, 0xbf800000);
+                    */
+
+                var gun = Function.Call<int>(Hash.GET_HASH_KEY, "weapon_airstrike_rocket");
+                
+
+                Function.Call((Hash) 0xBFE5756E7407064A, Game.Player.Character.Position.X,
+                    Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
+                    dest.X, dest.Y, dest.Z, 25, true, (int) Game.Player.Character.Weapons.Current.Hash,
+                    Game.Player.Character, true, true, -1f, Game.Player.Character, true, false, true, true);
             }
 
             #endif
             ProcessMessages();
+
+
 
             if (_client == null || _client.ConnectionStatus == NetConnectionStatus.Disconnected ||
                 _client.ConnectionStatus == NetConnectionStatus.None) return;
@@ -717,9 +758,25 @@ namespace MTAV
             if (_wasTyping)
                 Game.DisableControl(0, Control.FrontendPauseAlternate);
 
+            var playerCar = Game.Player.Character.CurrentVehicle;
+
+            if (playerCar != _lastPlayerCar)
+            {
+                if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = true;
+                if (playerCar != null) playerCar.IsInvincible = false;
+            }
+
+            _lastPlayerCar = playerCar;
+
             Game.DisableControl(0, Control.SpecialAbility);
             Game.DisableControl(0, Control.SpecialAbilityPC);
             Game.DisableControl(0, Control.SpecialAbilitySecondary);
+
+            Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f);
+            Function.Call(Hash.MODIFY_WATER, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z, 0f);
+
+            Game.MaxWantedLevel = 0;
+            Game.Player.WantedLevel = 0;
 
             var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
@@ -934,6 +991,7 @@ namespace MTAV
                                     Opponents[data.Id].ModelHash = data.PedModelHash;
                                     Opponents[data.Id].VehicleHash =
                                         data.VehicleModelHash;
+                                    Opponents[data.Id].PedArmor = data.PedArmor;
                                     Opponents[data.Id].VehicleRotation =
                                         //data.Quaternion.ToQuaternion();
                                         data.Quaternion.ToVector();
@@ -971,6 +1029,8 @@ namespace MTAV
                                         NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
                                     Opponents[data.Id].Speed = data.Speed;
                                     Opponents[data.Id].Name = data.Name;
+                                    Opponents[data.Id].IsRagdoll = data.IsRagdoll;
+                                    Opponents[data.Id].PedArmor = data.PedArmor;
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
                                     Opponents[data.Id].Position = data.Position.ToVector();
                                     Opponents[data.Id].ModelHash = data.PedModelHash;
@@ -1179,10 +1239,13 @@ namespace MTAV
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
-                                JavascriptHook.ScriptEngines.ForEach(
-                                    en =>
-                                        en.Script.invokeServerEvent(data.EventName,
-                                            DecodeArgumentList(data.Arguments.ToArray()).ToArray()));
+                                if (data != null)
+                                {
+                                    if (data.Arguments != null)
+                                        JavascriptHook.InvokeServerEvent(data.EventName, DecodeArgumentList(data.Arguments.ToArray()).ToArray());
+                                    else
+                                        JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
+                                }
                             }
                             break;
                         case PacketType.WorldSharingStop:
@@ -1432,6 +1495,7 @@ namespace MTAV
                     _debugSyncPed.Speed = veh.Speed;
                     _debugSyncPed.IsInVehicle = true;
                     _debugSyncPed.LastUpdateReceived = DateTime.Now;
+                    _debugSyncPed.PedArmor = player.Armor;
                 }
                 else
                 {
@@ -1443,8 +1507,11 @@ namespace MTAV
                         aimCoord = ScreenRelToWorld(GameplayCamera.Position, GameplayCamera.Rotation,
                             new Vector2(0, 0));
 
+                    _debugSyncPed.IsRagdoll = player.IsRagdoll;
+                    _debugSyncPed.PedVelocity = player.Velocity;
                     _debugSyncPed.PedHealth = player.Health;
                     _debugSyncPed.AimCoords = aimCoord;
+                    _debugSyncPed.PedArmor = player.Armor;
                     _debugSyncPed.Speed = player.Velocity.Length();
                     _debugSyncPed.Position = player.Position;
                     _debugSyncPed.Rotation = player.Rotation;

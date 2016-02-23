@@ -56,7 +56,7 @@ namespace GTAServer
             {
                 using (var stream = File.OpenRead(path)) settings = (ServerSettings)ser.Deserialize(stream);
 
-                using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
+                //using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
             }
             else
             {

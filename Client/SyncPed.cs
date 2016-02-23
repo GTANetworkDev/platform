@@ -36,6 +36,7 @@ namespace MTAV
         public Vector3 AimCoords;
         public float Latency;
         public bool IsHornPressed;
+        public bool _isRagdoll;
         public Vehicle MainVehicle { get; set; }
 
         public int VehicleSeat;
@@ -48,6 +49,7 @@ namespace MTAV
         public int VehicleSecondaryColor;
         public string Name;
         public bool Siren;
+        public int PedArmor;
 
         public bool Debug;
 
@@ -117,6 +119,8 @@ namespace MTAV
 
                 if (MainVehicle != null)
                     _carPosOnUpdate = MainVehicle.Position;
+
+
             }
         }
 
@@ -128,6 +132,18 @@ namespace MTAV
             {
                 _lastVehVel = _vehicleVelocity;
                 _vehicleVelocity = value; 
+            }
+        }
+
+        private Vector3 _lastPedVel;
+        private Vector3 _pedVelocity;
+        public Vector3 PedVelocity
+        {
+            get { return _pedVelocity; }
+            set
+            {
+                _lastPedVel = _pedVelocity;
+                _pedVelocity = value;
             }
         }
 
@@ -161,6 +177,28 @@ namespace MTAV
             {
                 _lastRotation = _rotation;
                 _rotation = value; 
+            }
+        }
+
+        public bool IsRagdoll
+        {
+            get { return _isRagdoll; }
+            set
+            {
+                if (!_isRagdoll && value)
+                {
+                    if (Character != null)
+                    {
+                        Character.CanRagdoll = true;
+                        Function.Call(Hash.SET_PED_TO_RAGDOLL, -1, -1, 0, true, true, true);
+                    }
+                }
+                else if (_isRagdoll && !value)
+                {
+                    if (Character != null) Character.CanRagdoll = false;
+                }
+                
+                _isRagdoll = value;
             }
         }
 
@@ -201,7 +239,7 @@ namespace MTAV
             World.SetRelationshipBetweenGroups(Relationship.Neutral, _relGroup, Game.Player.Character.RelationshipGroup);
             World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, _relGroup);
         }
-
+            
         public void SetBlipNameFromTextFile(Blip blip, string text)
         {
             Function.Call(Hash._0xF9113A30DE5C6670, "STRING");
@@ -217,7 +255,7 @@ namespace MTAV
 
         public void DisplayLocally()
         {
-            const float hRange = 200f;
+            const float hRange = 300f;
             var gPos = IsInVehicle ? VehiclePosition : _position;
             var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
             
@@ -294,7 +332,9 @@ namespace MTAV
 
                     if (Character != null)
                     {
-                        new UIResRectangle(new Point(0, 0) - new Size(75, -36), new Size(150, 20), Color.FromArgb(100, 0, 0, 0)).Draw();
+                        var bgColor = PedArmor > 0 ? Color.FromArgb(100, 220, 220, 220) : Color.FromArgb(100, 0, 0, 0);
+                        new UIResRectangle(new Point(0, 0) - new Size(75, -36), new Size(150, 20),
+                            bgColor).Draw();
                         new UIResRectangle(new Point(0, 0) - new Size(71, -40),
                             new Size((int) (142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f)), 12),
                             Color.FromArgb(150, 50, 250, 50)).Draw();
@@ -324,6 +364,8 @@ namespace MTAV
 
                 if (MainVehicle != null)
                 {
+                    MainVehicle.Position = VehiclePosition;
+                    MainVehicle.EngineRunning = true;
                     MainVehicle.PrimaryColor = (VehicleColor)VehiclePrimaryColor;
                     MainVehicle.SecondaryColor = (VehicleColor)VehicleSecondaryColor;
                     MainVehicle.Rotation = _vehicleRotation;
@@ -358,9 +400,12 @@ namespace MTAV
             if (!inRange)
             {
                 if (Character != null)
-                    Character.Position = _position;
+                    Character.Position = gPos;
                 if (MainVehicle != null)
+                {
                     MainVehicle.Position = VehiclePosition;
+                    MainVehicle.Rotation = VehicleRotation;
+                }
                 return;
             }
 
@@ -370,10 +415,10 @@ namespace MTAV
                     MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver) == null)
                 {
                     MainVehicle.Health = VehicleHealth;
-                    if (MainVehicle.Health <= 0)
+                    if (VehicleHealth <= -100)
                     {
                         MainVehicle.IsInvincible = false;
-                        //_mainVehicle.Explode();
+                        MainVehicle.Explode();
                     }
                     else
                     {
@@ -413,6 +458,7 @@ namespace MTAV
                         _lastHorn = false;
                         MainVehicle.SoundHorn(1);
                     }
+
 
                     if (MainVehicle.SirenActive && !Siren)
                         MainVehicle.SirenActive = Siren;
@@ -602,52 +648,36 @@ namespace MTAV
                         _parachuteProp = null;
                     }
 
-                    const int threshold = 50;
-                    if (IsAiming && !IsShooting && !Character.IsInRangeOf(_position, 0.5f) && _switch%threshold == 0)
+                    if (IsAiming && !IsShooting && Character.IsInRangeOf(_position, 0.5f))
                     {
-                        Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character.Handle, dest.X, dest.Y,
-                            dest.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 2f, 0, 0x3F000000, 0x40800000, 1, 512, 0,
-                            (uint) FiringPattern.FullAuto);
-                    }
-                    else if (IsAiming && !IsShooting && Character.IsInRangeOf(_position, 0.5f))
-                    {
-                        Character.Task.AimAt(AimCoords, 100);
-                    }
-                    /*
-                    if (!Character.IsInRangeOf(_position, 0.5f) &&
-                        ((IsShooting && !_lastShooting) ||
-                            (IsShooting && _lastShooting && _switch%(threshold*2) == 0)))
-                    {
-                        Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character.Handle, dest.X, dest.Y,
-                            dest.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 2f, 1, 0x3F000000, 0x40800000, 1, 0, 0,
-                            (uint) FiringPattern.FullAuto);
-                    }
-                    else if ((IsShooting && !_lastShooting) ||
-                                (IsShooting && _lastShooting && _switch%(threshold/2) == 0))
-                    {
+                        Character.Task.AimAt(AimCoords, 1);
 
-                        Function.Call(Hash.TASK_SHOOT_AT_COORD, Character.Handle, AimCoords.X, AimCoords.Y,
-                            AimCoords.Z, 1500, (uint) FiringPattern.FullAuto);
-                    }*/
+                        var dirVector = Position - _lastPosition;
+
+                        var target = Util.LinearVectorLerp(Position,
+                            (Position) + dirVector,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
+                    }
 
                     if (IsShooting)
                     {
-                        if (!Character.IsInRangeOf(_position, 0.5f) && _switch % threshold == 0)
-                        {
-                            Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character.Handle, dest.X, dest.Y,
-                                dest.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 2f, 0, 0x3F000000, 0x40800000, 1, 512, 0,
-                                (uint)FiringPattern.FullAuto);
-                        }
-                        else if (Character.IsInRangeOf(_position, 0.5f))
-                        {
-                            Character.Task.AimAt(AimCoords, 100);
-                        }
+                        Character.Task.AimAt(AimCoords, 100);
 
                         var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
                         var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
                         var damage = 25;
                         Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, AimCoords.X,
                             AimCoords.Y, AimCoords.Z, damage, true, CurrentWeapon, Character, true, true, 0xbf800000);
+
+                        var dirVector = Position - _lastPosition;
+
+                        var target = Util.LinearVectorLerp(Position,
+                            (Position) + dirVector,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
                     }
 
                     if (!IsAiming && !IsShooting && !IsJumping)
@@ -664,13 +694,40 @@ namespace MTAV
 
                         if (syncMode == SynchronizationMode.DeadReckoning)
                         {
+                            /*
                             var dirVector = Position - _lastPosition;
 
                             var target = Util.LinearVectorLerp(Position,
                                 (Position) + dirVector,
                                 (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
 
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);*/
+
+                            var dir = Position - _lastPosition;
+
+                            var vdir = PedVelocity - _lastPedVel;
+                            var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
+                                (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                            var posTarget = Util.LinearVectorLerp(Position, Position + dir,
+                                (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                            if (GetPedSpeed(PedVelocity.Length()) > 0)
+                            {
+                                Character.Velocity = target + 2 * (posTarget - Character.Position);
+                                _stopTime = DateTime.Now;
+                                _carPosOnUpdate = Character.Position;
+                            }
+                            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+                            {
+                                posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
+                                (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
+                            }
+                            else
+                            {
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y, Position.Z, 0, 0, 0, 0);
+                            }
                         }
                         else if (syncMode == SynchronizationMode.EntityLerping)
                         {
@@ -698,12 +755,15 @@ namespace MTAV
                         }
 
                         var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+                        //var animDict = Character.IsInWater ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : "move_m@generic";
+                        var animDict = "move_m@generic";
+
 
                         if (
-                            !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, "move_m@generic", ourAnim,
+                            !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
                                 3))
                         {
-                            Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict("move_m@generic"), ourAnim,
+                            Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
                                 8f, 1f, -1, 0, -8f, 0, 0, 0);
                         }
                     }

@@ -32,8 +32,17 @@ namespace MTAV
 
         public static List<Action> ThreadJumper;
 
+        public static void InvokeServerEvent(string eventName, object[] arguments)
+        {
+            ThreadJumper.Add(() =>
+            {
+                lock (ScriptEngines) ScriptEngines.ForEach(en => en.Script.script.invokeServerEvent(eventName, arguments));
+            });
+        }
+
         public static void InvokeMessageEvent(string msg)
         {
+            if (msg == null) return;
             ThreadJumper.Add(() =>
             {
                 if (msg.StartsWith("/"))
@@ -176,17 +185,24 @@ namespace MTAV
             };
 
             UI.Notify("~r~~h~Clientside Javascript Error~h~~w~");
-
+            
             foreach (var s in splitter(ex.Message, 99))
             {
                 UI.Notify(s);
+                DownloadManager.Log(s);
             }
 
-            if (ex.InnerException != null)
+            var innEx = ex.InnerException;
+            while (innEx != null)
+            {
                 foreach (var s in splitter(ex.InnerException.Message, 99))
                 {
                     UI.Notify(s);
+                    DownloadManager.Log(s);
                 }
+
+                innEx = innEx.InnerException;
+            }
         }
     }
 
@@ -264,6 +280,11 @@ namespace MTAV
         public bool isProp(int ent)
         {
             return Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent);
+        }
+
+        public float toFloat(double d)
+        {
+            return (float) d;
         }
 
         public void triggerServerEvent(string eventName, params object[] arguments)

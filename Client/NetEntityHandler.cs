@@ -83,7 +83,7 @@ namespace MTAV
 
             var veh = World.CreateVehicle(model, position, rotation.Z);
             veh.Rotation = rotation;
-
+            veh.IsInvincible = true;
             lock (HandleMap)
             {
                 if (!HandleMap.Reverse.ContainsKey(veh.Handle))

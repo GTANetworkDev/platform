@@ -253,6 +253,9 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(18)]
         public LVector3 Velocity { get; set; }
+
+        [ProtoMember(19)]
+        public int PedArmor { get; set; }
     }
 
     [ProtoContract]
@@ -268,34 +271,44 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(4)]
         public LVector3 Position { get; set; }
+
         [ProtoMember(5)]
         public LVector3 Quaternion { get; set; }
 
         [ProtoMember(6)]
-        public bool IsJumping { get; set; }
-        [ProtoMember(7)]
-        public bool IsShooting { get; set; }
-        [ProtoMember(8)]
-        public bool IsAiming { get; set; }
-        [ProtoMember(9)]
         public LVector3 AimCoords { get; set; }
-        [ProtoMember(10)]
+
+        [ProtoMember(7)]
         public int WeaponHash { get; set; }
 
-        [ProtoMember(11)]
+        [ProtoMember(8)]
         public int PlayerHealth { get; set; }
 
-        [ProtoMember(12)]
+        [ProtoMember(9)]
         public float Latency { get; set; }
-
-        [ProtoMember(13)]
-        public bool IsParachuteOpen { get; set; }
-
-        [ProtoMember(14)]
+        
+        [ProtoMember(10)]
         public int NetHandle { get; set; }
 
-        [ProtoMember(15)]
+        [ProtoMember(11)]
         public float Speed { get; set; }
+
+        [ProtoMember(12)]
+        public int PedArmor { get; set; }
+
+        [ProtoMember(13)]
+        public bool IsJumping { get; set; }
+        [ProtoMember(14)]
+        public bool IsShooting { get; set; }
+
+        [ProtoMember(15)]
+        public bool IsAiming { get; set; }
+
+        [ProtoMember(16)]
+        public bool IsParachuteOpen { get; set; }
+
+        [ProtoMember(17)]
+        public bool IsRagdoll { get; set; }
     }
 
     [ProtoContract]

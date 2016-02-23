@@ -28,8 +28,8 @@ namespace MTAV
 
         public void Init()
         {
-            _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "ALL");
-            _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "ALL");
+            _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "");
+            _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "");
             HasInitialized = true;
         }
 
@@ -40,11 +40,11 @@ namespace MTAV
             {
                 if (value && !_isFocused)
                 {
-                    _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "ALL");
+                    _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "");
                 }
                 else if (!value && _isFocused)
                 {
-                    _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "ALL");
+                    _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "");
                 }
 
                 _isFocused = value;
@@ -86,8 +86,7 @@ namespace MTAV
             {
                 maxWidth = _messages.Max(f => StringMeasurer.MeasureString(f));
             }
-
-
+            
             //new UIResRectangle(UIMenu.GetSafezoneBounds() - new Size(5, 5), new Size(Math.Max(680, maxWidth + 6), 264), Color.FromArgb(alpha, 10, 90, 250)).Draw();
 
             var safezone = UIMenu.GetSafezoneBounds();
@@ -97,7 +96,7 @@ namespace MTAV
 
             //new PointF(-766f, -480f)
 
-            _mainScaleform.Render2DScreenSpace(new PointF(-795f + converted.X, -505f + converted.Y), new PointF(UI.WIDTH, UI.HEIGHT));
+            _mainScaleform.Render2DScreenSpace(new PointF(-785f + converted.X, -505f + converted.Y), new PointF(UI.WIDTH, UI.HEIGHT));
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;
@@ -165,8 +164,8 @@ namespace MTAV
 
             if (keyChar[0] == (char)8)
             {
-                _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "ALL");
-                _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "ALL");
+                _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "");
+                _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "");
 
                 if (CurrentInput.Length > 0)
                 {
