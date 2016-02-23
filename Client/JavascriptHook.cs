@@ -292,6 +292,68 @@ namespace MTAV
             Sprite.DrawTexture(path, pos, size);
         }
 
+        public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading,
+            int r, int g, int b, int alpha)
+        {
+            if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
+                Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
+
+            int screenw = Game.ScreenResolution.Width;
+            int screenh = Game.ScreenResolution.Height;
+            const float hh = 1080f;
+            float ratio = (float)screenw / screenh;
+            var ww = height * ratio;
+
+
+            float w = (float)(width / ww);
+            float h = (float)(height / hh);
+            float xx = (float)(x / width) + w * 0.5f;
+            float yy = (float)(y / height) + h * 0.5f;
+
+            Function.Call(Hash.DRAW_SPRITE, dict, txtName, xx, yy, w, h, heading, r, g, b, alpha);
+        }
+
+        public void drawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
+            int justify, bool shadow, bool outline, int wordWrap)
+        {
+            int screenw = Game.ScreenResolution.Width;
+            int screenh = Game.ScreenResolution.Height;
+            const float height = 1080f;
+            float ratio = (float)screenw / screenh;
+            var width = height * ratio;
+
+            float x = (float)(xPos) / width;
+            float y = (float)(yPos) / height;
+
+            Function.Call(Hash.SET_TEXT_FONT, font);
+            Function.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
+            Function.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
+            if (shadow)
+                Function.Call(Hash.SET_TEXT_DROP_SHADOW);
+            if (outline)
+                Function.Call(Hash.SET_TEXT_OUTLINE);
+            switch (justify)
+            {
+                case 1:
+                    Function.Call(Hash.SET_TEXT_CENTRE, true);
+                    break;
+                case 2:
+                    Function.Call(Hash.SET_TEXT_RIGHT_JUSTIFY, true);
+                    Function.Call(Hash.SET_TEXT_WRAP, 0, x);
+                    break;
+            }
+
+            if (wordWrap != 0)
+            {
+                float xsize = (float)(xPos + wordWrap) / width;
+                Function.Call(Hash.SET_TEXT_WRAP, x, xsize);
+            }
+
+            Function.Call(Hash._SET_TEXT_ENTRY, "jamyfafi");
+            NativeUI.UIResText.AddLongString(caption);
+            Function.Call(Hash._DRAW_TEXT, x, y);
+        }
+
         public bool isPed(int ent)
         {
             return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);

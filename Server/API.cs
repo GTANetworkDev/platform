@@ -53,14 +53,14 @@ namespace GTAServer
         {
             var args = new CancelEventArgs(false);
             onChatMessage?.Invoke(sender, msg, args);
-            return args.Cancel;
+            return !args.Cancel;
         }
 
         internal bool invokeChatCommand(Client sender, string msg)
         {
             var args = new CancelEventArgs(false);
             onChatCommand?.Invoke(sender, msg, args);
-            return args.Cancel;
+            return !args.Cancel;
         }
 
         internal void invokePlayerBeginConnect(Client player)
@@ -154,7 +154,17 @@ namespace GTAServer
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
         }
 
-        public  void givePlayerWeapon(Client player, uint weaponHash, int ammo, bool equipNow, bool ammoLoaded)
+        public void sendNativeToPlayer(Client player, string longHash, params object[] args)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, ulong.Parse(longHash), args);
+        }
+
+        public void sendNativeToAllPlayers(string longHash, params object[] args)
+        {
+            Program.ServerInstance.SendNativeCallToAllPlayers(ulong.Parse(longHash), args);
+        }
+
+        public  void givePlayerWeapon(Client player, int weaponHash, int ammo, bool equipNow, bool ammoLoaded)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), weaponHash, ammo, equipNow, ammo);
         }
@@ -206,17 +216,7 @@ namespace GTAServer
                 Program.ServerInstance.SendNativeCallToAllPlayers(0xF020C96915705B3A, flashing, true);
             }
         }
-
-        public  void sendPictureNotificationToPlayer(Client player, string body, NotificationPicType pic, int flash, NotificationIconType iconType, string sender, string subject)
-        {
-            //Crash with new LocalPlayerArgument()!
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x6C188BE134E074AA, body);
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1CCD9A37359072CF, pic.ToString(), pic.ToString(), flash, (int)iconType, sender, subject);
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF020C96915705B3A, false, true);
-        }
-
-
+        
         public  void sendPictureNotificationToPlayer(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
         {
             //Crash with new LocalPlayerArgument()!
@@ -225,16 +225,7 @@ namespace GTAServer
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF020C96915705B3A, false, true);
         }
-
-        public  void sendPictureNotificationToAll(Client player, string body, NotificationPicType pic, int flash, NotificationIconType iconType, string sender, string subject)
-        {
-            //Crash with new LocalPlayerArgument()!
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x6C188BE134E074AA, body);
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x1CCD9A37359072CF, pic.ToString(), pic.ToString(), flash, (int)iconType, sender, subject);
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xF020C96915705B3A, false, true);
-        }
-
+        
         public  void sendPictureNotificationToAll(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
         {
             //Crash with new LocalPlayerArgument()!

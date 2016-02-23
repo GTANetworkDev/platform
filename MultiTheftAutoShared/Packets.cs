@@ -192,6 +192,8 @@ namespace MultiTheftAutoShared
         public int Port { get; set; }
         [ProtoMember(6)]
         public string Gamemode { get; set; }
+        [ProtoMember(7)]
+        public byte Tab { get; set; }
     }
 
     [ProtoContract]
@@ -267,6 +269,9 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(19)]
         public int PedArmor { get; set; }
+
+        [ProtoMember(20)]
+        public bool IsVehicleDead { get; set; }
     }
 
     [ProtoContract]

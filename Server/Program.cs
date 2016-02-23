@@ -11,6 +11,12 @@ namespace GTAServer
 {
     public static class Program
     {
+        public static void Output(string str)
+        {
+            Console.WriteLine("[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
+        }
+
+
         public static string Location { get { return AppDomain.CurrentDomain.BaseDirectory; } }
         public static GameServer ServerInstance { get; set; }
 
@@ -22,10 +28,17 @@ namespace GTAServer
         {
             var settings = ReadSettings(Program.Location + "settings.xml");
 
-            Console.WriteLine("Name: " + settings.Name);
-            Console.WriteLine("Port: " + settings.Port);
-            Console.WriteLine("Player Limit: " + settings.MaxPlayers);
-            Console.WriteLine("Starting...");
+            Console.WriteLine("=======================================================================");
+            Console.WriteLine("= MULTI THEFT AUTO V v1.0");
+            Console.WriteLine("=======================================================================");
+            Console.WriteLine("= Server Name: " + settings.Name);
+            Console.WriteLine("= Server Port: " + settings.Port);
+            Console.WriteLine("=");
+            Console.WriteLine("= Player Limit: " + settings.MaxPlayers);
+            Console.WriteLine("=======================================================================");
+
+
+            Output("Starting...");
 
             ServerInstance = new GameServer(settings.Port, settings.Name);
             ServerInstance.PasswordProtected = !string.IsNullOrWhiteSpace(settings.Password);
@@ -37,7 +50,7 @@ namespace GTAServer
 
             ServerInstance.Start(settings.Resources.Select(r => r.Path).ToArray());
 
-            Console.WriteLine("Started! Waiting for connections.");
+            Output("Started! Waiting for connections.");
 
             while (true)
             {

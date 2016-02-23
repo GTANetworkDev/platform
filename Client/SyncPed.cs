@@ -39,6 +39,8 @@ namespace MTAV
         public bool _isRagdoll;
         public Vehicle MainVehicle { get; set; }
 
+        public bool IsInCover;
+
         public int VehicleSeat;
         public int PedHealth;
 
@@ -50,6 +52,7 @@ namespace MTAV
         public string Name;
         public bool Siren;
         public int PedArmor;
+        public bool IsVehDead;
 
         public bool Debug;
 
@@ -195,7 +198,11 @@ namespace MTAV
                 }
                 else if (_isRagdoll && !value)
                 {
-                    if (Character != null) Character.CanRagdoll = false;
+                    if (Character != null)
+                    {
+                        Character.CanRagdoll = false;
+                        Character.Task.ClearAllImmediately();
+                    }
                 }
                 
                 _isRagdoll = value;
@@ -218,6 +225,9 @@ namespace MTAV
         private Dictionary<int, int> _pedProps;
 
         private Queue<double> _latencyAverager;
+
+        private Vector3 _lastStart;
+        private Vector3 _lastEnd;
 
         private int _playerSeat;
         private bool _isStreamedIn;
@@ -258,7 +268,18 @@ namespace MTAV
             const float hRange = 300f;
             var gPos = IsInVehicle ? VehiclePosition : _position;
             var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
-            
+
+            if (_lastStart != null && _lastEnd != null)
+            {
+                //Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
+                    //_lastEnd.Z, 255, 255, 255, 255);
+            }
+
+            if (inRange && Character != null)
+            {
+                Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, Character, true);
+            }
+
             /*
             if (inRange && !_isStreamedIn)
             {
@@ -313,34 +334,50 @@ namespace MTAV
                 return;
             }
 
-            if (!Character.IsOccluded && Character.IsInRangeOf(Game.Player.Character.Position, 20f))
+            bool isAiming = false;
+            if (!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f)) || (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
             {
-                var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
-                var targetPos = Character.Position + new Vector3(0, 0, 1.2f);
-                if (oldPos.X != 0 && oldPos.Y != 0)
-                {
-                    var res = UIMenu.GetScreenResolutionMantainRatio();
-                    var pos = new Point((int)((oldPos.X / (float)UI.WIDTH) * res.Width),
-                        (int)((oldPos.Y / (float)UI.HEIGHT) * res.Height));
-
-                    Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
-
-                    new UIResText(Name == null ? "<nameless>" : Name, new Point(0, 0), 0.3f, Color.WhiteSmoke, Font.ChaletLondon, UIResText.Alignment.Centered)
+                var ray = World.Raycast(GameplayCamera.Position, Character.Position, IntersectOptions.Everything, Game.Player.Character);
+                if (ray.HitEntity == Character || isAiming || Character.IsInVehicle())
+                { 
+                    var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
+                    var targetPos = Character.Position + new Vector3(0, 0, 1.2f);
+                    if (oldPos.X != 0 && oldPos.Y != 0)
                     {
-                        Outline = true,
-                    }.Draw();
+                        Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
 
-                    if (Character != null)
-                    {
-                        var bgColor = PedArmor > 0 ? Color.FromArgb(100, 220, 220, 220) : Color.FromArgb(100, 0, 0, 0);
-                        new UIResRectangle(new Point(0, 0) - new Size(75, -36), new Size(150, 20),
-                            bgColor).Draw();
-                        new UIResRectangle(new Point(0, 0) - new Size(71, -40),
-                            new Size((int) (142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f)), 12),
-                            Color.FromArgb(150, 50, 250, 50)).Draw();
+                        var nameText = Name == null ? "<nameless>" : Name;
+
+                        if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
+                            nameText = "~r~AFK~w~~n~" + nameText;
+
+                        new UIResText(nameText, new Point(0, 0), 0.3f, Color.WhiteSmoke,
+                            Font.ChaletLondon, UIResText.Alignment.Centered)
+                        {
+                            Outline = true,
+                        }.Draw();
+
+                        if (Character != null)
+                        {
+                            var armorColor = Color.FromArgb(100, 220, 220, 220);
+                            var bgColor = Color.FromArgb(100, 0, 0, 0);
+                            var armorPercent = Math.Min(Math.Max(PedArmor/100f, 0f), 1f);
+                            var armorBar = (int) Math.Round(150*armorPercent);
+
+                            new UIResRectangle(new Point(0, 0) - new Size(75, -36), new Size(armorBar, 20),
+                                armorColor).Draw();
+
+                            new UIResRectangle(new Point(0, 0) - new Size(75, -36) + new Size(armorBar, 0),
+                                new Size(150 - armorBar, 20),
+                                bgColor).Draw();
+
+                            new UIResRectangle(new Point(0, 0) - new Size(71, -40),
+                                new Size((int) (142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f)), 12),
+                                Color.FromArgb(150, 50, 250, 50)).Draw();
+                        }
+
+                        Function.Call(Hash.CLEAR_DRAW_ORIGIN);
                     }
-
-                    Function.Call(Hash.CLEAR_DRAW_ORIGIN);
                 }
             }
 
@@ -364,7 +401,8 @@ namespace MTAV
 
                 if (MainVehicle != null)
                 {
-                    MainVehicle.Position = VehiclePosition;
+                    if (VehicleSeat == -1)
+                        MainVehicle.Position = VehiclePosition;
                     MainVehicle.EngineRunning = true;
                     MainVehicle.PrimaryColor = (VehicleColor)VehiclePrimaryColor;
                     MainVehicle.SecondaryColor = (VehicleColor)VehicleSecondaryColor;
@@ -415,12 +453,12 @@ namespace MTAV
                     MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver) == null)
                 {
                     MainVehicle.Health = VehicleHealth;
-                    if (VehicleHealth <= -100)
+                    if (IsVehDead && !MainVehicle.IsDead)
                     {
                         MainVehicle.IsInvincible = false;
                         MainVehicle.Explode();
                     }
-                    else
+                    else if (!IsVehDead && MainVehicle.IsDead)
                     {
                         MainVehicle.IsInvincible = true;
                         if (MainVehicle.IsDead)
@@ -464,6 +502,22 @@ namespace MTAV
                         MainVehicle.SirenActive = Siren;
                     else if (!MainVehicle.SirenActive && Siren)
                         MainVehicle.SirenActive = Siren;
+
+                    if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
+                    {
+                        Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
+                        Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                    }
+
+                    if (IsAiming && !IsShooting)
+                    {
+                        Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z, 100f, 80, 0, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
+                    }
+                    else if (IsShooting)
+                    {
+                        Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z, 100f, 80, 1, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
+                    }
+
 
                     var dir = VehiclePosition - _lastVehiclePos;
                     
@@ -590,7 +644,7 @@ namespace MTAV
                 if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
                 {
                     Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
-                    Character.Weapons.Select(Character.Weapons[(WeaponHash)CurrentWeapon]);
+                    Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
                 }
 
                 if (!_lastJumping && IsJumping)
@@ -660,6 +714,7 @@ namespace MTAV
 
                         Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
                     }
+                    
 
                     if (IsShooting)
                     {
@@ -667,9 +722,21 @@ namespace MTAV
 
                         var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
                         var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
-                        var damage = 25;
+                        var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
+                        var speed = 0xbf800000;
+                        var weaponH = (WeaponHash) CurrentWeapon;
+                        if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
+                            weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
+                            speed = 500;
+
+                        if (weaponH == WeaponHash.Minigun)
+                            weaponH = WeaponHash.CombatPDW;
+                        
                         Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, AimCoords.X,
-                            AimCoords.Y, AimCoords.Z, damage, true, CurrentWeapon, Character, true, true, 0xbf800000);
+                            AimCoords.Y, AimCoords.Z, damage, true, (int)weaponH, Character, true, true, speed);
+
+                        _lastStart = start;
+                        _lastEnd = AimCoords;
 
                         var dirVector = Position - _lastPosition;
 
@@ -694,15 +761,7 @@ namespace MTAV
 
                         if (syncMode == SynchronizationMode.DeadReckoning)
                         {
-                            /*
-                            var dirVector = Position - _lastPosition;
-
-                            var target = Util.LinearVectorLerp(Position,
-                                (Position) + dirVector,
-                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
-
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);*/
-
+                            
                             var dir = Position - _lastPosition;
 
                             var vdir = PedVelocity - _lastPedVel;
@@ -735,6 +794,11 @@ namespace MTAV
                                 (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
 
                             Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
+                        }
+
+                        else if (syncMode == SynchronizationMode.Teleport)
+                        {
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y, Position.Z, 0, 0, 0, 0);
                         }
 
                         if (Main.LerpRotaion)
@@ -829,6 +893,94 @@ namespace MTAV
             {
                 _parachuteProp.Delete();
                 _parachuteProp = null;
+            }
+        }
+    }
+
+    public static class WeaponDataProvider
+    {
+        public static int GetWeaponDamage(WeaponHash weapon)
+        {
+            switch (weapon)
+            {
+                default:
+                    return 0;
+                case WeaponHash.SMG:
+                    return 22;
+                case WeaponHash.AssaultSMG:
+                    return 23;
+                case WeaponHash.AssaultRifle:
+                    return 30;
+                case WeaponHash.CarbineRifle:
+                    return 32;
+                case WeaponHash.AdvancedRifle:
+                    return 34;
+                case WeaponHash.MG:
+                    return 40;
+                case WeaponHash.CombatMG:
+                    return 45;
+                case WeaponHash.PumpShotgun:
+                    return 29;
+                case WeaponHash.SawnOffShotgun:
+                    return 40;
+                case WeaponHash.AssaultShotgun:
+                    return 32;
+                case WeaponHash.BullpupShotgun:
+                    return 14;
+                case WeaponHash.StunGun:
+                    return 1;
+                case WeaponHash.SniperRifle:
+                    return 101;
+                case WeaponHash.HeavySniper:
+                    return 216;
+                case WeaponHash.Minigun:
+                    return 30;
+                case WeaponHash.Pistol:
+                    return 26;
+                case WeaponHash.CombatPistol:
+                    return 27;
+                case WeaponHash.APPistol:
+                    return 28;
+                case WeaponHash.Pistol50:
+                    return 51;
+                case WeaponHash.MicroSMG:
+                    return 21;
+                case WeaponHash.Snowball:
+                    return 25;
+                case WeaponHash.CombatPDW:
+                    return 28;
+                case WeaponHash.MarksmanPistol:
+                    return 220;
+                case (WeaponHash)0x47757124:
+                    return 10;
+                case WeaponHash.SNSPistol:
+                    return 28;
+                case WeaponHash.HeavyPistol:
+                    return 40;
+                case WeaponHash.VintagePistol:
+                    return 34;
+                case (WeaponHash)0xC1B3C3D1:
+                    return 160;
+                case WeaponHash.Musket:
+                    return 165;
+                case WeaponHash.HeavyShotgun:
+                    return 117;
+                case WeaponHash.SpecialCarbine:
+                    return 34;
+                case WeaponHash.BullpupRifle:
+                    return 32;
+                case WeaponHash.Gusenberg:
+                    return 34;
+                case WeaponHash.MarksmanRifle:
+                    return 65;
+                case WeaponHash.RPG:
+                    return 50;
+                case WeaponHash.GrenadeLauncher:
+                    return 75;
+                case WeaponHash.Firework:
+                    return 20;
+                case WeaponHash.Railgun:
+                    return 30;
             }
         }
     }

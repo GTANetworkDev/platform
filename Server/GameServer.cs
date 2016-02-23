@@ -9,6 +9,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Lidgren.Network;
 using Microsoft.ClearScript;
@@ -77,52 +78,6 @@ namespace GTAServer
         public string Resource { get; set; }
     }
 
-    public enum NotificationIconType
-    {
-        Chatbox = 1,
-        Email = 2,
-        AddFriendRequest = 3,
-        Nothing = 4,
-        RightJumpingArrow = 7,
-        RP_Icon = 8,
-        DollarIcon = 9,
-    }
-
-    public enum NotificationPicType
-    {
-        CHAR_DEFAULT, // : Default profile pic
-        CHAR_FACEBOOK, // Facebook
-        CHAR_SOCIAL_CLUB, // Social Club Star
-        CHAR_CARSITE2, // Super Auto San Andreas Car Site
-        CHAR_BOATSITE, // Boat Site Anchor
-        CHAR_BANK_MAZE, // Maze Bank Logo
-        CHAR_BANK_FLEECA, // Fleeca Bank
-        CHAR_BANK_BOL, // Bank Bell Icon
-        CHAR_MINOTAUR, // Minotaur Icon
-        CHAR_EPSILON, // Epsilon E
-        CHAR_MILSITE, // Warstock W
-        CHAR_CARSITE, // Legendary Motorsports Icon
-        CHAR_DR_FRIEDLANDER, // Dr Freidlander Face
-        CHAR_BIKESITE, // P&M Logo
-        CHAR_LIFEINVADER, // Liveinvader
-        CHAR_PLANESITE, // Plane Site E
-        CHAR_MICHAEL, // Michael's Face
-        CHAR_FRANKLIN, // Franklin's Face
-        CHAR_TREVOR, // Trevor's Face
-        CHAR_SIMEON, // Simeon's Face
-        CHAR_RON, // Ron's Face
-        CHAR_JIMMY, // Jimmy's Face
-        CHAR_LESTER, // Lester's Shadowed Face
-        CHAR_DAVE, // Dave Norton's Face
-        CHAR_LAMAR, // Chop's Face
-        CHAR_DEVIN, // Devin Weston's Face
-        CHAR_AMANDA, // Amanda's Face
-        CHAR_TRACEY, // Tracey's Face
-        CHAR_STRETCH, // Stretch's Face
-        CHAR_WADE, // Wade's Face
-        CHAR_MARTIN, // Martin Madrazo's Face
-
-    }
 
     public class GameServer
     {
@@ -147,10 +102,11 @@ namespace GTAServer
             config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
             Server = new NetServer(config);
+            ConcurrentFactory = new TaskFactory();
         }
 
         public NetServer Server;
-
+        public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
         public int MaxPlayers { get; set; }
         public int Port { get; set; }
@@ -180,12 +136,12 @@ namespace GTAServer
             if (AnnounceSelf)
             {
                 _lastAnnounceDateTime = DateTime.Now;
-                Console.WriteLine("Announcing to master server...");
+                Program.Output("Announcing to master server...");
                 AnnounceSelfToMaster();
             }
             
 
-            Console.WriteLine("Loading resources...");
+            Program.Output("Loading resources...");
             var list = new List<JScriptEngine>();
             foreach (var path in filterscripts)
             {
@@ -197,15 +153,9 @@ namespace GTAServer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Failed to load resource \"" + path + "\", error: " + ex.Message);
+                    Program.Output("Failed to load resource \"" + path + "\", error: " + ex.Message);
                 }
             }
-
-            Console.WriteLine("Starting resources...");
-            list.ForEach(fs =>
-            {
-                fs.Script.API.invokeResourceStart();
-            });
         }
 
         public void AnnounceSelfToMaster()
@@ -218,7 +168,7 @@ namespace GTAServer
                 }
                 catch (WebException)
                 {
-                    Console.WriteLine("Failed to announce self: master server is not available at this time.");
+                    Program.Output("Failed to announce self: master server is not available at this time.");
                 }
             }
         }
@@ -227,6 +177,8 @@ namespace GTAServer
         {
             try
             {
+                Program.Output("Starting " + resourceName);
+
                 if (!Directory.Exists("resources" + Path.DirectorySeparatorChar + resourceName))
                     throw new FileNotFoundException("Resource does not exist.");
 
@@ -245,7 +197,6 @@ namespace GTAServer
                 ourResource.DirectoryName = resourceName;
                 ourResource.Engines = new List<JScriptEngine>();
 
-                
                 foreach (var script in currentResInfo.Scripts)
                 {
                     var scrTxt = File.ReadAllText(baseDir + script.Path);
@@ -267,8 +218,8 @@ namespace GTAServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR STARTING RESOURCE " + resourceName);
-                Console.WriteLine(ex.Message);
+                Program.Output("ERROR STARTING RESOURCE " + resourceName);
+                Program.Output(ex.Message);
             }
         }
 
@@ -276,6 +227,8 @@ namespace GTAServer
         {
             var ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
             if (ourRes == null) return;
+
+            Program.Output("Stopping " + resourceName);
 
             ourRes.Engines.ForEach(en => en.Script.API.invokeResourceStop());
             var msg = Server.CreateMessage();
@@ -309,10 +262,17 @@ namespace GTAServer
             scriptEngine.AddHostType("console", typeof(Console));
             scriptEngine.AddHostType("VehicleHash", typeof(VehicleHash));
             scriptEngine.AddHostType("Int32", typeof(int));
+            scriptEngine.AddHostType("EntityArgument", typeof(EntityArgument));
+            scriptEngine.AddHostType("EntityPtrArgument", typeof(EntityPointerArgument));
             try
             {
                 scriptEngine.Execute(script);
                 scriptEngine.Script.API.invokeResourceStart();
+                /*
+                ConcurrentFactory.StartNew(delegate
+                {
+                    scriptEngine.Script.API.invokeResourceStart();
+                });*/
             }
             catch (ScriptEngineException ex)
             {
@@ -324,8 +284,8 @@ namespace GTAServer
 
         private void LogException(Exception ex, string resourceName)
         {
-            Console.WriteLine("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
-            Console.WriteLine(ex.StackTrace);
+            Program.Output("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
+            Program.Output(ex.StackTrace);
         }
 
         public void Tick()
@@ -418,7 +378,7 @@ namespace GTAServer
                         var isPing = msg.ReadString();
                         if (isPing == "ping")
                         {
-                            Console.WriteLine("INFO: ping received from " + msg.SenderEndPoint.Address.ToString());
+                            Program.Output("INFO: ping received from " + msg.SenderEndPoint.Address.ToString());
                             var pong = Server.CreateMessage();
                             pong.Write("pong");
                             Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
@@ -427,7 +387,7 @@ namespace GTAServer
                         {
                             int playersonline = 0;
                             lock (Clients) playersonline = Clients.Count;
-                            Console.WriteLine("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
+                            Program.Output("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
                             var pong = Server.CreateMessage();
                             pong.Write(Name + "%" + PasswordProtected + "%" + playersonline + "%" + MaxPlayers + "%" + GamemodeName);
                             Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
@@ -437,7 +397,7 @@ namespace GTAServer
                     case NetIncomingMessageType.DebugMessage:
                     case NetIncomingMessageType.WarningMessage:
                     case NetIncomingMessageType.ErrorMessage:
-                        Console.WriteLine(msg.ReadString());
+                        Program.Output(msg.ReadString());
                         break;
                     case NetIncomingMessageType.ConnectionLatencyUpdated:
                         client.Latency = msg.ReadFloat();
@@ -469,7 +429,7 @@ namespace GTAServer
                                 if (Password != connReq.Password)
                                 {
                                     client.NetConnection.Deny("Wrong password.");
-                                    Console.WriteLine("Player connection refused: wrong password.");
+                                    Program.Output("Player connection refused: wrong password.");
 
                                     Server.Recycle(msg);
 
@@ -515,12 +475,12 @@ namespace GTAServer
 
                             lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerBeginConnect(client)));
                             
-                            Console.WriteLine("New incoming connection: " + client.SocialClubName + " (" + client.Name + ")");
+                            Program.Output("New incoming connection: " + client.SocialClubName + " (" + client.Name + ")");
                         }
                         else
                         {
                             client.NetConnection.Deny("No available player slots.");
-                            Console.WriteLine("Player connection refused: server full.");
+                            Program.Output("Player connection refused: server full.");
                         }
                         break;
                     case NetIncomingMessageType.StatusChanged:
@@ -528,13 +488,6 @@ namespace GTAServer
 
                         if (newStatus == NetConnectionStatus.Connected)
                         {
-                            bool sendMsg = true;
-
-                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerConnected(client)));
-
-                            //if (sendMsg) API.sendNotificationToAll("Player ~h~" + client.Name + "~h~ has connected.");
-
-                            Console.WriteLine("New player connected: " + client.SocialClubName + " (" + client.Name + ")");
                         }
                         else if (newStatus == NetConnectionStatus.Disconnected)
                         {
@@ -542,11 +495,15 @@ namespace GTAServer
                             {
                                 if (Clients.Contains(client))
                                 {
-                                    var sendMsg = true;
-
-                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDisconnected(client)));
-
-                                    //if (sendMsg) API.sendNotificationToAll("Player ~h~" + client.Name + "~h~ has disconnected.");
+                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                    {
+                                        en.Script.API.invokePlayerDisconnected(client);
+                                        /*
+                                        ConcurrentFactory.StartNew(delegate
+                                        {
+                                            en.Script.API.invokePlayerDisconnected(client);
+                                        });*/
+                                    }));
 
                                     var dcObj = new PlayerDisconnect()
                                     {
@@ -555,7 +512,7 @@ namespace GTAServer
 
                                     SendToAll(dcObj, PacketType.PlayerDisconnect, true);
 
-                                    Console.WriteLine("Player disconnected: " + client.SocialClubName + " (" + client.Name + ")");
+                                    Program.Output("Player disconnected: " + client.SocialClubName + " (" + client.Name + ")");
 
                                     Clients.Remove(client);
                                 }
@@ -602,14 +559,14 @@ namespace GTAServer
                                                 break;
                                             }
 
-                                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokeChatMessage(client, data.Message)));
+                                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => pass = pass && en.Script.API.invokeChatMessage(client, data.Message)));
 
                                             if (pass)
                                             {
                                                 data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                                 data.Sender = client.Name;
                                                 SendToAll(data, PacketType.ChatData, true);
-                                                Console.WriteLine(data.Sender + ": " + data.Message);
+                                                Program.Output(data.Sender + ": " + data.Message);
                                             }
                                         }
                                     }
@@ -719,15 +676,6 @@ namespace GTAServer
                                     { }
                                 }
                                 break;
-                            case PacketType.WorldSharingStop:
-                                {
-                                    var dcObj = new PlayerDisconnect()
-                                    {
-                                        Id = client.NetConnection.RemoteUniqueIdentifier,
-                                    };
-                                    SendToAll(dcObj, PacketType.WorldSharingStop, true);
-                                }
-                                break;
                             case PacketType.ScriptEventTrigger:
                                 {
                                     var len = msg.ReadInt32();
@@ -738,8 +686,18 @@ namespace GTAServer
                                         lock (RunningResources)
                                         RunningResources.ForEach(
                                             en =>
-                                                en.Engines.ForEach(fs => fs.Script.invokeClientEvent(client, data.EventName,
-                                                    DecodeArgumentList(data.Arguments.ToArray()).ToArray())));
+                                                en.Engines.ForEach(fs =>
+                                                {
+                                                    fs.Script.invokeClientEvent(client, data.EventName,
+                                                            DecodeArgumentList(data.Arguments.ToArray()).ToArray());
+                                                    /*
+                                                    ConcurrentFactory.StartNew(delegate
+                                                    {
+                                                        fs.Script.invokeClientEvent(client, data.EventName,
+                                                            DecodeArgumentList(data.Arguments.ToArray()).ToArray());
+                                                    });*/
+                                                }
+                                                ));
                                     }
                                 }
                                 break;
@@ -840,6 +798,22 @@ namespace GTAServer
                                     }
 
                                     Downloads.Add(downloader);
+
+
+                                    lock (RunningResources)
+                                    RunningResources.ForEach(
+                                    fs => fs.Engines.ForEach(en =>
+                                    {
+                                        en.Script.API.invokePlayerConnected(client);
+                                        /*
+                                        ConcurrentFactory.StartNew(delegate
+                                        {
+                                            en.Script.API.invokePlayerConnected(client);
+                                        });*/
+                                    }));
+
+                                    Program.Output("New player connected: " + client.SocialClubName + " (" + client.Name + ")");
+
                                     break;
                                 }
                             case PacketType.PlayerKilled:
@@ -848,24 +822,48 @@ namespace GTAServer
                                     var weapon = msg.ReadInt32();
                                     lock (RunningResources)
                                     {
-                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerDeath(client, reason, weapon)));
+                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                        {
+                                            en.Script.API.invokePlayerDeath(
+                                                    client, reason, weapon);
+                                            /*ConcurrentFactory.StartNew(delegate
+                                            {
+                                                en.Script.API.invokePlayerDeath(
+                                                    client, reason, weapon);
+                                            });*/
+                                        }));
                                     }
                                 }
                                 break;
                             case PacketType.PlayerRespawned:
                                 {
-                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerRespawn(client)));
+                                    lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                    {
+                                        en.Script.API.invokePlayerRespawn(client);
+                                        /*ConcurrentFactory.StartNew(
+                                            delegate {
+                                                en.Script.API.invokePlayerRespawn(client); });*/
+                                    }));
+                                    
                                 }
                                 break;
                         }
                         break;
                     default:
-                        Console.WriteLine("WARN: Unhandled type: " + msg.MessageType);
+                        Program.Output("WARN: Unhandled type: " + msg.MessageType);
                         break;
                 }
                 Server.Recycle(msg);
             }
-            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokeUpdate()));
+            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+            {
+                en.Script.API.invokeUpdate();
+                /*
+                ConcurrentFactory.StartNew(delegate
+                {
+                    en.Script.API.invokeUpdate();
+                });*/
+            }));
         }
 
         public IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
@@ -957,7 +955,7 @@ namespace GTAServer
                 }
                 catch (ProtoException e)
                 {
-                    Console.WriteLine("WARN: Deserialization failed: " + e.Message);
+                    Program.Output("WARN: Deserialization failed: " + e.Message);
                     return null;
                 }
             }

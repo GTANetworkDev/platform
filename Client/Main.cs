@@ -546,6 +546,7 @@ namespace MTAV
                 obj.Speed = veh.Speed;
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = player.Armor;
+                obj.IsVehicleDead = veh.IsDead;
 
                 var bin = SerializeBinary(obj);
 
@@ -575,6 +576,7 @@ namespace MTAV
                 obj.Quaternion = player.Rotation.ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsRagdoll = player.IsRagdoll;
+                //obj.IsInCover = player.IsInCover();
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
@@ -748,6 +750,7 @@ namespace MTAV
             }
                     */
 
+            Function.Call((Hash)0x8378627201D5497D, Game.Player.Character, 1f, 1f);
             #endif
             ProcessMessages();
 
@@ -761,6 +764,8 @@ namespace MTAV
 
             var playerCar = Game.Player.Character.CurrentVehicle;
 
+            //Function.Call(Hash.SET_PED_ALTERNATE_MOVEMENT_ANIM, player, 0, Util.LoadDict("move_m@generic"), "idle", 1f, true);
+
             if (playerCar != _lastPlayerCar)
             {
                 if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = true;
@@ -772,6 +777,12 @@ namespace MTAV
             Game.DisableControl(0, Control.SpecialAbility);
             Game.DisableControl(0, Control.SpecialAbilityPC);
             Game.DisableControl(0, Control.SpecialAbilitySecondary);
+
+            if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() &&
+                Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
+            {
+                Game.DisableControl(0, Control.Jump);
+            }
 
             Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f);
             Function.Call(Hash.MODIFY_WATER, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z, 0f);
@@ -989,6 +1000,7 @@ namespace MTAV
                                     Opponents[data.Id].VehiclePosition =
                                         data.Position.ToVector();
                                     Opponents[data.Id].VehicleVelocity = data.Velocity.ToVector();
+                                    Opponents[data.Id].IsVehDead = data.IsVehicleDead;
                                     Opponents[data.Id].ModelHash = data.PedModelHash;
                                     Opponents[data.Id].VehicleHash =
                                         data.VehicleModelHash;
@@ -1030,6 +1042,7 @@ namespace MTAV
                                         NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
                                     Opponents[data.Id].Speed = data.Speed;
                                     Opponents[data.Id].Name = data.Name;
+                                    //Opponents[data.Id].IsInCover = data.IsInCover;
                                     Opponents[data.Id].IsRagdoll = data.IsRagdoll;
                                     Opponents[data.Id].PedArmor = data.PedArmor;
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
@@ -1503,6 +1516,11 @@ namespace MTAV
                     _debugSyncPed.IsInVehicle = true;
                     _debugSyncPed.LastUpdateReceived = DateTime.Now;
                     _debugSyncPed.PedArmor = player.Armor;
+
+                    _debugSyncPed.CurrentWeapon = (int)Game.Player.Character.Weapons.Current.Hash;
+                    _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.Attack);
+                    _debugSyncPed.IsAiming = Game.IsControlPressed(0, Control.Aim);
+                    _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
                 }
                 else
                 {
@@ -1527,6 +1545,7 @@ namespace MTAV
                     _debugSyncPed.PedHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                     _debugSyncPed.IsAiming = aiming;
                     _debugSyncPed.IsShooting = shooting;
+                    //_debugSyncPed.IsInCover = player.IsInCover();
                     _debugSyncPed.IsJumping = Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle);
                     _debugSyncPed.IsParachuteOpen = Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 2;
                     _debugSyncPed.IsInVehicle = false;

@@ -96,7 +96,7 @@ namespace MTAV
 
             //new PointF(-766f, -480f)
 
-            _mainScaleform.Render2DScreenSpace(new PointF(-785f + converted.X, -505f + converted.Y), new PointF(UI.WIDTH, UI.HEIGHT));
+            _mainScaleform.Render2DScreenSpace(new PointF(-788f + converted.X, -505f + converted.Y), new PointF(UI.WIDTH, UI.HEIGHT));
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;
