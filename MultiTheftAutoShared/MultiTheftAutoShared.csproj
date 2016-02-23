@@ -56,7 +56,7 @@
   <ItemGroup>
     <Compile Include="NativeData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VehicleData.cs" />
+    <Compile Include="Packets.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

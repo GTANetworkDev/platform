@@ -13,10 +13,23 @@ using GTA.Math;
 using GTA.Native;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
+using MultiTheftAutoShared;
 using NativeUI;
 
 namespace MTAV
 {
+    public class ClientsideScriptWrapper
+    {
+        public ClientsideScriptWrapper(JScriptEngine en, string rs)
+        {
+            Engine = en;
+            ResourceParent = rs;
+        }
+
+        public JScriptEngine Engine { get; set; }
+        public string ResourceParent { get; set; }
+    }
+
     public class JavascriptHook : Script
     {
         public JavascriptHook()
@@ -24,11 +37,11 @@ namespace MTAV
             Tick += OnTick;
             KeyDown += OnKeyDown;
             KeyUp += OnKeyUp;
-            ScriptEngines = new List<JScriptEngine>();
+            ScriptEngines = new List<ClientsideScriptWrapper>();
             ThreadJumper = new List<Action>();
         }
 
-        public static List<JScriptEngine> ScriptEngines;
+        public static List<ClientsideScriptWrapper> ScriptEngines;
 
         public static List<Action> ThreadJumper;
 
@@ -36,7 +49,7 @@ namespace MTAV
         {
             ThreadJumper.Add(() =>
             {
-                lock (ScriptEngines) ScriptEngines.ForEach(en => en.Script.script.invokeServerEvent(eventName, arguments));
+                lock (ScriptEngines) ScriptEngines.ForEach(en => en.Engine.Script.script.invokeServerEvent(eventName, arguments));
             });
         }
 
@@ -49,14 +62,14 @@ namespace MTAV
                 {
                     lock (ScriptEngines)
                     {
-                        ScriptEngines.ForEach(en => en.Script.script.invokeChatCommand(msg));
+                        ScriptEngines.ForEach(en => en.Engine.Script.script.invokeChatCommand(msg));
                     }
                 }
                 else
                 {
                     lock (ScriptEngines)
                     {
-                        ScriptEngines.ForEach(en => en.Script.script.invokeChatMessage(msg));
+                        ScriptEngines.ForEach(en => en.Engine.Script.script.invokeChatMessage(msg));
                     }
                 }
             });
@@ -76,7 +89,7 @@ namespace MTAV
                 {
                     try
                     {
-                        engine.Script.script.invokeUpdate();
+                        engine.Engine.Script.script.invokeUpdate();
                     }  
                     catch (ScriptEngineException ex)
                     {
@@ -94,7 +107,7 @@ namespace MTAV
                 {
                     try
                     {
-                        engine.Script.script.invokeKeyDown(sender, e);
+                        engine.Engine.Script.script.invokeKeyDown(sender, e);
                     }
                     catch (ScriptEngineException ex)
                     {
@@ -112,7 +125,7 @@ namespace MTAV
                 {
                     try
                     {
-                        engine.Script.script.invokeKeyUp(sender, e);
+                        engine.Engine.Script.script.invokeKeyUp(sender, e);
                     }
                     catch (ScriptEngineException ex)
                     {
@@ -122,7 +135,7 @@ namespace MTAV
             }
         }
 
-        public static void StartScript(string script)
+        public static void StartScript(ClientsideScript script)
         {
             ThreadJumper.Add((() =>
             {
@@ -141,7 +154,7 @@ namespace MTAV
                 
                 try
                 {
-                    scriptEngine.Execute(script);
+                    scriptEngine.Execute(script.Script);
                 }
                 catch (ScriptEngineException ex)
                 {
@@ -150,7 +163,7 @@ namespace MTAV
                 finally
                 {
                     scriptEngine.Script.script.invokeResourceStart();
-                    lock (ScriptEngines) ScriptEngines.Add(scriptEngine);
+                    lock (ScriptEngines) ScriptEngines.Add(new ClientsideScriptWrapper(scriptEngine, script.ResourceParent));
                 }
             }));
         }
@@ -163,13 +176,25 @@ namespace MTAV
                 {
                     foreach (var engine in ScriptEngines)
                     {
-                        engine.Script.script.invokeResourceStop();
-                        engine.Dispose();
+                        engine.Engine.Script.script.invokeResourceStop();
+                        engine.Engine.Dispose();
                     }
 
                     ScriptEngines.Clear();
                 }
             });
+        }
+
+        public static void StopScript(string resourceName)
+        {
+            lock (ScriptEngines)
+                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                {
+                    if (ScriptEngines[i].ResourceParent != resourceName) continue;
+                    ScriptEngines[i].Engine.Script.script.invokeResourceStop();
+                    ScriptEngines[i].Engine.Dispose();
+                    ScriptEngines.RemoveAt(i);
+                }
         }
 
         private static void LogException(Exception ex)

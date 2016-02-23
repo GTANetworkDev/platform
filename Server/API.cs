@@ -17,7 +17,7 @@ namespace GTAServer
 
         #region Events
         public event EventHandler onResourceStart;
-        //public event EventHandler onResourceStop;
+        public event EventHandler onResourceStop;
         public event EventHandler onUpdate;
         public event ChatEvent onChatMessage;
         public event ChatEvent onChatCommand;
@@ -46,7 +46,7 @@ namespace GTAServer
 
         internal void invokeResourceStop()
         {
-            //onResourceStop?.Invoke(this, EventArgs.Empty);
+            onResourceStop?.Invoke(this, EventArgs.Empty);
         }
 
         internal bool invokeChatMessage(Client sender, string msg)

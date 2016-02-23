@@ -135,8 +135,7 @@ namespace GTAServer
             MaxPlayers = 32;
             Port = port;
             
-            //_resources = new List<JScriptEngine>();
-            _clientScripts = new List<string>();
+            _clientScripts = new List<ClientsideScript>();
             NetEntityHandler = new NetEntityHandler();
 
             Name = name;
@@ -171,7 +170,7 @@ namespace GTAServer
 
         public readonly ScriptVersion ServerVersion = ScriptVersion.VERSION_0_9;
 
-        private List<string> _clientScripts;
+        private List<ClientsideScript> _clientScripts;
         private DateTime _lastAnnounceDateTime;
 
         public void Start(string[] filterscripts)
@@ -252,7 +251,11 @@ namespace GTAServer
                     var scrTxt = File.ReadAllText(baseDir + script.Path);
                     if (script.Type == ResourceType.client)
                     {
-                        _clientScripts.Add(scrTxt);
+                        _clientScripts.Add(new ClientsideScript()
+                        {
+                            ResourceParent = resourceName,
+                            Script = scrTxt,
+                        });
                         continue;
                     }
 
@@ -267,6 +270,18 @@ namespace GTAServer
                 Console.WriteLine("ERROR STARTING RESOURCE " + resourceName);
                 Console.WriteLine(ex.Message);
             }
+        }
+
+        private void StopResource(string resourceName)
+        {
+            var ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
+            if (ourRes == null) return;
+
+            ourRes.Engines.ForEach(en => en.Script.API.invokeResourceStop());
+            var msg = Server.CreateMessage();
+            msg.Write((int)PacketType.StopResource);
+            msg.Write(resourceName);
+            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
         }
 
         private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
@@ -297,6 +312,7 @@ namespace GTAServer
             try
             {
                 scriptEngine.Execute(script);
+                scriptEngine.Script.API.invokeResourceStart();
             }
             catch (ScriptEngineException ex)
             {
@@ -794,7 +810,7 @@ namespace GTAServer
                                     mapData.Type = FileType.Map;
 
                                     var clientScripts = new ScriptCollection();
-                                    clientScripts.ClientsideScripts = new List<string>(_clientScripts);
+                                    clientScripts.ClientsideScripts = new List<ClientsideScript>(_clientScripts);
 
                                     var scriptData = new StreamedData();
                                     scriptData.Id = r.Next(int.MaxValue);

@@ -713,6 +713,7 @@ namespace MTAV
                 _debug.Draw();
             }
 
+                /*
             if (Game.IsKeyPressed(Keys.D1))
             {
                 _firstBool = !_firstBool;
@@ -734,9 +735,8 @@ namespace MTAV
             if (Game.IsControlJustPressed(0, Control.Context))
             {
                 var dest = World.GetCrosshairCoordinates().HitCoords;
-                /*Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
+                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
                     dest.X, dest.Y, dest.Z, 25, _firstBool, (int)Game.Player.Character.Weapons.Current.Hash, Game.Player.Character, _secondBool, _thirdBool, 0xbf800000);
-                    */
 
                 var gun = Function.Call<int>(Hash.GET_HASH_KEY, "weapon_airstrike_rocket");
                 
@@ -746,6 +746,7 @@ namespace MTAV
                     dest.X, dest.Y, dest.Z, 25, true, (int) Game.Player.Character.Weapons.Current.Hash,
                     Game.Player.Character, true, true, -1f, Game.Player.Character, true, false, true, true);
             }
+                    */
 
             #endif
             ProcessMessages();
@@ -1171,6 +1172,12 @@ namespace MTAV
                                         NetEntityHandler.RemoveByNetHandle(data.NetHandle);
                                     }
                                 }
+                            }
+                            break;
+                        case PacketType.StopResource:
+                            {
+                                var resourceName = msg.ReadString();
+                                JavascriptHook.StopScript(resourceName);
                             }
                             break;
                         case PacketType.FileTransferRequest:

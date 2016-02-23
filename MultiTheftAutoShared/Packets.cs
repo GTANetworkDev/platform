@@ -31,6 +31,7 @@ namespace MultiTheftAutoShared
         FileTransferComplete = 22,
         ConnectionConfirmed = 23,
         PlayerKilled = 24,
+        StopResource = 25,
     }
 
     public enum ScriptVersion
@@ -108,7 +109,17 @@ namespace MultiTheftAutoShared
     public class ScriptCollection
     {
         [ProtoMember(1)]
-        public List<string> ClientsideScripts { get; set; }
+        public List<ClientsideScript> ClientsideScripts { get; set; }
+    }
+
+    [ProtoContract]
+    public class ClientsideScript
+    {
+        [ProtoMember(1)]
+        public string ResourceParent { get; set; }
+
+        [ProtoMember(2)]
+        public string Script { get; set; }
     }
 
 
