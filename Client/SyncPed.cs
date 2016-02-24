@@ -351,7 +351,10 @@ namespace MTAV
                         if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
                             nameText = "~r~AFK~w~~n~" + nameText;
 
-                        new UIResText(nameText, new Point(0, 0), 0.3f, Color.WhiteSmoke,
+                        var dist = (GameplayCamera.Position - Character.Position).Length();
+                        var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
+
+                        new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
                             Font.ChaletLondon, UIResText.Alignment.Centered)
                         {
                             Outline = true,
@@ -363,16 +366,16 @@ namespace MTAV
                             var bgColor = Color.FromArgb(100, 0, 0, 0);
                             var armorPercent = Math.Min(Math.Max(PedArmor/100f, 0f), 1f);
                             var armorBar = (int) Math.Round(150*armorPercent);
+                            armorBar = (int)(armorBar * sizeOffset);
 
-                            new UIResRectangle(new Point(0, 0) - new Size(75, -36), new Size(armorBar, 20),
+                            new UIResRectangle(new Point(0, 0) - new Size((int)(75*sizeOffset), (int)(-36*sizeOffset)), new Size(armorBar, (int)(20*sizeOffset)),
                                 armorColor).Draw();
 
-                            new UIResRectangle(new Point(0, 0) - new Size(75, -36) + new Size(armorBar, 0),
-                                new Size(150 - armorBar, 20),
+                            new UIResRectangle(new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)) + new Size(armorBar, 0), new Size((int)(sizeOffset*150) - armorBar, (int)(sizeOffset*20)),
                                 bgColor).Draw();
 
-                            new UIResRectangle(new Point(0, 0) - new Size(71, -40),
-                                new Size((int) (142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f)), 12),
+                            new UIResRectangle(new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
+                                new Size((int) ((142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f)) * sizeOffset), (int)(12*sizeOffset)),
                                 Color.FromArgb(150, 50, 250, 50)).Draw();
                         }
 
@@ -731,6 +734,15 @@ namespace MTAV
 
                         if (weaponH == WeaponHash.Minigun)
                             weaponH = WeaponHash.CombatPDW;
+                        /*
+                        var end = AimCoords;
+
+                        if ((end - start).Length() > 20f)
+                        {
+                            var dir = (start - end);
+                            dir.Normalize();
+                            start = end + dir*20f;
+                        }*/
                         
                         Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, AimCoords.X,
                             AimCoords.Y, AimCoords.Z, damage, true, (int)weaponH, Character, true, true, speed);
@@ -819,9 +831,8 @@ namespace MTAV
                         }
 
                         var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
-                        //var animDict = Character.IsInWater ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : "move_m@generic";
-                        var animDict = "move_m@generic";
-
+                        var animDict = GetAnimDictionary();
+                        var secondaryAnimDict = GetSecondaryAnimDict();
 
                         if (
                             !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
@@ -829,6 +840,14 @@ namespace MTAV
                         {
                             Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
                                 8f, 1f, -1, 0, -8f, 0, 0, 0);
+                        }
+
+                        if (secondaryAnimDict != null &&
+                            !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
+                                3))
+                        {
+                            Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
+                                8f, 1f, -1, 32 | 16, -8f, 0, 0, 0);
                         }
                     }
                 }
@@ -839,21 +858,65 @@ namespace MTAV
             _lastVehicle = IsInVehicle;
         }
 
+        public string GetAnimDictionary()
+        {
+            string dict = "move_m@generic";
+
+            if (Character.Gender == Gender.Female)
+                dict = "move_f@generic";
+
+            return dict;
+        }
+
+        public string GetSecondaryAnimDict()
+        {
+            if (CurrentWeapon == unchecked((int) WeaponHash.Unarmed)) return GetAnimDictionary();
+            if (CurrentWeapon == unchecked((int) WeaponHash.RPG) ||
+                CurrentWeapon == unchecked((int) WeaponHash.HomingLauncher) ||
+                CurrentWeapon == unchecked((int)WeaponHash.Firework))
+                return "weapons@heavy@rpg";
+            if (CurrentWeapon == unchecked((int) WeaponHash.Minigun))
+                return "weapons@heavy@minigun";
+            if (CurrentWeapon == unchecked((int) WeaponHash.GolfClub) ||
+                CurrentWeapon == unchecked((int) WeaponHash.Bat))
+                return "weapons@melee_2h";
+            if (Function.Call<int>(Hash.GET_WEAPONTYPE_SLOT, CurrentWeapon) ==
+                     Function.Call<int>(Hash.GET_WEAPONTYPE_SLOT, unchecked((int) WeaponHash.Bat)))
+                return "weapons@melee_1h";
+            if (CurrentWeapon == -1357824103 || CurrentWeapon == -1074790547 ||
+                (CurrentWeapon == 2132975508 || CurrentWeapon == -2084633992) ||
+                (CurrentWeapon == -952879014 || CurrentWeapon == 100416529) ||
+                CurrentWeapon == unchecked((int) WeaponHash.Gusenberg) ||
+                CurrentWeapon == unchecked((int) WeaponHash.MG) || CurrentWeapon == unchecked((int) WeaponHash.CombatMG) ||
+                CurrentWeapon == unchecked((int) WeaponHash.CombatPDW) ||
+                CurrentWeapon == unchecked((int) WeaponHash.AssaultSMG) ||
+                CurrentWeapon == unchecked((int) WeaponHash.SMG) ||
+                CurrentWeapon == unchecked((int) WeaponHash.HeavySniper) ||
+                CurrentWeapon == unchecked((int) WeaponHash.PumpShotgun) ||
+                CurrentWeapon == unchecked((int) WeaponHash.HeavyShotgun) ||
+                CurrentWeapon == unchecked((int) WeaponHash.Musket) ||
+                CurrentWeapon == unchecked((int) WeaponHash.AssaultShotgun) ||
+                CurrentWeapon == unchecked((int) WeaponHash.BullpupShotgun) ||
+                CurrentWeapon == unchecked((int) WeaponHash.SawnOffShotgun))
+                return "weapons@machinegun@";
+            return GetAnimDictionary();
+        }
+
         public static int GetPedSpeed(float speed)
         {
             if (speed < 0.5f)
             {
                 return 0;
             }
-            else if (speed >= 0.5f && speed < 4f)
+            else if (speed >= 0.5f && speed < 3.7f)
             {
                 return 1;
             }
-            else if (speed >= 4f && speed < 6.4f)
+            else if (speed >= 3.7f && speed < 6.2f)
             {
                 return 2;
             }
-            else if (speed >= 6.4f)
+            else if (speed >= 6.2f)
                 return 3;
             return 0;
         }

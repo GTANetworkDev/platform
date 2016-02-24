@@ -58,15 +58,28 @@ namespace MultiTheftAutoShared
         Script = 2,
     }
 
+    public enum SyncEventType
+    {
+        LandingGearChange = 0,
+        DoorStateChange = 1,
+        BooleanLights = 2,
+    }
+
+    public enum Lights
+    {
+        NormalLights = 0,
+        Highbeams = 1,
+    }
+
     [ProtoContract]
     [ProtoInclude(5, typeof(VehicleProperties))]
     public class EntityProperties
     {
         [ProtoMember(1)]
-        public LVector3 Position { get; set; }
+        public Vector3 Position { get; set; }
 
         [ProtoMember(2)]
-        public LVector3 Rotation { get; set; }
+        public Vector3 Rotation { get; set; }
 
         [ProtoMember(3)]
         public int ModelHash { get; set; }
@@ -162,10 +175,10 @@ namespace MultiTheftAutoShared
         public int Model { get; set; }
 
         [ProtoMember(4)]
-        public LVector3 Position { get; set; }
+        public Vector3 Position { get; set; }
 
         [ProtoMember(5)]
-        public LVector3 Rotation { get; set; }
+        public Vector3 Rotation { get; set; }
 
         [ProtoMember(6)]
         public bool Dynamic { get; set; }
@@ -175,6 +188,16 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(8)]
         public int Color2 { get; set; }
+    }
+
+    [ProtoContract]
+    public class SyncEvent
+    {
+        [ProtoMember(1)]
+        public byte EventType { get; set; }
+
+        [ProtoMember(2)]
+        public List<NativeArgument> Arguments { get; set; }
     }
 
     [ProtoContract]
@@ -233,9 +256,9 @@ namespace MultiTheftAutoShared
         public int SecondaryColor { get; set; }
 
         [ProtoMember(7)]
-        public LVector3 Position { get; set; }
+        public Vector3 Position { get; set; }
         [ProtoMember(8)]
-        public LVector3 Quaternion { get; set; }
+        public Vector3 Quaternion { get; set; }
 
         [ProtoMember(9)]
         public int VehicleSeat { get; set; }
@@ -265,7 +288,7 @@ namespace MultiTheftAutoShared
         public int NetHandle { get; set; }
 
         [ProtoMember(18)]
-        public LVector3 Velocity { get; set; }
+        public Vector3 Velocity { get; set; }
 
         [ProtoMember(19)]
         public int PedArmor { get; set; }
@@ -286,13 +309,13 @@ namespace MultiTheftAutoShared
         public int PedModelHash { get; set; }
 
         [ProtoMember(4)]
-        public LVector3 Position { get; set; }
+        public Vector3 Position { get; set; }
 
         [ProtoMember(5)]
-        public LVector3 Quaternion { get; set; }
+        public Vector3 Quaternion { get; set; }
 
         [ProtoMember(6)]
-        public LVector3 AimCoords { get; set; }
+        public Vector3 AimCoords { get; set; }
 
         [ProtoMember(7)]
         public int WeaponHash { get; set; }
@@ -335,7 +358,7 @@ namespace MultiTheftAutoShared
     }
     
     [ProtoContract]
-    public class LVector3
+    public class Vector3
     {
         [ProtoMember(1)]
         public float X { get; set; }
@@ -344,26 +367,26 @@ namespace MultiTheftAutoShared
         [ProtoMember(3)]
         public float Z { get; set; }
 
-        public Vector3 ToVector()
+        public GTA.Math.Vector3 ToVector()
         {
-            return new Vector3(X, Y, Z);
+            return new GTA.Math.Vector3(X, Y, Z);
         }
 
-        public LVector3(float x, float y, float z)
+        public Vector3(float x, float y, float z)
         {
             X = x;
             Y = y;
             Z = z;
         }
 
-        public LVector3(double x, double y, double z)
+        public Vector3(double x, double y, double z)
         {
             X = (float)x;
             Y = (float)y;
             Z = (float)z;
         }
 
-        public LVector3()
+        public Vector3()
         {
             
         }
@@ -389,9 +412,9 @@ namespace MultiTheftAutoShared
 
     public static class VectorExtensions
     {
-        public static LVector3 ToLVector(this Vector3 vec)
+        public static Vector3 ToLVector(this GTA.Math.Vector3 vec)
         {
-            return new LVector3()
+            return new Vector3()
             {
                 X = vec.X,
                 Y = vec.Y,

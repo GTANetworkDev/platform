@@ -15,13 +15,14 @@ using Newtonsoft.Json;
 using ProtoBuf;
 using MultiTheftAutoShared;
 using Control = GTA.Control;
+using Vector3 = GTA.Math.Vector3;
 
 namespace MTAV
 {
     public class Main : Script
     {
         public static PlayerSettings PlayerSettings;
-
+        
         public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_0_9;
 
         private readonly UIMenu _mainMenu;
@@ -38,7 +39,7 @@ namespace MTAV
         private string _clientIp;
         private readonly ClassicChat _chat;
 
-        private static NetClient _client;
+        public static NetClient Client;
         private static NetPeerConfiguration _config;
 
         public static SynchronizationMode GlobalSyncMode;
@@ -53,6 +54,7 @@ namespace MTAV
         private bool _wasTyping;
         
         private DebugWindow _debug;
+        private SyncEventWatcher Watcher;
 
         // STATS
         private static int _bytesSent = 0;
@@ -68,6 +70,8 @@ namespace MTAV
             _threadJumping = new Queue<Action>();
 
             NetEntityHandler = new NetEntityHandler();
+
+            Watcher = new SyncEventWatcher(this);
 
             Opponents = new Dictionary<long, SyncPed>();
             Npcs = new Dictionary<string, SyncPed>();
@@ -94,11 +98,11 @@ namespace MTAV
                     };
                     var data = SerializeBinary(obj);
 
-                    var msg = _client.CreateMessage();
+                    var msg = Client.CreateMessage();
                     msg.Write((int)PacketType.ChatData);
                     msg.Write(data.Length);
                     msg.Write(data);
-                    _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 1);
+                    Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 1);
                 }
                 _chat.IsFocused = false;
             };
@@ -233,7 +237,7 @@ namespace MTAV
                 }
                 else
                 {
-                    if (_client != null) _client.Disconnect("Connection closed by peer.");
+                    if (Client != null) Client.Disconnect("Connection closed by peer.");
                 }
             };
             
@@ -370,7 +374,7 @@ namespace MTAV
 
             if (dejson == null) return;
 
-            if (_client == null)
+            if (Client == null)
             {
                 var port = GetOpenUdpPort();
                 if (port == 0)
@@ -379,8 +383,8 @@ namespace MTAV
                     return;
                 }
                 _config.Port = port;
-                _client = new NetClient(_config);
-                _client.Start();
+                Client = new NetClient(_config);
+                Client.Start();
             }
 
             foreach (var server in dejson.list)
@@ -390,10 +394,10 @@ namespace MTAV
                 int port;
                 if (!int.TryParse(split[1], out port))
                     continue;
-                _client.DiscoverKnownPeer(split[0], port);
+                Client.DiscoverKnownPeer(split[0], port);
             }
 
-            _client.DiscoverLocalPeers(Port);
+            Client.DiscoverLocalPeers(Port);
         }
         
         private void RebuildPlayersList()
@@ -444,7 +448,6 @@ namespace MTAV
 
         public static void AddMap(ServerMap map)
         {
-
             if (map.Vehicles != null)
                 foreach (var pair in map.Vehicles)
                 {
@@ -550,12 +553,12 @@ namespace MTAV
 
                 var bin = SerializeBinary(obj);
 
-                var msg = _client.CreateMessage();
+                var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.VehiclePositionData);
                 msg.Write(bin.Length);
                 msg.Write(bin);
 
-                _client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
+                Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
 
                 _bytesSent += bin.Length;
                 _messagesSent++;
@@ -590,13 +593,13 @@ namespace MTAV
 
                 var bin = SerializeBinary(obj);
 
-                var msg = _client.CreateMessage();
+                var msg = Client.CreateMessage();
 
                 msg.Write((int)PacketType.PedPositionData);
                 msg.Write(bin.Length);
                 msg.Write(bin);
 
-                _client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
+                Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
 
                 _bytesSent += bin.Length;
                 _messagesSent++;
@@ -756,13 +759,15 @@ namespace MTAV
 
 
 
-            if (_client == null || _client.ConnectionStatus == NetConnectionStatus.Disconnected ||
-                _client.ConnectionStatus == NetConnectionStatus.None) return;
+            if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected ||
+                Client.ConnectionStatus == NetConnectionStatus.None) return;
 
             if (_wasTyping)
                 Game.DisableControl(0, Control.FrontendPauseAlternate);
 
             var playerCar = Game.Player.Character.CurrentVehicle;
+
+            Watcher.Tick();
 
             //Function.Call(Hash.SET_PED_ALTERNATE_MOVEMENT_ANIM, player, 0, Util.LoadDict("move_m@generic"), "idle", 1f, true);
 
@@ -796,9 +801,9 @@ namespace MTAV
             if (hasRespawned && !_lastDead)
             {
                 _lastDead = true;
-                var msg = _client.CreateMessage();
+                var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.PlayerRespawned);
-                _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+                Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
             }
             
             _lastDead = hasRespawned;
@@ -807,7 +812,7 @@ namespace MTAV
 
             if (killed && !_lastKilled)
             {
-                var msg = _client.CreateMessage();
+                var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.PlayerKilled);
                 var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
                 var weapon = Function.Call<int>(Hash.GET_PED_CAUSE_OF_DEATH, Game.Player.Character);
@@ -816,7 +821,7 @@ namespace MTAV
                 msg.Write(killerEnt);
                 msg.Write(weapon);
 
-                _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+                Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
             }
 
             _lastKilled = killed;
@@ -859,7 +864,7 @@ namespace MTAV
 
         public static bool IsOnServer()
         {
-            return _client != null && _client.ConnectionStatus == NetConnectionStatus.Connected;
+            return Client != null && Client.ConnectionStatus == NetConnectionStatus.Connected;
         }
 
         public void OnKeyDown(object sender, KeyEventArgs e)
@@ -878,12 +883,23 @@ namespace MTAV
                 }
             }
 
-            if (e.KeyCode == Keys.G && !Game.Player.Character.IsInVehicle() && IsOnServer())
+            if (e.KeyCode == Keys.G && !Game.Player.Character.IsInVehicle() && IsOnServer() && !_chat.IsFocused)
             {
                 var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.Player.Character.Position).Length()).Take(1).ToList();
                 if (vehs.Any() && Game.Player.Character.IsInRangeOf(vehs[0].Position, 5f))
                 {
-                    Game.Player.Character.Task.EnterVehicle(vehs[0], (VehicleSeat)Util.GetFreePassengerSeat(vehs[0]));
+                    var relPos = vehs[0].GetOffsetFromWorldCoords(Game.Player.Character.Position);
+                    VehicleSeat seat = VehicleSeat.Any;
+                    if (relPos.X < 0 && relPos.Y > 0)
+                        seat = VehicleSeat.RightFront;
+                    if (relPos.X >= 0 && relPos.Y > 0)
+                        seat = VehicleSeat.RightFront;
+                    if (relPos.X < 0 && relPos.Y <= 0)
+                        seat = VehicleSeat.LeftRear;
+                    if (relPos.X >= 0 && relPos.Y <= 0)
+                        seat = VehicleSeat.RightRear;
+
+                    Game.Player.Character.Task.EnterVehicle(vehs[0], seat);
                     _isGoingToCar = true;
                 }
             }
@@ -906,11 +922,11 @@ namespace MTAV
                         };
                         var data = SerializeBinary(obj);
 
-                        var msg = _client.CreateMessage();
+                        var msg = Client.CreateMessage();
                         msg.Write((int)PacketType.ChatData);
                         msg.Write(data.Length);
                         msg.Write(data);
-                        _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+                        Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
                     }
                 }
             }
@@ -922,7 +938,7 @@ namespace MTAV
 
             _chat.Init();
 
-            if (_client == null)
+            if (Client == null)
             {
                 var cport = GetOpenUdpPort();
                 if (cport == 0)
@@ -931,15 +947,15 @@ namespace MTAV
                     return;
                 }
                 _config.Port = cport;
-                _client = new NetClient(_config);
-                _client.Start();
+                Client = new NetClient(_config);
+                Client.Start();
             }
 
             lock (Opponents) Opponents = new Dictionary<long, SyncPed>();
             lock (Npcs) Npcs = new Dictionary<string, SyncPed>();
             lock (_tickNatives) _tickNatives = new Dictionary<string, NativeData>();
 
-            var msg = _client.CreateMessage();
+            var msg = Client.CreateMessage();
 
             var obj = new ConnectionRequest();
             obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Unknown" : Game.Player.Name; // To be used as identifiers in server files
@@ -954,7 +970,7 @@ namespace MTAV
             msg.Write(bin.Length);
             msg.Write(bin);
 
-            _client.Connect(ip, port == 0 ? Port : port, msg);
+            Client.Connect(ip, port == 0 ? Port : port, msg);
 
             var pos = Game.Player.Character.Position;
             Function.Call(Hash.CLEAR_AREA_OF_PEDS, pos.X, pos.Y, pos.Z, 100f, 0);
@@ -968,7 +984,7 @@ namespace MTAV
         public void ProcessMessages()
         {
             NetIncomingMessage msg;
-            while (_client != null && (msg = _client.ReadMessage()) != null)
+            while (Client != null && (msg = Client.ReadMessage()) != null)
             {
                 _messagesReceived++;
                 _bytesReceived += msg.LengthBytes;
@@ -1232,6 +1248,49 @@ namespace MTAV
                                 }
                             }
                             break;
+                        case PacketType.SyncEvent:
+                            {
+                                var len = msg.ReadInt32();
+                                var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
+                                if (data != null)
+                                {
+                                    var args = DecodeArgumentList(data.Arguments.ToArray()).ToList();
+
+                                    switch ((SyncEventType)data.EventType)
+                                    {
+                                        case SyncEventType.LandingGearChange:
+                                            {
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var newState = (int) args[1];
+                                                Function.Call(Hash._SET_VEHICLE_LANDING_GEAR, veh, newState);
+                                            }
+                                            break;
+                                        case SyncEventType.DoorStateChange:
+                                            {
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var doorId = (int) args[1];
+                                                var newFloat = (bool) args[2];
+                                                if (newFloat)
+                                                    new Vehicle(veh.Handle).OpenDoor((VehicleDoor)doorId, false, false);
+                                                else
+                                                    new Vehicle(veh.Handle).CloseDoor((VehicleDoor)doorId, false);
+                                            }
+                                            break;
+                                        case SyncEventType.BooleanLights:
+                                            {
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var lightId = (Lights) (int) args[1];
+                                                var state = (bool) args[2];
+                                                if (lightId == Lights.NormalLights)
+                                                    new Vehicle(veh.Handle).LightsOn = state;
+                                                else if (lightId == Lights.Highbeams)
+                                                    Function.Call(Hash.SET_VEHICLE_FULLBEAM, veh.Handle, state);
+                                            }
+                                            break;
+                                    }
+                                }
+                            }
+                            break;
                         case PacketType.PlayerDisconnect:
                             {
                                 var len = msg.ReadInt32();
@@ -1360,9 +1419,9 @@ namespace MTAV
                             _channel = respObj.AssignedChannel;
                             NetEntityHandler.AddEntity(respObj.CharacterHandle, Game.Player.Character.Handle);
 
-                            var confirmObj = _client.CreateMessage();
+                            var confirmObj = Client.CreateMessage();
                             confirmObj.Write((int)PacketType.ConnectionConfirmed);
-                            _client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+                            Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
 
                             break;
                         case NetConnectionStatus.Disconnected:
@@ -1440,7 +1499,7 @@ namespace MTAV
                     {
                         if (IsOnServer())
                         {
-                            _client.Disconnect("Switching servers.");
+                            Client.Disconnect("Switching servers.");
 
                             if (Opponents != null)
                             {
@@ -1632,6 +1691,17 @@ namespace MTAV
             return list;
         }
 
+        public static void SendToServer(object newData, PacketType packetType, bool important, int sequenceChannel = -1)
+        {
+            var data = SerializeBinary(newData);
+            NetOutgoingMessage msg = Client.CreateMessage();
+            msg.Write((int)packetType);
+            msg.Write(data.Length);
+            msg.Write(data);
+            Client.SendMessage(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
+                sequenceChannel == -1 ? _channel : sequenceChannel);
+        }
+
         public static List<NativeArgument> ParseNativeArguments(params object[] args)
         {
             var list = new List<NativeArgument>();
@@ -1704,12 +1774,12 @@ namespace MTAV
             packet.Arguments = ParseNativeArguments(args);
             var bin = SerializeBinary(packet);
 
-            var msg = _client.CreateMessage();
+            var msg = Client.CreateMessage();
             msg.Write((int)PacketType.ScriptEventTrigger);
             msg.Write(bin.Length);
             msg.Write(bin);
 
-            _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
+            Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
         }
 
         public void DecodeNativeCall(NativeData obj)
@@ -1836,12 +1906,12 @@ namespace MTAV
                 };
             }
 
-            var msg = _client.CreateMessage();
+            var msg = Client.CreateMessage();
             var bin = SerializeBinary(obj);
             msg.Write((int)PacketType.NativeResponse);
             msg.Write(bin.Length);
             msg.Write(bin);
-            _client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
         }
         
         private enum NativeType

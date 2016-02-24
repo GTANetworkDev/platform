@@ -15,6 +15,7 @@ using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using MultiTheftAutoShared;
 using NativeUI;
+using Vector3 = GTA.Math.Vector3;
 
 namespace MTAV
 {
@@ -302,13 +303,13 @@ namespace MTAV
             int screenh = Game.ScreenResolution.Height;
             const float hh = 1080f;
             float ratio = (float)screenw / screenh;
-            var ww = height * ratio;
+            var ww = hh * ratio;
 
 
             float w = (float)(width / ww);
             float h = (float)(height / hh);
-            float xx = (float)(x / width) + w * 0.5f;
-            float yy = (float)(y / height) + h * 0.5f;
+            float xx = (float)(x / ww) + w * 0.5f;
+            float yy = (float)(y / hh) + h * 0.5f;
 
             Function.Call(Hash.DRAW_SPRITE, dict, txtName, xx, yy, w, h, heading, r, g, b, alpha);
         }

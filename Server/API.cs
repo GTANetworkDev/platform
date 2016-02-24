@@ -1,11 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Linq;
 using Lidgren.Network;
 using MultiTheftAutoShared;
 
+
 namespace GTAServer
 {
+    public class CancelEventArgs
+    {
+        public bool Cancel { get; set; }
+
+        public CancelEventArgs() { }
+        public CancelEventArgs(bool cancel)
+        {
+            Cancel = cancel;
+        }
+    }
+
     public abstract class Script
     {
         public API API = new API();
@@ -123,6 +135,15 @@ namespace GTAServer
             return Program.ServerInstance.Clients;
         }
 
+        public void triggerClientEventForAll(string eventName, params object[] args)
+        {
+            var packet = new ScriptEventTrigger();
+            packet.EventName = eventName;
+            packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
+
+            Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true);
+        }
+
         public  void triggerClientEvent(Client player, string eventName, params object[] args)
         {
             var packet = new ScriptEventTrigger();
@@ -135,6 +156,7 @@ namespace GTAServer
         public  void sendChatMessageToAll(string message)
         {
             sendChatMessageToAll("", message);
+            
         }
 
         public  void sendChatMessageToAll(string sender, string message)
@@ -279,6 +301,11 @@ namespace GTAServer
         public  int createObject(int model, Vector3 pos, Vector3 rot, bool dyn)
         {
             return Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot, dyn);
+        }
+
+        public int createBlip(Vector3 pos)
+        {
+            return Program.ServerInstance.NetEntityHandler.CreateBlip(pos);
         }
 
         public  void deleteEntity(int netHandle)

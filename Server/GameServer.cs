@@ -787,6 +787,16 @@ namespace GTAServer
                                     { }
                                 }
                                 break;
+                            case PacketType.SyncEvent:
+                                {
+                                    var len = msg.ReadInt32();
+                                    var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
+                                    if (data != null)
+                                    {
+                                        SendToAll(data, PacketType.SyncEvent, true, client);
+                                    }
+                                }
+                                break;
                             case PacketType.ScriptEventTrigger:
                                 {
                                     var len = msg.ReadInt32();
