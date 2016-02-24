@@ -32,8 +32,8 @@ namespace GTAServer
         public int GameVersion { get; set; }
 
         public int CurrentVehicle { get; set; }
-        public LVector3 Position { get; internal set; }
-        public LVector3 Rotation { get; internal set; }
+        public Vector3 Position { get; internal set; }
+        public Vector3 Rotation { get; internal set; }
         public int Health { get; internal set; }
         public int VehicleHealth { get; internal set; }
         public bool IsInVehicle { get; internal set; }
@@ -235,18 +235,15 @@ namespace GTAServer
                     else if (script.Language == ScriptingEngineLanguage.csharp)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
-                        
-                        var ass = Assembly.LoadFrom(baseDir + script.Path);
-                        var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss)));
+
+                        var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
+                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.vbasic)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
-
-                        var ass = Assembly.LoadFrom(baseDir + script.Path);
-                        var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss)));
+                        var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
+                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss)));
                     }
                 }
 
@@ -295,8 +292,8 @@ namespace GTAServer
             scriptEngine.AddHostType("String", typeof(string));
             scriptEngine.AddHostType("List", typeof (List<>));
             scriptEngine.AddHostType("Client", typeof(Client));
-            scriptEngine.AddHostType("Vector3", typeof(LVector3));
-            scriptEngine.AddHostType("Quaternion", typeof(LVector3));
+            scriptEngine.AddHostType("Vector3", typeof(Vector3));
+            scriptEngine.AddHostType("Quaternion", typeof(Vector3));
             scriptEngine.AddHostType("Client", typeof(Client));
             scriptEngine.AddHostType("LocalPlayerArgument", typeof(LocalPlayerArgument));
             scriptEngine.AddHostType("LocalGamePlayerArgument", typeof(LocalGamePlayerArgument));
@@ -338,7 +335,7 @@ namespace GTAServer
             }
         }
 
-        private IEnumerable<Script> CompileScript(string script, bool vbBasic = false)
+        private IEnumerable<Script> CompileScript(string script, string[] references, bool vbBasic = false)
         {
             var provide = new CSharpCodeProvider();
             var vBasicProvider = new VBCodeProvider();
@@ -351,6 +348,12 @@ namespace GTAServer
             compParams.ReferencedAssemblies.Add("System.Linq.dll");
             compParams.ReferencedAssemblies.Add("System.Core.dll");
             compParams.ReferencedAssemblies.Add("GTAServer.exe");
+            compParams.ReferencedAssemblies.Add("MultiTheftAutoShared.dll");
+
+            foreach (var s in references)
+            {
+                compParams.ReferencedAssemblies.Add(s);
+            }
 
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
@@ -365,7 +368,7 @@ namespace GTAServer
                 if (results.Errors.HasErrors)
                 {
                     bool allWarns = true;
-                    Program.Output("Error/warning while compiling script " + script);
+                    Program.Output("Error/warning while compiling script!");
                     foreach (CompilerError error in results.Errors)
                     {
                         Program.Output(String.Format("{3} ({0}) at {2}: {1}", error.ErrorNumber, error.ErrorText, error.Line, error.IsWarning ? "Warning" : "Error"));
@@ -383,7 +386,7 @@ namespace GTAServer
             }
             catch (Exception ex)
             {
-                Program.Output("Error while compiling assembly " + script);
+                Program.Output("Error while compiling assembly!");
                 Program.Output(ex.Message);
                 Program.Output(ex.StackTrace);
 
@@ -832,7 +835,7 @@ namespace GTAServer
                                     else if (data.Response is Vector3Argument)
                                     {
                                         var tmp = (Vector3Argument)data.Response;
-                                        resp = new LVector3()
+                                        resp = new Vector3()
                                         {
                                             X = tmp.X,
                                             Y = tmp.Y,
@@ -978,7 +981,7 @@ namespace GTAServer
                 else if (arg is Vector3Argument)
                 {
                     var tmp = (Vector3Argument)arg;
-                    list.Add(new LVector3(tmp.X, tmp.Y, tmp.Z));
+                    list.Add(new Vector3(tmp.X, tmp.Y, tmp.Z));
                 }
             }
 
@@ -1087,9 +1090,9 @@ namespace GTAServer
                 {
                     list.Add(new BooleanArgument() { Data = ((bool)o) });
                 }
-                else if (o is LVector3)
+                else if (o is Vector3)
                 {
-                    var tmp = (LVector3)o;
+                    var tmp = (Vector3)o;
                     list.Add(new Vector3Argument()
                     {
                         X = tmp.X,

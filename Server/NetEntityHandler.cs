@@ -19,7 +19,7 @@ namespace GTAServer
             return ServerEntities;
         }
 
-        public int CreateVehicle(int model, LVector3 pos, LVector3 rot, int color1, int color2)
+        public int CreateVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new VehicleProperties();
@@ -45,7 +45,7 @@ namespace GTAServer
             return localEntityHash;
         }
 
-        public int CreateProp(int model, LVector3 pos, LVector3 rot, bool dynamic)
+        public int CreateProp(int model, Vector3 pos, Vector3 rot, bool dynamic)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new EntityProperties();
@@ -68,7 +68,7 @@ namespace GTAServer
             return localEntityHash;
         }
 
-        public int CreateBlip(LVector3 pos)
+        public int CreateBlip(Vector3 pos)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new EntityProperties();
