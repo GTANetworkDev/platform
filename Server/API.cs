@@ -6,11 +6,17 @@ using MultiTheftAutoShared;
 
 namespace GTAServer
 {
+    public abstract class Script
+    {
+        public API API = new API();
+    }
+
     public class API
     {
         #region Delegates
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
+        public delegate void PlayerDisconnectedEvent(Client player, string reason);
         public delegate void PlayerKilledEvent(Client player, int entityKiller, int weapon);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
         #endregion
@@ -23,7 +29,7 @@ namespace GTAServer
         public event ChatEvent onChatCommand;
         public event PlayerEvent OnPlayerBeginConnect;
         public event PlayerEvent onPlayerConnected;
-        public event PlayerEvent onPlayerDisconnected;
+        public event PlayerDisconnectedEvent onPlayerDisconnected;
         public event PlayerKilledEvent onPlayerDeath;
         public event PlayerEvent onPlayerRespawn;
         public event ServerEventTrigger onClientEventTrigger;
@@ -73,9 +79,9 @@ namespace GTAServer
             onPlayerConnected?.Invoke(player);
         }
 
-        internal void invokePlayerDisconnected(Client player)
+        internal void invokePlayerDisconnected(Client player, string reason)
         {
-            onPlayerDisconnected?.Invoke(player);
+            onPlayerDisconnected?.Invoke(player, reason);
         }
 
         internal void invokePlayerDeath(Client player, int netHandle, int weapon)
@@ -91,6 +97,16 @@ namespace GTAServer
         #endregion
 
         #region Functions
+
+        public void startResource(string resourceName)
+        {
+            Program.ServerInstance.StartResource(resourceName);
+        }
+
+        public void stopResource(string name)
+        {
+            Program.ServerInstance.StopResource(name);
+        }
 
         public int vehicleNameToModel(string modelName)
         {

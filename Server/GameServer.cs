@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +15,8 @@ using System.Xml.Serialization;
 using Lidgren.Network;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
+using Microsoft.CSharp;
+using Microsoft.VisualBasic;
 using ProtoBuf;
 using MultiTheftAutoShared;
 
@@ -77,7 +80,6 @@ namespace GTAServer
         public string Name { get; set; }
         public string Resource { get; set; }
     }
-
 
     public class GameServer
     {
@@ -173,7 +175,7 @@ namespace GTAServer
             }
         }
 
-        private void StartResource(string resourceName)
+        public void StartResource(string resourceName)
         {
             try
             {
@@ -195,23 +197,62 @@ namespace GTAServer
                 var ourResource = new Resource();
                 ourResource.Info = currentResInfo;
                 ourResource.DirectoryName = resourceName;
-                ourResource.Engines = new List<JScriptEngine>();
+                ourResource.Engines = new List<ScriptingEngine>();
 
                 foreach (var script in currentResInfo.Scripts)
                 {
-                    var scrTxt = File.ReadAllText(baseDir + script.Path);
-                    if (script.Type == ResourceType.client)
+                    if (script.Language == ScriptingEngineLanguage.javascript)
                     {
-                        _clientScripts.Add(new ClientsideScript()
+                        var scrTxt = File.ReadAllText(baseDir + script.Path);
+                        if (script.Type == ResourceType.client)
                         {
-                            ResourceParent = resourceName,
-                            Script = scrTxt,
-                        });
-                        continue;
-                    }
+                            _clientScripts.Add(new ClientsideScript()
+                            {
+                                ResourceParent = resourceName,
+                                Script = scrTxt,
+                            });
+                            continue;
+                        }
 
-                    var fsObj = InstantiateScripts(scrTxt, script.Path, currentResInfo.Referenceses.Select(r => r.Name).ToArray());
-                    if (fsObj != null) ourResource.Engines.Add(fsObj);
+                        var fsObj = InstantiateScripts(scrTxt, script.Path,
+                            currentResInfo.Referenceses.Select(r => r.Name).ToArray());
+                        if (fsObj != null) ourResource.Engines.Add(new ScriptingEngine(fsObj));
+                    }
+                    else if (script.Language == ScriptingEngineLanguage.compiled)
+                    {
+                        try
+                        {
+                            Program.DeleteFile(baseDir + script.Path + ":Zone.Identifier");
+                        }
+                        catch
+                        {
+                        }
+
+                        var ass = Assembly.LoadFrom(baseDir + script.Path);
+                        var instances = InstantiateScripts(ass);
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss)));
+                    }
+                    else if (script.Language == ScriptingEngineLanguage.csharp)
+                    {
+                        var scrTxt = File.ReadAllText(baseDir + script.Path);
+                        
+                        var ass = Assembly.LoadFrom(baseDir + script.Path);
+                        var instances = InstantiateScripts(ass);
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss)));
+                    }
+                    else if (script.Language == ScriptingEngineLanguage.vbasic)
+                    {
+                        var scrTxt = File.ReadAllText(baseDir + script.Path);
+
+                        var ass = Assembly.LoadFrom(baseDir + script.Path);
+                        var instances = InstantiateScripts(ass);
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss)));
+                    }
+                }
+
+                foreach (var engine in ourResource.Engines)
+                {
+                    engine.InvokeResourceStart();
                 }
 
                 RunningResources.Add(ourResource);
@@ -223,18 +264,20 @@ namespace GTAServer
             }
         }
 
-        private void StopResource(string resourceName)
+        public void StopResource(string resourceName)
         {
             var ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
             if (ourRes == null) return;
 
             Program.Output("Stopping " + resourceName);
 
-            ourRes.Engines.ForEach(en => en.Script.API.invokeResourceStop());
+            ourRes.Engines.ForEach(en => en.InvokeResourceStop());
             var msg = Server.CreateMessage();
             msg.Write((int)PacketType.StopResource);
             msg.Write(resourceName);
             Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
+
+            RunningResources.Remove(ourRes);
         }
 
         private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
@@ -267,12 +310,6 @@ namespace GTAServer
             try
             {
                 scriptEngine.Execute(script);
-                scriptEngine.Script.API.invokeResourceStart();
-                /*
-                ConcurrentFactory.StartNew(delegate
-                {
-                    scriptEngine.Script.API.invokeResourceStart();
-                });*/
             }
             catch (ScriptEngineException ex)
             {
@@ -281,6 +318,80 @@ namespace GTAServer
 
             return scriptEngine;
         }
+
+        private IEnumerable<Script> InstantiateScripts(Assembly targetAssembly)
+        {
+            var types = targetAssembly.GetExportedTypes();
+            var validTypes = types.Where(t =>
+                !t.IsInterface &&
+                !t.IsAbstract)
+                .Where(t => typeof(Script).IsAssignableFrom(t));
+            if (!validTypes.Any())
+            {
+                yield break;
+            }
+            foreach (var type in validTypes)
+            {
+                var obj = Activator.CreateInstance(type) as Script;
+                if (obj != null)
+                    yield return obj;
+            }
+        }
+
+        private IEnumerable<Script> CompileScript(string script, bool vbBasic = false)
+        {
+            var provide = new CSharpCodeProvider();
+            var vBasicProvider = new VBCodeProvider();
+
+            var compParams = new CompilerParameters();
+
+            compParams.ReferencedAssemblies.Add("System.Drawing.dll");
+            compParams.ReferencedAssemblies.Add("System.Windows.Forms.dll");
+            compParams.ReferencedAssemblies.Add("System.IO.dll");
+            compParams.ReferencedAssemblies.Add("System.Linq.dll");
+            compParams.ReferencedAssemblies.Add("System.Core.dll");
+            compParams.ReferencedAssemblies.Add("GTAServer.exe");
+
+            compParams.GenerateInMemory = true;
+            compParams.GenerateExecutable = false;
+
+            try
+            {
+                CompilerResults results;
+                results = !vbBasic
+                    ? provide.CompileAssemblyFromSource(compParams, script)
+                    : vBasicProvider.CompileAssemblyFromSource(compParams, script);
+
+                if (results.Errors.HasErrors)
+                {
+                    bool allWarns = true;
+                    Program.Output("Error/warning while compiling script " + script);
+                    foreach (CompilerError error in results.Errors)
+                    {
+                        Program.Output(String.Format("{3} ({0}) at {2}: {1}", error.ErrorNumber, error.ErrorText, error.Line, error.IsWarning ? "Warning" : "Error"));
+
+                        allWarns = allWarns && error.IsWarning;
+                    }
+
+                    
+                    if (!allWarns)
+                        return null;
+                }
+
+                var asm = results.CompiledAssembly;
+                return InstantiateScripts(asm);
+            }
+            catch (Exception ex)
+            {
+                Program.Output("Error while compiling assembly " + script);
+                Program.Output(ex.Message);
+                Program.Output(ex.StackTrace);
+
+                Program.Output(ex.Source);
+                return null;
+            }
+        }
+        
 
         private void LogException(Exception ex, string resourceName)
         {
@@ -473,7 +584,7 @@ namespace GTAServer
                             
                             client.NetConnection.Approve(channelHail);
 
-                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokePlayerBeginConnect(client)));
+                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client)));
                             
                             Program.Output("New incoming connection: " + client.SocialClubName + " (" + client.Name + ")");
                         }
@@ -491,18 +602,15 @@ namespace GTAServer
                         }
                         else if (newStatus == NetConnectionStatus.Disconnected)
                         {
+                            var reason = msg.ReadString();
+
                             lock (Clients)
                             {
                                 if (Clients.Contains(client))
                                 {
                                     lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                     {
-                                        en.Script.API.invokePlayerDisconnected(client);
-                                        /*
-                                        ConcurrentFactory.StartNew(delegate
-                                        {
-                                            en.Script.API.invokePlayerDisconnected(client);
-                                        });*/
+                                        en.InvokePlayerDisconnected(client, reason);
                                     }));
 
                                     var dcObj = new PlayerDisconnect()
@@ -555,11 +663,11 @@ namespace GTAServer
 
                                             if (command)
                                             {
-                                                lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.Script.API.invokeChatCommand(client, data.Message)));
+                                                lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.InvokeChatCommand(client, data.Message)));
                                                 break;
                                             }
 
-                                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => pass = pass && en.Script.API.invokeChatMessage(client, data.Message)));
+                                            lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en => pass = pass && en.InvokeChatMessage(client, data.Message)));
 
                                             if (pass)
                                             {
@@ -688,14 +796,8 @@ namespace GTAServer
                                             en =>
                                                 en.Engines.ForEach(fs =>
                                                 {
-                                                    fs.Script.invokeClientEvent(client, data.EventName,
+                                                    fs.InvokeClientEvent(client, data.EventName,
                                                             DecodeArgumentList(data.Arguments.ToArray()).ToArray());
-                                                    /*
-                                                    ConcurrentFactory.StartNew(delegate
-                                                    {
-                                                        fs.Script.invokeClientEvent(client, data.EventName,
-                                                            DecodeArgumentList(data.Arguments.ToArray()).ToArray());
-                                                    });*/
                                                 }
                                                 ));
                                     }
@@ -777,7 +879,6 @@ namespace GTAServer
 
                                     var downloader = new StreamingClient(client);
                                     downloader.Files.Add(mapData);
-                                    downloader.Files.Add(scriptData);
 
                                     foreach (var resource in RunningResources)
                                     {
@@ -797,6 +898,7 @@ namespace GTAServer
                                         }
                                     }
 
+                                    downloader.Files.Add(scriptData);
                                     Downloads.Add(downloader);
 
 
@@ -804,12 +906,7 @@ namespace GTAServer
                                     RunningResources.ForEach(
                                     fs => fs.Engines.ForEach(en =>
                                     {
-                                        en.Script.API.invokePlayerConnected(client);
-                                        /*
-                                        ConcurrentFactory.StartNew(delegate
-                                        {
-                                            en.Script.API.invokePlayerConnected(client);
-                                        });*/
+                                        en.InvokePlayerConnected(client);
                                     }));
 
                                     Program.Output("New player connected: " + client.SocialClubName + " (" + client.Name + ")");
@@ -824,13 +921,7 @@ namespace GTAServer
                                     {
                                         RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                         {
-                                            en.Script.API.invokePlayerDeath(
-                                                    client, reason, weapon);
-                                            /*ConcurrentFactory.StartNew(delegate
-                                            {
-                                                en.Script.API.invokePlayerDeath(
-                                                    client, reason, weapon);
-                                            });*/
+                                            en.InvokePlayerDeath(client, reason, weapon);
                                         }));
                                     }
                                 }
@@ -839,10 +930,7 @@ namespace GTAServer
                                 {
                                     lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                     {
-                                        en.Script.API.invokePlayerRespawn(client);
-                                        /*ConcurrentFactory.StartNew(
-                                            delegate {
-                                                en.Script.API.invokePlayerRespawn(client); });*/
+                                        en.InvokePlayerRespawn(client);
                                     }));
                                     
                                 }
@@ -857,12 +945,7 @@ namespace GTAServer
             }
             lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
             {
-                en.Script.API.invokeUpdate();
-                /*
-                ConcurrentFactory.StartNew(delegate
-                {
-                    en.Script.API.invokeUpdate();
-                });*/
+                en.InvokeUpdate();
             }));
         }
 
