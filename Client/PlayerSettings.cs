@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Collections.Generic;
+using System.Windows.Forms;
 
 namespace MTAV
 {
@@ -8,6 +9,8 @@ namespace MTAV
         public int MaxStreamedNpcs { get; set; }
         public string MasterServerAddress { get; set; }
         public Keys ActivationKey { get; set; }
+        public List<string> FavoriteServers { get; set; }
+        public List<string> RecentServers { get; set; }
 
         public PlayerSettings()
         {
@@ -15,6 +18,8 @@ namespace MTAV
             MaxStreamedNpcs = 10;
             MasterServerAddress = "http://46.101.1.92/";
             ActivationKey = Keys.F9;
+            FavoriteServers = new List<string>();
+            RecentServers = new List<string>();
         }
     }
 }

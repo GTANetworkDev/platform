@@ -37,6 +37,8 @@ namespace GTAServer
             Console.WriteLine("= Player Limit: " + settings.MaxPlayers);
             Console.WriteLine("=======================================================================");
 
+            if (settings.Port != 4499)
+                Output("WARN: Port is not the default one, players on your local network won't be able to automatically detect you!");
 
             Output("Starting...");
 

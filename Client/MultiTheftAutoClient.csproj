@@ -77,7 +77,6 @@
     <Compile Include="DownloadManager.cs" />
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="Main.cs" />
-    <Compile Include="GUI\MainMenu.cs" />
     <Compile Include="NetEntityHandler.cs" />
     <Compile Include="PedThread.cs" />
     <Compile Include="PlayerSettings.cs" />

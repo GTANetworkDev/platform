@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Xml.Serialization;
 using GTA;
 using GTA.Math;
@@ -181,6 +182,31 @@ namespace MTAV
             return -3;
         }
 
+        public class ImpatientWebClient : WebClient
+        {
+            public int Timeout { get; set; }
+
+            public ImpatientWebClient()
+            {
+                Timeout = 10000;
+            }
+
+            public ImpatientWebClient(int timeout)
+            {
+                Timeout = timeout;
+            }
+
+            protected override WebRequest GetWebRequest(Uri address)
+            {
+                WebRequest w = base.GetWebRequest(address);
+                if (w != null)
+                {
+                    w.Timeout = Timeout;
+                }
+                return w;
+            }
+        }
+
         public static PlayerSettings ReadSettings(string path)
         {
             var ser = new XmlSerializer(typeof(PlayerSettings));
@@ -195,7 +221,11 @@ namespace MTAV
             }
             else
             {
-                using (var stream = File.OpenWrite(path)) ser.Serialize(stream, settings = new PlayerSettings());
+                using (var stream = File.OpenWrite(path))
+                {
+                    ser.Serialize(stream, settings = new PlayerSettings());
+                    UI.Notify("No settings! " + path);
+                }
             }
 
             return settings;

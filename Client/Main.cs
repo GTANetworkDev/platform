@@ -15,6 +15,7 @@ using NativeUI;
 using Newtonsoft.Json;
 using ProtoBuf;
 using MultiTheftAutoShared;
+using NativeUI.PauseMenu;
 using Control = GTA.Control;
 using Vector3 = GTA.Math.Vector3;
 
@@ -54,7 +55,7 @@ namespace MTAV
         private bool _lastKilled;
         private bool _wasTyping;
 
-        private MainMenu mainMenu;
+        public static TabView MainMenu;
         
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
@@ -121,7 +122,7 @@ namespace MTAV
                 }
             };
 
-            _config = new NetPeerConfiguration("GTAVOnlineRaces");
+            _config = new NetPeerConfiguration("MULTITHEFTAUTOV");
             _config.Port = 8888;
             _config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
 
@@ -129,9 +130,9 @@ namespace MTAV
             #region Menu Set up
 #warning Affects performance when open, drops from 80~100 on a GTX 980 to high 30s ~ 60
             _menuPool = new MenuPool();
-            mainMenu = new MainMenu();
+            BuildMainMenu();
 
-
+            /*
             _mainMenu = new UIMenu("Co-oP", "MAIN MENU");
             _settingsMenu = new UIMenu("Co-oP", "SETTINGS");
             _serverBrowserMenu = new UIMenu("Co-oP", "SERVER BROWSER");
@@ -251,7 +252,9 @@ namespace MTAV
             {
                 LerpRotaion = check;
             };
-            /*
+
+
+            //
             var npcItem = new UIMenuCheckboxItem("Share World With Players", false);
             npcItem.CheckboxEvent += (item, check) =>
             {
@@ -276,8 +279,8 @@ namespace MTAV
             {
                 _isTrafficEnabled = check;
             };
-
-            */
+            //
+            
 
             var browserItem = new UIMenuItem("Server Browser");
             _mainMenu.BindMenuToItem(_serverBrowserMenu, browserItem);
@@ -317,9 +320,15 @@ namespace MTAV
             _menuPool.Add(_serverBrowserMenu);
             _menuPool.Add(_settingsMenu);
             _menuPool.Add(_playersMenu);
+
+            */
             #endregion
 
             _debug = new DebugWindow();
+
+            MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(),
+                GameplayCamera.FieldOfView);
+            MainMenuCamera.PointAt(new Vector3(707.86f, 1228.09f, 333.66f));
         }
 
         // Debug stuff
@@ -337,72 +346,160 @@ namespace MTAV
         private bool _isGoingToCar;
         //
 
+        public static bool JustJoinedServer { get; set; }
+
+        private TabInteractiveListItem _serverBrowser;
+        private TabInteractiveListItem _lanBrowser;
+        private TabInteractiveListItem _favBrowser;
+        private TabInteractiveListItem _recentBrowser;
+
         public static Dictionary<long, SyncPed> Opponents;
         public static Dictionary<string, SyncPed> Npcs;
         public static float Latency;
         private int Port = 4499;
 
+        public static Camera MainMenuCamera;
+
+        private void AddToFavorites(string server)
+        {
+            PlayerSettings.FavoriteServers.Add(server);
+            Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+        }
+
+        private void RemoveFromFavorites(string server)
+        {
+            PlayerSettings.FavoriteServers.Remove(server);
+            Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+        }
+
+        private void AddServerToRecent(string server)
+        {
+            PlayerSettings.RecentServers.Add(server);
+            if (PlayerSettings.RecentServers.Count > 20)
+                PlayerSettings.RecentServers.RemoveAt(0);
+            Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+        }
+
         private void RebuildServerBrowser()
         {
-            _serverBrowserMenu.Clear();
-            _serverBrowserMenu.RefreshIndex();
-            if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
-                return;
-            string response = String.Empty;
-            try
+            _serverBrowser.Items.Clear();
+            _favBrowser.Items.Clear();
+            _lanBrowser.Items.Clear();
+            _recentBrowser.Items.Clear();
+
+            _serverBrowser.RefreshIndex();
+            _favBrowser.RefreshIndex();
+            _lanBrowser.RefreshIndex();
+            _recentBrowser.RefreshIndex();
+
+
+            var fetchThread = new Thread((ThreadStart)delegate
             {
-                using (var wc = new WebClient())
+                if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
+                    return;
+                string response = String.Empty;
+                try
                 {
-                    response = wc.DownloadString(PlayerSettings.MasterServerAddress);
+                    using (var wc = new MTAV.Util.ImpatientWebClient())
+                    {
+                        response = wc.DownloadString(PlayerSettings.MasterServerAddress);
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                UI.Notify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
-                var logOutput = "===== EXCEPTION CONTACTING MASTER SERVER @ " + DateTime.UtcNow + " ======\n";
-                logOutput += "Message: " + e.Message;
-                logOutput += "\nData: " + e.Data;
-                logOutput += "\nStack: " + e.StackTrace;
-                logOutput += "\nSource: " + e.Source;
-                logOutput += "\nTarget: " + e.TargetSite;
-                if (e.InnerException != null)
-                    logOutput += "\nInnerException: " + e.InnerException.Message;
-                logOutput += "\n";
-                File.AppendAllText("scripts\\GTACOOP.log", logOutput);
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(response))
-                return;
-
-            var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
-
-            if (dejson == null) return;
-
-            if (Client == null)
-            {
-                var port = GetOpenUdpPort();
-                if (port == 0)
+                catch (Exception e)
                 {
-                    UI.Notify("No available UDP port was found.");
+                    UI.Notify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
+                    var logOutput = "===== EXCEPTION CONTACTING MASTER SERVER @ " + DateTime.UtcNow + " ======\n";
+                    logOutput += "Message: " + e.Message;
+                    logOutput += "\nData: " + e.Data;
+                    logOutput += "\nStack: " + e.StackTrace;
+                    logOutput += "\nSource: " + e.Source;
+                    logOutput += "\nTarget: " + e.TargetSite;
+                    if (e.InnerException != null)
+                        logOutput += "\nInnerException: " + e.InnerException.Message;
+                    logOutput += "\n";
+                    File.AppendAllText("scripts\\GTACOOP.log", logOutput);
                     return;
                 }
-                _config.Port = port;
-                Client = new NetClient(_config);
-                Client.Start();
-            }
 
-            foreach (var server in dejson.list)
-            {
-                var split = server.Split(':');
-                if (split.Length != 2) continue;
-                int port;
-                if (!int.TryParse(split[1], out port))
-                    continue;
-                Client.DiscoverKnownPeer(split[0], port);
-            }
+                if (string.IsNullOrWhiteSpace(response))
+                    return;
 
-            Client.DiscoverLocalPeers(Port);
+                var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
+
+                if (dejson == null) return;
+
+                if (Client == null)
+                {
+                    var port = GetOpenUdpPort();
+                    if (port == 0)
+                    {
+                        UI.Notify("No available UDP port was found.");
+                        return;
+                    }
+                    _config.Port = port;
+                    Client = new NetClient(_config);
+                    Client.Start();
+                }
+
+                var list = new List<string>();
+
+                foreach (var server in dejson.list)
+                {
+                    var split = server.Split(':');
+                    if (split.Length != 2) continue;
+                    int port;
+                    if (!int.TryParse(split[1], out port))
+                        continue;
+                    list.Add(server);
+                    
+
+                    var item = new UIMenuItem(server);
+                    item.Description = server;
+
+                    int lastIndx = 0;
+                    if (_serverBrowser.Items.Count > 0)
+                        lastIndx = _serverBrowser.Index;
+
+                    _serverBrowser.Items.Add(item);
+                    _serverBrowser.Index = lastIndx;
+
+                    if (PlayerSettings.RecentServers.Contains(server))
+                    {
+                        _recentBrowser.Items.Add(item);
+                        _recentBrowser.Index = lastIndx;
+                    }
+
+                    if (PlayerSettings.FavoriteServers.Contains(server))
+                    {
+                        _favBrowser.Items.Add(item);
+                        _favBrowser.Index = lastIndx;
+                    }
+                }
+
+                foreach (var server in PlayerSettings.FavoriteServers)
+                {
+                    if (!list.Contains(server)) list.Add(server);
+                }
+
+                foreach (var server in PlayerSettings.RecentServers)
+                {
+                    if (!list.Contains(server)) list.Add(server);
+                }
+
+                Client.DiscoverLocalPeers(Port);
+
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (i != 0 && i%10 == 0)
+                    {
+                        Thread.Sleep(3000);
+                    }
+                    var spl = list[i].Split(':');
+                    Client.DiscoverKnownPeer(spl[0], int.Parse(spl[1]));
+                }
+            });
+
+            fetchThread.Start();
         }
         
         private void RebuildPlayersList()
@@ -438,6 +535,129 @@ namespace MTAV
             }
 
             _playersMenu.RefreshIndex();
+        }
+
+        private void BuildMainMenu()
+        {
+            MainMenu = new TabView("Multi Theft Auto V");
+            MainMenu.CanLeave = false;
+
+            #region Welcome Screen
+            {
+                var welcomeItem = new TabTextItem("Welcome", "Welcome to Multi Theft Auto", "Join a server on the right! Weekly Updates! Donate, or whatever.");
+                MainMenu.Tabs.Add(welcomeItem);
+            }
+            #endregion
+
+            #region ServerBrowser
+            {
+                var dConnect = new TabTextItem("Quick Connect", "", "Input the IP, port and the password and connect to the server.");
+                
+                _serverBrowser = new TabInteractiveListItem("Internet", new List<UIMenuItem>());
+                _lanBrowser = new TabInteractiveListItem("Local Area Network", new List<UIMenuItem>());
+                _favBrowser = new TabInteractiveListItem("Favorites", new List<UIMenuItem>());
+                _recentBrowser = new TabInteractiveListItem("Recent", new List<UIMenuItem>());
+                
+
+                var welcomeItem = new TabSubmenuItem("connect", new List<TabItem>() { dConnect, _serverBrowser, _lanBrowser, _favBrowser, _recentBrowser });
+                MainMenu.AddTab(welcomeItem);
+                welcomeItem.DrawInstructionalButtons += (sender, args) =>
+                {
+                    MainMenu.DrawInstructionalButton(4, Control.Jump, "Refresh");
+
+                    if (Game.IsControlJustPressed(0, Control.Jump))
+                    {
+                        RebuildServerBrowser();
+                    }
+
+                    if (welcomeItem.Index == 1 && welcomeItem.Items[1].Focused)
+                    {
+                        MainMenu.DrawInstructionalButton(5, Control.Enter, "Favorite");
+                        if (Game.IsControlJustPressed(0, Control.Enter))
+                        {
+                            var selectedServer = _serverBrowser.Items[_serverBrowser.Index];
+                            selectedServer.SetRightBadge(UIMenuItem.BadgeStyle.None);
+                            if (PlayerSettings.FavoriteServers.Contains(selectedServer.Description))
+                            {
+                                RemoveFromFavorites(selectedServer.Description);
+                                var favItem = _favBrowser.Items.FirstOrDefault(i => i.Description == selectedServer.Description);
+                                if (favItem != null)
+                                {
+                                    _favBrowser.Items.Remove(favItem);
+                                    _favBrowser.RefreshIndex();
+                                }
+                            }
+                            else
+                            {
+                                AddToFavorites(selectedServer.Description);
+                                selectedServer.SetRightBadge(UIMenuItem.BadgeStyle.Star);
+                                var item = new UIMenuItem(selectedServer.Text);
+                                item.Description = selectedServer.Description;
+                                item.SetRightLabel(selectedServer.RightLabel);
+                                item.SetLeftBadge(selectedServer.LeftBadge);
+                                _favBrowser.Items.Add(item);
+                            }
+                        }
+                    }
+                };
+            }
+            #endregion
+
+            #region Settings
+
+            {
+                var internetServers = new TabItemSimpleList("Multiplayer", new Dictionary<string, string>
+                {
+                    { "Name", "Guadmaz"},
+                    { "Chat size", "0/10"}
+                });
+
+                var localServs = new TabItemSimpleList("Audio", new Dictionary<string, string>
+                {
+                    { "Name", "Guadmaz"},
+                    { "Chat size", "0/10"}
+                });
+
+                var favServers = new TabItemSimpleList("Video", new Dictionary<string, string>
+                {
+                    { "Name", "Guadmaz"},
+                    { "Chat size", "0/10"}
+                });
+
+                var recentServs = new TabItemSimpleList("Keybindings", new Dictionary<string, string>
+                {
+                    { "Name", "Guadmaz"},
+                    { "Chat size", "0/10"}
+                });
+
+                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers, recentServs });
+                MainMenu.AddTab(welcomeItem);
+            }
+
+            #endregion
+            
+            #region About
+            {
+                var welcomeItem = new TabTextItem("about", "About", "Author: Guadmaz");
+                MainMenu.Tabs.Add(welcomeItem);
+            }
+            #endregion
+
+            #region Quit
+            {
+                var welcomeItem = new TabTextItem("Quit", "Quit Multi Theft Auto", "Are you sure you want to quit Multi Theft Auto V and return to desktop?");
+                welcomeItem.CanBeFocused = false;
+                welcomeItem.Activated += (sender, args) =>
+                {
+                    MainMenu.Visible = false;
+                    World.RenderingCamera = null;
+                };
+                MainMenu.Tabs.Add(welcomeItem);
+            }
+            #endregion
+
+            RebuildServerBrowser();
+            MainMenu.RefreshIndex();
         }
 
         private static Dictionary<int, int> _emptyVehicleMods;
@@ -693,15 +913,17 @@ namespace MTAV
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
-            _menuPool.ProcessMenus();
+            //_menuPool.ProcessMenus();
             _chat.Tick();
+            MainMenu.Update();
+            MainMenu.CanLeave = IsOnServer();
             
             if (_isGoingToCar && Game.IsControlJustPressed(0, Control.PhoneCancel))
             {
                 Game.Player.Character.Task.ClearAll();
                 _isGoingToCar = false;
             }
-            
+            /*
             if (IsOnServer())
             {
                 _mainMenu.MenuItems[5].Text = "Disconnect";
@@ -714,7 +936,7 @@ namespace MTAV
                 _mainMenu.MenuItems[6].Enabled = false;
                 _settingsMenu.MenuItems[0].Enabled = true;
             }
-
+            */
             #if DEBUG
             if (display)
             {
@@ -928,7 +1150,17 @@ namespace MTAV
                 }
                 else
                 {
-                    _mainMenu.Visible = true;
+                    //_mainMenu.Visible = true;
+                }
+
+                MainMenu.Visible = !MainMenu.Visible;
+
+                if (!IsOnServer())
+                {
+                    if (MainMenu.Visible)
+                        World.RenderingCamera = MainMenuCamera;
+                    else
+                        World.RenderingCamera = null;
                 }
             }
 
@@ -1471,7 +1703,7 @@ namespace MTAV
                             var confirmObj = Client.CreateMessage();
                             confirmObj.Write((int)PacketType.ConnectionConfirmed);
                             Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
-
+                            JustJoinedServer = true;
                             break;
                         case NetConnectionStatus.Disconnected:
                             var reason = msg.ReadString();
@@ -1519,7 +1751,7 @@ namespace MTAV
                             NetEntityHandler.ClearAll();
                             JavascriptHook.StopAllScripts();
                             DownloadManager.Cancel();
-                            // TODO: FIX
+                            JustJoinedServer = false;
                             break;
                     }
                 }
@@ -1530,51 +1762,120 @@ namespace MTAV
                     var bin = msg.ReadBytes(len);
                     var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;
                     if (data == null) return;
-                    var item = new UIMenuItem(data.ServerName);
 
-                    var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
+                    var itemText = msg.SenderEndPoint.Address.ToString() + ":" + data.Port;
 
-                    item.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
+                    var matchedItems = new List<UIMenuItem>();
 
-                    if (data.PasswordProtected)
-                        item.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+                    matchedItems.Add(_serverBrowser.Items.FirstOrDefault(i => i.Text == itemText));
+                    matchedItems.Add(_recentBrowser.Items.FirstOrDefault(i => i.Text == itemText));
+                    matchedItems.Add(_favBrowser.Items.FirstOrDefault(i => i.Text == itemText));
+                    matchedItems.Add(_lanBrowser.Items.FirstOrDefault(i => i.Text == itemText));
 
-                    int lastIndx = 0;
-                    if (_serverBrowserMenu.Size > 0)
-                        lastIndx = _serverBrowserMenu.CurrentSelection;
-
-                    var gMsg = msg;
-                    item.Activated += (sender, selectedItem) =>
+                    if (data.LAN)
                     {
-                        if (IsOnServer())
-                        {
-                            Client.Disconnect("Switching servers.");
+                        var item = new UIMenuItem(data.ServerName);
+                        var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
 
-                            if (Opponents != null)
-                            {
-                                Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                Opponents.Clear();
-                            }
-
-                            if (Npcs != null)
-                            {
-                                Npcs.ToList().ForEach(pair => pair.Value.Clear());
-                                Npcs.Clear();
-                            }
-
-                            while (IsOnServer()) Script.Yield();
-                        }
+                        item.Text = data.ServerName;
+                        item.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
 
                         if (data.PasswordProtected)
-                        {
-                            _password = Game.GetUserInput(256);
-                        }
-                        ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
-                        _serverBrowserMenu.Visible = false;
-                    };
+                            item.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
 
-                    _serverBrowserMenu.AddItem(item);
-                    _serverBrowserMenu.CurrentSelection = lastIndx;
+                        int lastIndx = 0;
+                        if (_serverBrowser.Items.Count > 0)
+                            lastIndx = _serverBrowser.Index;
+
+                        var gMsg = msg;
+                        item.Activated += (sender, selectedItem) =>
+                        {
+                            if (IsOnServer())
+                            {
+                                Client.Disconnect("Switching servers.");
+
+                                if (Opponents != null)
+                                {
+                                    Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                    Opponents.Clear();
+                                }
+
+                                if (Npcs != null)
+                                {
+                                    Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                    Npcs.Clear();
+                                }
+
+                                while (IsOnServer()) Script.Yield();
+                            }
+
+                            if (data.PasswordProtected)
+                            {
+                                _password = Game.GetUserInput(256);
+                            }
+
+
+                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                            MainMenu.TemporarilyHidden = true;
+                            AddServerToRecent(itemText);
+                        };
+
+                        _lanBrowser.Items.Add(item);
+                    }
+
+                    foreach (var ourItem in matchedItems.Where(k => k != null))
+                    {
+                        var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
+
+                        ourItem.Text = data.ServerName;
+                        ourItem.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
+                        if (PlayerSettings.FavoriteServers.Contains(ourItem.Description))
+                            ourItem.SetRightBadge(UIMenuItem.BadgeStyle.Star);
+
+                        if (data.PasswordProtected)
+                            ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+
+                        int lastIndx = 0;
+                        if (_serverBrowser.Items.Count > 0)
+                            lastIndx = _serverBrowser.Index;
+
+                        var gMsg = msg;
+                        ourItem.Activated += (sender, selectedItem) =>
+                        {
+                            if (IsOnServer())
+                            {
+                                Client.Disconnect("Switching servers.");
+
+                                if (Opponents != null)
+                                {
+                                    Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                    Opponents.Clear();
+                                }
+
+                                if (Npcs != null)
+                                {
+                                    Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                    Npcs.Clear();
+                                }
+
+                                while (IsOnServer()) Script.Yield();
+                            }
+
+                            if (data.PasswordProtected)
+                            {
+                                _password = Game.GetUserInput(256);
+                            }
+
+
+                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                            MainMenu.TemporarilyHidden = true;
+                            AddServerToRecent(itemText);
+                        };
+
+                        _serverBrowser.Items.Remove(ourItem);
+                        _serverBrowser.Items.Insert(0, ourItem);
+                        _serverBrowser.MoveDown();
+                    }
                 }
             }
         }

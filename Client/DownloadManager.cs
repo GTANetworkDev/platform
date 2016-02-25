@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Forms;
 using GTA;
 using MultiTheftAutoShared;
 
@@ -74,8 +75,13 @@ namespace MTAV
                 else
                 {
                     Main.StartClientsideScripts(obj);
+                    if (Main.JustJoinedServer)
+                    {
+                        World.RenderingCamera = null;
+                        Main.MainMenu.TemporarilyHidden = false;
+                        Main.MainMenu.Visible = false;
+                    }
                 }
-
             }
 
             CurrentFile.Dispose();

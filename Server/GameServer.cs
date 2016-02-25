@@ -95,7 +95,7 @@ namespace GTAServer
 
             Name = name;
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-            NetPeerConfiguration config = new NetPeerConfiguration("GTAVOnlineRaces");
+            NetPeerConfiguration config = new NetPeerConfiguration("MULTITHEFTAUTOV");
             config.Port = port;
             config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
@@ -170,6 +170,21 @@ namespace GTAServer
                 {
                     Program.Output("Failed to announce self: master server is not available at this time.");
                 }
+            }
+        }
+
+        private bool isIPLocal(string ipaddress)
+        {
+            String[] straryIPAddress = ipaddress.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
+            int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0]), int.Parse(straryIPAddress[1]), int.Parse(straryIPAddress[2]), int.Parse(straryIPAddress[3]) };
+            if (iaryIPAddress[0] == 10 || (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) || (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
+            {
+                return true;
+            }
+            else
+            {
+                // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
+                return false;
             }
         }
 
@@ -637,7 +652,7 @@ namespace GTAServer
                         obj.Gamemode = GamemodeName;
                         lock (Clients) obj.PlayerCount = (short)Clients.Count(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
                         obj.Port = Port;
-
+                        obj.LAN = isIPLocal(msg.SenderEndPoint.Address.ToString());
                         var bin = SerializeBinary(obj);
 
                         response.Write((int)PacketType.DiscoveryResponse);
