@@ -19,6 +19,13 @@ namespace MTAV
         Teleport
     }
 
+    public class Animation
+    {
+        public string Dictionary { get; set; }
+        public string Name { get; set; }
+        public bool Loop { get; set; }
+    }
+
     public class SyncPed
     {
         public SynchronizationMode SyncMode;
@@ -29,6 +36,7 @@ namespace MTAV
         public Vector3 _rotation;
         public bool IsInVehicle;
         public bool IsJumping;
+        public Animation CurrentAnimation;
         public int ModelHash;
         public int CurrentWeapon;
         public bool IsShooting;
@@ -38,8 +46,9 @@ namespace MTAV
         public bool IsHornPressed;
         public bool _isRagdoll;
         public Vehicle MainVehicle { get; set; }
-
+        public bool IsInActionMode;
         public bool IsInCover;
+        public bool IsInMeleeCombat;
 
         public int VehicleSeat;
         public int PedHealth;
@@ -262,25 +271,38 @@ namespace MTAV
         private DateTime _lastUpdateReceived;
         private float _speed;
         private Vector3 _vehicleVelocity;
+        private string lastMeleeAnim;
+        private float meleeanimationend;
+        private float meleeDamageStart;
+        private float meleeDamageEnd;
+        private bool meleeSwingDone;
+
+        private int DEBUG_STEP;
 
         public void DisplayLocally()
         {
-            const float hRange = 300f;
-            var gPos = IsInVehicle ? VehiclePosition : _position;
-            var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
-
-            if (_lastStart != null && _lastEnd != null)
+            try
             {
-                //Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
+                DEBUG_STEP = 0;
+
+                const float hRange = 300f;
+                var gPos = IsInVehicle ? VehiclePosition : _position;
+                var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
+
+                DEBUG_STEP = 1;
+
+                if (_lastStart != null && _lastEnd != null)
+                {
+                    //Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
                     //_lastEnd.Z, 255, 255, 255, 255);
-            }
+                }
 
-            if (inRange && Character != null)
-            {
-                Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, Character, true);
-            }
+                if (inRange && Character != null)
+                {
+                    Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, Character, true);
+                }
 
-            /*
+                /*
             if (inRange && !_isStreamedIn)
             {
                 _isStreamedIn = true;
@@ -311,458 +333,245 @@ namespace MTAV
                 return;
             }
             */
-            
-            if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
-            {
-                if (Character != null) Character.Delete();
+                DEBUG_STEP = 2;
 
-                Character = World.CreatePed(new Model(ModelHash), gPos, _rotation.Z);
-                                if (Character == null) return;
-
-                Character.BlockPermanentEvents = true;
-                Character.IsInvincible = true;
-                Character.CanRagdoll = false;
-                Character.RelationshipGroup = _relGroup;
-                if (_blip)
+                if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) ||
+                    Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
                 {
-                    Character.AddBlip();
-                    if (Character.CurrentBlip == null) return;
-                    Character.CurrentBlip.Color = BlipColor.White;
-                    Character.CurrentBlip.Scale = 0.8f;
-                    SetBlipNameFromTextFile(Character.CurrentBlip, Name);
-                }
-                return;
-            }
-
-            bool isAiming = false;
-            if (!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f)) || (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
-            {
-                var ray = World.Raycast(GameplayCamera.Position, Character.Position, IntersectOptions.Everything, Game.Player.Character);
-                if (ray.HitEntity == Character || isAiming || Character.IsInVehicle())
-                { 
-                    var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
-                    var targetPos = Character.Position + new Vector3(0, 0, 1.2f);
-                    if (oldPos.X != 0 && oldPos.Y != 0)
+                    if (Character != null) Character.Delete();
+                    DEBUG_STEP = 3;
+                    var charModel = new Model(ModelHash);
+                    charModel.Request(10000);
+                    Character = World.CreatePed(charModel, gPos, _rotation.Z);
+                    charModel.MarkAsNoLongerNeeded();
+                    if (Character == null) return;
+                    DEBUG_STEP = 4;
+                    Character.BlockPermanentEvents = true;
+                    Character.IsInvincible = true;
+                    Character.CanRagdoll = false;
+                    Character.RelationshipGroup = _relGroup;
+                    if (_blip)
                     {
-                        Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
-
-                        var nameText = Name == null ? "<nameless>" : Name;
-
-                        if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
-                            nameText = "~r~AFK~w~~n~" + nameText;
-
-                        var dist = (GameplayCamera.Position - Character.Position).Length();
-                        var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
-
-                        new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
-                            Font.ChaletLondon, UIResText.Alignment.Centered)
+                        Character.AddBlip();
+                        if (Character.CurrentBlip == null) return;
+                        Character.CurrentBlip.Color = BlipColor.White;
+                        Character.CurrentBlip.Scale = 0.8f;
+                        SetBlipNameFromTextFile(Character.CurrentBlip, Name);
+                    }
+                    return;
+                }
+                DEBUG_STEP = 5;
+                bool isAiming = false;
+                if (!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f)) ||
+                    (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
+                {
+                    var ray = World.Raycast(GameplayCamera.Position, Character.Position, IntersectOptions.Everything,
+                        Game.Player.Character);
+                    if (ray.HitEntity == Character || isAiming || Character.IsInVehicle())
+                    {
+                        var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
+                        var targetPos = Character.Position + new Vector3(0, 0, 1.2f);
+                        if (oldPos.X != 0 && oldPos.Y != 0)
                         {
-                            Outline = true,
-                        }.Draw();
+                            Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
+                            DEBUG_STEP = 6;
+                            var nameText = Name == null ? "<nameless>" : Name;
 
-                        if (Character != null)
-                        {
-                            var armorColor = Color.FromArgb(100, 220, 220, 220);
-                            var bgColor = Color.FromArgb(100, 0, 0, 0);
-                            var armorPercent = Math.Min(Math.Max(PedArmor/100f, 0f), 1f);
-                            var armorBar = (int) Math.Round(150*armorPercent);
-                            armorBar = (int)(armorBar * sizeOffset);
+                            if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
+                                nameText = "~r~AFK~w~~n~" + nameText;
 
-                            new UIResRectangle(new Point(0, 0) - new Size((int)(75*sizeOffset), (int)(-36*sizeOffset)), new Size(armorBar, (int)(20*sizeOffset)),
-                                armorColor).Draw();
+                            var dist = (GameplayCamera.Position - Character.Position).Length();
+                            var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
 
-                            new UIResRectangle(new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)) + new Size(armorBar, 0), new Size((int)(sizeOffset*150) - armorBar, (int)(sizeOffset*20)),
-                                bgColor).Draw();
+                            new UIResText(nameText, new Point(0, 0), 0.4f*sizeOffset, Color.WhiteSmoke,
+                                Font.ChaletLondon, UIResText.Alignment.Centered)
+                            {
+                                Outline = true,
+                            }.Draw();
+                            DEBUG_STEP = 7;
+                            if (Character != null)
+                            {
+                                var armorColor = Color.FromArgb(100, 220, 220, 220);
+                                var bgColor = Color.FromArgb(100, 0, 0, 0);
+                                var armorPercent = Math.Min(Math.Max(PedArmor/100f, 0f), 1f);
+                                var armorBar = (int) Math.Round(150*armorPercent);
+                                armorBar = (int) (armorBar*sizeOffset);
 
-                            new UIResRectangle(new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
-                                new Size((int) ((142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f)) * sizeOffset), (int)(12*sizeOffset)),
-                                Color.FromArgb(150, 50, 250, 50)).Draw();
+                                new UIResRectangle(
+                                    new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)),
+                                    new Size(armorBar, (int) (20*sizeOffset)),
+                                    armorColor).Draw();
+
+                                new UIResRectangle(
+                                    new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)) +
+                                    new Size(armorBar, 0),
+                                    new Size((int) (sizeOffset*150) - armorBar, (int) (sizeOffset*20)),
+                                    bgColor).Draw();
+
+                                new UIResRectangle(
+                                    new Point(0, 0) - new Size((int) (71*sizeOffset), (int) (-40*sizeOffset)),
+                                    new Size((int) ((142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f))*sizeOffset),
+                                        (int) (12*sizeOffset)),
+                                    Color.FromArgb(150, 50, 250, 50)).Draw();
+                            }
+                            DEBUG_STEP = 8;
+                            Function.Call(Hash.CLEAR_DRAW_ORIGIN);
                         }
-
-                        Function.Call(Hash.CLEAR_DRAW_ORIGIN);
                     }
                 }
-            }
-
-            if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) || (_lastVehicle && IsInVehicle && (MainVehicle == null || !Character.IsInVehicle(MainVehicle) || MainVehicle.Model.Hash != VehicleHash || Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle || VehicleSeat != Util.GetPedSeat(Character))))
-            {
-                if (Debug)
+                DEBUG_STEP = 9;
+                if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
+                    (_lastVehicle && IsInVehicle &&
+                     (MainVehicle == null || !Character.IsInVehicle(MainVehicle) ||
+                      MainVehicle.Model.Hash != VehicleHash ||
+                      Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
+                      VehicleSeat != Util.GetPedSeat(Character))))
                 {
-                    if (MainVehicle != null) MainVehicle.Delete();
-                    MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
-                }
-                else
-                    MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
-
-                if (Game.Player.Character.IsInVehicle(MainVehicle) &&
+                    if (Debug)
+                    {
+                        if (MainVehicle != null) MainVehicle.Delete();
+                        MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
+                    }
+                    else
+                        MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
+                    DEBUG_STEP = 10;
+                    if (Game.Player.Character.IsInVehicle(MainVehicle) &&
                         VehicleSeat == Util.GetPedSeat(Game.Player.Character))
-                {
-                    Game.Player.Character.Task.WarpOutOfVehicle(MainVehicle);
-                    UI.Notify("~r~Car jacked!");
-                }
-                
-
-                if (MainVehicle != null)
-                {
-                    if (VehicleSeat == -1)
-                        MainVehicle.Position = VehiclePosition;
-                    MainVehicle.EngineRunning = true;
-                    MainVehicle.PrimaryColor = (VehicleColor)VehiclePrimaryColor;
-                    MainVehicle.SecondaryColor = (VehicleColor)VehicleSecondaryColor;
-                    MainVehicle.Rotation = _vehicleRotation;
-                    MainVehicle.IsInvincible = true;
-                    Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
-                }
-
-                _lastVehicle = true;
-                _justEnteredVeh = true;
-                _enterVehicleStarted = DateTime.Now;
-                return;
-            }
-           
-            if (_lastVehicle && _justEnteredVeh && IsInVehicle && !Character.IsInVehicle(MainVehicle) && DateTime.Now.Subtract(_enterVehicleStarted).TotalSeconds <= 4)
-            {
-                return;
-            }
-            _justEnteredVeh = false;
-
-            if (_lastVehicle && !IsInVehicle && MainVehicle != null)
-            {
-                if (Character != null) Character.Task.LeaveVehicle(MainVehicle, true);
-            }
-
-            if (Character != null)
-            {
-                Character.Health = (int)((PedHealth/(float)100) * Character.MaxHealth);
-            }
-
-            _switch++;
-
-            if (!inRange)
-            {
-                if (Character != null)
-                    Character.Position = gPos;
-                if (MainVehicle != null)
-                {
-                    MainVehicle.Position = VehiclePosition;
-                    MainVehicle.Rotation = VehicleRotation;
-                }
-                return;
-            }
-
-            if (IsInVehicle)
-            {
-                if (VehicleSeat == (int) GTA.VehicleSeat.Driver ||
-                    MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver) == null)
-                {
-                    MainVehicle.Health = VehicleHealth;
-                    if (IsVehDead && !MainVehicle.IsDead)
                     {
-                        MainVehicle.IsInvincible = false;
-                        MainVehicle.Explode();
+                        Game.Player.Character.Task.WarpOutOfVehicle(MainVehicle);
+                        UI.Notify("~r~Car jacked!");
                     }
-                    else if (!IsVehDead && MainVehicle.IsDead)
+                    DEBUG_STEP = 11;
+
+                    if (MainVehicle != null)
                     {
+                        if (VehicleSeat == -1)
+                            MainVehicle.Position = VehiclePosition;
+                        MainVehicle.EngineRunning = true;
+                        MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
+                        MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
+                        MainVehicle.Rotation = _vehicleRotation;
                         MainVehicle.IsInvincible = true;
-                        if (MainVehicle.IsDead)
-                            MainVehicle.Repair();
+                        Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
+                        DEBUG_STEP = 12;
                     }
-
-                    MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
-                    MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
-
-                    if (VehicleMods != null && _modSwitch%50 == 0 &&
-                        Game.Player.Character.IsInRangeOf(VehiclePosition, 30f))
-                    {
-                        var id = _modSwitch/50;
-
-                        if (VehicleMods.ContainsKey(id) && VehicleMods[id] != MainVehicle.GetMod((VehicleMod) id))
-                        {
-                            Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle.Handle, 0);
-                            MainVehicle.SetMod((VehicleMod) id, VehicleMods[id], false);
-                            Function.Call(Hash.RELEASE_PRELOAD_MODS, id);
-                        }
-                    }
-                    _modSwitch++;
-
-                    if (_modSwitch >= 2500)
-                        _modSwitch = 0;
-
-                    if (IsHornPressed && !_lastHorn)
-                    {
-                        _lastHorn = true;
-                        MainVehicle.SoundHorn(99999);
-                    }
-
-                    if (!IsHornPressed && _lastHorn)
-                    {
-                        _lastHorn = false;
-                        MainVehicle.SoundHorn(1);
-                    }
-
-
-                    if (MainVehicle.SirenActive && !Siren)
-                        MainVehicle.SirenActive = Siren;
-                    else if (!MainVehicle.SirenActive && Siren)
-                        MainVehicle.SirenActive = Siren;
-
-                    if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
-                    {
-                        Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
-                        Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
-                    }
-
-                    if (IsAiming && !IsShooting)
-                    {
-                        Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z, 100f, 80, 0, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
-                    }
-                    else if (IsShooting)
-                    {
-                        Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z, 100f, 80, 1, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
-                    }
-
-
-                    var dir = VehiclePosition - _lastVehiclePos;
-                    
-                    var syncMode = Main.GlobalSyncMode;
-                    if (syncMode == SynchronizationMode.Dynamic)
-                    {
-                        if (AverageLatency > 70)
-                            syncMode = SynchronizationMode.EntityLerping;
-                        else
-                            syncMode = SynchronizationMode.DeadReckoning;
-                    }
-
-                    if (syncMode == SynchronizationMode.DeadReckoning)
-                    {
-                        var vdir = VehicleVelocity - _lastVehVel;
-                        var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                        var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                        if (Speed > 0.5f)
-                        {
-                            MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
-                            _stopTime = DateTime.Now;
-                            _carPosOnUpdate = MainVehicle.Position;
-                        }
-                        else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
-                        {
-                            posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
-                            (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
-                        }
-                        else
-                        {
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X, VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
-                        }
-                    }
-                    else if (syncMode == SynchronizationMode.EntityLerping)
-                    {
-                        var target = Util.LinearVectorLerp(_lastVehVel, VehicleVelocity,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                        var posTarget = Util.LinearVectorLerp(_lastVehiclePos, VehiclePosition,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                        if (Speed > 0)
-                        { 
-                            MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
-                            _stopTime = DateTime.Now;
-                            _carPosOnUpdate = MainVehicle.Position;
-                        }
-                        else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
-                        {
-                            posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
-                            (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
-                        }
-                        else
-                        {
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X, VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
-                        }
-                    }
-                    else if (syncMode == SynchronizationMode.Experimental)
-                    {
-                        var vdir = VehicleVelocity - _lastVehVel;
-                        var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                        var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                        if (Speed > 0)
-                            MainVehicle.Velocity = target + 2*(posTarget - MainVehicle.Position);
-                        else
-                        {
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
-                        }
-                    }
-                    else if (syncMode == SynchronizationMode.Teleport)
-                    {
-                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X, VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
-                    }
-
-                    if (Main.LerpRotaion)
-                    {
-                        if ((Util.Denormalize(_lastVehicleRotation.Z) < 180f &&
-                             Util.Denormalize(_vehicleRotation.Z) > 180f) ||
-                            (Util.Denormalize(_lastVehicleRotation.Z) > 180f &&
-                             Util.Denormalize(_vehicleRotation.Z) < 180f))
-                            MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
-                        else
-                        {
-                            var lerpedRot =
-                                Util.LinearVectorLerp(_lastVehicleRotation, _vehicleRotation,
-                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                    (int) AverageLatency);
-                            MainVehicle.Quaternion = lerpedRot.ToQuaternion();
-                        }
-                    }
-                    else
-                    {
-                        MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
-                    }
-                }
-            }
-            else
-            {
-                if (PedProps != null && _clothSwitch%50 == 0 && Game.Player.Character.IsInRangeOf(_position, 30f))
-                {
-                    var id = _clothSwitch/50;
-
-                    if (PedProps.ContainsKey(id) &&
-                        PedProps[id] != Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, Character.Handle, id))
-                    {
-                        Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character.Handle, id, PedProps[id], 0, 0);
-                    }
+                    DEBUG_STEP = 13;
+                    _lastVehicle = true;
+                    _justEnteredVeh = true;
+                    _enterVehicleStarted = DateTime.Now;
+                    return;
                 }
 
-                _clothSwitch++;
-                if (_clothSwitch >= 750)
-                    _clothSwitch = 0;
-
-                if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
+                if (_lastVehicle && _justEnteredVeh && IsInVehicle && !Character.IsInVehicle(MainVehicle) &&
+                    DateTime.Now.Subtract(_enterVehicleStarted).TotalSeconds <= 4)
                 {
-                    Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
-                    Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                    return;
+                }
+                _justEnteredVeh = false;
+                DEBUG_STEP = 14;
+                if (_lastVehicle && !IsInVehicle && MainVehicle != null)
+                {
+                    if (Character != null) Character.Task.LeaveVehicle(MainVehicle, true);
                 }
 
-                if (!_lastJumping && IsJumping)
+                if (Character != null)
                 {
-                    Character.Task.Jump();
+                    Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
                 }
 
-                if (IsParachuteOpen)
+                _switch++;
+                DEBUG_STEP = 15;
+                if (!inRange)
                 {
-
-                    if (_parachuteProp == null)
+                    if (Character != null)
+                        Character.Position = gPos;
+                    if (MainVehicle != null)
                     {
-                        _parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,
-                            Character.Rotation, false, false);
-                        _parachuteProp.FreezePosition = true;
-                        Function.Call(Hash.SET_ENTITY_COLLISION, _parachuteProp.Handle, false, 0);
+                        MainVehicle.Position = VehiclePosition;
+                        MainVehicle.Rotation = VehicleRotation;
                     }
+                    return;
+                }
 
-                    Character.FreezePosition = true;
-                    
-                    var target = Util.LinearVectorLerp(_lastPosition - new Vector3(0, 0, 1),
-                        _position - new Vector3(0, 0, 1),
-                        (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
+                DEBUG_STEP = 16;
 
-                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
-
-                    if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-                         Util.Denormalize(_rotation.Z) > 180f) ||
-                        (Util.Denormalize(_lastRotation.Z) > 180f &&
-                         Util.Denormalize(_rotation.Z) < 180f))
-                        Character.Quaternion = _rotation.ToQuaternion();
-                    else
-                        Character.Quaternion =
-                        Util.LinearVectorLerp(_lastRotation, _rotation,
-                            (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency)
-                            .ToQuaternion();
-
-                    _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) + Character.ForwardVector * 0.5f;
-                    _parachuteProp.Quaternion = Character.Quaternion;
-                    if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, "skydive@parachute@first_person", "chute_idle_right",
-                                3))
+                if (IsInVehicle)
+                {
+                    if (VehicleSeat == (int) GTA.VehicleSeat.Driver ||
+                        MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver) == null)
+                    {
+                        MainVehicle.Health = VehicleHealth;
+                        if (IsVehDead && !MainVehicle.IsDead)
                         {
-                            Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict("skydive@parachute@first_person"), "chute_idle_right",
-                                8f, 1f, -1, 0, -8f, 0, 0, 0);
+                            MainVehicle.IsInvincible = false;
+                            MainVehicle.Explode();
                         }
-                }
-                else
-                {
-                    var dest = _position;
-                    Character.FreezePosition = false;
-
-                    if (_parachuteProp != null)
-                    {
-                        _parachuteProp.Delete();
-                        _parachuteProp = null;
-                    }
-
-                    if (IsAiming && !IsShooting && Character.IsInRangeOf(_position, 0.5f))
-                    {
-                        Character.Task.AimAt(AimCoords, 1);
-
-                        var dirVector = Position - _lastPosition;
-
-                        var target = Util.LinearVectorLerp(Position,
-                            (Position) + dirVector,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
-                    }
-                    
-
-                    if (IsShooting)
-                    {
-                        Character.Task.AimAt(AimCoords, 100);
-
-                        var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
-                        var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
-                        var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
-                        var speed = 0xbf800000;
-                        var weaponH = (WeaponHash) CurrentWeapon;
-                        if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
-                            weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
-                            speed = 500;
-
-                        if (weaponH == WeaponHash.Minigun)
-                            weaponH = WeaponHash.CombatPDW;
-                        /*
-                        var end = AimCoords;
-
-                        if ((end - start).Length() > 20f)
+                        else if (!IsVehDead && MainVehicle.IsDead)
                         {
-                            var dir = (start - end);
-                            dir.Normalize();
-                            start = end + dir*20f;
-                        }*/
-                        
-                        Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, AimCoords.X,
-                            AimCoords.Y, AimCoords.Z, damage, true, (int)weaponH, Character, true, true, speed);
+                            MainVehicle.IsInvincible = true;
+                            if (MainVehicle.IsDead)
+                                MainVehicle.Repair();
+                        }
+                        DEBUG_STEP = 17;
+                        MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
+                        MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
 
-                        _lastStart = start;
-                        _lastEnd = AimCoords;
+                        if (VehicleMods != null && _modSwitch%50 == 0 &&
+                            Game.Player.Character.IsInRangeOf(VehiclePosition, 30f))
+                        {
+                            var id = _modSwitch/50;
 
-                        var dirVector = Position - _lastPosition;
+                            if (VehicleMods.ContainsKey(id) && VehicleMods[id] != MainVehicle.GetMod((VehicleMod) id))
+                            {
+                                Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle.Handle, 0);
+                                MainVehicle.SetMod((VehicleMod) id, VehicleMods[id], false);
+                                Function.Call(Hash.RELEASE_PRELOAD_MODS, id);
+                            }
+                        }
+                        _modSwitch++;
 
-                        var target = Util.LinearVectorLerp(Position,
-                            (Position) + dirVector,
-                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                        if (_modSwitch >= 2500)
+                            _modSwitch = 0;
 
-                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
-                    }
+                        if (IsHornPressed && !_lastHorn)
+                        {
+                            _lastHorn = true;
+                            MainVehicle.SoundHorn(99999);
+                        }
 
-                    if (!IsAiming && !IsShooting && !IsJumping)
-                    {
+                        if (!IsHornPressed && _lastHorn)
+                        {
+                            _lastHorn = false;
+                            MainVehicle.SoundHorn(1);
+                        }
+                        DEBUG_STEP = 18;
+
+                        if (MainVehicle.SirenActive && !Siren)
+                            MainVehicle.SirenActive = Siren;
+                        else if (!MainVehicle.SirenActive && Siren)
+                            MainVehicle.SirenActive = Siren;
+
+                        if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
+                        {
+                            Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
+                            Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                        }
+
+                        if (IsAiming && !IsShooting)
+                        {
+                            Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
+                                100f, 80, 0, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
+                        }
+                        else if (IsShooting)
+                        {
+                            Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
+                                100f, 80, 1, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
+                        }
+                        DEBUG_STEP = 19;
+
+                        var dir = VehiclePosition - _lastVehiclePos;
+
                         var syncMode = Main.GlobalSyncMode;
-
                         if (syncMode == SynchronizationMode.Dynamic)
                         {
                             if (AverageLatency > 70)
@@ -770,92 +579,499 @@ namespace MTAV
                             else
                                 syncMode = SynchronizationMode.DeadReckoning;
                         }
-
+                        DEBUG_STEP = 20;
                         if (syncMode == SynchronizationMode.DeadReckoning)
                         {
-                            
-                            var dir = Position - _lastPosition;
+                            var vdir = VehicleVelocity - _lastVehVel;
+                            var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
 
-                            var vdir = PedVelocity - _lastPedVel;
-                            var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                                (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                            var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
 
-                            var posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                                (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-                            if (GetPedSpeed(PedVelocity.Length()) > 0)
+                            if (Speed > 0.5f)
                             {
-                                Character.Velocity = target + 2 * (posTarget - Character.Position);
+                                MainVehicle.Velocity = target + 2*(posTarget - MainVehicle.Position);
                                 _stopTime = DateTime.Now;
-                                _carPosOnUpdate = Character.Position;
+                                _carPosOnUpdate = MainVehicle.Position;
                             }
                             else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
                             {
-                                posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
-                                (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
+                                posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
+                                    (int) DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
+                                    posTarget.Z, 0, 0, 0, 0);
                             }
                             else
                             {
-                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y, Position.Z, 0, 0, 0, 0);
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X,
+                                    VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
                             }
                         }
                         else if (syncMode == SynchronizationMode.EntityLerping)
                         {
-                            var target = Util.LinearVectorLerp(_lastPosition, Position,
-                                (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                            var target = Util.LinearVectorLerp(_lastVehVel, VehicleVelocity,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
 
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0, 0);
+                            var posTarget = Util.LinearVectorLerp(_lastVehiclePos, VehiclePosition,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
+
+                            if (Speed > 0)
+                            {
+                                MainVehicle.Velocity = target + 2*(posTarget - MainVehicle.Position);
+                                _stopTime = DateTime.Now;
+                                _carPosOnUpdate = MainVehicle.Position;
+                            }
+                            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+                            {
+                                posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
+                                    (int) DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
+                                    posTarget.Z, 0, 0, 0, 0);
+                            }
+                            else
+                            {
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X,
+                                    VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
+                            }
                         }
+                        else if (syncMode == SynchronizationMode.Experimental)
+                        {
+                            var vdir = VehicleVelocity - _lastVehVel;
+                            var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
 
+                            var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
+
+                            if (Speed > 0)
+                                MainVehicle.Velocity = target + 2*(posTarget - MainVehicle.Position);
+                            else
+                            {
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
+                                    posTarget.Z, 0, 0, 0, 0);
+                            }
+                        }
                         else if (syncMode == SynchronizationMode.Teleport)
                         {
-                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y, Position.Z, 0, 0, 0, 0);
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X,
+                                VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
                         }
-
+                        DEBUG_STEP = 21;
                         if (Main.LerpRotaion)
                         {
-                            if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-                                 Util.Denormalize(Rotation.Z) > 180f) ||
-                                (Util.Denormalize(_lastRotation.Z) > 180f &&
-                                 Util.Denormalize(Rotation.Z) < 180f))
-                                Character.Rotation = Rotation;
+                            if ((Util.Denormalize(_lastVehicleRotation.Z) < 180f &&
+                                 Util.Denormalize(_vehicleRotation.Z) > 180f) ||
+                                (Util.Denormalize(_lastVehicleRotation.Z) > 180f &&
+                                 Util.Denormalize(_vehicleRotation.Z) < 180f))
+                                MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
                             else
-                                Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
-                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                    (int) AverageLatency);
+                            {
+                                var lerpedRot =
+                                    Util.LinearVectorLerp(_lastVehicleRotation, _vehicleRotation,
+                                        (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                        (int) AverageLatency);
+                                MainVehicle.Quaternion = lerpedRot.ToQuaternion();
+                            }
                         }
                         else
                         {
-                            Character.Rotation = Rotation;
-                        }
-
-                        var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
-                        var animDict = GetAnimDictionary();
-                        var secondaryAnimDict = GetSecondaryAnimDict();
-
-                        if (
-                            !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
-                                3))
-                        {
-                            Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-                                8f, 1f, -1, 0, -8f, 0, 0, 0);
-                        }
-
-                        if (secondaryAnimDict != null &&
-                            !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
-                                3))
-                        {
-                            Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
-                                8f, 1f, -1, 32 | 16, -8f, 0, 0, 0);
+                            MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
                         }
                     }
                 }
-                _lastJumping = IsJumping;
-                _lastShooting = IsShooting;
-                _lastAiming = IsAiming;
+                else
+                {
+                    if (PedProps != null && _clothSwitch%50 == 0 && Game.Player.Character.IsInRangeOf(_position, 30f))
+                    {
+                        var id = _clothSwitch/50;
+
+                        if (PedProps.ContainsKey(id) &&
+                            PedProps[id] != Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, Character.Handle, id))
+                        {
+                            Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character.Handle, id, PedProps[id], 0, 0);
+                        }
+                    }
+                    DEBUG_STEP = 22;
+                    _clothSwitch++;
+                    if (_clothSwitch >= 750)
+                        _clothSwitch = 0;
+                    DEBUG_STEP = 23;
+                    if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
+                    {
+                        Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
+                        Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                    }
+
+                    if (!_lastJumping && IsJumping)
+                    {
+                        Character.Task.Jump();
+                    }
+                    DEBUG_STEP = 24;
+                    if (IsParachuteOpen)
+                    {
+
+                        if (_parachuteProp == null)
+                        {
+                            _parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,
+                                Character.Rotation, false, false);
+                            _parachuteProp.FreezePosition = true;
+                            Function.Call(Hash.SET_ENTITY_COLLISION, _parachuteProp.Handle, false, 0);
+                        }
+
+                        Character.FreezePosition = true;
+
+                        var target = Util.LinearVectorLerp(_lastPosition - new Vector3(0, 0, 1),
+                            _position - new Vector3(0, 0, 1),
+                            (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
+
+                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
+                            0);
+                        DEBUG_STEP = 25;
+                        if ((Util.Denormalize(_lastRotation.Z) < 180f &&
+                             Util.Denormalize(_rotation.Z) > 180f) ||
+                            (Util.Denormalize(_lastRotation.Z) > 180f &&
+                             Util.Denormalize(_rotation.Z) < 180f))
+                            Character.Quaternion = _rotation.ToQuaternion();
+                        else
+                            Character.Quaternion =
+                                Util.LinearVectorLerp(_lastRotation, _rotation,
+                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                    (int) AverageLatency)
+                                    .ToQuaternion();
+
+                        _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
+                                                  Character.ForwardVector*0.5f;
+                        _parachuteProp.Quaternion = Character.Quaternion;
+                        if (
+                            !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
+                                "skydive@parachute@first_person", "chute_idle_right",
+                                3))
+                        {
+                            Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                                Util.LoadDict("skydive@parachute@first_person"), "chute_idle_right",
+                                8f, 1f, -1, 0, -8f, 0, 0, 0);
+                        }
+                        DEBUG_STEP = 26;
+                    }
+                    else
+                    {
+                        Character.FreezePosition = false;
+
+                        if (_parachuteProp != null)
+                        {
+                            _parachuteProp.Delete();
+                            _parachuteProp = null;
+                        }
+                        DEBUG_STEP = 27;
+                        if (lastMeleeAnim != null)
+                        {
+                            var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
+                                lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
+                            UI.ShowSubtitle(currentTime.ToString());
+
+                            if (currentTime >= meleeDamageStart && currentTime <= meleeDamageEnd && !meleeSwingDone)
+                            {
+                                var gunEntity = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
+                                var start = gunEntity.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+                                var end = gunEntity.GetOffsetInWorldCoords(new Vector3(0, 0, 0.01f));
+                                var ray = World.RaycastCapsule(start, end, 0.2f, IntersectOptions.Everything, gunEntity);
+                                if (ray.DitHitAnything && ray.HitEntity != null)
+                                {
+                                    if (ray.HitEntity != Character)
+                                        if (ray.HitEntity == Game.Player.Character)
+                                        {
+                                            Game.Player.Character.Health -= 75;
+                                            meleeSwingDone = true;
+                                        }
+                                }
+                            }
+                            DEBUG_STEP = 28;
+                            if (currentTime >= 1f)
+                            {
+                                lastMeleeAnim = null;
+                                meleeSwingDone = false;
+                            }
+                            if (currentTime >= meleeanimationend)
+                            {
+                                Character.Task.ClearAnimation(lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
+                                lastMeleeAnim = null;
+                                meleeSwingDone = false;
+                            }
+                        }
+                        else if (IsInMeleeCombat)
+                        {
+                            var secondaryAnimDict = "";
+                            var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+                            var hands = GetWeaponHandsHeld(CurrentWeapon);
+                            if (hands == 3) secondaryAnimDict = "move_strafe@melee_small_weapon";
+                            if (hands == 4) secondaryAnimDict = "move_strafe@melee_large_weapon";
+
+                            var animDict = GetAnimDictionary();
+
+                            if (
+                                !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
+                                    3))
+                            {
+                                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
+                                    8f, 1f, -1, 0, -8f, 0, 0, 0);
+                            }
+
+                            if (secondaryAnimDict != null &&
+                                !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
+                                    3))
+                            {
+                                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
+                                    8f, 1f, -1, 32 | 16, -8f, 0, 0, 0);
+                            }
+
+                            if (Main.LerpRotaion)
+                            {
+                                if ((Util.Denormalize(_lastRotation.Z) < 180f &&
+                                     Util.Denormalize(Rotation.Z) > 180f) ||
+                                    (Util.Denormalize(_lastRotation.Z) > 180f &&
+                                     Util.Denormalize(Rotation.Z) < 180f))
+                                    Character.Rotation = Rotation;
+                                else
+                                    Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
+                                        (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                        (int) AverageLatency);
+                            }
+                            else
+                            {
+                                Character.Rotation = Rotation;
+                            }
+                        }
+                        DEBUG_STEP = 29;
+                        if (IsAiming && !IsShooting)
+                        {
+                            var hands = GetWeaponHandsHeld(CurrentWeapon);
+
+                            if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
+                            {
+                                Character.Task.AimAt(AimCoords, 1);
+                            }
+
+                            var dirVector = Position - _lastPosition;
+
+                            var target = Util.LinearVectorLerp(Position,
+                                (Position) + dirVector,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0,
+                                0, 0, 0);
+                        }
+
+                        DEBUG_STEP = 30;
+
+                        if (IsShooting)
+                        {
+                            var hands = GetWeaponHandsHeld(CurrentWeapon);
+
+                            if (hands == 3 || hands == 4)
+                            {
+                                Character.Task.ClearSecondary();
+
+                                var ourAnim = "";
+                                var anim = 0;
+                                if (hands == 3)
+                                {
+                                    ourAnim = "melee@small_wpn@streamed_core_fps small_melee_wpn_short_range_0";
+                                    anim = 0;
+                                    meleeanimationend = 0.3f;
+                                }
+                                if (hands == 4)
+                                {
+                                    ourAnim = "melee@large_wpn@streamed_core short_0_attack";
+                                    meleeanimationend = 0.55f;
+                                    anim = 1;
+                                }
+                                if (CurrentWeapon == unchecked((int) WeaponHash.Knife) ||
+                                    CurrentWeapon == unchecked((int) WeaponHash.Dagger))
+                                {
+                                    ourAnim = "melee@knife@streamed_core knife_short_range_0";
+                                    meleeanimationend = 0.9f;
+                                    anim = 2;
+                                }
+                                DEBUG_STEP = 31;
+                                lastMeleeAnim = ourAnim;
+
+                                if (
+                                    !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, ourAnim.Split()[0],
+                                        ourAnim.Split()[1],
+                                        3))
+                                {
+                                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(ourAnim.Split()[0]),
+                                        ourAnim.Split()[1],
+                                        8f, 1f, -1, 0, -8f, 0, 0, 0);
+                                }
+
+                                if (Main.LerpRotaion)
+                                {
+                                    if ((Util.Denormalize(_lastRotation.Z) < 180f &&
+                                         Util.Denormalize(Rotation.Z) > 180f) ||
+                                        (Util.Denormalize(_lastRotation.Z) > 180f &&
+                                         Util.Denormalize(Rotation.Z) < 180f))
+                                        Character.Rotation = Rotation;
+                                    else
+                                        Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
+                                            (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                            (int) AverageLatency);
+                                }
+                                else
+                                {
+                                    Character.Rotation = Rotation;
+                                }
+                            }
+                            else
+                            {
+
+                                Character.Task.AimAt(AimCoords, 100);
+
+                                var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
+                                var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+                                var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
+                                var speed = 0xbf800000;
+                                var weaponH = (WeaponHash) CurrentWeapon;
+                                if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
+                                    weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
+                                    speed = 500;
+
+                                if (weaponH == WeaponHash.Minigun)
+                                    weaponH = WeaponHash.CombatPDW;
+
+                                var dir = (AimCoords - start);
+                                dir.Normalize();
+                                var end = start + dir*100f;
+
+                                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
+                                    end.Y, end.Z, damage, true, (int) weaponH, Character, true, true, speed);
+
+                                _lastStart = start;
+                                _lastEnd = AimCoords;
+                            }
+
+                            var dirVector = Position - _lastPosition;
+
+                            var target = Util.LinearVectorLerp(Position,
+                                (Position) + dirVector,
+                                (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
+
+                            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0,
+                                0, 0, 0);
+                        }
+                        DEBUG_STEP = 32;
+                        if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat)
+                        {
+                            var syncMode = Main.GlobalSyncMode;
+
+                            if (syncMode == SynchronizationMode.Dynamic)
+                            {
+                                if (AverageLatency > 70)
+                                    syncMode = SynchronizationMode.EntityLerping;
+                                else
+                                    syncMode = SynchronizationMode.DeadReckoning;
+                            }
+
+                            if (syncMode == SynchronizationMode.DeadReckoning)
+                            {
+
+                                var dir = Position - _lastPosition;
+
+                                var vdir = PedVelocity - _lastPedVel;
+                                var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
+                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                    (int) AverageLatency);
+
+                                var posTarget = Util.LinearVectorLerp(Position, Position + dir,
+                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                    (int) AverageLatency);
+
+                                if (GetPedSpeed(PedVelocity.Length()) > 0)
+                                {
+                                    Character.Velocity = target + 2*(posTarget - Character.Position);
+                                    _stopTime = DateTime.Now;
+                                    _carPosOnUpdate = Character.Position;
+                                }
+                                else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+                                {
+                                    posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
+                                        (int) DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
+                                        posTarget.Z, 0, 0, 0, 0);
+                                }
+                                else
+                                {
+                                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
+                                        Position.Z, 0, 0, 0, 0);
+                                }
+                            }
+                            else if (syncMode == SynchronizationMode.EntityLerping)
+                            {
+                                var target = Util.LinearVectorLerp(_lastPosition, Position,
+                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                    (int) AverageLatency);
+
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z,
+                                    0, 0, 0, 0);
+                            }
+                            else if (syncMode == SynchronizationMode.Teleport)
+                            {
+                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
+                                    Position.Z, 0, 0, 0, 0);
+                            }
+
+                            DEBUG_STEP = 33;
+                            if (Main.LerpRotaion)
+                            {
+                                if ((Util.Denormalize(_lastRotation.Z) < 180f &&
+                                     Util.Denormalize(Rotation.Z) > 180f) ||
+                                    (Util.Denormalize(_lastRotation.Z) > 180f &&
+                                     Util.Denormalize(Rotation.Z) < 180f))
+                                    Character.Rotation = Rotation;
+                                else
+                                    Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
+                                        (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                        (int) AverageLatency);
+                            }
+                            else
+                            {
+                                Character.Rotation = Rotation;
+                            }
+
+                            var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+                            var animDict = GetAnimDictionary();
+                            var secondaryAnimDict = GetSecondaryAnimDict();
+                            DEBUG_STEP = 34;
+                            if (
+                                !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
+                                    3))
+                            {
+                                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
+                                    8f, 1f, -1, 0, -8f, 0, 0, 0);
+                            }
+
+                            if (secondaryAnimDict != null &&
+                                !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
+                                    3))
+                            {
+                                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
+                                    8f, 1f, -1, 32 | 16, -8f, 0, 0, 0);
+                            }
+                        }
+                    }
+                    _lastJumping = IsJumping;
+                    _lastShooting = IsShooting;
+                    _lastAiming = IsAiming;
+                }
+                _lastVehicle = IsInVehicle;
+                DEBUG_STEP = 35;
             }
-            _lastVehicle = IsInVehicle;
+            catch (Exception ex)
+            {
+                UI.Notify("Caught unhandled exception in PedThread for player " + Name);
+                UI.Notify(ex.Message);
+                UI.Notify("LAST STEP: " + DEBUG_STEP);
+            }
         }
 
         public string GetAnimDictionary()
@@ -864,6 +1080,8 @@ namespace MTAV
 
             if (Character.Gender == Gender.Female)
                 dict = "move_f@generic";
+
+            
 
             return dict;
         }
@@ -898,8 +1116,44 @@ namespace MTAV
                 CurrentWeapon == unchecked((int) WeaponHash.AssaultShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.BullpupShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.SawnOffShotgun))
-                return "weapons@machinegun@";
+                return "move_weapon@rifle@generic";
             return GetAnimDictionary();
+        }
+
+        public int GetWeaponHandsHeld(int weapon)
+        {
+            if (weapon == unchecked((int) WeaponHash.Unarmed)) return 0;
+            if (weapon == unchecked((int)WeaponHash.RPG) ||
+                weapon == unchecked((int)WeaponHash.HomingLauncher) ||
+                weapon == unchecked((int)WeaponHash.Firework))
+                return 5;
+            if (weapon == unchecked((int)WeaponHash.Minigun))
+                return 5;
+            if (weapon == unchecked((int)WeaponHash.GolfClub) ||
+                weapon == unchecked((int)WeaponHash.Bat))
+                return 4;
+            if (weapon == unchecked((int) WeaponHash.Knife) || weapon == unchecked((int) WeaponHash.Nightstick) ||
+                weapon == unchecked((int) WeaponHash.Hammer) || weapon == unchecked((int) WeaponHash.Crowbar) ||
+                weapon == unchecked((int) WeaponHash.Dagger) || weapon == unchecked((int) WeaponHash.Hatchet) ||
+                weapon == unchecked((int) WeaponHash.KnuckleDuster))
+                return 3;
+            if (weapon == -1357824103 || weapon == -1074790547 ||
+                (weapon == 2132975508 || weapon == -2084633992) ||
+                (weapon == -952879014 || weapon == 100416529) ||
+                weapon == unchecked((int)WeaponHash.Gusenberg) ||
+                weapon == unchecked((int)WeaponHash.MG) || weapon == unchecked((int)WeaponHash.CombatMG) ||
+                weapon == unchecked((int)WeaponHash.CombatPDW) ||
+                weapon == unchecked((int)WeaponHash.AssaultSMG) ||
+                weapon == unchecked((int)WeaponHash.SMG) ||
+                weapon == unchecked((int)WeaponHash.HeavySniper) ||
+                weapon == unchecked((int)WeaponHash.PumpShotgun) ||
+                weapon == unchecked((int)WeaponHash.HeavyShotgun) ||
+                weapon == unchecked((int)WeaponHash.Musket) ||
+                weapon == unchecked((int)WeaponHash.AssaultShotgun) ||
+                weapon == unchecked((int)WeaponHash.BullpupShotgun) ||
+                weapon == unchecked((int)WeaponHash.SawnOffShotgun))
+                return 2;
+            return 1;
         }
 
         public static int GetPedSpeed(float speed)

@@ -216,7 +216,7 @@ namespace MultiTheftAutoShared
         [ProtoMember(6)]
         public string Gamemode { get; set; }
         [ProtoMember(7)]
-        public byte Tab { get; set; }
+        public bool LAN { get; set; }
     }
 
     [ProtoContract]
@@ -348,6 +348,9 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(17)]
         public bool IsRagdoll { get; set; }
+
+        [ProtoMember(18)]
+        public bool IsInMeleeCombat { get; set; }
     }
 
     [ProtoContract]

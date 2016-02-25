@@ -120,6 +120,11 @@ namespace GTAServer
             Program.ServerInstance.StopResource(name);
         }
 
+        public void consoleOutput(string text)
+        {
+            Program.Output(text);
+        }
+
         public int vehicleNameToModel(string modelName)
         {
             VehicleHash output;

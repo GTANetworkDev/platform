@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -52,6 +53,8 @@ namespace MTAV
         private bool _lastDead;
         private bool _lastKilled;
         private bool _wasTyping;
+
+        private MainMenu mainMenu;
         
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
@@ -126,6 +129,8 @@ namespace MTAV
             #region Menu Set up
 #warning Affects performance when open, drops from 80~100 on a GTX 980 to high 30s ~ 60
             _menuPool = new MenuPool();
+            mainMenu = new MainMenu();
+
 
             _mainMenu = new UIMenu("Co-oP", "MAIN MENU");
             _settingsMenu = new UIMenu("Co-oP", "SETTINGS");
@@ -580,11 +585,12 @@ namespace MTAV
                 obj.PedArmor = player.Armor;
                 obj.IsRagdoll = player.IsRagdoll;
                 //obj.IsInCover = player.IsInCover();
+                obj.IsInMeleeCombat = player.IsInMeleeCombat;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.IsAiming = aiming;
-                obj.IsShooting = shooting;
+                obj.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack));
                 obj.IsJumping = Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle);
                 obj.IsParachuteOpen = Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 2;
                 obj.Speed = player.Velocity.Length();
@@ -679,12 +685,11 @@ namespace MTAV
         */
 
 #if DEBUG
-        private bool _firstBool;
-        private bool _secondBool;
-        private bool _thirdBool;
+        private float range = 50f;
 #endif
 
         private Vehicle _lastPlayerCar;
+        private int _lastModel;
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
@@ -737,11 +742,35 @@ namespace MTAV
                 UI.ShowSubtitle("THIRD BOOL: " + _thirdBool);
             }
 
-            if (Game.IsControlJustPressed(0, Control.Context))
+                    */
+
+            if (Game.IsKeyPressed(Keys.D7))
             {
-                var dest = World.GetCrosshairCoordinates().HitCoords;
-                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, Game.Player.Character.Position.X, Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
-                    dest.X, dest.Y, dest.Z, 25, _firstBool, (int)Game.Player.Character.Weapons.Current.Hash, Game.Player.Character, _secondBool, _thirdBool, 0xbf800000);
+                range--;
+                UI.ShowSubtitle("" + range);
+            }
+
+            if (Game.IsKeyPressed(Keys.D8))
+            {
+                range++;
+                UI.ShowSubtitle("" + range);
+            }
+
+            if (Game.IsControlPressed(0, Control.Context))
+            {
+                /*
+                //var dest = World.GetCrosshairCoordinates().HitCoords;
+
+                var origin = Game.Player.Character.Position + Game.Player.Character.ForwardVector*range;
+                var dest = Game.Player.Character.Position;
+
+                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, origin.X, origin.Y, origin.Z,
+                    dest.X, dest.Y, dest.Z, 25, true, (int)Game.Player.Character.Weapons.Current.Hash, 0, false, false, 0xbf800000);
+
+                UI.ShowSubtitle("hit at " + range);
+
+                Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character, Util.LoadDict("move_strafe@first_person@generic"), "run_bwd_-90_loop",
+                                8f, 1f, -1, 32 | 128, -8f, 0, 0, 0);
 
                 var gun = Function.Call<int>(Hash.GET_HASH_KEY, "weapon_airstrike_rocket");
                 
@@ -749,9 +778,8 @@ namespace MTAV
                 Function.Call((Hash) 0xBFE5756E7407064A, Game.Player.Character.Position.X,
                     Game.Player.Character.Position.Y, Game.Player.Character.Position.Z + 2f,
                     dest.X, dest.Y, dest.Z, 25, true, (int) Game.Player.Character.Weapons.Current.Hash,
-                    Game.Player.Character, true, true, -1f, Game.Player.Character, true, false, true, true);
+                    Game.Player.Character, true, true, -1f, Game.Player.Character, true, false, true, true);*/
             }
-                    */
 
             Function.Call((Hash)0x8378627201D5497D, Game.Player.Character, 1f, 1f);
             #endif
@@ -782,6 +810,8 @@ namespace MTAV
             Game.DisableControl(0, Control.SpecialAbility);
             Game.DisableControl(0, Control.SpecialAbilityPC);
             Game.DisableControl(0, Control.SpecialAbilitySecondary);
+            Game.DisableControl(0, Control.CharacterWheel);
+            Game.DisableControl(0, Control.Phone);
 
             if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() &&
                 Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
@@ -800,6 +830,14 @@ namespace MTAV
                                 Game.Player.CanControlCharacter);
             if (hasRespawned && !_lastDead)
             {
+                if (_lastModel != 0)
+                {
+                    var lastMod = new Model(_lastModel);
+                    lastMod.Request(10000);
+                    Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, lastMod);
+                    lastMod.MarkAsNoLongerNeeded();
+                }
+
                 _lastDead = true;
                 var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.PlayerRespawned);
@@ -812,6 +850,7 @@ namespace MTAV
 
             if (killed && !_lastKilled)
             {
+
                 var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.PlayerKilled);
                 var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
@@ -821,6 +860,16 @@ namespace MTAV
                 msg.Write(killerEnt);
                 msg.Write(weapon);
 
+                var playerMod = (PedHash) Game.Player.Character.Model.Hash;
+                if (playerMod != PedHash.Michael && playerMod != PedHash.Franklin && playerMod != PedHash.Trevor)
+                {
+                    _lastModel = Game.Player.Character.Model.Hash;
+                    var lastMod = new Model(PedHash.Michael);
+                    lastMod.Request(10000);
+                    Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, lastMod);
+                    lastMod.MarkAsNoLongerNeeded();
+                    Game.Player.Character.Kill();
+                }
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
             }
 
@@ -1064,6 +1113,7 @@ namespace MTAV
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
                                     Opponents[data.Id].Position = data.Position.ToVector();
                                     Opponents[data.Id].ModelHash = data.PedModelHash;
+                                    Opponents[data.Id].IsInMeleeCombat = data.IsInMeleeCombat;
                                     //Opponents[data.Id].Rotation = data.Quaternion.ToQuaternion();
                                     Opponents[data.Id].Rotation = data.Quaternion.ToVector();
 
@@ -1243,8 +1293,7 @@ namespace MTAV
                                 var data = DeserializeBinary<ChatData>(msg.ReadBytes(len)) as ChatData;
                                 if (data != null && !string.IsNullOrEmpty(data.Message))
                                 {
-                                    var sender = string.IsNullOrEmpty(data.Sender) ? "SERVER" : data.Sender;
-                                    _chat.AddMessage(sender, data.Message);
+                                    _chat.AddMessage(data.Sender, data.Message);
                                 }
                             }
                             break;
@@ -1543,6 +1592,12 @@ namespace MTAV
         {
             var player = Game.Player.Character;
 
+            foreach (var blip in World.GetActiveBlips())
+            {
+                if (!NetEntityHandler.ContainsLocalHandle(blip.Handle)) blip.Remove();
+            }
+
+
             if (_debugSyncPed == null)
             {
                 _debugSyncPed = new SyncPed(player.Model.Hash, player.Position, player.Rotation, false);
@@ -1591,13 +1646,14 @@ namespace MTAV
                         aimCoord = ScreenRelToWorld(GameplayCamera.Position, GameplayCamera.Rotation,
                             new Vector2(0, 0));
 
+                    _debugSyncPed.IsInMeleeCombat = player.IsInMeleeCombat;
                     _debugSyncPed.IsRagdoll = player.IsRagdoll;
                     _debugSyncPed.PedVelocity = player.Velocity;
                     _debugSyncPed.PedHealth = player.Health;
                     _debugSyncPed.AimCoords = aimCoord;
                     _debugSyncPed.PedArmor = player.Armor;
                     _debugSyncPed.Speed = player.Velocity.Length();
-                    _debugSyncPed.Position = player.Position;
+                    _debugSyncPed.Position = player.Position + new Vector3(1f, 0, 0);
                     _debugSyncPed.Rotation = player.Rotation;
                     _debugSyncPed.ModelHash = player.Model.Hash;
                     _debugSyncPed.CurrentWeapon = (int)player.Weapons.Current.Hash;
