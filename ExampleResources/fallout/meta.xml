@@ -1,0 +1,7 @@
+<meta>
+    <info name="Fallout" author="Guadmaz" type="script" />
+    
+    <script src="fallout.js" type="server" lang="javascript"/>
+    <script src="fallout_local.js" type="client" lang="javascript"/>    
+    
+</meta>

@@ -82,8 +82,8 @@ namespace GTANetwork
             _tickNatives = new Dictionary<string, NativeData>();
             _dcNatives = new Dictionary<string, NativeData>();
 
-            _entityCleanup = new List<int>();
-            _blipCleanup = new List<int>();
+            EntityCleanup = new List<int>();
+            BlipCleanup = new List<int>();
 
             _emptyVehicleMods = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++) _emptyVehicleMods.Add(i, 0);
@@ -231,6 +231,56 @@ namespace GTANetwork
                     }
 
                     var splt = server.Description.Split(':');
+                    if (splt.Length < 2) return;
+                    int port;
+                    if (!int.TryParse(splt[1], out port)) return;
+                    ConnectToServer(splt[0], port);
+                    MainMenu.TemporarilyHidden = true;
+                    _connectTab.RefreshIndex();
+                };
+                _recentBrowser.Items.Add(item);
+            }
+        }
+
+        private void AddServerToRecent(string server, string password)
+        {
+            if (!PlayerSettings.RecentServers.Contains(server))
+            {
+                PlayerSettings.RecentServers.Add(server);
+                if (PlayerSettings.RecentServers.Count > 20)
+                    PlayerSettings.RecentServers.RemoveAt(0);
+                Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+
+                var item = new UIMenuItem(server);
+                item.Description = server;
+                item.SetRightLabel(server);
+                item.Activated += (sender, selectedItem) =>
+                {
+                    if (IsOnServer())
+                    {
+                        Client.Disconnect("Switching servers.");
+
+                        if (Opponents != null)
+                        {
+                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                            Opponents.Clear();
+                        }
+
+                        if (Npcs != null)
+                        {
+                            Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                            Npcs.Clear();
+                        }
+
+                        while (IsOnServer()) Script.Yield();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(password))
+                    {
+                        _password = Game.GetUserInput(256);
+                    }
+
+                    var splt = server.Split(':');
                     if (splt.Length < 2) return;
                     int port;
                     if (!int.TryParse(splt[1], out port)) return;
@@ -398,7 +448,7 @@ namespace GTANetwork
         {
             MainMenu = new TabView("Grand Theft Auto Network");
             MainMenu.CanLeave = false;
-            MainMenu.MoneySubtitle = "MTAV 1.0.42.362";
+            MainMenu.MoneySubtitle = "GTAN 1.0.42.362";
 
             #region Welcome Screen
             {
@@ -465,6 +515,7 @@ namespace GTANetwork
                     ipButton.Size = new Size(500, 40);
                     ipButton.Activated += (sender, args) =>
                     {
+                        AddServerToRecent(_clientIp + ":" + Port, _password);
                         ConnectToServer(_clientIp, Port);
                     };
                     dConnect.Buttons.Add(ipButton);
@@ -548,6 +599,55 @@ namespace GTANetwork
                                     MainMenu.TemporarilyHidden = true;
                                     _connectTab.RefreshIndex();
                                     AddServerToRecent(selectedServer);
+                                };
+                                _favBrowser.Items.Add(item);
+                            }
+                        }
+                    }
+
+                    if (_connectTab.Index == 3 && _connectTab.Items[3].Focused)
+                    {
+                        MainMenu.DrawInstructionalButton(5, Control.Enter, "Favorite by IP");
+                        if (Game.IsControlJustPressed(0, Control.Enter))
+                        {
+                            var serverIp = InputboxThread.GetUserInput("Server IP", 40, TickSpinner);
+                            
+                            if (!PlayerSettings.FavoriteServers.Contains(serverIp))
+                            {
+                                AddToFavorites(serverIp);
+                                var item = new UIMenuItem(serverIp);
+                                item.Description = serverIp;
+                                item.Activated += (faf, selectedItem) =>
+                                {
+                                    if (IsOnServer())
+                                    {
+                                        Client.Disconnect("Switching servers.");
+
+                                        if (Opponents != null)
+                                        {
+                                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                            Opponents.Clear();
+                                        }
+
+                                        if (Npcs != null)
+                                        {
+                                            Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                            Npcs.Clear();
+                                        }
+
+                                        while (IsOnServer()) Script.Yield();
+                                    }
+
+                                    var splt = serverIp.Split(':');
+
+                                    if (splt.Length < 2) return;
+                                    int port;
+                                    if (!int.TryParse(splt[1], out port)) return;
+
+                                    ConnectToServer(splt[0], port);
+                                    MainMenu.TemporarilyHidden = true;
+                                    _connectTab.RefreshIndex();
+                                    AddServerToRecent(serverIp, "");
                                 };
                                 _favBrowser.Items.Add(item);
                             }
@@ -666,9 +766,11 @@ namespace GTANetwork
         private static Dictionary<int, int> _emptyVehicleMods;
         private Dictionary<string, NativeData> _tickNatives;
         private Dictionary<string, NativeData> _dcNatives;
-        private List<int> _entityCleanup;
-        private List<int> _blipCleanup;
-        private Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
+
+        public static List<int> EntityCleanup;
+        public static List<int> BlipCleanup;
+        public static Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
+
         private int _markerCount;
 
         private static int _modSwitch = 0;
@@ -1825,15 +1927,15 @@ namespace GTANetwork
 
                             lock (_tickNatives) if (_tickNatives != null) _tickNatives.Clear();
 
-                            lock (_entityCleanup)
+                            lock (EntityCleanup)
                             {
-                                _entityCleanup.ForEach(ent => new Prop(ent).Delete());
-                                _entityCleanup.Clear();
+                                EntityCleanup.ForEach(ent => new Prop(ent).Delete());
+                                EntityCleanup.Clear();
                             }
-                            lock (_blipCleanup)
+                            lock (BlipCleanup)
                             {
-                                _blipCleanup.ForEach(blip => new Blip(blip).Remove());
-                                _blipCleanup.Clear();
+                                BlipCleanup.ForEach(blip => new Blip(blip).Remove());
+                                BlipCleanup.Clear();
                             }
 
                             _chat.Clear();
@@ -2278,7 +2380,7 @@ namespace GTANetwork
                 }
 
                 var entId = Function.Call<int>((Hash) obj.Hash, list.ToArray());
-                lock(_entityCleanup) _entityCleanup.Add(entId);
+                lock(EntityCleanup) EntityCleanup.Add(entId);
                 if (obj.ReturnType is IntArgument)
                 {
                     SendNativeCallResponse(obj.Id, entId);
@@ -2292,7 +2394,7 @@ namespace GTANetwork
             if (nativeType == NativeType.ReturnsBlip)
             {
                 var blipId = Function.Call<int>((Hash)obj.Hash, list.ToArray());
-                lock (_blipCleanup) _blipCleanup.Add(blipId);
+                lock (BlipCleanup) BlipCleanup.Add(blipId);
                 if (obj.ReturnType is IntArgument)
                 {
                     SendNativeCallResponse(obj.Id, blipId);

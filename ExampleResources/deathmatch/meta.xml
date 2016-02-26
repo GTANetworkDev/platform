@@ -1,0 +1,6 @@
+<meta>
+    <info name="Deathmatch" author="Guadmaz" type="script" />
+    
+    <!--<script src="deathmatch.js" type="server" lang="javascript" />-->
+    <script src="deathmatch.cs" type="server" lang="csharp" />
+</meta>

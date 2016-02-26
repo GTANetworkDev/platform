@@ -12,6 +12,7 @@ namespace GTANetwork
         {
             HandleMap = new BiDictionary<int, int>();
             Blips = new List<int>();
+            Markers = new Dictionary<int, MarkerProperties>();
         }
 
         public void DrawMarkers()

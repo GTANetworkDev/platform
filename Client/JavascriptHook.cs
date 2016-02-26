@@ -282,7 +282,10 @@ namespace GTANetwork
 
         public int createBlip(Vector3 pos)
         {
-            return World.CreateBlip(pos).Handle;
+            var blip = World.CreateBlip(pos);
+            if (!Main.BlipCleanup.Contains(blip.Handle))
+                Main.BlipCleanup.Add(blip.Handle);
+            return blip.Handle;
         }
 
         

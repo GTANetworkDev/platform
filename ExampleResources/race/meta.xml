@@ -1,0 +1,10 @@
+<meta>
+    <info name="Race" author="Guadmaz" type="script" />
+    
+    <assembly ref="mscorlib.dll" />
+    <assembly ref="System.Xml.Serialization.dll" />
+    <assembly ref="System.Xml.dll" />
+    
+    <script src="race.cs" type="server" lang="csharp" />    
+    <script src="race_local.js" type="client" lang="javascript" />
+</meta>

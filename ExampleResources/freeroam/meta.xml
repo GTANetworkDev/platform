@@ -1,0 +1,8 @@
+<meta>
+    <info name="Freeroam" author="Guadmaz" type="script" />
+    
+    <script src="freeroam.js" type="server" lang="javascript" />
+    <script src="freeroam_local.js" type="client" lang="javascript" />    
+    
+    <file src="skeletor.png" />
+</meta>
