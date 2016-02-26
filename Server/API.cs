@@ -301,9 +301,9 @@ namespace GTANetworkServer
             return Program.ServerInstance.NetEntityHandler.CreateVehicle(model, pos, rot, color1, color2);
         }
 
-        public  int createObject(int model, Vector3 pos, Vector3 rot, bool dyn)
+        public  int createObject(int model, Vector3 pos, Vector3 rot)
         {
-            return Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot, dyn);
+            return Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot);
         }
 
         public int createBlip(Vector3 pos)

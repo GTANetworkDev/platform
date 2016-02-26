@@ -280,6 +280,13 @@ namespace GTANetwork
             }
         }
 
+        public int createBlip(Vector3 pos)
+        {
+            return World.CreateBlip(pos).Handle;
+        }
+
+        
+        
         public string getResourceFilePath(string resourceName, string fileName)
         {
             return FileTransferId._DOWNLOADFOLDER_ + resourceName + "\\" + fileName;

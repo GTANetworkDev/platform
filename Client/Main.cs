@@ -668,6 +668,8 @@ namespace GTANetwork
         private Dictionary<string, NativeData> _dcNatives;
         private List<int> _entityCleanup;
         private List<int> _blipCleanup;
+        private Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
+        private int _markerCount;
 
         private static int _modSwitch = 0;
         private static int _pedSwitch = 0;
@@ -693,6 +695,30 @@ namespace GTANetwork
                     var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
                 }
+
+            if (map.Blips != null)
+            {
+                foreach (var blip in map.Blips)
+                {
+                    var ourBlip = NetEntityHandler.CreateBlip(blip.Value.Position.ToVector(), blip.Key);
+                    if (blip.Value.Sprite != 0)
+                        ourBlip.Sprite = (BlipSprite) blip.Value.Sprite;
+                    ourBlip.Color = (BlipColor)blip.Value.Color;
+                    ourBlip.Alpha = blip.Value.Alpha;
+                    ourBlip.IsShortRange = blip.Value.IsShortRange;
+                    ourBlip.Scale = blip.Value.Scale;
+                }
+            }
+
+            if (map.Markers != null)
+            {
+                foreach (var marker in map.Markers)
+                {
+                    NetEntityHandler.CreateMarker(marker.Value.MarkerType, marker.Value.Position, marker.Value.Rotation,
+                        marker.Value.Direction, marker.Value.Scale, marker.Value.Red, marker.Value.Green,
+                        marker.Value.Blue, marker.Value.Alpha, marker.Key);
+                }
+            }
         }
 
         public static void StartClientsideScripts(ScriptCollection scripts)
@@ -1053,6 +1079,19 @@ namespace GTANetwork
 
             Game.MaxWantedLevel = 0;
             Game.Player.WantedLevel = 0;
+
+            lock (_localMarkers)
+            {
+                foreach (var marker in _localMarkers)
+                {
+                    World.DrawMarker((MarkerType)marker.Value.MarkerType, marker.Value.Position.ToVector(),
+                        marker.Value.Direction.ToVector(), marker.Value.Rotation.ToVector(),
+                        marker.Value.Scale.ToVector(),
+                        Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
+                }
+            }
+
+            NetEntityHandler.DrawMarkers();
 
             var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
@@ -1446,27 +1485,60 @@ namespace GTANetwork
                                 var len = msg.ReadInt32();
                                 DownloadManager.Log("Received CreateEntity");
                                 var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
-                                if (data != null)
+                                if (data != null && data.Properties != null)
                                 {
                                     DownloadManager.Log("CreateEntity was not null. Type: " + data.EntityType);
-                                    DownloadManager.Log("Model: " + data.Model);
+                                    DownloadManager.Log("Model: " + data.Properties.ModelHash);
                                     if (data.EntityType == (byte) EntityType.Vehicle)
                                     {
-                                        var veh = NetEntityHandler.CreateVehicle(new Model(data.Model), data.Position?.ToVector() ?? new Vector3(),
-                                            data.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
-                                        veh.PrimaryColor = (VehicleColor) data.Color1;
-                                        veh.PrimaryColor = (VehicleColor) data.Color2;
+                                        var prop = (VehicleProperties) data.Properties;
+                                        var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash), data.Properties.Position?.ToVector() ?? new Vector3(),
+                                            data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
+                                        veh.PrimaryColor = (VehicleColor) prop.PrimaryColor;
+                                        veh.PrimaryColor = (VehicleColor) prop.SecondaryColor;
                                         Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
                                     }
                                     else if (data.EntityType == (byte)EntityType.Prop)
                                     {
                                         DownloadManager.Log("It was a prop. Spawning...");
-                                        NetEntityHandler.CreateObject(new Model(data.Model), data.Position?.ToVector() ?? new Vector3(),
-                                            data.Rotation?.ToVector() ?? new Vector3(), data.Dynamic, data.NetHandle);
+                                        NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash), data.Properties.Position?.ToVector() ?? new Vector3(),
+                                            data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
                                     }
                                     else if (data.EntityType == (byte) EntityType.Blip)
                                     {
-                                        NetEntityHandler.CreateBlip(data.Position.ToVector(), data.NetHandle);
+                                        NetEntityHandler.CreateBlip(data.Properties.Position.ToVector(), data.NetHandle);
+                                    }
+                                    else if (data.EntityType == (byte) EntityType.Marker)
+                                    {
+                                        var prop = (MarkerProperties) data.Properties;
+                                        NetEntityHandler.CreateMarker(prop.MarkerType, prop.Position, prop.Rotation,
+                                            prop.Direction, prop.Scale, prop.Red, prop.Green, prop.Blue, prop.Alpha,
+                                            data.NetHandle);
+                                    }
+                                }
+                            }
+                            break;
+                        case PacketType.UpdateMarkerProperties:
+                            {
+                                var len = msg.ReadInt32();
+                                var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
+                                if (data != null && data.Properties != null)
+                                {
+                                    if (data.EntityType == (byte)EntityType.Marker && NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                                    {
+                                        var prop = (MarkerProperties)data.Properties;
+                                        NetEntityHandler.Markers[data.NetHandle] = new MarkerProperties()
+                                        {
+                                            MarkerType = prop.MarkerType,
+                                            Alpha = prop.Alpha,
+                                            Blue = prop.Blue,
+                                            Direction = prop.Direction,
+                                            Green = prop.Green,
+                                            Position = prop.Position,
+                                            Red = prop.Red,
+                                            Rotation = prop.Rotation,
+                                            Scale = prop.Scale,
+                                        };
                                     }
                                 }
                             }
@@ -1477,11 +1549,25 @@ namespace GTANetwork
                                 var data = DeserializeBinary<DeleteEntity>(msg.ReadBytes(len)) as DeleteEntity;
                                 if (data != null)
                                 {
-                                    var entity = NetEntityHandler.NetToEntity(data.NetHandle);
-                                    if (entity != null)
+                                    if (NetEntityHandler.Markers.ContainsKey(data.NetHandle))
                                     {
-                                        entity.Delete();
-                                        NetEntityHandler.RemoveByNetHandle(data.NetHandle);
+                                        NetEntityHandler.Markers.Remove(data.NetHandle);
+                                    }
+                                    else
+                                    {
+                                        var entity = NetEntityHandler.NetToEntity(data.NetHandle);
+                                        if (entity != null)
+                                        {
+                                            if (NetEntityHandler.IsBlip(entity.Handle))
+                                            {
+                                                new Blip(entity.Handle).Remove();
+                                            }
+                                            else
+                                            {
+                                                entity.Delete();
+                                            }
+                                            NetEntityHandler.RemoveByNetHandle(data.NetHandle);
+                                        }
                                     }
                                 }
                             }
@@ -1758,6 +1844,7 @@ namespace GTANetwork
                             JustJoinedServer = false;
                             MainMenu.Tabs.Remove(_serverItem);
                             MainMenu.RefreshIndex();
+                            _localMarkers.Clear();
                             World.RenderingCamera = MainMenuCamera;
                             break;
                     }

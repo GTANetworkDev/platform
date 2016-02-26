@@ -32,19 +32,20 @@ namespace GTANetworkServer
 
             var packet = new CreateEntity();
             packet.EntityType = (byte) EntityType.Vehicle;
-            packet.Model = model;
-            packet.Rotation = rot;
-            packet.Position = pos;
-            packet.Color1 = color1;
-            packet.Color2 = color2;
+            var props = new VehicleProperties();
+            props.ModelHash = model;
+            props.Rotation = rot;
+            props.Position = pos;
+            props.PrimaryColor = color1;
+            props.SecondaryColor = color2;
             packet.NetHandle = localEntityHash;
-
+            packet.Properties = props;
             Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true);
 
             return localEntityHash;
         }
 
-        public int CreateProp(int model, Vector3 pos, Vector3 rot, bool dynamic)
+        public int CreateProp(int model, Vector3 pos, Vector3 rot)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new EntityProperties();
@@ -56,10 +57,10 @@ namespace GTANetworkServer
 
             var packet = new CreateEntity();
             packet.EntityType = (byte)EntityType.Prop;
-            packet.Model = model;
-            packet.Rotation = rot;
-            packet.Position = pos;
-            packet.Dynamic = dynamic;
+            packet.Properties = new EntityProperties();
+            packet.Properties.ModelHash = model;
+            packet.Properties.Rotation = rot;
+            packet.Properties.Position = pos;
             packet.NetHandle = localEntityHash;
 
             Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true);
@@ -77,7 +78,8 @@ namespace GTANetworkServer
 
             var packet = new CreateEntity();
             packet.EntityType = (byte) EntityType.Blip;
-            packet.Position = pos;
+            packet.Properties = new BlipProperties();
+            packet.Properties.Position = pos;
             packet.NetHandle = localEntityHash;
 
             Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true);

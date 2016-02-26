@@ -406,6 +406,14 @@ namespace GTANetworkServer
                 return null;
             }
         }
+
+        public void UpdateMarkerInfo(int netId, MarkerProperties newInfo)
+        {
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.Marker;
+            packet.Properties = newInfo;
+            Program.ServerInstance.SendToAll(packet, PacketType.UpdateMarkerProperties, true);
+        }
         
 
         private void LogException(Exception ex, string resourceName)
@@ -876,13 +884,21 @@ namespace GTANetworkServer
                                     mapObj.Objects = new Dictionary<int, EntityProperties>();
                                     foreach (var pair in NetEntityHandler.ToDict())
                                     {
-                                        if (pair.Value is VehicleProperties && pair.Value.EntityType == (byte)EntityType.Vehicle)
+                                        if (pair.Value.EntityType == (byte)EntityType.Vehicle)
                                         {
                                             mapObj.Vehicles.Add(pair.Key, (VehicleProperties)pair.Value);
                                         }
                                         else if (pair.Value.EntityType == (byte)EntityType.Prop)
                                         {
                                             mapObj.Objects.Add(pair.Key, pair.Value);
+                                        }
+                                        else if (pair.Value.EntityType == (byte) EntityType.Blip)
+                                        {
+                                            mapObj.Blips.Add(pair.Key, (BlipProperties)pair.Value);
+                                        }
+                                        else if (pair.Value.EntityType == (byte) EntityType.Marker)
+                                        {
+                                            mapObj.Markers.Add(pair.Key, (MarkerProperties) pair.Value);
                                         }
                                     }
 

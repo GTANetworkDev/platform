@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
 using GTA;
-using GTA.Math;
+using MultiTheftAutoShared;
+using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
 {
@@ -12,8 +14,23 @@ namespace GTANetwork
             Blips = new List<int>();
         }
 
+        public void DrawMarkers()
+        {
+            lock (Markers)
+            {
+                foreach (var marker in Markers)
+                {
+                    World.DrawMarker((MarkerType) marker.Value.MarkerType, marker.Value.Position.ToVector(),
+                        marker.Value.Direction.ToVector(), marker.Value.Rotation.ToVector(),
+                        marker.Value.Scale.ToVector(),
+                        Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
+                }
+            }
+        }
+
         private BiDictionary<int, int> HandleMap;
         private List<int> Blips { get; set; }
+        public Dictionary<int, MarkerProperties> Markers { get; set; }
 
         public Entity NetToEntity(int netId)
         {
@@ -25,6 +42,11 @@ namespace GTANetwork
                 }
             }
             return null;
+        }
+
+        public bool IsBlip(int localHandle)
+        {
+            return Blips.Contains(localHandle);
         }
 
         public bool ContainsNethandle(int netHandle)
@@ -130,6 +152,26 @@ namespace GTANetwork
             lock (Blips) Blips.Add(blip.Handle);
             return blip;
         }
+
+        public void CreateMarker(int type, MultiTheftAutoShared.Vector3 position, MultiTheftAutoShared.Vector3 rotation, MultiTheftAutoShared.Vector3 dir, MultiTheftAutoShared.Vector3 scale, int r, int g, int b, int a,
+            int netHandle)
+        {
+            if (!Markers.ContainsKey(netHandle))
+            {
+                Markers.Add(netHandle, new MarkerProperties()
+                {
+                    MarkerType = type,
+                    Position = position,
+                    Rotation =  rotation,
+                    Direction = dir,
+                    Scale = scale,
+                    Red = r,
+                    Green = g,
+                    Blue = b,
+                    Alpha = a,
+                });
+            }
+        }
         
         public void ClearAll()
         {
@@ -144,7 +186,10 @@ namespace GTANetwork
                 }
 
                 HandleMap.Clear();
+                Markers.Clear();
+                Blips.Clear();
             }
+
         }
     }
 }

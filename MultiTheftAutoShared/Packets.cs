@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net.Configuration;
 using GTA.Math;
 using ProtoBuf;
 
@@ -32,6 +33,7 @@ namespace MultiTheftAutoShared
         ConnectionConfirmed = 23,
         PlayerKilled = 24,
         StopResource = 25,
+        UpdateMarkerProperties = 26,
     }
 
     public enum ScriptVersion
@@ -49,6 +51,7 @@ namespace MultiTheftAutoShared
         Vehicle = 0,
         Prop = 1,
         Blip = 2,
+        Marker = 3,
     }
 
     public enum FileType
@@ -73,6 +76,8 @@ namespace MultiTheftAutoShared
 
     [ProtoContract]
     [ProtoInclude(5, typeof(VehicleProperties))]
+    [ProtoInclude(6, typeof(BlipProperties))]
+    [ProtoInclude(7, typeof(MarkerProperties))]
     public class EntityProperties
     {
         [ProtoMember(1)]
@@ -99,6 +104,57 @@ namespace MultiTheftAutoShared
     }
 
     [ProtoContract]
+    public class BlipProperties : EntityProperties
+    {
+        public BlipProperties()
+        {
+            Sprite = 0;
+            Scale = 1f;
+            Alpha = 255;
+        }
+
+        [ProtoMember(1)]
+        public int Sprite { get; set; }
+
+        [ProtoMember(2)]
+        public float Scale { get; set; }
+
+        [ProtoMember(3)]
+        public int Color { get; set; }
+
+        [ProtoMember(4)]
+        public bool IsShortRange { get; set; }
+
+        [ProtoMember(5)]
+        public int Alpha { get; set; }
+    }
+
+    [ProtoContract]
+    public class MarkerProperties : EntityProperties
+    {
+        [ProtoMember(1)]
+        public Vector3 Direction { get; set; }
+
+        [ProtoMember(2)]
+        public int MarkerType { get; set; }
+
+        [ProtoMember(3)]
+        public int Red { get; set; }
+
+        [ProtoMember(4)]
+        public int Green { get; set; }
+
+        [ProtoMember(5)]
+        public int Blue { get; set; }
+
+        [ProtoMember(6)]
+        public int Alpha { get; set; }
+
+        [ProtoMember(7)]
+        public Vector3 Scale { get; set; }
+    }
+
+    [ProtoContract]
     public class ConnectionResponse
     {
         [ProtoMember(1)]
@@ -116,6 +172,12 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(2)]
         public Dictionary<int, VehicleProperties> Vehicles { get; set; }
+
+        [ProtoMember(3)]
+        public Dictionary<int, BlipProperties> Blips { get; set; }
+
+        [ProtoMember(4)]
+        public Dictionary<int, MarkerProperties> Markers { get; set; }
     }
 
     [ProtoContract]
@@ -172,22 +234,7 @@ namespace MultiTheftAutoShared
         public byte EntityType { get; set; }
 
         [ProtoMember(3)]
-        public int Model { get; set; }
-
-        [ProtoMember(4)]
-        public Vector3 Position { get; set; }
-
-        [ProtoMember(5)]
-        public Vector3 Rotation { get; set; }
-
-        [ProtoMember(6)]
-        public bool Dynamic { get; set; }
-
-        [ProtoMember(7)]
-        public int Color1 { get; set; }
-
-        [ProtoMember(8)]
-        public int Color2 { get; set; }
+        public EntityProperties Properties { get; set; }
     }
 
     [ProtoContract]
