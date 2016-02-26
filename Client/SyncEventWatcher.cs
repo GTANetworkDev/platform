@@ -2,7 +2,7 @@
 using GTA.Native;
 using MultiTheftAutoShared;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class SyncEventWatcher
     {

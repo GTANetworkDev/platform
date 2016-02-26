@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
-namespace GTAServer
+namespace GTANetworkServer
 {
     public static class Program
     {
@@ -29,7 +26,7 @@ namespace GTAServer
             var settings = ReadSettings(Program.Location + "settings.xml");
 
             Console.WriteLine("=======================================================================");
-            Console.WriteLine("= MULTI THEFT AUTO V v1.0");
+            Console.WriteLine("= GRAND THEFT AUTO NETWORK v1.0");
             Console.WriteLine("=======================================================================");
             Console.WriteLine("= Server Name: " + settings.Name);
             Console.WriteLine("= Server Port: " + settings.Port);

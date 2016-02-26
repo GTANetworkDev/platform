@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class PlayerSettings
     {

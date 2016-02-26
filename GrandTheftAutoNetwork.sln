@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiTheftAutoClient", "Client\MultiTheftAutoClient.csproj", "{1BC495C9-DC44-478A-9E16-3FC482A8B850}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTANetworkClient", "Client\GTANetworkClient.csproj", "{1BC495C9-DC44-478A-9E16-3FC482A8B850}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiTheftAutoServer", "Server\MultiTheftAutoServer.csproj", "{559EE224-BF7B-49D8-9CEE-11E6BA71FE4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTANetworkServer", "Server\GTANetworkServer.csproj", "{559EE224-BF7B-49D8-9CEE-11E6BA71FE4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiTheftAutoShared", "MultiTheftAutoShared\MultiTheftAutoShared.csproj", "{9A4E6062-2CC6-40A4-A2CD-A8EC6CCA2E8E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTANetworkShared", "MultiTheftAutoShared\GTANetworkShared.csproj", "{9A4E6062-2CC6-40A4-A2CD-A8EC6CCA2E8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

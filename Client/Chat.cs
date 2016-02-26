@@ -6,7 +6,7 @@ using System.Windows.Forms;
 using GTA;
 using GTA.Native;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class Chat
     {

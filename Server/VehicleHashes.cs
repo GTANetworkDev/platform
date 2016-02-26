@@ -1,4 +1,4 @@
-﻿namespace GTAServer
+﻿namespace GTANetworkServer
 {
     public enum VehicleHash : int
     {

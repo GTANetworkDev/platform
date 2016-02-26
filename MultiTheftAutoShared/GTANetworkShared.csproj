@@ -7,8 +7,8 @@
     <ProjectGuid>{9A4E6062-2CC6-40A4-A2CD-A8EC6CCA2E8E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MultiTheftAutoShared</RootNamespace>
-    <AssemblyName>MultiTheftAutoShared</AssemblyName>
+    <RootNamespace>GTANetworkShared</RootNamespace>
+    <AssemblyName>GTANetworkShared</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

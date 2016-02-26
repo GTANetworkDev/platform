@@ -1,6 +1,5 @@
 ﻿using System;
 using System.CodeDom.Compiler;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,10 +14,10 @@ using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using Microsoft.CSharp;
 using Microsoft.VisualBasic;
-using ProtoBuf;
 using MultiTheftAutoShared;
+using ProtoBuf;
 
-namespace GTAServer
+namespace GTANetworkServer
 {
     public class Client
     {
@@ -95,7 +94,7 @@ namespace GTAServer
 
             Name = name;
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-            NetPeerConfiguration config = new NetPeerConfiguration("MULTITHEFTAUTOV");
+            NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             config.Port = port;
             config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
@@ -136,7 +135,6 @@ namespace GTAServer
             if (AnnounceSelf)
             {
                 _lastAnnounceDateTime = DateTime.Now;
-                Program.Output("Announcing to master server...");
                 AnnounceSelfToMaster();
             }
             
@@ -160,6 +158,7 @@ namespace GTAServer
 
         public void AnnounceSelfToMaster()
         {
+            Program.Output("Announcing self to master server...");
             using (var wb = new WebClient())
             {
                 try

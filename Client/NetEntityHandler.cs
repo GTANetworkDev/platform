@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using GTA;
 using GTA.Math;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class NetEntityHandler
     {

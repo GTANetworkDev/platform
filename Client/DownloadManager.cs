@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Forms;
 using GTA;
 using MultiTheftAutoShared;
 
-namespace MTAV
+namespace GTANetwork
 {
     public static class DownloadManager
     {

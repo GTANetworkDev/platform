@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using GTA;
 using GTA.Math;
@@ -17,7 +14,7 @@ using MultiTheftAutoShared;
 using NativeUI;
 using Vector3 = GTA.Math.Vector3;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class ClientsideScriptWrapper
     {

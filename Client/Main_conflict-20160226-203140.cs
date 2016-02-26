@@ -398,11 +398,11 @@ namespace GTANetwork
         {
             MainMenu = new TabView("Grand Theft Auto Network");
             MainMenu.CanLeave = false;
-            MainMenu.MoneySubtitle = "MTAV 1.0.42.362";
+            MainMenu.MoneySubtitle = "GTAN 1.0.42.362";
 
             #region Welcome Screen
             {
-                var welcomeItem = new TabTextItem("Welcome", "Welcome to GTA Network", "Join a server on the right! Weekly Updates! Donate, or whatever.");
+                var welcomeItem = new TabTextItem("Welcome", "Welcome to Grand Theft Auto Network", "Join a server on the right! Weekly Updates! Donate, or whatever.");
                 MainMenu.Tabs.Add(welcomeItem);
             }
             #endregion
@@ -631,7 +631,7 @@ namespace GTANetwork
 
             #region Quit
             {
-                var welcomeItem = new TabTextItem("Quit", "Quit GTA Network", "Are you sure you want to quit Grand Theft Auto Network and return to desktop?");
+                var welcomeItem = new TabTextItem("Quit", "Quit Multi Theft Auto", "Are you sure you want to quit Multi Theft Auto V and return to desktop?");
                 welcomeItem.CanBeFocused = false;
                 welcomeItem.Activated += (sender, args) =>
                 {

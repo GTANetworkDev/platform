@@ -351,6 +351,9 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(18)]
         public bool IsInMeleeCombat { get; set; }
+
+        [ProtoMember(19)]
+        public bool IsFreefallingWithChute { get; set; }
     }
 
     [ProtoContract]

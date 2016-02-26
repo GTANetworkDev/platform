@@ -7,7 +7,7 @@ using GTA;
 using GTA.Math;
 using GTA.Native;
 
-namespace MTAV
+namespace GTANetwork
 {
     public static class Util
     {

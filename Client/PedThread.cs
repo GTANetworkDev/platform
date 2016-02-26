@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GTA;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class PedThread : Script
     {

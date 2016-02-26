@@ -5,7 +5,7 @@ using Lidgren.Network;
 using MultiTheftAutoShared;
 using ProtoBuf;
 
-namespace MTAV
+namespace GTANetwork
 {
     public static class Program
     {

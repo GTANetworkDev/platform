@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using MultiTheftAutoShared;
-using ProtoBuf;
 
-namespace GTAServer
+namespace GTANetworkServer
 {
     public class NetEntityHandler
     {

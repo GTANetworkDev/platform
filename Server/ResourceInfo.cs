@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using Microsoft.ClearScript.Windows;
 
-namespace GTAServer
+namespace GTANetworkServer
 {
     public enum ScriptingEngineLanguage
     {

@@ -10,7 +10,7 @@ using GTA;
 using GTA.Native;
 using NativeUI;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class ClassicChat
     {

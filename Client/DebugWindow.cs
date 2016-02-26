@@ -3,7 +3,7 @@ using System.Linq;
 using GTA;
 using NativeUI;
 
-namespace MTAV
+namespace GTANetwork
 {
     public class DebugWindow
     {

@@ -8,7 +8,7 @@ using GTA.Native;
 using NativeUI;
 using Font = GTA.Font;
 
-namespace MTAV
+namespace GTANetwork
 {
     public enum SynchronizationMode
     {
@@ -49,6 +49,7 @@ namespace MTAV
         public bool IsInActionMode;
         public bool IsInCover;
         public bool IsInMeleeCombat;
+        public bool IsFreefallingWithParachute;
 
         public int VehicleSeat;
         public int PedHealth;
@@ -276,6 +277,7 @@ namespace MTAV
         private float meleeDamageStart;
         private float meleeDamageEnd;
         private bool meleeSwingDone;
+        private bool _lastFreefall;
 
         private int DEBUG_STEP;
 
@@ -708,21 +710,62 @@ namespace MTAV
                         Character.Task.Jump();
                     }
                     DEBUG_STEP = 24;
-                    if (IsParachuteOpen)
+                    if (IsFreefallingWithParachute)
                     {
+                        Character.FreezePosition = true;
+                        Character.CanRagdoll = false;
 
+                        if (!_lastFreefall)
+                        {
+                            Character.Task.ClearAllImmediately();
+                            Character.Task.ClearSecondary();
+                        }
+
+                        var target = Util.LinearVectorLerp(_lastPosition,
+                            _position,
+                            (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+
+                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
+                            0);
+                        DEBUG_STEP = 25;
+                        if ((Util.Denormalize(_lastRotation.Z) < 180f &&
+                             Util.Denormalize(_rotation.Z) > 180f) ||
+                            (Util.Denormalize(_lastRotation.Z) > 180f &&
+                             Util.Denormalize(_rotation.Z) < 180f))
+                            Character.Quaternion = _rotation.ToQuaternion();
+                        else
+                            Character.Quaternion =
+                                Util.LinearVectorLerp(_lastRotation, _rotation,
+                                    (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                                    (int)AverageLatency)
+                                    .ToQuaternion();
+                        if (
+                            !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
+                                "skydive@base", "free_idle",
+                                3))
+                        {
+                            Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                                Util.LoadDict("skydive@base"), "free_idle",
+                                8f, 1f, -1, 0, -8f, 1, 1, 1);
+                        }
+                    }
+                    else if (IsParachuteOpen)
+                    {
                         if (_parachuteProp == null)
                         {
                             _parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,
                                 Character.Rotation, false, false);
                             _parachuteProp.FreezePosition = true;
                             Function.Call(Hash.SET_ENTITY_COLLISION, _parachuteProp.Handle, false, 0);
+                            Character.Task.ClearAllImmediately();
+                            Character.Task.ClearSecondary();
                         }
 
                         Character.FreezePosition = true;
-
-                        var target = Util.LinearVectorLerp(_lastPosition - new Vector3(0, 0, 1),
-                            _position - new Vector3(0, 0, 1),
+                        Character.CanRagdoll = false;
+                        
+                        var target = Util.LinearVectorLerp(_lastPosition,
+                            _position,
                             (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int) AverageLatency);
 
                         Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
@@ -739,7 +782,7 @@ namespace MTAV
                                     (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
                                     (int) AverageLatency)
                                     .ToQuaternion();
-
+                        
                         _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
                                                   Character.ForwardVector*0.5f;
                         _parachuteProp.Quaternion = Character.Quaternion;
@@ -750,7 +793,7 @@ namespace MTAV
                         {
                             Function.Call(Hash.TASK_PLAY_ANIM, Character,
                                 Util.LoadDict("skydive@parachute@first_person"), "chute_idle_right",
-                                8f, 1f, -1, 0, -8f, 0, 0, 0);
+                                8f, 1f, -1, 0, -8f, 1, 1, 1);
                         }
                         DEBUG_STEP = 26;
                     }
@@ -768,22 +811,30 @@ namespace MTAV
                         {
                             var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
                                 lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
-                            UI.ShowSubtitle(currentTime.ToString());
+
+                            UpdatePlayerPedPos();
 
                             if (currentTime >= meleeDamageStart && currentTime <= meleeDamageEnd && !meleeSwingDone)
                             {
                                 var gunEntity = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
                                 var start = gunEntity.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
                                 var end = gunEntity.GetOffsetInWorldCoords(new Vector3(0, 0, 0.01f));
-                                var ray = World.RaycastCapsule(start, end, 0.2f, IntersectOptions.Everything, gunEntity);
+                                
+                                var ray = World.RaycastCapsule(start, end, 0.5f, IntersectOptions.Mission_Entities | IntersectOptions.Peds1, Character);
                                 if (ray.DitHitAnything && ray.HitEntity != null)
                                 {
                                     if (ray.HitEntity != Character)
+                                    {
                                         if (ray.HitEntity == Game.Player.Character)
                                         {
-                                            Game.Player.Character.Health -= 75;
+                                            Game.Player.Character.ApplyDamage(25);
                                             meleeSwingDone = true;
                                         }
+                                        else
+                                        {
+                                            UI.ShowSubtitle("HIT CHAR", 100);
+                                        }
+                                    }
                                 }
                             }
                             DEBUG_STEP = 28;
@@ -814,7 +865,7 @@ namespace MTAV
                                     3))
                             {
                                 Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-                                    8f, 1f, -1, 0, -8f, 0, 0, 0);
+                                    8f, 1f, -1, 0, -8f, 1, 1, 1);
                             }
 
                             if (secondaryAnimDict != null &&
@@ -822,25 +873,10 @@ namespace MTAV
                                     3))
                             {
                                 Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
-                                    8f, 1f, -1, 32 | 16, -8f, 0, 0, 0);
+                                    8f, 1f, -1, 32 | 16, -8f, 1, 1, 1);
                             }
 
-                            if (Main.LerpRotaion)
-                            {
-                                if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-                                     Util.Denormalize(Rotation.Z) > 180f) ||
-                                    (Util.Denormalize(_lastRotation.Z) > 180f &&
-                                     Util.Denormalize(Rotation.Z) < 180f))
-                                    Character.Rotation = Rotation;
-                                else
-                                    Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
-                                        (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                        (int) AverageLatency);
-                            }
-                            else
-                            {
-                                Character.Rotation = Rotation;
-                            }
+                            UpdatePlayerPedPos();
                         }
                         DEBUG_STEP = 29;
                         if (IsAiming && !IsShooting)
@@ -869,7 +905,7 @@ namespace MTAV
 
                             if (hands == 3 || hands == 4)
                             {
-                                Character.Task.ClearSecondary();
+                                if (Character != null) Character.Task.ClearSecondary();
 
                                 var ourAnim = "";
                                 var anim = 0;
@@ -902,7 +938,7 @@ namespace MTAV
                                 {
                                     Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(ourAnim.Split()[0]),
                                         ourAnim.Split()[1],
-                                        8f, 1f, -1, 0, -8f, 0, 0, 0);
+                                        8f, 1f, -1, 0, -8f, 1, 1, 1);
                                 }
 
                                 if (Main.LerpRotaion)
@@ -962,81 +998,7 @@ namespace MTAV
                         DEBUG_STEP = 32;
                         if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat)
                         {
-                            var syncMode = Main.GlobalSyncMode;
-
-                            if (syncMode == SynchronizationMode.Dynamic)
-                            {
-                                if (AverageLatency > 70)
-                                    syncMode = SynchronizationMode.EntityLerping;
-                                else
-                                    syncMode = SynchronizationMode.DeadReckoning;
-                            }
-
-                            if (syncMode == SynchronizationMode.DeadReckoning)
-                            {
-
-                                var dir = Position - _lastPosition;
-
-                                var vdir = PedVelocity - _lastPedVel;
-                                var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                    (int) AverageLatency);
-
-                                var posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                    (int) AverageLatency);
-
-                                if (GetPedSpeed(PedVelocity.Length()) > 0)
-                                {
-                                    Character.Velocity = target + 2*(posTarget - Character.Position);
-                                    _stopTime = DateTime.Now;
-                                    _carPosOnUpdate = Character.Position;
-                                }
-                                else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
-                                {
-                                    posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
-                                        (int) DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-                                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
-                                        posTarget.Z, 0, 0, 0, 0);
-                                }
-                                else
-                                {
-                                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
-                                        Position.Z, 0, 0, 0, 0);
-                                }
-                            }
-                            else if (syncMode == SynchronizationMode.EntityLerping)
-                            {
-                                var target = Util.LinearVectorLerp(_lastPosition, Position,
-                                    (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                    (int) AverageLatency);
-
-                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z,
-                                    0, 0, 0, 0);
-                            }
-                            else if (syncMode == SynchronizationMode.Teleport)
-                            {
-                                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
-                                    Position.Z, 0, 0, 0, 0);
-                            }
-
-                            DEBUG_STEP = 33;
-                            if (Main.LerpRotaion)
-                            {
-                                if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-                                     Util.Denormalize(Rotation.Z) > 180f) ||
-                                    (Util.Denormalize(_lastRotation.Z) > 180f &&
-                                     Util.Denormalize(Rotation.Z) < 180f))
-                                    Character.Rotation = Rotation;
-                                else
-                                    Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
-                                        (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                        (int) AverageLatency);
-                            }
-                            else
-                            {
-                                Character.Rotation = Rotation;
-                            }
+                            UpdatePlayerPedPos();
 
                             var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
                             var animDict = GetAnimDictionary();
@@ -1047,7 +1009,7 @@ namespace MTAV
                                     3))
                             {
                                 Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-                                    8f, 1f, -1, 0, -8f, 0, 0, 0);
+                                    8f, 1f, -1, 0, -8f, 1, 1, 1);
                             }
 
                             if (secondaryAnimDict != null &&
@@ -1055,13 +1017,14 @@ namespace MTAV
                                     3))
                             {
                                 Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
-                                    8f, 1f, -1, 32 | 16, -8f, 0, 0, 0);
+                                    8f, 1f, -1, 32 | 16, -8f, 1, 1, 1);
                             }
                         }
                     }
                     _lastJumping = IsJumping;
                     _lastShooting = IsShooting;
                     _lastAiming = IsAiming;
+                    _lastFreefall = IsFreefallingWithParachute;
                 }
                 _lastVehicle = IsInVehicle;
                 DEBUG_STEP = 35;
@@ -1084,6 +1047,85 @@ namespace MTAV
             
 
             return dict;
+        }
+
+        private void UpdatePlayerPedPos()
+        {
+            var syncMode = Main.GlobalSyncMode;
+
+            if (syncMode == SynchronizationMode.Dynamic)
+            {
+                if (AverageLatency > 70)
+                    syncMode = SynchronizationMode.EntityLerping;
+                else
+                    syncMode = SynchronizationMode.DeadReckoning;
+            }
+
+            if (syncMode == SynchronizationMode.DeadReckoning)
+            {
+
+                var dir = Position - _lastPosition;
+
+                var vdir = PedVelocity - _lastPedVel;
+                var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
+                    (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                    (int)AverageLatency);
+
+                var posTarget = Util.LinearVectorLerp(Position, Position + dir,
+                    (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                    (int)AverageLatency);
+
+                if (GetPedSpeed(PedVelocity.Length()) > 0)
+                {
+                    Character.Velocity = target + 2 * (posTarget - Character.Position);
+                    _stopTime = DateTime.Now;
+                    _carPosOnUpdate = Character.Position;
+                }
+                else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+                {
+                    posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
+                        (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
+                        posTarget.Z, 0, 0, 0, 0);
+                }
+                else
+                {
+                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
+                        Position.Z, 0, 0, 0, 0);
+                }
+            }
+            else if (syncMode == SynchronizationMode.EntityLerping)
+            {
+                var target = Util.LinearVectorLerp(_lastPosition, Position,
+                    (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                    (int)AverageLatency);
+
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z,
+                    0, 0, 0, 0);
+            }
+            else if (syncMode == SynchronizationMode.Teleport)
+            {
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
+                    Position.Z, 0, 0, 0, 0);
+            }
+
+            DEBUG_STEP = 33;
+            if (Main.LerpRotaion)
+            {
+                if ((Util.Denormalize(_lastRotation.Z) < 180f &&
+                     Util.Denormalize(Rotation.Z) > 180f) ||
+                    (Util.Denormalize(_lastRotation.Z) > 180f &&
+                     Util.Denormalize(Rotation.Z) < 180f))
+                    Character.Rotation = Rotation;
+                else
+                    Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
+                        (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                        (int)AverageLatency);
+            }
+            else
+            {
+                Character.Rotation = Rotation;
+            }
         }
 
         public string GetSecondaryAnimDict()

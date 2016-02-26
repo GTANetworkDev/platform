@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Xml;
 
-namespace GTAServer
+namespace GTANetworkServer
 {
     public static class RetardedXMLParser
     {

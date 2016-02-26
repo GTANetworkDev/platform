@@ -1,6 +1,6 @@
 ﻿using ProtoBuf;
 
-namespace MTAV
+namespace GTANetwork
 {
     [ProtoContract]
     public class ChatData
