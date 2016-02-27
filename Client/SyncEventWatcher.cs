@@ -1,6 +1,6 @@
 ﻿using GTA;
 using GTA.Native;
-using MultiTheftAutoShared;
+using GTANetworkShared;
 
 namespace GTANetwork
 {
@@ -20,6 +20,17 @@ namespace GTANetwork
         
         private bool _lights;
         private bool _highBeams;
+
+        private Vehicle _lastTrailer;
+
+        private Vehicle GetVehicleTrailerVehicle(Vehicle tanker)
+        {
+            if (!Function.Call<bool>(Hash.IS_VEHICLE_ATTACHED_TO_TRAILER, tanker))
+                return null;
+            var trailerArg = new OutputArgument();
+            Function.Call<bool>(Hash.GET_VEHICLE_TRAILER_VEHICLE, tanker, trailerArg);
+            return trailerArg.GetResult<Vehicle>();
+        }
 
         private void SendSyncEvent(SyncEventType type, params object[] args)
         {
@@ -47,6 +58,7 @@ namespace GTANetwork
                 
                 _highBeams = false;
                 _lights = true;
+                _lastTrailer = null;
             }
             _lastCar = car;
 
@@ -81,6 +93,22 @@ namespace GTANetwork
                 }
                 _lights = car.LightsOn;
 
+                var trailer = GetVehicleTrailerVehicle(car);
+
+                if (_lastTrailer != trailer)
+                {
+                    if (trailer == null)
+                    {
+                        SendSyncEvent(SyncEventType.TrailerDeTach, false, Main.NetEntityHandler.EntityToNet(car.Handle));
+                    }
+                    else
+                    {
+                        SendSyncEvent(SyncEventType.TrailerDeTach, true, Main.NetEntityHandler.EntityToNet(car.Handle),
+                            Main.NetEntityHandler.EntityToNet(trailer.Handle));
+                    }
+                }
+
+                _lastTrailer = trailer;
 
             }
         }

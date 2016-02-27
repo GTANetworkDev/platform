@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using GTA;
-using MultiTheftAutoShared;
+using GTANetworkShared;
 using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
@@ -154,7 +154,7 @@ namespace GTANetwork
             return blip;
         }
 
-        public void CreateMarker(int type, MultiTheftAutoShared.Vector3 position, MultiTheftAutoShared.Vector3 rotation, MultiTheftAutoShared.Vector3 dir, MultiTheftAutoShared.Vector3 scale, int r, int g, int b, int a,
+        public void CreateMarker(int type, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, GTANetworkShared.Vector3 dir, GTANetworkShared.Vector3 scale, int r, int g, int b, int a,
             int netHandle)
         {
             if (!Markers.ContainsKey(netHandle))

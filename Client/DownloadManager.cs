@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using GTA;
-using MultiTheftAutoShared;
+using GTANetworkShared;
 
 namespace GTANetwork
 {

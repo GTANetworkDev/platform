@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
+using GTANetworkShared;
 using Lidgren.Network;
-using MultiTheftAutoShared;
 using ProtoBuf;
 
 namespace GTANetwork

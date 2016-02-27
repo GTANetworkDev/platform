@@ -8,9 +8,9 @@ using System.Windows.Forms;
 using GTA;
 using GTA.Math;
 using GTA.Native;
+using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
-using MultiTheftAutoShared;
 using NativeUI;
 using Vector3 = GTA.Math.Vector3;
 

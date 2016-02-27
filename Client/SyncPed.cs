@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -244,8 +245,8 @@ namespace GTANetwork
         private Blip _mainBlip;
         private bool _lastHorn;
         private Prop _parachuteProp;
+        private bool _leftSide;
 
-        //public SyncPed(int hash, Vector3 pos, Quaternion rot, bool blip = true)
         public SyncPed(int hash, Vector3 pos, Vector3 rot, bool blip = true)
         {
             _position = pos;
@@ -278,6 +279,7 @@ namespace GTANetwork
         private float meleeDamageEnd;
         private bool meleeSwingDone;
         private bool _lastFreefall;
+        private DateTime _lastRocketshot;
 
         private int DEBUG_STEP;
 
@@ -295,8 +297,8 @@ namespace GTANetwork
 
                 if (_lastStart != null && _lastEnd != null)
                 {
-                    //Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
-                    //_lastEnd.Z, 255, 255, 255, 255);
+                    Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
+                    _lastEnd.Z, 255, 255, 255, 255);
                 }
 
                 if (inRange && Character != null)
@@ -450,8 +452,8 @@ namespace GTANetwork
                         if (VehicleSeat == -1)
                             MainVehicle.Position = VehiclePosition;
                         MainVehicle.EngineRunning = true;
-                        MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
-                        MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
+                        //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
+                        //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
                         MainVehicle.Rotation = _vehicleRotation;
                         MainVehicle.IsInvincible = true;
                         Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
@@ -515,8 +517,8 @@ namespace GTANetwork
                                 MainVehicle.Repair();
                         }
                         DEBUG_STEP = 17;
-                        MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
-                        MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
+                        //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
+                        //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
 
                         if (VehicleMods != null && _modSwitch%50 == 0 &&
                             Game.Player.Character.IsInRangeOf(VehiclePosition, 30f))
@@ -552,7 +554,7 @@ namespace GTANetwork
                             MainVehicle.SirenActive = Siren;
                         else if (!MainVehicle.SirenActive && Siren)
                             MainVehicle.SirenActive = Siren;
-
+                        /*
                         if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
                         {
                             Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
@@ -568,9 +570,10 @@ namespace GTANetwork
                         {
                             Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
                                 100f, 80, 1, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
-                        }
+                        }*/
                         DEBUG_STEP = 19;
 
+                        
                         var dir = VehiclePosition - _lastVehiclePos;
 
                         var syncMode = Main.GlobalSyncMode;
@@ -659,6 +662,7 @@ namespace GTANetwork
                             Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X,
                                 VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
                         }
+
                         DEBUG_STEP = 21;
                         if (Main.LerpRotaion)
                         {
@@ -679,6 +683,42 @@ namespace GTANetwork
                         else
                         {
                             MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
+                        }
+
+                        if (IsShooting && CurrentWeapon != 0)
+                        {
+                            var isRocket = WeaponDataProvider.IsVehicleWeaponRocket(CurrentWeapon);
+                            if (isRocket && DateTime.Now.Subtract(_lastRocketshot).TotalMilliseconds < 1500)
+                            {
+                                return;
+                            }
+                            if (isRocket)
+                                _lastRocketshot = DateTime.Now;
+                            var isParallel =
+                                WeaponDataProvider.DoesVehicleHaveParallelWeapon(unchecked((VehicleHash) VehicleHash),
+                                    isRocket);
+
+                            var muzzle = WeaponDataProvider.GetVehicleWeaponMuzzle(unchecked((VehicleHash) VehicleHash), isRocket);
+
+                            if (isParallel && _leftSide)
+                            {
+                                muzzle = new Vector3(muzzle.X * -1f, muzzle.Y, muzzle.Z);
+                            }
+                            _leftSide = !_leftSide;
+
+                            var start =
+                                MainVehicle.GetOffsetInWorldCoords(muzzle);
+                            var end = start + Main.RotationToDirection(VehicleRotation) * 100f;
+                            var hash = CurrentWeapon;
+                            var speed = 0xbf800000;
+
+                            if (isRocket)
+                                speed = 500;
+                            else
+                                hash = unchecked((int)WeaponHash.CombatPDW);
+
+                            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
+                                    end.Y, end.Z, 75, true, hash, Character, true, true, speed);
                         }
                     }
                 }
@@ -814,29 +854,23 @@ namespace GTANetwork
 
                             UpdatePlayerPedPos();
 
-                            if (currentTime >= meleeDamageStart && currentTime <= meleeDamageEnd && !meleeSwingDone)
+                            if (!meleeSwingDone)
                             {
                                 var gunEntity = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
-                                var start = gunEntity.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
-                                var end = gunEntity.GetOffsetInWorldCoords(new Vector3(0, 0, 0.01f));
-                                
-                                var ray = World.RaycastCapsule(start, end, 0.5f, IntersectOptions.Mission_Entities | IntersectOptions.Peds1, Character);
-                                if (ray.DitHitAnything && ray.HitEntity != null)
+                                Vector3 min;
+                                Vector3 max;
+                                gunEntity.Model.GetDimensions(out min, out max);
+                                var start = gunEntity.GetOffsetInWorldCoords(min);
+                                var end = gunEntity.GetOffsetInWorldCoords(max);
+                                var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
+                                Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
+                                if (ray.DitHitAnything && ray.DitHitEntity && ray.HitEntity.Handle == Game.Player.Character.Handle)
                                 {
-                                    if (ray.HitEntity != Character)
-                                    {
-                                        if (ray.HitEntity == Game.Player.Character)
-                                        {
-                                            Game.Player.Character.ApplyDamage(25);
-                                            meleeSwingDone = true;
-                                        }
-                                        else
-                                        {
-                                            UI.ShowSubtitle("HIT CHAR", 100);
-                                        }
-                                    }
+                                    Game.Player.Character.ApplyDamage(25);
+                                    meleeSwingDone = true;
                                 }
                             }
+
                             DEBUG_STEP = 28;
                             if (currentTime >= 1f)
                             {
@@ -983,7 +1017,7 @@ namespace GTANetwork
                                     end.Y, end.Z, damage, true, (int) weaponH, Character, true, true, speed);
 
                                 _lastStart = start;
-                                _lastEnd = AimCoords;
+                                _lastEnd = end;
                             }
 
                             var dirVector = Position - _lastPosition;
@@ -1258,6 +1292,86 @@ namespace GTANetwork
 
     public static class WeaponDataProvider
     {
+        public static bool DoesVehicleHaveParallelWeapon(VehicleHash model, bool rockets)
+        {
+            if (model == VehicleHash.Savage)
+            {
+                if (!rockets)
+                    return false;
+                else
+                    return true;
+            }
+            else if (model == VehicleHash.Buzzard)
+            {
+                if (!rockets)
+                    return true;
+                else
+                    return true;
+            }
+            else if (model == VehicleHash.Hydra)
+            {
+                if (!rockets)
+                    return true;
+                else return true;
+            }
+            else if (model == VehicleHash.Lazer)
+            {
+                if (!rockets)
+                    return true;
+                else return true;
+            }
+
+            return false;
+        }
+
+        public static Vector3 GetVehicleWeaponMuzzle(VehicleHash model, bool rockets)
+        {
+            if (model == VehicleHash.Savage)
+            {
+                if (!rockets)
+                    return new Vector3(0f, 6.45f, -0.5f);
+                else
+                    return new Vector3(-2.799f, -0.599f, -0.15f);
+            }
+            else if (model == VehicleHash.Buzzard || model == VehicleHash.Annihilator)
+            {
+                if (!rockets)
+                    return new Vector3(1.1f, 0.2f, -0.25f);
+                else
+                    return new Vector3(1.55f, 0.2f, -0.35f);
+            }
+            else if (model == VehicleHash.Hydra)
+            {
+                if (!rockets)
+                    return new Vector3(0.4f, 1.6f, -1f);
+                else return new Vector3(5.05f, -0.14f, -0.9f);
+            }
+            else if (model == VehicleHash.Lazer)
+            {
+                if (!rockets)
+                    return new Vector3(0.75f, 3.19f, 0.4f);
+                else return new Vector3(4.95f, 0.55f, 0.15f);
+            }
+
+            return new Vector3();
+        }
+
+        public static bool IsVehicleWeaponRocket(int hash)
+        {
+            switch (hash)
+            {
+                default:
+                    return false;
+                case 1186503822:
+                case -494786007:
+                case 1638077257:
+                    return false;
+                case -821520672:
+                case -123497569:
+                    return true;
+            }
+        }
+
         public static int GetWeaponDamage(WeaponHash weapon)
         {
             switch (weapon)

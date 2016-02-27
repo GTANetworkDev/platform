@@ -9,12 +9,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using GTANetworkShared;
 using Lidgren.Network;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using Microsoft.CSharp;
 using Microsoft.VisualBasic;
-using MultiTheftAutoShared;
 using ProtoBuf;
 
 namespace GTANetworkServer
@@ -228,7 +228,7 @@ namespace GTANetworkServer
 
                         var fsObj = InstantiateScripts(scrTxt, script.Path,
                             currentResInfo.Referenceses.Select(r => r.Name).ToArray());
-                        if (fsObj != null) ourResource.Engines.Add(new ScriptingEngine(fsObj));
+                        if (fsObj != null) ourResource.Engines.Add(new ScriptingEngine(fsObj, script.Path));
                     }
                     else if (script.Language == ScriptingEngineLanguage.compiled)
                     {
@@ -242,20 +242,20 @@ namespace GTANetworkServer
 
                         var ass = Assembly.LoadFrom(baseDir + script.Path);
                         var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss)));
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, script.Path)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.csharp)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
 
                         var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
-                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss)));
+                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.vbasic)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
                         var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
-                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss)));
+                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path)));
                     }
                 }
 
@@ -359,8 +359,8 @@ namespace GTANetworkServer
             compParams.ReferencedAssemblies.Add("System.IO.dll");
             compParams.ReferencedAssemblies.Add("System.Linq.dll");
             compParams.ReferencedAssemblies.Add("System.Core.dll");
-            compParams.ReferencedAssemblies.Add("GTAServer.exe");
-            compParams.ReferencedAssemblies.Add("MultiTheftAutoShared.dll");
+            compParams.ReferencedAssemblies.Add("GTANetworkServer.exe");
+            compParams.ReferencedAssemblies.Add("GTANetworkShared.dll");
 
             foreach (var s in references)
             {
@@ -733,9 +733,9 @@ namespace GTANetworkServer
                                                 NetEntityHandler.ToDict()[data.VehicleHandle].Position = data.Position;
                                                 NetEntityHandler.ToDict()[data.VehicleHandle].Rotation = data.Quaternion;
                                                 ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle])
-                                                    .PrimaryColor = data.PrimaryColor;
+                                                    .IsDead = data.IsVehicleDead;
                                                 ((VehicleProperties)NetEntityHandler.ToDict()[data.VehicleHandle])
-                                                    .SecondaryColor = data.SecondaryColor;
+                                                    .Health = data.VehicleHealth;
                                             }
 
                                             SendToAll(data, PacketType.VehiclePositionData, false, client);

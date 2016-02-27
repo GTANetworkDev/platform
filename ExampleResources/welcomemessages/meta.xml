@@ -2,5 +2,4 @@
     <info name="Welcome Messages" author="Guadmaz" type="script" />
     
     <script src="welcomemessages.js" type="server" lang="javascript" />
-    <script src="SampleGamemode.dll" type="server" lang="compiled" />
 </meta>

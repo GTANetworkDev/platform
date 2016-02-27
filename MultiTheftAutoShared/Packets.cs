@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Net.Configuration;
 using GTA.Math;
 using ProtoBuf;
 
-namespace MultiTheftAutoShared
+namespace GTANetworkShared
 {
     public enum PacketType
     {
@@ -48,10 +47,10 @@ namespace MultiTheftAutoShared
 
     public enum EntityType
     {
-        Vehicle = 0,
-        Prop = 1,
-        Blip = 2,
-        Marker = 3,
+        Vehicle = 1,
+        Prop = 2,
+        Blip = 3,
+        Marker = 4,
     }
 
     public enum FileType
@@ -66,6 +65,7 @@ namespace MultiTheftAutoShared
         LandingGearChange = 0,
         DoorStateChange = 1,
         BooleanLights = 2,
+        TrailerDeTach = 3,
     }
 
     public enum Lights
@@ -101,6 +101,12 @@ namespace MultiTheftAutoShared
 
         [ProtoMember(2)]
         public int SecondaryColor { get; set; }
+
+        [ProtoMember(3)]
+        public int Health { get; set; }
+
+        [ProtoMember(4)]
+        public bool IsDead { get; set; }
     }
 
     [ProtoContract]
@@ -298,9 +304,9 @@ namespace MultiTheftAutoShared
         [ProtoMember(4)]
         public int PedModelHash { get; set; }
         [ProtoMember(5)]
-        public int PrimaryColor { get; set; }
+        public int WeaponHash { get; set; }
         [ProtoMember(6)]
-        public int SecondaryColor { get; set; }
+        public bool IsShooting { get; set; }
 
         [ProtoMember(7)]
         public Vector3 Position { get; set; }

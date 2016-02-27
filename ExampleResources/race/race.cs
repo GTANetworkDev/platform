@@ -5,8 +5,8 @@ using System.IO;
 using System.ComponentModel;
 using System.Xml.Serialization;
 using System.Text;
-using GTAServer;
-using MultiTheftAutoShared;
+using GTANetworkServer;
+using GTANetworkShared;
 using System.Threading;
 
 

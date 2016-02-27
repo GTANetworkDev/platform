@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using GTANetworkShared;
 using Lidgren.Network;
-using MultiTheftAutoShared;
 
 namespace GTANetworkServer
 {
@@ -107,6 +108,26 @@ namespace GTANetworkServer
         #endregion
 
         #region Functions
+
+        public void call(string resourceName, string scriptName, string methodName, params object[] arguments)
+        {
+            var ourResource =
+                Program.ServerInstance.RunningResources.FirstOrDefault(k => k.DirectoryName == resourceName);
+            if (ourResource == null)
+            {
+                Program.Output("ERROR: call() - No resource named '" + resourceName + "' found.");
+                return;
+            }
+
+            var ourScriptName = ourResource.Engines.FirstOrDefault(en => en.Filename == scriptName);
+            if (ourScriptName == null)
+            {
+                Program.Output("ERROR: call() - No script name named '" + scriptName + "' found.");
+                return;
+            }
+
+            ourScriptName.InvokeMethod(methodName, arguments);
+        }
 
         public void startResource(string resourceName)
         {

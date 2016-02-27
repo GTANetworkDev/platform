@@ -179,10 +179,6 @@ namespace GTANetwork
 
         private void AddToFavorites(string server)
         {
-            if (string.IsNullOrWhiteSpace(server)) return;
-            var split = server.Split(':');
-            int port;
-            if (split.Length < 2 || string.IsNullOrWhiteSpace(split[0]) || string.IsNullOrWhiteSpace(split[1]) || !int.TryParse(split[1], out port)) return;
             PlayerSettings.FavoriteServers.Add(server);
             Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
         }
@@ -200,10 +196,6 @@ namespace GTANetwork
 
         private void AddServerToRecent(UIMenuItem server)
         {
-            if (string.IsNullOrWhiteSpace(server.Description)) return;
-            var split = server.Description.Split(':');
-            int tmpPort;
-            if (split.Length < 2 || string.IsNullOrWhiteSpace(split[0]) || string.IsNullOrWhiteSpace(split[1]) || !int.TryParse(split[1], out tmpPort)) return;
             if (!PlayerSettings.RecentServers.Contains(server.Description))
             {
                 PlayerSettings.RecentServers.Add(server.Description);
@@ -255,10 +247,6 @@ namespace GTANetwork
 
         private void AddServerToRecent(string server, string password)
         {
-            if (string.IsNullOrWhiteSpace(server)) return;
-            var split = server.Split(':');
-            int tmpPort;
-            if (split.Length < 2 || string.IsNullOrWhiteSpace(split[0]) || string.IsNullOrWhiteSpace(split[1]) || !int.TryParse(split[1], out tmpPort)) return;
             if (!PlayerSettings.RecentServers.Contains(server))
             {
                 PlayerSettings.RecentServers.Add(server);
@@ -854,9 +842,6 @@ namespace GTANetwork
                     ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
                     ourVeh.PearlescentColor = (VehicleColor) 0;
                     ourVeh.RimColor = (VehicleColor)0;
-                    ourVeh.Health = pair.Value.Health;
-                    if (pair.Value.IsDead)
-                        ourVeh.Explode();
                 }
 
             if (map.Objects != null)
@@ -963,6 +948,8 @@ namespace GTANetwork
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
                 obj.VehicleModelHash = veh.Model.Hash;
+                obj.PrimaryColor = (int)veh.PrimaryColor;
+                obj.SecondaryColor = (int)veh.SecondaryColor;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.VehicleHealth = veh.Health;
                 obj.VehicleSeat = Util.GetPedSeat(player);
@@ -972,8 +959,6 @@ namespace GTANetwork
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsVehicleDead = veh.IsDead;
-                obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
-                obj.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
 
                 var bin = SerializeBinary(obj);
 
@@ -994,9 +979,8 @@ namespace GTANetwork
 
                 Vector3 aimCoord = new Vector3();
                 if (aiming || shooting)
-                {
-                    aimCoord = RaycastEverything(new Vector2(0, 0));
-                }
+                    aimCoord = ScreenRelToWorld(GameplayCamera.Position, GameplayCamera.Rotation,
+                        new Vector2(0, 0));
 
                 var obj = new PedData();
                 obj.AimCoords = aimCoord.ToLVector();
@@ -1110,34 +1094,16 @@ namespace GTANetwork
         private float range = 50f;
 #endif
 
-        public static int GetCurrentVehicleWeaponHash(Ped ped)
-        {
-            if (ped.IsInVehicle())
-            {
-                var outputArg = new OutputArgument();
-                var success = Function.Call<bool>(Hash.GET_CURRENT_PED_VEHICLE_WEAPON, ped, outputArg);
-                if (success)
-                {
-                    return outputArg.GetResult<int>();
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            return 0;
-        }
-
         private Vehicle _lastPlayerCar;
         private int _lastModel;
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
+            //_menuPool.ProcessMenus();
             if (!BlockControls)
                 MainMenu.ProcessControls();
             MainMenu.Update();
             MainMenu.CanLeave = IsOnServer();
-
             
             if (!MainMenu.Visible || MainMenu.TemporarilyHidden)
                 _chat.Tick();
@@ -1147,6 +1113,7 @@ namespace GTANetwork
                 Game.Player.Character.Task.ClearAll();
                 _isGoingToCar = false;
             }
+            
             #if DEBUG
             if (display)
             {
@@ -1155,31 +1122,8 @@ namespace GTANetwork
                 _debug.Draw();
             }
             
-            if (Game.Player.Character.IsInVehicle() && Game.IsControlPressed(0, Control.Context))
-            {
-                var outputArg = new OutputArgument();
-                var success = Function.Call<bool>(Hash.GET_CURRENT_PED_VEHICLE_WEAPON, Game.Player.Character, outputArg);
-                if (success)
-                {
-                    var start = Game.Player.Character.CurrentVehicle.GetOffsetInWorldCoords(WeaponDataProvider.GetVehicleWeaponMuzzle(unchecked((VehicleHash)Game.Player.Character.CurrentVehicle.Model.Hash), false));
-                    var end = start + Main.RotationToDirection(Game.Player.Character.CurrentVehicle.Rotation) * 100f;
-                    var weapHash = outputArg.GetResult<int>();
-                    if (!WeaponDataProvider.IsVehicleWeaponRocket(weapHash))
-                        weapHash = unchecked((int) WeaponHash.CombatPDW);
-                    Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
-                            end.Y, end.Z, 75, true, weapHash, Game.Player.Character, true, true, 0xbf800000);
-                    UI.ShowSubtitle("Shootin");
-                }
-                else
-                {
-                    UI.ShowSubtitle("WeaponHash: None");
-                }
-            }
-            
             #endif
-
             ProcessMessages();
-
 
 
             if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected ||
@@ -1207,6 +1151,12 @@ namespace GTANetwork
             Game.DisableControl(0, Control.SpecialAbilitySecondary);
             Game.DisableControl(0, Control.CharacterWheel);
             Game.DisableControl(0, Control.Phone);
+
+            if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character) == 2)
+            {
+                Game.DisableControl(0, Control.Aim);
+                Game.DisableControl(0, Control.Attack);
+            }
 
             if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() &&
                 Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
@@ -1238,11 +1188,12 @@ namespace GTANetwork
                                 Game.Player.CanControlCharacter);
             if (hasRespawned && !_lastDead)
             {
-                if (_lastModel != 0 && Game.Player.Character.Model.Hash != _lastModel)
+                if (_lastModel != 0)
                 {
                     var lastMod = new Model(_lastModel);
                     lastMod.Request(10000);
-                    Function.Call(Hash.SET_PLAYER_MODEL, new InputArgument(Game.Player), lastMod.Hash);
+                    Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, lastMod);
+                    lastMod.MarkAsNoLongerNeeded();
                 }
 
                 _lastDead = true;
@@ -1452,18 +1403,15 @@ namespace GTANetwork
             NetIncomingMessage msg;
             while (Client != null && (msg = Client.ReadMessage()) != null)
             {
-                PacketType type = PacketType.WorldSharingStop;
-                try
-                {
-                    _messagesReceived++;
-                    _bytesReceived += msg.LengthBytes;
+                _messagesReceived++;
+                _bytesReceived += msg.LengthBytes;
 
-                    if (msg.MessageType == NetIncomingMessageType.Data)
+                if (msg.MessageType == NetIncomingMessageType.Data)
+                {
+                    var type = (PacketType)msg.ReadInt32();
+                    switch (type)
                     {
-                        type = (PacketType) msg.ReadInt32();
-                        switch (type)
-                        {
-                            case PacketType.VehiclePositionData:
+                        case PacketType.VehiclePositionData:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
@@ -1495,8 +1443,8 @@ namespace GTANetwork
                                         data.Quaternion.ToVector();
                                     Opponents[data.Id].PedHealth = data.PlayerHealth;
                                     Opponents[data.Id].VehicleHealth = data.VehicleHealth;
-                                    //Opponents[data.Id].VehiclePrimaryColor = data.PrimaryColor;
-                                    //Opponents[data.Id].VehicleSecondaryColor = data.SecondaryColor;
+                                    Opponents[data.Id].VehiclePrimaryColor = data.PrimaryColor;
+                                    Opponents[data.Id].VehicleSecondaryColor = data.SecondaryColor;
                                     Opponents[data.Id].VehicleSeat = data.VehicleSeat;
                                     Opponents[data.Id].IsInVehicle = true;
                                     Opponents[data.Id].Latency = data.Latency;
@@ -1505,12 +1453,10 @@ namespace GTANetwork
                                     Opponents[data.Id].IsHornPressed = data.IsPressingHorn;
                                     Opponents[data.Id].Speed = data.Speed;
                                     Opponents[data.Id].Siren = data.IsSirenActive;
-                                    Opponents[data.Id].IsShooting = data.IsShooting;
-                                    Opponents[data.Id].CurrentWeapon = data.WeaponHash;
                                 }
                             }
-                                break;
-                            case PacketType.PedPositionData:
+                            break;
+                        case PacketType.PedPositionData:
                             {
 
                                 var len = msg.ReadInt32();
@@ -1548,8 +1494,8 @@ namespace GTANetwork
                                     Opponents[data.Id].IsParachuteOpen = data.IsParachuteOpen;
                                 }
                             }
-                                break;
-                            case PacketType.NpcVehPositionData:
+                            break;
+                        case PacketType.NpcVehPositionData:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
@@ -1577,11 +1523,11 @@ namespace GTANetwork
                                         data.VehicleModelHash;
                                     Npcs[data.Name].VehicleRotation =
                                         data.Quaternion.ToVector();
-                                    //data.Quaternion.ToQuaternion();
+                                        //data.Quaternion.ToQuaternion();
                                     Npcs[data.Name].PedHealth = data.PlayerHealth;
                                     Npcs[data.Name].VehicleHealth = data.VehicleHealth;
-                                    //Npcs[data.Name].VehiclePrimaryColor = data.PrimaryColor;
-                                    //Npcs[data.Name].VehicleSecondaryColor = data.SecondaryColor;
+                                    Npcs[data.Name].VehiclePrimaryColor = data.PrimaryColor;
+                                    Npcs[data.Name].VehicleSecondaryColor = data.SecondaryColor;
                                     Npcs[data.Name].VehicleSeat = data.VehicleSeat;
                                     Npcs[data.Name].IsInVehicle = true;
 
@@ -1590,8 +1536,8 @@ namespace GTANetwork
                                     Npcs[data.Name].Siren = data.IsSirenActive;
                                 }
                             }
-                                break;
-                            case PacketType.NpcPedPositionData:
+                            break;
+                        case PacketType.NpcPedPositionData:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
@@ -1626,8 +1572,8 @@ namespace GTANetwork
                                     Npcs[data.Name].IsParachuteOpen = data.IsParachuteOpen;
                                 }
                             }
-                                break;
-                            case PacketType.CreateEntity:
+                            break;
+                        case PacketType.CreateEntity:
                             {
                                 var len = msg.ReadInt32();
                                 DownloadManager.Log("Received CreateEntity");
@@ -1639,18 +1585,16 @@ namespace GTANetwork
                                     if (data.EntityType == (byte) EntityType.Vehicle)
                                     {
                                         var prop = (VehicleProperties) data.Properties;
-                                        var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash),
-                                            data.Properties.Position?.ToVector() ?? new Vector3(),
+                                        var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash), data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
                                         veh.PrimaryColor = (VehicleColor) prop.PrimaryColor;
                                         veh.PrimaryColor = (VehicleColor) prop.SecondaryColor;
                                         Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
                                     }
-                                    else if (data.EntityType == (byte) EntityType.Prop)
+                                    else if (data.EntityType == (byte)EntityType.Prop)
                                     {
                                         DownloadManager.Log("It was a prop. Spawning...");
-                                        NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash),
-                                            data.Properties.Position?.ToVector() ?? new Vector3(),
+                                        NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash), data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
                                     }
                                     else if (data.EntityType == (byte) EntityType.Blip)
@@ -1666,17 +1610,16 @@ namespace GTANetwork
                                     }
                                 }
                             }
-                                break;
-                            case PacketType.UpdateMarkerProperties:
+                            break;
+                        case PacketType.UpdateMarkerProperties:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
                                 if (data != null && data.Properties != null)
                                 {
-                                    if (data.EntityType == (byte) EntityType.Marker &&
-                                        NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                                    if (data.EntityType == (byte)EntityType.Marker && NetEntityHandler.Markers.ContainsKey(data.NetHandle))
                                     {
-                                        var prop = (MarkerProperties) data.Properties;
+                                        var prop = (MarkerProperties)data.Properties;
                                         NetEntityHandler.Markers[data.NetHandle] = new MarkerProperties()
                                         {
                                             MarkerType = prop.MarkerType,
@@ -1692,8 +1635,8 @@ namespace GTANetwork
                                     }
                                 }
                             }
-                                break;
-                            case PacketType.DeleteEntity:
+                            break;
+                        case PacketType.DeleteEntity:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<DeleteEntity>(msg.ReadBytes(len)) as DeleteEntity;
@@ -1721,44 +1664,42 @@ namespace GTANetwork
                                     }
                                 }
                             }
-                                break;
-                            case PacketType.StopResource:
+                            break;
+                        case PacketType.StopResource:
                             {
                                 var resourceName = msg.ReadString();
                                 JavascriptHook.StopScript(resourceName);
                             }
-                                break;
-                            case PacketType.FileTransferRequest:
+                            break;
+                        case PacketType.FileTransferRequest:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<DataDownloadStart>(msg.ReadBytes(len)) as DataDownloadStart;
                                 if (data != null)
                                 {
-                                    DownloadManager.StartDownload(data.Id,
-                                        data.ResourceParent + Path.DirectorySeparatorChar + data.FileName,
-                                        (FileType) data.FileType, data.Length);
+                                    DownloadManager.StartDownload(data.Id, data.ResourceParent + Path.DirectorySeparatorChar + data.FileName, (FileType) data.FileType, data.Length);
                                 }
                                 else
                                 {
                                     DownloadManager.Log("DATA WAS NULL ON REQUEST");
                                 }
                             }
-                                break;
-                            case PacketType.FileTransferTick:
-                            {
+                            break;
+                        case PacketType.FileTransferTick:
+                        {
                                 var channel = msg.ReadInt32();
                                 var len = msg.ReadInt32();
                                 var data = msg.ReadBytes(len);
                                 DownloadManager.DownloadPart(channel, data);
                             }
-                                break;
-                            case PacketType.FileTransferComplete:
-                            {
+                            break;
+                        case PacketType.FileTransferComplete:
+                        {
                                 var id = msg.ReadInt32();
                                 DownloadManager.End(id);
                             }
-                                break;
-                            case PacketType.ChatData:
+                            break;
+                        case PacketType.ChatData:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<ChatData>(msg.ReadBytes(len)) as ChatData;
@@ -1767,8 +1708,8 @@ namespace GTANetwork
                                     _chat.AddMessage(data.Sender, data.Message);
                                 }
                             }
-                                break;
-                            case PacketType.SyncEvent:
+                            break;
+                        case PacketType.SyncEvent:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
@@ -1776,60 +1717,42 @@ namespace GTANetwork
                                 {
                                     var args = DecodeArgumentList(data.Arguments.ToArray()).ToList();
 
-                                    switch ((SyncEventType) data.EventType)
+                                    switch ((SyncEventType)data.EventType)
                                     {
                                         case SyncEventType.LandingGearChange:
-                                        {
-                                            var veh = NetEntityHandler.NetToEntity((int) args[0]);
-                                            var newState = (int) args[1];
-                                            Function.Call(Hash._SET_VEHICLE_LANDING_GEAR, veh, newState);
-                                        }
+                                            {
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var newState = (int) args[1];
+                                                Function.Call(Hash._SET_VEHICLE_LANDING_GEAR, veh, newState);
+                                            }
                                             break;
                                         case SyncEventType.DoorStateChange:
-                                        {
-                                            var veh = NetEntityHandler.NetToEntity((int) args[0]);
-                                            var doorId = (int) args[1];
-                                            var newFloat = (bool) args[2];
-                                            if (newFloat)
-                                                new Vehicle(veh.Handle).OpenDoor((VehicleDoor) doorId, false, false);
-                                            else
-                                                new Vehicle(veh.Handle).CloseDoor((VehicleDoor) doorId, false);
-                                        }
+                                            {
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var doorId = (int) args[1];
+                                                var newFloat = (bool) args[2];
+                                                if (newFloat)
+                                                    new Vehicle(veh.Handle).OpenDoor((VehicleDoor)doorId, false, false);
+                                                else
+                                                    new Vehicle(veh.Handle).CloseDoor((VehicleDoor)doorId, false);
+                                            }
                                             break;
                                         case SyncEventType.BooleanLights:
-                                        {
-                                            var veh = NetEntityHandler.NetToEntity((int) args[0]);
-                                            var lightId = (Lights) (int) args[1];
-                                            var state = (bool) args[2];
-                                            if (lightId == Lights.NormalLights)
-                                                new Vehicle(veh.Handle).LightsOn = state;
-                                            else if (lightId == Lights.Highbeams)
-                                                Function.Call(Hash.SET_VEHICLE_FULLBEAM, veh.Handle, state);
-                                        }
-                                            break;
-                                        case SyncEventType.TrailerDeTach:
-                                        {
-                                            var newState = (bool) args[0];
-                                            if (!newState)
                                             {
-                                                var car = NetEntityHandler.NetToEntity((int) args[1]);
-                                                if (car != null)
-                                                    Function.Call(Hash.DETACH_VEHICLE_FROM_TRAILER, car.Handle);
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var lightId = (Lights) (int) args[1];
+                                                var state = (bool) args[2];
+                                                if (lightId == Lights.NormalLights)
+                                                    new Vehicle(veh.Handle).LightsOn = state;
+                                                else if (lightId == Lights.Highbeams)
+                                                    Function.Call(Hash.SET_VEHICLE_FULLBEAM, veh.Handle, state);
                                             }
-                                            else
-                                            {
-                                                var car = NetEntityHandler.NetToEntity((int) args[1]);
-                                                var trailer = NetEntityHandler.NetToEntity((int) args[2]);
-                                                if (car != null && trailer != null)
-                                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, car, trailer, 4f);
-                                            }
-                                        }
                                             break;
                                     }
                                 }
                             }
-                                break;
-                            case PacketType.PlayerDisconnect:
+                            break;
+                        case PacketType.PlayerDisconnect:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<PlayerDisconnect>(msg.ReadBytes(len)) as PlayerDisconnect;
@@ -1842,10 +1765,7 @@ namespace GTANetwork
 
                                         lock (Npcs)
                                         {
-                                            foreach (
-                                                var pair in
-                                                    new Dictionary<string, SyncPed>(Npcs).Where(
-                                                        p => p.Value.Host == data.Id))
+                                            foreach (var pair in new Dictionary<string, SyncPed>(Npcs).Where(p => p.Value.Host == data.Id))
                                             {
                                                 pair.Value.Clear();
                                                 Npcs.Remove(pair.Key);
@@ -1854,75 +1774,68 @@ namespace GTANetwork
                                     }
                                 }
                             }
-                                break;
-                            case PacketType.ScriptEventTrigger:
+                            break;
+                        case PacketType.ScriptEventTrigger:
                             {
                                 var len = msg.ReadInt32();
-                                var data =
-                                    DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
+                                var data = DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
                                 if (data != null)
                                 {
                                     if (data.Arguments != null)
-                                        JavascriptHook.InvokeServerEvent(data.EventName,
-                                            DecodeArgumentList(data.Arguments.ToArray()).ToArray());
+                                        JavascriptHook.InvokeServerEvent(data.EventName, DecodeArgumentList(data.Arguments.ToArray()).ToArray());
                                     else
                                         JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
                                 }
                             }
-                                break;
-                            case PacketType.WorldSharingStop:
+                            break;
+                        case PacketType.WorldSharingStop:
                             {
                                 var len = msg.ReadInt32();
                                 var data = DeserializeBinary<PlayerDisconnect>(msg.ReadBytes(len)) as PlayerDisconnect;
                                 if (data == null) return;
                                 lock (Npcs)
                                 {
-                                    foreach (
-                                        var pair in
-                                            new Dictionary<string, SyncPed>(Npcs).Where(p => p.Value.Host == data.Id)
-                                                .ToList())
+                                    foreach (var pair in new Dictionary<string, SyncPed>(Npcs).Where(p => p.Value.Host == data.Id).ToList())
                                     {
                                         pair.Value.Clear();
                                         Npcs.Remove(pair.Key);
                                     }
                                 }
                             }
-                                break;
-                            case PacketType.NativeCall:
+                            break;
+                        case PacketType.NativeCall:
                             {
                                 var len = msg.ReadInt32();
-                                var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
+                                var data = (NativeData)DeserializeBinary<NativeData>(msg.ReadBytes(len));
                                 if (data == null) return;
                                 DecodeNativeCall(data);
                             }
-                                break;
-                            case PacketType.NativeTick:
+                            break;
+                        case PacketType.NativeTick:
                             {
                                 var len = msg.ReadInt32();
-                                var data = (NativeTickCall) DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
+                                var data = (NativeTickCall)DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
                                 if (data == null) return;
                                 lock (_tickNatives)
                                 {
-                                    if (!_tickNatives.ContainsKey(data.Identifier))
-                                        _tickNatives.Add(data.Identifier, data.Native);
+                                    if (!_tickNatives.ContainsKey(data.Identifier)) _tickNatives.Add(data.Identifier, data.Native);
 
                                     _tickNatives[data.Identifier] = data.Native;
                                 }
                             }
-                                break;
-                            case PacketType.NativeTickRecall:
+                            break;
+                        case PacketType.NativeTickRecall:
                             {
                                 var len = msg.ReadInt32();
-                                var data = (NativeTickCall) DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
+                                var data = (NativeTickCall)DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
                                 if (data == null) return;
-                                lock (_tickNatives)
-                                    if (_tickNatives.ContainsKey(data.Identifier)) _tickNatives.Remove(data.Identifier);
+                                lock (_tickNatives) if (_tickNatives.ContainsKey(data.Identifier)) _tickNatives.Remove(data.Identifier);
                             }
-                                break;
-                            case PacketType.NativeOnDisconnect:
+                            break;
+                        case PacketType.NativeOnDisconnect:
                             {
                                 var len = msg.ReadInt32();
-                                var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
+                                var data = (NativeData)DeserializeBinary<NativeData>(msg.ReadBytes(len));
                                 if (data == null) return;
                                 lock (_dcNatives)
                                 {
@@ -1930,245 +1843,236 @@ namespace GTANetwork
                                     _dcNatives[data.Id] = data;
                                 }
                             }
-                                break;
-                            case PacketType.NativeOnDisconnectRecall:
+                            break;
+                        case PacketType.NativeOnDisconnectRecall:
                             {
                                 var len = msg.ReadInt32();
-                                var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
+                                var data = (NativeData)DeserializeBinary<NativeData>(msg.ReadBytes(len));
                                 if (data == null) return;
                                 lock (_dcNatives) if (_dcNatives.ContainsKey(data.Id)) _dcNatives.Remove(data.Id);
                             }
-                                break;
-                        }
-                    }
-                    else if (msg.MessageType == NetIncomingMessageType.ConnectionLatencyUpdated)
-                    {
-                        Latency = msg.ReadFloat();
-                    }
-                    else if (msg.MessageType == NetIncomingMessageType.StatusChanged)
-                    {
-                        var newStatus = (NetConnectionStatus) msg.ReadByte();
-                        switch (newStatus)
-                        {
-                            case NetConnectionStatus.InitiatedConnect:
-                                UI.Notify("Connecting...");
-                                break;
-                            case NetConnectionStatus.Connected:
-                                UI.Notify("Connection successful!");
-                                var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
-                                var respObj =
-                                    DeserializeBinary<ConnectionResponse>(
-                                        msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
-                                if (respObj == null)
-                                {
-                                    UI.Notify("ERROR WHILE READING REMOTE HAIL MESSAGE");
-                                    return;
-                                }
-                                _channel = respObj.AssignedChannel;
-                                NetEntityHandler.AddEntity(respObj.CharacterHandle, Game.Player.Character.Handle);
-
-                                var confirmObj = Client.CreateMessage();
-                                confirmObj.Write((int) PacketType.ConnectionConfirmed);
-                                Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
-                                JustJoinedServer = true;
-                                MainMenu.Tabs.Insert(1, _serverItem);
-                                MainMenu.RefreshIndex();
-                                break;
-                            case NetConnectionStatus.Disconnected:
-                                var reason = msg.ReadString();
-                                UI.Notify("You have been disconnected" +
-                                          (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
-
-                                lock (Opponents)
-                                {
-                                    if (Opponents != null)
-                                    {
-                                        Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                        Opponents.Clear();
-                                    }
-                                }
-
-                                lock (Npcs)
-                                {
-                                    if (Npcs != null)
-                                    {
-                                        Npcs.ToList().ForEach(pair => pair.Value.Clear());
-                                        Npcs.Clear();
-                                    }
-                                }
-
-                                lock (_dcNatives)
-                                    if (_dcNatives != null && _dcNatives.Any())
-                                    {
-                                        _dcNatives.ToList().ForEach(pair => DecodeNativeCall(pair.Value));
-                                        _dcNatives.Clear();
-                                    }
-
-                                lock (_tickNatives) if (_tickNatives != null) _tickNatives.Clear();
-
-                                lock (EntityCleanup)
-                                {
-                                    EntityCleanup.ForEach(ent => new Prop(ent).Delete());
-                                    EntityCleanup.Clear();
-                                }
-                                lock (BlipCleanup)
-                                {
-                                    BlipCleanup.ForEach(blip => new Blip(blip).Remove());
-                                    BlipCleanup.Clear();
-                                }
-
-                                _chat.Clear();
-                                NetEntityHandler.ClearAll();
-                                JavascriptHook.StopAllScripts();
-                                DownloadManager.Cancel();
-                                MainMenu.TemporarilyHidden = false;
-                                JustJoinedServer = false;
-                                MainMenu.Tabs.Remove(_serverItem);
-                                MainMenu.RefreshIndex();
-                                _localMarkers.Clear();
-                                World.RenderingCamera = MainMenuCamera;
-                                MainMenu.Visible = true;
-                                break;
-                        }
-                    }
-                    else if (msg.MessageType == NetIncomingMessageType.DiscoveryResponse)
-                    {
-                        var discType = msg.ReadInt32();
-                        var len = msg.ReadInt32();
-                        var bin = msg.ReadBytes(len);
-                        var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;
-                        if (data == null) return;
-
-                        var itemText = msg.SenderEndPoint.Address.ToString() + ":" + data.Port;
-
-                        var matchedItems = new List<UIMenuItem>();
-
-                        matchedItems.Add(_serverBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-                        matchedItems.Add(_recentBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-                        matchedItems.Add(_favBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-                        matchedItems.Add(_lanBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-
-                        _currentOnlinePlayers += data.PlayerCount;
-
-                        MainMenu.Money = "Servers Online: " + _currentOnlineServers + " | Players Online: " +
-                                         _currentOnlinePlayers;
-
-                        if (data.LAN)
-                        {
-                            var item = new UIMenuItem(data.ServerName);
-                            var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
-
-                            item.Text = data.ServerName;
-                            item.Description = itemText;
-                            item.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
-
-                            if (data.PasswordProtected)
-                                item.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
-
-                            int lastIndx = 0;
-                            if (_serverBrowser.Items.Count > 0)
-                                lastIndx = _serverBrowser.Index;
-
-                            var gMsg = msg;
-                            item.Activated += (sender, selectedItem) =>
-                            {
-                                if (IsOnServer())
-                                {
-                                    Client.Disconnect("Switching servers.");
-
-                                    if (Opponents != null)
-                                    {
-                                        Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                        Opponents.Clear();
-                                    }
-
-                                    if (Npcs != null)
-                                    {
-                                        Npcs.ToList().ForEach(pair => pair.Value.Clear());
-                                        Npcs.Clear();
-                                    }
-
-                                    while (IsOnServer()) Script.Yield();
-                                }
-
-                                if (data.PasswordProtected)
-                                {
-                                    _password = Game.GetUserInput(256);
-                                }
-
-                                _connectTab.RefreshIndex();
-                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
-                                MainMenu.TemporarilyHidden = true;
-                                AddServerToRecent(item);
-                            };
-
-                            _lanBrowser.Items.Add(item);
-                        }
-
-                        foreach (var ourItem in matchedItems.Where(k => k != null))
-                        {
-                            var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
-
-                            ourItem.Text = data.ServerName;
-                            ourItem.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
-                            if (PlayerSettings.FavoriteServers.Contains(ourItem.Description))
-                                ourItem.SetRightBadge(UIMenuItem.BadgeStyle.Star);
-
-                            if (data.PasswordProtected)
-                                ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
-
-                            int lastIndx = 0;
-                            if (_serverBrowser.Items.Count > 0)
-                                lastIndx = _serverBrowser.Index;
-
-                            var gMsg = msg;
-                            ourItem.Activated += (sender, selectedItem) =>
-                            {
-                                if (IsOnServer())
-                                {
-                                    Client.Disconnect("Switching servers.");
-
-                                    if (Opponents != null)
-                                    {
-                                        Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                        Opponents.Clear();
-                                    }
-
-                                    if (Npcs != null)
-                                    {
-                                        Npcs.ToList().ForEach(pair => pair.Value.Clear());
-                                        Npcs.Clear();
-                                    }
-
-                                    while (IsOnServer()) Script.Yield();
-                                }
-
-                                if (data.PasswordProtected)
-                                {
-                                    _password = Game.GetUserInput(256);
-                                }
-
-
-                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
-                                MainMenu.TemporarilyHidden = true;
-                                _connectTab.RefreshIndex();
-                                AddServerToRecent(ourItem);
-                            };
-
-                            _serverBrowser.Items.Remove(ourItem);
-                            _serverBrowser.Items.Insert(0, ourItem);
-                            if (_serverBrowser.Focused)
-                                _serverBrowser.MoveDown();
-                            else
-                                _serverBrowser.RefreshIndex();
-                        }
+                            break;
                     }
                 }
-                catch (Exception e)
+                else if (msg.MessageType == NetIncomingMessageType.ConnectionLatencyUpdated)
                 {
-                    UI.Notify("Unhandled Exception ocurred in Process Messages");
-                    UI.Notify("Message Type: " + msg.MessageType);
-                    UI.Notify("Data Type: " + type);
+                    Latency = msg.ReadFloat();
+                }
+                else if (msg.MessageType == NetIncomingMessageType.StatusChanged)
+                {
+                    var newStatus = (NetConnectionStatus)msg.ReadByte();
+                    switch (newStatus)
+                    {
+                        case NetConnectionStatus.InitiatedConnect:
+                            UI.Notify("Connecting...");
+                            break;
+                        case NetConnectionStatus.Connected:
+                            UI.Notify("Connection successful!");
+                            var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
+                            var respObj =
+                                DeserializeBinary<ConnectionResponse>(
+                                    msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
+                            if (respObj == null)
+                            {
+                                UI.Notify("ERROR WHILE READING REMOTE HAIL MESSAGE");
+                                return;
+                            }
+                            _channel = respObj.AssignedChannel;
+                            NetEntityHandler.AddEntity(respObj.CharacterHandle, Game.Player.Character.Handle);
+
+                            var confirmObj = Client.CreateMessage();
+                            confirmObj.Write((int)PacketType.ConnectionConfirmed);
+                            Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+                            JustJoinedServer = true;
+                            MainMenu.Tabs.Insert(1, _serverItem);
+                            MainMenu.RefreshIndex();
+                            break;
+                        case NetConnectionStatus.Disconnected:
+                            var reason = msg.ReadString();
+                            UI.Notify("You have been disconnected" + (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
+
+                            lock (Opponents)
+                            {
+                                if (Opponents != null)
+                                {
+                                    Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                    Opponents.Clear();
+                                }
+                            }
+
+                            lock (Npcs)
+                            {
+                                if (Npcs != null)
+                                {
+                                    Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                    Npcs.Clear();
+                                }
+                            }
+                            
+                            lock (_dcNatives)
+                                if (_dcNatives != null && _dcNatives.Any())
+                                {
+                                    _dcNatives.ToList().ForEach(pair => DecodeNativeCall(pair.Value));
+                                    _dcNatives.Clear();
+                                }
+
+                            lock (_tickNatives) if (_tickNatives != null) _tickNatives.Clear();
+
+                            lock (EntityCleanup)
+                            {
+                                EntityCleanup.ForEach(ent => new Prop(ent).Delete());
+                                EntityCleanup.Clear();
+                            }
+                            lock (BlipCleanup)
+                            {
+                                BlipCleanup.ForEach(blip => new Blip(blip).Remove());
+                                BlipCleanup.Clear();
+                            }
+
+                            _chat.Clear();
+                            NetEntityHandler.ClearAll();
+                            JavascriptHook.StopAllScripts();
+                            DownloadManager.Cancel();
+                            MainMenu.TemporarilyHidden = false;
+                            JustJoinedServer = false;
+                            MainMenu.Tabs.Remove(_serverItem);
+                            MainMenu.RefreshIndex();
+                            _localMarkers.Clear();
+                            World.RenderingCamera = MainMenuCamera;
+                            break;
+                    }
+                }
+                else if (msg.MessageType == NetIncomingMessageType.DiscoveryResponse)
+                {
+                    var type = msg.ReadInt32();
+                    var len = msg.ReadInt32();
+                    var bin = msg.ReadBytes(len);
+                    var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;
+                    if (data == null) return;
+
+                    var itemText = msg.SenderEndPoint.Address.ToString() + ":" + data.Port;
+
+                    var matchedItems = new List<UIMenuItem>();
+
+                    matchedItems.Add(_serverBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                    matchedItems.Add(_recentBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                    matchedItems.Add(_favBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                    matchedItems.Add(_lanBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+
+                    _currentOnlinePlayers += data.PlayerCount;
+
+                    MainMenu.Money = "Servers Online: " + _currentOnlineServers + " | Players Online: " +
+                                     _currentOnlinePlayers;
+
+                    if (data.LAN)
+                    {
+                        var item = new UIMenuItem(data.ServerName);
+                        var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
+
+                        item.Text = data.ServerName;
+                        item.Description = itemText;
+                        item.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
+
+                        if (data.PasswordProtected)
+                            item.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+
+                        int lastIndx = 0;
+                        if (_serverBrowser.Items.Count > 0)
+                            lastIndx = _serverBrowser.Index;
+
+                        var gMsg = msg;
+                        item.Activated += (sender, selectedItem) =>
+                        {
+                            if (IsOnServer())
+                            {
+                                Client.Disconnect("Switching servers.");
+
+                                if (Opponents != null)
+                                {
+                                    Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                    Opponents.Clear();
+                                }
+
+                                if (Npcs != null)
+                                {
+                                    Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                    Npcs.Clear();
+                                }
+
+                                while (IsOnServer()) Script.Yield();
+                            }
+
+                            if (data.PasswordProtected)
+                            {
+                                _password = Game.GetUserInput(256);
+                            }
+
+                            _connectTab.RefreshIndex();
+                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                            MainMenu.TemporarilyHidden = true;
+                            AddServerToRecent(item);
+                        };
+
+                        _lanBrowser.Items.Add(item);
+                    }
+                    
+                    foreach (var ourItem in matchedItems.Where(k => k != null))
+                    {
+                        var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
+
+                        ourItem.Text = data.ServerName;
+                        ourItem.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
+                        if (PlayerSettings.FavoriteServers.Contains(ourItem.Description))
+                            ourItem.SetRightBadge(UIMenuItem.BadgeStyle.Star);
+
+                        if (data.PasswordProtected)
+                            ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+
+                        int lastIndx = 0;
+                        if (_serverBrowser.Items.Count > 0)
+                            lastIndx = _serverBrowser.Index;
+
+                        var gMsg = msg;
+                        ourItem.Activated += (sender, selectedItem) =>
+                        {
+                            if (IsOnServer())
+                            {
+                                Client.Disconnect("Switching servers.");
+
+                                if (Opponents != null)
+                                {
+                                    Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                    Opponents.Clear();
+                                }
+
+                                if (Npcs != null)
+                                {
+                                    Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                    Npcs.Clear();
+                                }
+
+                                while (IsOnServer()) Script.Yield();
+                            }
+
+                            if (data.PasswordProtected)
+                            {
+                                _password = Game.GetUserInput(256);
+                            }
+
+
+                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                            MainMenu.TemporarilyHidden = true;
+                            _connectTab.RefreshIndex();
+                            AddServerToRecent(ourItem);
+                        };
+
+                        _serverBrowser.Items.Remove(ourItem);
+                        _serverBrowser.Items.Insert(0, ourItem);
+                        if (_serverBrowser.Focused)
+                            _serverBrowser.MoveDown();
+                        else
+                            _serverBrowser.RefreshIndex();
+                    }
                 }
             }
         }
@@ -2225,9 +2129,8 @@ namespace GTANetwork
                     _debugSyncPed.LastUpdateReceived = DateTime.Now;
                     _debugSyncPed.PedArmor = player.Armor;
 
-                    _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
-                    _debugSyncPed.CurrentWeapon = GetCurrentVehicleWeaponHash(Game.Player.Character);
-
+                    _debugSyncPed.CurrentWeapon = (int)Game.Player.Character.Weapons.Current.Hash;
+                    _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.Attack);
                     _debugSyncPed.IsAiming = Game.IsControlPressed(0, Control.Aim);
                     _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
                 }

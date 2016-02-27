@@ -53,7 +53,8 @@
     <Reference Include="protobuf-net">
       <HintPath>..\libs\protobuf-net.dll</HintPath>
     </Reference>
-    <Reference Include="ScriptHookVDotNet">
+    <Reference Include="ScriptHookVDotNet, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\ScriptHookVDotNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />

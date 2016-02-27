@@ -17,23 +17,47 @@ namespace GTANetworkServer
     public class ScriptingEngine
     {
         public ScriptingEngineLanguage Language { get; private set; }
+        public string Filename { get; set; }
 
         private JScriptEngine _jsEngine;
         private Script _compiledScript;
 
-        public ScriptingEngine(JScriptEngine en)
+        public ScriptingEngine(JScriptEngine en, string name)
         {
             _jsEngine = en;
             Language = ScriptingEngineLanguage.javascript;
+            Filename = name;
         }
 
-        public ScriptingEngine(Script sc)
+        public ScriptingEngine(Script sc, string name)
         {
             _compiledScript = sc;
             Language = ScriptingEngineLanguage.compiled;
+            Filename = name;
         }
 
         #region Interface
+
+        public void InvokeMethod(string method, object[] args)
+        {
+            try
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                {
+                    var mi = _compiledScript.GetType().GetMethod(method);
+                    mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
+                }
+                else if (Language == ScriptingEngineLanguage.javascript)
+                {
+                    var mi = ((object)_jsEngine.Script).GetType().GetMethod(method);
+                    mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
+                }
+            }
+            catch (Exception e)
+            {
+                Program.Output("ERROR: Method invocation failed for method " + method + "! (" + e.Message + ")");
+            }
+        }
 
         public void InvokeResourceStart()
         {

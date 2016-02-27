@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using MultiTheftAutoShared;
+using GTANetworkShared;
 
 namespace GTANetworkServer
 {
@@ -25,6 +25,8 @@ namespace GTANetworkServer
             obj.Position = pos;
             obj.Rotation = rot;
             obj.ModelHash = model;
+            obj.IsDead = false;
+            obj.Health = 900;
             obj.EntityType = (byte)EntityType.Vehicle;
             obj.PrimaryColor = color1;
             obj.SecondaryColor = color2;
