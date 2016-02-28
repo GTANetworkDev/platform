@@ -365,64 +365,113 @@ namespace GTANetwork
                     return;
                 }
                 DEBUG_STEP = 5;
-                bool isAiming = false;
-                if (!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f)) ||
-                    (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
+                if (!IsInVehicle)
                 {
-                    var ray = World.Raycast(GameplayCamera.Position, Character.Position, IntersectOptions.Everything,
-                        Game.Player.Character);
-                    if (ray.HitEntity == Character || isAiming || Character.IsInVehicle())
+                    bool isAiming = false;
+                    if ((!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f))) ||
+                        (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
                     {
-                        var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
-                        var targetPos = Character.Position + new Vector3(0, 0, 1.2f);
-                        if (oldPos.X != 0 && oldPos.Y != 0)
+                        var ray = World.Raycast(GameplayCamera.Position, Character.GetBoneCoord(Bone.IK_Head),
+                            IntersectOptions.Everything,
+                            Game.Player.Character);
+                        if (ray.HitEntity == Character || isAiming)
                         {
-                            Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
-                            DEBUG_STEP = 6;
-                            var nameText = Name == null ? "<nameless>" : Name;
-
-                            if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
-                                nameText = "~r~AFK~w~~n~" + nameText;
-
-                            var dist = (GameplayCamera.Position - Character.Position).Length();
-                            var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
-
-                            new UIResText(nameText, new Point(0, 0), 0.4f*sizeOffset, Color.WhiteSmoke,
-                                Font.ChaletLondon, UIResText.Alignment.Centered)
+                            var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
+                            var targetPos = Character.Position + new Vector3(0, 0, 1.2f);
+                            if (oldPos.X != 0 && oldPos.Y != 0)
                             {
-                                Outline = true,
-                            }.Draw();
-                            DEBUG_STEP = 7;
-                            if (Character != null)
-                            {
-                                var armorColor = Color.FromArgb(100, 220, 220, 220);
-                                var bgColor = Color.FromArgb(100, 0, 0, 0);
-                                var armorPercent = Math.Min(Math.Max(PedArmor/100f, 0f), 1f);
-                                var armorBar = (int) Math.Round(150*armorPercent);
-                                armorBar = (int) (armorBar*sizeOffset);
+                                Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
+                                DEBUG_STEP = 6;
+                                var nameText = Name == null ? "<nameless>" : Name;
 
-                                new UIResRectangle(
-                                    new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)),
-                                    new Size(armorBar, (int) (20*sizeOffset)),
-                                    armorColor).Draw();
+                                if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
+                                    nameText = "~r~AFK~w~~n~" + nameText;
 
-                                new UIResRectangle(
-                                    new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)) +
-                                    new Size(armorBar, 0),
-                                    new Size((int) (sizeOffset*150) - armorBar, (int) (sizeOffset*20)),
-                                    bgColor).Draw();
+                                var dist = (GameplayCamera.Position - Character.Position).Length();
+                                var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
 
-                                new UIResRectangle(
-                                    new Point(0, 0) - new Size((int) (71*sizeOffset), (int) (-40*sizeOffset)),
-                                    new Size((int) ((142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f))*sizeOffset),
-                                        (int) (12*sizeOffset)),
-                                    Color.FromArgb(150, 50, 250, 50)).Draw();
+                                new UIResText(nameText, new Point(0, 0), 0.4f*sizeOffset, Color.WhiteSmoke,
+                                    Font.ChaletLondon, UIResText.Alignment.Centered)
+                                {
+                                    Outline = true,
+                                }.Draw();
+                                DEBUG_STEP = 7;
+                                if (Character != null)
+                                {
+                                    var armorColor = Color.FromArgb(100, 220, 220, 220);
+                                    var bgColor = Color.FromArgb(100, 0, 0, 0);
+                                    var armorPercent = Math.Min(Math.Max(PedArmor/100f, 0f), 1f);
+                                    var armorBar = (int) Math.Round(150*armorPercent);
+                                    armorBar = (int) (armorBar*sizeOffset);
+
+                                    new UIResRectangle(
+                                        new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)),
+                                        new Size(armorBar, (int) (20*sizeOffset)),
+                                        armorColor).Draw();
+
+                                    new UIResRectangle(
+                                        new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)) +
+                                        new Size(armorBar, 0),
+                                        new Size((int) (sizeOffset*150) - armorBar, (int) (sizeOffset*20)),
+                                        bgColor).Draw();
+
+                                    new UIResRectangle(
+                                        new Point(0, 0) - new Size((int) (71*sizeOffset), (int) (-40*sizeOffset)),
+                                        new Size(
+                                            (int) ((142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f))*sizeOffset),
+                                            (int) (12*sizeOffset)),
+                                        Color.FromArgb(150, 50, 250, 50)).Draw();
+                                }
+                                DEBUG_STEP = 8;
+                                Function.Call(Hash.CLEAR_DRAW_ORIGIN);
                             }
-                            DEBUG_STEP = 8;
-                            Function.Call(Hash.CLEAR_DRAW_ORIGIN);
                         }
                     }
                 }
+                else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) && !Character.IsOccluded && MainVehicle.IsOnScreen)
+                {
+                    
+                    var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 2f));
+                    var targetPos = Character.Position + new Vector3(0, 0, 2f);
+                    if (oldPos.X != 0 && oldPos.Y != 0)
+                    {
+                        Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
+                        DEBUG_STEP = 6;
+                        var nameText = Name == null ? "<nameless>" : Name;
+
+                        if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
+                            nameText = "~r~AFK~w~~n~" + nameText;
+
+                        var dist = (GameplayCamera.Position - Character.Position).Length();
+                        var sizeOffset = Math.Max(1f - (dist / 100f), 0.3f);
+
+                        new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
+                            Font.ChaletLondon, UIResText.Alignment.Centered)
+                        {
+                            Outline = true,
+                        }.Draw();
+                        DEBUG_STEP = 7;
+                        if (Character != null)
+                        {
+                            var bgColor = Color.FromArgb(100, 0, 0, 0);
+
+                            new UIResRectangle(new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)),
+                                new Size((int)(sizeOffset * 150), (int)(sizeOffset * 20)),
+                                bgColor).Draw();
+
+                            new UIResRectangle(
+                                new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
+                                new Size(
+                                    (int)((142 * Math.Min(Math.Max(((VehicleHealth + 100) / 1000f), 0f), 1f)) * sizeOffset),
+                                    (int)(12 * sizeOffset)),
+                                Color.FromArgb(150, 50, 250, 50)).Draw();
+                        }
+                        DEBUG_STEP = 8;
+                        Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+                    }
+                    
+                }
+
                 DEBUG_STEP = 9;
                 if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
                     (_lastVehicle && IsInVehicle &&

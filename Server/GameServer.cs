@@ -882,6 +882,8 @@ namespace GTANetworkServer
                                     var mapObj = new ServerMap();
                                     mapObj.Vehicles = new Dictionary<int, VehicleProperties>();
                                     mapObj.Objects = new Dictionary<int, EntityProperties>();
+                                    mapObj.Blips = new Dictionary<int, BlipProperties>();
+                                    mapObj.Markers = new Dictionary<int, MarkerProperties>();
                                     foreach (var pair in NetEntityHandler.ToDict())
                                     {
                                         if (pair.Value.EntityType == (byte)EntityType.Vehicle)

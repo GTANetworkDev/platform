@@ -73,7 +73,7 @@ namespace GTANetworkServer
         public int CreateBlip(Vector3 pos)
         {
             int localEntityHash = ++EntityCounter;
-            var obj = new EntityProperties();
+            var obj = new BlipProperties();
             obj.EntityType = (byte)EntityType.Blip;
             obj.Position = pos;
             ServerEntities.Add(localEntityHash, obj);

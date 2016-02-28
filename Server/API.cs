@@ -109,24 +109,24 @@ namespace GTANetworkServer
 
         #region Functions
 
-        public void call(string resourceName, string scriptName, string methodName, params object[] arguments)
+        public object call(string resourceName, string scriptName, string methodName, params object[] arguments)
         {
             var ourResource =
                 Program.ServerInstance.RunningResources.FirstOrDefault(k => k.DirectoryName == resourceName);
             if (ourResource == null)
             {
                 Program.Output("ERROR: call() - No resource named '" + resourceName + "' found.");
-                return;
+                return null;
             }
 
             var ourScriptName = ourResource.Engines.FirstOrDefault(en => en.Filename == scriptName);
             if (ourScriptName == null)
             {
                 Program.Output("ERROR: call() - No script name named '" + scriptName + "' found.");
-                return;
+                return null;
             }
 
-            ourScriptName.InvokeMethod(methodName, arguments);
+            return ourScriptName.InvokeMethod(methodName, arguments);
         }
 
         public void startResource(string resourceName)

@@ -38,25 +38,26 @@ namespace GTANetworkServer
 
         #region Interface
 
-        public void InvokeMethod(string method, object[] args)
+        public object InvokeMethod(string method, object[] args)
         {
             try
             {
                 if (Language == ScriptingEngineLanguage.compiled)
                 {
                     var mi = _compiledScript.GetType().GetMethod(method);
-                    mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
+                    return mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
                 }
                 else if (Language == ScriptingEngineLanguage.javascript)
                 {
                     var mi = ((object)_jsEngine.Script).GetType().GetMethod(method);
-                    mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
+                    return mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
                 }
             }
             catch (Exception e)
             {
                 Program.Output("ERROR: Method invocation failed for method " + method + "! (" + e.Message + ")");
             }
+            return null;
         }
 
         public void InvokeResourceStart()

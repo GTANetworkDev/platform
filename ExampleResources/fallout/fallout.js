@@ -68,7 +68,7 @@ function createFallingPanels() {
     for (var i = 0; i < rows * cols; i++) {
         var currentColumn = i % cols;
         var currentRow = i / cols;
-        objects.Add(API.createObject(-384237829, new Vector3(-66.4266739 - (distance * currentColumn), -764.013062 - (distance * currentRow), 337.5375), new Vector3(90, 0, 0), false));
+        objects.Add(API.createObject(-384237829, new Vector3(-66.4266739 - (distance * currentColumn), -764.013062 - (distance * currentRow), 337.5375), new Vector3(90, 0, 0)));
     }   
     
        

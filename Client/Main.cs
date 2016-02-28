@@ -372,6 +372,8 @@ namespace GTANetwork
 
                 var list = new List<string>();
 
+                list.AddRange(dejson.list);
+
                 foreach (var server in PlayerSettings.FavoriteServers)
                 {
                     if (!list.Contains(server)) list.Add(server);
@@ -382,16 +384,14 @@ namespace GTANetwork
                     if (!list.Contains(server)) list.Add(server);
                 }
 
-                foreach (var server in dejson.list)
+                foreach (var server in list)
                 {
                     var split = server.Split(':');
                     if (split.Length != 2) continue;
                     int port;
                     if (!int.TryParse(split[1], out port))
                         continue;
-                    if (!list.Contains(server)) list.Add(server);
                     
-
                     var item = new UIMenuItem(server);
                     item.Description = server;
 
@@ -532,6 +532,7 @@ namespace GTANetwork
                     {
                         AddServerToRecent(_clientIp + ":" + Port, _password);
                         ConnectToServer(_clientIp, Port);
+                        MainMenu.TemporarilyHidden = true;
                     };
                     dConnect.Buttons.Add(ipButton);
                 }
@@ -856,7 +857,10 @@ namespace GTANetwork
                     ourVeh.RimColor = (VehicleColor)0;
                     ourVeh.Health = pair.Value.Health;
                     if (pair.Value.IsDead)
+                    {
+                        ourVeh.IsInvincible = false;
                         ourVeh.Explode();
+                    }
                 }
 
             if (map.Objects != null)
@@ -1238,13 +1242,7 @@ namespace GTANetwork
                                 Game.Player.CanControlCharacter);
             if (hasRespawned && !_lastDead)
             {
-                if (_lastModel != 0 && Game.Player.Character.Model.Hash != _lastModel)
-                {
-                    var lastMod = new Model(_lastModel);
-                    lastMod.Request(10000);
-                    Function.Call(Hash.SET_PLAYER_MODEL, new InputArgument(Game.Player), lastMod.Hash);
-                }
-
+                
                 _lastDead = true;
                 var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.PlayerRespawned);
@@ -1267,17 +1265,30 @@ namespace GTANetwork
                 msg.Write(killerEnt);
                 msg.Write(weapon);
 
-                var playerMod = (PedHash) Game.Player.Character.Model.Hash;
+                var playerMod = (PedHash)Game.Player.Character.Model.Hash;
                 if (playerMod != PedHash.Michael && playerMod != PedHash.Franklin && playerMod != PedHash.Trevor)
                 {
                     _lastModel = Game.Player.Character.Model.Hash;
                     var lastMod = new Model(PedHash.Michael);
                     lastMod.Request(10000);
                     Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, lastMod);
-                    lastMod.MarkAsNoLongerNeeded();
                     Game.Player.Character.Kill();
                 }
+                else
+                {
+                    _lastModel = 0;
+                }
+
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            }
+            else if (!killed && _lastKilled)
+            {
+                if (_lastModel != 0 && Game.Player.Character.Model.Hash != _lastModel)
+                {
+                    var lastMod = new Model(_lastModel);
+                    lastMod.Request(10000);
+                    Function.Call(Hash.SET_PLAYER_MODEL, new InputArgument(Game.Player), lastMod.Hash);
+                }
             }
 
             _lastKilled = killed;
@@ -2169,6 +2180,7 @@ namespace GTANetwork
                     UI.Notify("Unhandled Exception ocurred in Process Messages");
                     UI.Notify("Message Type: " + msg.MessageType);
                     UI.Notify("Data Type: " + type);
+                    UI.Notify(e.Message);
                 }
             }
         }
