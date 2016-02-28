@@ -113,6 +113,7 @@ namespace GTANetwork
                     HandleMap.Reverse.Add(veh.Handle, netHash);
                 }
             } 
+            model.MarkAsNoLongerNeeded();
             return veh;
         }
 
@@ -123,25 +124,21 @@ namespace GTANetwork
                 DownloadManager.Log("Model was null?");
                 return null;
             }
-
-            DownloadManager.Log("Requesting...");
+            
             model.Request(10000);
-            DownloadManager.Log("Available: " + model.IsLoaded);
-
-            DownloadManager.Log("Pos: " + position);
-            DownloadManager.Log("NetHash: " + netHash);
-
+            
             var veh = World.CreateProp(model, position, rotation, dynamic, false);
-            DownloadManager.Log("Prop null: " + (veh == null) + " exists: " + veh?.Exists());
             veh.Rotation = rotation;
             veh.Position = position;
+            veh.LodDistance = 3000;
+            
             if (!dynamic)
                 veh.FreezePosition = true;
-
+            
             lock (HandleMap)
                 if (!HandleMap.Reverse.ContainsKey(veh.Handle))
                     HandleMap.Reverse.Add(veh.Handle, netHash);
-
+                    
             model.MarkAsNoLongerNeeded();
             return veh;
         }

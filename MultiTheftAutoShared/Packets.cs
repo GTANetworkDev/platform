@@ -452,7 +452,7 @@ namespace GTANetworkShared
     }
     
     [ProtoContract]
-    public class LQuaternion
+    public class Quaternion
     {
         [ProtoMember(1)]
         public float X { get; set; }
@@ -463,9 +463,9 @@ namespace GTANetworkShared
         [ProtoMember(4)]
         public float W { get; set; }
 
-        public Quaternion ToQuaternion()
+        public GTA.Math.Quaternion ToQuaternion()
         {
-            return new Quaternion(X, Y, Z, W);
+            return new GTA.Math.Quaternion(X, Y, Z, W);
         }
     }
 
@@ -481,9 +481,9 @@ namespace GTANetworkShared
             };
         }
 
-        public static LQuaternion ToLQuaternion(this Quaternion vec)
+        public static Quaternion ToLQuaternion(this GTA.Math.Quaternion vec)
         {
-            return new LQuaternion()
+            return new Quaternion()
             {
                 X = vec.X,
                 Y = vec.Y,

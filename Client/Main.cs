@@ -536,13 +536,12 @@ namespace GTANetwork
                     };
                     dConnect.Buttons.Add(ipButton);
                 }
-
+                
                 _serverBrowser = new TabInteractiveListItem("Internet", new List<UIMenuItem>());
                 _lanBrowser = new TabInteractiveListItem("Local Area Network", new List<UIMenuItem>());
                 _favBrowser = new TabInteractiveListItem("Favorites", new List<UIMenuItem>());
                 _recentBrowser = new TabInteractiveListItem("Recent", new List<UIMenuItem>());
                 
-
                 _connectTab = new TabSubmenuItem("connect", new List<TabItem>() { dConnect, _serverBrowser, _lanBrowser, _favBrowser, _recentBrowser });
                 MainMenu.AddTab(_connectTab);
                 _connectTab.DrawInstructionalButtons += (sender, args) =>
@@ -1134,6 +1133,7 @@ namespace GTANetwork
 
         private Vehicle _lastPlayerCar;
         private int _lastModel;
+        private bool _whoseturnisitanyways;
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
@@ -1184,8 +1184,7 @@ namespace GTANetwork
 
             ProcessMessages();
 
-
-
+            
             if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected ||
                 Client.ConnectionStatus == NetConnectionStatus.None) return;
 
@@ -1195,8 +1194,6 @@ namespace GTANetwork
             var playerCar = Game.Player.Character.CurrentVehicle;
 
             Watcher.Tick();
-
-            //Function.Call(Hash.SET_PED_ALTERNATE_MOVEMENT_ANIM, player, 0, Util.LoadDict("move_m@generic"), "idle", 1f, true);
 
             if (playerCar != _lastPlayerCar)
             {
@@ -1303,11 +1300,25 @@ namespace GTANetwork
             Function.Call((Hash) 0x2F9A292AD0A3BD89);
             Function.Call((Hash) 0x5F3B7749C112D552);
 
-            foreach (var entity in World.GetAllEntities())
+
+            if (_whoseturnisitanyways)
             {
-                if ((Function.Call<bool>(Hash.IS_ENTITY_A_PED, entity.Handle) || Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, entity.Handle)) && !NetEntityHandler.ContainsLocalHandle(entity.Handle))
-                    entity.Delete();
+                foreach (var entity in World.GetAllPeds())
+                {
+                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                        entity.Delete();
+                }
             }
+            else
+            {
+                foreach (var entity in World.GetAllVehicles())
+                {
+                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                        entity.Delete();
+                }
+            }
+
+            _whoseturnisitanyways = !_whoseturnisitanyways;
             
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);

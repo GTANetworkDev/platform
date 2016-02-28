@@ -1,0 +1,9 @@
+<meta>
+    <info name="Map Loader" author="Guadmaz" type="script" description="Load the .XML maps from the Map Editor mod." />
+    
+    <assembly ref="mscorlib.dll" />
+    <assembly ref="System.Xml.Serialization.dll" />
+    <assembly ref="System.Xml.dll" />
+    
+    <script src="maploader.cs" type="server" lang="csharp" />
+</meta>
