@@ -60,6 +60,7 @@ namespace GTANetworkServer
                 ServerInstance.Tick();
                 Thread.Sleep(10); // Reducing CPU Usage (Win7 from average 15 % to 0-1 %, Linux from 100 % to 0-2 %)
             }
+
         }
 
 
@@ -67,36 +68,12 @@ namespace GTANetworkServer
 
         private static bool ConsoleCtrlCheck(CtrlTypes ctrType)
         {
-            switch (ctrType)
+            ServerInstance.IsClosing = true;
+            Program.Output("Terminating...");
+            DateTime start = DateTime.Now;
+            while (!ServerInstance.ReadyToClose)
             {
-                case CtrlTypes.CTRL_CLOSE_EVENT:
-                    Program.Output("NEXT TIME USE CTRL + C!");
-                    ServerInstance.IsClosing = true;
-                    Program.Output("Terminating...");
-                    while (!ServerInstance.ReadyToClose)
-                    {
-                        Thread.Sleep(10);
-                    }
-                    Thread.Sleep(1000);
-                    break;
-                case CtrlTypes.CTRL_C_EVENT:
-                    ServerInstance.IsClosing = true;
-                    Program.Output("Terminating...");
-                    while (!ServerInstance.ReadyToClose)
-                    {
-                        Thread.Sleep(10);
-                    }
-                    break;
-                case CtrlTypes.CTRL_SHUTDOWN_EVENT:
-                    Program.Output("NEXT TIME USE CTRL + C!");
-                    ServerInstance.IsClosing = true;
-                    Program.Output("Terminating...");
-                    while (!ServerInstance.ReadyToClose)
-                    {
-                        Thread.Sleep(10);
-                    }
-                    Thread.Sleep(1000);
-                    break;
+                Thread.Sleep(10);
             }
             CloseProgram = true;
             return true;

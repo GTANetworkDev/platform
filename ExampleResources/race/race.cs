@@ -30,7 +30,11 @@ using System.Threading;
 		API.onChatCommand += onChatCommand;
 		API.onPlayerFinishedDownload += onPlayerConnect;
         API.onPlayerRespawn += onPlayerRespawn;
-	}
+
+        var calcThread = new Thread(CalculatePositions);
+        calcThread.IsBackground = true;
+        calcThread.Start();
+    }
 
 	public bool IsRaceOngoing { get; set; }
 	public List<Opponent> Opponents { get; set; }
@@ -60,6 +64,29 @@ using System.Threading;
 		}
     }
 
+     private void CalculatePositions()
+     {
+         if (!IsRaceOngoing)
+         {
+             goto end;
+         }
+
+         foreach (var opponent in Opponents)
+         {
+             if (opponent.HasFinished || !opponent.HasStarted) continue;
+             var newPos = CalculatePlayerPositionInRace(opponent);
+             if (newPos != opponent.RacePosition)
+             {
+                 opponent.RacePosition = newPos;
+                 API.triggerClientEvent(opponent.Client, "updatePosition", newPos, Opponents.Count);
+             }
+         }
+
+        end:
+         Thread.Sleep(1000);
+         CalculatePositions();
+     }
+
 	public void onUpdate(object sender, EventArgs e)
 	{
 		if (!IsRaceOngoing) return;
@@ -87,6 +114,7 @@ using System.Threading;
 								   if (!IsVoteActive())
 									   StartVote();
 							   });
+                               t.IsBackground = true;
 								t.Start();
 							}
 
@@ -188,13 +216,6 @@ using System.Threading;
 		if (IsRaceOngoing)
 		{
             SetUpPlayerForRace(player, CurrentRace, false, 0);
-            /*
-            var k = new Thread((ThreadStart) delegate
-		    {
-		        Thread.Sleep(2000);
-		        SetUpPlayerForRace(player, CurrentRace, false, 0);
-		    });
-		    k.Start();*/
 		}
 
 		if (DateTime.Now.Subtract(VoteStart).TotalSeconds < 60)
@@ -277,7 +298,8 @@ using System.Threading;
 				   opponent.HasStarted = true;
 			   }
 	   });
-		t.Start();
+		t.IsBackground  = true;
+        t.Start();
 	}
 
 	private void EndRace()
@@ -292,7 +314,7 @@ using System.Threading;
 			opponent.HasStarted = false;
 		}
         
-	    API.triggerClientEventForAll("finishRace");
+	    API.triggerClientEventForAll("resetRace");
 
         CurrentRaceCheckpoints.Clear();
 	}
@@ -378,24 +400,22 @@ using System.Threading;
 		}*/
 	}
 
-	private int CalculatePlayerPositionInRace(Client player)
+	private int CalculatePlayerPositionInRace(Opponent player)
     {
-		Opponent curOp = Opponents.FirstOrDefault(op => op.Client == player);
-		if (curOp == null) return 0;
         int output = 1;
-        int playerCheckpoint = CurrentRace.Checkpoints.Length - curOp.CheckpointsPassed;
+        int playerCheckpoint = CurrentRace.Checkpoints.Length - player.CheckpointsPassed;
         int beforeYou = Opponents.Count(tuple => {
-			if (tuple == curOp) return false;
+			if (tuple == player) return false;
 			return tuple.CheckpointsPassed > playerCheckpoint;
 		});
 		
         output += beforeYou;
-        var samePosAsYou = Opponents.Where(tuple => tuple.CheckpointsPassed == playerCheckpoint && tuple != curOp);
+        var samePosAsYou = Opponents.Where(tuple => tuple.CheckpointsPassed == playerCheckpoint && tuple != player);
         output +=
             samePosAsYou.Count(
                 tuple =>
                     (CurrentRace.Checkpoints[playerCheckpoint].Subtract(tuple.Client.Position)).Length() <
-                    (CurrentRace.Checkpoints[playerCheckpoint].Subtract(curOp.Client.Position)).Length());
+                    (CurrentRace.Checkpoints[playerCheckpoint].Subtract(player.Client.Position)).Length());
         return output;
     }
 
@@ -441,6 +461,7 @@ using System.Threading;
 			Thread.Sleep(1000);
 			StartRace(raceWon);
 		});
+        t.IsBackground = true;
 		t.Start();
 	}
 
@@ -554,4 +575,5 @@ public class Opponent
 	public bool HasStarted { get; set; }
 	public int Vehicle { get; set; }
 	public int Blip { get; set; }
+    public int RacePosition { get; set; }
 }

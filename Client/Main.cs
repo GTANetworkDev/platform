@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -68,6 +69,7 @@ namespace GTANetwork
         private static int _messagesReceived = 0;
         //
 
+        
         public Main()
         {
             PlayerSettings = Util.ReadSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
@@ -84,6 +86,12 @@ namespace GTANetwork
 
             EntityCleanup = new List<int>();
             BlipCleanup = new List<int>();
+
+
+            var gameSettings = GameSettings.LoadGameSettings();
+
+
+
 
             _emptyVehicleMods = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++) _emptyVehicleMods.Add(i, 0);
@@ -866,6 +874,14 @@ namespace GTANetwork
 
         public static void AddMap(ServerMap map)
         {
+
+            if (map.Objects != null)
+                foreach (var pair in map.Objects)
+                {
+                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                        pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
+                }
+
             if (map.Vehicles != null)
                 foreach (var pair in map.Vehicles)
                 {
@@ -890,13 +906,6 @@ namespace GTANetwork
                         ourVeh.IsInvincible = false;
                         ourVeh.Explode();
                     }
-                }
-
-            if (map.Objects != null)
-                foreach (var pair in map.Objects)
-                {
-                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
-                        pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
                 }
 
             if (map.Blips != null)
@@ -1172,6 +1181,9 @@ namespace GTANetwork
         private Vehicle _lastPlayerCar;
         private int _lastModel;
         private bool _whoseturnisitanyways;
+
+        private Scaleform _mapScaleform;
+
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
@@ -1200,27 +1212,6 @@ namespace GTANetwork
                 _debug.Visible = true;
                 _debug.Draw();
             }
-            /*
-            if (Game.Player.Character.IsInVehicle() && Game.IsControlPressed(0, Control.Context))
-            {
-                var outputArg = new OutputArgument();
-                var success = Function.Call<bool>(Hash.GET_CURRENT_PED_VEHICLE_WEAPON, Game.Player.Character, outputArg);
-                if (success)
-                {
-                    var start = Game.Player.Character.CurrentVehicle.GetOffsetInWorldCoords(WeaponDataProvider.GetVehicleWeaponMuzzle(unchecked((VehicleHash)Game.Player.Character.CurrentVehicle.Model.Hash), false));
-                    var end = start + Main.RotationToDirection(Game.Player.Character.CurrentVehicle.Rotation) * 100f;
-                    var weapHash = outputArg.GetResult<int>();
-                    if (!WeaponDataProvider.IsVehicleWeaponRocket(weapHash))
-                        weapHash = unchecked((int) WeaponHash.CombatPDW);
-                    Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
-                            end.Y, end.Z, 75, true, weapHash, Game.Player.Character, true, true, 0xbf800000);
-                    UI.ShowSubtitle("Shootin");
-                }
-                else
-                {
-                    UI.ShowSubtitle("WeaponHash: None");
-                }
-            }*/
             
             #endif
 
@@ -1331,7 +1322,9 @@ namespace GTANetwork
             }
 
             _lastKilled = killed;
-            
+
+            Function.Call(Hash.SET_RANDOM_TRAINS, 0);
+
             Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
@@ -1805,9 +1798,14 @@ namespace GTANetwork
                                 var data = DeserializeBinary<DataDownloadStart>(msg.ReadBytes(len)) as DataDownloadStart;
                                 if (data != null)
                                 {
-                                    DownloadManager.StartDownload(data.Id,
+                                    var acceptDownload = DownloadManager.StartDownload(data.Id,
                                         data.ResourceParent + Path.DirectorySeparatorChar + data.FileName,
-                                        (FileType) data.FileType, data.Length);
+                                        (FileType) data.FileType, data.Length, data.Md5Hash);
+                                    var newMsg = Client.CreateMessage();
+                                    newMsg.Write((int)PacketType.FileAcceptDeny);
+                                    newMsg.Write(data.Id);
+                                    newMsg.Write(acceptDownload);
+                                    Client.SendMessage(newMsg, NetDeliveryMethod.ReliableOrdered, 29);
                                 }
                                 else
                                 {
@@ -2119,6 +2117,7 @@ namespace GTANetwork
                         matchedItems.Add(_recentBrowser.Items.FirstOrDefault(i => i.Description == itemText));
                         matchedItems.Add(_favBrowser.Items.FirstOrDefault(i => i.Description == itemText));
                         matchedItems.Add(_lanBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                        matchedItems = matchedItems.Distinct().ToList();
 
                         _currentOnlinePlayers += data.PlayerCount;
 

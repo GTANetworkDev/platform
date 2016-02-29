@@ -33,6 +33,7 @@ namespace GTANetworkShared
         PlayerKilled = 24,
         StopResource = 25,
         UpdateMarkerProperties = 26,
+        FileAcceptDeny = 27,
     }
 
     public enum ScriptVersion
@@ -233,6 +234,9 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public int Length { get; set; }
+
+        [ProtoMember(6)]
+        public string Md5Hash { get; set; }
     }
 
     [ProtoContract]

@@ -2,9 +2,16 @@ var mainBlip = null;
 var secondBlip = null;
 var nextCheckpointMarker = null;
 var nextCheckpointDir = null;
+var racePosition = null;
+
+script.onUpdate.connect(function(sender, args) {
+    if (racePosition != null) {
+        //script.drawText(racePosition, 1900, 1000, 0.5, 255, 255, 255, 255, 0, 2, false, false, false);
+    }
+});
 
 script.onServerEventTrigger.connect(function (eventName, args) {
-    if (eventName === "startCountdown") {
+    if (eventName === "startRaceCountdown") {
         script.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
         script.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
         API.NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage("3");
@@ -20,6 +27,10 @@ script.onServerEventTrigger.connect(function (eventName, args) {
         script.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
         script.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
         API.NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage("go", 1000);
+    }
+
+    if (eventName === "updatePosition") {
+        racePosition = args[0] + " / " + args[1];
     }
 
     if (eventName === "setNextCheckpoint") {
@@ -80,6 +91,31 @@ script.onServerEventTrigger.connect(function (eventName, args) {
     }
 
     if (eventName === "finishRace") {
+        script.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
+        API.NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage("finished");
+
+        if (mainBlip != null) {
+            script.removeBlip(mainBlip);
+            mainBlip = null;
+        }
+
+        if (secondBlip != null) {
+            script.removeBlip(secondBlip);
+            secondBlip = null;
+        }
+
+        if (nextCheckpointMarker != null) {
+            script.deleteMarker(nextCheckpointMarker);
+            nextCheckpointMarker = null;
+        }
+
+        if (nextCheckpointDir != null) {
+            script.deleteMarker(nextCheckpointDir);
+            nextCheckpointDir = null;
+        }
+    }
+
+    if (eventName === "resetRace") {
         if (mainBlip != null) {
             script.removeBlip(mainBlip);
             mainBlip = null;

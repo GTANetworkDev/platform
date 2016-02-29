@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
 using GTA;
 using GTANetworkShared;
 
@@ -14,12 +16,27 @@ namespace GTANetwork
         }
 
         private static FileTransferId CurrentFile;
-        public static bool StartDownload(int id, string path, FileType type, int len)
+        public static bool StartDownload(int id, string path, FileType type, int len, string md5hash)
         {
             if (CurrentFile != null)
             {
                 return false;
             }
+
+            if (type == FileType.Normal && Directory.Exists(FileTransferId._DOWNLOADFOLDER_ + path.Replace(Path.GetFileName(path), "")) &&
+                File.Exists(FileTransferId._DOWNLOADFOLDER_ + path))
+            {
+                using (var md5 = MD5.Create())
+                using (var stream = File.OpenRead(FileTransferId._DOWNLOADFOLDER_ + path))
+                {
+                    var myData = md5.ComputeHash(stream);
+                    if (myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right) == md5hash)
+                    {
+                        return false;
+                    }
+                }
+            }
+
             CurrentFile = new FileTransferId(id, path, type, len);
             return true;
         }

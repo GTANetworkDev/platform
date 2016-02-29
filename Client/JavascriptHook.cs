@@ -77,7 +77,17 @@ namespace GTANetwork
         {
             if (ThreadJumper.Count > 0)
             {
-                ThreadJumper.ForEach(a => a.Invoke());
+                ThreadJumper.ForEach(a =>
+                {
+                    try
+                    {
+                        a.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogException(ex);
+                    }
+                });
                 ThreadJumper.Clear();
             }
 

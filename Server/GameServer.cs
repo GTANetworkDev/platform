@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -70,6 +71,8 @@ namespace GTANetworkServer
         }
 
         public bool HasStarted { get; set; }
+        public bool Accepted { get; set; }
+
         public int Id { get; set; }
         public long BytesSent { get; set; }
         public byte[] Data { get; set; }
@@ -77,6 +80,7 @@ namespace GTANetworkServer
         public FileType Type { get; set; }
         public string Name { get; set; }
         public string Resource { get; set; }
+        public string Hash { get; set; }
     }
 
     public class GameServer
@@ -86,6 +90,7 @@ namespace GTANetworkServer
             Clients = new List<Client>();
             Downloads = new List<StreamingClient>();
             RunningResources = new List<Resource>();
+            FileHashes = new Dictionary<string, string>();
 
             MaxPlayers = 32;
             Port = port;
@@ -103,17 +108,6 @@ namespace GTANetworkServer
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
             Server = new NetServer(config);
             ConcurrentFactory = new TaskFactory();
-            /*
-            
-            Console.CancelKeyPress += (sender, eventArgs) =>
-            {
-                Program.Output("Terminating...");
-                IsClosing = true;
-                while (!ReadyToClose)
-                {
-                    Thread.Sleep(10);
-                }
-            };*/
         }
         
         public NetServer Server;
@@ -133,6 +127,8 @@ namespace GTANetworkServer
         public bool ReadyToClose { get; set; }
 
         public List<Resource> RunningResources;
+
+        private Dictionary<string, string> FileHashes { get; set; }
 
         public NetEntityHandler NetEntityHandler { get; set; }
 
@@ -225,6 +221,20 @@ namespace GTANetworkServer
                 ourResource.Info = currentResInfo;
                 ourResource.DirectoryName = resourceName;
                 ourResource.Engines = new List<ScriptingEngine>();
+
+                foreach (var filePath in currentResInfo.Files)
+                {
+                    using (var md5 = MD5.Create())
+                    using (var stream = File.OpenRead("resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar + filePath.Path))
+                    {
+                        var myData = md5.ComputeHash(stream);
+
+                        if (FileHashes.ContainsKey(filePath.Path))
+                            FileHashes[filePath.Path] = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                        else
+                            FileHashes.Add(filePath.Path, myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right));
+                    }
+                }
 
                 foreach (var script in currentResInfo.Scripts)
                 {
@@ -446,6 +456,7 @@ namespace GTANetworkServer
                     StopResource(RunningResources[i].DirectoryName);
                 }
                 ReadyToClose = true;
+                return;
             }
 
             if (Downloads.Count > 0)
@@ -465,9 +476,12 @@ namespace GTANetworkServer
                                 notifyObj.FileName = Downloads[i].Files[0].Name;
                                 notifyObj.Id = Downloads[i].Files[0].Id;
                                 notifyObj.Length = Downloads[i].Files[0].Data.Length;
+                                notifyObj.Md5Hash = Downloads[i].Files[0].Hash;
                                 SendToClient(Downloads[i].Parent, notifyObj, PacketType.FileTransferRequest, true);
                                 Downloads[i].Files[0].HasStarted = true;
                             }
+
+                            if (!Downloads[i].Files[0].Accepted) continue;
 
                             var remaining = Downloads[i].Files[0].Data.Length - Downloads[i].Files[0].BytesSent;
                             int sendBytes = (remaining > Downloads[i].ChunkSize
@@ -903,6 +917,20 @@ namespace GTANetworkServer
                                     _callbacks.Remove(data.Id);
                                 }
                                 break;
+                            case PacketType.FileAcceptDeny:
+                                {
+                                    var fileId = msg.ReadInt32();
+                                    var hasBeenAccepted = msg.ReadBoolean();
+                                    var ourD = Downloads.FirstOrDefault(d => d.Parent == client);
+                                    if (ourD != null && ourD.Files.Count > 0 && ourD.Files[0].Id == fileId && !ourD.Files[0].Accepted)
+                                    {
+                                        if (!hasBeenAccepted)
+                                            ourD.Files.RemoveAt(0);
+                                        else
+                                            ourD.Files[0].Accepted = true;
+                                    }
+                                }
+                                break;
                             case PacketType.ConnectionConfirmed:
                                 {
                                     var state = msg.ReadBoolean();
@@ -966,7 +994,9 @@ namespace GTANetworkServer
                                                                       file.Path);
                                                 fileData.Name = file.Path;
                                                 fileData.Resource = resource.DirectoryName;
-
+                                                fileData.Hash = FileHashes.ContainsKey(file.Path)
+                                                    ? FileHashes[file.Path]
+                                                    : null;
                                                 downloader.Files.Add(fileData);
                                             }
                                         }
