@@ -79,6 +79,7 @@ namespace GTANetwork
                         World.RenderingCamera = null;
                         Main.MainMenu.TemporarilyHidden = false;
                         Main.MainMenu.Visible = false;
+                        Main.InvokeFinishedDownload();
                     }
                 }
             }

@@ -96,6 +96,12 @@ namespace GTANetworkShared
     [ProtoContract]
     public class VehicleProperties : EntityProperties
     {
+        public VehicleProperties()
+        {
+            Mods = new int[50];
+            Health = 900;
+        }
+
         [ProtoMember(1)]
         public int PrimaryColor { get; set; }
 
@@ -107,6 +113,12 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public bool IsDead { get; set; }
+
+        [ProtoMember(5)]
+        public int[] Mods { get; set; }
+
+        [ProtoMember(6)]
+        public bool Siren { get; set; }
     }
 
     [ProtoContract]

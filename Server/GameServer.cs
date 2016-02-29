@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -102,8 +103,19 @@ namespace GTANetworkServer
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
             Server = new NetServer(config);
             ConcurrentFactory = new TaskFactory();
+            /*
+            
+            Console.CancelKeyPress += (sender, eventArgs) =>
+            {
+                Program.Output("Terminating...");
+                IsClosing = true;
+                while (!ReadyToClose)
+                {
+                    Thread.Sleep(10);
+                }
+            };*/
         }
-
+        
         public NetServer Server;
         public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
@@ -116,6 +128,9 @@ namespace GTANetworkServer
         public string GamemodeName { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
+
+        public bool IsClosing { get; set; }
+        public bool ReadyToClose { get; set; }
 
         public List<Resource> RunningResources;
 
@@ -424,6 +439,15 @@ namespace GTANetworkServer
 
         public void Tick()
         {
+            if (IsClosing)
+            {
+                for (int i = RunningResources.Count - 1; i >= 0; i--)
+                {
+                    StopResource(RunningResources[i].DirectoryName);
+                }
+                ReadyToClose = true;
+            }
+
             if (Downloads.Count > 0)
             {
                 for (int i = Downloads.Count - 1; i >= 0; i--)
@@ -736,6 +760,8 @@ namespace GTANetworkServer
                                                     .IsDead = data.IsVehicleDead;
                                                 ((VehicleProperties)NetEntityHandler.ToDict()[data.VehicleHandle])
                                                     .Health = data.VehicleHealth;
+                                                ((VehicleProperties)NetEntityHandler.ToDict()[data.VehicleHandle])
+                                                    .Siren = data.IsSirenActive;
                                             }
 
                                             SendToAll(data, PacketType.VehiclePositionData, false, client);
@@ -879,80 +905,95 @@ namespace GTANetworkServer
                                 break;
                             case PacketType.ConnectionConfirmed:
                                 {
-                                    var mapObj = new ServerMap();
-                                    mapObj.Vehicles = new Dictionary<int, VehicleProperties>();
-                                    mapObj.Objects = new Dictionary<int, EntityProperties>();
-                                    mapObj.Blips = new Dictionary<int, BlipProperties>();
-                                    mapObj.Markers = new Dictionary<int, MarkerProperties>();
-                                    foreach (var pair in NetEntityHandler.ToDict())
+                                    var state = msg.ReadBoolean();
+                                    if (!state)
                                     {
-                                        if (pair.Value.EntityType == (byte)EntityType.Vehicle)
+                                        var mapObj = new ServerMap();
+                                        mapObj.Vehicles = new Dictionary<int, VehicleProperties>();
+                                        mapObj.Objects = new Dictionary<int, EntityProperties>();
+                                        mapObj.Blips = new Dictionary<int, BlipProperties>();
+                                        mapObj.Markers = new Dictionary<int, MarkerProperties>();
+                                        foreach (var pair in NetEntityHandler.ToDict())
                                         {
-                                            mapObj.Vehicles.Add(pair.Key, (VehicleProperties)pair.Value);
+                                            if (pair.Value.EntityType == (byte) EntityType.Vehicle)
+                                            {
+                                                mapObj.Vehicles.Add(pair.Key, (VehicleProperties) pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte) EntityType.Prop)
+                                            {
+                                                mapObj.Objects.Add(pair.Key, pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte) EntityType.Blip)
+                                            {
+                                                mapObj.Blips.Add(pair.Key, (BlipProperties) pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte) EntityType.Marker)
+                                            {
+                                                mapObj.Markers.Add(pair.Key, (MarkerProperties) pair.Value);
+                                            }
                                         }
-                                        else if (pair.Value.EntityType == (byte)EntityType.Prop)
+
+                                        // TODO: replace this filth
+                                        var r = new Random();
+
+                                        var mapData = new StreamedData();
+                                        mapData.Id = r.Next(int.MaxValue);
+                                        mapData.Data = SerializeBinary(mapObj);
+                                        mapData.Type = FileType.Map;
+
+                                        var clientScripts = new ScriptCollection();
+                                        clientScripts.ClientsideScripts = new List<ClientsideScript>(_clientScripts);
+
+                                        var scriptData = new StreamedData();
+                                        scriptData.Id = r.Next(int.MaxValue);
+                                        scriptData.Data = SerializeBinary(clientScripts);
+                                        scriptData.Type = FileType.Script;
+
+                                        var downloader = new StreamingClient(client);
+                                        downloader.Files.Add(mapData);
+
+                                        foreach (var resource in RunningResources)
                                         {
-                                            mapObj.Objects.Add(pair.Key, pair.Value);
+                                            foreach (var file in resource.Info.Files)
+                                            {
+                                                var fileData = new StreamedData();
+                                                fileData.Id = r.Next(int.MaxValue);
+                                                fileData.Type = FileType.Normal;
+                                                fileData.Data =
+                                                    File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
+                                                                      resource.DirectoryName +
+                                                                      Path.DirectorySeparatorChar +
+                                                                      file.Path);
+                                                fileData.Name = file.Path;
+                                                fileData.Resource = resource.DirectoryName;
+
+                                                downloader.Files.Add(fileData);
+                                            }
                                         }
-                                        else if (pair.Value.EntityType == (byte) EntityType.Blip)
-                                        {
-                                            mapObj.Blips.Add(pair.Key, (BlipProperties)pair.Value);
-                                        }
-                                        else if (pair.Value.EntityType == (byte) EntityType.Marker)
-                                        {
-                                            mapObj.Markers.Add(pair.Key, (MarkerProperties) pair.Value);
-                                        }
+
+                                        downloader.Files.Add(scriptData);
+                                        Downloads.Add(downloader);
+
+
+                                        lock (RunningResources)
+                                            RunningResources.ForEach(
+                                                fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerConnected(client);
+                                                }));
+
+                                        Program.Output("New player connected: " + client.SocialClubName + " (" +
+                                                       client.Name + ")");
                                     }
-
-                                    // TODO: replace this filth
-                                    var r = new Random();
-
-                                    var mapData = new StreamedData();
-                                    mapData.Id = r.Next(int.MaxValue);
-                                    mapData.Data = SerializeBinary(mapObj);
-                                    mapData.Type = FileType.Map;
-
-                                    var clientScripts = new ScriptCollection();
-                                    clientScripts.ClientsideScripts = new List<ClientsideScript>(_clientScripts);
-
-                                    var scriptData = new StreamedData();
-                                    scriptData.Id = r.Next(int.MaxValue);
-                                    scriptData.Data = SerializeBinary(clientScripts);
-                                    scriptData.Type = FileType.Script;
-
-                                    var downloader = new StreamingClient(client);
-                                    downloader.Files.Add(mapData);
-
-                                    foreach (var resource in RunningResources)
+                                    else
                                     {
-                                        foreach (var file in resource.Info.Files)
-                                        {
-                                            var fileData = new StreamedData();
-                                            fileData.Id = r.Next(int.MaxValue);
-                                            fileData.Type = FileType.Normal;
-                                            fileData.Data =
-                                                File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
-                                                                  resource.DirectoryName + Path.DirectorySeparatorChar +
-                                                                  file.Path);
-                                            fileData.Name = file.Path;
-                                            fileData.Resource = resource.DirectoryName;
-
-                                            downloader.Files.Add(fileData);
-                                        }
+                                        lock (RunningResources)
+                                            RunningResources.ForEach(
+                                                fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerDownloadFinished(client);
+                                                }));
                                     }
-
-                                    downloader.Files.Add(scriptData);
-                                    Downloads.Add(downloader);
-
-
-                                    lock (RunningResources)
-                                    RunningResources.ForEach(
-                                    fs => fs.Engines.ForEach(en =>
-                                    {
-                                        en.InvokePlayerConnected(client);
-                                    }));
-
-                                    Program.Output("New player connected: " + client.SocialClubName + " (" + client.Name + ")");
 
                                     break;
                                 }
@@ -1339,6 +1380,25 @@ namespace GTANetworkServer
             Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
         }
 
+        private ulong _nativeCount = 0;
+        public object ReturnNativeCallFromPlayer(Client player, ulong hash, NativeArgument returnType, params object[] args)
+        {
+            _nativeCount++;
+            object output = null;
+            GetNativeCallFromPlayer(player, _nativeCount.ToString(), hash, returnType, (o) =>
+            {
+                output = o;
+            }, args);
+
+            DateTime start = DateTime.Now;
+            while (output == null && DateTime.Now.Subtract(start).Milliseconds < 10000)
+            {
+                Thread.Sleep(10);
+            }
+            
+            return output;
+        }
+
         private Dictionary<string, Action<object>> _callbacks = new Dictionary<string, Action<object>>();
         public void GetNativeCallFromPlayer(Client player, string salt, ulong hash, NativeArgument returnType, Action<object> callback,
             params object[] arguments)
@@ -1366,7 +1426,5 @@ namespace GTANetworkServer
         }
 
         // SCRIPTING
-
-        
     }
 }

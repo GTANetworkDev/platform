@@ -87,16 +87,19 @@ namespace GTANetwork
                 maxWidth = _messages.Max(f => StringMeasurer.MeasureString(f));
             }
             
-            //new UIResRectangle(UIMenu.GetSafezoneBounds() - new Size(5, 5), new Size(Math.Max(680, maxWidth + 6), 264), Color.FromArgb(alpha, 10, 90, 250)).Draw();
 
             var safezone = UIMenu.GetSafezoneBounds();
             var res = UIMenu.GetScreenResolutionMantainRatio();
 
             var converted = new PointF((safezone.X/res.Width) * UI.WIDTH, (safezone.Y/res.Height) * UI.HEIGHT);
 
-            //new PointF(-766f, -480f)
-
-            _mainScaleform.Render2DScreenSpace(new PointF(-788f + converted.X, -505f + converted.Y), new PointF(UI.WIDTH, UI.HEIGHT));
+            if (Main.PlayerSettings.ScaleChatWithSafezone)
+                _mainScaleform.Render2DScreenSpace(new PointF(-788f + converted.X, -505f + converted.Y),
+                    new PointF(UI.WIDTH, UI.HEIGHT));
+            else
+                _mainScaleform.Render2DScreenSpace(
+                    new PointF(-788f + converted.X - (converted.X/2), -505f + converted.Y - (converted.Y/2)),
+                    new PointF(UI.WIDTH, UI.HEIGHT));
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;
@@ -107,10 +110,22 @@ namespace GTANetwork
                 while (StringMeasurer.MeasureString(output) > limit)
                     output = output.Substring(0, output.Length - 5);
 
-                new UIResText(output, UIMenu.GetSafezoneBounds() + new Size(0, 25 * c), 0.35f, Color.FromArgb((int)textAlpha, 255, 255, 255))
+                if (Main.PlayerSettings.ScaleChatWithSafezone)
                 {
-                    Outline = true,
-                }.Draw();
+                    new UIResText(output, UIMenu.GetSafezoneBounds() + new Size(0, 25*c), 0.35f,
+                        Color.FromArgb((int) textAlpha, 255, 255, 255))
+                    {
+                        Outline = true,
+                    }.Draw();
+                }
+                else
+                {
+                    new UIResText(output, new Point(0, 25 * c), 0.35f,
+                        Color.FromArgb((int)textAlpha, 255, 255, 255))
+                    {
+                        Outline = true,
+                    }.Draw();
+                }
                 c++;
             }
             
@@ -158,6 +173,7 @@ namespace GTANetwork
                 CurrentInput = "";
             }
 
+            
             var keyChar = GetCharFromKey(key, Game.IsKeyPressed(Keys.ShiftKey), false);
 
             if (keyChar.Length == 0) return;
@@ -179,6 +195,10 @@ namespace GTANetwork
                 _mainScaleform.CallFunction("ADD_TEXT", "ENTER");
                 if (OnComplete != null) OnComplete.Invoke(this, EventArgs.Empty);
                 CurrentInput = "";
+                return;
+            }
+            else if (keyChar[0] == 27)
+            {
                 return;
             }
             var str = keyChar;

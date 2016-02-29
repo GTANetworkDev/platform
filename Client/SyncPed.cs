@@ -297,8 +297,8 @@ namespace GTANetwork
 
                 if (_lastStart != null && _lastEnd != null)
                 {
-                    Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
-                    _lastEnd.Z, 255, 255, 255, 255);
+                    //Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
+                    //_lastEnd.Z, 255, 255, 255, 255);
                 }
 
                 if (inRange && Character != null)
@@ -354,6 +354,13 @@ namespace GTANetwork
                     Character.IsInvincible = true;
                     Character.CanRagdoll = false;
                     Character.RelationshipGroup = _relGroup;
+
+                    if (PedProps != null)
+                    foreach (var pair in PedProps)
+                    {
+                        Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, 0, 2);
+                    }
+
                     if (_blip)
                     {
                         Character.AddBlip();
@@ -476,7 +483,6 @@ namespace GTANetwork
                 if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
                     (_lastVehicle && IsInVehicle &&
                      (MainVehicle == null || !Character.IsInVehicle(MainVehicle) ||
-                      MainVehicle.Model.Hash != VehicleHash ||
                       Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
                       VehicleSeat != Util.GetPedSeat(Character))))
                 {
@@ -505,7 +511,8 @@ namespace GTANetwork
                         //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
                         MainVehicle.Rotation = _vehicleRotation;
                         MainVehicle.IsInvincible = true;
-                        Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
+                        //Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
+                        Character.SetIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
                         DEBUG_STEP = 12;
                     }
                     DEBUG_STEP = 13;
@@ -547,6 +554,11 @@ namespace GTANetwork
                 }
 
                 DEBUG_STEP = 16;
+
+                if ((Character.CurrentBlip == null || (Character.CurrentBlip.Position - Character.Position).Length() > 5f) && _blip)
+                {
+                    Character.Delete();
+                }
 
                 if (IsInVehicle)
                 {
@@ -912,7 +924,7 @@ namespace GTANetwork
                                 var start = gunEntity.GetOffsetInWorldCoords(min);
                                 var end = gunEntity.GetOffsetInWorldCoords(max);
                                 var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
-                                Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
+                                //Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
                                 if (ray.DitHitAnything && ray.DitHitEntity && ray.HitEntity.Handle == Game.Player.Character.Handle)
                                 {
                                     Game.Player.Character.ApplyDamage(25);
@@ -968,7 +980,7 @@ namespace GTANetwork
 
                             if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
                             {
-                                Character.Task.AimAt(AimCoords, 1);
+                                Character.Task.AimAt(AimCoords, -1);
                             }
 
                             var dirVector = Position - _lastPosition;
@@ -982,7 +994,7 @@ namespace GTANetwork
 
                         DEBUG_STEP = 30;
 
-                        if (IsShooting)
+                        if (IsShooting && CurrentWeapon != unchecked ((int) WeaponHash.Unarmed))
                         {
                             var hands = GetWeaponHandsHeld(CurrentWeapon);
 
@@ -1044,7 +1056,7 @@ namespace GTANetwork
                             else
                             {
 
-                                Character.Task.AimAt(AimCoords, 100);
+                                Character.Task.AimAt(AimCoords, -1);
 
                                 var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
                                 var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));

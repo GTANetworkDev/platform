@@ -12,7 +12,7 @@ using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using NativeUI;
-using Vector3 = GTA.Math.Vector3;
+using Vector3 = GTANetworkShared.Vector3;
 
 namespace GTANetwork
 {
@@ -149,7 +149,9 @@ namespace GTANetwork
                 scriptEngine.AddHostType("Keys", typeof(Keys));
                 scriptEngine.AddHostType("Point", typeof(Point));
                 scriptEngine.AddHostType("Size", typeof(Size));
+                scriptEngine.AddHostType("Vector3", typeof(Vector3));
                 
+
                 try
                 {
                     scriptEngine.Execute(script.Script);
@@ -185,14 +187,17 @@ namespace GTANetwork
 
         public static void StopScript(string resourceName)
         {
-            lock (ScriptEngines)
-                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
-                {
-                    if (ScriptEngines[i].ResourceParent != resourceName) continue;
-                    ScriptEngines[i].Engine.Script.script.invokeResourceStop();
-                    ScriptEngines[i].Engine.Dispose();
-                    ScriptEngines.RemoveAt(i);
-                }
+            ThreadJumper.Add(delegate
+            {
+                lock (ScriptEngines)
+                    for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                    {
+                        if (ScriptEngines[i].ResourceParent != resourceName) continue;
+                        ScriptEngines[i].Engine.Script.script.invokeResourceStop();
+                        ScriptEngines[i].Engine.Dispose();
+                        ScriptEngines.RemoveAt(i);
+                    }
+            });
         }
 
         private static void LogException(Exception ex)
@@ -282,13 +287,51 @@ namespace GTANetwork
 
         public int createBlip(Vector3 pos)
         {
-            var blip = World.CreateBlip(pos);
+            var blip = World.CreateBlip(pos.ToVector());
             if (!Main.BlipCleanup.Contains(blip.Handle))
                 Main.BlipCleanup.Add(blip.Handle);
             return blip.Handle;
         }
 
-        
+        public void setBlipPosition(int blip, Vector3 pos)
+        {
+            if (new Blip(blip).Exists())
+            {
+                new Blip(blip).Position = pos.ToVector();
+            }
+        }
+
+        public void removeBlip(int blip)
+        {
+            if (new Blip(blip).Exists())
+            {
+                new Blip(blip).Remove();
+            }
+        }
+
+
+        public void setBlipScale(int blip, double scale)
+        {
+            setBlipScale(blip, (float) scale);
+        }
+
+        public void setBlipScale(int blip, float scale)
+        {
+            if (new Blip(blip).Exists())
+            {
+                new Blip(blip).Scale = scale;
+            }
+        }
+
+        public int createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
+        {
+            return Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b);
+        }
+
+        public void deleteMarker(int handle)
+        {
+            Main.NetEntityHandler.DeleteLocalMarker(handle);
+        }
         
         public string getResourceFilePath(string resourceName, string fileName)
         {

@@ -13,6 +13,7 @@ namespace GTANetwork
             HandleMap = new BiDictionary<int, int>();
             Blips = new List<int>();
             Markers = new Dictionary<int, MarkerProperties>();
+            _localMarkers = new Dictionary<int, MarkerProperties>();
         }
 
         public void DrawMarkers()
@@ -27,11 +28,49 @@ namespace GTANetwork
                         Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
                 }
             }
+
+            lock (_localMarkers)
+            {
+                foreach (var marker in _localMarkers)
+                {
+                    World.DrawMarker((MarkerType)marker.Value.MarkerType, marker.Value.Position.ToVector(),
+                        marker.Value.Direction.ToVector(), marker.Value.Rotation.ToVector(),
+                        marker.Value.Scale.ToVector(),
+                        Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
+                }
+            }
         }
 
         private BiDictionary<int, int> HandleMap;
         private List<int> Blips { get; set; }
         public Dictionary<int, MarkerProperties> Markers { get; set; }
+        private Dictionary<int, MarkerProperties> _localMarkers { get; set; }
+        private int _markerCount;
+
+        public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b)
+        {
+            var newId = ++_markerCount;
+            _localMarkers.Add(newId, new MarkerProperties()
+            {
+                MarkerType = markerType,
+                Position = pos.ToLVector(),
+                Direction = dir.ToLVector(),
+                Rotation = rot.ToLVector(),
+                Scale = scale.ToLVector(),
+                Alpha = alpha,
+                Red = r,
+                Green = g,
+                Blue = b,
+                EntityType = (byte)EntityType.Marker,
+            });
+            return newId;
+        }
+        
+
+        public void DeleteLocalMarker(int handle)
+        {
+            if (_localMarkers.ContainsKey(handle)) _localMarkers.Remove(handle);
+        }
 
         public Entity NetToEntity(int netId)
         {
@@ -124,9 +163,23 @@ namespace GTANetwork
                 DownloadManager.Log("Model was null?");
                 return null;
             }
-            
-            model.Request(10000);
-            
+
+            int counter = 0;
+            var sc = new Scaleform(0);
+            sc.Load("instructional_buttons");
+            sc.CallFunction("CLEAR_ALL");
+            sc.CallFunction("TOGGLE_MOUSE_BUTTONS", 0);
+            sc.CallFunction("CREATE_CONTAINER");
+            sc.CallFunction("SET_DATA_SLOT", 0, "b_50", "Loading Model");
+            sc.CallFunction("DRAW_INSTRUCTIONAL_BUTTONS", -1);
+            while (!model.IsLoaded && counter < 500)
+            {
+                model.Request();
+                Script.Yield();
+                counter++;
+                sc.Render2D();
+            }
+
             var veh = World.CreateProp(model, position, rotation, dynamic, false);
             veh.Rotation = rotation;
             veh.Position = position;
@@ -186,6 +239,8 @@ namespace GTANetwork
                 HandleMap.Clear();
                 Markers.Clear();
                 Blips.Clear();
+                _localMarkers.Clear();
+                _markerCount = 0;
             }
 
         }

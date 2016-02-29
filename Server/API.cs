@@ -40,6 +40,7 @@ namespace GTANetworkServer
         public event ChatEvent onChatCommand;
         public event PlayerEvent OnPlayerBeginConnect;
         public event PlayerEvent onPlayerConnected;
+        public event PlayerEvent onPlayerFinishedDownload;
         public event PlayerDisconnectedEvent onPlayerDisconnected;
         public event PlayerKilledEvent onPlayerDeath;
         public event PlayerEvent onPlayerRespawn;
@@ -50,6 +51,10 @@ namespace GTANetworkServer
             onClientEventTrigger?.Invoke(sender, eventName, arsg);
         }
 
+        internal void invokeFinishedDownload(Client sender)
+        {
+            onPlayerFinishedDownload?.Invoke(sender);
+        }
 
         internal void invokeResourceStart()
         {
@@ -144,6 +149,15 @@ namespace GTANetworkServer
             Program.Output(text);
         }
 
+        public void setVehicleMod(int vehicle, int modType, int mod)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle))
+            {
+                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle]).Mods[modType] = mod;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x6AF0636DDEDCB6DD, new EntityArgument(vehicle), modType, mod, false);
+            }
+        }
+
         public int vehicleNameToModel(string modelName)
         {
             VehicleHash output;
@@ -157,6 +171,11 @@ namespace GTANetworkServer
         public List<Client> getAllPlayers()
         {
             return Program.ServerInstance.Clients;
+        }
+
+        public void setEntityPositionFrozen(int netHandle, bool frozen)
+        {
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x428CA6DBD1094446, new EntityArgument(netHandle), frozen);
         }
 
         public void triggerClientEventForAll(string eventName, params object[] args)

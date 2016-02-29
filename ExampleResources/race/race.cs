@@ -28,7 +28,7 @@ using System.Threading;
         API.onUpdate += onUpdate;
 		API.onPlayerDisconnected += onDisconnect;
 		API.onChatCommand += onChatCommand;
-		API.onPlayerConnected += onPlayerConnect;
+		API.onPlayerFinishedDownload += onPlayerConnect;
         API.onPlayerRespawn += onPlayerRespawn;
 	}
 
@@ -96,24 +96,14 @@ using System.Threading;
 								? "st"
 								: pos.ToString().EndsWith("2") ? "nd" : pos.ToString().EndsWith("3") ? "rd" : "th";
 							API.sendNotificationToAll("~h~" + opponent.Client.Name + "~h~ has finished " + pos + suffix);
-
-							Program.ServerInstance.SendNativeCallToPlayer(opponent.Client, 0x45FF974EEE1C8734, opponent.Blip, 0);
-							Program.ServerInstance.RecallNativeCallOnTickForPlayer(opponent.Client, "RACE_CHECKPOINT_MARKER");
-							Program.ServerInstance.RecallNativeCallOnTickForPlayer(opponent.Client, "RACE_CHECKPOINT_MARKER_DIR");
-							continue;
+						    API.triggerClientEvent(opponent.Client, "finishRace");
+                            continue;
 						}
+					    Vector3 nextPos = CurrentRaceCheckpoints[opponent.CheckpointsPassed];
+					    Vector3 nextDir = null;
 
-						Program.ServerInstance.SendNativeCallToPlayer(opponent.Client, 0xAE2AF67E9D9AF65D, opponent.Blip,
-							CurrentRaceCheckpoints[opponent.CheckpointsPassed].X,
-							CurrentRaceCheckpoints[opponent.CheckpointsPassed].Y,
-							CurrentRaceCheckpoints[opponent.CheckpointsPassed].Z);
 
-						Program.ServerInstance.SetNativeCallOnTickForPlayer(opponent.Client, "RACE_CHECKPOINT_MARKER",
-						0x28477EC23D892089, 1, CurrentRaceCheckpoints[opponent.CheckpointsPassed], new Vector3(), new Vector3(),
-						new Vector3() { X = 10f, Y = 10f, Z = 2f }, 241, 247, 57, 180, false, false, 2, false, false,
-						false, false);
-
-						if (CurrentRaceCheckpoints.Count > opponent.CheckpointsPassed + 1)
+                        if (CurrentRaceCheckpoints.Count > opponent.CheckpointsPassed + 1)
 						{
 							var nextCp = CurrentRaceCheckpoints[opponent.CheckpointsPassed + 1];
 							var curCp = CurrentRaceCheckpoints[opponent.CheckpointsPassed];
@@ -122,21 +112,19 @@ using System.Threading;
 							{
 								Vector3 dir = nextCp.Subtract(curCp);
 								dir = dir.Normalize();
-
-								Program.ServerInstance.SetNativeCallOnTickForPlayer(opponent.Client,
-									"RACE_CHECKPOINT_MARKER_DIR",
-									0x28477EC23D892089, 20, curCp.Subtract(new Vector3() { X = 0f, Y = 0f, Z = -2f }), dir,
-									new Vector3() { X = 60f, Y = 0f, Z = 0f },
-									new Vector3() { X = 4f, Y = 4f, Z = 4f }, 87, 193, 250, 200, false, false, 2, false,
-									false,
-									false, false);
+							    nextDir = dir;
 							}
 						}
-						else
-						{
-							Program.ServerInstance.RecallNativeCallOnTickForPlayer(opponent.Client, "RACE_CHECKPOINT_MARKER_DIR");
-						}
-					}
+
+					    if (nextDir == null)
+					    {
+                            API.triggerClientEvent(opponent.Client, "setNextCheckpoint", nextPos, true, true);
+					    }
+					    else
+					    {
+                            API.triggerClientEvent(opponent.Client, "setNextCheckpoint", nextPos, false, true, nextDir, CurrentRaceCheckpoints[opponent.CheckpointsPassed + 1]);
+                        }
+                    }
 				}
 		}
 	}
@@ -199,7 +187,14 @@ using System.Threading;
 
 		if (IsRaceOngoing)
 		{
-			SetUpPlayerForRace(player, CurrentRace, false, 0);
+            SetUpPlayerForRace(player, CurrentRace, false, 0);
+            /*
+            var k = new Thread((ThreadStart) delegate
+		    {
+		        Thread.Sleep(2000);
+		        SetUpPlayerForRace(player, CurrentRace, false, 0);
+		    });
+		    k.Start();*/
 		}
 
 		if (DateTime.Now.Subtract(VoteStart).TotalSeconds < 60)
@@ -228,7 +223,6 @@ using System.Threading;
 	private void StartRace(Race race)
 	{
 		race = new Race(race);
-		//Game.FadeScreenOut(500);
 
 		CurrentRace = race;
 
@@ -243,7 +237,7 @@ using System.Threading;
             _currentRace.Checkpoints = tmpCheckpoints.ToArray();
         }*/
 
-		Opponents.ForEach(op =>
+            Opponents.ForEach(op =>
 		{
 			op.HasFinished = false;
 			op.CheckpointsPassed = 0;
@@ -269,12 +263,11 @@ using System.Threading;
 		var t = new Thread((ThreadStart)delegate
 	   {
 		   Thread.Sleep(10000);
-                      
 		   API.triggerClientEventForAll("startCountdown");
-			Thread.Sleep(3000);
+		   Thread.Sleep(3000);
 		   IsRaceOngoing = true;
 		
-		var nat = 0x428CA6DBD1094446;
+		    var nat = 0x428CA6DBD1094446;
 
 		   lock (Opponents)
 		   foreach (var opponent in Opponents)
@@ -297,17 +290,11 @@ using System.Threading;
 			opponent.CheckpointsPassed = 0;
 			opponent.HasFinished = true;
 			opponent.HasStarted = false;
-
-			if (opponent.Blip != 0)
-			{
-				Program.ServerInstance.SendNativeCallToPlayer(opponent.Client, 0x45FF974EEE1C8734, opponent.Blip, 0);
-			}
 		}
+        
+	    API.triggerClientEventForAll("finishRace");
 
-		Program.ServerInstance.RecallNativeCallOnTickForAllPlayers("RACE_CHECKPOINT_MARKER");
-		Program.ServerInstance.RecallNativeCallOnTickForAllPlayers("RACE_CHECKPOINT_MARKER_DIR");
-
-		CurrentRaceCheckpoints.Clear();
+        CurrentRaceCheckpoints.Clear();
 	}
 
 	private Random randGen = new Random();
@@ -321,29 +308,33 @@ using System.Threading;
 		
 		API.setEntityPosition(client.CharacterHandle, position);
 
+	    Vector3 newDir = null;
+
 		if (race.Checkpoints.Length >= 2)
 		{
 			Vector3 dir = race.Checkpoints[1].Subtract(race.Checkpoints[0]);
 			dir = dir.Normalize();
-
-			Program.ServerInstance.SetNativeCallOnTickForPlayer(client, "RACE_CHECKPOINT_MARKER_DIR",
-			0x28477EC23D892089, 20, race.Checkpoints[0].Subtract(new Vector3() { X = 0f, Y = 0f, Z = -2f }), dir, new Vector3() { X = 60f, Y = 0f, Z = 0f },
-			new Vector3() { X = 4f, Y = 4f, Z = 4f }, 87, 193, 250, 200, false, false, 2, false, false,
-			false, false);
+		    newDir = dir;
 		}
+        
 
+	    var nextPos = race.Checkpoints[0];
+        if (newDir == null)
+        {
+            API.triggerClientEvent(client, "setNextCheckpoint", nextPos, true, false);
+        }
+        else
+        {
+            API.triggerClientEvent(client, "setNextCheckpoint", nextPos, false, false, newDir, race.Checkpoints[1]);
+        }
+	    
 
-		Program.ServerInstance.SetNativeCallOnTickForPlayer(client, "RACE_CHECKPOINT_MARKER",
-			0x28477EC23D892089, 1, race.Checkpoints[0], new Vector3(), new Vector3(),
-			new Vector3() { X = 10f, Y = 10f, Z = 2f }, 241, 247, 57, 180, false, false, 2, false, false,
-			false, false);
-
-		var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), 0, 0);
+        var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), 0, 0);
 		Thread.Sleep(500);
-		API.setPlayerIntoVehicle(client, playerVehicle, -1);		
-		
-		if (freeze)
-		Program.ServerInstance.SendNativeCallToPlayer(client, 0x428CA6DBD1094446, new EntityArgument(playerVehicle), true);
+		API.setPlayerIntoVehicle(client, playerVehicle, -1);
+
+	    if (freeze)
+	        API.setEntityPositionFrozen(playerVehicle, true);
 		
 		Opponent inOp = Opponents.FirstOrDefault(op => op.Client == client);
 
@@ -359,7 +350,7 @@ using System.Threading;
 				Opponents.Add(new Opponent(client) { Vehicle = (int)playerVehicle, HasStarted = true });
 			}
 		}
-		
+		/*
 		Opponent curOp = Opponents.FirstOrDefault(op => op.Client == client);
 		if (curOp == null || curOp.Blip == 0)
 		{
@@ -384,7 +375,7 @@ using System.Threading;
 		{
 			Program.ServerInstance.SendNativeCallToPlayer(client, 0x45FF974EEE1C8734, curOp.Blip, 255);
 			Program.ServerInstance.SendNativeCallToPlayer(client, 0xAE2AF67E9D9AF65D, curOp.Blip, race.Checkpoints[0].X, race.Checkpoints[0].Y, race.Checkpoints[0].Z);
-		}
+		}*/
 	}
 
 	private int CalculatePlayerPositionInRace(Client player)

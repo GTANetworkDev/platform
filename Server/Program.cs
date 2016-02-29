@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Xml.Serialization;
 
 namespace GTANetworkServer
@@ -16,6 +17,7 @@ namespace GTANetworkServer
 
         public static string Location { get { return AppDomain.CurrentDomain.BaseDirectory; } }
         public static GameServer ServerInstance { get; set; }
+        private static bool CloseProgram = false;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -40,7 +42,7 @@ namespace GTANetworkServer
             Output("Starting...");
 
             ServerInstance = new GameServer(settings.Port, settings.Name);
-            ServerInstance.PasswordProtected = !string.IsNullOrWhiteSpace(settings.Password);
+            ServerInstance.PasswordProtected = !String.IsNullOrWhiteSpace(settings.Password);
             ServerInstance.Password = settings.Password;
             ServerInstance.AnnounceSelf = settings.Announce;
             ServerInstance.MasterServer = settings.MasterServer;
@@ -51,12 +53,77 @@ namespace GTANetworkServer
 
             Output("Started! Waiting for connections.");
 
-            while (true)
+            SetConsoleCtrlHandler(new HandlerRoutine(ConsoleCtrlCheck), true);
+
+            while (!CloseProgram)
             {
                 ServerInstance.Tick();
-                System.Threading.Thread.Sleep(10); // Reducing CPU Usage (Win7 from average 15 % to 0-1 %, Linux from 100 % to 0-2 %)
+                Thread.Sleep(10); // Reducing CPU Usage (Win7 from average 15 % to 0-1 %, Linux from 100 % to 0-2 %)
             }
         }
+
+
+        #region unmanaged
+
+        private static bool ConsoleCtrlCheck(CtrlTypes ctrType)
+        {
+            switch (ctrType)
+            {
+                case CtrlTypes.CTRL_CLOSE_EVENT:
+                    Program.Output("NEXT TIME USE CTRL + C!");
+                    ServerInstance.IsClosing = true;
+                    Program.Output("Terminating...");
+                    while (!ServerInstance.ReadyToClose)
+                    {
+                        Thread.Sleep(10);
+                    }
+                    Thread.Sleep(1000);
+                    break;
+                case CtrlTypes.CTRL_C_EVENT:
+                    ServerInstance.IsClosing = true;
+                    Program.Output("Terminating...");
+                    while (!ServerInstance.ReadyToClose)
+                    {
+                        Thread.Sleep(10);
+                    }
+                    break;
+                case CtrlTypes.CTRL_SHUTDOWN_EVENT:
+                    Program.Output("NEXT TIME USE CTRL + C!");
+                    ServerInstance.IsClosing = true;
+                    Program.Output("Terminating...");
+                    while (!ServerInstance.ReadyToClose)
+                    {
+                        Thread.Sleep(10);
+                    }
+                    Thread.Sleep(1000);
+                    break;
+            }
+            CloseProgram = true;
+            return true;
+        }
+
+        [DllImport("Kernel32")]
+        public static extern bool SetConsoleCtrlHandler(HandlerRoutine Handler, bool Add);
+
+        // A delegate type to be used as the handler routine
+        // for SetConsoleCtrlHandler.
+
+        public delegate bool HandlerRoutine(CtrlTypes CtrlType);
+
+        // An enumerated type for the control messages
+        // sent to the handler routine.
+
+        public enum CtrlTypes
+        {
+            CTRL_C_EVENT = 0,
+            CTRL_BREAK_EVENT,
+            CTRL_CLOSE_EVENT,
+            CTRL_LOGOFF_EVENT = 5,
+            CTRL_SHUTDOWN_EVENT
+        }
+
+        #endregion
+
 
         static ServerSettings ReadSettings(string path)
         {

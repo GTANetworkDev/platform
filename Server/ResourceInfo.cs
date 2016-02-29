@@ -92,6 +92,14 @@ namespace GTANetworkServer
                 _compiledScript.API.invokePlayerDisconnected(client, reason);
         }
 
+        public void InvokePlayerDownloadFinished(Client client)
+        {
+            if (Language == ScriptingEngineLanguage.javascript)
+                _jsEngine.Script.API.invokeFinishedDownload(client);
+            else if (Language == ScriptingEngineLanguage.compiled)
+                _compiledScript.API.invokeFinishedDownload(client);
+        }
+
         public void InvokeChatCommand(Client sender, string command)
         {
             if (Language == ScriptingEngineLanguage.javascript)

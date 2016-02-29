@@ -169,6 +169,7 @@ namespace GTANetwork
 
         private int _currentServerPort;
         private string _currentServerIp;
+        private bool _debugWindow;
 
         public static Dictionary<long, SyncPed> Opponents;
         public static Dictionary<string, SyncPed> Npcs;
@@ -699,7 +700,7 @@ namespace GTANetwork
 
                     internetServers.Items.Add(nameItem);
                 }
-
+                #if DEBUG
                 {
                     var debugItem = new UIMenuCheckboxItem("Debug", false);
                     debugItem.CheckboxEvent += (sender, @checked) =>
@@ -715,6 +716,26 @@ namespace GTANetwork
                                 _debugSyncPed = null;
                             }
                         }
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Debug Window", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        _debugWindow = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+#endif
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.ScaleChatWithSafezone = @checked;
+                        SaveSettings();
                     };
                     internetServers.Items.Add(debugItem);
                 }
@@ -855,6 +876,15 @@ namespace GTANetwork
                     ourVeh.PearlescentColor = (VehicleColor) 0;
                     ourVeh.RimColor = (VehicleColor)0;
                     ourVeh.Health = pair.Value.Health;
+                    ourVeh.SirenActive = pair.Value.Siren;
+
+                    Function.Call(Hash.SET_VEHICLE_MOD_KIT, ourVeh, 0);
+
+                    for (int i = 0; i < pair.Value.Mods.Length; i++) 
+                    {
+                        ourVeh.SetMod((VehicleMod) i, pair.Value.Mods[i], false);
+                    }
+
                     if (pair.Value.IsDead)
                     {
                         ourVeh.IsInvincible = false;
@@ -1113,6 +1143,14 @@ namespace GTANetwork
         private float range = 50f;
 #endif
 
+        public static void InvokeFinishedDownload()
+        {
+            var confirmObj = Client.CreateMessage();
+            confirmObj.Write((int)PacketType.ConnectionConfirmed);
+            confirmObj.Write(true);
+            Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+        }
+
         public static int GetCurrentVehicleWeaponHash(Ped ped)
         {
             if (ped.IsInVehicle())
@@ -1155,10 +1193,14 @@ namespace GTANetwork
             if (display)
             {
                 Debug();
+            }
+
+            if (_debugWindow)
+            {
                 _debug.Visible = true;
                 _debug.Draw();
             }
-            
+            /*
             if (Game.Player.Character.IsInVehicle() && Game.IsControlPressed(0, Control.Context))
             {
                 var outputArg = new OutputArgument();
@@ -1178,7 +1220,7 @@ namespace GTANetwork
                 {
                     UI.ShowSubtitle("WeaponHash: None");
                 }
-            }
+            }*/
             
             #endif
 
@@ -1465,6 +1507,12 @@ namespace GTANetwork
             Function.Call(Hash.SET_RANDOM_BOATS, 0);
             Function.Call(Hash.SET_RANDOM_TRAINS, 0);
 
+            Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "blip_controller");
+            Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "event_controller");
+            Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "cheat_controller");
+            Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "restrictedAreas");
+            Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "vehicle_gen_controller");
+            
             _currentServerIp = ip;
             _currentServerPort = port == 0 ? Port : port;
         }
@@ -1732,7 +1780,8 @@ namespace GTANetwork
                                         {
                                             if (NetEntityHandler.IsBlip(entity.Handle))
                                             {
-                                                new Blip(entity.Handle).Remove();
+                                                if (new Blip(entity.Handle).Exists())
+                                                    new Blip(entity.Handle).Remove();
                                             }
                                             else
                                             {
@@ -1991,6 +2040,7 @@ namespace GTANetwork
 
                                 var confirmObj = Client.CreateMessage();
                                 confirmObj.Write((int) PacketType.ConnectionConfirmed);
+                                confirmObj.Write(false);
                                 Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
                                 JustJoinedServer = true;
                                 MainMenu.Tabs.Insert(1, _serverItem);

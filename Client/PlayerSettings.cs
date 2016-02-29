@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Forms;
+using GTA.Math;
 
 namespace GTANetwork
 {
@@ -11,6 +12,8 @@ namespace GTANetwork
         public Keys ActivationKey { get; set; }
         public List<string> FavoriteServers { get; set; }
         public List<string> RecentServers { get; set; }
+        public bool ScaleChatWithSafezone { get; set; }
+        
 
         public PlayerSettings()
         {
@@ -20,6 +23,7 @@ namespace GTANetwork
             ActivationKey = Keys.F9;
             FavoriteServers = new List<string>();
             RecentServers = new List<string>();
+            ScaleChatWithSafezone = true;
         }
     }
 }
