@@ -173,9 +173,9 @@ namespace GTANetworkServer
             return Program.ServerInstance.Clients;
         }
 
-        public void setEntityPositionFrozen(int netHandle, bool frozen)
+        public void setEntityPositionFrozen(Client player, int entity, bool frozen)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x428CA6DBD1094446, new EntityArgument(netHandle), frozen);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(entity), frozen);
         }
 
         public void triggerClientEventForAll(string eventName, params object[] args)

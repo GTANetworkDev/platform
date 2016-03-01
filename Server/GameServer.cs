@@ -455,6 +455,12 @@ namespace GTANetworkServer
                 {
                     StopResource(RunningResources[i].DirectoryName);
                 }
+
+                for (int i = Clients.Count - 1; i >= 0; i--)
+                {
+                    Clients[i].NetConnection.Disconnect("Server is shutting down");
+                }
+
                 ReadyToClose = true;
                 return;
             }

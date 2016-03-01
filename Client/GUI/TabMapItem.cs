@@ -110,10 +110,17 @@ namespace GTANetwork.GUI
 
                     if (DateTime.Now.Subtract(_holdDownTime).TotalMilliseconds < 300)
                     {
-                        var wpyPos = new PointF(center.X - Position.X * Zoom, center.Y - Position.Y * Zoom);
-                        var realPos = Map2DToWorld3d(wpyPos, new PointF(945, 1910));
-                        Function.Call(Hash.SET_NEW_WAYPOINT, realPos.X, realPos.Y);
-                        UI.Notify(realPos.X + " " + realPos.Y);
+                        if (Function.Call<bool>(Hash.IS_WAYPOINT_ACTIVE))
+                        {
+                            Function.Call(Hash.SET_WAYPOINT_OFF);
+                        }
+                        else
+                        {
+                            var wpyPos = new PointF(center.X - Position.X*Zoom, center.Y - Position.Y*Zoom);
+                            var ourShit = new SizeF(mouseX - wpyPos.X, mouseY - wpyPos.Y);
+                            var realPos = Map2DToWorld3d(wpyPos, wpyPos + ourShit);
+                            Function.Call(Hash.SET_NEW_WAYPOINT, realPos.X, realPos.Y*-1f);
+                        }
                     }
                 }
 
@@ -127,8 +134,6 @@ namespace GTANetwork.GUI
 
                 var newPos = new PointF(center.X - mapPos.X*Zoom, center.Y - mapPos.Y*Zoom);
                 var newSize = new SizeF(1024*Zoom, 1024*Zoom);
-
-                UI.ShowSubtitle($"{newPos.X} {newPos.Y}");
 
                 DrawSprite("minimap_sea_0_0", "minimap_sea_0_0", newPos, newSize);
                 DrawSprite("minimap_sea_0_1", "minimap_sea_0_1", newPos + new SizeF(1024 * Zoom, 0), newSize);
@@ -158,7 +163,12 @@ namespace GTANetwork.GUI
                 _crosshair.Draw();
 
 
-                DrawSprite("cross", "circle_checkpoints_cross", newPos + World3DToMap2D(Game.Player.Character.Position), new Size(16, 16), Color.Red);
+                DrawSprite("cross", "circle_checkpoints_cross", newPos + World3DToMap2D(Game.Player.Character.Position) - new Size(16, 16), new Size(32, 32), Color.Red);
+
+                foreach (var blip in World.GetActiveBlips())
+                {
+                    DrawSprite("cross", "circle_checkpoints_cross", newPos + World3DToMap2D(blip.Position) - new Size(16, 16), new Size(32, 32), Color.Blue);
+                }
             }
         }
 
@@ -178,7 +188,7 @@ namespace GTANetwork.GUI
             return new Vector2()
             {
                 X = (mapPoint.X - absoluteZero.X - mapPos.X) * pixelRatio,
-                Y = (mapPoint.Y - absoluteZero.Y - mapPos.X) * pixelRatio * -1f,
+                Y = (mapPoint.Y - absoluteZero.Y - mapPos.Y) * pixelRatio,
             };
         }
 
