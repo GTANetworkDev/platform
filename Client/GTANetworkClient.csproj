@@ -80,6 +80,7 @@
     <Compile Include="DebugWindow.cs" />
     <Compile Include="DownloadManager.cs" />
     <Compile Include="GameSettings.cs" />
+    <Compile Include="GUI\TabMapItem.cs" />
     <Compile Include="GUI\TabQuickConnectItem.cs" />
     <Compile Include="InputboxThread.cs" />
     <Compile Include="JavascriptHook.cs" />

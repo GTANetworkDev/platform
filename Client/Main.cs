@@ -468,16 +468,20 @@ namespace GTANetwork
             OnTick(null, EventArgs.Empty);
         }
 
+        private TabMapItem _mainMapItem;
+        private TabTextItem _welcomePage;
         private void BuildMainMenu()
         {
             MainMenu = new TabView("Grand Theft Auto Network");
             MainMenu.CanLeave = false;
             MainMenu.MoneySubtitle = "GTAN 1.0.42.362";
 
+            _mainMapItem = new TabMapItem();
+
             #region Welcome Screen
             {
-                var welcomeItem = new TabTextItem("Welcome", "Welcome to GTA Network", "Join a server on the right! Weekly Updates! Donate, or whatever.");
-                MainMenu.Tabs.Add(welcomeItem);
+                _welcomePage = new TabTextItem("Welcome", "Welcome to GTA Network", "Join a server on the right! Weekly Updates! Donate, or whatever.");
+                MainMenu.Tabs.Add(_welcomePage);
             }
             #endregion
 
@@ -1213,6 +1217,8 @@ namespace GTANetwork
                 _debug.Draw();
             }
             
+            //UI.ShowSubtitle($"X: {Game.Player.Character.Position.X} Y: {Game.Player.Character.Position.Y} Z: {Game.Player.Character.Position.Z}");
+
             #endif
 
             ProcessMessages();
@@ -2041,7 +2047,9 @@ namespace GTANetwork
                                 confirmObj.Write(false);
                                 Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
                                 JustJoinedServer = true;
-                                MainMenu.Tabs.Insert(1, _serverItem);
+                                MainMenu.Tabs.RemoveAt(0);
+                                MainMenu.Tabs.Insert(0, _serverItem);
+                                MainMenu.Tabs.Insert(0, _mainMapItem);
                                 MainMenu.RefreshIndex();
                                 break;
                             case NetConnectionStatus.Disconnected:
@@ -2094,6 +2102,8 @@ namespace GTANetwork
                                 MainMenu.TemporarilyHidden = false;
                                 JustJoinedServer = false;
                                 MainMenu.Tabs.Remove(_serverItem);
+                                MainMenu.Tabs.Remove(_mainMapItem);
+                                MainMenu.Tabs.Insert(0, _welcomePage);
                                 MainMenu.RefreshIndex();
                                 _localMarkers.Clear();
                                 World.RenderingCamera = MainMenuCamera;
