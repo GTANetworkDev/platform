@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.Linq;
 using GTA;
 using GTA.Math;
 using GTA.Native;
@@ -11,6 +14,7 @@ namespace GTANetwork.GUI
     public class TabMapItem : TabItem
     {
         public static string MAP_PATH = "scripts\\map\\map.png";
+        public static string BLIP_PATH = "scripts\\map\\blips\\";
         private PointF Position = new PointF(1000, 2000);
         private Size Size  = new Size(6420, 7898);
         private float Zoom = 1f;
@@ -21,6 +25,8 @@ namespace GTANetwork.GUI
         private float Ratio = 6420f/ 7898f;
         private bool _focused;
         private DateTime _holdDownTime;
+        private bool _showPlayerBlip;
+        private DateTime _lastShowPlayerBlip;
 
 
         public TabMapItem() : base("Map")
@@ -37,6 +43,8 @@ namespace GTANetwork.GUI
                 if (!_focused && value)
                 {
                     Main.MainMenu.HideTabs = true;
+                    var newPos = World3DToMap2D(Game.Player.Character.Position);
+                    Position = new PointF(newPos.Width / Zoom, newPos.Height / Zoom);
                 }
                 else if (_focused && !value)
                 {
@@ -108,7 +116,7 @@ namespace GTANetwork.GUI
                     Position = _mapPosAtHelddown + new SizeF((_heldDownPoint.X - mouseX) / Zoom, (_heldDownPoint.Y - mouseY) / Zoom);
                     _isHeldDown = false;
 
-                    if (DateTime.Now.Subtract(_holdDownTime).TotalMilliseconds < 300)
+                    if (DateTime.Now.Subtract(_holdDownTime).TotalMilliseconds < 100)
                     {
                         if (Function.Call<bool>(Hash.IS_WAYPOINT_ACTIVE))
                         {
@@ -162,13 +170,115 @@ namespace GTANetwork.GUI
                 _crosshair.Heading = 270;
                 _crosshair.Draw();
 
+                if (_showPlayerBlip)
+                {
+                    Sprite.DrawTexture(BLIP_PATH + "163.png",
+                        new Point((int) (newPos.X + World3DToMap2D(Game.Player.Character.Position).Width - 16),
+                            (int) (newPos.Y + World3DToMap2D(Game.Player.Character.Position).Height - 16)),
+                        new Size(32, 32));
+                }
 
-                DrawSprite("cross", "circle_checkpoints_cross", newPos + World3DToMap2D(Game.Player.Character.Position) - new Size(16, 16), new Size(32, 32), Color.Red);
+                if (DateTime.Now.Subtract(_lastShowPlayerBlip).TotalMilliseconds >= 1000)
+                {
+                    _lastShowPlayerBlip = DateTime.Now;
+                    _showPlayerBlip = !_showPlayerBlip;
+                }
+
+
+                var blipList = new List<string>();
 
                 foreach (var blip in World.GetActiveBlips())
                 {
-                    DrawSprite("cross", "circle_checkpoints_cross", newPos + World3DToMap2D(blip.Position) - new Size(16, 16), new Size(32, 32), Color.Blue);
+                    if (((int)blip.Sprite) == 8 && File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
+                    {
+                        var fname = BLIP_PATH + ((int) blip.Sprite) + ".png";
+                        var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
+                        var siz = new Size(32, 32);
+                        var col = Color.Purple;
+
+                        Util.DxDrawTexture(fname, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        blipList.Add(((int)blip.Sprite) + ".png");
+                    }
                 }
+                
+                foreach (var blipHandle in Main.NetEntityHandler.Blips)
+                {
+                    var blip = new Blip(blipHandle);
+                    if (!blip.Exists()) continue;
+
+                    if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
+                    {
+                        var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
+                        var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
+                        var siz = new Size(32, 32);
+                        var col = GetBlipcolor(blip.Color, blip.Alpha);
+                        var ident = fname +
+                                    (blipList.Count(k => k == fname) > 0
+                                        ? blipList.Count(k => k == fname).ToString()
+                                        : "");
+                        Util.DxDrawTexture(blipList.Count, ident, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        blipList.Add(((int)blip.Sprite) + ".png");
+                    }
+                }
+
+                foreach (var opp in Main.Opponents)
+                {
+                    if (opp.Value.Character?.CurrentBlip == null) continue;
+
+                    var blip = opp.Value.Character.CurrentBlip;
+
+                    if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
+                    {
+                        var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
+                        var pos = newPos + World3DToMap2D(blip.Position) - new Size(8, 8);
+                        var siz = new Size(16, 16);
+                        var col = GetBlipcolor(blip.Color, blip.Alpha);
+                        var ident = fname +
+                                    (blipList.Count(k => k == fname) > 0
+                                        ? blipList.Count(k => k == fname).ToString()
+                                        : "");
+                        Util.DxDrawTexture(blipList.Count, ident, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        blipList.Add(((int)blip.Sprite) + ".png");
+                    }
+                }
+
+                foreach (var blipHandle in Main.BlipCleanup)
+                {
+                    var blip = new Blip(blipHandle);
+                    if (!blip.Exists()) continue;
+
+                    if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
+                    {
+                        var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
+                        var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
+                        var siz = new Size(32, 32);
+                        var col = GetBlipcolor(blip.Color, blip.Alpha);
+                        var ident = fname +
+                                    (blipList.Count(k => k == fname) > 0
+                                        ? blipList.Count(k => k == fname).ToString()
+                                        : "");
+                        Util.DxDrawTexture(blipList.Count, ident, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        blipList.Add(((int)blip.Sprite) + ".png");
+                    }
+                }
+            }
+        }
+
+        public static Color GetBlipcolor(BlipColor col, int a)
+        {
+            switch (col)
+            {
+                case BlipColor.White:
+                default: return Color.FromArgb(a, 255, 255, 255);
+                case BlipColor.Blue:
+                    return Color.FromArgb(a, 93, 182, 229);
+                case BlipColor.Green:
+                    return Color.FromArgb(a, 114, 204, 114);
+                case BlipColor.Red:
+                    return Color.FromArgb(a, 224, 50, 50);
+                case BlipColor.Yellow:
+                    return Color.FromArgb(a, 250, 200, 80);
+
             }
         }
 

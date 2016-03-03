@@ -39,12 +39,15 @@ namespace GTANetwork
 
         private readonly MenuPool _menuPool;
 
+        private UIResText _verionLabel = new UIResText("GTAN " + CurrentVersion.ToString(), new Point(), 0.35f, Color.FromArgb(100, 200, 200, 200));
+
         private string _clientIp;
         private readonly ClassicChat _chat;
 
         public static NetClient Client;
         private static NetPeerConfiguration _config;
-
+        public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly();
+        
         public static SynchronizationMode GlobalSyncMode;
         public static bool LerpRotaion = true;
 
@@ -86,13 +89,7 @@ namespace GTANetwork
 
             EntityCleanup = new List<int>();
             BlipCleanup = new List<int>();
-
-
-            var gameSettings = GameSettings.LoadGameSettings();
-
-
-
-
+            
             _emptyVehicleMods = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++) _emptyVehicleMods.Add(i, 0);
 
@@ -174,7 +171,7 @@ namespace GTANetwork
         private TabItemSimpleList _serverPlayers;
         private TabSubmenuItem _serverItem;
         private TabSubmenuItem _connectTab;
-
+        
         private int _currentServerPort;
         private string _currentServerIp;
         private bool _debugWindow;
@@ -333,110 +330,124 @@ namespace GTANetwork
 
             var fetchThread = new Thread((ThreadStart)delegate
             {
-                if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
-                    return;
-                string response = String.Empty;
                 try
                 {
-                    using (var wc = new Util.ImpatientWebClient())
+                    if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
+                        return;
+                    string response = String.Empty;
+                    try
                     {
-                        response = wc.DownloadString(PlayerSettings.MasterServerAddress);
+                        using (var wc = new ImpatientWebClient())
+                        {
+                            response = wc.DownloadString(PlayerSettings.MasterServerAddress);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        UI.Notify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
+                        var logOutput = "===== EXCEPTION CONTACTING MASTER SERVER @ " + DateTime.UtcNow + " ======\n";
+                        logOutput += "Message: " + e.Message;
+                        logOutput += "\nData: " + e.Data;
+                        logOutput += "\nStack: " + e.StackTrace;
+                        logOutput += "\nSource: " + e.Source;
+                        logOutput += "\nTarget: " + e.TargetSite;
+                        if (e.InnerException != null)
+                            logOutput += "\nInnerException: " + e.InnerException.Message;
+                        logOutput += "\n";
+                        File.AppendAllText("scripts\\GTACOOP.log", logOutput);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(response))
+                        return;
+
+                    var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
+
+                    if (dejson == null) return;
+
+                    if (Client == null)
+                    {
+                        var port = GetOpenUdpPort();
+                        if (port == 0)
+                        {
+                            UI.Notify("No available UDP port was found.");
+                            return;
+                        }
+                        _config.Port = port;
+                        Client = new NetClient(_config);
+                        Client.Start();
+                    }
+
+                    var list = new List<string>();
+
+                    list.AddRange(dejson.list);
+
+                    foreach (var server in PlayerSettings.FavoriteServers)
+                    {
+                        if (!list.Contains(server)) list.Add(server);
+                    }
+
+                    foreach (var server in PlayerSettings.RecentServers)
+                    {
+                        if (!list.Contains(server)) list.Add(server);
+                    }
+
+                    foreach (var server in list)
+                    {
+                        var split = server.Split(':');
+                        if (split.Length != 2) continue;
+                        int port;
+                        if (!int.TryParse(split[1], out port))
+                            continue;
+
+                        var item = new UIMenuItem(server);
+                        item.Description = server;
+
+                        int lastIndx = 0;
+                        if (_serverBrowser.Items.Count > 0)
+                            lastIndx = _serverBrowser.Index;
+
+                        _serverBrowser.Items.Add(item);
+                        _serverBrowser.Index = lastIndx;
+
+                        if (PlayerSettings.RecentServers.Contains(server))
+                        {
+                            _recentBrowser.Items.Add(item);
+                            _recentBrowser.Index = lastIndx;
+                        }
+
+                        if (PlayerSettings.FavoriteServers.Contains(server))
+                        {
+                            _favBrowser.Items.Add(item);
+                            _favBrowser.Index = lastIndx;
+                        }
+                    }
+
+                    _currentOnlineServers = list.Count;
+
+                    Client.DiscoverLocalPeers(Port);
+
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        if (i != 0 && i%10 == 0)
+                        {
+                            Thread.Sleep(3000);
+                        }
+                        var spl = list[i].Split(':');
+                        if (spl.Length < 2) continue;
+                        try
+                        {
+                            Client.DiscoverKnownPeer(spl[0], int.Parse(spl[1]));
+                        }
+                        catch (Exception e)
+                        {
+                            DownloadManager.Log("DISCOVERY EXCEPTION " + e.Message + " " + e.StackTrace);
+                        }
                     }
                 }
                 catch (Exception e)
                 {
-                    UI.Notify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
-                    var logOutput = "===== EXCEPTION CONTACTING MASTER SERVER @ " + DateTime.UtcNow + " ======\n";
-                    logOutput += "Message: " + e.Message;
-                    logOutput += "\nData: " + e.Data;
-                    logOutput += "\nStack: " + e.StackTrace;
-                    logOutput += "\nSource: " + e.Source;
-                    logOutput += "\nTarget: " + e.TargetSite;
-                    if (e.InnerException != null)
-                        logOutput += "\nInnerException: " + e.InnerException.Message;
-                    logOutput += "\n";
-                    File.AppendAllText("scripts\\GTACOOP.log", logOutput);
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(response))
-                    return;
-
-                var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
-
-                if (dejson == null) return;
-
-                if (Client == null)
-                {
-                    var port = GetOpenUdpPort();
-                    if (port == 0)
-                    {
-                        UI.Notify("No available UDP port was found.");
-                        return;
-                    }
-                    _config.Port = port;
-                    Client = new NetClient(_config);
-                    Client.Start();
-                }
-
-                var list = new List<string>();
-
-                list.AddRange(dejson.list);
-
-                foreach (var server in PlayerSettings.FavoriteServers)
-                {
-                    if (!list.Contains(server)) list.Add(server);
-                }
-
-                foreach (var server in PlayerSettings.RecentServers)
-                {
-                    if (!list.Contains(server)) list.Add(server);
-                }
-
-                foreach (var server in list)
-                {
-                    var split = server.Split(':');
-                    if (split.Length != 2) continue;
-                    int port;
-                    if (!int.TryParse(split[1], out port))
-                        continue;
-                    
-                    var item = new UIMenuItem(server);
-                    item.Description = server;
-
-                    int lastIndx = 0;
-                    if (_serverBrowser.Items.Count > 0)
-                        lastIndx = _serverBrowser.Index;
-
-                    _serverBrowser.Items.Add(item);
-                    _serverBrowser.Index = lastIndx;
-
-                    if (PlayerSettings.RecentServers.Contains(server))
-                    {
-                        _recentBrowser.Items.Add(item);
-                        _recentBrowser.Index = lastIndx;
-                    }
-
-                    if (PlayerSettings.FavoriteServers.Contains(server))
-                    {
-                        _favBrowser.Items.Add(item);
-                        _favBrowser.Index = lastIndx;
-                    }
-                }
-
-                _currentOnlineServers = list.Count;
-
-                Client.DiscoverLocalPeers(Port);
-
-                for (int i = 0; i < list.Count; i++)
-                {
-                    if (i != 0 && i%10 == 0)
-                    {
-                        Thread.Sleep(3000);
-                    }
-                    var spl = list[i].Split(':');
-                    if (spl.Length < 2) continue;
-                    Client.DiscoverKnownPeer(spl[0], int.Parse(spl[1]));
+                    DownloadManager.Log("DISCOVERY CRASH: " + e.Message + " " + e.StackTrace);
                 }
             });
 
@@ -474,7 +485,7 @@ namespace GTANetwork
         {
             MainMenu = new TabView("Grand Theft Auto Network");
             MainMenu.CanLeave = false;
-            MainMenu.MoneySubtitle = "GTAN 1.0.42.362";
+            MainMenu.MoneySubtitle = "GTAN " + ParseableVersion.FromAssembly().ToString();
 
             _mainMapItem = new TabMapItem();
 
@@ -856,8 +867,7 @@ namespace GTANetwork
             _serverItem = new TabSubmenuItem("server", new List<TabItem>() { _serverPlayers, favTab, dcItem });
             _serverItem.Parent = MainMenu;
             #endregion
-
-            RebuildServerBrowser();
+            
             MainMenu.RefreshIndex();
         }
 
@@ -1018,8 +1028,20 @@ namespace GTANetwork
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsVehicleDead = veh.IsDead;
-                obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
-                obj.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
+
+                if (
+                        !WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash,
+                            Util.GetPedSeat(Game.Player.Character)))
+                {
+                    obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
+                    obj.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
+                }
+                else
+                {
+                    obj.IsShooting = Game.IsControlPressed(0, Control.VehicleAttack);
+                    obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
+                }
+
 
                 var bin = SerializeBinary(obj);
 
@@ -1186,17 +1208,50 @@ namespace GTANetwork
         private int _lastModel;
         private bool _whoseturnisitanyways;
 
-        private Scaleform _mapScaleform;
+        private Vector3 offset;
+        private DateTime _start;
+
+        private bool _hasInitialized;
 
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
-            if (!BlockControls)
-                MainMenu.ProcessControls();
-            MainMenu.Update();
-            MainMenu.CanLeave = IsOnServer();
 
+            if (!_hasInitialized)
+            {
+                RebuildServerBrowser();
+                _hasInitialized = true;
+            }
+
+            Game.DisableControl(0, Control.FrontendPauseAlternate);
             
+            if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
+            {
+                MainMenu.Visible = true;
+
+                if (!IsOnServer())
+                {
+                    if (MainMenu.Visible)
+                        World.RenderingCamera = MainMenuCamera;
+                    else
+                        World.RenderingCamera = null;
+                }
+                else if (MainMenu.Visible)
+                {
+                    RebuildPlayersList();
+                }
+
+                MainMenu.RefreshIndex();
+            }
+            else
+            {
+                if (!BlockControls)
+                    MainMenu.ProcessControls();
+                MainMenu.Update();
+                MainMenu.CanLeave = IsOnServer();
+            }
+
+
             if (!MainMenu.Visible || MainMenu.TemporarilyHidden)
                 _chat.Tick();
             
@@ -1205,7 +1260,45 @@ namespace GTANetwork
                 Game.Player.Character.Task.ClearAll();
                 _isGoingToCar = false;
             }
-            #if DEBUG
+            /*
+            if (Game.Player.Character.IsInVehicle())
+            {
+                var pos = Game.Player.Character.CurrentVehicle.GetOffsetInWorldCoords(offset);
+                UI.ShowSubtitle(offset.ToString());
+                World.DrawMarker(MarkerType.DebugSphere, pos, new Vector3(), new Vector3(), new Vector3(0.2f, 0.2f, 0.2f), Color.Red);
+            }
+
+            if (Game.IsKeyPressed(Keys.NumPad7))
+            {
+                offset = new Vector3(offset.X, offset.Y, offset.Z + 0.01f);
+            }
+
+            if (Game.IsKeyPressed(Keys.NumPad1))
+            {
+                offset = new Vector3(offset.X, offset.Y, offset.Z - 0.01f);
+            }
+
+            if (Game.IsKeyPressed(Keys.NumPad4))
+            {
+                offset = new Vector3(offset.X, offset.Y - 0.01f, offset.Z);
+            }
+
+            if (Game.IsKeyPressed(Keys.NumPad6))
+            {
+                offset = new Vector3(offset.X, offset.Y + 0.01f, offset.Z);
+            }
+
+            if (Game.IsKeyPressed(Keys.NumPad2))
+            {
+                offset = new Vector3(offset.X - 0.01f, offset.Y, offset.Z);
+            }
+
+            if (Game.IsKeyPressed(Keys.NumPad8))
+            {
+                offset = new Vector3(offset.X + 0.01f, offset.Y, offset.Z);
+            }*/
+            
+#if DEBUG
             if (display)
             {
                 Debug();
@@ -1217,8 +1310,9 @@ namespace GTANetwork
                 _debug.Draw();
             }
             
-            //UI.ShowSubtitle($"X: {Game.Player.Character.Position.X} Y: {Game.Player.Character.Position.Y} Z: {Game.Player.Character.Position.Z}");
 
+            //UI.ShowSubtitle(GetCurrentVehicleWeaponHash(Game.Player.Character) + " seat " + Util.GetPedSeat(Game.Player.Character));
+            
             #endif
 
             ProcessMessages();
@@ -1226,6 +1320,10 @@ namespace GTANetwork
             
             if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected ||
                 Client.ConnectionStatus == NetConnectionStatus.None) return;
+            var res = UIMenu.GetScreenResolutionMantainRatio();
+            _verionLabel.Position = new Point((int) (res.Width/2), 0);
+            _verionLabel.TextAlignment = UIResText.Alignment.Centered;
+            _verionLabel.Draw();
 
             if (_wasTyping)
                 Game.DisableControl(0, Control.FrontendPauseAlternate);
@@ -1389,7 +1487,6 @@ namespace GTANetwork
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
             _chat.OnKeyDown(e.KeyCode);
-            //if (e.KeyCode == PlayerSettings.ActivationKey && !_chat.IsFocused)
             if (e.KeyCode == Keys.F10 && !_chat.IsFocused)
             {
                 MainMenu.Visible = !MainMenu.Visible;
@@ -1412,7 +1509,7 @@ namespace GTANetwork
             if (e.KeyCode == Keys.G && !Game.Player.Character.IsInVehicle() && IsOnServer() && !_chat.IsFocused)
             {
                 var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.Player.Character.Position).Length()).Take(1).ToList();
-                if (vehs.Any() && Game.Player.Character.IsInRangeOf(vehs[0].Position, 5f))
+                if (vehs.Any() && Game.Player.Character.IsInRangeOf(vehs[0].Position, 6f))
                 {
                     var relPos = vehs[0].GetOffsetFromWorldCoords(Game.Player.Character.Position);
                     VehicleSeat seat = VehicleSeat.Any;
@@ -1576,6 +1673,8 @@ namespace GTANetwork
                                     Opponents[data.Id].Siren = data.IsSirenActive;
                                     Opponents[data.Id].IsShooting = data.IsShooting;
                                     Opponents[data.Id].CurrentWeapon = data.WeaponHash;
+                                    if (data.AimCoords != null)
+                                        Opponents[data.Id].AimCoords = data.AimCoords.ToVector();
                                 }
                             }
                                 break;
@@ -2103,7 +2202,8 @@ namespace GTANetwork
                                 JustJoinedServer = false;
                                 MainMenu.Tabs.Remove(_serverItem);
                                 MainMenu.Tabs.Remove(_mainMapItem);
-                                MainMenu.Tabs.Insert(0, _welcomePage);
+                                if (!MainMenu.Tabs.Contains(_welcomePage))
+                                    MainMenu.Tabs.Insert(0, _welcomePage);
                                 MainMenu.RefreshIndex();
                                 _localMarkers.Clear();
                                 World.RenderingCamera = MainMenuCamera;
@@ -2307,11 +2407,21 @@ namespace GTANetwork
                     _debugSyncPed.LastUpdateReceived = DateTime.Now;
                     _debugSyncPed.PedArmor = player.Armor;
 
-                    _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
-                    _debugSyncPed.CurrentWeapon = GetCurrentVehicleWeaponHash(Game.Player.Character);
+                    if (
+                        !WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash) veh.Model.Hash,
+                            Util.GetPedSeat(Game.Player.Character)))
+                    {
+                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
+                        _debugSyncPed.CurrentWeapon = GetCurrentVehicleWeaponHash(Game.Player.Character);
 
-                    _debugSyncPed.IsAiming = Game.IsControlPressed(0, Control.Aim);
-                    _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
+                        _debugSyncPed.IsAiming = Game.IsControlPressed(0, Control.Aim);
+                        _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
+                    }
+                    else
+                    {
+                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleAttack);
+                        _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
+                    }
                 }
                 else
                 {

@@ -42,7 +42,7 @@ namespace GTANetwork
         }
 
         private BiDictionary<int, int> HandleMap;
-        private List<int> Blips { get; set; }
+        public List<int> Blips { get; set; }
         public Dictionary<int, MarkerProperties> Markers { get; set; }
         private Dictionary<int, MarkerProperties> _localMarkers { get; set; }
         private int _markerCount;

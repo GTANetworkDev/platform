@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Xml.Serialization;
@@ -45,6 +46,54 @@ namespace GTANetwork
         public static string GetStationName(int id)
         {
             return Function.Call<string>(Hash.GET_RADIO_STATION_NAME, id);
+        }
+
+        public static void DxDrawTexture(string id, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a)
+        {
+            int screenw = Game.ScreenResolution.Width;
+            int screenh = Game.ScreenResolution.Height;
+
+            const float height = 1080f;
+            float ratio = (float)screenw / screenh;
+            float width = height * ratio;
+
+            float reduceX = UI.WIDTH / width;
+            float reduceY = UI.HEIGHT / height;
+
+
+            Point extra = new Point(0, 0);
+            if (screenw == 1914 && screenh == 1052) 
+                extra = new Point(15, 0);
+
+            UI.DrawTexture(id, filename, 1, 1, 60,
+                new PointF(xPos * reduceX + extra.X, yPos * reduceY + extra.Y),
+                new PointF(0f, 0f),
+                new SizeF(txdWidth * reduceX, txdHeight * reduceY),
+                rot, Color.FromArgb(a, r, g, b), 1f);
+        }
+
+        public static void DxDrawTexture(int idx, string id, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a)
+        {
+            int screenw = Game.ScreenResolution.Width;
+            int screenh = Game.ScreenResolution.Height;
+
+            const float height = 1080f;
+            float ratio = (float)screenw / screenh;
+            float width = height * ratio;
+
+            float reduceX = UI.WIDTH / width;
+            float reduceY = UI.HEIGHT / height;
+
+
+            Point extra = new Point(0, 0);
+            if (screenw == 1914 && screenh == 1052)
+                extra = new Point(15, 0);
+
+            UI.DrawTexture(id, filename, idx, 1, 60,
+                new PointF(xPos * reduceX + extra.X, yPos * reduceY + extra.Y),
+                new PointF(0f, 0f),
+                new SizeF(txdWidth * reduceX, txdHeight * reduceY),
+                rot, Color.FromArgb(a, r, g, b), 1f);
         }
 
         public static Vector3 ToEuler(this Quaternion q)
@@ -182,31 +231,7 @@ namespace GTANetwork
             return -3;
         }
 
-        public class ImpatientWebClient : WebClient
-        {
-            public int Timeout { get; set; }
-
-            public ImpatientWebClient()
-            {
-                Timeout = 10000;
-            }
-
-            public ImpatientWebClient(int timeout)
-            {
-                Timeout = timeout;
-            }
-
-            protected override WebRequest GetWebRequest(Uri address)
-            {
-                WebRequest w = base.GetWebRequest(address);
-                if (w != null)
-                {
-                    w.Timeout = Timeout;
-                }
-                return w;
-            }
-        }
-
+        
         public static PlayerSettings ReadSettings(string path)
         {
             var ser = new XmlSerializer(typeof(PlayerSettings));

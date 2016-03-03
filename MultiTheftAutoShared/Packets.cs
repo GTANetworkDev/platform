@@ -364,6 +364,9 @@ namespace GTANetworkShared
 
         [ProtoMember(20)]
         public bool IsVehicleDead { get; set; }
+
+        [ProtoMember(21)]
+        public Vector3 AimCoords { get; set; }
     }
 
     [ProtoContract]

@@ -350,7 +350,7 @@ namespace GTANetwork
         
         public void dxDrawTexture(string path, Point pos, Size size)
         {
-            Sprite.DrawTexture(path, pos, size);
+            Util.DxDrawTexture(path, path, pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
         }
 
         public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading,
