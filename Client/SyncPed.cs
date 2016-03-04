@@ -55,7 +55,7 @@ namespace GTANetwork
         public int VehicleSeat;
         public int PedHealth;
 
-        public int VehicleHealth;
+        public float VehicleHealth;
         public int VehicleHash;
         public Vector3 _vehicleRotation;
         public int VehiclePrimaryColor;
@@ -226,8 +226,8 @@ namespace GTANetwork
             set
             {
                 DEBUG_STEP_backend = value;
-                UI.ShowSubtitle("NEWSTEP: " + DEBUG_STEP_backend + " for " + Name);
-                //DownloadManager.Log("NEXTSTEP FOR " + Name + ": " + value);
+                //UI.ShowSubtitle("NEWSTEP: " + DEBUG_STEP_backend + " for " + Name);
+                DownloadManager.Log("NEXTSTEP FOR " + Name + ": " + value);
             }
         }
 
@@ -356,6 +356,7 @@ namespace GTANetwork
                 if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) ||
                     Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
                 {
+                    DownloadManager.Log($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
                     if (Character != null) Character.Delete();
                     DEBUG_STEP = 3;
                     DownloadManager.Log("NEW PLAYER " + Name);
@@ -381,15 +382,20 @@ namespace GTANetwork
                     {
                         Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, 0, 2);
                     }
-                    DownloadManager.Log("ATTACHING BLIP FOR" + Name);
+                    DownloadManager.Log("ATTACHING BLIP FOR " + Name);
                     if (_blip)
                     {
                         Character.AddBlip();
-                        if (Character.CurrentBlip == null) return;
+                        if (Character.CurrentBlip == null || !Character.CurrentBlip.Exists()) return;
+                        DownloadManager.Log("SETTING BLIP COLOR FOR" + Name);
                         Character.CurrentBlip.Color = BlipColor.White;
+                        DownloadManager.Log("SETTING BLIP SCALE FOR" + Name);
                         Character.CurrentBlip.Scale = 0.8f;
+                        DownloadManager.Log("SETTING BLIP NAME FOR" + Name);
                         SetBlipNameFromTextFile(Character.CurrentBlip, Name);
+                        DownloadManager.Log("BLIP DONE FOR" + Name);
                     }
+                    
                     return;
                 }
                 DEBUG_STEP = 5;
@@ -490,7 +496,7 @@ namespace GTANetwork
                             new UIResRectangle(
                                 new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
                                 new Size(
-                                    (int)((142 * Math.Min(Math.Max(((VehicleHealth + 100) / 1000f), 0f), 1f)) * sizeOffset),
+                                    (int)((142 * Math.Min(Math.Max(((VehicleHealth) / 1000f), 0f), 1f)) * sizeOffset),
                                     (int)(12 * sizeOffset)),
                                 Color.FromArgb(150, 50, 250, 50)).Draw();
                         }
@@ -515,6 +521,7 @@ namespace GTANetwork
                     else
                         MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
                     DEBUG_STEP = 10;
+
                     if (Game.Player.Character.IsInVehicle(MainVehicle) &&
                         VehicleSeat == Util.GetPedSeat(Game.Player.Character))
                     {
@@ -566,7 +573,7 @@ namespace GTANetwork
                 {
                     if (Character != null)
                         Character.Position = gPos;
-                    if (MainVehicle != null && VehicleSeat == (int)GTA.VehicleSeat.Driver && MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver) != null && MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle == Character.Handle)
+                    if (MainVehicle != null && VehicleSeat == (int)GTA.VehicleSeat.Driver && IsInVehicle && MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle == Character.Handle)
                     {
                         MainVehicle.Position = VehiclePosition;
                         MainVehicle.Rotation = VehicleRotation;
@@ -578,15 +585,15 @@ namespace GTANetwork
 
                 if ((Character.CurrentBlip == null || (Character.CurrentBlip.Position - Character.Position).Length() > 5f) && _blip)
                 {
+                    DownloadManager.Log("Blip was too far away -- deleting");
                     Character.Delete();
                 }
 
                 if (IsInVehicle)
                 {
-                    if (VehicleSeat == (int) GTA.VehicleSeat.Driver ||
-                        MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle == 0)
+                    if (GetResponsiblePed(MainVehicle).Handle == Character.Handle)
                     {
-                        MainVehicle.Health = VehicleHealth;
+                        MainVehicle.EngineHealth = VehicleHealth;
                         if (IsVehDead && !MainVehicle.IsDead)
                         {
                             MainVehicle.IsInvincible = false;
@@ -636,23 +643,7 @@ namespace GTANetwork
                             MainVehicle.SirenActive = Siren;
                         else if (!MainVehicle.SirenActive && Siren)
                             MainVehicle.SirenActive = Siren;
-                        /*
-                        if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
-                        {
-                            Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
-                            Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
-                        }
-
-                        if (IsAiming && !IsShooting)
-                        {
-                            Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
-                                100f, 80, 0, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
-                        }
-                        else if (IsShooting)
-                        {
-                            Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
-                                100f, 80, 1, Function.Call<int>(Hash.GET_HASH_KEY, "firing_pattern_burst_fire_driveby"));
-                        }*/
+                        
                         DEBUG_STEP = 19;
 
                         
@@ -768,7 +759,7 @@ namespace GTANetwork
                         }
 
                         
-                        if (IsShooting && CurrentWeapon != 0 && VehicleSeat == -1)
+                        if (IsShooting && CurrentWeapon != 0 && VehicleSeat == -1 && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash) VehicleHash))
                         {
                             var isRocket = WeaponDataProvider.IsVehicleWeaponRocket(CurrentWeapon);
                             if (isRocket && DateTime.Now.Subtract(_lastRocketshot).TotalMilliseconds < 1500)
@@ -809,7 +800,8 @@ namespace GTANetwork
                     {
                         if (Game.GameTime - _lastVehicleAimUpdate > 30)
                         {
-                            Function.Call(Hash.TASK_VEHICLE_AIM_AT_COORD, Character, AimCoords.X, AimCoords.Y, AimCoords.Z);
+                            Function.Call(Hash.TASK_VEHICLE_AIM_AT_COORD, Character, AimCoords.X, AimCoords.Y,
+                                AimCoords.Z);
                             _lastVehicleAimUpdate = Game.GameTime;
                         }
 
@@ -876,6 +868,20 @@ namespace GTANetwork
                                 Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
                                     end.Y, end.Z, damage, true, (int) hash, Character, true, true, speed);
                             }
+                        }
+                    }
+                    else if (!WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash) VehicleHash) || VehicleSeat != -1)
+                    {
+                        if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
+                        {
+                            Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
+                            Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                        }
+
+                        if (IsShooting && Game.GameTime - _lastVehicleAimUpdate > 30)
+                        {
+                            Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z, 0, 0, 0, unchecked((int)FiringPattern.FullAuto));
+                            _lastVehicleAimUpdate = Game.GameTime;
                         }
                     }
 
@@ -1262,7 +1268,24 @@ namespace GTANetwork
                 UI.Notify("Caught unhandled exception in PedThread for player " + Name);
                 UI.Notify(ex.Message);
                 UI.Notify("LAST STEP: " + DEBUG_STEP);
+
+                DownloadManager.Log("Caught unhandled exception in PedThread for player " + Name);
+                DownloadManager.Log(ex.Message);
+                DownloadManager.Log("LAST STEP: " + DEBUG_STEP);
+                throw;
             }
+        }
+
+        public static Ped GetResponsiblePed(Vehicle veh)
+        {
+            if (veh.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle != 0) return veh.GetPedOnSeat(GTA.VehicleSeat.Driver);
+
+            for (int i = 0; i < veh.PassengerSeats; i++)
+            {
+                if (veh.GetPedOnSeat((VehicleSeat)i).Handle != 0) return veh.GetPedOnSeat((VehicleSeat)i);
+            }
+
+            return new Ped(0);
         }
 
         public string GetAnimDictionary()
@@ -1464,6 +1487,7 @@ namespace GTANetwork
 
         public void Clear()
         {
+            DownloadManager.Log("CLEAR FOR " + Name);
             if (Character != null)
             {
                 Character.Model.MarkAsNoLongerNeeded();
@@ -1523,6 +1547,17 @@ namespace GTANetwork
         public static bool DoesVehiclesMuzzleDifferFromVehicleGunPos(VehicleHash model)
         {
             if (model == VehicleHash.Rhino || model == VehicleHash.Insurgent || model == VehicleHash.Limo2) return true;
+            return false;
+        }
+
+        public static bool DoesVehicleSeatHaveMountedGuns(VehicleHash vehicle)
+        {
+            if (vehicle == VehicleHash.Savage || vehicle == VehicleHash.Buzzard || vehicle == VehicleHash.Annihilator ||
+                vehicle == VehicleHash.Rhino || vehicle == VehicleHash.Hydra || vehicle == VehicleHash.Lazer ||
+                vehicle == VehicleHash.Valkyrie)
+            {
+                return true;
+            }
             return false;
         }
 
@@ -1610,18 +1645,18 @@ namespace GTANetwork
             }
         }
 
-        public static bool DoesVehicleSeatHaveGunPosition(VehicleHash vehicle, int vehiclepos)
+        public static bool DoesVehicleSeatHaveGunPosition(VehicleHash vehicle, int vehiclepos, bool anySeat = false)
         {
-            if (vehicle == VehicleHash.Rhino && vehiclepos == -1) return true;
-            if (vehicle == VehicleHash.Insurgent && vehiclepos == 7) return true;
-            if (vehicle == VehicleHash.Valkyrie && vehiclepos == (int) VehicleSeat.Passenger) return true;
-            if (vehicle == VehicleHash.Valkyrie && vehiclepos == 1) return true;
-            if (vehicle == VehicleHash.Valkyrie && vehiclepos == 2) return true;
-            if (vehicle == VehicleHash.Valkyrie2 && vehiclepos == (int)VehicleSeat.Passenger) return true;
-            if (vehicle == VehicleHash.Valkyrie2 && vehiclepos == 1) return true;
-            if (vehicle == VehicleHash.Valkyrie2 && vehiclepos == 2) return true;
-            if (vehicle == VehicleHash.Technical && vehiclepos == 1) return true;
-            if (vehicle == VehicleHash.Limo2 && vehiclepos == 3) return true;
+            if (vehicle == VehicleHash.Rhino && (vehiclepos == -1 || anySeat)) return true;
+            if (vehicle == VehicleHash.Insurgent && (vehiclepos == 7 || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == (int) VehicleSeat.Passenger || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == 1 || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == 2 || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == (int)VehicleSeat.Passenger || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == 1 || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == 2 || anySeat)) return true;
+            if (vehicle == VehicleHash.Technical && (vehiclepos == 1 || anySeat)) return true;
+            if (vehicle == VehicleHash.Limo2 && (vehiclepos == 3 || anySeat)) return true;
             return false;
         }
 

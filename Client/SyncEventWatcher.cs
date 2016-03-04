@@ -62,12 +62,13 @@ namespace GTANetwork
             }
             _lastCar = car;
 
-            if (player.IsInVehicle())
+            if (player.IsInVehicle() && SyncPed.GetResponsiblePed(player.CurrentVehicle).Handle == Game.Player.Character.Handle)
             {
                 var lg = Function.Call<int>(Hash._GET_VEHICLE_LANDING_GEAR, car);
                 if (lg != _lastLandingGear)
                 {
-                    SendSyncEvent(SyncEventType.LandingGearChange, Main.NetEntityHandler.EntityToNet(car.Handle), lg);
+                    if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
+                        SendSyncEvent(SyncEventType.LandingGearChange, Main.NetEntityHandler.EntityToNet(car.Handle), lg);
                 }
                 _lastLandingGear = lg;
 
@@ -76,20 +77,23 @@ namespace GTANetwork
                     bool isOpen = false;
                     if ((isOpen = (Function.Call<float>(Hash.GET_VEHICLE_DOOR_ANGLE_RATIO, car.Handle, i) > 0.5f)) != _doors[i])
                     {
-                        SendSyncEvent(SyncEventType.DoorStateChange, Main.NetEntityHandler.EntityToNet(car.Handle), i, isOpen);
+                        if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
+                            SendSyncEvent(SyncEventType.DoorStateChange, Main.NetEntityHandler.EntityToNet(car.Handle), i, isOpen);
                     }
                     _doors[i] = isOpen;
                 }
 
                 if (car.HighBeamsOn != _highBeams)
                 {
-                    SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.Highbeams, car.HighBeamsOn);
+                    if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
+                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.Highbeams, car.HighBeamsOn);
                 }
                 _highBeams = car.HighBeamsOn;
 
                 if (car.LightsOn != _lights)
                 {
-                    SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.NormalLights, car.LightsOn);
+                    if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
+                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.NormalLights, car.LightsOn);
                 }
                 _lights = car.LightsOn;
 
@@ -99,10 +103,12 @@ namespace GTANetwork
                 {
                     if (trailer == null)
                     {
-                        SendSyncEvent(SyncEventType.TrailerDeTach, false, Main.NetEntityHandler.EntityToNet(car.Handle));
+                        if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
+                            SendSyncEvent(SyncEventType.TrailerDeTach, false, Main.NetEntityHandler.EntityToNet(car.Handle));
                     }
                     else
                     {
+                        if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0 && Main.NetEntityHandler.EntityToNet(trailer.Handle) != 0)
                         SendSyncEvent(SyncEventType.TrailerDeTach, true, Main.NetEntityHandler.EntityToNet(car.Handle),
                             Main.NetEntityHandler.EntityToNet(trailer.Handle));
                     }

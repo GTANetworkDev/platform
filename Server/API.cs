@@ -149,6 +149,14 @@ namespace GTANetworkServer
             Program.Output(text);
         }
 
+        public bool doesEntityExistForPlayer(Client player, int entity)
+        {
+            return
+                (bool)
+                    Program.ServerInstance.ReturnNativeCallFromPlayer(player, 0x7239B21A38F536BA, new BooleanArgument(),
+                        new EntityArgument(entity));
+        }
+
         public void setVehicleMod(int vehicle, int modType, int mod)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle))

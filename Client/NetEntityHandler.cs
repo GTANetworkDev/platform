@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using GTA;
+using GTA.Native;
 using GTANetworkShared;
 using Vector3 = GTA.Math.Vector3;
 
@@ -138,21 +139,25 @@ namespace GTANetwork
         public Vehicle CreateVehicle(Model model, Vector3 position, Vector3 rotation, int netHash)
         {
             if (model == null) return null;
-
+            DownloadManager.Log("CREATING VEHICLE FOR NETHASH " + netHash);
             model.Request(10000);
-
+            DownloadManager.Log("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
 
             var veh = World.CreateVehicle(model, position, rotation.Z);
+            DownloadManager.Log("VEHICLE CREATED. NULL? " + (veh == null));
             veh.Rotation = rotation;
             veh.IsInvincible = true;
+            DownloadManager.Log("PROPERTIES SET");
             lock (HandleMap)
             {
                 if (!HandleMap.Reverse.ContainsKey(veh.Handle))
                 {
                     HandleMap.Reverse.Add(veh.Handle, netHash);
                 }
-            } 
+            }
+            DownloadManager.Log("DISCARDING MODEL");
             model.MarkAsNoLongerNeeded();
+            DownloadManager.Log("CREATEVEHICLE COMPLETE");
             return veh;
         }
 

@@ -100,7 +100,8 @@ namespace GTANetworkShared
         public VehicleProperties()
         {
             Mods = new int[50];
-            Health = 900;
+            Health = 1000;
+            Doors = new bool[7];
         }
 
         [ProtoMember(1)]
@@ -110,7 +111,7 @@ namespace GTANetworkShared
         public int SecondaryColor { get; set; }
 
         [ProtoMember(3)]
-        public int Health { get; set; }
+        public float Health { get; set; }
 
         [ProtoMember(4)]
         public bool IsDead { get; set; }
@@ -120,6 +121,12 @@ namespace GTANetworkShared
 
         [ProtoMember(6)]
         public bool Siren { get; set; }
+
+        [ProtoMember(7)]
+        public bool[] Doors { get; set; }
+
+        [ProtoMember(8)]
+        public int Trailer { get; set; }
     }
 
     [ProtoContract]
@@ -333,7 +340,7 @@ namespace GTANetworkShared
         public int VehicleSeat { get; set; }
 
         [ProtoMember(10)]
-        public int VehicleHealth { get; set; }
+        public float VehicleHealth { get; set; }
 
         [ProtoMember(11)]
         public int PlayerHealth { get; set; }

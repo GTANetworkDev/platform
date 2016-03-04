@@ -82,6 +82,7 @@
     <Compile Include="API.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="GameServer.cs" />
+    <Compile Include="MemberwiseClone.cs" />
     <Compile Include="ResourceInfo.cs" />
     <Compile Include="RetardedXMLParser.cs" />
     <Compile Include="VehicleHashes.cs" />

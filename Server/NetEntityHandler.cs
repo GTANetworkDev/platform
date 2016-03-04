@@ -5,7 +5,7 @@ namespace GTANetworkServer
 {
     public class NetEntityHandler
     {
-        private int EntityCounter;
+        private int EntityCounter = 1;
         private Dictionary<int, EntityProperties> ServerEntities;
 
         public NetEntityHandler()

@@ -12,7 +12,7 @@ namespace GTANetwork
     {
         public static void Log(string txt)
         {
-            File.AppendAllText("scripts\\download.log", txt + "\r\n");
+            //File.AppendAllText("scripts\\download.log", txt + "\r\n");
         }
 
         private static FileTransferId CurrentFile;

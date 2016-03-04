@@ -21,6 +21,7 @@ namespace GTANetwork
 
             Dictionary<long, SyncPed> localOpps = null;
             lock (Main.Opponents) localOpps = new Dictionary<long, SyncPed>(Main.Opponents);
+            /*
             for (int i = localOpps.Count - 1; i >= 0; i--)
             {
                 if (DateTime.Now.Subtract(localOpps.ElementAt(i).Value.LastUpdateReceived).TotalMilliseconds > playerThreshold)
@@ -30,7 +31,6 @@ namespace GTANetwork
                     localOpps.Remove(key);
                 }
             }
-
             Dictionary<string, SyncPed> localNpcs = null;
             lock (Main.Npcs) localNpcs = new Dictionary<string, SyncPed>(Main.Npcs);
             for (int i = localNpcs.Count - 1; i >= 0; i--)
@@ -42,16 +42,17 @@ namespace GTANetwork
                     localNpcs.Remove(key);
                 }
             }
-
+            */
             lock (Main.Opponents) foreach (KeyValuePair<long, SyncPed> opp in new Dictionary<long, SyncPed>(Main.Opponents)) if (!localOpps.ContainsKey(opp.Key)) Main.Opponents.Remove(opp.Key);
 
-            lock (Main.Npcs) foreach (KeyValuePair<string, SyncPed> npc in new Dictionary<string, SyncPed>(Main.Npcs)) if (!localNpcs.ContainsKey(npc.Key)) Main.Npcs.Remove(npc.Key);
+            //lock (Main.Npcs) foreach (KeyValuePair<string, SyncPed> npc in new Dictionary<string, SyncPed>(Main.Npcs)) if (!localNpcs.ContainsKey(npc.Key)) Main.Npcs.Remove(npc.Key);
 
             for (int i = 0; i < localOpps.Count; i++) localOpps.ElementAt(i).Value.DisplayLocally();
 
-            for (int i = 0; i < localNpcs.Count; i++) localNpcs.ElementAt(i).Value.DisplayLocally();
-
+            //for (int i = 0; i < localNpcs.Count; i++) localNpcs.ElementAt(i).Value.DisplayLocally();
+            DownloadManager.Log("SENDING PLAYER DATA");
             Main.SendPlayerData();
+            DownloadManager.Log("END LOOP");
         }
     }
 }
