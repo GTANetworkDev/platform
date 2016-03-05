@@ -33,7 +33,7 @@ namespace GTANetwork
         private readonly UIMenu _settingsMenu;
 
         public static bool BlockControls;
-        
+        public static bool WriteDebugLog;
 
         public static NetEntityHandler NetEntityHandler;
 
@@ -344,7 +344,7 @@ namespace GTANetwork
                     }
                     catch (Exception e)
                     {
-                        UI.Notify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
+                        Util.SafeNotify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
                         var logOutput = "===== EXCEPTION CONTACTING MASTER SERVER @ " + DateTime.UtcNow + " ======\n";
                         logOutput += "Message: " + e.Message;
                         logOutput += "\nData: " + e.Data;
@@ -370,7 +370,7 @@ namespace GTANetwork
                         var port = GetOpenUdpPort();
                         if (port == 0)
                         {
-                            UI.Notify("No available UDP port was found.");
+                            Util.SafeNotify("No available UDP port was found.");
                             return;
                         }
                         _config.Port = port;
@@ -526,7 +526,7 @@ namespace GTANetwork
                         int newPort;
                         if (!int.TryParse(newIp, out newPort))
                         {
-                            UI.Notify("Wrong port format!");
+                            Util.SafeNotify("Wrong port format!");
                             return;
                         }
                         Port = newPort;
@@ -653,7 +653,7 @@ namespace GTANetwork
 
                             if (!serverIp.Contains(":"))
                             {
-                                UI.Notify("Server IP and port need to be separated by a : character!");
+                                Util.SafeNotify("Server IP and port need to be separated by a : character!");
                                 return;
                             }
 
@@ -751,6 +751,15 @@ namespace GTANetwork
                     };
                     internetServers.Items.Add(debugItem);
                 }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Write Debug Info To File", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        WriteDebugLog = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
 #endif
 
                 {
@@ -821,7 +830,7 @@ namespace GTANetwork
                 AddToFavorites(_currentServerIp + ":" + _currentServerPort);
                 var item = new UIMenuItem(serb);
                 item.Description = serb;
-                UI.Notify("Server added to favorites!");
+                Util.SafeNotify("Server added to favorites!");
                 item.Activated += (faf, selectedItem) =>
                 {
                     if (IsOnServer())
@@ -907,12 +916,22 @@ namespace GTANetwork
                     ourVeh.RimColor = (VehicleColor)0;
                     ourVeh.EngineHealth = pair.Value.Health;
                     ourVeh.SirenActive = pair.Value.Siren;
-
+                    
                     for (int i = 0; i < pair.Value.Doors.Length; i++)
                     {
                         if (pair.Value.Doors[i])
                             ourVeh.OpenDoor((VehicleDoor) i, false, true);
                         else ourVeh.CloseDoor((VehicleDoor) i, true);
+                    }
+
+                    for (int i = 0; i < pair.Value.Tires.Length; i++)
+                    {
+                        //Util.SafeNotify("TIRE #" + i + " is burst? " + pair.Value.Tires[i]);
+                        if (pair.Value.Tires[i])
+                        {
+                            ourVeh.IsInvincible = false;
+                            ourVeh.BurstTire(i);
+                        }
                     }
 
                     if (pair.Value.Trailer != 0)
@@ -936,6 +955,8 @@ namespace GTANetwork
                         ourVeh.IsInvincible = false;
                         ourVeh.Explode();
                     }
+                    else
+                        ourVeh.IsInvincible = true;
                 }
 
             if (map.Blips != null)
@@ -959,6 +980,15 @@ namespace GTANetwork
                     NetEntityHandler.CreateMarker(marker.Value.MarkerType, marker.Value.Position, marker.Value.Rotation,
                         marker.Value.Direction, marker.Value.Scale, marker.Value.Red, marker.Value.Green,
                         marker.Value.Blue, marker.Value.Alpha, marker.Key);
+                }
+            }
+
+            if (map.Pickups != null)
+            {
+                foreach (var pickup in map.Pickups)
+                {
+                    NetEntityHandler.CreatePickup(pickup.Value.Position.ToVector(), pickup.Value.Rotation.ToVector(),
+                        pickup.Value.ModelHash, pickup.Value.Amount, pickup.Key);
                 }
             }
         }
@@ -1057,9 +1087,13 @@ namespace GTANetwork
                 }
                 else
                 {
-                    //obj.IsShooting = Game.IsControlPressed(0, Control.Attack);
-                    obj.IsShooting = Game.Player.Character.IsShooting;
+                    obj.IsShooting = Game.IsControlPressed(0, Control.Attack);
+                    //obj.IsShooting = Game.Player.Character.IsShooting;
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
+
+                    var outputArg = new OutputArgument();
+                    Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
+                    obj.WeaponHash = outputArg.GetResult<int>();
                 }
 
 
@@ -1075,7 +1109,7 @@ namespace GTANetwork
                 }
                 catch (Exception ex)
                 {
-                    UI.Notify("FAILED TO SEND DATA: " + ex.Message);
+                    Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
                     DownloadManager.Log("FAILED TO SEND DATA: " + ex.Message);
                     DownloadManager.Log(ex.StackTrace);
                 }
@@ -1128,7 +1162,7 @@ namespace GTANetwork
                 }
                 catch (Exception ex)
                 {
-                    UI.Notify("FAILED TO SEND DATA: " + ex.Message);
+                    Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
                     DownloadManager.Log("FAILED TO SEND DATA: " + ex.Message);
                     DownloadManager.Log(ex.StackTrace);
                 }
@@ -1209,11 +1243,7 @@ namespace GTANetwork
             }
         }
         */
-
-#if DEBUG
-        private float range = 50f;
-#endif
-
+        
         public static void InvokeFinishedDownload()
         {
             var confirmObj = Client.CreateMessage();
@@ -1248,7 +1278,6 @@ namespace GTANetwork
         private DateTime _start;
 
         private bool _hasInitialized;
-        private Vehicle _tmpCar;
 
         private int _debugStep;
 
@@ -1258,9 +1287,11 @@ namespace GTANetwork
             set
             {
                 _debugStep = value;
-                UI.ShowSubtitle(_debugStep.ToString());
+                //UI.ShowSubtitle(_debugStep.ToString());
             }
         }
+
+        private int _debugPickup;
 
         public void OnTick(object sender, EventArgs e)
         {
@@ -1349,7 +1380,32 @@ namespace GTANetwork
             if (Game.IsKeyPressed(Keys.NumPad8))
             {
                 offset = new Vector3(offset.X + 0.01f, offset.Y, offset.Z);
-            }*/
+            }
+
+
+            if (Game.IsControlJustPressed(0, Control.Context))
+            {
+                var p = Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 10f, 0f));
+                //_debugPickup = Function.Call<int>(Hash.CREATE_PICKUP, 1295434569, p.X, p.Y, p.Z, 0, 1, 1, 0);
+                _debugPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, 1295434569, p.X, p.Y, p.Z, 0, 0, 0, 0, 1, 0, false, 0);
+            }
+
+            if (_debugPickup != 0)
+            {
+                var obj = Function.Call<int>(Hash.GET_PICKUP_OBJECT, _debugPickup);
+                new Prop(obj).FreezePosition = true;
+                var exist = Function.Call<bool>(Hash.DOES_PICKUP_EXIST, _debugPickup);
+                UI.ShowSubtitle(_debugPickup + " (exists? " + exist + ") picked up obj (" + obj + "): " + Function.Call<bool>(Hash.HAS_PICKUP_BEEN_COLLECTED, obj));
+            }
+
+            if (Game.IsControlJustPressed(0, Control.LookBehind) && _debugPickup != 0)
+            {
+                Function.Call(Hash.REMOVE_PICKUP, _debugPickup);
+            }
+
+            */
+
+
 
             DEBUG_STEP = 3;
 #if DEBUG
@@ -1397,6 +1453,8 @@ namespace GTANetwork
                 _tmpCar.Delete();
             }
             */
+            
+
 #endif
             DEBUG_STEP = 5;
             ProcessMessages();
@@ -1698,7 +1756,7 @@ namespace GTANetwork
                 var cport = GetOpenUdpPort();
                 if (cport == 0)
                 {
-                    UI.Notify("No available UDP port was found.");
+                    Util.SafeNotify("No available UDP port was found.");
                     return;
                 }
                 _config.Port = cport;
@@ -1751,6 +1809,7 @@ namespace GTANetwork
             while (Client != null && (msg = Client.ReadMessage()) != null)
             {
                 PacketType type = PacketType.WorldSharingStop;
+                DownloadManager.Log("RECEIVED MESSAGE " + msg.MessageType);
                 try
                 {
                     _messagesReceived++;
@@ -1759,6 +1818,7 @@ namespace GTANetwork
                     if (msg.MessageType == NetIncomingMessageType.Data)
                     {
                         type = (PacketType) msg.ReadInt32();
+                        DownloadManager.Log("RECEIVED DATATYPE " + type);
                         switch (type)
                         {
                             case PacketType.VehiclePositionData:
@@ -1968,6 +2028,13 @@ namespace GTANetwork
                                             prop.Direction, prop.Scale, prop.Red, prop.Green, prop.Blue, prop.Alpha,
                                             data.NetHandle);
                                     }
+                                    else if (data.EntityType == (byte) EntityType.Pickup)
+                                    {
+                                        var amount = ((PickupProperties) data.Properties).Amount;
+                                        NetEntityHandler.CreatePickup(data.Properties.Position.ToVector(),
+                                            data.Properties.Rotation.ToVector(), data.Properties.ModelHash, amount,
+                                            data.NetHandle);
+                                    }
                                 }
                             }
                                 break;
@@ -2003,6 +2070,7 @@ namespace GTANetwork
                                 var data = DeserializeBinary<DeleteEntity>(msg.ReadBytes(len)) as DeleteEntity;
                                 if (data != null)
                                 {
+                                    DownloadManager.Log("RECEIVED DELETE ENTITY " + data.NetHandle);
                                     if (NetEntityHandler.Markers.ContainsKey(data.NetHandle))
                                     {
                                         NetEntityHandler.Markers.Remove(data.NetHandle);
@@ -2016,6 +2084,10 @@ namespace GTANetwork
                                             {
                                                 if (new Blip(entity.Handle).Exists())
                                                     new Blip(entity.Handle).Remove();
+                                            }
+                                            else if (NetEntityHandler.IsPickup(entity.Handle))
+                                            {
+                                                Function.Call(Hash.REMOVE_PICKUP, entity.Handle);
                                             }
                                             else
                                             {
@@ -2085,13 +2157,14 @@ namespace GTANetwork
                                 if (data != null)
                                 {
                                     var args = DecodeArgumentList(data.Arguments.ToArray()).ToList();
-
+                                    DownloadManager.Log("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
                                     switch ((SyncEventType) data.EventType)
                                     {
                                         case SyncEventType.LandingGearChange:
                                         {
                                             var veh = NetEntityHandler.NetToEntity((int) args[0]);
                                             var newState = (int) args[1];
+                                            if (veh == null) return;
                                             Function.Call(Hash._SET_VEHICLE_LANDING_GEAR, veh, newState);
                                         }
                                             break;
@@ -2100,6 +2173,7 @@ namespace GTANetwork
                                             var veh = NetEntityHandler.NetToEntity((int) args[0]);
                                             var doorId = (int) args[1];
                                             var newFloat = (bool) args[2];
+                                            if (veh == null) return;
                                             if (newFloat)
                                                 new Vehicle(veh.Handle).OpenDoor((VehicleDoor) doorId, false, false);
                                             else
@@ -2111,6 +2185,7 @@ namespace GTANetwork
                                             var veh = NetEntityHandler.NetToEntity((int) args[0]);
                                             var lightId = (Lights) (int) args[1];
                                             var state = (bool) args[2];
+                                            if (veh == null) return;
                                             if (lightId == Lights.NormalLights)
                                                 new Vehicle(veh.Handle).LightsOn = state;
                                             else if (lightId == Lights.Highbeams)
@@ -2132,6 +2207,44 @@ namespace GTANetwork
                                                 var trailer = NetEntityHandler.NetToEntity((int) args[2]);
                                                 if (car != null && trailer != null)
                                                     Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, car, trailer, 4f);
+                                            }
+                                        }
+                                        break;
+                                        case SyncEventType.TireBurst:
+                                        {
+                                            var veh = NetEntityHandler.NetToEntity((int)args[0]);
+                                            var tireId = (int)args[1];
+                                            var isBursted = (bool)args[2];
+                                            if (veh == null) return;
+                                            if (isBursted)
+                                                new Vehicle(veh.Handle).BurstTire(tireId);
+                                            else
+                                                new Vehicle(veh.Handle).FixTire(tireId);
+                                         }
+                                        break;
+                                        case SyncEventType.RadioChange:
+                                        {
+                                            var veh = NetEntityHandler.NetToEntity((int)args[0]);
+                                            var newRadio = (int) args[1];
+                                            if (veh != null)
+                                            {
+                                                var rad = (RadioStation) newRadio;
+                                                string radioName = "OFF";
+                                                if (rad != RadioStation.RadioOff)
+                                                {
+                                                    radioName = Function.Call<string>(Hash.GET_RADIO_STATION_NAME,
+                                                        newRadio);
+                                                }
+                                                Function.Call(Hash.SET_VEH_RADIO_STATION, veh, radioName);
+                                            }
+                                        }
+                                        break;
+                                        case SyncEventType.PickupPickedUp:
+                                        {
+                                            var pickupId = NetEntityHandler.NetToEntity((int) args[0]);
+                                            if (pickupId != null && NetEntityHandler.IsPickup(pickupId.Handle))
+                                            {
+                                                Function.Call(Hash.REMOVE_PICKUP, pickupId.Handle);
                                             }
                                         }
                                             break;
@@ -2203,6 +2316,7 @@ namespace GTANetwork
                                 var len = msg.ReadInt32();
                                 var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
                                 if (data == null) return;
+                                DownloadManager.Log("RECEIVED NATIVE CALL " + data.Hash);
                                 DecodeNativeCall(data);
                             }
                                 break;
@@ -2258,20 +2372,21 @@ namespace GTANetwork
                     else if (msg.MessageType == NetIncomingMessageType.StatusChanged)
                     {
                         var newStatus = (NetConnectionStatus) msg.ReadByte();
+                        DownloadManager.Log("NEW STATUS: " + newStatus);
                         switch (newStatus)
                         {
                             case NetConnectionStatus.InitiatedConnect:
-                                UI.Notify("Connecting...");
+                                Util.SafeNotify("Connecting...");
                                 break;
                             case NetConnectionStatus.Connected:
-                                UI.Notify("Connection successful!");
+                                Util.SafeNotify("Connection successful!");
                                 var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
                                 var respObj =
                                     DeserializeBinary<ConnectionResponse>(
                                         msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
                                 if (respObj == null)
                                 {
-                                    UI.Notify("ERROR WHILE READING REMOTE HAIL MESSAGE");
+                                    Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
                                     return;
                                 }
                                 _channel = respObj.AssignedChannel;
@@ -2289,7 +2404,7 @@ namespace GTANetwork
                                 break;
                             case NetConnectionStatus.Disconnected:
                                 var reason = msg.ReadString();
-                                UI.Notify("You have been disconnected" +
+                                Util.SafeNotify("You have been disconnected" +
                                           (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
 
                                 lock (Opponents)
@@ -2483,10 +2598,10 @@ namespace GTANetwork
                 }
                 catch (Exception e)
                 {
-                    UI.Notify("Unhandled Exception ocurred in Process Messages");
-                    UI.Notify("Message Type: " + msg.MessageType);
-                    UI.Notify("Data Type: " + type);
-                    UI.Notify(e.Message);
+                    Util.SafeNotify("Unhandled Exception ocurred in Process Messages");
+                    Util.SafeNotify("Message Type: " + msg.MessageType);
+                    Util.SafeNotify("Data Type: " + type);
+                    Util.SafeNotify(e.Message);
                 }
             }
         }
@@ -2670,6 +2785,10 @@ namespace GTANetwork
                 {
                     list.Add(new OutputArgument(NetEntityHandler.NetToEntity(((EntityPointerArgument)arg).NetHandle)));
                 }
+                else if (args == null)
+                {
+                    list.Add(null);
+                }
             }
 
             return list;
@@ -2745,6 +2864,14 @@ namespace GTANetwork
                 {
                     list.Add((EntityPointerArgument)o);
                 }
+                else if (o is NetHandle)
+                {
+                    list.Add(new EntityArgument(((NetHandle)o).Value));
+                }
+                else
+                {
+                    list.Add(null);
+                }
             }
 
             return list;
@@ -2772,7 +2899,10 @@ namespace GTANetwork
 
             list.AddRange(DecodeArgumentList(obj.Arguments.ToArray()).Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
 
+            DownloadManager.Log("NATIVE CALL ARGUMENTS: " + list.Aggregate((f, s) => f + ", " + s));
+            DownloadManager.Log("RETURN TYPE: " + obj.ReturnType);
             var nativeType = CheckNativeHash(obj.Hash);
+            DownloadManager.Log("NATIVE TYPE IS " + nativeType);
 
             if ((int)nativeType >= 2)
             {

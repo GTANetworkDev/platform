@@ -40,7 +40,6 @@ namespace GTANetwork
         public Animation CurrentAnimation;
         public int ModelHash;
         public int CurrentWeapon;
-        public bool IsShooting;
         public bool IsAiming;
         public Vector3 AimCoords;
         public float Latency;
@@ -51,6 +50,7 @@ namespace GTANetwork
         public bool IsInCover;
         public bool IsInMeleeCombat;
         public bool IsFreefallingWithParachute;
+        public bool IsShooting;
 
         public int VehicleSeat;
         public int PedHealth;
@@ -66,7 +66,7 @@ namespace GTANetwork
         public bool IsVehDead;
 
         public bool Debug;
-
+        
         private DateTime _stopTime;
         public float Speed
         {
@@ -227,7 +227,7 @@ namespace GTANetwork
             {
                 DEBUG_STEP_backend = value;
                 //UI.ShowSubtitle("NEWSTEP: " + DEBUG_STEP_backend + " for " + Name);
-                DownloadManager.Log("NEXTSTEP FOR " + Name + ": " + value);
+                //DownloadManager.Log("NEXTSTEP FOR " + Name + ": " + value);
             }
         }
 
@@ -314,11 +314,7 @@ namespace GTANetwork
                     //Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
                     //_lastEnd.Z, 255, 255, 255, 255);
                 }
-
-                if (inRange && Character != null)
-                {
-                    Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, Character, true);
-                }
+                
 
                 /*
             if (inRange && !_isStreamedIn)
@@ -526,7 +522,7 @@ namespace GTANetwork
                         VehicleSeat == Util.GetPedSeat(Game.Player.Character))
                     {
                         Game.Player.Character.Task.WarpOutOfVehicle(MainVehicle);
-                        UI.Notify("~r~Car jacked!");
+                        //Util.SafeNotify("~r~Car jacked!");
                     }
                     DEBUG_STEP = 11;
 
@@ -572,11 +568,16 @@ namespace GTANetwork
                 if (!inRange)
                 {
                     if (Character != null)
-                        Character.Position = gPos;
-                    if (MainVehicle != null && VehicleSeat == (int)GTA.VehicleSeat.Driver && IsInVehicle && MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle == Character.Handle)
                     {
-                        MainVehicle.Position = VehiclePosition;
-                        MainVehicle.Rotation = VehicleRotation;
+                        if (!IsInVehicle)
+                            Character.Position = gPos;
+                        else
+                        if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
+                        {
+                            MainVehicle.Position = VehiclePosition;
+                            MainVehicle.Rotation = VehicleRotation;
+                            Character.Position = gPos;
+                        }
                     }
                     return;
                 }
@@ -883,6 +884,11 @@ namespace GTANetwork
                             Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z, 0, 0, 0, unchecked((int)FiringPattern.FullAuto));
                             _lastVehicleAimUpdate = Game.GameTime;
                         }
+
+                        if (!IsShooting && _lastShooting)
+                        {
+                            Character.Task.ClearAll();
+                        }
                     }
 
                 }
@@ -1028,17 +1034,22 @@ namespace GTANetwork
                             if (!meleeSwingDone && CurrentWeapon != unchecked ((int)WeaponHash.Unarmed))
                             {
                                 var gunEntity = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
-                                Vector3 min;
-                                Vector3 max;
-                                gunEntity.Model.GetDimensions(out min, out max);
-                                var start = gunEntity.GetOffsetInWorldCoords(min);
-                                var end = gunEntity.GetOffsetInWorldCoords(max);
-                                var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
-                                //Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
-                                if (ray.DitHitAnything && ray.DitHitEntity && ray.HitEntity.Handle == Game.Player.Character.Handle)
+                                if (gunEntity != null)
                                 {
-                                    Game.Player.Character.ApplyDamage(25);
-                                    meleeSwingDone = true;
+                                    Vector3 min;
+                                    Vector3 max;
+                                    gunEntity.Model.GetDimensions(out min, out max);
+                                    var start = gunEntity.GetOffsetInWorldCoords(min);
+                                    var end = gunEntity.GetOffsetInWorldCoords(max);
+                                    var ray = World.RaycastCapsule(start, end, (int) Math.Abs(end.X - start.X),
+                                        IntersectOptions.Peds1, Character);
+                                    //Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
+                                    if (ray.DitHitAnything && ray.DitHitEntity &&
+                                        ray.HitEntity.Handle == Game.Player.Character.Handle)
+                                    {
+                                        Game.Player.Character.ApplyDamage(25);
+                                        meleeSwingDone = true;
+                                    }
                                 }
                             }
                             else if (!meleeSwingDone && CurrentWeapon == unchecked((int)WeaponHash.Unarmed))
@@ -1235,7 +1246,7 @@ namespace GTANetwork
                             UpdatePlayerPedPos();
 
                             var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
-                            var animDict = GetAnimDictionary();
+                            var animDict = GetAnimDictionary(ourAnim);
                             var secondaryAnimDict = GetSecondaryAnimDict();
                             DEBUG_STEP = 34;
                             if (
@@ -1265,14 +1276,14 @@ namespace GTANetwork
             }
             catch (Exception ex)
             {
-                UI.Notify("Caught unhandled exception in PedThread for player " + Name);
-                UI.Notify(ex.Message);
-                UI.Notify("LAST STEP: " + DEBUG_STEP);
+                Util.SafeNotify("Caught unhandled exception in PedThread for player " + Name);
+                Util.SafeNotify(ex.Message);
+                Util.SafeNotify("LAST STEP: " + DEBUG_STEP);
 
                 DownloadManager.Log("Caught unhandled exception in PedThread for player " + Name);
                 DownloadManager.Log(ex.Message);
                 DownloadManager.Log("LAST STEP: " + DEBUG_STEP);
-                throw;
+                //throw;
             }
         }
 
@@ -1288,14 +1299,14 @@ namespace GTANetwork
             return new Ped(0);
         }
 
-        public string GetAnimDictionary()
+        public string GetAnimDictionary(string ourAnim = "")
         {
             string dict = "move_m@generic";
 
             if (Character.Gender == Gender.Female)
                 dict = "move_f@generic";
 
-            
+            dict = Character.IsInWater ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : dict;
 
             return dict;
         }

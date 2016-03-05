@@ -28,8 +28,9 @@ namespace GTANetworkServer
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
         public delegate void PlayerDisconnectedEvent(Client player, string reason);
-        public delegate void PlayerKilledEvent(Client player, int entityKiller, int weapon);
+        public delegate void PlayerKilledEvent(Client player, NetHandle entityKiller, int weapon);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
+        public delegate void PickupEvent(Client pickupee, NetHandle pickupHandle);
         #endregion
 
         #region Events
@@ -45,6 +46,7 @@ namespace GTANetworkServer
         public event PlayerKilledEvent onPlayerDeath;
         public event PlayerEvent onPlayerRespawn;
         public event ServerEventTrigger onClientEventTrigger;
+        public event PickupEvent onPlayerPickup;
 
         internal void invokeClientEvent(Client sender, string eventName, params object[] arsg)
         {
@@ -78,6 +80,11 @@ namespace GTANetworkServer
             return !args.Cancel;
         }
 
+        internal void invokePlayerPickup(Client pickupee, NetHandle pickup)
+        {
+            onPlayerPickup?.Invoke(pickupee, pickup);
+        }
+
         internal bool invokeChatCommand(Client sender, string msg)
         {
             var args = new CancelEventArgs(false);
@@ -100,7 +107,7 @@ namespace GTANetworkServer
             onPlayerDisconnected?.Invoke(player, reason);
         }
 
-        internal void invokePlayerDeath(Client player, int netHandle, int weapon)
+        internal void invokePlayerDeath(Client player, NetHandle netHandle, int weapon)
         {
             onPlayerDeath?.Invoke(player, netHandle, weapon);
         }
@@ -149,20 +156,20 @@ namespace GTANetworkServer
             Program.Output(text);
         }
 
-        public bool doesEntityExistForPlayer(Client player, int entity)
+        public bool doesEntityExistForPlayer(Client player, NetHandle entity)
         {
             return
                 (bool)
                     Program.ServerInstance.ReturnNativeCallFromPlayer(player, 0x7239B21A38F536BA, new BooleanArgument(),
-                        new EntityArgument(entity));
+                        new EntityArgument(entity.Value));
         }
 
-        public void setVehicleMod(int vehicle, int modType, int mod)
+        public void setVehicleMod(NetHandle vehicle, int modType, int mod)
         {
-            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle))
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))
             {
-                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle]).Mods[modType] = mod;
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x6AF0636DDEDCB6DD, new EntityArgument(vehicle), modType, mod, false);
+                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods[modType] = mod;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x6AF0636DDEDCB6DD, new EntityArgument(vehicle.Value), modType, mod, false);
             }
         }
 
@@ -176,14 +183,44 @@ namespace GTANetworkServer
             return (int) output;
         }
 
+        public int pedNameToModel(string modelName)
+        {
+            PedHash output;
+            if (!Enum.TryParse(modelName, out output))
+            {
+                return 0;
+            }
+            return (int)output;
+        }
+
+        public int pickupNameToModel(string modelName)
+        {
+            PickupHash output;
+            if (!Enum.TryParse(modelName, out output))
+            {
+                return 0;
+            }
+            return (int)output;
+        }
+
+        public int weaponNameToModel(string modelName)
+        {
+            WeaponHash output;
+            if (!Enum.TryParse(modelName, out output))
+            {
+                return 0;
+            }
+            return (int)output;
+        }
+
         public List<Client> getAllPlayers()
         {
             return Program.ServerInstance.Clients;
         }
 
-        public void setEntityPositionFrozen(Client player, int entity, bool frozen)
+        public void setEntityPositionFrozen(Client player, NetHandle entity, bool frozen)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(entity), frozen);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
         }
 
         public void triggerClientEventForAll(string eventName, params object[] args)
@@ -263,21 +300,22 @@ namespace GTANetworkServer
             player.NetConnection.Disconnect("Kicked: " + reason);
         }
 
-        public void setEntityPosition(int netHandle, Vector3 newPosition)
+        public void setEntityPosition(NetHandle netHandle, Vector3 newPosition)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x06843DA7060A026B, new EntityArgument(netHandle), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x06843DA7060A026B, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
         }
 
-        public  void getPlayerPosition(Client player, Action<object> callback, string salt = "salt")
+        public Vector3 getPlayerPosition(Client player)
         {
-            Program.ServerInstance.GetNativeCallFromPlayer(player,
+            /*Program.ServerInstance.GetNativeCallFromPlayer(player,
                 salt,
-                0x3FEF770D40960D5A, new Vector3Argument(), callback, new LocalPlayerArgument(), 0);
+                0x3FEF770D40960D5A, new Vector3Argument(), callback, new LocalPlayerArgument(), 0);*/
+            return player.Position;
         }
 
-        public void setPlayerIntoVehicle(Client player, int vehicle, int seat)
+        public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle), seat);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), seat);
         }
 
         public  void setPlayerHealth(Client player, int health)
@@ -307,7 +345,6 @@ namespace GTANetworkServer
         
         public  void sendPictureNotificationToPlayer(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
         {
-            //Crash with new LocalPlayerArgument()!
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x6C188BE134E074AA, body);
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
@@ -316,7 +353,6 @@ namespace GTANetworkServer
         
         public  void sendPictureNotificationToAll(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
         {
-            //Crash with new LocalPlayerArgument()!
             Program.ServerInstance.SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
             Program.ServerInstance.SendNativeCallToAllPlayers(0x6C188BE134E074AA, body);
             Program.ServerInstance.SendNativeCallToAllPlayers(0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
@@ -344,24 +380,29 @@ namespace GTANetworkServer
             Program.ServerInstance.GetNativeCallFromPlayer(player, salt, 0x2202A3F42C8E5F79, new BooleanArgument(), callback, new LocalPlayerArgument());
         }
 
-        public  int createVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2)
+        public NetHandle createVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2)
         {
-            return Program.ServerInstance.NetEntityHandler.CreateVehicle(model, pos, rot, color1, color2);
+            return new NetHandle(Program.ServerInstance.NetEntityHandler.CreateVehicle(model, pos, rot, color1, color2));
         }
 
-        public  int createObject(int model, Vector3 pos, Vector3 rot)
+        public NetHandle createObject(int model, Vector3 pos, Vector3 rot)
         {
-            return Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot);
+            return new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot));
         }
 
-        public int createBlip(Vector3 pos)
+        public NetHandle createBlip(Vector3 pos)
         {
-            return Program.ServerInstance.NetEntityHandler.CreateBlip(pos);
+            return new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos));
         }
 
-        public  void deleteEntity(int netHandle)
+        public NetHandle createPickup(int pickupHash, Vector3 pos, Vector3 rot, int amount)
         {
-            Program.ServerInstance.NetEntityHandler.DeleteEntity(netHandle);
+            return new NetHandle(Program.ServerInstance.NetEntityHandler.CreatePickup(pickupHash, pos, rot, amount));
+        }
+
+        public void deleteEntity(NetHandle netHandle)
+        {
+            Program.ServerInstance.NetEntityHandler.DeleteEntity(netHandle.Value);
         }
 
 #endregion

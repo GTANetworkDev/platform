@@ -14,6 +14,7 @@ namespace GTANetwork
             HandleMap = new BiDictionary<int, int>();
             Blips = new List<int>();
             Markers = new Dictionary<int, MarkerProperties>();
+            Pickups = new List<int>();
             _localMarkers = new Dictionary<int, MarkerProperties>();
         }
 
@@ -44,6 +45,7 @@ namespace GTANetwork
 
         private BiDictionary<int, int> HandleMap;
         public List<int> Blips { get; set; }
+        public List<int> Pickups { get; set; } 
         public Dictionary<int, MarkerProperties> Markers { get; set; }
         private Dictionary<int, MarkerProperties> _localMarkers { get; set; }
         private int _markerCount;
@@ -88,6 +90,11 @@ namespace GTANetwork
         public bool IsBlip(int localHandle)
         {
             return Blips.Contains(localHandle);
+        }
+
+        public bool IsPickup(int localHandle)
+        {
+            return Pickups.Contains(localHandle);
         }
 
         public bool ContainsNethandle(int netHandle)
@@ -228,7 +235,24 @@ namespace GTANetwork
                 });
             }
         }
-        
+
+        public int CreatePickup(Vector3 pos, Vector3 rot, int pickupHash, int amount, int netHandle)
+        {
+            var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, pickupHash, pos.X, pos.Y, pos.Z, rot.X, rot.Y, rot.Z, 0, amount, 0, false, 0);
+            lock (HandleMap) HandleMap.Add(netHandle, newPickup);
+            lock (Pickups) Pickups.Add(newPickup);
+            var start = 0;
+            while (Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup) == -1 && start < 20)
+            {
+                start++;
+                Script.Yield();
+            }
+
+            new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).FreezePosition = true;
+
+            return newPickup;
+        }
+
         public void ClearAll()
         {
             lock (HandleMap)
@@ -237,6 +261,8 @@ namespace GTANetwork
                 {
                     if (Blips.Contains(pair.Value))
                         new Blip(pair.Value).Remove();
+                    else if(Pickups.Contains(pair.Value))
+                        Function.Call(Hash.REMOVE_PICKUP, pair.Value);
                     else
                         new Prop(pair.Value).Delete();
                 }
@@ -244,6 +270,7 @@ namespace GTANetwork
                 HandleMap.Clear();
                 Markers.Clear();
                 Blips.Clear();
+                Pickups.Clear();
                 _localMarkers.Clear();
                 _markerCount = 0;
             }

@@ -17,9 +17,11 @@ namespace GTANetwork
         private Vehicle _lastCar;
 
         private bool[] _doors = new bool[7];
+        private bool[] _tires = new bool[8];
         
         private bool _lights;
         private bool _highBeams;
+        private int _radioStation;
 
         private Vehicle _lastTrailer;
 
@@ -48,6 +50,16 @@ namespace GTANetwork
             var player = Game.Player.Character;
             var car = Game.Player.Character.CurrentVehicle;
 
+            foreach (var pickup in Main.NetEntityHandler.Pickups)
+            {
+                if (!Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup)) continue;
+                if (Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup) == -1)
+                {
+                    Function.Call(Hash.REMOVE_PICKUP, pickup);
+                    SendSyncEvent(SyncEventType.PickupPickedUp, Main.NetEntityHandler.EntityToNet(pickup));
+                }
+            }
+
             if (car != _lastCar)
             {
                 _lastLandingGear = 0;
@@ -55,10 +67,17 @@ namespace GTANetwork
                 {
                     _doors[i] = false;
                 }
-                
+
+                for (int i = 0; i < _tires.Length; i++)
+                {
+                    _tires[i] = false;
+                }
+
                 _highBeams = false;
                 _lights = true;
                 _lastTrailer = null;
+
+                _radioStation = 0;
             }
             _lastCar = car;
 
@@ -115,6 +134,29 @@ namespace GTANetwork
                 }
 
                 _lastTrailer = trailer;
+
+                for (int i = 0; i < _tires.Length; i++)
+                {
+                    bool isBusted = false;
+                    if ((isBusted = car.IsTireBurst(i)) != _tires[i])
+                    {
+                        Util.SafeNotify("TIRE " + i + "is burst? " + isBusted);
+                        if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
+                            SendSyncEvent(SyncEventType.TireBurst, Main.NetEntityHandler.EntityToNet(car.Handle), i, isBusted);
+                    }
+                    _tires[i] = isBusted;
+                }
+
+
+                var newStation = (int) Game.RadioStation;
+
+                if (newStation != _radioStation)
+                {
+                    if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
+                        SendSyncEvent(SyncEventType.RadioChange, Main.NetEntityHandler.EntityToNet(car.Handle), newStation);
+                }
+
+                _radioStation = newStation;
 
             }
         }

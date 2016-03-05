@@ -222,11 +222,11 @@ namespace GTANetwork
                 return list.ToArray();
             };
 
-            UI.Notify("~r~~h~Clientside Javascript Error~h~~w~");
+            Util.SafeNotify("~r~~h~Clientside Javascript Error~h~~w~");
             
             foreach (var s in splitter(ex.Message, 99))
             {
-                UI.Notify(s);
+                Util.SafeNotify(s);
                 DownloadManager.Log(s);
             }
 
@@ -235,7 +235,7 @@ namespace GTANetwork
             {
                 foreach (var s in splitter(ex.InnerException.Message, 99))
                 {
-                    UI.Notify(s);
+                    Util.SafeNotify(s);
                     DownloadManager.Log(s);
                 }
 
@@ -295,52 +295,52 @@ namespace GTANetwork
             }
         }
 
-        public int createBlip(Vector3 pos)
+        public LocalHandle createBlip(Vector3 pos)
         {
             var blip = World.CreateBlip(pos.ToVector());
             if (!Main.BlipCleanup.Contains(blip.Handle))
                 Main.BlipCleanup.Add(blip.Handle);
-            return blip.Handle;
+            return new LocalHandle(blip.Handle);
         }
 
-        public void setBlipPosition(int blip, Vector3 pos)
+        public void setBlipPosition(LocalHandle blip, Vector3 pos)
         {
-            if (new Blip(blip).Exists())
+            if (new Blip(blip.Value).Exists())
             {
-                new Blip(blip).Position = pos.ToVector();
+                new Blip(blip.Value).Position = pos.ToVector();
             }
         }
 
-        public void removeBlip(int blip)
+        public void removeBlip(LocalHandle blip)
         {
-            if (new Blip(blip).Exists())
+            if (new Blip(blip.Value).Exists())
             {
-                new Blip(blip).Remove();
+                new Blip(blip.Value).Remove();
             }
         }
 
 
-        public void setBlipScale(int blip, double scale)
+        public void setBlipScale(LocalHandle blip, double scale)
         {
             setBlipScale(blip, (float) scale);
         }
 
-        public void setBlipScale(int blip, float scale)
+        public void setBlipScale(LocalHandle blip, float scale)
         {
-            if (new Blip(blip).Exists())
+            if (new Blip(blip.Value).Exists())
             {
-                new Blip(blip).Scale = scale;
+                new Blip(blip.Value).Scale = scale;
             }
         }
 
-        public int createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
+        public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
         {
-            return Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b);
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b));
         }
 
-        public void deleteMarker(int handle)
+        public void deleteMarker(LocalHandle handle)
         {
-            Main.NetEntityHandler.DeleteLocalMarker(handle);
+            Main.NetEntityHandler.DeleteLocalMarker(handle.Value);
         }
         
         public string getResourceFilePath(string resourceName, string fileName)
@@ -415,19 +415,19 @@ namespace GTANetwork
             Function.Call(Hash._DRAW_TEXT, x, y);
         }
 
-        public bool isPed(int ent)
+        public bool isPed(LocalHandle ent)
         {
-            return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
+            return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Value);
         }
 
-        public bool isVehicle(int ent)
+        public bool isVehicle(LocalHandle ent)
         {
-            return Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, ent);
+            return Function.Call<bool>(Hash.IS_ENTITY_A_VEHICLE, ent.Value);
         }
 
-        public bool isProp(int ent)
+        public bool isProp(LocalHandle ent)
         {
-            return Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent);
+            return Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent.Value);
         }
 
         public float toFloat(double d)

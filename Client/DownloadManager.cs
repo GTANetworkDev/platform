@@ -12,7 +12,8 @@ namespace GTANetwork
     {
         public static void Log(string txt)
         {
-            //File.AppendAllText("scripts\\download.log", txt + "\r\n");
+            if (!Main.WriteDebugLog) return;
+            File.AppendAllText("scripts\\download.log", txt + "\r\n");
         }
 
         private static FileTransferId CurrentFile;
@@ -65,7 +66,7 @@ namespace GTANetwork
         {
             if (CurrentFile == null || CurrentFile.Id != id)
             {
-                UI.Notify($"END Channel mismatch! We have {CurrentFile?.Id} and supplied was {id}");
+                Util.SafeNotify($"END Channel mismatch! We have {CurrentFile?.Id} and supplied was {id}");
                 return;
             }
             
@@ -74,7 +75,7 @@ namespace GTANetwork
                 var obj = Main.DeserializeBinary<ServerMap>(CurrentFile.Data.ToArray()) as ServerMap;
                 if (obj == null)
                 {
-                    UI.Notify("ERROR DOWNLOADING MAP: NULL");
+                    Util.SafeNotify("ERROR DOWNLOADING MAP: NULL");
                 }
                 else
                 {
@@ -86,7 +87,7 @@ namespace GTANetwork
                 var obj = Main.DeserializeBinary<ScriptCollection>(CurrentFile.Data.ToArray()) as ScriptCollection;
                 if (obj == null)
                 {
-                    UI.Notify("ERROR DOWNLOADING SCRIPTS: NULL");
+                    Util.SafeNotify("ERROR DOWNLOADING SCRIPTS: NULL");
                 }
                 else
                 {

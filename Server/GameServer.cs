@@ -30,7 +30,7 @@ namespace GTANetworkServer
         public ScriptVersion RemoteScriptVersion { get; set; }
         public int GameVersion { get; set; }
 
-        public int CurrentVehicle { get; set; }
+        public NetHandle CurrentVehicle { get; set; }
         public Vector3 Position { get; internal set; }
         public Vector3 Rotation { get; internal set; }
         public int Health { get; internal set; }
@@ -38,12 +38,12 @@ namespace GTANetworkServer
 
         public DateTime LastUpdate { get; internal set; }
 
-        public int CharacterHandle { get; set; }
+        public NetHandle CharacterHandle { get; set; }
 
         public Client(NetConnection nc)
         {
             NetConnection = nc;
-            CharacterHandle = Program.ServerInstance.NetEntityHandler.GenerateHandle();
+            CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GenerateHandle());
         }
     }
 
@@ -438,7 +438,6 @@ namespace GTANetworkServer
             Program.ServerInstance.SendToAll(packet, PacketType.UpdateMarkerProperties, true);
         }
         
-
         private void LogException(Exception ex, string resourceName)
         {
             Program.Output("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
@@ -556,7 +555,7 @@ namespace GTANetworkServer
                             if (client.GameVersion != connReq.GameVersion) client.GameVersion = connReq.GameVersion;
 
                             var respObj = new ConnectionResponse();
-                            respObj.CharacterHandle = client.CharacterHandle;
+                            respObj.CharacterHandle = client.CharacterHandle.Value;
                             respObj.AssignedChannel = GetChannelIdForConnection(client);
 
                             // TODO: Transfer map.
@@ -701,12 +700,12 @@ namespace GTANetworkServer
                                         data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                         data.Name = client.Name;
                                         data.Latency = client.Latency;
-                                        data.NetHandle = client.CharacterHandle;
+                                        data.NetHandle = client.CharacterHandle.Value;
 
                                         client.Health = data.PlayerHealth;
                                         client.Position = data.Position;
                                         client.IsInVehicle = true;
-                                        client.CurrentVehicle = data.VehicleHandle;
+                                        client.CurrentVehicle = new NetHandle(data.VehicleHandle);
                                         client.Rotation = data.Quaternion;
                                         client.LastUpdate = DateTime.Now;
 
@@ -741,12 +740,13 @@ namespace GTANetworkServer
                                         data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                         data.Name = client.Name;
                                         data.Latency = client.Latency;
-                                        data.NetHandle = client.CharacterHandle;
+                                        data.NetHandle = client.CharacterHandle.Value;
 
                                         client.Health = data.PlayerHealth;
                                         client.Position = data.Position;
                                         client.IsInVehicle = false;
                                         client.LastUpdate = DateTime.Now;
+                                        client.Rotation = data.Quaternion;
 
                                         client.Rotation = data.Quaternion;
 
@@ -802,7 +802,7 @@ namespace GTANetworkServer
                                 if (data != null)
                                 {
                                     SendToAll(data, PacketType.SyncEvent, true, client);
-                                    HandleSyncEvent(data);
+                                    HandleSyncEvent(client, data);
                                 }
 
                             }
@@ -893,6 +893,7 @@ namespace GTANetworkServer
                                     mapObj.Objects = new Dictionary<int, EntityProperties>();
                                     mapObj.Blips = new Dictionary<int, BlipProperties>();
                                     mapObj.Markers = new Dictionary<int, MarkerProperties>();
+                                    mapObj.Pickups = new Dictionary<int, PickupProperties>();
                                     foreach (var pair in NetEntityHandler.ToDict())
                                     {
                                         if (pair.Value.EntityType == (byte) EntityType.Vehicle)
@@ -910,6 +911,11 @@ namespace GTANetworkServer
                                         else if (pair.Value.EntityType == (byte) EntityType.Marker)
                                         {
                                             mapObj.Markers.Add(pair.Key, (MarkerProperties) pair.Value);
+                                        }
+                                        else if (pair.Value.EntityType == (byte) EntityType.Pickup)
+                                        {
+                                            if (!((PickupProperties)pair.Value).PickedUp)
+                                                mapObj.Pickups.Add(pair.Key, (PickupProperties) pair.Value);
                                         }
                                     }
 
@@ -1100,9 +1106,22 @@ namespace GTANetworkServer
             {
                 en.InvokeUpdate();
             }));
+
+            lock (RunningResources)
+            {
+                for (int i = RunningResources.Count - 1; i >= 0; i--)
+                {
+                    if (RunningResources[i].Engines.Any(en => en.HasTerminated))
+                    {
+                        Program.Output("TERMINATING RESOURCE " + RunningResources[i].DirectoryName + " BECAUSE AN ENGINE HAS BEEN TERMINATED.");
+                        RunningResources.RemoveAt(i);
+                    }
+                }
+            }
+
         }
 
-        private void HandleSyncEvent(SyncEvent data)
+        private void HandleSyncEvent(Client sender, SyncEvent data)
         {
             var args = DecodeArgumentList(data.Arguments?.ToArray()).ToList();
 
@@ -1128,6 +1147,25 @@ namespace GTANetworkServer
                     {
                         if (NetEntityHandler.ToDict().ContainsKey((int)args[1]))
                             ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[1]]).Trailer = (int)args[2];
+                    }
+                    break;
+                }
+                case SyncEventType.TireBurst:
+                {
+                    var veh = (int)args[0];
+                    var tireId = (int)args[1];
+                    var isBursted = (bool)args[2];
+                    if (NetEntityHandler.ToDict().ContainsKey(veh))
+                        ((VehicleProperties)NetEntityHandler.ToDict()[veh]).Tires[tireId] = isBursted;
+                    break;
+                }
+                case SyncEventType.PickupPickedUp:
+                {
+                    var pickupId = (int) args[0];
+                    if (NetEntityHandler.ToDict().ContainsKey(pickupId))
+                    {
+                        ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).PickedUp = true;
+                        RunningResources.ForEach(res => res.Engines.ForEach(en => en.InvokePlayerPickup(sender, new NetHandle(pickupId))));
                     }
                     break;
                 }
@@ -1165,6 +1203,10 @@ namespace GTANetworkServer
                 {
                     var tmp = (Vector3Argument)arg;
                     list.Add(new Vector3(tmp.X, tmp.Y, tmp.Z));
+                }
+                else if (arg == null)
+                {
+                    list.Add(null);
                 }
             }
 
@@ -1302,6 +1344,14 @@ namespace GTANetworkServer
                 else if (o is EntityPointerArgument)
                 {
                     list.Add((EntityPointerArgument) o);
+                }
+                else if (o is NetHandle)
+                {
+                    list.Add(new EntityArgument(((NetHandle) o).Value));
+                }
+                else
+                {
+                    list.Add(null);
                 }
             }
 
@@ -1494,9 +1544,7 @@ namespace GTANetworkServer
 
             DateTime start = DateTime.Now;
             while (output == null && DateTime.Now.Subtract(start).Milliseconds < 10000)
-            {
-                Thread.Sleep(10);
-            }
+            {}
             
             return output;
         }

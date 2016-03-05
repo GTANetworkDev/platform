@@ -52,6 +52,7 @@ namespace GTANetworkShared
         Prop = 2,
         Blip = 3,
         Marker = 4,
+        Pickup = 5,
     }
 
     public enum FileType
@@ -67,6 +68,9 @@ namespace GTANetworkShared
         DoorStateChange = 1,
         BooleanLights = 2,
         TrailerDeTach = 3,
+        TireBurst = 4,
+        RadioChange = 5,
+        PickupPickedUp = 6,
     }
 
     public enum Lights
@@ -75,10 +79,65 @@ namespace GTANetworkShared
         Highbeams = 1,
     }
 
+    public struct LocalHandle
+    {
+        public LocalHandle(int handle)
+        {
+            Value = handle;
+        }
+
+        public int Value { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return (obj as NetHandle?)?.Value == Value;
+        }
+
+        public static bool operator ==(LocalHandle left, LocalHandle right)
+        {
+            return left.Value == right.Value;
+        }
+
+        public static bool operator !=(LocalHandle left, LocalHandle right)
+        {
+            return left.Value != right.Value;
+        }
+
+        public bool IsNull { get { return Value == 0; } }
+    }
+
+    public struct NetHandle
+    {
+        public NetHandle(int handle)
+        {
+            Value = handle;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return (obj as NetHandle?)?.Value == Value;
+        }
+
+        public static bool operator == (NetHandle left, NetHandle right)
+        {
+            return left.Value == right.Value;
+        }
+
+        public static bool operator !=(NetHandle left, NetHandle right)
+        {
+            return left.Value != right.Value;
+        }
+
+        public bool IsNull { get { return Value == 0; } }
+
+        public int Value { get; set; }
+    }
+
     [ProtoContract]
     [ProtoInclude(5, typeof(VehicleProperties))]
     [ProtoInclude(6, typeof(BlipProperties))]
     [ProtoInclude(7, typeof(MarkerProperties))]
+    [ProtoInclude(8, typeof(PickupProperties))]
     public class EntityProperties
     {
         [ProtoMember(1)]
@@ -102,6 +161,7 @@ namespace GTANetworkShared
             Mods = new int[50];
             Health = 1000;
             Doors = new bool[7];
+            Tires = new bool[8];
         }
 
         [ProtoMember(1)]
@@ -127,6 +187,9 @@ namespace GTANetworkShared
 
         [ProtoMember(8)]
         public int Trailer { get; set; }
+
+        [ProtoMember(9)]
+        public bool[] Tires { get; set; }
     }
 
     [ProtoContract]
@@ -181,6 +244,16 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
+    public class PickupProperties : EntityProperties
+    {
+        [ProtoMember(1)]
+        public int Amount { get; set; }
+
+        [ProtoMember(2)]
+        public bool PickedUp { get; set; }
+    }
+
+    [ProtoContract]
     public class ConnectionResponse
     {
         [ProtoMember(1)]
@@ -204,6 +277,9 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public Dictionary<int, MarkerProperties> Markers { get; set; }
+
+        [ProtoMember(5)]
+        public Dictionary<int, PickupProperties> Pickups { get; set; }
     }
 
     [ProtoContract]

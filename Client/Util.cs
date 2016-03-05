@@ -43,6 +43,18 @@ namespace GTANetwork
             };
         }
 
+        public static void SafeNotify(string msg)
+        {
+            if (!string.IsNullOrWhiteSpace(msg))
+            {
+                try
+                {
+                    UI.Notify(msg);
+                }
+                catch (Exception) { }
+            }
+        }
+
         public static string GetStationName(int id)
         {
             return Function.Call<string>(Hash.GET_RADIO_STATION_NAME, id);
@@ -249,7 +261,7 @@ namespace GTANetwork
                 using (var stream = File.OpenWrite(path))
                 {
                     ser.Serialize(stream, settings = new PlayerSettings());
-                    UI.Notify("No settings! " + path);
+                    Util.SafeNotify("No settings! " + path);
                 }
             }
 
