@@ -39,7 +39,6 @@ namespace PlayGTANetwork
 
                 Direct3DVersion direct3dVersion = Direct3DVersion.Direct3D11;
 
-                var gameSettings = GameSettings.LoadGameSettings();
                 /*
                 switch (gameSettings.Graphics.DX_Version.Value)
                 {

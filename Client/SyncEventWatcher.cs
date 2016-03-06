@@ -53,6 +53,7 @@ namespace GTANetwork
             foreach (var pickup in Main.NetEntityHandler.Pickups)
             {
                 if (!Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup)) continue;
+                if (!player.IsInRangeOf(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup), 20f)) continue;
                 if (Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup) == -1)
                 {
                     Function.Call(Hash.REMOVE_PICKUP, pickup);

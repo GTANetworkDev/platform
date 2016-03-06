@@ -1292,6 +1292,7 @@ namespace GTANetwork
         }
 
         private int _debugPickup;
+        private int _debugmask;
 
         public void OnTick(object sender, EventArgs e)
         {
@@ -1387,7 +1388,12 @@ namespace GTANetwork
             {
                 var p = Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 10f, 0f));
                 //_debugPickup = Function.Call<int>(Hash.CREATE_PICKUP, 1295434569, p.X, p.Y, p.Z, 0, 1, 1, 0);
-                _debugPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, 1295434569, p.X, p.Y, p.Z, 0, 0, 0, 0, 1, 0, false, 0);
+                int mask = 0;
+                mask |= 1 << _debugmask;
+                //mask |= 1 << 4;
+                //mask |= 1 << 8;
+                //mask |= 1 << 1;
+                _debugPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, 1295434569, p.X, p.Y, p.Z, 0, 0, 0, mask, 1, 2, true, 0);
             }
 
             if (_debugPickup != 0)
@@ -1403,9 +1409,13 @@ namespace GTANetwork
                 Function.Call(Hash.REMOVE_PICKUP, _debugPickup);
             }
 
+            if (Game.IsControlJustPressed(0, Control.VehicleDuck))
+            {
+                _debugmask++;
+                UI.Notify("new bit pos: " + _debugmask);
+            }
+
             */
-
-
 
             DEBUG_STEP = 3;
 #if DEBUG

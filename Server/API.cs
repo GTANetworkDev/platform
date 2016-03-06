@@ -215,7 +215,7 @@ namespace GTANetworkServer
 
         public List<Client> getAllPlayers()
         {
-            return Program.ServerInstance.Clients;
+            return new List<Client>(Program.ServerInstance.Clients);
         }
 
         public void setEntityPositionFrozen(Client player, NetHandle entity, bool frozen)

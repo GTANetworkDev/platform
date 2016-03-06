@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTANetworkShared", "MultiTh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlayGTANetwork", "PlayGTANetwork\PlayGTANetwork.csproj", "{46B260B6-37B5-4089-AD88-90BE463804E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTANSubprocess", "GTANSubprocess\GTANSubprocess.csproj", "{5602DD20-B327-487C-81AC-D2451FDC3B18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{46B260B6-37B5-4089-AD88-90BE463804E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46B260B6-37B5-4089-AD88-90BE463804E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46B260B6-37B5-4089-AD88-90BE463804E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5602DD20-B327-487C-81AC-D2451FDC3B18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5602DD20-B327-487C-81AC-D2451FDC3B18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5602DD20-B327-487C-81AC-D2451FDC3B18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5602DD20-B327-487C-81AC-D2451FDC3B18}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

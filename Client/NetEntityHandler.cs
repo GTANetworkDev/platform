@@ -238,7 +238,7 @@ namespace GTANetwork
 
         public int CreatePickup(Vector3 pos, Vector3 rot, int pickupHash, int amount, int netHandle)
         {
-            var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, pickupHash, pos.X, pos.Y, pos.Z, rot.X, rot.Y, rot.Z, 0, amount, 0, false, 0);
+            var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, pickupHash, pos.X, pos.Y, pos.Z, rot.X, rot.Y, rot.Z, 512, amount, 0, true, 0);
             lock (HandleMap) HandleMap.Add(netHandle, newPickup);
             lock (Pickups) Pickups.Add(newPickup);
             var start = 0;
@@ -249,6 +249,7 @@ namespace GTANetwork
             }
 
             new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).FreezePosition = true;
+            new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).IsPersistent = true;
 
             return newPickup;
         }

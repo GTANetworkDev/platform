@@ -1227,6 +1227,7 @@ namespace GTANetworkServer
 
         public void SendToAll(object newData, PacketType packetType, bool important)
         {
+            lock (Clients)
             foreach (var client in Clients)
             {
                 var data = SerializeBinary(newData);
@@ -1242,6 +1243,7 @@ namespace GTANetworkServer
 
         public void SendToAll(object newData, PacketType packetType, bool important, Client exclude)
         {
+            lock (Clients)
             foreach (var client in Clients)
             {
                 if (client == exclude) continue;

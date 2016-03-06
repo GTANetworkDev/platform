@@ -9,8 +9,8 @@ namespace GTANetwork
     {
         public static Settings LoadGameSettings()
         {
-            var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
-                Environment.SpecialFolderOption.Create) + "Rockstar Games\\GTA V\\settings.xml";
+            var filePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments,
+                Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\settings.xml";
             if (!File.Exists(filePath)) return null;
 
             using (var stream = File.OpenRead(filePath))
@@ -24,7 +24,7 @@ namespace GTANetwork
         public static void SaveSettings(Settings sets)
         {
             var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
-                Environment.SpecialFolderOption.Create) + "Rockstar Games\\GTA V\\settings.xml";
+                Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\settings.xml";
             using (var stream = new FileStream(filePath, File.Exists(filePath) ? FileMode.Truncate : FileMode.CreateNew)
                 )
             {
