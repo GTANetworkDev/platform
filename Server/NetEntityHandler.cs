@@ -121,11 +121,14 @@ namespace GTANetworkServer
             ServerEntities.Remove(netId);
         }
 
-        public int GenerateHandle()
+        public int GeneratePedHandle()
         {
             var localHan = ++EntityCounter;
 
-            ServerEntities.Add(localHan, new EntityProperties());
+            ServerEntities.Add(localHan, new PedProperties()
+            {
+                EntityType = (byte) EntityType.Ped,
+            });
 
             return localHan;
         }

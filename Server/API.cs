@@ -164,12 +164,111 @@ namespace GTANetworkServer
                         new EntityArgument(entity.Value));
         }
 
+        public void setEntityTransparency(NetHandle entity, int newAlpha)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            {
+                Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Alpha = (byte) newAlpha;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x44A0870B7E92D7C0, new EntityArgument(entity.Value), newAlpha, false);
+            }
+        }
+
+        /// <summary>
+        /// WARN: Resets on reconnect.
+        /// </summary>
+        public void setCollisionBetweenEntities(NetHandle entity1, NetHandle entity2, bool collision)
+        {
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xA53ED5520C07654A, entity1, entity2, collision);
+        }
+
         public void setVehicleMod(NetHandle vehicle, int modType, int mod)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))
             {
                 ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods[modType] = mod;
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x6AF0636DDEDCB6DD, new EntityArgument(vehicle.Value), modType, mod, false);
+            }
+        }
+
+        public void removeVehicleMod(NetHandle vehicle, int modType)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods[modType] = -1;
+            }
+
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x92D619E420858204, vehicle, modType);
+        }
+
+        public void setPlayerSkin(Client player, int modelHash)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), modelHash);
+        }
+
+        public void setWeather(string weather)
+        {
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xED712CA327900C8A, weather);
+            Program.ServerInstance.Weather = weather;
+        }
+
+        public void setTime(int hours, int minutes)
+        {
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x47C3B5848C3E45D8, hours, minutes, 0);
+            Program.ServerInstance.TimeOfDay = new DateTime(2016, 1, 1, hours, minutes, 0);
+        }
+
+        public void freezePlayerTime(Client client, bool freeze)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(client, 0x4055E40BD2DBEC1D, freeze);
+        }
+
+        public void setVehiclePrimaryColor(NetHandle vehicle, int color)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor =
+                    color;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x4F1D4BE3A7F24601, vehicle, color, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor);
+            }
+        }
+
+        public void setVehicleSecondaryColor(NetHandle vehicle, int color)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor =
+                    color;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x4F1D4BE3A7F24601, vehicle, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor, color);
+            }
+        }
+
+        public int getVehiclePrimaryColor(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor;
+            }
+            return 0;
+        }
+
+        public int getVehicleSecondaryColor(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor;
+            }
+            return 0;
+        }
+
+
+
+        public void setPlayerProp(Client player, int slot, int drawable, int texture)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
+            {
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props[slot] = (ushort)drawable;
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures[slot] = (ushort)texture;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x262B14F48D29DE80, new EntityArgument(player.CharacterHandle.Value), slot, texture, 2);
             }
         }
 
@@ -300,17 +399,23 @@ namespace GTANetworkServer
             player.NetConnection.Disconnect("Kicked: " + reason);
         }
 
+        public void kickPlayer(Client player)
+        {
+            player.NetConnection.Disconnect("You have been kicked.");
+        }
+
         public void setEntityPosition(NetHandle netHandle, Vector3 newPosition)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0x06843DA7060A026B, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
         }
 
-        public Vector3 getPlayerPosition(Client player)
+        public Vector3 getEntityPosition(NetHandle entity)
         {
-            /*Program.ServerInstance.GetNativeCallFromPlayer(player,
-                salt,
-                0x3FEF770D40960D5A, new Vector3Argument(), callback, new LocalPlayerArgument(), 0);*/
-            return player.Position;
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            {
+                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Position;
+            }
+            return null;
         }
 
         public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
@@ -318,12 +423,160 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), seat);
         }
 
+        public void warpPlayerOutOfVehicle(Client player, NetHandle vehicle)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xD3DBCE61A490BE02, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), 16);
+        }
+
+        public bool doesEntityExist(NetHandle entity)
+        {
+            return Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value);
+        }
+
+        public void setVehicleHealth(NetHandle vehicle, float health)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))
+            {
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Health = health;
+            }
+
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x45F6D8EEF34ABEF1, vehicle, health);
+        }
+
+        public float getVehicleHealth(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Health;
+            }
+            return 0f;
+        }
+
+        public void repairVehicle(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Health = 1000f;
+            }
+
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x115722B1B9C14C1C, vehicle);
+        }
+
         public  void setPlayerHealth(Client player, int health)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
         }
 
-        public  void sendNotificationToPlayer(Client player, string message, bool flashing = false)
+        public int getPlayerHealth(Client player)
+        {
+            return player.Health;
+        }
+
+        public void setPlayerArmor(Client player, int armor)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xCEA04D83135264CC, new LocalPlayerArgument(), armor);
+        }
+
+        public int getPlayerArmor(Client player)
+        {
+            return player.Armor;
+        }
+
+        public void setBlipColor(NetHandle blip, int color)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties) Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color = color;
+            }
+
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x03D7FB09E75D6B7E, blip, color);
+        }
+
+        public int getBlipColor(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color;
+            }
+            return 0;
+        }
+
+        public void setBlipShortRange(NetHandle blip, bool range)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties) Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).IsShortRange = range;
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xBE8BE4FE60E27B72, blip, range);
+        }
+
+        public bool getBlipShortRange(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).IsShortRange;
+            }
+            return false;
+        }
+
+        public void setBlipPosition(NetHandle blip, Vector3 newPos)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Position = newPos;
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xAE2AF67E9D9AF65D, blip, newPos.X, newPos.Y, newPos.Z);
+        }
+
+        public Vector3 getBlipPosition(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Position;
+            }
+
+            return null;
+        }
+
+        public void setBlipSprite(NetHandle blip, int sprite)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Sprite = sprite;
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xDF735600A4696DAF, blip, sprite);
+        }
+
+        public int getBlipSprite(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Sprite;
+            }
+
+            return 0;
+        }
+
+        public void setBlipScale(NetHandle blip, float scale)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Scale = scale;
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xD38744167B2FA257, blip, scale);
+        }
+
+        public float getBlipScale(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Scale;
+            }
+
+            return 0;
+        }
+
+        public void sendNotificationToPlayer(Client player, string message, bool flashing = false)
         {
             for (int i = 0; i < message.Length; i += 99)
             {

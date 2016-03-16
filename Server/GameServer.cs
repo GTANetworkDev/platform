@@ -34,6 +34,7 @@ namespace GTANetworkServer
         public Vector3 Position { get; internal set; }
         public Vector3 Rotation { get; internal set; }
         public int Health { get; internal set; }
+        public int Armor { get; internal set; }
         public bool IsInVehicle { get; internal set; }
 
         public DateTime LastUpdate { get; internal set; }
@@ -43,7 +44,7 @@ namespace GTANetworkServer
         public Client(NetConnection nc)
         {
             NetConnection = nc;
-            CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GenerateHandle());
+            CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle());
         }
     }
 
@@ -125,6 +126,9 @@ namespace GTANetworkServer
 
         public bool IsClosing { get; set; }
         public bool ReadyToClose { get; set; }
+
+        public string Weather { get; set; } = "CLEAR";
+        public DateTime TimeOfDay { get; set; } = DateTime.Now;
 
         public List<Resource> RunningResources;
 
@@ -703,6 +707,7 @@ namespace GTANetworkServer
                                         data.NetHandle = client.CharacterHandle.Value;
 
                                         client.Health = data.PlayerHealth;
+                                        client.Armor = data.PedArmor;
                                         client.Position = data.Position;
                                         client.IsInVehicle = true;
                                         client.CurrentVehicle = new NetHandle(data.VehicleHandle);
@@ -743,6 +748,7 @@ namespace GTANetworkServer
                                         data.NetHandle = client.CharacterHandle.Value;
 
                                         client.Health = data.PlayerHealth;
+                                        client.Armor = data.PedArmor;
                                         client.Position = data.Position;
                                         client.IsInVehicle = false;
                                         client.LastUpdate = DateTime.Now;
@@ -820,7 +826,7 @@ namespace GTANetworkServer
                                                 en.Engines.ForEach(fs =>
                                                 {
                                                     fs.InvokeClientEvent(client, data.EventName,
-                                                        DecodeArgumentList(data.Arguments.ToArray()).ToArray());
+                                                        DecodeArgumentListPure(data.Arguments.ToArray()).ToArray());
                                                 }
                                                     ));
                                 }
@@ -889,11 +895,9 @@ namespace GTANetworkServer
                                 if (!state)
                                 {
                                     var mapObj = new ServerMap();
-                                    mapObj.Vehicles = new Dictionary<int, VehicleProperties>();
-                                    mapObj.Objects = new Dictionary<int, EntityProperties>();
-                                    mapObj.Blips = new Dictionary<int, BlipProperties>();
-                                    mapObj.Markers = new Dictionary<int, MarkerProperties>();
-                                    mapObj.Pickups = new Dictionary<int, PickupProperties>();
+                                    mapObj.Hours = (byte)TimeOfDay.Hour;
+                                    mapObj.Minutes = (byte)TimeOfDay.Minute;
+                                    mapObj.Weather = Weather;
                                     foreach (var pair in NetEntityHandler.ToDict())
                                     {
                                         if (pair.Value.EntityType == (byte) EntityType.Vehicle)
@@ -916,6 +920,10 @@ namespace GTANetworkServer
                                         {
                                             if (!((PickupProperties)pair.Value).PickedUp)
                                                 mapObj.Pickups.Add(pair.Key, (PickupProperties) pair.Value);
+                                        }
+                                        else if (pair.Value.EntityType == (byte) EntityType.Ped)
+                                        {
+                                            mapObj.Players.Add(pair.Key, (PedProperties) pair.Value);
                                         }
                                     }
 
@@ -1213,6 +1221,46 @@ namespace GTANetworkServer
             return list;
         }
 
+        public IEnumerable<object> DecodeArgumentListPure(params NativeArgument[] args)
+        {
+            var list = new List<object>();
+
+            foreach (var arg in args)
+            {
+                if (arg is IntArgument)
+                {
+                    list.Add(((IntArgument)arg).Data);
+                }
+                else if (arg is UIntArgument)
+                {
+                    list.Add(((UIntArgument)arg).Data);
+                }
+                else if (arg is StringArgument)
+                {
+                    list.Add(((StringArgument)arg).Data);
+                }
+                else if (arg is FloatArgument)
+                {
+                    list.Add(((FloatArgument)arg).Data);
+                }
+                else if (arg is BooleanArgument)
+                {
+                    list.Add(((BooleanArgument)arg).Data);
+                }
+                else if (arg is Vector3Argument)
+                {
+                    var tmp = (Vector3Argument)arg;
+                    list.Add(new GTANetworkShared.Vector3(tmp.X, tmp.Y, tmp.Z));
+                }
+                else if (args == null)
+                {
+                    list.Add(null);
+                }
+            }
+
+            return list;
+        }
+
         public void SendToClient(Client c, object newData, PacketType packetType, bool important)
         {
             var data = SerializeBinary(newData);
@@ -1359,7 +1407,7 @@ namespace GTANetworkServer
 
             return list;
         }
-
+        
         public void SendNativeCallToPlayer(Client player, ulong hash, params object[] arguments)
         {
             var obj = new NativeData();

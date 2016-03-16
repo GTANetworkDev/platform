@@ -371,6 +371,8 @@ namespace GTANetwork
                     DownloadManager.Log("SETTINGS FIRING PATTERN " + Name);
                     Character.FiringPattern = FiringPattern.FullAuto;
 
+                    Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character);
+
                     //Character.FreezePosition = true;
                     DownloadManager.Log("SETTING CLOTHES FOR " + Name);
                     if (PedProps != null)

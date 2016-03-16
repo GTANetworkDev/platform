@@ -148,11 +148,8 @@ namespace GTANetwork
             ThreadJumper.Add((() =>
             {
                 var scriptEngine = new JScriptEngine();
-                var collection = new HostTypeCollection(Assembly.LoadFrom("scripthookvdotnet.dll"),
-                    Assembly.LoadFrom("scripts\\NativeUI.dll"));
-                scriptEngine.AddHostObject("API", collection);
                 scriptEngine.AddHostObject("host", new HostFunctions());
-                scriptEngine.AddHostObject("script", new ScriptContext());
+                scriptEngine.AddHostObject("API", new ScriptContext());
                 scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
                 scriptEngine.AddHostType("List", typeof(IList));
                 scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
@@ -258,6 +255,11 @@ namespace GTANetwork
             Float = 7
         }
 
+        public LocalHandle NetToLocal(NetHandle handle)
+        {
+            return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
+        }
+
         public void callNative(string hash, params object[] args)
         {
             Hash ourHash;
@@ -318,8 +320,7 @@ namespace GTANetwork
                 new Blip(blip.Value).Remove();
             }
         }
-
-
+        
         public void setBlipScale(LocalHandle blip, double scale)
         {
             setBlipScale(blip, (float) scale);

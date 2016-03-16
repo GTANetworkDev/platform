@@ -44,13 +44,13 @@ namespace GTANetwork.GUI
                 {
                     Main.MainMenu.HideTabs = true;
                     var newPos = World3DToMap2D(Game.Player.Character.Position);
-                    Position = new PointF(newPos.Width / Zoom, newPos.Height / Zoom);
+                    Position = new PointF(newPos.Width/Zoom, newPos.Height/Zoom);
                 }
                 else if (_focused && !value)
                 {
                     Main.MainMenu.HideTabs = false;
                 }
-                _focused = value; 
+                _focused = value;
             }
         }
 

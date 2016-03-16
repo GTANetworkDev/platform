@@ -53,6 +53,7 @@ namespace GTANetworkShared
         Blip = 3,
         Marker = 4,
         Pickup = 5,
+        Ped = 6,
     }
 
     public enum FileType
@@ -134,12 +135,18 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
-    [ProtoInclude(5, typeof(VehicleProperties))]
-    [ProtoInclude(6, typeof(BlipProperties))]
-    [ProtoInclude(7, typeof(MarkerProperties))]
-    [ProtoInclude(8, typeof(PickupProperties))]
+    [ProtoInclude(6, typeof(VehicleProperties))]
+    [ProtoInclude(7, typeof(BlipProperties))]
+    [ProtoInclude(8, typeof(MarkerProperties))]
+    [ProtoInclude(9, typeof(PickupProperties))]
+    [ProtoInclude(10, typeof(PedProperties))]
     public class EntityProperties
     {
+        public EntityProperties()
+        {
+            Alpha = 255;
+        }
+
         [ProtoMember(1)]
         public Vector3 Position { get; set; }
 
@@ -151,6 +158,9 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public byte EntityType { get; set; }
+
+        [ProtoMember(5)]
+        public byte Alpha { get; set; }
     }
 
     [ProtoContract]
@@ -159,6 +169,12 @@ namespace GTANetworkShared
         public VehicleProperties()
         {
             Mods = new int[50];
+
+            for (int i = 0; i < Mods.Length; i++)
+            {
+                Mods[i] = -1;
+            }
+
             Health = 1000;
             Doors = new bool[7];
             Tires = new bool[8];
@@ -199,7 +215,6 @@ namespace GTANetworkShared
         {
             Sprite = 0;
             Scale = 1f;
-            Alpha = 255;
         }
 
         [ProtoMember(1)]
@@ -213,9 +228,6 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public bool IsShortRange { get; set; }
-
-        [ProtoMember(5)]
-        public int Alpha { get; set; }
     }
 
     [ProtoContract]
@@ -235,10 +247,7 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public int Blue { get; set; }
-
-        [ProtoMember(6)]
-        public int Alpha { get; set; }
-
+        
         [ProtoMember(7)]
         public Vector3 Scale { get; set; }
     }
@@ -254,6 +263,22 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
+    public class PedProperties : EntityProperties
+    {
+        public PedProperties()
+        {
+            Props = new ushort[15];
+            Textures = new ushort[15];
+        }
+
+        [ProtoMember(1)]
+        public ushort[] Props { get; set; }
+
+        [ProtoMember(2)]
+        public ushort[] Textures { get; set; }
+    }
+
+    [ProtoContract]
     public class ConnectionResponse
     {
         [ProtoMember(1)]
@@ -266,6 +291,16 @@ namespace GTANetworkShared
     [ProtoContract]
     public class ServerMap
     {
+        public ServerMap()
+        {
+            Objects = new Dictionary<int, EntityProperties>();
+            Vehicles = new Dictionary<int, VehicleProperties>();
+            Blips = new Dictionary<int, BlipProperties>();
+            Markers = new Dictionary<int, MarkerProperties>();
+            Pickups = new Dictionary<int, PickupProperties>();
+            Players = new Dictionary<int, PedProperties>();
+        }
+
         [ProtoMember(1)]
         public Dictionary<int, EntityProperties> Objects { get; set; }
 
@@ -280,6 +315,18 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public Dictionary<int, PickupProperties> Pickups { get; set; }
+
+        [ProtoMember(6)]
+        public Dictionary<int, PedProperties> Players { get; set; }
+
+        [ProtoMember(7)]
+        public byte Hours { get; set; }
+
+        [ProtoMember(8)]
+        public byte Minutes { get; set; }
+
+        [ProtoMember(9)]
+        public string Weather { get; set; }
     }
 
     [ProtoContract]

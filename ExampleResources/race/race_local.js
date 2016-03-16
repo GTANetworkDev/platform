@@ -34,16 +34,15 @@ script.onServerEventTrigger.connect(function (eventName, args) {
     }
 
     if (eventName === "setNextCheckpoint") {
-        var newPos = new Vector3(args[0], args[1], args[2]);
-        var isFinishLine = args[3];
+        var newPos = args[0];
+        var isFinishLine = args[1];
         var newDir;
-        var playSound = args[4];
+        var playSound = args[2];
         var secondNextBlip;
 
-
         if (!isFinishLine) {
-            newDir = new Vector3(args[5], args[6], args[7]);
-            secondNextBlip = new Vector3(args[8], args[9], args[10]);
+            newDir = args[3];
+            secondNextBlip = args[4];
         }
 
         if (playSound) {

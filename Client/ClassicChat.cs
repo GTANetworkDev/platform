@@ -94,7 +94,7 @@ namespace GTANetwork
             var converted = new PointF((safezone.X/res.Width) * UI.WIDTH, (safezone.Y/res.Height) * UI.HEIGHT);
 
             if (Main.PlayerSettings.ScaleChatWithSafezone)
-                _mainScaleform.Render2DScreenSpace(new PointF(-788f + converted.X, -505f + converted.Y),
+                _mainScaleform.Render2DScreenSpace(new PointF((-788f) + converted.X, (-505f) + converted.Y),
                     new PointF(UI.WIDTH, UI.HEIGHT));
             else
                 _mainScaleform.Render2DScreenSpace(

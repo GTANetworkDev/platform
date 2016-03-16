@@ -60,7 +60,7 @@ namespace GTANetwork
                 Direction = dir.ToLVector(),
                 Rotation = rot.ToLVector(),
                 Scale = scale.ToLVector(),
-                Alpha = alpha,
+                Alpha = (byte)alpha,
                 Red = r,
                 Green = g,
                 Blue = b,
@@ -231,7 +231,7 @@ namespace GTANetwork
                     Red = r,
                     Green = g,
                     Blue = b,
-                    Alpha = a,
+                    Alpha = (byte)a,
                 });
             }
         }
