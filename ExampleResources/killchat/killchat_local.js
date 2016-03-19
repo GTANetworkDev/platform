@@ -85,33 +85,33 @@ weaponDicts["0"] = "commonmenutu";
 var mainArr = new Array();
 var show = true;
 
-script.onUpdate.connect(function (sender, args) {
+API.onUpdate.connect(function (sender, args) {
     if (show) {
-        var res = API.NativeUI.UIMenu.GetScreenResolutionMantainRatio();
+        var res = API.getScreenResolutionMantainRatio();
         for (var i = 0; i < mainArr.length; i++) {
-            script.drawText(mainArr[i].k, host.toInt32(res.Width - 275), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 2, false, true, 0);        
-            script.drawText(mainArr[i].v, host.toInt32(res.Width - 200), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 0, false, true, 0);
+            API.drawText(mainArr[i].k, host.toInt32(res.Width - 275), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 2, false, true, 0);        
+            API.drawText(mainArr[i].v, host.toInt32(res.Width - 200), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 0, false, true, 0);
             
             var dct = weaponDicts[mainArr[i].w];
             var nam = weaponNames[mainArr[i].w];
             
             if (dct != null && nam != null) {
-                script.drawGameTexture(dct, nam, host.toInt32(res.Width - 270), 290 + 70 * i, 70, 70, 0, 255, 255, 255, 255);
+                API.drawGameTexture(dct, nam, host.toInt32(res.Width - 270), 290 + 70 * i, 70, 70, 0, 255, 255, 255, 255);
             } else {
-                script.drawGameTexture("commonmenutu", "deathmatch", host.toInt32(res.Width - 270), 290 + 70 * i, 70, 70, 0, 255, 255, 255, 255);
+                API.drawGameTexture("commonmenutu", "deathmatch", host.toInt32(res.Width - 270), 290 + 70 * i, 70, 70, 0, 255, 255, 255, 255);
             }
             
         }
     }
 });
 
-script.onChatCommand.connect(function (cmd){
+API.onChatCommand.connect(function (cmd){
     if (cmd == "/togglekillchat") {
         show = !show;
     }
 });
 
-script.onServerEventTrigger.connect(function (evName, args) {
+API.onServerEventTrigger.connect(function (evName, args) {
     if (evName == "addKillToKillchat") {        
         var victim = args[0];
         var killer = args[1];

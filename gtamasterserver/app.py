@@ -24,12 +24,14 @@ def index():
 
 
 def checkThread():
-	print 'cleaning list...'
+	print 'cleaning list...'    
 	for server in dict(servers):
-		date = servers[server]
-		if (datetime.now() - date).total_seconds() > 10*60:
-			del servers[server]
-
+		try:
+			date = servers[server]
+			if (datetime.now() - date).total_seconds() > 10*60:
+				del servers[server]
+		except:
+        	pass
 	sleep(10*60)
 	checkThread()
 

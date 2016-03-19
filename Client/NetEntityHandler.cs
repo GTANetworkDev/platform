@@ -81,6 +81,7 @@ namespace GTANetwork
             {
                 if (HandleMap.ContainsKey(netId))
                 {
+                    if (HandleMap[netId] == -2) return Game.Player.Character;
                     return new Prop(HandleMap[netId]);
                 }
             }

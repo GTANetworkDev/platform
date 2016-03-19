@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using GTANetworkShared;
 using Lidgren.Network;
 
@@ -151,6 +152,17 @@ namespace GTANetworkServer
             Program.ServerInstance.StopResource(name);
         }
 
+        public void playSoundFrontEnd(Client target, string audioLib, string audioName)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(target, 0x2F844A8B08D76685, audioLib, true);
+            Program.ServerInstance.SendNativeCallToPlayer(target, 0x67C540AA08E4A6F5, -1, audioName, audioLib);
+        }
+
+        public void sleep(int ms)
+        {
+            Thread.Sleep(ms);
+        }
+
         public void consoleOutput(string text)
         {
             Program.Output(text);
@@ -209,6 +221,11 @@ namespace GTANetworkServer
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0xED712CA327900C8A, weather);
             Program.ServerInstance.Weather = weather;
+        }
+
+        public void setPlayerTeam(Client player, int team)
+        {
+            Program.ServerInstance.ChangePlayerTeam(player, team);
         }
 
         public void setTime(int hours, int minutes)
@@ -651,6 +668,12 @@ namespace GTANetworkServer
         public NetHandle createPickup(int pickupHash, Vector3 pos, Vector3 rot, int amount)
         {
             return new NetHandle(Program.ServerInstance.NetEntityHandler.CreatePickup(pickupHash, pos, rot, amount));
+        }
+
+        public NetHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha,
+            int r, int g, int b)
+        {
+            return new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b));
         }
 
         public void deleteEntity(NetHandle netHandle)

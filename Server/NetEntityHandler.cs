@@ -109,7 +109,36 @@ namespace GTANetworkServer
 
             return localEntityHash;
         }
-        
+
+        public int CreateMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b)
+        {
+            int localEntityHash = ++EntityCounter;
+            
+            var obj = new MarkerProperties()
+            {
+                MarkerType = markerType,
+                Position = pos,
+                Direction = dir,
+                Rotation = rot,
+                Scale = scale,
+                Alpha = (byte) alpha,
+                Red = r,
+                Green = g,
+                Blue = b,
+                EntityType = (byte) EntityType.Marker,
+            };
+            ServerEntities.Add(localEntityHash, obj);
+
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.Marker;
+            packet.Properties = obj;
+            packet.NetHandle = localEntityHash;
+
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true);
+
+            return localEntityHash;
+        }
+
         public void DeleteEntity(int netId)
         {
             if (!ServerEntities.ContainsKey(netId)) return;

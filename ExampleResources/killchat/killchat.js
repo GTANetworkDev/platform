@@ -1,6 +1,6 @@
 API.onPlayerDeath.connect(function (player, reason, weapon) {
     var killer = "";
-    
+    API.consoleOutput("killed: " + player.Name + " reason: " + reason + " weapon: " + weapon);
     if (reason == 0)
     {        
     }

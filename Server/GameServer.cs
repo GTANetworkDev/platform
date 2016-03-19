@@ -1180,7 +1180,6 @@ namespace GTANetworkServer
             }
         }
 
-
         public IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {
             var list = new List<object>();
@@ -1625,6 +1624,18 @@ namespace GTANetworkServer
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
-        // SCRIPTING
+        public void ChangePlayerTeam(Client target, int newTeam)
+        {
+            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
+            {
+                ((PedProperties) NetEntityHandler.ToDict()[target.CharacterHandle.Value]).Team = newTeam;
+            }
+
+            var obj = new SyncEvent();
+            obj.EventType = (byte) ServerEventType.PlayerTeamChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newTeam);
+
+            SendToAll(obj, PacketType.ServerEvent, true);
+        }
     }
 }

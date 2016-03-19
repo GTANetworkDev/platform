@@ -1,3 +1,3 @@
 
-script.onUpdate.connect(function (sender, args) {    
+API.onUpdate.connect(function (sender, args) {    
 });

@@ -52,6 +52,7 @@ namespace GTANetwork
         public static bool LerpRotaion = true;
 
         private static int _channel;
+        public static int LocalTeam = -1;
 
         private readonly Queue<Action> _threadJumping;
         private string _password;
@@ -1007,9 +1008,23 @@ namespace GTANetwork
                             Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props[i], pair.Value.Textures[i], 2);
                         }
                         ourPed.Alpha = pair.Value.Alpha;
+
+                        var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle);
+                        if (ourSyncPed.Value != null)
+                        {
+                            ourSyncPed.Value.Team = pair.Value.Team;
+                            ourSyncPed.Value.BlipSprite = pair.Value.BlipSprite;
+                            ourSyncPed.Value.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
+                                                                            pair.Value.Team != -1)
+                                ? ourSyncPed.Value.FriendRelGroup
+                                : ourSyncPed.Value.RelGroup;
+                        }
                     }
                 }
             }
+
+            World.CurrentDayTime = new TimeSpan(map.Hours, map.Minutes, 00);
+            Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, map.Weather);
         }
 
         public static void StartClientsideScripts(ScriptCollection scripts)
@@ -1481,9 +1496,14 @@ namespace GTANetwork
                 new Ped(_lastModel).Delete();
                 _tmpCar.Delete();
             }
-            */
-            
 
+            if (Game.IsControlJustPressed(0, Control.LookBehind))
+            {
+                var mod = new Model(PedHash.Zombie01);
+                mod.Request(10000);
+                Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, mod.Hash);
+            }
+            */
 #endif
             DEBUG_STEP = 5;
             ProcessMessages();
@@ -1568,7 +1588,7 @@ namespace GTANetwork
                 var killerEnt = NetEntityHandler.EntityToNet(killer);
                 msg.Write(killerEnt);
                 msg.Write(weapon);
-
+                /*
                 var playerMod = (PedHash)Game.Player.Character.Model.Hash;
                 if (playerMod != PedHash.Michael && playerMod != PedHash.Franklin && playerMod != PedHash.Trevor)
                 {
@@ -1582,10 +1602,13 @@ namespace GTANetwork
                 {
                     _lastModel = 0;
                 }
-
+                */
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+
+                NativeUI.BigMessageThread.MessageInstance.ShowColoredShard("WASTED", "", HudColor.HUD_COLOUR_BLACK, HudColor.HUD_COLOUR_RED, 7000);
             }
             DEBUG_STEP = 20;
+            /*
             if (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1)
             {
@@ -1596,6 +1619,7 @@ namespace GTANetwork
                     Function.Call(Hash.SET_PLAYER_MODEL, new InputArgument(Game.Player), lastMod.Hash);
                 }
             }
+            */
             DEBUG_STEP = 21;
             _lastKilled = killed;
 
@@ -2175,6 +2199,59 @@ namespace GTANetwork
                                 }
                             }
                                 break;
+                            case PacketType.ServerEvent:
+                            {
+                                var len = msg.ReadInt32();
+                                var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
+                                if (data != null)
+                                {
+                                    var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
+                                    switch ((ServerEventType) data.EventType)
+                                    {
+                                        case ServerEventType.PlayerTeamChange:
+                                        {
+                                            var netHandle = (int)args[0];
+                                            var newTeam = (int) args[1];
+                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                            lock (Opponents)
+                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                            {
+                                                var pair = Opponents.FirstOrDefault(
+                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                if (pair.Value != null)
+                                                {
+                                                    pair.Value.Team = newTeam;
+                                                    if (pair.Value.Character != null)
+                                                        pair.Value.Character.RelationshipGroup = (newTeam == LocalTeam &&
+                                                                                                  newTeam != -1)
+                                                            ? pair.Value.FriendRelGroup
+                                                            : pair.Value.RelGroup;
+                                                }
+                                            }
+                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                            {
+                                                LocalTeam = newTeam;
+                                                foreach (var opponent in Opponents)
+                                                {
+                                                    if (opponent.Value.Character != null &&
+                                                        (opponent.Value.Team == newTeam && newTeam != -1))
+                                                    {
+                                                        opponent.Value.Character.RelationshipGroup =
+                                                            opponent.Value.FriendRelGroup;
+                                                    }
+                                                    else
+                                                    {
+                                                        opponent.Value.Character.RelationshipGroup =
+                                                            opponent.Value.RelGroup;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                            break;
+                                    }
+                                }
+                            }
+                                break;
                             case PacketType.SyncEvent:
                             {
                                 var len = msg.ReadInt32();
@@ -2402,6 +2479,10 @@ namespace GTANetwork
                         {
                             case NetConnectionStatus.InitiatedConnect:
                                 Util.SafeNotify("Connecting...");
+                                LocalTeam = -1;
+                                Game.Player.Character.Weapons.RemoveAll();
+                                Game.Player.Character.Health = Game.Player.Character.MaxHealth;
+                                Game.Player.Character.Armor = 0;
                                 break;
                             case NetConnectionStatus.Connected:
                                 Util.SafeNotify("Connection successful!");
@@ -2415,7 +2496,7 @@ namespace GTANetwork
                                     return;
                                 }
                                 _channel = respObj.AssignedChannel;
-                                NetEntityHandler.AddEntity(respObj.CharacterHandle, Game.Player.Character.Handle);
+                                NetEntityHandler.AddEntity(respObj.CharacterHandle, -2);
 
                                 var confirmObj = Client.CreateMessage();
                                 confirmObj.Write((int) PacketType.ConnectionConfirmed);
@@ -2484,6 +2565,7 @@ namespace GTANetwork
                                 _localMarkers.Clear();
                                 World.RenderingCamera = MainMenuCamera;
                                 MainMenu.Visible = true;
+                                LocalTeam = -1;
                                 break;
                         }
                     }
@@ -2871,7 +2953,7 @@ namespace GTANetwork
                 {
                     list.Add(new OutputArgument(NetEntityHandler.NetToEntity(((EntityPointerArgument)arg).NetHandle)));
                 }
-                else if (args == null)
+                else
                 {
                     list.Add(null);
                 }
@@ -2989,10 +3071,10 @@ namespace GTANetwork
             DownloadManager.Log("RETURN TYPE: " + obj.ReturnType);
             var nativeType = CheckNativeHash(obj.Hash);
             DownloadManager.Log("NATIVE TYPE IS " + nativeType);
-
             Model model = null;
             if (((int)nativeType & (int)NativeType.NeedsModel) > 0)
             {
+                DownloadManager.Log("REQUIRES MODEL");
                 int position = 0;
                 if (((int)nativeType & (int)NativeType.NeedsModel1) > 0)
                     position = 0;
@@ -3000,10 +3082,9 @@ namespace GTANetwork
                     position = 1;
                 if (((int)nativeType & (int)NativeType.NeedsModel3) > 0)
                     position = 2;
-
+                DownloadManager.Log("POSITION IS " + position);
                 var modelObj = obj.Arguments[position];
                 int modelHash = 0;
-
                 if (modelObj is UIntArgument)
                 {
                     modelHash = unchecked((int)((UIntArgument)modelObj).Data);
@@ -3012,10 +3093,12 @@ namespace GTANetwork
                 {
                     modelHash = ((IntArgument)modelObj).Data;
                 }
+                DownloadManager.Log("MODEL HASH IS " + modelHash);
                 model = new Model(modelHash);
 
                 if (model.IsValid)
                 {
+                    DownloadManager.Log("MODEL IS VALID, REQUESTING");
                     model.Request(10000);
                 }
             }
@@ -3140,7 +3223,7 @@ namespace GTANetwork
                 default:
                     return NativeType.Unknown;
                 case 0x00A1CADD00108836:
-                    return NativeType.NeedsModel2 | NativeType.Unknown;
+                    return NativeType.NeedsModel2 | NativeType.Unknown | NativeType.NeedsModel;
                 case 0xD49F9B0955C367DE:
                     return NativeType.NeedsModel2 | NativeType.NeedsModel | NativeType.ReturnsEntity;
                 case 0x7DD959874C1FD534:

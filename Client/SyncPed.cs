@@ -52,6 +52,9 @@ namespace GTANetwork
         public bool IsFreefallingWithParachute;
         public bool IsShooting;
 
+        public int Team = -1;
+        public int BlipSprite;
+
         public int VehicleSeat;
         public int PedHealth;
 
@@ -240,7 +243,8 @@ namespace GTANetwork
         private bool _blip;
         private bool _justEnteredVeh;
         private DateTime _lastHornPress = DateTime.Now;
-        private int _relGroup;
+        public int RelGroup;
+        public int FriendRelGroup;
         private DateTime _enterVehicleStarted;
         private Vector3 _vehiclePosition;
         private Dictionary<int, int> _vehicleMods;
@@ -269,9 +273,13 @@ namespace GTANetwork
             
             _latencyAverager = new Queue<double>();
 
-            _relGroup = World.AddRelationshipGroup("SYNCPED");
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, _relGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, _relGroup);
+            RelGroup = World.AddRelationshipGroup("SYNCPED");
+            FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
+            World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
+
+            World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
         }
             
         public void SetBlipNameFromTextFile(Blip blip, string text)
@@ -367,7 +375,10 @@ namespace GTANetwork
                     Character.BlockPermanentEvents = true;
                     Character.IsInvincible = true;
                     Character.CanRagdoll = false;
-                    Character.RelationshipGroup = _relGroup;
+                    if (Team == -1 || Team != Main.LocalTeam)
+                        Character.RelationshipGroup = RelGroup;
+                    else
+                        Character.RelationshipGroup = FriendRelGroup;
                     DownloadManager.Log("SETTINGS FIRING PATTERN " + Name);
                     Character.FiringPattern = FiringPattern.FullAuto;
 
@@ -391,6 +402,8 @@ namespace GTANetwork
                         Character.CurrentBlip.Scale = 0.8f;
                         DownloadManager.Log("SETTING BLIP NAME FOR" + Name);
                         SetBlipNameFromTextFile(Character.CurrentBlip, Name);
+                        if (BlipSprite != 0)
+                            Character.CurrentBlip.Sprite = (BlipSprite) BlipSprite;
                         DownloadManager.Log("BLIP DONE FOR" + Name);
                     }
                     
@@ -520,11 +533,13 @@ namespace GTANetwork
                         MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
                     DEBUG_STEP = 10;
 
+
+                    UI.Notify(Util.GetPedSeat(Game.Player.Character).ToString() + " in " + VehicleSeat);
                     if (Game.Player.Character.IsInVehicle(MainVehicle) &&
                         VehicleSeat == Util.GetPedSeat(Game.Player.Character))
                     {
                         Game.Player.Character.Task.WarpOutOfVehicle(MainVehicle);
-                        //Util.SafeNotify("~r~Car jacked!");
+                        Util.SafeNotify("~r~Car jacked!");
                     }
                     DEBUG_STEP = 11;
 

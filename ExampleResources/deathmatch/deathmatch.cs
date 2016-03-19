@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using GTAServer;
-using MultiTheftAutoShared;
+using GTANetworkServer;
+using GTANetworkShared;
 
 public class Deathmatch : Script
 {
@@ -26,7 +26,7 @@ public class Deathmatch : Script
     
     private void Respawn(Client player)
     {
-        API.sendNativeToPlayer(player, "17464388802800305651", new EntityArgument(player.CharacterHandle), true);
+        API.sendNativeToPlayer(player, "17464388802800305651", new EntityArgument(player.CharacterHandle.Value), true);
         var rand = spawns[rInst.Next(spawns.Count)];
         API.setEntityPosition(player.CharacterHandle, rand);
         API.givePlayerWeapon(player, 324215364, 500, false, true);

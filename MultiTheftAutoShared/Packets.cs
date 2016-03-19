@@ -34,6 +34,7 @@ namespace GTANetworkShared
         StopResource = 25,
         UpdateMarkerProperties = 26,
         FileAcceptDeny = 27,
+        ServerEvent = 28,
     }
 
     public enum ScriptVersion
@@ -72,6 +73,12 @@ namespace GTANetworkShared
         TireBurst = 4,
         RadioChange = 5,
         PickupPickedUp = 6,
+    }
+
+    public enum ServerEventType
+    {
+        PlayerTeamChange = 0,
+        PlayerBlipChange = 1,
     }
 
     public enum Lights
@@ -276,6 +283,12 @@ namespace GTANetworkShared
 
         [ProtoMember(2)]
         public ushort[] Textures { get; set; }
+
+        [ProtoMember(3)]
+        public int BlipSprite { get; set; }
+
+        [ProtoMember(4)]
+        public int Team { get; set; }
     }
 
     [ProtoContract]

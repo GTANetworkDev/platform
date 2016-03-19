@@ -47,7 +47,7 @@ namespace GTANetwork
         {
             ThreadJumper.Add(() =>
             {
-                lock (ScriptEngines) ScriptEngines.ForEach(en => en.Engine.Script.script.invokeServerEvent(eventName, arguments));
+                lock (ScriptEngines) ScriptEngines.ForEach(en => en.Engine.Script.API.invokeServerEvent(eventName, arguments));
             });
         }
 
@@ -60,14 +60,14 @@ namespace GTANetwork
                 {
                     lock (ScriptEngines)
                     {
-                        ScriptEngines.ForEach(en => en.Engine.Script.script.invokeChatCommand(msg));
+                        ScriptEngines.ForEach(en => en.Engine.Script.API.invokeChatCommand(msg));
                     }
                 }
                 else
                 {
                     lock (ScriptEngines)
                     {
-                        ScriptEngines.ForEach(en => en.Engine.Script.script.invokeChatMessage(msg));
+                        ScriptEngines.ForEach(en => en.Engine.Script.API.invokeChatMessage(msg));
                     }
                 }
             });
@@ -97,7 +97,7 @@ namespace GTANetwork
                 {
                     try
                     {
-                        engine.Engine.Script.script.invokeUpdate();
+                        engine.Engine.Script.API.invokeUpdate();
                     }  
                     catch (ScriptEngineException ex)
                     {
@@ -115,7 +115,7 @@ namespace GTANetwork
                 {
                     try
                     {
-                        engine.Engine.Script.script.invokeKeyDown(sender, e);
+                        engine.Engine.Script.API.invokeKeyDown(sender, e);
                     }
                     catch (ScriptEngineException ex)
                     {
@@ -133,7 +133,7 @@ namespace GTANetwork
                 {
                     try
                     {
-                        engine.Engine.Script.script.invokeKeyUp(sender, e);
+                        engine.Engine.Script.API.invokeKeyUp(sender, e);
                     }
                     catch (ScriptEngineException ex)
                     {
@@ -169,7 +169,7 @@ namespace GTANetwork
                 }
                 finally
                 {
-                    scriptEngine.Script.script.invokeResourceStart();
+                    scriptEngine.Script.API.invokeResourceStart();
                     lock (ScriptEngines) ScriptEngines.Add(new ClientsideScriptWrapper(scriptEngine, script.ResourceParent));
                 }
             }));
@@ -183,7 +183,7 @@ namespace GTANetwork
                 {
                     foreach (var engine in ScriptEngines)
                     {
-                        engine.Engine.Script.script.invokeResourceStop();
+                        engine.Engine.Script.API.invokeResourceStop();
                         engine.Engine.Dispose();
                     }
 
@@ -200,7 +200,7 @@ namespace GTANetwork
                     for (int i = ScriptEngines.Count - 1; i >= 0; i--)
                     {
                         if (ScriptEngines[i].ResourceParent != resourceName) continue;
-                        ScriptEngines[i].Engine.Script.script.invokeResourceStop();
+                        ScriptEngines[i].Engine.Script.API.invokeResourceStop();
                         ScriptEngines[i].Engine.Dispose();
                         ScriptEngines.RemoveAt(i);
                     }
@@ -295,6 +295,53 @@ namespace GTANetwork
                 default:
                     return null;
             }
+        }
+
+        public void showShard(string text)
+        {
+            NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
+        }
+
+        public void playSoundFrontEnd(string audioLib, string audioName)
+        {
+            Function.Call((Hash)0x2F844A8B08D76685, audioLib, true);
+            Function.Call((Hash)0x67C540AA08E4A6F5, -1, audioName, audioLib);
+        }
+
+        public void showShard(string text, int timeout)
+        {
+            NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
+        }
+
+        public SizeF getScreenResolutionMantainRatio()
+        {
+            return UIMenu.GetScreenResolutionMantainRatio();
+        }
+
+        public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
+        {
+            var offset = convertAnchorPos((float) x, (float) y, (Anchor) anchor);
+            return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y)));
+        }
+
+        public UIMenu createMenu(string subtitle, double x, double y, int anchor)
+        {
+            var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor);
+            var newM = new UIMenu("", subtitle, new Point((int)(offset.X), (int)(offset.Y)));
+            newM.SetBannerType(new UIResRectangle());
+            return newM;
+        }
+
+        public MenuPool getMenuPool()
+        {
+            return new MenuPool();
+        }
+
+        public void drawMenu(UIMenu menu)
+        {
+            menu.ProcessControl();
+            menu.ProcessMouse();
+            menu.Draw();
         }
 
         public LocalHandle createBlip(Vector3 pos)
@@ -436,6 +483,11 @@ namespace GTANetwork
             return (float) d;
         }
 
+        public void wait(int ms)
+        {
+            Script.Wait(ms);
+        }
+
         public void triggerServerEvent(string eventName, params object[] arguments)
         {
             Main.TriggerServerEvent(eventName, arguments);
@@ -492,6 +544,48 @@ namespace GTANetwork
         internal void invokeKeyUp(object sender, KeyEventArgs e)
         {
             onKeyUp?.Invoke(sender, e);
+        }
+
+        internal PointF convertAnchorPos(float x, float y, Anchor anchor)
+        {
+            var res = UIMenu.GetScreenResolutionMantainRatio();
+
+            switch (anchor)
+            {
+                case Anchor.TopLeft:
+                    return new PointF(x, y);
+                case Anchor.TopCenter:
+                    return new PointF(res.Width / 2 + x, 0 + y);
+                case Anchor.TopRight:
+                    return new PointF(res.Width - x, y);
+                case Anchor.MiddleLeft:
+                    return new PointF(x, res.Height / 2 + y);
+                case Anchor.MiddleCenter:
+                    return new PointF(res.Width / 2 + x, res.Height / 2 + y);
+                case Anchor.MiddleRight:
+                    return new PointF(res.Width - x, res.Height / 2 + y);
+                case Anchor.BottomLeft:
+                    return new PointF(x, res.Height - y);
+                case Anchor.BottomCenter:
+                    return new PointF(res.Width / 2 + x, res.Height - y);
+                case Anchor.BottomRight:
+                    return new PointF(res.Width - x, res.Height - y);
+                default:
+                    return PointF.Empty;
+            }
+        }
+
+        internal enum Anchor
+        {
+            TopLeft = 0,
+            TopCenter = 1,
+            TopRight = 2,
+            MiddleLeft = 3,
+            MiddleCenter = 4,
+            MiddleRight = 6,
+            BottomLeft = 7,
+            BottomCenter = 8,
+            BottomRight = 9,
         }
     }
 
