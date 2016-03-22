@@ -19,7 +19,7 @@ namespace GTANetwork
         {
             DisplayName = string.IsNullOrWhiteSpace(GTA.Game.Player.Name) ? "Player" : GTA.Game.Player.Name;
             MaxStreamedNpcs = 10;
-            MasterServerAddress = "http://46.101.1.92/";
+            MasterServerAddress = "http://148.251.18.67:8888/";
             ActivationKey = Keys.F9;
             FavoriteServers = new List<string>();
             RecentServers = new List<string>();

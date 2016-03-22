@@ -13,8 +13,8 @@ namespace GTANetwork.GUI
 {
     public class TabMapItem : TabItem
     {
-        public static string MAP_PATH = "scripts\\map\\map.png";
-        public static string BLIP_PATH = "scripts\\map\\blips\\";
+        public static string MAP_PATH = Main.GTANInstallDir + "\\bin\\scripts\\map\\map.png";
+        public static string BLIP_PATH = Main.GTANInstallDir + "\\bin\\scripts\\map\\blips\\";
         private PointF Position = new PointF(1000, 2000);
         private Size Size  = new Size(6420, 7898);
         private float Zoom = 1f;

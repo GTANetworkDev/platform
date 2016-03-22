@@ -101,7 +101,7 @@ namespace GTANetworkShared
 
         public override bool Equals(object obj)
         {
-            return (obj as NetHandle?)?.Value == Value;
+            return (obj as LocalHandle?)?.Value == Value;
         }
 
         public static bool operator ==(LocalHandle left, LocalHandle right)

@@ -59,7 +59,7 @@ namespace GTANetworkServer
             //AnnounceToLan = true;
             AutoUpdateMinClientVersion = true;
             //AllowDisplayNames = true;
-            MasterServer = "http://46.101.1.92/";
+            MasterServer = "http://148.251.18.67:8080/";
             Resources = new List<SettingsResFilepath>();
         }
     }

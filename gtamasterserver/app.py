@@ -31,7 +31,7 @@ def checkThread():
 			if (datetime.now() - date).total_seconds() > 10*60:
 				del servers[server]
 		except:
-        	pass
+			pass
 	sleep(10*60)
 	checkThread()
 
@@ -41,6 +41,6 @@ if __name__ == '__main__':
 	t.daemon = True
 	t.start()
 
-	app.debug = True #InDev ONLY 
-	#serve(app, port=int(environ['PORT'])) #For deployment
-	app.run() #Run our app. #InDev ONLY
+	#app.debug = True #InDev ONLY 
+	serve(app, port=8888) #For deployment
+	#app.run() #Run our app. #InDev ONLY

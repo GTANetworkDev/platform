@@ -82,6 +82,7 @@
     <Compile Include="GameSettings.cs" />
     <Compile Include="GUI\TabMapItem.cs" />
     <Compile Include="GUI\TabQuickConnectItem.cs" />
+    <Compile Include="GUI\TabWelcomeMessageItem.cs" />
     <Compile Include="InputboxThread.cs" />
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="Main.cs" />

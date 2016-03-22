@@ -178,7 +178,7 @@ namespace GTANetworkServer
             {
                 try
                 {
-                    wb.UploadData(MasterServer, Encoding.UTF8.GetBytes(Port.ToString()));
+                    wb.UploadData(MasterServer.Trim('/') + "/addserver", Encoding.UTF8.GetBytes(Port.ToString()));
                 }
                 catch (WebException)
                 {
@@ -997,6 +997,7 @@ namespace GTANetworkServer
                             {
                                 var reason = msg.ReadInt32();
                                 var weapon = msg.ReadInt32();
+
                                 lock (RunningResources)
                                 {
                                     RunningResources.ForEach(fs => fs.Engines.ForEach(en =>

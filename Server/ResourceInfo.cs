@@ -80,6 +80,7 @@ namespace GTANetworkServer
             scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
             scriptEngine.AddHostType("xmlParser", typeof(RetardedXMLParser));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
+            scriptEngine.AddHostType("NetHandle", typeof(NetHandle));
             scriptEngine.AddHostType("String", typeof(string));
             scriptEngine.AddHostType("List", typeof(List<>));
             scriptEngine.AddHostType("Client", typeof(Client));

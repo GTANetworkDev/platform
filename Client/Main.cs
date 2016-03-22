@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 using GTA;
@@ -12,6 +13,7 @@ using GTA.Native;
 using GTANetwork.GUI;
 using GTANetworkShared;
 using Lidgren.Network;
+using Microsoft.Win32;
 using NativeUI;
 using NativeUI.PauseMenu;
 using Newtonsoft.Json;
@@ -26,11 +28,7 @@ namespace GTANetwork
         public static PlayerSettings PlayerSettings;
         
         public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_0_9;
-
-        private readonly UIMenu _mainMenu;
-        private readonly UIMenu _serverBrowserMenu;
-        private readonly UIMenu _playersMenu;
-        private readonly UIMenu _settingsMenu;
+        
 
         public static bool BlockControls;
         public static bool WriteDebugLog;
@@ -79,7 +77,7 @@ namespace GTANetwork
         
         public Main()
         {
-            PlayerSettings = Util.ReadSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+            PlayerSettings = Util.ReadSettings(GTANInstallDir + "\\settings.xml");
             _threadJumping = new Queue<Action>();
 
             NetEntityHandler = new NetEntityHandler();
@@ -146,6 +144,8 @@ namespace GTANetwork
             MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(),
                 GameplayCamera.FieldOfView);
             MainMenuCamera.PointAt(new Vector3(707.86f, 1228.09f, 333.66f));
+
+            GetWelcomeMessage();
         }
 
         // Debug stuff
@@ -175,6 +175,8 @@ namespace GTANetwork
         private TabItemSimpleList _serverPlayers;
         private TabSubmenuItem _serverItem;
         private TabSubmenuItem _connectTab;
+
+        private TabWelcomeMessageItem _welcomePage;
         
         private int _currentServerPort;
         private string _currentServerIp;
@@ -186,6 +188,32 @@ namespace GTANetwork
         private int Port = 4499;
 
         public static Camera MainMenuCamera;
+
+        public static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
+        
+        public void GetWelcomeMessage()
+        {
+            try
+            {
+                using (var wc = new ImpatientWebClient())
+                {
+                    var rawJson = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim('/') + "/welcome.json");
+                    var jsonObj = JsonConvert.DeserializeObject<WelcomeSchema>(rawJson) as WelcomeSchema;
+                    if (jsonObj == null) throw new WebException();
+                    if (!File.Exists(GTANInstallDir + "\\images\\" + jsonObj.Picture))
+                    {
+                        wc.DownloadFile(PlayerSettings.MasterServerAddress.Trim('/') + "/pictures/" + jsonObj.Picture, GTANInstallDir + "\\images\\" + jsonObj.Picture);
+                    }
+                    
+                    _welcomePage.Text = jsonObj.Message;
+                    _welcomePage.TextTitle = jsonObj.Title;
+                    _welcomePage.PromoPicturePath = GTANInstallDir + "\\images\\" + jsonObj.Picture;
+                }
+            }
+            catch (WebException ex)
+            {
+            }
+        }
 
         private void AddToFavorites(string server)
         {
@@ -343,7 +371,7 @@ namespace GTANetwork
                     {
                         using (var wc = new ImpatientWebClient())
                         {
-                            response = wc.DownloadString(PlayerSettings.MasterServerAddress);
+                            response = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/servers");
                         }
                     }
                     catch (Exception e)
@@ -484,7 +512,6 @@ namespace GTANetwork
         }
 
         private TabMapItem _mainMapItem;
-        private TabTextItem _welcomePage;
         private void BuildMainMenu()
         {
             MainMenu = new TabView("Grand Theft Auto Network");
@@ -495,7 +522,7 @@ namespace GTANetwork
 
             #region Welcome Screen
             {
-                _welcomePage = new TabTextItem("Welcome", "Welcome to GTA Network", "Join a server on the right! Weekly Updates! Donate, or whatever.");
+                _welcomePage = new TabWelcomeMessageItem("Welcome to GTA Network", "Join a server on the right! Weekly Updates! Donate, or whatever.");
                 MainMenu.Tabs.Add(_welcomePage);
             }
             #endregion
@@ -1592,6 +1619,7 @@ namespace GTANetwork
                 var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
                 var weapon = Function.Call<int>(Hash.GET_PED_CAUSE_OF_DEATH, Game.Player.Character);
 
+
                 var killerEnt = NetEntityHandler.EntityToNet(killer);
                 msg.Write(killerEnt);
                 msg.Write(weapon);
@@ -1613,6 +1641,8 @@ namespace GTANetwork
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 
                 NativeUI.BigMessageThread.MessageInstance.ShowColoredShard("WASTED", "", HudColor.HUD_COLOUR_BLACK, HudColor.HUD_COLOUR_RED, 7000);
+                Function.Call(Hash.REQUEST_SCRIPT_AUDIO_BANK, "HUD_MINI_GAME_SOUNDSET", true);
+                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
             }
             DEBUG_STEP = 20;
             /*
@@ -4334,5 +4364,12 @@ namespace GTANetwork
     public class MasterServerList
     {
         public List<string> list { get; set; }
+    }
+
+    public class WelcomeSchema
+    {
+        public string Title { get; set; }
+        public string Message { get; set; }
+        public string Picture { get; set; }
     }
 }
