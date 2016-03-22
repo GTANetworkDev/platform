@@ -1637,5 +1637,65 @@ namespace GTANetworkServer
 
             SendToAll(obj, PacketType.ServerEvent, true);
         }
+
+        public void ChangePlayerBlipColor(Client target, int newColor)
+        {
+            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
+            {
+                ((PedProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipColor = newColor;
+            }
+
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerBlipColorChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newColor);
+
+            SendToAll(obj, PacketType.ServerEvent, true);
+        }
+
+        public void ChangePlayerBlipSprite(Client target, int newSprite)
+        {
+            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
+            {
+                ((PedProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipSprite = newSprite;
+            }
+
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerBlipSpriteChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newSprite);
+
+            SendToAll(obj, PacketType.ServerEvent, true);
+        }
+
+        public void ChangePlayerBlipAlpha(Client target, int newAlpha)
+        {
+            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
+            {
+                ((PedProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipAlpha = (byte)newAlpha;
+            }
+
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newAlpha);
+
+            SendToAll(obj, PacketType.ServerEvent, true);
+        }
+
+        public void SetPlayerOnSpectate(Client target, bool spectating)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, spectating);
+
+            SendToAll(obj, PacketType.ServerEvent, true);
+        }
+
+        public void SetPlayerOnSpectatePlayer(Client spectator, Client target)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
+            obj.Arguments = ParseNativeArguments(spectator.CharacterHandle.Value, true, target.CharacterHandle.Value);
+
+            SendToAll(obj, PacketType.ServerEvent, true);
+        }
     }
 }

@@ -193,6 +193,36 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0xA53ED5520C07654A, entity1, entity2, collision);
         }
 
+        public void setPlayerBlipColor(Client target, int newColor)
+        {
+            Program.ServerInstance.ChangePlayerBlipColor(target, newColor);
+        }
+
+        public void setPlayerBlipAlpha(Client target, int newAlpha)
+        {
+            Program.ServerInstance.ChangePlayerBlipAlpha(target, newAlpha);
+        }
+
+        public void setPlayerBlipSprite(Client target, int newSprite)
+        {
+            Program.ServerInstance.ChangePlayerBlipSprite(target, newSprite);
+        }
+
+        public void setPlayerToSpectator(Client player)
+        {
+            Program.ServerInstance.SetPlayerOnSpectate(player, true);
+        }
+
+        public void setPlayerToSpectatePlayer(Client player, Client target)
+        {
+            Program.ServerInstance.SetPlayerOnSpectatePlayer(player, target);
+        }
+
+        public void unspectatePlayer(Client player)
+        {
+            Program.ServerInstance.SetPlayerOnSpectate(player, false);
+        }
+
         public void setVehicleMod(NetHandle vehicle, int modType, int mod)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))

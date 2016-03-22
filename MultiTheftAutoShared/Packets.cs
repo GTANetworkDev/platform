@@ -78,7 +78,10 @@ namespace GTANetworkShared
     public enum ServerEventType
     {
         PlayerTeamChange = 0,
-        PlayerBlipChange = 1,
+        PlayerBlipColorChange = 1,
+        PlayerBlipAlphaChange = 2,
+        PlayerBlipSpriteChange = 3,
+        PlayerSpectatorChange = 4,
     }
 
     public enum Lights
@@ -276,6 +279,8 @@ namespace GTANetworkShared
         {
             Props = new ushort[15];
             Textures = new ushort[15];
+            BlipSprite = 1;
+            BlipAlpha = 255;
         }
 
         [ProtoMember(1)]
@@ -289,6 +294,12 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public int Team { get; set; }
+
+        [ProtoMember(5)]
+        public int BlipColor { get; set; }
+
+        [ProtoMember(6)]
+        public byte BlipAlpha { get; set; }
     }
 
     [ProtoContract]

@@ -53,7 +53,9 @@ namespace GTANetwork
         public bool IsShooting;
 
         public int Team = -1;
-        public int BlipSprite;
+        public int BlipSprite = -1;
+        public int BlipColor = -1;
+        public int BlipAlpha = -1;
 
         public int VehicleSeat;
         public int PedHealth;
@@ -397,13 +399,18 @@ namespace GTANetwork
                         Character.AddBlip();
                         if (Character.CurrentBlip == null || !Character.CurrentBlip.Exists()) return;
                         DownloadManager.Log("SETTING BLIP COLOR FOR" + Name);
-                        Character.CurrentBlip.Color = BlipColor.White;
+                        if (BlipColor != -1)
+                            Character.CurrentBlip.Color = (BlipColor) BlipColor;
+                        else
+                            Character.CurrentBlip.Color = GTA.BlipColor.White;
                         DownloadManager.Log("SETTING BLIP SCALE FOR" + Name);
                         Character.CurrentBlip.Scale = 0.8f;
                         DownloadManager.Log("SETTING BLIP NAME FOR" + Name);
                         SetBlipNameFromTextFile(Character.CurrentBlip, Name);
-                        if (BlipSprite != 0)
+                        if (BlipSprite != -1)
                             Character.CurrentBlip.Sprite = (BlipSprite) BlipSprite;
+                        if (BlipAlpha != -1)
+                            Character.CurrentBlip.Alpha = BlipAlpha;
                         DownloadManager.Log("BLIP DONE FOR" + Name);
                     }
                     

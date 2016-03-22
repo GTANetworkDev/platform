@@ -35,6 +35,8 @@ namespace GTANetwork
         public static bool BlockControls;
         public static bool WriteDebugLog;
 
+        public static bool IsSpectating;
+
         public static NetEntityHandler NetEntityHandler;
 
         private readonly MenuPool _menuPool;
@@ -53,6 +55,7 @@ namespace GTANetwork
 
         private static int _channel;
         public static int LocalTeam = -1;
+        public int SpectatingEntity;
 
         private readonly Queue<Action> _threadJumping;
         private string _password;
@@ -1088,6 +1091,7 @@ namespace GTANetwork
 
         public static void SendPlayerData()
         {
+            if (IsSpectating) return;
             var player = Game.Player.Character;
             if (player.IsInVehicle())
             {
@@ -1327,6 +1331,9 @@ namespace GTANetwork
 
         private int _debugPickup;
         private int _debugmask;
+        private bool _lastSpectating;
+        private int _currentSpectatingPlayerIndex;
+        private SyncPed _currentSpectatingPlayer;
 
         public void OnTick(object sender, EventArgs e)
         {
@@ -1620,7 +1627,55 @@ namespace GTANetwork
                 }
             }
             */
+
+            
             DEBUG_STEP = 21;
+
+            if (IsSpectating && !_lastSpectating)
+            {
+                Game.Player.Character.Alpha = 0;
+                Game.Player.Character.FreezePosition = true;
+                Game.Player.IsInvincible = true;
+            }
+
+            else if (!IsSpectating && _lastSpectating)
+            {
+                Game.Player.Character.Alpha = 255;
+                Game.Player.Character.FreezePosition = false;
+                Game.Player.IsInvincible = false;
+                SpectatingEntity = 0;
+                _currentSpectatingPlayer = null;
+                _currentSpectatingPlayerIndex = 0;
+            }
+
+            if (IsSpectating && SpectatingEntity != 0)
+            {
+                Game.Player.Character.Position = new Prop(SpectatingEntity).Position;
+                Game.DisableControl(0, Control.NextCamera);
+            }
+            else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer == null && Opponents.Count(op => op.Value.Character != null) > 0)
+            {
+                _currentSpectatingPlayer = Opponents.Where(op => op.Value.Character != null).ElementAt(_currentSpectatingPlayerIndex % Opponents.Count(op => op.Value.Character != null)).Value;
+            }
+            else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer != null)
+            {
+                Game.Player.Character.Position = _currentSpectatingPlayer.Character.Position;
+                Game.DisableControl(0, Control.NextCamera);
+
+                if (Game.IsControlJustPressed(0, Control.PhoneLeft))
+                {
+                    _currentSpectatingPlayerIndex--;
+                    _currentSpectatingPlayer = null;
+                }
+                else if (Game.IsControlJustPressed(0, Control.PhoneRight))
+                {
+                    _currentSpectatingPlayerIndex++;
+                    _currentSpectatingPlayer = null;
+                }
+            }
+
+            _lastSpectating = IsSpectating;
+
             _lastKilled = killed;
 
             Function.Call(Hash.SET_RANDOM_TRAINS, 0);
@@ -2208,6 +2263,99 @@ namespace GTANetwork
                                     var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
                                     switch ((ServerEventType) data.EventType)
                                     {
+                                        case ServerEventType.PlayerSpectatorChange:
+                                        {
+                                            var netHandle = (int)args[0];
+                                            var spectating = (bool)args[1];
+                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                            lock (Opponents)
+                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle && spectating)
+                                            {
+                                                var pair = Opponents.FirstOrDefault(
+                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                if (pair.Value != null)
+                                                {
+                                                    pair.Value.Clear();
+                                                }
+                                            }
+                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                            {
+                                                IsSpectating = spectating;
+                                                if (spectating && args.Count >= 3)
+                                                {
+                                                    var target = (int) args[2];
+                                                    var targetHandle = NetEntityHandler.NetToEntity(target);
+
+                                                    var pair =
+                                                        Opponents.FirstOrDefault(
+                                                            op => op.Value.Character?.Handle == targetHandle.Handle);
+                                                    if (pair.Value != null)
+                                                    {
+                                                        pair.Value.Clear();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                            break;
+                                        case ServerEventType.PlayerBlipColorChange:
+                                        {
+                                            var netHandle = (int)args[0];
+                                            var newColor = (int)args[1];
+                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                            lock (Opponents)
+                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                            {
+                                                var pair = Opponents.FirstOrDefault(
+                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                if (pair.Value != null)
+                                                {
+                                                    pair.Value.BlipColor = newColor;
+                                                    if (pair.Value.Character != null && pair.Value.Character.CurrentBlip != null)
+                                                        pair.Value.Character.CurrentBlip.Color = (BlipColor)newColor;
+                                                }
+                                            }
+                                        }
+                                            break;
+                                        case ServerEventType.PlayerBlipSpriteChange:
+                                        {
+                                            var netHandle = (int)args[0];
+                                            var newSprite = (int)args[1];
+                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                            lock (Opponents)
+                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                                {
+                                                    var pair = Opponents.FirstOrDefault(
+                                                        op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                    if (pair.Value != null)
+                                                    {
+                                                        pair.Value.BlipSprite = newSprite;
+                                                        if (pair.Value.Character != null && pair.Value.Character.CurrentBlip != null)
+                                                            pair.Value.Character.CurrentBlip.Sprite =
+                                                                (BlipSprite) newSprite;
+                                                    }
+                                                }
+                                        }
+                                            break;
+                                        case ServerEventType.PlayerBlipAlphaChange:
+                                            {
+                                                var netHandle = (int)args[0];
+                                                var newAlpha = (int)args[1];
+                                                var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                                lock (Opponents)
+                                                if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                                    {
+                                                        var pair = Opponents.FirstOrDefault(
+                                                            op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                        if (pair.Value != null)
+                                                        {
+                                                            pair.Value.BlipAlpha = newAlpha;
+                                                            if (pair.Value.Character != null &&
+                                                                pair.Value.Character.CurrentBlip != null)
+                                                                pair.Value.Character.CurrentBlip.Alpha = newAlpha;
+                                                        }
+                                                    }
+                                            }
+                                            break;
                                         case ServerEventType.PlayerTeamChange:
                                         {
                                             var netHandle = (int)args[0];
@@ -2565,6 +2713,7 @@ namespace GTANetwork
                                 _localMarkers.Clear();
                                 World.RenderingCamera = MainMenuCamera;
                                 MainMenu.Visible = true;
+                                IsSpectating = false;
                                 LocalTeam = -1;
                                 break;
                         }
