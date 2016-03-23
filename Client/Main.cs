@@ -424,6 +424,8 @@ namespace GTANetwork
                         if (!list.Contains(server)) list.Add(server);
                     }
 
+                    list = list.Distinct().ToList();
+
                     foreach (var server in list)
                     {
                         var split = server.Split(':');
@@ -516,7 +518,7 @@ namespace GTANetwork
         {
             MainMenu = new TabView("Grand Theft Auto Network");
             MainMenu.CanLeave = false;
-            MainMenu.MoneySubtitle = "GTAN " + ParseableVersion.FromAssembly().ToString();
+            MainMenu.MoneySubtitle = "GTAN " + ParseableVersion.Parse(FileVersionInfo.GetVersionInfo("scripts\\GTANetwork.dll").FileVersion);
 
             _mainMapItem = new TabMapItem();
 

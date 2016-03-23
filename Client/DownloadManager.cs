@@ -109,7 +109,7 @@ namespace GTANetwork
 
     public class FileTransferId : IDisposable
     {
-        public static string _DOWNLOADFOLDER_ = "scripts\\resources\\";
+        public static string _DOWNLOADFOLDER_ = Main.GTANInstallDir + "\\resources\\";
 
         public int Id { get; set; }
         public string Filename { get; set; }

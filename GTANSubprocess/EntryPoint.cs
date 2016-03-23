@@ -91,7 +91,32 @@ namespace GTANetwork
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
             var keyName = "InstallFolder";
-            var installFolder = (string)Registry.GetValue(dictPath, keyName, "");
+            var installFolder = (string)Registry.GetValue(dictPath, keyName, null);
+
+            if (string.IsNullOrEmpty(installFolder))
+            {
+                var diag = new OpenFileDialog();
+
+                diag.Filter = "GTA5 Executable|GTA5.exe";
+                diag.RestoreDirectory = true;
+                diag.CheckFileExists = true;
+                diag.CheckPathExists = true;
+
+                if (diag.ShowDialog() == DialogResult.OK)
+                {
+                    installFolder = Path.GetDirectoryName(diag.FileName);
+                    try
+                    {
+                        Registry.SetValue(dictPath, keyName, installFolder);
+                    }
+                    catch(UnauthorizedAccessException)
+                    { }
+                }
+                else
+                {
+                    return;
+                }
+            }
 
             splashScreen.SetPercent(50);
 
