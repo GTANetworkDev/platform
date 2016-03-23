@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using GTA.Math;
 using ProtoBuf;
 
 namespace GTANetworkShared
@@ -599,11 +598,6 @@ namespace GTANetworkShared
         [ProtoMember(3)]
         public float Z { get; set; }
 
-        public GTA.Math.Vector3 ToVector()
-        {
-            return new GTA.Math.Vector3(X, Y, Z);
-        }
-
         public Vector3(float x, float y, float z)
         {
             X = x;
@@ -635,34 +629,7 @@ namespace GTANetworkShared
         public float Z { get; set; }
         [ProtoMember(4)]
         public float W { get; set; }
-
-        public GTA.Math.Quaternion ToQuaternion()
-        {
-            return new GTA.Math.Quaternion(X, Y, Z, W);
-        }
     }
 
-    public static class VectorExtensions
-    {
-        public static Vector3 ToLVector(this GTA.Math.Vector3 vec)
-        {
-            return new Vector3()
-            {
-                X = vec.X,
-                Y = vec.Y,
-                Z = vec.Z,
-            };
-        }
-
-        public static Quaternion ToLQuaternion(this GTA.Math.Quaternion vec)
-        {
-            return new Quaternion()
-            {
-                X = vec.X,
-                Y = vec.Y,
-                Z = vec.Z,
-                W = vec.W,
-            };
-        }
-    }
+    
 }

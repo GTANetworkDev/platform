@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
+using GTANetworkShared;
 using Microsoft.Win32;
 using PlayGTANetwork;
 using Ionic.Zip;
@@ -38,11 +39,18 @@ namespace GTANetwork
             if (settings == null)
             {
                 MessageBox.Show("No settings were found.");
+                return;
             }
 
+            // Create splash screen
+
+            var splashScreen = new SplashScreenThread();
+            
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
             if (File.Exists("bin\\scripts\\GTANetwork.dll"))
                 fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(Path.GetFullPath("bin\\scripts\\GTANetwork.dll")).FileVersion);
+
+            splashScreen.SetPercent(10);
 
             // Check for new version
             using (var wc = new ImpatientWebClient())
@@ -73,6 +81,8 @@ namespace GTANetwork
                 }
             }
 
+            splashScreen.SetPercent(40);
+
             if (Process.GetProcessesByName("GTA5").Any())
             {
                 MessageBox.Show("GTA V is already running. Please shut down the game before starting GTA Network.");
@@ -83,6 +93,7 @@ namespace GTANetwork
             var keyName = "InstallFolder";
             var installFolder = (string)Registry.GetValue(dictPath, keyName, "");
 
+            splashScreen.SetPercent(50);
 
             if ((string) Registry.GetValue(dictPath, "GTANetworkInstallDir", null) != AppDomain.CurrentDomain.BaseDirectory)
             {
@@ -98,6 +109,8 @@ namespace GTANetwork
                 }
             }
 
+            splashScreen.SetPercent(60);
+
             var mySettings = GameSettings.LoadGameSettings();
             if (mySettings.Video != null && mySettings.Video.PauseOnFocusLoss != null)
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
@@ -108,35 +121,32 @@ namespace GTANetwork
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
             }
 
-            var GTALauncherProcess = Process.Start(installFolder + "\\GTAVLauncher.exe");
 
-            Thread.Sleep(5000);
+            Process.Start(installFolder + "\\GTAVLauncher.exe");
 
-            while (!GTALauncherProcess.HasExited)
-            {
-                Thread.Sleep(10);
-            }
-
-            Thread.Sleep(5000);
-
+            splashScreen.SetPercent(65);
+            
             Process gta5Process;
-            var start = DateTime.Now;
+
+            var counter = 0;
 
             while ((gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null)) == null)
             {
-                Thread.Sleep(10);
+                Thread.Sleep(100);
 
-                if (DateTime.Now.Subtract(start).TotalMilliseconds > 10000)
+                if (Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null) == null)
                 {
-                    return;
+                    counter++;
+                    if (counter > 50)
+                        return;
                 }
             }
 
-            // Close the splashscreen here.
+            splashScreen.SetPercent(70);
 
             if (Directory.Exists("tempstorage"))
             {
-                Directory.Delete("tempstorage", false);
+                Directory.Delete("tempstorage", true);
             }
 
             Directory.CreateDirectory("tempstorage");
@@ -165,7 +175,7 @@ namespace GTANetwork
 
             foreach (var path in Directory.GetFiles("bin"))
             {
-                File.Copy(path, installFolder + "\\" + Path.GetFileName(path));
+                File.Copy(path, installFolder + "\\" + Path.GetFileName(path), true);
                 ourFiles.Add(installFolder + "\\" + Path.GetFileName(path));
             }
 
@@ -173,9 +183,17 @@ namespace GTANetwork
 
             foreach (var path in Directory.GetFiles("bin\\scripts"))
             {
-                File.Copy(path, installFolder + "\\scripts\\" + Path.GetFileName(path));
+                File.Copy(path, installFolder + "\\scripts\\" + Path.GetFileName(path), true);
                 ourFiles.Add(installFolder + "\\scripts\\" + Path.GetFileName(path));
             }
+
+            splashScreen.SetPercent(100);
+
+            // Close the splashscreen here.
+
+            Thread.Sleep(1000);
+
+            splashScreen.Stop();
 
             // Wait for GTA5 to exit
 
@@ -183,6 +201,8 @@ namespace GTANetwork
             {
                 Thread.Sleep(1000);
             }
+
+            Thread.Sleep(5000);
 
             // Move everything back
 
@@ -198,23 +218,23 @@ namespace GTANetwork
             
             foreach (var path in Directory.GetFiles("tempstorage"))
             {
-                File.Move(path, installFolder + "\\" + Path.GetFileName(path));
+                File.Copy(path, installFolder + "\\" + Path.GetFileName(path), true);
             }
 
             if (Directory.Exists("tempstorage\\scripts"))
             foreach (var path in Directory.GetFiles("tempstorage\\scripts"))
             {
-                File.Move(path, installFolder + "\\scripts\\" + Path.GetFileName(path));
+                File.Copy(path, installFolder + "\\scripts\\" + Path.GetFileName(path), true);
             }
 
-            
+            Directory.Delete("tempstorage", true);
         }
 
         public static PlayerSettings ReadSettings(string path)
         {
             var ser = new XmlSerializer(typeof(PlayerSettings));
 
-            PlayerSettings settings = null;
+            PlayerSettings settings = new PlayerSettings();
 
             if (File.Exists(path))
             {
@@ -225,116 +245,43 @@ namespace GTANetwork
         }
     }
 
-    public class ImpatientWebClient : WebClient
+    public class SplashScreenThread
     {
-        public int Timeout { get; set; }
+        private Thread _thread;
+        private bool _hasToClose = false;
+        private SplashScreen _splashScreen;
 
-        public ImpatientWebClient()
+        private delegate void CloseForm();
+        private delegate void SetPercentDel(int newPercent);
+        
+        public SplashScreenThread()
         {
-            Timeout = 10000;
+            _thread = new Thread(Show);
+            _thread.IsBackground = true;
+            _thread.Start();
         }
 
-        public ImpatientWebClient(int timeout)
+        public void SetPercent(int newPercent)
         {
-            Timeout = timeout;
+            while (_splashScreen == null) Thread.Sleep(10);
+            if (_splashScreen.InvokeRequired)
+                _splashScreen.Invoke(new SetPercentDel(SetPercent), newPercent);
+            else
+                _splashScreen.progressBar1.Value = newPercent;
         }
 
-        protected override WebRequest GetWebRequest(Uri address)
+        public void Stop()
         {
-            WebRequest w = base.GetWebRequest(address);
-            if (w != null)
-            {
-                w.Timeout = Timeout;
-            }
-            return w;
-        }
-    }
-
-    public class PlayerSettings
-    {
-        public string DisplayName { get; set; }
-        public int MaxStreamedNpcs { get; set; }
-        public string MasterServerAddress { get; set; }
-        public Keys ActivationKey { get; set; }
-        public List<string> FavoriteServers { get; set; }
-        public List<string> RecentServers { get; set; }
-        public bool ScaleChatWithSafezone { get; set; }
-
-
-        public PlayerSettings()
-        {
-            MaxStreamedNpcs = 10;
-            MasterServerAddress = "http://148.251.18.67:8888/";
-            ActivationKey = Keys.F9;
-            FavoriteServers = new List<string>();
-            RecentServers = new List<string>();
-            ScaleChatWithSafezone = true;
-        }
-    }
-
-    public struct ParseableVersion : IComparable<ParseableVersion>
-    {
-        public int Major { get; set; }
-        public int Minor { get; set; }
-        public int Revision { get; set; }
-        public int Build { get; set; }
-
-        public ParseableVersion(int major, int minor, int rev, int build)
-        {
-            Major = major;
-            Minor = minor;
-            Revision = rev;
-            Build = build;
+            if (_splashScreen.InvokeRequired)
+                _splashScreen.Invoke(new CloseForm(Stop));
+            else
+                _splashScreen.Close();
         }
 
-        public override string ToString()
+        public void Show()
         {
-            return Major + "." + Minor + "." + Build + "." + Revision;
-        }
-
-        public int CompareTo(ParseableVersion right)
-        {
-            return CreateComparableInteger().CompareTo(right.CreateComparableInteger());
-        }
-
-        public long CreateComparableInteger()
-        {
-            return (long)((Revision) + (Build * Math.Pow(10, 4)) + (Minor * Math.Pow(10, 8)) + (Major * Math.Pow(10, 12)));
-        }
-
-        public static bool operator >(ParseableVersion left, ParseableVersion right)
-        {
-            return left.CreateComparableInteger() > right.CreateComparableInteger();
-        }
-
-        public static bool operator <(ParseableVersion left, ParseableVersion right)
-        {
-            return left.CreateComparableInteger() < right.CreateComparableInteger();
-        }
-
-        public static ParseableVersion Parse(string version)
-        {
-            var split = version.Split('.');
-            if (split.Length < 2) throw new ArgumentException("Argument version is in wrong format");
-
-            var output = new ParseableVersion();
-            output.Major = int.Parse(split[0]);
-            output.Minor = int.Parse(split[1]);
-            if (split.Length >= 3) output.Build = int.Parse(split[2]);
-            if (split.Length >= 4) output.Revision = int.Parse(split[3]);
-            return output;
-        }
-
-        public static ParseableVersion FromAssembly()
-        {
-            var ourVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            return new ParseableVersion()
-            {
-                Major = ourVersion.Major,
-                Minor = ourVersion.Minor,
-                Revision = ourVersion.Revision,
-                Build = ourVersion.Build,
-            };
+            _splashScreen = new SplashScreen();
+            _splashScreen.ShowDialog();
         }
     }
 }

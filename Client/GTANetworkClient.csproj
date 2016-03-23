@@ -88,7 +88,6 @@
     <Compile Include="Main.cs" />
     <Compile Include="NetEntityHandler.cs" />
     <Compile Include="PedThread.cs" />
-    <Compile Include="PlayerSettings.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <AutoGen>True</AutoGen>
@@ -98,9 +97,6 @@
     <Compile Include="SyncEventWatcher.cs" />
     <Compile Include="SyncPed.cs" />
     <Compile Include="Util.cs" />
-    <Compile Include="Version.cs">
-      <SubType>Component</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

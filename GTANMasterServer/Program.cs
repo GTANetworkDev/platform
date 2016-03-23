@@ -40,6 +40,7 @@ namespace GTANMasterServer
     public static class VersioningUpdaterWorker
     {
         public static ParseableVersion LastClientVersion;
+        public static ParseableVersion LastSubprocessVersion;
         private static DateTime _lastUpdate = DateTime.Now;
 
         public static void Work()
@@ -53,16 +54,23 @@ namespace GTANMasterServer
         public static void GetVersion()
         {
             _lastUpdate = DateTime.Now;
-            if (!File.Exists("updater" + Path.DirectorySeparatorChar + "version.txt") || !File.Exists("updater" + Path.DirectorySeparatorChar + "files.zip"))
+
+            if (!File.Exists("updater" + Path.DirectorySeparatorChar + "version.txt") || !File.Exists("updater" + Path.DirectorySeparatorChar + "files.zip") || !File.Exists("updater" + Path.DirectorySeparatorChar + "GTANetwork.dll"))
             {
-                Console.WriteLine("ERROR: version.txt or files.zip were not found.");
+                Console.WriteLine("ERROR: version.txt, files.zip or GTANetwork.dll were not found.");
                 return;
             }
+            
 
             var versionText = File.ReadAllText("updater" + Path.DirectorySeparatorChar + "version.txt");
             LastClientVersion = ParseableVersion.Parse(versionText);
+
+            var subprocessVersionText =
+                System.Diagnostics.FileVersionInfo.GetVersionInfo("updater" + Path.DirectorySeparatorChar +
+                                                                  "GTANetwork.dll").FileVersion.ToString();
+            LastSubprocessVersion = ParseableVersion.Parse(subprocessVersionText);
             
-            Console.WriteLine("[{0}] Updated last version.", DateTime.Now.ToString("HH:MM:SS"));
+            Console.WriteLine("[{0}] Updated last version.", DateTime.Now.ToString("HH:MM:ss"));
         }
     }
 
@@ -98,7 +106,7 @@ namespace GTANMasterServer
             Message = welcomeObj.Message;
             Picture = welcomeObj.Picture;
 
-            Console.WriteLine("[{0}] Updated welcome message.", DateTime.Now.ToString("HH:MM:SS"));
+            Console.WriteLine("[{0}] Updated welcome message.", DateTime.Now.ToString("HH:MM:ss"));
         }
 
         public static string ToJson()
@@ -175,7 +183,7 @@ namespace GTANMasterServer
                 if (Request.IsLocal()) return 403;
                 var port = new StreamReader(Request.Body).ReadToEnd();
                 var serverAddress = Request.UserHostAddress + ":" + port;
-                Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:MM:SS"));
+                Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:MM:ss"));
                 MasterServerWorker.AddServer(serverAddress);
                 return 200;
             };
@@ -185,6 +193,10 @@ namespace GTANMasterServer
             Get["/welcome.json"] = _ => WelcomeMessageWorker.ToJson();
 
             Get["/version"] = _ => VersioningUpdaterWorker.LastClientVersion.ToString();
+
+            Get["/launcherversion"] = _ => VersioningUpdaterWorker.LastSubprocessVersion.ToString();
+
+            Get["/launcher"] = _ => Response.AsFile("updater" + Path.DirectorySeparatorChar + "GTANetwork.dll");
 
             Get["/files"] = _ => Response.AsFile("updater" + Path.DirectorySeparatorChar + "files.zip");
         }

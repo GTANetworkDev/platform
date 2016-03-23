@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
+using System.Xml.Serialization;
+using GTANetworkShared;
 
 namespace PlayGTANetwork
 {
@@ -15,9 +19,53 @@ namespace PlayGTANetwork
         //[STAThread]
         public static void Main()
         {
-            //Application.EnableVisualStyles();
-            //Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new Form1());
+            ParseableVersion subprocessVersion = new ParseableVersion(0, 0, 0, 0);
+
+            if (File.Exists("GTANetwork.dll"))
+            {
+                var versiontext =
+                    System.Diagnostics.FileVersionInfo.GetVersionInfo("GTANetwork.dll").FileVersion.ToString();
+                subprocessVersion = ParseableVersion.Parse(versiontext);
+            }
+
+
+            var playerSetings = new PlayerSettings();
+
+            if (File.Exists("settings.xml"))
+            {
+                var ser = new XmlSerializer(typeof (PlayerSettings));
+                using (var stream = File.OpenRead("settings.xml"))
+                {
+                    playerSetings = (PlayerSettings) ser.Deserialize(stream);
+                }
+            }
+            else
+            {
+                var ser = new XmlSerializer(typeof(PlayerSettings));
+                using (var stream = File.OpenWrite("settings.xml"))
+                {
+                    ser.Serialize(stream, playerSetings);
+                }
+            }
+
+            try
+            {
+                using (var wc = new ImpatientWebClient())
+                {
+                    var internetTextVersion =
+                        wc.DownloadString(playerSetings.MasterServerAddress.Trim('/') + "/launcherversion");
+                    var internetVersion = ParseableVersion.Parse(internetTextVersion);
+
+                    if (internetVersion > subprocessVersion)
+                    {
+                        wc.DownloadFile(playerSetings.MasterServerAddress.Trim('/') + "/launcher", "GTANetwork.dll");
+                    }
+                }
+            }
+            catch (WebException)
+            {
+            }
+
             IEnumerable<Type> validTypes;
             try
             {
@@ -61,7 +109,8 @@ namespace PlayGTANetwork
             mainBehaviour.Start();
 
             end:
-            { }
+            {
+            }
         }
     }
 

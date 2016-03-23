@@ -5,8 +5,10 @@ using System.IO;
 using System.Net;
 using System.Xml.Serialization;
 using GTA;
-using GTA.Math;
 using GTA.Native;
+using GTANetworkShared;
+using Quaternion = GTA.Math.Quaternion;
+using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
 {
@@ -254,6 +256,11 @@ namespace GTANetwork
             {
                 using (var stream = File.OpenRead(path)) settings = (PlayerSettings)ser.Deserialize(stream);
 
+                if (string.IsNullOrWhiteSpace(settings.DisplayName))
+                {
+                    settings.DisplayName = string.IsNullOrWhiteSpace(GTA.Game.Player.Name) ? "Player" : GTA.Game.Player.Name;
+                }
+
                 using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
             }
             else
@@ -327,6 +334,40 @@ namespace GTANetwork
             which gives:
             heading = -2 * atan2(x,w)
             bank = 0 */
+        }
+    }
+
+    public static class VectorExtensions
+    {
+        public static GTA.Math.Quaternion ToQuaternion(this GTANetworkShared.Quaternion q)
+        {
+            return new GTA.Math.Quaternion(q.X, q.Y, q.Z, q.W);
+        }
+
+        public static GTA.Math.Vector3 ToVector(this GTANetworkShared.Vector3 v)
+        {
+            return new GTA.Math.Vector3(v.X, v.Y, v.Z);
+        }
+
+        public static GTANetworkShared.Vector3 ToLVector(this GTA.Math.Vector3 vec)
+        {
+            return new GTANetworkShared.Vector3()
+            {
+                X = vec.X,
+                Y = vec.Y,
+                Z = vec.Z,
+            };
+        }
+
+        public static GTANetworkShared.Quaternion ToLQuaternion(this GTA.Math.Quaternion vec)
+        {
+            return new GTANetworkShared.Quaternion()
+            {
+                X = vec.X,
+                Y = vec.Y,
+                Z = vec.Z,
+                W = vec.W,
+            };
         }
     }
 }

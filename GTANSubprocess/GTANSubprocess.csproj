@@ -36,6 +36,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -46,9 +47,28 @@
   <ItemGroup>
     <Compile Include="EntryPoint.cs" />
     <Compile Include="GameSettings.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <DependentUpon>AssemblyInfo.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="SplashScreen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SplashScreen.Designer.cs">
+      <DependentUpon>SplashScreen.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\MultiTheftAutoShared\GTANetworkShared.csproj">
+      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
+      <Name>GTANetworkShared</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PlayGTANetwork\PlayGTANetwork.csproj">
       <Project>{46b260b6-37b5-4089-ad88-90be463804e2}</Project>
       <Name>PlayGTANetwork</Name>
@@ -56,6 +76,21 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Properties\AssemblyInfo.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AssemblyInfo.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SplashScreen.resx">
+      <DependentUpon>SplashScreen.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

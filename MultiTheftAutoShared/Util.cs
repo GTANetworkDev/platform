@@ -1,9 +1,54 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
-using System.Text.RegularExpressions;
 
-namespace GTANetwork
+namespace GTANetworkShared
 {
+    public class PlayerSettings
+    {
+        public string DisplayName { get; set; }
+        public int MaxStreamedNpcs { get; set; }
+        public string MasterServerAddress { get; set; }
+        public List<string> FavoriteServers { get; set; }
+        public List<string> RecentServers { get; set; }
+        public bool ScaleChatWithSafezone { get; set; }
+
+
+        public PlayerSettings()
+        {
+            MaxStreamedNpcs = 10;
+            MasterServerAddress = "http://148.251.18.67:8888/";
+            FavoriteServers = new List<string>();
+            RecentServers = new List<string>();
+            ScaleChatWithSafezone = true;
+        }
+    }
+
+    public class ImpatientWebClient : WebClient
+    {
+        public int Timeout { get; set; }
+
+        public ImpatientWebClient()
+        {
+            Timeout = 10000;
+        }
+
+        public ImpatientWebClient(int timeout)
+        {
+            Timeout = timeout;
+        }
+
+        protected override WebRequest GetWebRequest(Uri address)
+        {
+            WebRequest w = base.GetWebRequest(address);
+            if (w != null)
+            {
+                w.Timeout = Timeout;
+            }
+            return w;
+        }
+    }
+
     public struct ParseableVersion : IComparable<ParseableVersion>
     {
         public int Major { get; set; }
@@ -57,16 +102,6 @@ namespace GTANetwork
             return output;
         }
 
-        public static ParseableVersion FromWebsite(string modName, string category = "scripts")
-        {
-            using (var client = new ImpatientWebClient())
-            {
-                var html = client.DownloadString("https://www.gta5-mods.com/" + category + "/" + modName);
-                var res = Regex.Match(html, "<span class=\\\"version\\\">(.+)</span>");
-                return Parse(res.Groups[1].Captures[0].Value);
-            }
-        }
-
         public static ParseableVersion FromAssembly()
         {
             var ourVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
@@ -77,31 +112,6 @@ namespace GTANetwork
                 Revision = ourVersion.Revision,
                 Build = ourVersion.Build,
             };
-        }
-    }
-
-    public class ImpatientWebClient : WebClient
-    {
-        public int Timeout { get; set; }
-
-        public ImpatientWebClient()
-        {
-            Timeout = 10000;
-        }
-
-        public ImpatientWebClient(int timeout)
-        {
-            Timeout = timeout;
-        }
-
-        protected override WebRequest GetWebRequest(Uri address)
-        {
-            WebRequest w = base.GetWebRequest(address);
-            if (w != null)
-            {
-                w.Timeout = Timeout;
-            }
-            return w;
         }
     }
 }

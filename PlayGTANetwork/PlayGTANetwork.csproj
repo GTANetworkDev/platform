@@ -158,6 +158,12 @@
     <Content Include="DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
     <Content Include="DirectXHook\sharpdx_direct3d11_effects_x86.dll" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MultiTheftAutoShared\GTANetworkShared.csproj">
+      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
+      <Name>GTANetworkShared</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
