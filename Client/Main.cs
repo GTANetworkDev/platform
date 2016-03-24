@@ -222,18 +222,18 @@ namespace GTANetwork
             int port;
             if (split.Length < 2 || string.IsNullOrWhiteSpace(split[0]) || string.IsNullOrWhiteSpace(split[1]) || !int.TryParse(split[1], out port)) return;
             PlayerSettings.FavoriteServers.Add(server);
-            Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+            Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
         private void RemoveFromFavorites(string server)
         {
             PlayerSettings.FavoriteServers.Remove(server);
-            Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+            Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
         private void SaveSettings()
         {
-            Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+            Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
         private void AddServerToRecent(UIMenuItem server)
@@ -247,7 +247,7 @@ namespace GTANetwork
                 PlayerSettings.RecentServers.Add(server.Description);
                 if (PlayerSettings.RecentServers.Count > 20)
                     PlayerSettings.RecentServers.RemoveAt(0);
-                Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+                Util.SaveSettings(GTANInstallDir + "\\settings.xml");
 
                 var item = new UIMenuItem(server.Text);
                 item.Description = server.Description;
@@ -302,7 +302,7 @@ namespace GTANetwork
                 PlayerSettings.RecentServers.Add(server);
                 if (PlayerSettings.RecentServers.Count > 20)
                     PlayerSettings.RecentServers.RemoveAt(0);
-                Util.SaveSettings(Program.Location + Path.DirectorySeparatorChar + "GTACOOPSettings.xml");
+                Util.SaveSettings(GTANInstallDir + "\\settings.xml");
 
                 var item = new UIMenuItem(server);
                 item.Description = server;
@@ -342,6 +342,21 @@ namespace GTANetwork
                     _connectTab.RefreshIndex();
                 };
                 _recentBrowser.Items.Add(item);
+            }
+        }
+
+        private bool isIPLocal(string ipaddress)
+        {
+            String[] straryIPAddress = ipaddress.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
+            int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0]), int.Parse(straryIPAddress[1]), int.Parse(straryIPAddress[2]), int.Parse(straryIPAddress[3]) };
+            if (iaryIPAddress[0] == 10 || iaryIPAddress[0] == 127 || (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) || (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
+            {
+                return true;
+            }
+            else
+            {
+                // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
+                return false;
             }
         }
 
@@ -438,11 +453,23 @@ namespace GTANetwork
                         item.Description = server;
 
                         int lastIndx = 0;
-                        if (_serverBrowser.Items.Count > 0)
-                            lastIndx = _serverBrowser.Index;
 
-                        _serverBrowser.Items.Add(item);
-                        _serverBrowser.Index = lastIndx;
+                        if (!isIPLocal(split[0]))
+                        {
+                            if (_serverBrowser.Items.Count > 0)
+                                lastIndx = _serverBrowser.Index;
+
+                            _serverBrowser.Items.Add(item);
+                            _serverBrowser.Index = lastIndx;
+                        }
+                        else
+                        {
+                            if (_lanBrowser.Items.Count > 0)
+                                lastIndx = _lanBrowser.Index;
+
+                            _lanBrowser.Items.Add(item);
+                            _lanBrowser.Index = lastIndx;
+                        }
 
                         if (PlayerSettings.RecentServers.Contains(server))
                         {
@@ -2569,7 +2596,7 @@ namespace GTANetwork
                                 {
                                     if (data.Arguments != null)
                                         JavascriptHook.InvokeServerEvent(data.EventName,
-                                            DecodeArgumentList(data.Arguments.ToArray()).ToArray());
+                                            DecodeArgumentListPure(data.Arguments.ToArray()).ToArray());
                                     else
                                         JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
                                 }
@@ -2772,8 +2799,8 @@ namespace GTANetwork
 
                         MainMenu.Money = "Servers Online: " + _currentOnlineServers + " | Players Online: " +
                                          _currentOnlinePlayers;
-
-                        if (data.LAN)
+                        
+                        if (data.LAN && matchedItems.Count == 0)
                         {
                             var item = new UIMenuItem(data.ServerName);
                             var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
@@ -2824,6 +2851,7 @@ namespace GTANetwork
 
                             _lanBrowser.Items.Add(item);
                         }
+                        
 
                         foreach (var ourItem in matchedItems.Where(k => k != null))
                         {
@@ -2842,6 +2870,7 @@ namespace GTANetwork
                                 lastIndx = _serverBrowser.Index;
 
                             var gMsg = msg;
+                            var data1 = data;
                             ourItem.Activated += (sender, selectedItem) =>
                             {
                                 if (IsOnServer())
@@ -2863,24 +2892,55 @@ namespace GTANetwork
                                     while (IsOnServer()) Script.Yield();
                                 }
 
-                                if (data.PasswordProtected)
+                                if (data1.PasswordProtected)
                                 {
                                     _password = Game.GetUserInput(256);
                                 }
 
 
-                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data1.Port);
                                 MainMenu.TemporarilyHidden = true;
                                 _connectTab.RefreshIndex();
                                 AddServerToRecent(ourItem);
                             };
 
-                            _serverBrowser.Items.Remove(ourItem);
-                            _serverBrowser.Items.Insert(0, ourItem);
-                            if (_serverBrowser.Focused)
-                                _serverBrowser.MoveDown();
-                            else
-                                _serverBrowser.RefreshIndex();
+
+                            if (_serverBrowser.Items.Contains(ourItem))
+                            {
+                                _serverBrowser.Items.Remove(ourItem);
+                                _serverBrowser.Items.Insert(0, ourItem);
+                                if (_serverBrowser.Focused)
+                                    _serverBrowser.MoveDown();
+                                else
+                                    _serverBrowser.RefreshIndex();
+                            }
+                            else if (_lanBrowser.Items.Contains(ourItem))
+                            {
+                                _lanBrowser.Items.Remove(ourItem);
+                                _lanBrowser.Items.Insert(0, ourItem);
+                                if (_lanBrowser.Focused)
+                                    _lanBrowser.MoveDown();
+                                else
+                                    _lanBrowser.RefreshIndex();
+                            }
+                            else if (_favBrowser.Items.Contains(ourItem))
+                            {
+                                _favBrowser.Items.Remove(ourItem);
+                                _favBrowser.Items.Insert(0, ourItem);
+                                if (_favBrowser.Focused)
+                                    _favBrowser.MoveDown();
+                                else
+                                    _favBrowser.RefreshIndex();
+                            }
+                            else if (_recentBrowser.Items.Contains(ourItem))
+                            {
+                                _recentBrowser.Items.Remove(ourItem);
+                                _recentBrowser.Items.Insert(0, ourItem);
+                                if (_recentBrowser.Focused)
+                                    _recentBrowser.MoveDown();
+                                else
+                                    _recentBrowser.RefreshIndex();
+                            }
                         }
                     }
                 }

@@ -224,20 +224,9 @@ namespace GTANetwork
             foreach (var s in splitter(ex.Message, 99))
             {
                 Util.SafeNotify(s);
-                DownloadManager.Log(s);
             }
 
-            var innEx = ex.InnerException;
-            while (innEx != null)
-            {
-                foreach (var s in splitter(ex.InnerException.Message, 99))
-                {
-                    Util.SafeNotify(s);
-                    DownloadManager.Log(s);
-                }
-
-                innEx = innEx.InnerException;
-            }
+            DownloadManager.Log(ex.ToString());
         }
     }
 
@@ -296,16 +285,16 @@ namespace GTANetwork
                     return null;
             }
         }
-
-        public void showShard(string text)
-        {
-            NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
-        }
-
+        
         public void playSoundFrontEnd(string audioLib, string audioName)
         {
             Function.Call((Hash)0x2F844A8B08D76685, audioLib, true);
             Function.Call((Hash)0x67C540AA08E4A6F5, -1, audioName, audioLib);
+        }
+
+        public void showShard(string text)
+        {
+            NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
         }
 
         public void showShard(string text, int timeout)
@@ -316,6 +305,11 @@ namespace GTANetwork
         public SizeF getScreenResolutionMantainRatio()
         {
             return UIMenu.GetScreenResolutionMantainRatio();
+        }
+
+        public void sendNotification(string text)
+        {
+            Util.SafeNotify(text);
         }
 
         public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
