@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using GTA;
@@ -46,7 +47,7 @@ namespace GTANetwork
 
         public static NetClient Client;
         private static NetPeerConfiguration _config;
-        public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly();
+        public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
         
         public static SynchronizationMode GlobalSyncMode;
         public static bool LerpRotaion = true;
@@ -545,7 +546,7 @@ namespace GTANetwork
         {
             MainMenu = new TabView("Grand Theft Auto Network");
             MainMenu.CanLeave = false;
-            MainMenu.MoneySubtitle = "GTAN " + ParseableVersion.Parse(FileVersionInfo.GetVersionInfo("scripts\\GTANetwork.dll").FileVersion);
+            MainMenu.MoneySubtitle = "GTAN " + CurrentVersion;
 
             _mainMapItem = new TabMapItem();
 
@@ -1168,6 +1169,7 @@ namespace GTANetwork
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsVehicleDead = veh.IsDead;
+                obj.RPM = veh.CurrentRPM;
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
@@ -1398,6 +1400,11 @@ namespace GTANetwork
             if (!_hasInitialized)
             {
                 RebuildServerBrowser();
+
+                MainMenu.Visible = true;
+                World.RenderingCamera = MainMenuCamera;
+                MainMenu.RefreshIndex();
+
                 _hasInitialized = true;
             }
 
@@ -1567,6 +1574,17 @@ namespace GTANetwork
                 Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, mod.Hash);
             }
             */
+            /*
+            if (Game.IsControlPressed(0, Control.LookBehind) && Game.Player.Character.IsInVehicle())
+            {
+                Game.Player.Character.CurrentVehicle.CurrentRPM = 1f;
+                Game.Player.Character.CurrentVehicle.Acceleration = 1f;
+            }
+
+            if (Game.Player.Character.IsInVehicle())
+            {
+                UI.ShowSubtitle("RPM: " + Game.Player.Character.CurrentVehicle.CurrentRPM + " AC: " + Game.Player.Character.CurrentVehicle.Acceleration);
+            }*/
 #endif
             DEBUG_STEP = 5;
             ProcessMessages();
@@ -2011,6 +2029,7 @@ namespace GTANetwork
                                     Opponents[data.Id].VehicleHash =
                                         data.VehicleModelHash;
                                     Opponents[data.Id].PedArmor = data.PedArmor;
+                                    Opponents[data.Id].VehicleRPM = data.RPM;
                                     Opponents[data.Id].VehicleRotation =
                                         //data.Quaternion.ToQuaternion();
                                         data.Quaternion.ToVector();

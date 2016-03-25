@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Reflection;
 
 namespace GTANetworkShared
 {
@@ -12,7 +13,7 @@ namespace GTANetworkShared
         public List<string> FavoriteServers { get; set; }
         public List<string> RecentServers { get; set; }
         public bool ScaleChatWithSafezone { get; set; }
-
+        public bool SteamPowered { get; set; }
 
         public PlayerSettings()
         {
@@ -21,6 +22,7 @@ namespace GTANetworkShared
             FavoriteServers = new List<string>();
             RecentServers = new List<string>();
             ScaleChatWithSafezone = true;
+            SteamPowered = false;
         }
     }
 
@@ -105,6 +107,18 @@ namespace GTANetworkShared
         public static ParseableVersion FromAssembly()
         {
             var ourVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            return new ParseableVersion()
+            {
+                Major = ourVersion.Major,
+                Minor = ourVersion.Minor,
+                Revision = ourVersion.Revision,
+                Build = ourVersion.Build,
+            };
+        }
+
+        public static ParseableVersion FromAssembly(Assembly assembly)
+        {
+            var ourVersion = assembly.GetName().Version;
             return new ParseableVersion()
             {
                 Major = ourVersion.Major,

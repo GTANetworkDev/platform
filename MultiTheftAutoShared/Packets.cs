@@ -520,6 +520,9 @@ namespace GTANetworkShared
 
         [ProtoMember(21)]
         public Vector3 AimCoords { get; set; }
+
+        [ProtoMember(22)]
+        public float RPM { get; set; }
     }
 
     [ProtoContract]

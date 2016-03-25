@@ -51,6 +51,7 @@ namespace GTANetwork
         public bool IsInMeleeCombat;
         public bool IsFreefallingWithParachute;
         public bool IsShooting;
+        public float VehicleRPM;
 
         public int Team = -1;
         public int BlipSprite = -1;
@@ -527,9 +528,9 @@ namespace GTANetwork
                 DEBUG_STEP = 9;
                 if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
                     (_lastVehicle && IsInVehicle &&
-                     (MainVehicle == null || !Character.IsInVehicle(MainVehicle) ||
+                     (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
                       Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
-                      VehicleSeat != Util.GetPedSeat(Character))))
+                      (VehicleSeat != Util.GetPedSeat(Character) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle))))
                 {
                     if (Debug)
                     {
@@ -668,6 +669,8 @@ namespace GTANetwork
                             MainVehicle.SirenActive = Siren;
                         else if (!MainVehicle.SirenActive && Siren)
                             MainVehicle.SirenActive = Siren;
+
+                        MainVehicle.CurrentRPM = VehicleRPM;
                         
                         DEBUG_STEP = 19;
 

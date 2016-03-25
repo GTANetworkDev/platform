@@ -70,7 +70,7 @@ namespace GTANMasterServer
                                                                   "GTANetwork.dll").FileVersion.ToString();
             LastSubprocessVersion = ParseableVersion.Parse(subprocessVersionText);
             
-            Console.WriteLine("[{0}] Updated last version.", DateTime.Now.ToString("HH:MM:ss"));
+            Console.WriteLine("[{0}] Updated last version.", DateTime.Now.ToString("HH:mm:ss"));
         }
     }
 
@@ -106,7 +106,7 @@ namespace GTANMasterServer
             Message = welcomeObj.Message;
             Picture = welcomeObj.Picture;
 
-            Console.WriteLine("[{0}] Updated welcome message.", DateTime.Now.ToString("HH:MM:ss"));
+            Console.WriteLine("[{0}] Updated welcome message.", DateTime.Now.ToString("HH:mm:ss"));
         }
 
         public static string ToJson()
@@ -183,7 +183,7 @@ namespace GTANMasterServer
                 if (Request.IsLocal()) return 403;
                 var port = new StreamReader(Request.Body).ReadToEnd();
                 var serverAddress = Request.UserHostAddress + ":" + port;
-                Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:MM:ss"));
+                Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:mm:ss"));
                 MasterServerWorker.AddServer(serverAddress);
                 return 200;
             };

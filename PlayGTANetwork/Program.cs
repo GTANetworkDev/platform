@@ -16,8 +16,8 @@ namespace PlayGTANetwork
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
-        //[STAThread]
-        public static void Main()
+        [STAThread]
+        static void Main()
         {
             ParseableVersion subprocessVersion = new ParseableVersion(0, 0, 0, 0);
 

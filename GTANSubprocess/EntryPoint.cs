@@ -41,6 +41,7 @@ namespace GTANetwork
                 MessageBox.Show("No settings were found.");
                 return;
             }
+            
 
             // Create splash screen
 
@@ -48,7 +49,9 @@ namespace GTANetwork
             
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
             if (File.Exists("bin\\scripts\\GTANetwork.dll"))
+            {
                 fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(Path.GetFullPath("bin\\scripts\\GTANetwork.dll")).FileVersion);
+            }
 
             splashScreen.SetPercent(10);
 
@@ -60,6 +63,7 @@ namespace GTANetwork
                     var lastVersion = ParseableVersion.Parse(wc.DownloadString(settings.MasterServerAddress.Trim('/') + "/version"));
                     if (lastVersion > fileVersion)
                     {
+                        //MessageBox.Show("Updating version!\nInternet Version: " + lastVersion + "\nOur Version: " + fileVersion + "\nBigger? " + (lastVersion > fileVersion));
                         // Download latest version.
                         if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
                         wc.DownloadFile(settings.MasterServerAddress.Trim('/') + "/files", "tempstorage\\files.zip");
@@ -95,8 +99,10 @@ namespace GTANetwork
 
             if (string.IsNullOrEmpty(installFolder))
             {
-                var diag = new OpenFileDialog();
+                settings.SteamPowered = true;
+                SaveSettings("settings.xml", settings);
 
+                var diag = new OpenFileDialog();
                 diag.Filter = "GTA5 Executable|GTA5.exe";
                 diag.RestoreDirectory = true;
                 diag.CheckFileExists = true;
@@ -146,8 +152,14 @@ namespace GTANetwork
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
             }
 
-
-            Process.Start(installFolder + "\\GTAVLauncher.exe");
+            if (!settings.SteamPowered)
+            {
+                Process.Start(installFolder + "\\GTAVLauncher.exe");
+            }
+            else
+            {
+                Process.Start("steam://run/271590");
+            }
 
             splashScreen.SetPercent(65);
             
@@ -267,6 +279,14 @@ namespace GTANetwork
             }
 
             return settings;
+        }
+
+        public static void SaveSettings(string path, PlayerSettings set)
+        {
+            var ser = new XmlSerializer(typeof(PlayerSettings));
+
+            if (File.Exists(path)) using (var stream = new FileStream(path, FileMode.Truncate)) ser.Serialize(stream, set);
+            else using (var stream = new FileStream(path, FileMode.Create)) ser.Serialize(stream, set);
         }
     }
 
