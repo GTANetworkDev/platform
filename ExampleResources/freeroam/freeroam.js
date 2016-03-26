@@ -7,9 +7,34 @@ API.onPlayerRespawn.connect(function (sender) {
 
 
 API.onChatCommand.connect(function (sender, command) {
+    if (command.substring(0, 5) == "/spec")   {
+      if (command.length > 5) {
+        var target;
+        var targetName = command.substring(5);
+        var players = API.getAllPlayers();
+        for (var i = players.length - 1; i >= 0; i--) {
+          if (players[i].Name === targetName) {
+            target = players[i];
+            break;
+          }
+        }
+
+        if (target != null) {
+          API.setPlayerToSpectatePlayer(sender, target);
+        } else {
+          API.sendNotificationToPlayer(sender, "No such player found.");
+        }
+      } else {
+        API.sendNotificationToPlayer(sender, "USAGE: /spec [player name]");
+      }
+    }
+
+    if (command === "/unspec") {
+      API.unspectatePlayer(sender);
+    }
+
     if (command.substring(0, 4) == "/car") {
-        if (command.length > 4)
-        {
+        if (command.length > 4) {
             var vehName = command.substring(5);
             var vehModel = API.vehicleNameToModel(vehName);
             if (vehModel == 0) {

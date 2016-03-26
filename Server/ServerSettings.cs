@@ -40,6 +40,9 @@ namespace GTANetworkServer
         [XmlElement("resource")]
         public List<SettingsResFilepath> Resources { get; set; }
 
+        [XmlElement("acl_enabled")]
+        public bool UseACL { get; set; }
+
         [XmlRoot("resource")]
         public class SettingsResFilepath
         {
@@ -56,6 +59,7 @@ namespace GTANetworkServer
             Password = "";
             //Gamemode = "freeroam";
             Announce = true;
+            UseACL = true;
             //AnnounceToLan = true;
             AutoUpdateMinClientVersion = true;
             //AllowDisplayNames = true;

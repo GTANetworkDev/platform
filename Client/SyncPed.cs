@@ -363,14 +363,14 @@ namespace GTANetwork
                 if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) ||
                     Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
                 {
-                    DownloadManager.Log($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
+                    LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
                     if (Character != null) Character.Delete();
                     DEBUG_STEP = 3;
-                    DownloadManager.Log("NEW PLAYER " + Name);
+                    LogManager.DebugLog("NEW PLAYER " + Name);
                     var charModel = new Model(ModelHash);
-                    DownloadManager.Log("REQUESTING MODEL FOR " + Name);
+                    LogManager.DebugLog("REQUESTING MODEL FOR " + Name);
                     charModel.Request(10000);
-                    DownloadManager.Log("CREATING PED FOR " + Name);
+                    LogManager.DebugLog("CREATING PED FOR " + Name);
                     Character = World.CreatePed(charModel, gPos, _rotation.Z);
                     charModel.MarkAsNoLongerNeeded();
                     if (Character == null) return;
@@ -382,37 +382,37 @@ namespace GTANetwork
                         Character.RelationshipGroup = RelGroup;
                     else
                         Character.RelationshipGroup = FriendRelGroup;
-                    DownloadManager.Log("SETTINGS FIRING PATTERN " + Name);
+                    LogManager.DebugLog("SETTINGS FIRING PATTERN " + Name);
                     Character.FiringPattern = FiringPattern.FullAuto;
 
                     Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character);
 
                     //Character.FreezePosition = true;
-                    DownloadManager.Log("SETTING CLOTHES FOR " + Name);
+                    LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
                     if (PedProps != null)
                     foreach (var pair in PedProps)
                     {
                         Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, 0, 2);
                     }
-                    DownloadManager.Log("ATTACHING BLIP FOR " + Name);
+                    LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
                     if (_blip)
                     {
                         Character.AddBlip();
                         if (Character.CurrentBlip == null || !Character.CurrentBlip.Exists()) return;
-                        DownloadManager.Log("SETTING BLIP COLOR FOR" + Name);
+                        LogManager.DebugLog("SETTING BLIP COLOR FOR" + Name);
                         if (BlipColor != -1)
                             Character.CurrentBlip.Color = (BlipColor) BlipColor;
                         else
                             Character.CurrentBlip.Color = GTA.BlipColor.White;
-                        DownloadManager.Log("SETTING BLIP SCALE FOR" + Name);
+                        LogManager.DebugLog("SETTING BLIP SCALE FOR" + Name);
                         Character.CurrentBlip.Scale = 0.8f;
-                        DownloadManager.Log("SETTING BLIP NAME FOR" + Name);
+                        LogManager.DebugLog("SETTING BLIP NAME FOR" + Name);
                         SetBlipNameFromTextFile(Character.CurrentBlip, Name);
                         if (BlipSprite != -1)
                             Character.CurrentBlip.Sprite = (BlipSprite) BlipSprite;
                         if (BlipAlpha != -1)
                             Character.CurrentBlip.Alpha = BlipAlpha;
-                        DownloadManager.Log("BLIP DONE FOR" + Name);
+                        LogManager.DebugLog("BLIP DONE FOR" + Name);
                     }
                     
                     return;
@@ -611,7 +611,7 @@ namespace GTANetwork
 
                 if ((Character.CurrentBlip == null || (Character.CurrentBlip.Position - Character.Position).Length() > 5f) && _blip)
                 {
-                    DownloadManager.Log("Blip was too far away -- deleting");
+                    LogManager.DebugLog("Blip was too far away -- deleting");
                     Character.Delete();
                 }
 
@@ -1307,9 +1307,7 @@ namespace GTANetwork
                 Util.SafeNotify(ex.Message);
                 Util.SafeNotify("LAST STEP: " + DEBUG_STEP);
 
-                DownloadManager.Log("Caught unhandled exception in PedThread for player " + Name);
-                DownloadManager.Log(ex.Message);
-                DownloadManager.Log("LAST STEP: " + DEBUG_STEP);
+                LogManager.LogException(ex, "PEDTHREAD FOR " + Name);
                 //throw;
             }
         }
@@ -1525,7 +1523,7 @@ namespace GTANetwork
 
         public void Clear()
         {
-            DownloadManager.Log("CLEAR FOR " + Name);
+            LogManager.DebugLog("CLEAR FOR " + Name);
             if (Character != null)
             {
                 Character.Model.MarkAsNoLongerNeeded();

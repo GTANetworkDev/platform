@@ -1,0 +1,10 @@
+<meta>
+    <info name="Destruction Derby" author="Guadmaz" type="script" />
+    
+    <assembly ref="mscorlib.dll" />
+    <assembly ref="System.Xml.Serialization.dll" />
+    <assembly ref="System.Xml.dll" />
+    
+    <script src="dd.cs" type="server" lang="csharp" />    
+    <script src="dd_local.js" type="client" lang="javascript" />
+</meta>

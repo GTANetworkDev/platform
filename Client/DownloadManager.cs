@@ -10,12 +10,6 @@ namespace GTANetwork
 {
     public static class DownloadManager
     {
-        public static void Log(string txt)
-        {
-            if (!Main.WriteDebugLog) return;
-            File.AppendAllText("scripts\\download.log", txt + "\r\n");
-        }
-
         private static FileTransferId CurrentFile;
         public static bool StartDownload(int id, string path, FileType type, int len, string md5hash)
         {

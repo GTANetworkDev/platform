@@ -25,6 +25,10 @@ namespace GTANetworkServer
 
     public class API
     {
+        #region META
+        internal string ResourceParent { get; set; }
+        #endregion
+
         #region Delegates
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
@@ -152,6 +156,11 @@ namespace GTANetworkServer
             Program.ServerInstance.StopResource(name);
         }
 
+        public bool isResourceRunning(string resource)
+        {
+            return Program.ServerInstance.RunningResources.Any(r => r.DirectoryName == resource);
+        }
+
         public void playSoundFrontEnd(Client target, string audioLib, string audioName)
         {
             Program.ServerInstance.SendNativeCallToPlayer(target, 0x2F844A8B08D76685, audioLib, true);
@@ -161,6 +170,45 @@ namespace GTANetworkServer
         public void sleep(int ms)
         {
             Thread.Sleep(ms);
+        }
+
+        public string getThisResource()
+        {
+            return ResourceParent;
+        }
+
+        public int loginPlayer(Client player, string password)
+        {
+            if (!Program.ServerInstance.ACLEnabled) return (int) AccessControlList.LoginResult.ACLDisabled;
+            return (int) Program.ServerInstance.ACL.TryLoginPlayer(player, password);
+        }
+
+        public void logoutPlayer(Client player)
+        {
+            Program.ServerInstance.ACL.LogOutClient(player);
+        }
+
+        public bool doesPlayerHaveAccessToCommand(Client player, string cmd)
+        {
+            cmd = cmd.TrimStart('/');
+
+            return (!Program.ServerInstance.ACLEnabled ||
+                    Program.ServerInstance.ACL.DoesUserHaveAccessToCommand(player, cmd));
+        }
+
+        public bool isPlayerLoggedIn(Client player)
+        {
+            return Program.ServerInstance.ACL.IsPlayerLoggedIn(player);
+        }
+
+        public bool isAclEnabled()
+        {
+            return Program.ServerInstance.ACLEnabled;
+        }
+
+        public string getPlayerAclGroup(Client player)
+        {
+            return Program.ServerInstance.ACL.GetPlayerGroup(player);
         }
 
         public void consoleOutput(string text)
@@ -307,7 +355,10 @@ namespace GTANetworkServer
             return 0;
         }
 
-
+        public Client getPlayerFromName(string name)
+        {
+            return getAllPlayers().FirstOrDefault(c => c.Name == name);
+        }
 
         public void setPlayerProp(Client player, int slot, int drawable, int texture)
         {
@@ -441,7 +492,12 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), weaponHash, ammo, equipNow, ammo);
         }
 
-        public  void kickPlayer(Client player, string reason)
+        public string getPlayerAddress(Client player)
+        {
+            return player.NetConnection.RemoteEndPoint.Address.ToString();
+        }
+
+        public void kickPlayer(Client player, string reason)
         {
             player.NetConnection.Disconnect("Kicked: " + reason);
         }

@@ -147,15 +147,15 @@ namespace GTANetwork
         public Vehicle CreateVehicle(Model model, Vector3 position, Vector3 rotation, int netHash)
         {
             if (model == null) return null;
-            DownloadManager.Log("CREATING VEHICLE FOR NETHASH " + netHash);
+            LogManager.DebugLog("CREATING VEHICLE FOR NETHASH " + netHash);
             model.Request(10000);
-            DownloadManager.Log("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
+            LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
 
             var veh = World.CreateVehicle(model, position, rotation.Z);
-            DownloadManager.Log("VEHICLE CREATED. NULL? " + (veh == null));
+            LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null));
             veh.Rotation = rotation;
             veh.IsInvincible = true;
-            DownloadManager.Log("PROPERTIES SET");
+            LogManager.DebugLog("PROPERTIES SET");
             lock (HandleMap)
             {
                 if (!HandleMap.Reverse.ContainsKey(veh.Handle))
@@ -163,9 +163,9 @@ namespace GTANetwork
                     HandleMap.Reverse.Add(veh.Handle, netHash);
                 }
             }
-            DownloadManager.Log("DISCARDING MODEL");
+            LogManager.DebugLog("DISCARDING MODEL");
             model.MarkAsNoLongerNeeded();
-            DownloadManager.Log("CREATEVEHICLE COMPLETE");
+            LogManager.DebugLog("CREATEVEHICLE COMPLETE");
             return veh;
         }
 
@@ -173,7 +173,7 @@ namespace GTANetwork
         {
             if (model == null)
             {
-                DownloadManager.Log("Model was null?");
+                LogManager.DebugLog("Model was null?");
                 return null;
             }
 

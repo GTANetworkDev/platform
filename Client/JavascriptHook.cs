@@ -226,7 +226,7 @@ namespace GTANetwork
                 Util.SafeNotify(s);
             }
 
-            DownloadManager.Log(ex.ToString());
+            LogManager.LogException(ex, "CLIENTSIDE SCRIPT ERROR");
         }
     }
 

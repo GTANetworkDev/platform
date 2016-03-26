@@ -97,8 +97,8 @@ namespace GTANetworkServer
             
             _clientScripts = new List<ClientsideScript>();
             NetEntityHandler = new NetEntityHandler();
+            ACL = new AccessControlList("acl.xml");
 
-            
             Name = name;
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
@@ -123,9 +123,10 @@ namespace GTANetworkServer
         public string GamemodeName { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
-
+        public AccessControlList ACL { get; set; }
         public bool IsClosing { get; set; }
         public bool ReadyToClose { get; set; }
+        public bool ACLEnabled { get; set; }
 
         public string Weather { get; set; } = "CLEAR";
         public DateTime TimeOfDay { get; set; } = DateTime.Now;
@@ -661,12 +662,37 @@ namespace GTANetworkServer
 
                                         if (command)
                                         {
-                                            lock (RunningResources)
-                                                RunningResources.ForEach(
-                                                    fs =>
-                                                        fs.Engines.ForEach(
-                                                            en => en.InvokeChatCommand(client, data.Message)));
-                                            break;
+                                            if (ACLEnabled)
+                                            {
+                                                pass = ACL.DoesUserHaveAccessToCommand(client, data.Message.Split()[0]);
+                                            }
+
+                                            if (pass)
+                                            {
+                                                lock (RunningResources)
+                                                    RunningResources.ForEach(
+                                                        fs =>
+                                                            fs.Engines.ForEach(
+                                                                en => en.InvokeChatCommand(client, data.Message)));
+                                            }
+                                            else
+                                            {
+                                                var chatObj = new ChatData()
+                                                {
+                                                    Sender = "",
+                                                    Message = "You don't have access to this command!",
+                                                };
+
+                                                var binData = Program.ServerInstance.SerializeBinary(chatObj);
+
+                                                NetOutgoingMessage respMsg = Program.ServerInstance.Server.CreateMessage();
+                                                respMsg.Write((int)PacketType.ChatData);
+                                                respMsg.Write(binData.Length);
+                                                respMsg.Write(binData);
+                                                client.NetConnection.SendMessage(respMsg, NetDeliveryMethod.ReliableOrdered, 0);
+                                                }
+
+                                            return;
                                         }
 
                                         lock (RunningResources)

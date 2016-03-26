@@ -46,6 +46,7 @@ namespace GTANetworkServer
             _mainQueue.Enqueue(new Action(() =>
             {
                 _jsEngine = InstantiateScripts(javascript, name, references);
+                _jsEngine.Script.API.ResourceParent = name;
             }));
         }
 
@@ -65,6 +66,7 @@ namespace GTANetworkServer
             _mainQueue.Enqueue(new Action(() =>
             {
                 _compiledScript = sc;
+                _compiledScript.API.ResourceParent = name;
             }));
         }
 
@@ -111,7 +113,6 @@ namespace GTANetworkServer
 
             return scriptEngine;
         }
-
 
         private void MainThreadLoop()
         {

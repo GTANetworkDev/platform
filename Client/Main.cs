@@ -503,13 +503,13 @@ namespace GTANetwork
                         }
                         catch (Exception e)
                         {
-                            DownloadManager.Log("DISCOVERY EXCEPTION " + e.Message + " " + e.StackTrace);
+                            LogManager.LogException(e, "DISCOVERY EXCEPTION");
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    DownloadManager.Log("DISCOVERY CRASH: " + e.Message + " " + e.StackTrace);
+                    LogManager.LogException(e, "DISCOVERY CRASH");
                 }
             });
 
@@ -1206,8 +1206,7 @@ namespace GTANetwork
                 catch (Exception ex)
                 {
                     Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
-                    DownloadManager.Log("FAILED TO SEND DATA: " + ex.Message);
-                    DownloadManager.Log(ex.StackTrace);
+                    LogManager.LogException(ex, "SENDPLAYERDATA");
                 }
                 _bytesSent += bin.Length;
                 _messagesSent++;
@@ -1259,8 +1258,7 @@ namespace GTANetwork
                 catch (Exception ex)
                 {
                     Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
-                    DownloadManager.Log("FAILED TO SEND DATA: " + ex.Message);
-                    DownloadManager.Log(ex.StackTrace);
+                    LogManager.LogException(ex, "SENDPLAYERDATAPED");
                 }
 
                 _bytesSent += bin.Length;
@@ -1990,7 +1988,7 @@ namespace GTANetwork
             while (Client != null && (msg = Client.ReadMessage()) != null)
             {
                 PacketType type = PacketType.WorldSharingStop;
-                DownloadManager.Log("RECEIVED MESSAGE " + msg.MessageType);
+                LogManager.DebugLog("RECEIVED MESSAGE " + msg.MessageType);
                 try
                 {
                     _messagesReceived++;
@@ -1999,7 +1997,7 @@ namespace GTANetwork
                     if (msg.MessageType == NetIncomingMessageType.Data)
                     {
                         type = (PacketType) msg.ReadInt32();
-                        DownloadManager.Log("RECEIVED DATATYPE " + type);
+                        LogManager.DebugLog("RECEIVED DATATYPE " + type);
                         switch (type)
                         {
                             case PacketType.VehiclePositionData:
@@ -2172,29 +2170,29 @@ namespace GTANetwork
                             case PacketType.CreateEntity:
                             {
                                 var len = msg.ReadInt32();
-                                DownloadManager.Log("Received CreateEntity");
+                                    LogManager.DebugLog("Received CreateEntity");
                                 var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
                                 if (data != null && data.Properties != null)
                                 {
-                                    DownloadManager.Log("CreateEntity was not null. Type: " + data.EntityType);
-                                    DownloadManager.Log("Model: " + data.Properties.ModelHash);
+                                    LogManager.DebugLog("CreateEntity was not null. Type: " + data.EntityType);
+                                    LogManager.DebugLog("Model: " + data.Properties.ModelHash);
                                     if (data.EntityType == (byte) EntityType.Vehicle)
                                     {
                                         var prop = (VehicleProperties) data.Properties;
                                         var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash),
                                             data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
-                                        DownloadManager.Log("Settings vehicle color 1");
+                                        LogManager.DebugLog("Settings vehicle color 1");
                                         veh.PrimaryColor = (VehicleColor) prop.PrimaryColor;
-                                        DownloadManager.Log("Settings vehicle color 2");
+                                        LogManager.DebugLog("Settings vehicle color 2");
                                         veh.PrimaryColor = (VehicleColor) prop.SecondaryColor;
-                                        DownloadManager.Log("Settings vehicle extra colors");
+                                        LogManager.DebugLog("Settings vehicle extra colors");
                                         Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
-                                        DownloadManager.Log("CreateEntity done");
+                                        LogManager.DebugLog("CreateEntity done");
                                     }
                                     else if (data.EntityType == (byte) EntityType.Prop)
                                     {
-                                        DownloadManager.Log("It was a prop. Spawning...");
+                                        LogManager.DebugLog("It was a prop. Spawning...");
                                         NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash),
                                             data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
@@ -2252,7 +2250,7 @@ namespace GTANetwork
                                 var data = DeserializeBinary<DeleteEntity>(msg.ReadBytes(len)) as DeleteEntity;
                                 if (data != null)
                                 {
-                                    DownloadManager.Log("RECEIVED DELETE ENTITY " + data.NetHandle);
+                                    LogManager.DebugLog("RECEIVED DELETE ENTITY " + data.NetHandle);
                                     if (NetEntityHandler.Markers.ContainsKey(data.NetHandle))
                                     {
                                         NetEntityHandler.Markers.Remove(data.NetHandle);
@@ -2304,7 +2302,7 @@ namespace GTANetwork
                                 }
                                 else
                                 {
-                                    DownloadManager.Log("DATA WAS NULL ON REQUEST");
+                                    LogManager.DebugLog("DATA WAS NULL ON REQUEST");
                                 }
                             }
                                 break;
@@ -2485,7 +2483,7 @@ namespace GTANetwork
                                 if (data != null)
                                 {
                                     var args = DecodeArgumentList(data.Arguments.ToArray()).ToList();
-                                    DownloadManager.Log("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
+                                    LogManager.DebugLog("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
                                     switch ((SyncEventType) data.EventType)
                                     {
                                         case SyncEventType.LandingGearChange:
@@ -2644,7 +2642,7 @@ namespace GTANetwork
                                 var len = msg.ReadInt32();
                                 var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
                                 if (data == null) return;
-                                DownloadManager.Log("RECEIVED NATIVE CALL " + data.Hash);
+                                LogManager.DebugLog("RECEIVED NATIVE CALL " + data.Hash);
                                 DecodeNativeCall(data);
                             }
                                 break;
@@ -2700,7 +2698,7 @@ namespace GTANetwork
                     else if (msg.MessageType == NetIncomingMessageType.StatusChanged)
                     {
                         var newStatus = (NetConnectionStatus) msg.ReadByte();
-                        DownloadManager.Log("NEW STATUS: " + newStatus);
+                        LogManager.DebugLog("NEW STATUS: " + newStatus);
                         switch (newStatus)
                         {
                             case NetConnectionStatus.InitiatedConnect:
@@ -3327,14 +3325,14 @@ namespace GTANetwork
 
             list.AddRange(DecodeArgumentList(obj.Arguments.ToArray()).Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
 
-            DownloadManager.Log("NATIVE CALL ARGUMENTS: " + list.Aggregate((f, s) => f + ", " + s));
-            DownloadManager.Log("RETURN TYPE: " + obj.ReturnType);
+            LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + list.Aggregate((f, s) => f + ", " + s));
+            LogManager.DebugLog("RETURN TYPE: " + obj.ReturnType);
             var nativeType = CheckNativeHash(obj.Hash);
-            DownloadManager.Log("NATIVE TYPE IS " + nativeType);
+            LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
             Model model = null;
             if (((int)nativeType & (int)NativeType.NeedsModel) > 0)
             {
-                DownloadManager.Log("REQUIRES MODEL");
+                LogManager.DebugLog("REQUIRES MODEL");
                 int position = 0;
                 if (((int)nativeType & (int)NativeType.NeedsModel1) > 0)
                     position = 0;
@@ -3342,7 +3340,7 @@ namespace GTANetwork
                     position = 1;
                 if (((int)nativeType & (int)NativeType.NeedsModel3) > 0)
                     position = 2;
-                DownloadManager.Log("POSITION IS " + position);
+                LogManager.DebugLog("POSITION IS " + position);
                 var modelObj = obj.Arguments[position];
                 int modelHash = 0;
                 if (modelObj is UIntArgument)
@@ -3353,12 +3351,12 @@ namespace GTANetwork
                 {
                     modelHash = ((IntArgument)modelObj).Data;
                 }
-                DownloadManager.Log("MODEL HASH IS " + modelHash);
+                LogManager.DebugLog("MODEL HASH IS " + modelHash);
                 model = new Model(modelHash);
 
                 if (model.IsValid)
                 {
-                    DownloadManager.Log("MODEL IS VALID, REQUESTING");
+                    LogManager.DebugLog("MODEL IS VALID, REQUESTING");
                     model.Request(10000);
                 }
             }

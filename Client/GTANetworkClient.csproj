@@ -85,6 +85,7 @@
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />
     <Compile Include="InputboxThread.cs" />
     <Compile Include="JavascriptHook.cs" />
+    <Compile Include="LogManager.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="NetEntityHandler.cs" />
     <Compile Include="PedThread.cs" />

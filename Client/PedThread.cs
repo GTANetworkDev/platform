@@ -50,9 +50,9 @@ namespace GTANetwork
             for (int i = 0; i < localOpps.Count; i++) localOpps.ElementAt(i).Value.DisplayLocally();
 
             //for (int i = 0; i < localNpcs.Count; i++) localNpcs.ElementAt(i).Value.DisplayLocally();
-            DownloadManager.Log("SENDING PLAYER DATA");
+            LogManager.DebugLog("SENDING PLAYER DATA");
             Main.SendPlayerData();
-            DownloadManager.Log("END LOOP");
+            LogManager.DebugLog("END LOOP");
         }
     }
 }
