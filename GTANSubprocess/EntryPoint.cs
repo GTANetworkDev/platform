@@ -63,19 +63,27 @@ namespace GTANetwork
                     var lastVersion = ParseableVersion.Parse(wc.DownloadString(settings.MasterServerAddress.Trim('/') + "/version"));
                     if (lastVersion > fileVersion)
                     {
-                        //MessageBox.Show("Updating version!\nInternet Version: " + lastVersion + "\nOur Version: " + fileVersion + "\nBigger? " + (lastVersion > fileVersion));
-                        // Download latest version.
-                        if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
-                        wc.DownloadFile(settings.MasterServerAddress.Trim('/') + "/files", "tempstorage\\files.zip");
-                        using (var zipfile = ZipFile.Read("tempstorage\\files.zip"))
-                        {
-                            foreach (var entry in zipfile)
-                            {
-                                entry.Extract("bin", ExtractExistingFileAction.OverwriteSilently);
-                            }
-                        }
+                        var updateResult =
+                            MessageBox.Show(
+                                "New GTA Network version is available! Download now?\n\nInternet Version: " +
+                                lastVersion + "\nOur Version: " + fileVersion, "Update Available",
+                                MessageBoxButtons.YesNo);
 
-                        File.Delete("tempstorage\\files.zip");
+                        if (updateResult == DialogResult.Yes)
+                        {
+                            // Download latest version.
+                            if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
+                            wc.DownloadFile(settings.MasterServerAddress.Trim('/') + "/files", "tempstorage\\files.zip");
+                            using (var zipfile = ZipFile.Read("tempstorage\\files.zip"))
+                            {
+                                foreach (var entry in zipfile)
+                                {
+                                    entry.Extract("bin", ExtractExistingFileAction.OverwriteSilently);
+                                }
+                            }
+
+                            File.Delete("tempstorage\\files.zip");
+                        }
                     }
                 }
                 catch (WebException)
@@ -95,12 +103,23 @@ namespace GTANetwork
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
             var keyName = "InstallFolder";
-            var installFolder = (string)Registry.GetValue(dictPath, keyName, null);
+            InstallFolder = (string)Registry.GetValue(dictPath, keyName, null);
+            
 
-            if (string.IsNullOrEmpty(installFolder))
+            if (string.IsNullOrEmpty(InstallFolder))
             {
                 settings.SteamPowered = true;
-                SaveSettings("settings.xml", settings);
+
+                try
+                {
+                    SaveSettings("settings.xml", settings);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    MessageBox.Show("We require administrative privileges to continue. Please restart as administrator.", "Unauthorized access");
+                    return;
+                }
+
 
                 var diag = new OpenFileDialog();
                 diag.Filter = "GTA5 Executable|GTA5.exe";
@@ -110,10 +129,10 @@ namespace GTANetwork
 
                 if (diag.ShowDialog() == DialogResult.OK)
                 {
-                    installFolder = Path.GetDirectoryName(diag.FileName);
+                    InstallFolder = Path.GetDirectoryName(diag.FileName);
                     try
                     {
-                        Registry.SetValue(dictPath, keyName, installFolder);
+                        Registry.SetValue(dictPath, keyName, InstallFolder);
                     }
                     catch(UnauthorizedAccessException)
                     { }
@@ -152,17 +171,22 @@ namespace GTANetwork
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
             }
 
+            splashScreen.SetPercent(65);
+
+            MoveStuffIn();
+
+
             if (!settings.SteamPowered)
             {
-                Process.Start(installFolder + "\\GTAVLauncher.exe");
+                Process.Start(InstallFolder + "\\GTAVLauncher.exe");
             }
             else
             {
                 Process.Start("steam://run/271590");
             }
 
-            splashScreen.SetPercent(65);
-            
+            splashScreen.SetPercent(80);
+
             Process gta5Process;
 
             var counter = 0;
@@ -175,53 +199,11 @@ namespace GTANetwork
                 {
                     counter++;
                     if (counter > 50)
+                    {
+                        MoveStuffOut();
                         return;
+                    }
                 }
-            }
-
-            splashScreen.SetPercent(70);
-
-            if (Directory.Exists("tempstorage"))
-            {
-                Directory.Delete("tempstorage", true);
-            }
-
-            Directory.CreateDirectory("tempstorage");
-
-            var filesRoot = Directory.GetFiles(installFolder, "*.asi");
-            foreach (var s in filesRoot)
-            {
-                File.Move(s, "tempstorage\\" + Path.GetFileName(s));
-            }
-
-            if (File.Exists(installFolder + "\\dinput8.dll"))
-                File.Move(installFolder + "\\dinput8.dll", "tempstorage\\dinput8.dll");
-
-            if (File.Exists(installFolder + "\\dsound.dll"))
-                File.Move(installFolder + "\\dsound.dll", "tempstorage\\dsound.dll");
-
-            if (File.Exists(installFolder + "\\scripthookv.dll"))
-                File.Move(installFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
-
-            if (Directory.Exists(installFolder + "\\scripts"))
-                Directory.Move(installFolder + "\\scripts", "tempstorage\\scripts");
-
-            // Moving our stuff
-
-            List<string> ourFiles = new List<string>();
-
-            foreach (var path in Directory.GetFiles("bin"))
-            {
-                File.Copy(path, installFolder + "\\" + Path.GetFileName(path), true);
-                ourFiles.Add(installFolder + "\\" + Path.GetFileName(path));
-            }
-
-            Directory.CreateDirectory(installFolder + "\\scripts");
-
-            foreach (var path in Directory.GetFiles("bin\\scripts"))
-            {
-                File.Copy(path, installFolder + "\\scripts\\" + Path.GetFileName(path), true);
-                ourFiles.Add(installFolder + "\\scripts\\" + Path.GetFileName(path));
             }
 
             splashScreen.SetPercent(100);
@@ -243,28 +225,7 @@ namespace GTANetwork
 
             // Move everything back
 
-            foreach (var file in ourFiles)
-            {
-                try
-                {
-                    File.Delete(file);
-                }
-                catch(Exception e)
-                { }
-            }
-            
-            foreach (var path in Directory.GetFiles("tempstorage"))
-            {
-                File.Copy(path, installFolder + "\\" + Path.GetFileName(path), true);
-            }
-
-            if (Directory.Exists("tempstorage\\scripts"))
-            foreach (var path in Directory.GetFiles("tempstorage\\scripts"))
-            {
-                File.Copy(path, installFolder + "\\scripts\\" + Path.GetFileName(path), true);
-            }
-
-            Directory.Delete("tempstorage", true);
+            MoveStuffOut();
         }
 
         public static PlayerSettings ReadSettings(string path)
@@ -279,6 +240,79 @@ namespace GTANetwork
             }
 
             return settings;
+        }
+
+        private List<string> OurFiles = new List<string>();
+        private string InstallFolder;
+
+        public void MoveStuffIn()
+        {
+            if (Directory.Exists("tempstorage"))
+            {
+                Directory.Delete("tempstorage", true);
+            }
+
+            Directory.CreateDirectory("tempstorage");
+
+            var filesRoot = Directory.GetFiles(InstallFolder, "*.asi");
+            foreach (var s in filesRoot)
+            {
+                File.Move(s, "tempstorage\\" + Path.GetFileName(s));
+            }
+
+            if (File.Exists(InstallFolder + "\\dinput8.dll"))
+                File.Move(InstallFolder + "\\dinput8.dll", "tempstorage\\dinput8.dll");
+
+            if (File.Exists(InstallFolder + "\\dsound.dll"))
+                File.Move(InstallFolder + "\\dsound.dll", "tempstorage\\dsound.dll");
+
+            if (File.Exists(InstallFolder + "\\scripthookv.dll"))
+                File.Move(InstallFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
+
+            if (Directory.Exists(InstallFolder + "\\scripts"))
+                Directory.Move(InstallFolder + "\\scripts", "tempstorage\\scripts");
+
+            // Moving our stuff
+
+            foreach (var path in Directory.GetFiles("bin"))
+            {
+                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
+                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
+            }
+
+            Directory.CreateDirectory(InstallFolder + "\\scripts");
+
+            foreach (var path in Directory.GetFiles("bin\\scripts"))
+            {
+                File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
+                OurFiles.Add(InstallFolder + "\\scripts\\" + Path.GetFileName(path));
+            }
+        }
+
+        public void MoveStuffOut()
+        {
+            foreach (var file in OurFiles)
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (Exception e)
+                { }
+            }
+
+            foreach (var path in Directory.GetFiles("tempstorage"))
+            {
+                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
+            }
+
+            if (Directory.Exists("tempstorage\\scripts"))
+                foreach (var path in Directory.GetFiles("tempstorage\\scripts"))
+                {
+                    File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
+                }
+
+            Directory.Delete("tempstorage", true);
         }
 
         public static void SaveSettings(string path, PlayerSettings set)

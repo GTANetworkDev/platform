@@ -152,8 +152,6 @@ public class DDGamemode : Script
 
     public void onPlayerConnect(Client player)
     {
-        Program.ServerInstance.SetNativeCallOnTickForPlayer(player, "RACE_DISABLE_VEHICLE_EXIT", 0xFE99B66D079CF6BC, 0, 75, true);
-
         if (IsRaceStarting)
         {
             SetUpPlayerForRace(player, CurrentRace, true, 0);

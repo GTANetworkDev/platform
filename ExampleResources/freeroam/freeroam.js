@@ -9,11 +9,11 @@ API.onPlayerRespawn.connect(function (sender) {
 API.onChatCommand.connect(function (sender, command) {
     if (command.substring(0, 5) == "/spec")   {
       if (command.length > 5) {
-        var target;
-        var targetName = command.substring(5);
-        var players = API.getAllPlayers();
-        for (var i = players.length - 1; i >= 0; i--) {
-          if (players[i].Name === targetName) {
+        var target = null;
+        var targetName = command.substring(6);
+        var players = API.getAllPlayers();        
+        for (var i = 0; i < players.Count; i++) {          
+          if (players[i].Name == targetName) {
             target = players[i];
             break;
           }

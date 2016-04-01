@@ -177,6 +177,11 @@ namespace GTANetworkServer
             return ResourceParent;
         }
 
+        public int getGameHash(string input)
+        {
+            return Program.GetHash(input);
+        }
+
         public int loginPlayer(Client player, string password)
         {
             if (!Program.ServerInstance.ACLEnabled) return (int) AccessControlList.LoginResult.ACLDisabled;

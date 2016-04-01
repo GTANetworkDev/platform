@@ -86,13 +86,16 @@ namespace GTANetwork
                 else
                 {
                     Main.StartClientsideScripts(obj);
+
                     if (Main.JustJoinedServer)
                     {
                         World.RenderingCamera = null;
                         Main.MainMenu.TemporarilyHidden = false;
                         Main.MainMenu.Visible = false;
-                        Main.InvokeFinishedDownload();
+                        Main.JustJoinedServer = false;
                     }
+
+                    Main.InvokeFinishedDownload();
                 }
             }
 

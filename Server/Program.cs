@@ -16,6 +16,27 @@ namespace GTANetworkServer
             Console.WriteLine("[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
         }
 
+        public static int GetHash(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return 0;
+
+            var bytes = Encoding.UTF8.GetBytes(input.ToLower().ToCharArray());
+            uint hash = 0;
+
+            for (int i = 0, length = bytes.Length; i < length; i++)
+            {
+                hash += bytes[i];
+                hash += (hash << 10);
+                hash ^= (hash >> 6);
+            }
+
+            hash += (hash << 3);
+            hash ^= (hash >> 11);
+            hash += (hash << 15);
+
+            return unchecked((int)hash);
+        }
+
         public static string GetHashSHA256(string text)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(text);

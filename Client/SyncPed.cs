@@ -71,6 +71,8 @@ namespace GTANetwork
         public int PedArmor;
         public bool IsVehDead;
 
+        public bool IsSpectating;
+
         public bool Debug;
         
         private DateTime _stopTime;
@@ -232,8 +234,10 @@ namespace GTANetwork
             set
             {
                 DEBUG_STEP_backend = value;
-                //UI.ShowSubtitle("NEWSTEP: " + DEBUG_STEP_backend + " for " + Name);
-                //DownloadManager.Log("NEXTSTEP FOR " + Name + ": " + value);
+                LogManager.DebugLog("NEXTSTEP FOR " + Name + ": " + value);
+
+                if (Main.SlowDownClientForDebug)
+                    Script.Yield();
             }
         }
 
@@ -312,6 +316,10 @@ namespace GTANetwork
         {
             try
             {
+
+                if (IsSpectating) return;
+
+
                 DEBUG_STEP = 0;
                 
                 const float hRange = 300f;
@@ -596,8 +604,7 @@ namespace GTANetwork
                     {
                         if (!IsInVehicle)
                             Character.Position = gPos;
-                        else
-                        if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
+                        else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
                         {
                             MainVehicle.Position = VehiclePosition;
                             MainVehicle.Rotation = VehicleRotation;
@@ -820,7 +827,7 @@ namespace GTANetwork
                                 hash = unchecked((int)WeaponHash.CombatPDW);
 
                             Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
-                                    end.Y, end.Z, 75, true, hash, Character, true, true, speed);
+                                    end.Y, end.Z, 75, true, hash, Character, true, false, speed);
                         }
                     }
 
@@ -894,7 +901,7 @@ namespace GTANetwork
                                     damage = 210;
 
                                 Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
-                                    end.Y, end.Z, damage, true, (int) hash, Character, true, true, speed);
+                                    end.Y, end.Z, damage, true, (int) hash, Character, true, false, speed);
                             }
                         }
                     }
@@ -915,6 +922,7 @@ namespace GTANetwork
                         if (!IsShooting && _lastShooting)
                         {
                             Character.Task.ClearAll();
+                            Character.Task.ClearSecondary();
                         }
                     }
 
@@ -1082,8 +1090,8 @@ namespace GTANetwork
                             else if (!meleeSwingDone && CurrentWeapon == unchecked((int)WeaponHash.Unarmed))
                             {
                                 var rightfist = Character.GetBoneCoord(Bone.IK_R_Hand);
-                                var start = rightfist -= new Vector3(0, 0, 0.5f);
-                                var end = rightfist += new Vector3(0, 0, 0.5f);
+                                var start = rightfist - new Vector3(0, 0, 0.5f);
+                                var end = rightfist + new Vector3(0, 0, 0.5f);
                                 var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
                                 if (ray.DitHitAnything && ray.DitHitEntity && ray.HitEntity.Handle == Game.Player.Character.Handle)
                                 {
@@ -1250,7 +1258,7 @@ namespace GTANetwork
                                 var end = start + dir*100f;
 
                                 Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
-                                    end.Y, end.Z, damage, true, (int) weaponH, Character, true, true, speed);
+                                    end.Y, end.Z, damage, true, (int) weaponH, Character, true, false, speed);
 
                                 _lastStart = start;
                                 _lastEnd = end;
@@ -1778,6 +1786,10 @@ namespace GTANetwork
                     return 20;
                 case WeaponHash.Railgun:
                     return 30;
+                case (WeaponHash) 1649403952:
+                    return 36;
+                case (WeaponHash)4019527611:
+                    return 165;
             }
         }
     }

@@ -33,6 +33,7 @@ namespace GTANetwork
 
         public static bool BlockControls;
         public static bool WriteDebugLog;
+        public static bool SlowDownClientForDebug;
 
         public static bool IsSpectating;
 
@@ -79,6 +80,7 @@ namespace GTANetwork
         public Main()
         {
             PlayerSettings = Util.ReadSettings(GTANInstallDir + "\\settings.xml");
+            GameSettings = GTANetwork.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
 
             NetEntityHandler = new NetEntityHandler();
@@ -187,6 +189,8 @@ namespace GTANetwork
         public static Dictionary<string, SyncPed> Npcs;
         public static float Latency;
         private int Port = 4499;
+
+        private GameSettings.Settings GameSettings;
 
         public static Camera MainMenuCamera;
 
@@ -528,6 +532,8 @@ namespace GTANetwork
                 list = new List<SyncPed>(Opponents.Select(pair => pair.Value));
             }
             
+            _serverPlayers.Dictionary.Add("Total Players", list.Count.ToString());
+
             _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
 
             foreach (var ped in list)
@@ -773,6 +779,7 @@ namespace GTANetwork
                     nameItem.SetRightLabel(PlayerSettings.DisplayName);
                     nameItem.Activated += (sender, item) =>
                     {
+                        if (IsOnServer()) return;
                         var newName = InputboxThread.GetUserInput(PlayerSettings.DisplayName ?? "Enter new name", 40, TickSpinner);
                         if (!string.IsNullOrWhiteSpace(newName))
                         {
@@ -784,6 +791,7 @@ namespace GTANetwork
 
                     internetServers.Items.Add(nameItem);
                 }
+
                 #if DEBUG
                 {
                     var debugItem = new UIMenuCheckboxItem("Debug", false);
@@ -821,6 +829,15 @@ namespace GTANetwork
                     };
                     internetServers.Items.Add(debugItem);
                 }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Break Every Update For Debugging", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        SlowDownClientForDebug = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
 #endif
 
                 {
@@ -833,25 +850,145 @@ namespace GTANetwork
                     internetServers.Items.Add(debugItem);
                 }
 
-                var localServs = new TabItemSimpleList("Audio", new Dictionary<string, string>
-                {
-                    { "Name", "Guadmaz"},
-                    { "Chat size", "0/10"}
-                });
+                var localServs = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
 
-                var favServers = new TabItemSimpleList("Video", new Dictionary<string, string>
                 {
-                    { "Name", "Guadmaz"},
-                    { "Chat size", "0/10"}
-                });
+                    var cityDen = new UIMenuItem("City Density");
+                    cityDen.SetRightLabel(GameSettings.Graphics.CityDensity.Value.ToString());
+                    localServs.Items.Add(cityDen);
 
-                var recentServs = new TabItemSimpleList("Keybindings", new Dictionary<string, string>
+                    cityDen.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.CityDensity.Value.ToString(),
+                            10, TickSpinner);
+
+                        double newSetting;
+                        if (!double.TryParse(strInput, out newSetting))
+                        {
+                            Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        GameSettings.Graphics.CityDensity.Value = newSetting;
+                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                    };
+                }
+
                 {
-                    { "Name", "Guadmaz"},
-                    { "Chat size", "0/10"}
-                });
+                    var cityDen = new UIMenuItem("Depth Of Field");
+                    cityDen.SetRightLabel(GameSettings.Graphics.DoF.Value.ToString());
+                    localServs.Items.Add(cityDen);
 
-                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers, recentServs });
+                    cityDen.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.DoF.Value.ToString(),
+                            10, TickSpinner);
+
+                        bool newSetting;
+                        if (!bool.TryParse(strInput, out newSetting))
+                        {
+                            Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        GameSettings.Graphics.DoF.Value = newSetting;
+                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                    };
+                }
+
+                {
+                    var cityDen = new UIMenuItem("Grass Quality");
+                    cityDen.SetRightLabel(GameSettings.Graphics.GrassQuality.Value.ToString());
+                    localServs.Items.Add(cityDen);
+
+                    cityDen.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.GrassQuality.Value.ToString(),
+                            10, TickSpinner);
+
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting))
+                        {
+                            Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        GameSettings.Graphics.GrassQuality.Value = newSetting;
+                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                    };
+                }
+
+                {
+                    var cityDen = new UIMenuItem("MSAA");
+                    cityDen.SetRightLabel(GameSettings.Graphics.MSAA.Value.ToString());
+                    localServs.Items.Add(cityDen);
+
+                    cityDen.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.MSAA.Value.ToString(),
+                            10, TickSpinner);
+
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting))
+                        {
+                            Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        GameSettings.Graphics.MSAA.Value = newSetting;
+                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                    };
+                }
+
+
+                var favServers = new TabInteractiveListItem("Video", new List<UIMenuItem>());
+
+                {
+                    var cityDen = new UIMenuItem("City Density");
+                    cityDen.SetRightLabel(GameSettings.Video.Windowed.Value.ToString());
+                    favServers.Items.Add(cityDen);
+
+                    cityDen.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(GameSettings.Video.Windowed.Value.ToString(),
+                            10, TickSpinner);
+
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting))
+                        {
+                            Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        GameSettings.Video.Windowed.Value = newSetting;
+                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                    };
+                }
+
+                {
+                    var cityDen = new UIMenuItem("Vertical Sync");
+                    cityDen.SetRightLabel(GameSettings.Video.VSync.Value.ToString());
+                    favServers.Items.Add(cityDen);
+
+                    cityDen.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(GameSettings.Video.VSync.Value.ToString(),
+                            10, TickSpinner);
+
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting))
+                        {
+                            Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        GameSettings.Video.VSync.Value = newSetting;
+                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                    };
+                }
+
+                
+                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers });
                 MainMenu.AddTab(welcomeItem);
             }
 
@@ -955,6 +1092,9 @@ namespace GTANetwork
         private static int _pedSwitch = 0;
         private static Dictionary<int, int> _vehMods = new Dictionary<int, int>();
         private static Dictionary<int, int> _pedClothes = new Dictionary<int, int>();
+
+        private static string Weather { get; set; }
+        private static TimeSpan? Time { get; set; }
 
         public static void AddMap(ServerMap map)
         {
@@ -1085,6 +1225,11 @@ namespace GTANetwork
 
             World.CurrentDayTime = new TimeSpan(map.Hours, map.Minutes, 00);
             Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, map.Weather);
+
+            Time = new TimeSpan(map.Hours, map.Minutes, 00);
+            Weather = map.Weather;
+
+            Function.Call(Hash.PAUSE_CLOCK, true);
         }
 
         public static void StartClientsideScripts(ScriptCollection scripts)
@@ -1517,6 +1662,7 @@ namespace GTANetwork
                 UI.Notify("new bit pos: " + _debugmask);
             }
 
+                        UI.ShowSubtitle(Game.Player.Character.Weapons.Current.Hash.ToString());
             */
 
             DEBUG_STEP = 3;
@@ -1643,13 +1789,18 @@ namespace GTANetwork
             var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
                                 Game.Player.CanControlCharacter);
+
             if (hasRespawned && !_lastDead)
             {
-                
                 _lastDead = true;
                 var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.PlayerRespawned);
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+
+                if (Weather != null) Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Weather);
+                if (Time.HasValue) World.CurrentDayTime = new TimeSpan(Time.Value.Hours, Time.Value.Minutes, 00);
+
+                Function.Call(Hash.PAUSE_CLOCK, true);
             }
             DEBUG_STEP = 17;
             _lastDead = hasRespawned;
@@ -1725,7 +1876,7 @@ namespace GTANetwork
 
             if (IsSpectating && SpectatingEntity != 0)
             {
-                Game.Player.Character.Position = new Prop(SpectatingEntity).Position;
+                Game.Player.Character.PositionNoOffset = new Prop(SpectatingEntity).Position;
                 Game.DisableControl(0, Control.NextCamera);
             }
             else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer == null && Opponents.Count(op => op.Value.Character != null) > 0)
@@ -1734,7 +1885,7 @@ namespace GTANetwork
             }
             else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer != null)
             {
-                Game.Player.Character.Position = _currentSpectatingPlayer.Character.Position;
+                Game.Player.Character.PositionNoOffset = _currentSpectatingPlayer.Character.Position;
                 Game.DisableControl(0, Control.NextCamera);
 
                 if (Game.IsControlJustPressed(0, Control.PhoneLeft))
@@ -1838,6 +1989,7 @@ namespace GTANetwork
 
                 MainMenu.RefreshIndex();
             }
+            
 
             if (e.KeyCode == Keys.G && !Game.Player.Character.IsInVehicle() && IsOnServer() && !_chat.IsFocused)
             {
@@ -2345,13 +2497,15 @@ namespace GTANetwork
                                             var spectating = (bool)args[1];
                                             var lclHndl = NetEntityHandler.NetToEntity(netHandle);
                                             lock (Opponents)
-                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle && spectating)
+                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
                                             {
                                                 var pair = Opponents.FirstOrDefault(
                                                     op => op.Value.Character?.Handle == lclHndl.Handle);
                                                 if (pair.Value != null)
                                                 {
-                                                    pair.Value.Clear();
+                                                    pair.Value.IsSpectating = spectating;
+                                                    if (spectating)
+                                                        pair.Value.Clear();
                                                 }
                                             }
                                             else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
@@ -2501,9 +2655,9 @@ namespace GTANetwork
                                             var newFloat = (bool) args[2];
                                             if (veh == null) return;
                                             if (newFloat)
-                                                new Vehicle(veh.Handle).OpenDoor((VehicleDoor) doorId, false, false);
+                                                new Vehicle(veh.Handle).OpenDoor((VehicleDoor) doorId, false, true);
                                             else
-                                                new Vehicle(veh.Handle).CloseDoor((VehicleDoor) doorId, false);
+                                                new Vehicle(veh.Handle).CloseDoor((VehicleDoor) doorId, true);
                                         }
                                             break;
                                         case SyncEventType.BooleanLights:
@@ -2790,6 +2944,8 @@ namespace GTANetwork
                                 World.RenderingCamera = MainMenuCamera;
                                 MainMenu.Visible = true;
                                 IsSpectating = false;
+                                Weather = null;
+                                Time = null;
                                 LocalTeam = -1;
                                 break;
                         }

@@ -5,9 +5,7 @@ var nextCheckpointDir = null;
 var racePosition = null;
 
 API.onUpdate.connect(function(sender, args) {
-    if (racePosition != null) {
-        //API.drawText(racePosition, 1900, 1000, 0.5, 255, 255, 255, 255, 0, 2, false, false, false);
-    }
+    API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
 });
 
 API.onServerEventTrigger.connect(function (eventName, args) {

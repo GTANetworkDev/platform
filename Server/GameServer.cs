@@ -241,6 +241,8 @@ namespace GTANetworkServer
                     }
                 }
 
+                var csScripts = new List<ClientsideScript>();
+
                 foreach (var script in currentResInfo.Scripts)
                 {
                     if (script.Language == ScriptingEngineLanguage.javascript)
@@ -248,11 +250,14 @@ namespace GTANetworkServer
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
                         if (script.Type == ResourceType.client)
                         {
-                            _clientScripts.Add(new ClientsideScript()
+                            var csScript = new ClientsideScript()
                             {
                                 ResourceParent = resourceName,
                                 Script = scrTxt,
-                            });
+                            };
+
+                            _clientScripts.Add(csScript);
+                            csScripts.Add(csScript);
                             continue;
                         }
 
@@ -291,6 +296,44 @@ namespace GTANetworkServer
                 {
                     engine.InvokeResourceStart();
                 }
+                
+
+                var randGen = new Random();
+                // TODO: Send new files to everyone
+                foreach (var client in Clients)
+                {
+                    var clientScripts = new ScriptCollection();
+                    clientScripts.ClientsideScripts = new List<ClientsideScript>(_clientScripts);
+
+                    var scriptData = new StreamedData();
+                    scriptData.Id = randGen.Next(int.MaxValue);
+                    scriptData.Data = SerializeBinary(clientScripts);
+                    scriptData.Type = FileType.Script;
+
+                    var downloader = new StreamingClient(client);
+
+                    foreach (var file in currentResInfo.Files)
+                    {
+                        var fileData = new StreamedData();
+                        fileData.Id = randGen.Next(int.MaxValue);
+                        fileData.Type = FileType.Normal;
+                        fileData.Data =
+                            File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
+                                                ourResource.DirectoryName +
+                                                Path.DirectorySeparatorChar +
+                                                file.Path);
+                        fileData.Name = file.Path;
+                        fileData.Resource = ourResource.DirectoryName;
+                        fileData.Hash = FileHashes.ContainsKey(file.Path)
+                            ? FileHashes[file.Path]
+                            : null;
+
+                        downloader.Files.Add(fileData);
+                    }
+
+                    downloader.Files.Add(scriptData);
+                    Downloads.Add(downloader);
+                }
 
                 RunningResources.Add(ourResource);
             }
@@ -303,18 +346,21 @@ namespace GTANetworkServer
 
         public void StopResource(string resourceName)
         {
-            var ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
-            if (ourRes == null) return;
+            lock (RunningResources)
+            {
+                var ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
+                if (ourRes == null) return;
 
-            Program.Output("Stopping " + resourceName);
+                Program.Output("Stopping " + resourceName);
 
-            ourRes.Engines.ForEach(en => en.InvokeResourceStop());
-            var msg = Server.CreateMessage();
-            msg.Write((int)PacketType.StopResource);
-            msg.Write(resourceName);
-            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
+                ourRes.Engines.ForEach(en => en.InvokeResourceStop());
+                var msg = Server.CreateMessage();
+                msg.Write((int) PacketType.StopResource);
+                msg.Write(resourceName);
+                Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
 
-            RunningResources.Remove(ourRes);
+                RunningResources.Remove(ourRes);
+            }
         }
 
         private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
@@ -664,7 +710,7 @@ namespace GTANetworkServer
                                         {
                                             if (ACLEnabled)
                                             {
-                                                pass = ACL.DoesUserHaveAccessToCommand(client, data.Message.Split()[0]);
+                                                pass = ACL.DoesUserHaveAccessToCommand(client, data.Message.Split()[0].TrimStart('/'));
                                             }
 
                                             if (pass)

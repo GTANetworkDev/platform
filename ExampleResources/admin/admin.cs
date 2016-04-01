@@ -25,7 +25,9 @@ public class CopsNCrooks : Script
 	{
 		if (!API.isAclEnabled()) return;
 
-		if (cmd.StartsWith("/login"))
+		var arguments = cmd.Split();
+
+		if (arguments[0] == "/login")
 		{
 			if (cmd.Length < 7)
 			{
@@ -62,7 +64,7 @@ public class CopsNCrooks : Script
 			API.logoutPlayer(sender);
 		}
 
-		if (cmd.StartsWith("/start"))
+		if (arguments[0] == "/start")
 		{
 			if (cmd.Length > 7)
 			{
@@ -76,7 +78,7 @@ public class CopsNCrooks : Script
 			}
 		}
 
-		if (cmd.StartsWith("/stop"))
+		if (arguments[0] == "/stop")
 		{
 			if (cmd.Length > 6)
 			{
@@ -90,7 +92,7 @@ public class CopsNCrooks : Script
 			}
 		}
 
-		if (cmd.StartsWith("/restart"))
+		if (arguments[0] == "/restart")
 		{
 			if (cmd.Length > 9)
 			{
@@ -106,7 +108,7 @@ public class CopsNCrooks : Script
 			}
 		}
 
-		if (cmd.StartsWith("/kick"))
+		if (arguments[0] == "/kick")
 		{
 			var split = cmd.Split();
 
@@ -129,7 +131,7 @@ public class CopsNCrooks : Script
 			}
 		}
 
-		if (cmd.StartsWith("/kill"))
+		if (arguments[0] == "/kill")
 		{
 			var split = cmd.Split();
 

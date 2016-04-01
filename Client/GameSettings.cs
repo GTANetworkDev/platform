@@ -9,7 +9,7 @@ namespace GTANetwork
     {
         public static Settings LoadGameSettings()
         {
-            var filePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments,
+            var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
                 Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\settings.xml";
             if (!File.Exists(filePath)) return null;
 

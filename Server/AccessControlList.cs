@@ -89,10 +89,18 @@ namespace GTANetworkServer
         private bool DoesGroupHavePermissions(ACLGroup grp, string right, RightType type)
         {
             if (grp == null) return false;
+            if (!DoesRightExist(right, type)) return true;
 
-            var groupRights = grp.ACLRights.Select(g => _mainAcl.RightLists.FirstOrDefault(r => r.Name == g.Name));
+            var groupRights = grp.ACLRights.Select(g => _mainAcl.RightLists.FirstOrDefault(r => r.Name == g.Name)).ToList();
+            groupRights.Add(_mainAcl.RightLists.FirstOrDefault(r => r.Name == _mainAcl.Groups.FirstOrDefault(g => g.Objects.Any(o => o.Name == "user.*")).ACLRights[0].Name));
             if (!groupRights.Any(rightsList => rightsList.Rights.Any(r => r.Name == type + "." + right))) return true;
             return groupRights.Any(rightsList => rightsList.Rights.Any(r => r.Name == type + "." + right && r.Access));
+        }
+
+        private bool DoesRightExist(string right, RightType type)
+        {
+            var exist = _mainAcl.RightLists.Any(grp => grp.Rights.Any(r => r.Name == type + "." + right));
+            return exist;
         }
 
         public bool DoesResourceHaveAccessToFunction(string callingResource, string function)
@@ -103,6 +111,7 @@ namespace GTANetworkServer
 
         public bool DoesUserHaveAccessToCommand(Client client, string command)
         {
+            if (!DoesRightExist(command, RightType.command)) return true;
             var userGrp = FindObjectGroup(client.SocialClubName, ObjectType.user);
             return (DoesGroupHavePermissions(userGrp, command, RightType.command) && IsPlayerLoggedIn(client));
         }
