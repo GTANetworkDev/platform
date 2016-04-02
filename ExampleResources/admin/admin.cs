@@ -69,8 +69,15 @@ public class CopsNCrooks : Script
 			if (cmd.Length > 7)
 			{
 				var resource = cmd.Substring(7);
-				API.startResource(resource);
-				API.sendChatMessageToPlayer(sender, "~g~Started resource \"" + resource + "\"");
+				if (API.doesResourceExist(resource))
+				{
+					API.startResource(resource);
+					API.sendChatMessageToPlayer(sender, "~g~Started resource \"" + resource + "\"");
+				}
+				else
+				{
+					API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
+				}
 			}	
 			else
 			{
@@ -83,8 +90,15 @@ public class CopsNCrooks : Script
 			if (cmd.Length > 6)
 			{
 				var resource = cmd.Substring(6);
-				API.stopResource(resource);
-				API.sendChatMessageToPlayer(sender, "~g~Stopped resource \"" + resource + "\"");
+				if (API.doesResourceExist(resource))
+				{
+					API.stopResource(resource);
+					API.sendChatMessageToPlayer(sender, "~g~Stopped resource \"" + resource + "\"");
+				}
+				else
+				{
+					API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
+				}
 			}	
 			else
 			{
@@ -95,12 +109,19 @@ public class CopsNCrooks : Script
 		if (arguments[0] == "/restart")
 		{
 			if (cmd.Length > 9)
-			{
+			{				
 				var resource = cmd.Substring(9);
-				API.stopResource(resource);
-				API.startResource(resource);
+				if (API.doesResourceExist(resource))
+				{
+					API.stopResource(resource);
+					API.startResource(resource);
 
-				API.sendChatMessageToPlayer(sender, "~g~Restarted resource \"" + resource + "\"");
+					API.sendChatMessageToPlayer(sender, "~g~Restarted resource \"" + resource + "\"");
+				}
+				else
+				{
+					API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
+				}
 			}	
 			else
 			{

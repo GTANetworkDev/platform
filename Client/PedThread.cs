@@ -11,10 +11,13 @@ namespace GTANetwork
         {
             Tick += OnTick;
         }
-
-        public void OnTick(object sender, EventArgs e)
+        
+        public static void OnTick(object sender, EventArgs e)
         {
             if (!Main.IsOnServer()) return;
+            if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
+
+            //UI.ShowSubtitle("MT: " + Main.Multithreading + " sender: " + sender.GetType());
 
             const int npcThreshold = 5000; // 5 second timeout
             const int playerThreshold = 60000 * 5; // 60 second timeout

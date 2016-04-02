@@ -91,6 +91,27 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
+        public int CreateBlip(NetHandle ent)
+        {
+            if (ent.IsNull || !ent.Exists()) return 0;
+
+            int localEntityHash = ++EntityCounter;
+            var obj = new BlipProperties();
+            obj.EntityType = (byte)EntityType.Blip;
+            obj.AttachedNetEntity = ent.Value;
+            obj.Position = ServerEntities[ent.Value].Position;
+            ServerEntities.Add(localEntityHash, obj);
+
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.Blip;
+            packet.Properties = obj;
+            packet.NetHandle = localEntityHash;
+
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true);
+
+            return localEntityHash;
+        }
+
         public int CreateBlip(Vector3 pos)
         {
             int localEntityHash = ++EntityCounter;
@@ -160,6 +181,14 @@ namespace GTANetworkServer
             });
 
             return localHan;
+        }
+    }
+
+    internal static class NetHandleExtension
+    {
+        internal static bool Exists(this NetHandle ent)
+        {
+            return !ent.IsNull || Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(ent.Value);
         }
     }
 }

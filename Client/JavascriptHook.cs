@@ -157,11 +157,13 @@ namespace GTANetwork
                 scriptEngine.AddHostType("Point", typeof(Point));
                 scriptEngine.AddHostType("Size", typeof(Size));
                 scriptEngine.AddHostType("Vector3", typeof(Vector3));
+                scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
                 
 
                 try
                 {
                     scriptEngine.Execute(script.Script);
+                    scriptEngine.Script.API.ParentResourceName = script.ResourceParent;
                 }
                 catch (ScriptEngineException ex)
                 {
@@ -232,6 +234,8 @@ namespace GTANetwork
 
     public class ScriptContext
     {
+        internal string ParentResourceName;
+
         public enum ReturnType
         {
             Int = 0,
@@ -312,32 +316,6 @@ namespace GTANetwork
             Util.SafeNotify(text);
         }
 
-        public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
-        {
-            var offset = convertAnchorPos((float) x, (float) y, (Anchor) anchor);
-            return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y)));
-        }
-
-        public UIMenu createMenu(string subtitle, double x, double y, int anchor)
-        {
-            var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor);
-            var newM = new UIMenu("", subtitle, new Point((int)(offset.X), (int)(offset.Y)));
-            newM.SetBannerType(new UIResRectangle());
-            return newM;
-        }
-
-        public MenuPool getMenuPool()
-        {
-            return new MenuPool();
-        }
-
-        public void drawMenu(UIMenu menu)
-        {
-            menu.ProcessControl();
-            menu.ProcessMouse();
-            menu.Draw();
-        }
-
         public LocalHandle createBlip(Vector3 pos)
         {
             var blip = World.CreateBlip(pos.ToVector());
@@ -385,14 +363,15 @@ namespace GTANetwork
             Main.NetEntityHandler.DeleteLocalMarker(handle.Value);
         }
         
-        public string getResourceFilePath(string resourceName, string fileName)
+        public string getResourceFilePath(string fileName)
         {
-            return FileTransferId._DOWNLOADFOLDER_ + resourceName + "\\" + fileName;
+            return FileTransferId._DOWNLOADFOLDER_ + ParentResourceName + "\\" + fileName;
         }
         
-        public void dxDrawTexture(string path, Point pos, Size size)
+        public void dxDrawTexture(string path, Point pos, Size size, int id = 60)
         {
-            Util.DxDrawTexture(path, path, pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
+            path = getResourceFilePath(path);
+            Util.DxDrawTexture(id, path, pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
         }
 
         public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading,
@@ -540,7 +519,50 @@ namespace GTANetwork
             onKeyUp?.Invoke(sender, e);
         }
 
-        internal PointF convertAnchorPos(float x, float y, Anchor anchor)
+        #region Menus
+
+        public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
+        {
+            var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
+            return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y)));
+        }
+
+        public UIMenu createMenu(string subtitle, double x, double y, int anchor)
+        {
+            var offset = convertAnchorPos((float)x, (float)y - 107, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
+            var newM = new UIMenu("", subtitle, new Point((int)(offset.X), (int)(offset.Y)));
+            newM.SetBannerType(new UIResRectangle());
+            return newM;
+        }
+
+        public UIMenuItem createMenuItem(string label, string description)
+        {
+            return new UIMenuItem(label, description);
+        }
+
+        public UIMenuCheckboxItem createCheckboxItem(string label, string description, bool isChecked)
+        {
+            return new UIMenuCheckboxItem(label, isChecked, description);
+        }
+
+        public UIMenuListItem createListItem(string label, string description, List<string> items, int index)
+        {
+            return new UIMenuListItem(label, items.Select(s => (dynamic)s).ToList(), index, description);
+        }
+
+        public MenuPool getMenuPool()
+        {
+            return new MenuPool();
+        }
+
+        public void drawMenu(UIMenu menu)
+        {
+            menu.ProcessControl();
+            menu.ProcessMouse();
+            menu.Draw();
+        }
+
+        internal PointF convertAnchorPos(float x, float y, Anchor anchor, float xOffset, float yOffset)
         {
             var res = UIMenu.GetScreenResolutionMantainRatio();
 
@@ -551,19 +573,19 @@ namespace GTANetwork
                 case Anchor.TopCenter:
                     return new PointF(res.Width / 2 + x, 0 + y);
                 case Anchor.TopRight:
-                    return new PointF(res.Width - x, y);
+                    return new PointF(res.Width - x - xOffset, y);
                 case Anchor.MiddleLeft:
                     return new PointF(x, res.Height / 2 + y);
                 case Anchor.MiddleCenter:
                     return new PointF(res.Width / 2 + x, res.Height / 2 + y);
                 case Anchor.MiddleRight:
-                    return new PointF(res.Width - x, res.Height / 2 + y);
+                    return new PointF(res.Width - x - xOffset, res.Height / 2 + y);
                 case Anchor.BottomLeft:
-                    return new PointF(x, res.Height - y);
+                    return new PointF(x, res.Height - y - yOffset);
                 case Anchor.BottomCenter:
-                    return new PointF(res.Width / 2 + x, res.Height - y);
+                    return new PointF(res.Width / 2 + x, res.Height - y - yOffset);
                 case Anchor.BottomRight:
-                    return new PointF(res.Width - x, res.Height - y);
+                    return new PointF(res.Width - x, res.Height - y - yOffset);
                 default:
                     return PointF.Empty;
             }
@@ -581,6 +603,8 @@ namespace GTANetwork
             BottomCenter = 8,
             BottomRight = 9,
         }
+
+        #endregion
     }
 
 }

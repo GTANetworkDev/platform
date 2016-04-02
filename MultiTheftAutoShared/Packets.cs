@@ -224,6 +224,7 @@ namespace GTANetworkShared
         {
             Sprite = 0;
             Scale = 1f;
+            AttachedNetEntity = 0;
         }
 
         [ProtoMember(1)]
@@ -237,6 +238,9 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public bool IsShortRange { get; set; }
+
+        [ProtoMember(5)]
+        public int AttachedNetEntity { get; set; }
     }
 
     [ProtoContract]

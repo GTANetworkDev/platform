@@ -3,9 +3,20 @@ var secondBlip = null;
 var nextCheckpointMarker = null;
 var nextCheckpointDir = null;
 var racePosition = null;
+var voteMenu = null;
+
+voteMenu = API.createMenu("VOTE FOR NEXT MAP", 0, 0, 6);
+
+voteMenu.OnItemSelect.connect(function(sender, item, index) {
+    API.triggerServerEvent("race_castVote", index+1);
+    API.sendNotification("You have voted for ~b~" + item.Text + "~w~.");
+    voteMenu.Visible = false;    
+})
+
 
 API.onUpdate.connect(function(sender, args) {
     API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
+    API.drawMenu(voteMenu);
 });
 
 API.onServerEventTrigger.connect(function (eventName, args) {
@@ -29,6 +40,19 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
     if (eventName === "updatePosition") {
         racePosition = args[0] + " / " + args[1];
+    }
+
+    if (eventName === "race_startVotemap") {
+        var numOfMaps = args[0];
+        voteMenu.Clear();
+
+        for (var i = 0; i < numOfMaps; i++) {
+            var mapName = args[i+1];
+            var mapItem = API.createMenuItem(mapName, "");
+            voteMenu.AddItem(mapItem);
+        }
+
+        voteMenu.Visible = true;
     }
 
     if (eventName === "setNextCheckpoint") {

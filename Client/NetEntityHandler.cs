@@ -217,6 +217,15 @@ namespace GTANetwork
             return blip;
         }
 
+        public Blip CreateBlip(Entity entity, int netHandle)
+        {
+            if (entity == null) return null;
+            var blip = entity.AddBlip();
+            lock (HandleMap) HandleMap.Add(netHandle, blip.Handle);
+            lock (Blips) Blips.Add(blip.Handle);
+            return blip;
+        }
+
         public void CreateMarker(int type, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, GTANetworkShared.Vector3 dir, GTANetworkShared.Vector3 scale, int r, int g, int b, int a,
             int netHandle)
         {

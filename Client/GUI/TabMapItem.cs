@@ -196,7 +196,7 @@ namespace GTANetwork.GUI
                         var siz = new Size(32, 32);
                         var col = Color.Purple;
 
-                        Util.DxDrawTexture(fname, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
@@ -216,7 +216,7 @@ namespace GTANetwork.GUI
                                     (blipList.Count(k => k == fname) > 0
                                         ? blipList.Count(k => k == fname).ToString()
                                         : "");
-                        Util.DxDrawTexture(blipList.Count, ident, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
@@ -233,11 +233,7 @@ namespace GTANetwork.GUI
                         var pos = newPos + World3DToMap2D(blip.Position) - new Size(8, 8);
                         var siz = new Size(16, 16);
                         var col = GetBlipcolor(blip.Color, blip.Alpha);
-                        var ident = fname +
-                                    (blipList.Count(k => k == fname) > 0
-                                        ? blipList.Count(k => k == fname).ToString()
-                                        : "");
-                        Util.DxDrawTexture(blipList.Count, ident, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
@@ -257,7 +253,7 @@ namespace GTANetwork.GUI
                                     (blipList.Count(k => k == fname) > 0
                                         ? blipList.Count(k => k == fname).ToString()
                                         : "");
-                        Util.DxDrawTexture(blipList.Count, ident, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }

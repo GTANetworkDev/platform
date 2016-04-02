@@ -83,9 +83,29 @@ namespace GTANetworkServer
         public string Hash { get; set; }
     }
 
+    public struct ServerConfig
+    {
+        /*ServerInstance.PasswordProtected = !String.IsNullOrWhiteSpace(settings.Password);
+            ServerInstance.Password = settings.Password;
+            ServerInstance.AnnounceSelf = settings.Announce;
+            ServerInstance.MasterServer = settings.MasterServer;
+            ServerInstance.MaxPlayers = settings.MaxPlayers;
+            ServerInstance.ACLEnabled = settings.UseACL;*/
+
+        public int Port;
+        public string Name;
+        public bool PasswordProtected;
+        public string Password;
+        public string MasterServer;
+        public bool AnnounceSelf;
+        public int MaxPlayers;
+        public bool ACLEnabled;
+
+    }
+
     public class GameServer
     {
-        public GameServer(int port, string name)
+        public GameServer(ServerConfig conf)
         {
             Clients = new List<Client>();
             Downloads = new List<StreamingClient>();
@@ -93,22 +113,32 @@ namespace GTANetworkServer
             FileHashes = new Dictionary<string, string>();
 
             MaxPlayers = 32;
-            Port = port;
+            Port = conf.Port;
             
-            _clientScripts = new List<ClientsideScript>();
             NetEntityHandler = new NetEntityHandler();
-            ACL = new AccessControlList("acl.xml");
 
-            Name = name;
+            ACLEnabled = conf.ACLEnabled;
+
+            if (conf.ACLEnabled)
+            {
+                ACL = new AccessControlList("acl.xml");
+            }
+            
+            Name = conf.Name;
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
-            config.Port = port;
+            config.Port = conf.Port;
             config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
             config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
             Server = new NetServer(config);
-            ConcurrentFactory = new TaskFactory();
+
+            PasswordProtected = conf.PasswordProtected;
+            Password = conf.Password;
+            AnnounceSelf = conf.AnnounceSelf;
+            MasterServer = conf.MasterServer;
+            MaxPlayers = conf.MaxPlayers;
         }
         
         public NetServer Server;
@@ -141,7 +171,7 @@ namespace GTANetworkServer
 
         public readonly ScriptVersion ServerVersion = ScriptVersion.VERSION_0_9;
 
-        private List<ClientsideScript> _clientScripts;
+        //private List<ClientsideScript> _clientScripts;
         private DateTime _lastAnnounceDateTime;
 
         public void Start(string[] filterscripts)
@@ -203,6 +233,21 @@ namespace GTANetworkServer
             }
         }
 
+        public List<ClientsideScript> GetAllClientsideScripts()
+        {
+            List<ClientsideScript> allScripts = new List<ClientsideScript>();
+
+            lock (RunningResources)
+            {
+                foreach (var resource in RunningResources)
+                {
+                    allScripts.AddRange(resource.ClientsideScripts);
+                }
+            }
+
+            return allScripts;
+        }
+
         public void StartResource(string resourceName)
         {
             try
@@ -226,6 +271,7 @@ namespace GTANetworkServer
                 ourResource.Info = currentResInfo;
                 ourResource.DirectoryName = resourceName;
                 ourResource.Engines = new List<ScriptingEngine>();
+                ourResource.ClientsideScripts = new List<ClientsideScript>();
 
                 foreach (var filePath in currentResInfo.Files)
                 {
@@ -248,7 +294,7 @@ namespace GTANetworkServer
                     if (script.Language == ScriptingEngineLanguage.javascript)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
-                        if (script.Type == ResourceType.client)
+                        if (script.Type == ScriptType.client)
                         {
                             var csScript = new ClientsideScript()
                             {
@@ -256,7 +302,7 @@ namespace GTANetworkServer
                                 Script = scrTxt,
                             };
 
-                            _clientScripts.Add(csScript);
+                            ourResource.ClientsideScripts.Add(csScript);
                             csScripts.Add(csScript);
                             continue;
                         }
@@ -303,7 +349,7 @@ namespace GTANetworkServer
                 foreach (var client in Clients)
                 {
                     var clientScripts = new ScriptCollection();
-                    clientScripts.ClientsideScripts = new List<ClientsideScript>(_clientScripts);
+                    clientScripts.ClientsideScripts = new List<ClientsideScript>(ourResource.ClientsideScripts);
 
                     var scriptData = new StreamedData();
                     scriptData.Id = randGen.Next(int.MaxValue);
@@ -335,7 +381,7 @@ namespace GTANetworkServer
                     Downloads.Add(downloader);
                 }
 
-                RunningResources.Add(ourResource);
+                lock (RunningResources) RunningResources.Add(ourResource);
             }
             catch (Exception ex)
             {
@@ -1008,7 +1054,7 @@ namespace GTANetworkServer
                                     mapData.Type = FileType.Map;
 
                                     var clientScripts = new ScriptCollection();
-                                    clientScripts.ClientsideScripts = new List<ClientsideScript>(_clientScripts);
+                                    clientScripts.ClientsideScripts = new List<ClientsideScript>(GetAllClientsideScripts());
 
                                     var scriptData = new StreamedData();
                                     scriptData.Id = r.Next(int.MaxValue);

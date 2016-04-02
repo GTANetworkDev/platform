@@ -265,6 +265,7 @@ namespace GTANetwork
         private Vector3 _lastEnd;
 
         private int _playerSeat;
+        private bool _lastDrivebyShooting;
         private bool _isStreamedIn;
         private Blip _mainBlip;
         private bool _lastHorn;
@@ -602,8 +603,7 @@ namespace GTANetwork
                 {
                     if (Character != null)
                     {
-                        if (!IsInVehicle)
-                            Character.Position = gPos;
+                        if (!IsInVehicle) Character.Position = gPos;
                         else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
                         {
                             MainVehicle.Position = VehiclePosition;
@@ -909,23 +909,46 @@ namespace GTANetwork
                     {
                         if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
                         {
-                            Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
-                            Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                            //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
+                            //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                            Character.Weapons.Give((WeaponHash) CurrentWeapon, -1, true, true);
                         }
 
-                        if (IsShooting && Game.GameTime - _lastVehicleAimUpdate > 30)
+                        if (IsShooting)
                         {
-                            Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z, 0, 0, 0, unchecked((int)FiringPattern.FullAuto));
+                            if (IsShooting && _lastShooting && Game.GameTime - _lastVehicleAimUpdate > 30)
+                            {
+                                Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
+                                Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z);
+                            }
+
+                            if (IsShooting && !_lastShooting)
+                            {
+                                Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
+                                    0, 0, 0, unchecked((int) FiringPattern.FullAuto));
+                            }
+
                             _lastVehicleAimUpdate = Game.GameTime;
+                            _lastDrivebyShooting = IsShooting;
                         }
 
-                        if (!IsShooting && _lastShooting)
+                        if (!IsShooting && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
                         {
                             Character.Task.ClearAll();
                             Character.Task.ClearSecondary();
+                            Function.Call(Hash.CLEAR_DRIVEBY_TASK_UNDERNEATH_DRIVING_TASK, Character);
+                            //Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                            //Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, 0, 0, 0);
+                            Character.Task.ClearLookAt();
+                            //UI.Notify("Done shooting");
+                            //UI.ShowSubtitle("Done Shooting1", 300);
+                            _lastDrivebyShooting = false;
                         }
+
+                        
                     }
 
+                    //UI.ShowSubtitle("SS: " + IsShooting + " _LS: " + _lastShooting);
                 }
                 else
                 {
@@ -944,10 +967,13 @@ namespace GTANetwork
                     if (_clothSwitch >= 750)
                         _clothSwitch = 0;
                     DEBUG_STEP = 23;
+
                     if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
                     {
-                        Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
-                        Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                        //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
+                        //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+
+                        Character.Weapons.Give((WeaponHash) CurrentWeapon, -1, true, true);
                     }
 
                     if (!_lastJumping && IsJumping)
@@ -1242,26 +1268,30 @@ namespace GTANetwork
                                 Character.Task.AimAt(AimCoords, -1);
 
                                 var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
-                                var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
-                                var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
-                                var speed = 0xbf800000;
-                                var weaponH = (WeaponHash) CurrentWeapon;
-                                if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
-                                    weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
-                                    speed = 500;
+                                if (gunEnt != null)
+                                {
+                                    var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+                                    var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
+                                    var speed = 0xbf800000;
+                                    var weaponH = (WeaponHash) CurrentWeapon;
+                                    if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
+                                        weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
+                                        speed = 500;
 
-                                if (weaponH == WeaponHash.Minigun)
-                                    weaponH = WeaponHash.CombatPDW;
+                                    if (weaponH == WeaponHash.Minigun)
+                                        weaponH = WeaponHash.CombatPDW;
 
-                                var dir = (AimCoords - start);
-                                dir.Normalize();
-                                var end = start + dir*100f;
+                                    var dir = (AimCoords - start);
+                                    dir.Normalize();
+                                    var end = start + dir*100f;
 
-                                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
-                                    end.Y, end.Z, damage, true, (int) weaponH, Character, true, false, speed);
+                                    Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z,
+                                        end.X,
+                                        end.Y, end.Z, damage, true, (int) weaponH, Character, true, false, speed);
 
-                                _lastStart = start;
-                                _lastEnd = end;
+                                    _lastStart = start;
+                                    _lastEnd = end;
+                                }
                             }
 
                             var dirVector = Position - _lastPosition;
@@ -1301,11 +1331,12 @@ namespace GTANetwork
                             }
                         }
                     }
-                    _lastJumping = IsJumping;
-                    _lastShooting = IsShooting;
-                    _lastAiming = IsAiming;
-                    _lastFreefall = IsFreefallingWithParachute;
                 }
+
+                _lastJumping = IsJumping;
+                _lastFreefall = IsFreefallingWithParachute;
+                _lastShooting = IsShooting;
+                _lastAiming = IsAiming;
                 _lastVehicle = IsInVehicle;
                 DEBUG_STEP = 35;
             }
@@ -1315,7 +1346,7 @@ namespace GTANetwork
                 Util.SafeNotify(ex.Message);
                 Util.SafeNotify("LAST STEP: " + DEBUG_STEP);
 
-                LogManager.LogException(ex, "PEDTHREAD FOR " + Name);
+                LogManager.LogException(ex, "PEDTHREAD FOR " + Name + " LASTSTEP: " + DEBUG_STEP);
                 //throw;
             }
         }

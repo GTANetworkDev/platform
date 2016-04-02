@@ -34,6 +34,7 @@ namespace GTANetwork
         public static bool BlockControls;
         public static bool WriteDebugLog;
         public static bool SlowDownClientForDebug;
+        public static bool Multithreading;
 
         public static bool IsSpectating;
 
@@ -841,6 +842,15 @@ namespace GTANetwork
 #endif
 
                 {
+                    var debugItem = new UIMenuCheckboxItem("Use Multithreading", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        Multithreading = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
                     var debugItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
@@ -1068,7 +1078,7 @@ namespace GTANetwork
             dcItem.CanBeFocused = false;
             dcItem.Activated += (sender, args) =>
             {
-                if (Client != null) Client.Disconnect("Connection closed by peer.");
+                if (Client != null) Client.Disconnect("Quit");
             };
 
             _serverItem = new TabSubmenuItem("server", new List<TabItem>() { _serverPlayers, favTab, dcItem });
@@ -1165,9 +1175,15 @@ namespace GTANetwork
 
             if (map.Blips != null)
             {
-                foreach (var blip in map.Blips)
+                foreach (var blip in map.Blips) 
                 {
-                    var ourBlip = NetEntityHandler.CreateBlip(blip.Value.Position.ToVector(), blip.Key);
+                    Blip ourBlip;
+                    if (blip.Value.AttachedNetEntity == 0)
+                        ourBlip = NetEntityHandler.CreateBlip(blip.Value.Position.ToVector(), blip.Key);
+                    else
+                        ourBlip = NetEntityHandler.CreateBlip(
+                            NetEntityHandler.NetToEntity(blip.Value.AttachedNetEntity), blip.Key);
+
                     if (blip.Value.Sprite != 0)
                         ourBlip.Sprite = (BlipSprite) blip.Value.Sprite;
                     ourBlip.Color = (BlipColor)blip.Value.Color;
@@ -1298,7 +1314,7 @@ namespace GTANetwork
             if (player.IsInVehicle())
             {
                 var veh = player.CurrentVehicle;
-
+                
                 var obj = new VehicleData();
                 obj.Position = veh.Position.ToLVector();
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
@@ -1947,6 +1963,9 @@ namespace GTANetwork
                 */
             //UI.ShowSubtitle(stats);
 
+            if (!Multithreading)
+                PedThread.OnTick("thisaintnullnigga", e);
+
             lock (_threadJumping)
             {
                 if (_threadJumping.Any())
@@ -2351,7 +2370,12 @@ namespace GTANetwork
                                     }
                                     else if (data.EntityType == (byte) EntityType.Blip)
                                     {
-                                        NetEntityHandler.CreateBlip(data.Properties.Position.ToVector(), data.NetHandle);
+                                        var hasBlip = ((BlipProperties) data.Properties).AttachedNetEntity != 0;
+                                        if (hasBlip)
+                                            NetEntityHandler.CreateBlip(NetEntityHandler.NetToEntity(((BlipProperties) data.Properties).AttachedNetEntity), data.NetHandle);
+                                        else
+                                            NetEntityHandler.CreateBlip(data.Properties.Position.ToVector(),
+                                                data.NetHandle);
                                     }
                                     else if (data.EntityType == (byte) EntityType.Marker)
                                     {
@@ -2890,6 +2914,8 @@ namespace GTANetwork
                                 var reason = msg.ReadString();
                                 Util.SafeNotify("You have been disconnected" +
                                           (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
+
+                                Script.Wait(500);
 
                                 lock (Opponents)
                                 {

@@ -355,12 +355,20 @@ namespace GTANetworkServer
         public string DirectoryName { get; set; }
         public ResourceInfo Info { get; set; }
         public List<ScriptingEngine> Engines { get; set; }
+        public List<ClientsideScript> ClientsideScripts { get; set; }
+    }
+
+    public enum ScriptType
+    {
+        server,
+        client
     }
 
     public enum ResourceType
     {
-        server,
-        client
+        script,
+        gamemode,
+        map
     }
 
     [XmlRoot("meta"), Serializable]
@@ -397,7 +405,7 @@ namespace GTANetworkServer
         [XmlAttribute("src")]
         public string Path { get; set; }
         [XmlAttribute("type")]
-        public ResourceType Type { get; set; }
+        public ScriptType Type { get; set; }
         [XmlAttribute("lang")]
         public ScriptingEngineLanguage Language { get; set; }
     }
@@ -415,7 +423,7 @@ namespace GTANetworkServer
     {
         public ResourceMetaInfo()
         {
-            Type = "script";
+            Type = ResourceType.script;
         }
 
         [XmlAttribute("author")]
@@ -425,12 +433,15 @@ namespace GTANetworkServer
         public string Version { get; set; }
 
         [XmlAttribute("type")]
-        public string Type { get; set; }
+        public ResourceType Type { get; set; }
 
         [XmlAttribute("name")]
         public string Name { get; set; }
 
         [XmlAttribute("description")]
         public string Description { get; set; }
+
+        [XmlAttribute("gamemodes")]
+        public string Gamemodes { get; set; }
     }
 }

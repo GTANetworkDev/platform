@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using GTANetworkShared;
@@ -161,10 +162,22 @@ namespace GTANetworkServer
             return Program.ServerInstance.RunningResources.Any(r => r.DirectoryName == resource);
         }
 
+        public bool doesResourceExist(string resource)
+        {
+            if (resource.Contains("..")) return false;
+            return Directory.Exists("resources" + Path.DirectorySeparatorChar + resource);
+        }
+
         public void playSoundFrontEnd(Client target, string audioLib, string audioName)
         {
             Program.ServerInstance.SendNativeCallToPlayer(target, 0x2F844A8B08D76685, audioLib, true);
             Program.ServerInstance.SendNativeCallToPlayer(target, 0x67C540AA08E4A6F5, -1, audioName, audioLib);
+        }
+
+        public void setGamemodeName(string newName)
+        {
+            if (newName == null) throw new ArgumentNullException(nameof(newName));
+            Program.ServerInstance.GamemodeName = newName;
         }
 
         public void sleep(int ms)
@@ -754,6 +767,12 @@ namespace GTANetworkServer
         public NetHandle createBlip(Vector3 pos)
         {
             return new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos));
+        }
+
+        public NetHandle createBlip(NetHandle entity)
+        {
+            if (entity.IsNull || !entity.Exists()) throw new ArgumentNullException(nameof(entity));
+            return new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(entity));
         }
 
         public NetHandle createPickup(int pickupHash, Vector3 pos, Vector3 rot, int amount)

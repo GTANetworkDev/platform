@@ -77,13 +77,19 @@ namespace GTANetworkServer
 
             Output("Starting...");
 
-            ServerInstance = new GameServer(settings.Port, settings.Name);
-            ServerInstance.PasswordProtected = !String.IsNullOrWhiteSpace(settings.Password);
-            ServerInstance.Password = settings.Password;
-            ServerInstance.AnnounceSelf = settings.Announce;
-            ServerInstance.MasterServer = settings.MasterServer;
-            ServerInstance.MaxPlayers = settings.MaxPlayers;
-            ServerInstance.ACLEnabled = settings.UseACL;
+            var config = new ServerConfig();
+
+            config.PasswordProtected = !String.IsNullOrWhiteSpace(settings.Password);
+            config.Password = settings.Password;
+            config.AnnounceSelf = settings.Announce;
+            config.MasterServer = settings.MasterServer;
+            config.MaxPlayers = settings.MaxPlayers;
+            config.ACLEnabled = settings.UseACL;
+            config.Name = settings.Name;
+            config.Port = settings.Port;
+
+
+            ServerInstance = new GameServer(config);
             ServerInstance.AllowDisplayNames = true;
 
             ServerInstance.Start(settings.Resources.Select(r => r.Path).ToArray());

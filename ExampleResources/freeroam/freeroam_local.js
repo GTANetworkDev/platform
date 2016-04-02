@@ -6,7 +6,7 @@ API.onUpdate.connect(function (sender, args) {
     {
         var pont = new Point(0, 1080 - 295);
         var siz = new Size(500, 295);
-        API.dxDrawTexture(API.getResourceFilePath("freeroam", "skeletor.png"), pont, siz);        
+        API.dxDrawTexture("skeletor.png", pont, siz);        
     }
 });
 

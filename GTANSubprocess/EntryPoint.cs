@@ -102,12 +102,18 @@ namespace GTANetwork
             }
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
+            var steamDictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\GTAV";
+            var steamKeyName = "InstallFolderSteam";
             var keyName = "InstallFolder";
+
+
+
+
             InstallFolder = (string)Registry.GetValue(dictPath, keyName, null);
-            
 
             if (string.IsNullOrEmpty(InstallFolder))
             {
+                InstallFolder = (string) Registry.GetValue(steamDictPath, steamKeyName, null);
                 settings.SteamPowered = true;
 
                 try
@@ -120,26 +126,28 @@ namespace GTANetwork
                     return;
                 }
 
-
-                var diag = new OpenFileDialog();
-                diag.Filter = "GTA5 Executable|GTA5.exe";
-                diag.RestoreDirectory = true;
-                diag.CheckFileExists = true;
-                diag.CheckPathExists = true;
-
-                if (diag.ShowDialog() == DialogResult.OK)
+                if (string.IsNullOrEmpty(InstallFolder))
                 {
-                    InstallFolder = Path.GetDirectoryName(diag.FileName);
-                    try
+                    var diag = new OpenFileDialog();
+                    diag.Filter = "GTA5 Executable|GTA5.exe";
+                    diag.RestoreDirectory = true;
+                    diag.CheckFileExists = true;
+                    diag.CheckPathExists = true;
+
+                    if (diag.ShowDialog() == DialogResult.OK)
                     {
-                        Registry.SetValue(dictPath, keyName, InstallFolder);
+                        InstallFolder = Path.GetDirectoryName(diag.FileName);
+                        try
+                        {
+                            Registry.SetValue(dictPath, keyName, InstallFolder);
+                        }
+                        catch(UnauthorizedAccessException)
+                        { }
                     }
-                    catch(UnauthorizedAccessException)
-                    { }
-                }
-                else
-                {
-                    return;
+                    else
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -268,6 +276,10 @@ namespace GTANetwork
 
             if (File.Exists(InstallFolder + "\\scripthookv.dll"))
                 File.Move(InstallFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
+
+            if (File.Exists(InstallFolder + "\\commandline.txt"))
+                File.Move(InstallFolder + "\\commandline.txt", "tempstorage\\commandline.txt");
+
 
             if (Directory.Exists(InstallFolder + "\\scripts"))
                 Directory.Move(InstallFolder + "\\scripts", "tempstorage\\scripts");

@@ -22,7 +22,7 @@ public class RaceGamemode : Script
         Objects = new List<NetHandle>();
         LoadRaces();
 
-        Console.WriteLine("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
+        API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
 
         StartVote();
 
@@ -31,6 +31,7 @@ public class RaceGamemode : Script
         API.onChatCommand += onChatCommand;
         API.onPlayerFinishedDownload += onPlayerConnect;
         API.onPlayerRespawn += onPlayerRespawn;
+        API.onClientEventTrigger += onClientEvent;
 
 
         var calcThread = new Thread(CalculatePositions);
@@ -87,6 +88,16 @@ public class RaceGamemode : Script
         end:
         Thread.Sleep(1000);
         CalculatePositions();
+    }
+
+    private void onClientEvent(Client sender, string eventName, params object[] arguments)
+    {
+        if (eventName == "race_castVote" && IsVoteActive() && !Voters.Contains(sender))
+        {
+            var voteCast = (int)arguments[0];
+            Votes[voteCast]++;
+            Voters.Add(sender);            
+        }
     }
 
     public void onUpdate(object sender, EventArgs e)
@@ -220,7 +231,15 @@ public class RaceGamemode : Script
 
         if (DateTime.Now.Subtract(VoteStart).TotalSeconds < 60)
         {
-            API.sendNotificationToPlayer(player, GetVoteHelpString());
+            object[] argumentList = new object[11];
+
+            argumentList[0] = AvailableChoices.Count;
+            for (var i = 0; i < AvailableChoices.Count; i++)
+            {
+                argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
+            }
+
+            API.triggerClientEvent(player, "race_startVotemap", argumentList);
         }
     }
 
@@ -279,7 +298,7 @@ public class RaceGamemode : Script
         CurrentRaceCheckpoints = race.Checkpoints.ToList();
         RaceStart = DateTime.UtcNow;
 
-        Console.WriteLine("RACE: Starting race " + race.Name);
+        API.consoleOutput("RACE: Starting race " + race.Name);
 
         var t = new Thread((ThreadStart)delegate
         {
@@ -409,21 +428,26 @@ public class RaceGamemode : Script
         Voters = new List<Client>();
         AvailableChoices = new Dictionary<int, Race>();
 
-        var build = new StringBuilder();
-        build.Append("Type /vote [id] to vote for the next race! The options are:");
-
         var counter = 1;
         foreach (var race in pickedRaces)
         {
-            build.Append("\n" + counter + ": " + race.Name);
             Votes.Add(counter, 0);
             AvailableChoices.Add(counter, race);
             counter++;
         }
 
-        VoteStart = DateTime.Now;
-        API.sendNotificationToAll(build.ToString());
+        object[] argumentList = new object[11];
 
+        argumentList[0] = AvailableChoices.Count;
+        for (var i = 0; i < AvailableChoices.Count; i++)
+        {
+            argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
+        }
+
+        API.triggerClientEventForAll("race_startVotemap", argumentList);
+
+        VoteStart = DateTime.Now;
+        
         var t = new Thread((ThreadStart)delegate
         {
             Thread.Sleep(60 * 1000);
