@@ -6,6 +6,7 @@ var racePosition = null;
 var voteMenu = null;
 
 voteMenu = API.createMenu("VOTE FOR NEXT MAP", 0, 0, 6);
+voteMenu.ResetKey(menuControl.Back);
 
 voteMenu.OnItemSelect.connect(function(sender, item, index) {
     API.triggerServerEvent("race_castVote", index+1);

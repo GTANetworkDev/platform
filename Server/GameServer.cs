@@ -400,6 +400,7 @@ namespace GTANetworkServer
                 Program.Output("Stopping " + resourceName);
 
                 ourRes.Engines.ForEach(en => en.InvokeResourceStop());
+
                 var msg = Server.CreateMessage();
                 msg.Write((int) PacketType.StopResource);
                 msg.Write(resourceName);

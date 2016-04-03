@@ -32,7 +32,7 @@ public class RaceGamemode : Script
         API.onPlayerFinishedDownload += onPlayerConnect;
         API.onPlayerRespawn += onPlayerRespawn;
         API.onClientEventTrigger += onClientEvent;
-
+        API.onResourceStop += onResourceStop;
 
         var calcThread = new Thread(CalculatePositions);
         calcThread.IsBackground = true;
@@ -64,6 +64,26 @@ public class RaceGamemode : Script
         if (IsRaceOngoing)
         {
             SetUpPlayerForRace(player, CurrentRace, false, 0);
+        }
+    }
+
+    public void onResourceStop(object sender, EventArgs e)
+    {
+        API.triggerClientEventForAll("resetRace");
+        
+        Opponents.ForEach(op =>
+        {
+            op.HasFinished = false;
+            op.CheckpointsPassed = 0;
+            if (!op.Vehicle.IsNull)
+            {
+                API.deleteEntity(op.Vehicle);
+            }
+        });
+
+        foreach (var ent in Objects)
+        {
+            API.deleteEntity(ent);
         }
     }
 
@@ -136,7 +156,7 @@ public class RaceGamemode : Script
                             var suffix = pos.ToString().EndsWith("1")
                                 ? "st"
                                 : pos.ToString().EndsWith("2") ? "nd" : pos.ToString().EndsWith("3") ? "rd" : "th";
-                            API.sendNotificationToAll("~h~" + opponent.Client.Name + "~h~ has finished " + pos + suffix);
+                            API.sendChatMessageToAll("~h~" + opponent.Client.Name + "~h~ has finished " + pos + suffix);
                             API.triggerClientEvent(opponent.Client, "finishRace");
                             continue;
                         }
@@ -453,7 +473,7 @@ public class RaceGamemode : Script
             Thread.Sleep(60 * 1000);
             EndRace();
             var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
-            API.sendNotificationToAll(raceWon.Name + " has won the vote!");
+            API.sendChatMessageToAll("Race ~b~" + raceWon.Name + "~w~ has won the vote!");
 
             Thread.Sleep(1000);
             StartRace(raceWon);
