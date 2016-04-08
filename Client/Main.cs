@@ -1878,6 +1878,7 @@ namespace GTANetwork
                 Game.Player.Character.Alpha = 0;
                 Game.Player.Character.FreezePosition = true;
                 Game.Player.IsInvincible = true;
+                Game.Player.Character.HasCollision = false;
             }
 
             else if (!IsSpectating && _lastSpectating)
@@ -1885,6 +1886,7 @@ namespace GTANetwork
                 Game.Player.Character.Alpha = 255;
                 Game.Player.Character.FreezePosition = false;
                 Game.Player.IsInvincible = false;
+                Game.Player.Character.HasCollision = true;
                 SpectatingEntity = 0;
                 _currentSpectatingPlayer = null;
                 _currentSpectatingPlayerIndex = 0;
@@ -1893,7 +1895,6 @@ namespace GTANetwork
             if (IsSpectating && SpectatingEntity != 0)
             {
                 Game.Player.Character.PositionNoOffset = new Prop(SpectatingEntity).Position;
-                Game.DisableControl(0, Control.NextCamera);
             }
             else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer == null && Opponents.Count(op => op.Value.Character != null) > 0)
             {
@@ -1902,7 +1903,6 @@ namespace GTANetwork
             else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer != null)
             {
                 Game.Player.Character.PositionNoOffset = _currentSpectatingPlayer.Character.Position;
-                Game.DisableControl(0, Control.NextCamera);
 
                 if (Game.IsControlJustPressed(0, Control.PhoneLeft))
                 {
@@ -2915,7 +2915,7 @@ namespace GTANetwork
                                 Util.SafeNotify("You have been disconnected" +
                                           (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
 
-                                Script.Wait(500);
+                                //Script.Wait(500);
 
                                 lock (Opponents)
                                 {

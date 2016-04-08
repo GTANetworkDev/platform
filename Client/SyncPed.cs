@@ -551,7 +551,6 @@ namespace GTANetwork
                     DEBUG_STEP = 10;
 
 
-                    UI.Notify(Util.GetPedSeat(Game.Player.Character).ToString() + " in " + VehicleSeat);
                     if (Game.Player.Character.IsInVehicle(MainVehicle) &&
                         VehicleSeat == Util.GetPedSeat(Game.Player.Character))
                     {

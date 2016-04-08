@@ -307,7 +307,8 @@ namespace GTANetworkServer
                             continue;
                         }
 
-                        ourResource.Engines.Add(new ScriptingEngine(scrTxt, script.Path, currentResInfo.Referenceses.Select(r => r.Name).ToArray()));
+                        Program.Output("WARNING: Javascript resources will not run on GNU/Linux servers, and thus, they are deprecated.");
+                        ourResource.Engines.Add(new ScriptingEngine(scrTxt, script.Path, ourResource, currentResInfo.Referenceses.Select(r => r.Name).ToArray()));
                     }
                     else if (script.Language == ScriptingEngineLanguage.compiled)
                     {
@@ -321,20 +322,20 @@ namespace GTANetworkServer
 
                         var ass = Assembly.LoadFrom(baseDir + script.Path);
                         var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, script.Path)));
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, script.Path, ourResource)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.csharp)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
 
                         var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
-                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path)));
+                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path, ourResource)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.vbasic)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
                         var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
-                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path)));
+                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path, ourResource)));
                     }
                 }
 
@@ -407,6 +408,8 @@ namespace GTANetworkServer
                 Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
 
                 RunningResources.Remove(ourRes);
+
+                Program.Output("Stopped " + resourceName + "!");
             }
         }
 
@@ -845,6 +848,13 @@ namespace GTANetworkServer
                                                 .Siren = data.IsSirenActive;
                                         }
 
+                                        if (NetEntityHandler.ToDict().ContainsKey(data.NetHandle))
+                                        {
+                                            NetEntityHandler.ToDict()[data.NetHandle].Position = data.Position;
+                                            NetEntityHandler.ToDict()[data.NetHandle].Rotation = data.Quaternion;
+                                            NetEntityHandler.ToDict()[data.NetHandle].ModelHash = data.PedModelHash;
+                                        }
+
                                         SendToAll(data, PacketType.VehiclePositionData, false, client);
                                     }
                                 }
@@ -874,6 +884,13 @@ namespace GTANetworkServer
                                         client.Rotation = data.Quaternion;
 
                                         client.Rotation = data.Quaternion;
+
+                                        if (NetEntityHandler.ToDict().ContainsKey(data.NetHandle))
+                                        {
+                                            NetEntityHandler.ToDict()[data.NetHandle].Position = data.Position;
+                                            NetEntityHandler.ToDict()[data.NetHandle].Rotation = data.Quaternion;
+                                            NetEntityHandler.ToDict()[data.NetHandle].ModelHash = data.PedModelHash;
+                                        }
 
                                         SendToAll(data, PacketType.PedPositionData, false, client);
                                     }

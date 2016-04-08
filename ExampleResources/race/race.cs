@@ -20,6 +20,7 @@ public class RaceGamemode : Script
         RememberedBlips = new Dictionary<long, int>();
         CurrentRaceCheckpoints = new List<Vector3>();
         Objects = new List<NetHandle>();
+        ActiveThreads = new List<Thread>();
         LoadRaces();
 
         API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
@@ -47,6 +48,7 @@ public class RaceGamemode : Script
     public Dictionary<long, int> RememberedBlips { get; set; }
     public DateTime RaceStart { get; set; }
     public List<NetHandle> Objects { get; set; }
+    public List<Thread> ActiveThreads { get; set; }    
 
     // Voting
     public DateTime VoteStart { get; set; }
@@ -84,6 +86,12 @@ public class RaceGamemode : Script
         foreach (var ent in Objects)
         {
             API.deleteEntity(ent);
+        }
+
+        foreach (var t in ActiveThreads)
+        {
+            if (!t.IsAlive) continue;
+            t.Abort();
         }
     }
 
@@ -147,8 +155,12 @@ public class RaceGamemode : Script
                                     if (!IsVoteActive())
                                         StartVote();
                                 });
+
                                 t.IsBackground = true;
                                 t.Start();
+
+                                ActiveThreads.RemoveAll(th => !th.IsAlive);
+                                ActiveThreads.Add(t);
                             }
 
                             opponent.HasFinished = true;
@@ -336,8 +348,12 @@ public class RaceGamemode : Script
                     opponent.HasStarted = true;
                 }
         });
+
         t.IsBackground = true;
         t.Start();
+
+        ActiveThreads.RemoveAll(th => !th.IsAlive);
+        ActiveThreads.Add(t);
     }
 
     private void EndRace()

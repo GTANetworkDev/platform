@@ -96,7 +96,8 @@ namespace GTANetworkServer
 
             Output("Started! Waiting for connections.");
 
-            SetConsoleCtrlHandler(new HandlerRoutine(ConsoleCtrlCheck), true);
+            if (Type.GetType("Mono.Runtime") == null)
+                SetConsoleCtrlHandler(new HandlerRoutine(ConsoleCtrlCheck), true);
 
             while (!CloseProgram)
             {

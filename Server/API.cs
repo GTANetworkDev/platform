@@ -27,7 +27,7 @@ namespace GTANetworkServer
     public class API
     {
         #region META
-        internal string ResourceParent { get; set; }
+        internal ScriptingEngine ResourceParent { get; set; }
         #endregion
 
         #region Delegates
@@ -187,7 +187,7 @@ namespace GTANetworkServer
 
         public string getThisResource()
         {
-            return ResourceParent;
+            return ResourceParent.ResourceParent.DirectoryName;
         }
 
         public int getGameHash(string input)
@@ -532,7 +532,7 @@ namespace GTANetworkServer
 
         public Vector3 getEntityPosition(NetHandle entity)
         {
-            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            if (doesEntityExist(entity))
             {
                 return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Position;
             }

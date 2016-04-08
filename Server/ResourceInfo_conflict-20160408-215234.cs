@@ -19,24 +19,24 @@ namespace GTANetworkServer
         compiled,
         csharp,
         vbasic,
+        python
     }
 
     public class ScriptingEngine
     {
         public ScriptingEngineLanguage Language { get; private set; }
         public string Filename { get; set; }
-        public Resource ResourceParent { get; set; }
 
+        private List<Thread> ActiveThreads;
         private Thread _workerThread;
-        private JScriptEngine _jsEngine;
+        private V8ScriptEngine _jsEngine;
         private Script _compiledScript;
         private Queue _mainQueue;
         public bool HasTerminated = false;
-        
 
-        public ScriptingEngine(string javascript, string name, Resource parent, string[] references)
+        public ScriptingEngine(string javascript, string name, string[] references)
         {
-            ResourceParent = parent;
+            ActiveThreads = new List<Thread>();
             _mainQueue = Queue.Synchronized(new Queue());
             _workerThread = new Thread(MainThreadLoop);
             _workerThread.IsBackground = true;
@@ -48,12 +48,13 @@ namespace GTANetworkServer
             _mainQueue.Enqueue(new Action(() =>
             {
                 _jsEngine = InstantiateScripts(javascript, name, references);
+                _jsEngine.Script.API.ResourceParent = name;
             }));
         }
 
-        public ScriptingEngine(Script sc, string name, Resource parent)
+        public ScriptingEngine(Script sc, string name)
         {
-            ResourceParent = parent;
+            ActiveThreads = new List<Thread>();
             _mainQueue = Queue.Synchronized(new Queue());
             _workerThread = new Thread(MainThreadLoop);
             _workerThread.IsBackground = true;
@@ -67,17 +68,18 @@ namespace GTANetworkServer
             _mainQueue.Enqueue(new Action(() =>
             {
                 _compiledScript = sc;
-                _compiledScript.API.ResourceParent = this;
+                _compiledScript.API.ResourceParent = name;
             }));
         }
 
-        private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
+        private V8ScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
         {
-            var scriptEngine = new JScriptEngine();
+            var scriptEngine = new V8ScriptEngine();
+
             var collect = new HostTypeCollection(refs);
 
             scriptEngine.AddHostObject("clr", collect);
-            scriptEngine.AddHostObject("API", new API() { ResourceParent = this});
+            scriptEngine.AddHostObject("API", new API());
             scriptEngine.AddHostObject("host", new HostFunctions());
             scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
             scriptEngine.AddHostType("xmlParser", typeof(RetardedXMLParser));
@@ -114,7 +116,6 @@ namespace GTANetworkServer
 
             return scriptEngine;
         }
-        
 
         private void MainThreadLoop()
         {
@@ -128,19 +129,18 @@ namespace GTANetworkServer
                        mainAction = (_mainQueue.Dequeue() as Action);
                     }
 
-                    /*
-                    if (mainAction != null) // TODO: Fix me -> NullReferenceException when calling API object on JS Engine.
+                    if (mainAction != null)
                     {
                         var t = new Thread(mainAction.Invoke);
                         t.IsBackground = true;
                         lock (ActiveThreads) ActiveThreads.Add(t);
                         t.Start();
-                    }*/
-
-                    mainAction?.Invoke();
+                    }
+                    //mainAction?.Invoke();
                 }
 
                 Thread.Sleep(10);
+                lock (ActiveThreads) ActiveThreads.RemoveAll(t => !t.IsAlive);
             }
         }
 
@@ -206,7 +206,11 @@ namespace GTANetworkServer
             }));
             DateTime start = DateTime.Now;
             while (!canContinue && DateTime.Now.Subtract(start).TotalMilliseconds < 10000) { Thread.Sleep(10); }
-            
+            lock (ActiveThreads)
+            {
+                ActiveThreads.ForEach(t => t.Abort());
+                ActiveThreads.Clear();
+            }
             HasTerminated = true;
         }
 

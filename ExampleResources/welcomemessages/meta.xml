@@ -1,5 +1,5 @@
 <meta>
     <info name="Welcome Messages" author="Guadmaz" type="script" />
     
-    <script src="welcomemessages.js" type="server" lang="javascript" />
+    <script src="welcomemessages.cs" type="server" lang="csharp" />
 </meta>

@@ -9,9 +9,9 @@ using GTANetworkShared;
 using System.Threading;
 
 
-public class CopsNCrooks : Script
+public class AdminScript : Script
 {
-	public CopsNCrooks()
+	public AdminScript()
 	{
 		API.onPlayerRespawn += onDeath;
 		API.onPlayerConnected += OnPlayerConnected;

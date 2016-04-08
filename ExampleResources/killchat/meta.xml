@@ -1,6 +1,6 @@
 <meta>
     <info name="Killchat" author="Guadmaz" type="script" />
     
-    <script src="killchat.js" type="server" lang="javascript" />
+    <script src="killchat.cs" type="server" lang="csharp" />
     <script src="killchat_local.js" type="client" lang="javascript" />
 </meta>

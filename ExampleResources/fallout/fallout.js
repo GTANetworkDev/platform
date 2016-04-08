@@ -1,4 +1,4 @@
-
+// someone rewrite me
 var roundStart;
 var objects;
 var playersLeft;
@@ -7,18 +7,6 @@ var roundStarted = false;
 var firstPanel = new Vector3(-66.4266739, -764.013062, 337.5375);
 var distance = 2.6466739;
 
-API.onPlayerConnected.connect(function (player) {
-    API.sendNotificationToAll("~b~~h~" + player.Name + "~h~ ~w~joined.");
-});
-
-API.onPlayerDisconnected.connect(function (player) {
-    API.sendNotificationToAll("~b~~h~" + player.Name + "~h~ ~w~quit.");    
-});
-
-API.onPlayerDeath.connect(function (player, reason, weapon) {
-    API.sendNotificationToAll("~b~~h~" + player.Name + "~h~ ~w~died.");   
-    
-});
 
 API.onPlayerRespawn.connect(function (player) {
     if (playersLeft == null || !roundStarted) return;
