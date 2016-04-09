@@ -395,6 +395,22 @@ namespace GTANetwork
             Function.Call(Hash.DRAW_SPRITE, dict, txtName, xx, yy, w, h, heading, r, g, b, alpha);
         }
 
+        public void drawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
+        {
+            int screenw = Game.ScreenResolution.Width;
+            int screenh = Game.ScreenResolution.Height;
+            const float height = 1080f;
+            float ratio = (float)screenw / screenh;
+            var width = height * ratio;
+
+            float w = (float)wSize / width;
+            float h = (float)hSize / height;
+            float x = (((float)xPos) / width) + w * 0.5f;
+            float y = (((float)yPos) / height) + h * 0.5f;
+
+            Function.Call(Hash.DRAW_RECT, x, y, w, h, r, g, b, alpha);
+        }
+
         public void drawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
             int justify, bool shadow, bool outline, int wordWrap)
         {

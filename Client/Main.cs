@@ -145,6 +145,8 @@ namespace GTANetwork
 
             _debug = new DebugWindow();
 
+            Function.Call((Hash)0x9BAE5AD2508DF078, true); // _ENABLE_MP_DLC_MAPS
+
             MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(),
                 GameplayCamera.FieldOfView);
             MainMenuCamera.PointAt(new Vector3(707.86f, 1228.09f, 333.66f));
@@ -1931,7 +1933,9 @@ namespace GTANetwork
 
             Function.Call((Hash) 0x2F9A292AD0A3BD89);
             Function.Call((Hash) 0x5F3B7749C112D552);
-            
+
+            Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
+
             if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS))
                 Function.Call(Hash.CANCEL_STUNT_JUMP);
 
