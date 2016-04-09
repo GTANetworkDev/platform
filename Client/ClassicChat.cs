@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using GTA;
 using GTA.Native;
 using NativeUI;
+using Control = GTA.Control;
 
 namespace GTANetwork
 {
@@ -69,10 +70,57 @@ namespace GTANetwork
             _messages.Clear();
         }
 
+
+        private PointF GetInputboxPos(bool scaleWithSafezone)
+        {
+            var aspectRatio = (Game.ScreenResolution.Width/(float) Game.ScreenResolution.Height);
+            var res = UIMenu.GetScreenResolutionMantainRatio();
+            var safezone = UIMenu.GetSafezoneBounds();
+            PointF offset = new PointF(0, 0);
+
+            if (!scaleWithSafezone)
+                offset = new PointF(-safezone.X, -safezone.Y);
+
+            if (Math.Abs(aspectRatio - 1.777778f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+            else if (Math.Abs(aspectRatio - 1.6f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 1122 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+            else if (Math.Abs(aspectRatio - 1.481481f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 1054 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+            else if (Math.Abs(aspectRatio - 1.5625f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 1100 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+            else if (Math.Abs(aspectRatio - 1.770833f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 1216 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+            else if (Math.Abs(aspectRatio - 1.25f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 857 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+            else if (Math.Abs(aspectRatio - 1.33333f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 915 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+            else if (Math.Abs(aspectRatio - 1.66666f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+            }
+
+            return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UI.HEIGHT);
+        }
+        
         public void Tick()
         {
             if (!Main.IsOnServer()) return;
-
+            
             var timePassed = Math.Min(DateTime.Now.Subtract(_focusStart).TotalMilliseconds, DateTime.Now.Subtract(_lastMsg).TotalMilliseconds);
 
             int alpha = 100;
@@ -87,19 +135,8 @@ namespace GTANetwork
                 maxWidth = _messages.Max(f => StringMeasurer.MeasureString(f));
             }
             
-
-            var safezone = UIMenu.GetSafezoneBounds();
-            var res = UIMenu.GetScreenResolutionMantainRatio();
-
-            var converted = new PointF((safezone.X/res.Width) * UI.WIDTH, (safezone.Y/res.Height) * UI.HEIGHT);
-
-            if (Main.PlayerSettings.ScaleChatWithSafezone)
-                _mainScaleform.Render2DScreenSpace(new PointF((-788f) + converted.X, (-505f) + converted.Y),
-                    new PointF(UI.WIDTH, UI.HEIGHT));
-            else
-                _mainScaleform.Render2DScreenSpace(
-                    new PointF(-788f + converted.X - (converted.X/2), -505f + converted.Y - (converted.Y/2)),
-                    new PointF(UI.WIDTH, UI.HEIGHT));
+            var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
+            _mainScaleform.Render2DScreenSpace(new PointF(pos.X, pos.Y), new PointF(UI.WIDTH, UI.HEIGHT));
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;

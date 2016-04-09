@@ -399,6 +399,9 @@ namespace GTANetworkServer
 
         [XmlElement("assembly")]
         public List<AssemblyReferences> Referenceses { get; set; }
+
+        [XmlElement("include")]
+        public List<RequiredResource> Includes { get; set; }
     }
 
     [XmlRoot("assembly")]
@@ -406,6 +409,13 @@ namespace GTANetworkServer
     {
         [XmlAttribute("ref")]
         public string Name { get; set; }
+    }
+
+    [XmlRoot("include")]
+    public class RequiredResource
+    {
+        [XmlAttribute("resource")]
+        public string Resource { get; set; }
     }
 
     [XmlRoot("script")]

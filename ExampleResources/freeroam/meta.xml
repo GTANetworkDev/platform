@@ -2,7 +2,11 @@
     <info name="Freeroam" author="Guadmaz" type="script" />
     
     <script src="freeroam.cs" type="server" lang="csharp" />
-    <script src="freeroam_local.js" type="client" lang="javascript" />    
+    <script src="freeroam_local.js" type="client" lang="javascript" />
     
+
+    <script src="trainer/trainer.js" type="client" />
+    <script src="trainer/player.js" type="client" />
+
     <file src="skeletor.png" />
 </meta>

@@ -318,7 +318,17 @@ namespace GTANetwork
                     return null;
             }
         }
-        
+
+        public int getGamePlayer()
+        {
+            return Game.Player.Handle;
+        }
+
+        public LocalHandle getLocalPlayer()
+        {
+            return new LocalHandle(Game.Player.Character.Handle);
+        }
+
         public void playSoundFrontEnd(string audioLib, string audioName)
         {
             Function.Call((Hash)0x2F844A8B08D76685, audioLib, true);
@@ -343,6 +353,36 @@ namespace GTANetwork
         public void sendNotification(string text)
         {
             Util.SafeNotify(text);
+        }
+
+        public void setPlayerInvincible(bool invinc)
+        {
+            Game.Player.IsInvincible = invinc;
+        }
+
+        public bool getPlayerInvincible()
+        {
+            return Game.Player.IsInvincible;
+        }
+
+        public void setPlayerHealth(LocalHandle ped, int health)
+        {
+            new Ped(ped.Value).Health = health;
+        }
+
+        public int getPlayerHealth(LocalHandle ped)
+        {
+            return new Ped(ped.Value).Health;
+        }
+
+        public void setPlayerArmor(LocalHandle ped, int armor)
+        {
+            new Ped(ped.Value).Armor = armor;
+        }
+
+        public int getPlayerArmor(LocalHandle ped)
+        {
+            return new Ped(ped.Value).Armor;
         }
 
         public LocalHandle createBlip(Vector3 pos)
@@ -569,13 +609,14 @@ namespace GTANetwork
         public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
         {
             var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
-            return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y)));
+            return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y))) { ScaleWithSafezone = false };
         }
 
         public UIMenu createMenu(string subtitle, double x, double y, int anchor)
         {
             var offset = convertAnchorPos((float)x, (float)y - 107, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
             var newM = new UIMenu("", subtitle, new Point((int)(offset.X), (int)(offset.Y)));
+            newM.ScaleWithSafezone = false;
             newM.SetBannerType(new UIResRectangle());
             return newM;
         }
@@ -620,11 +661,11 @@ namespace GTANetwork
                 case Anchor.TopRight:
                     return new PointF(res.Width - x - xOffset, y);
                 case Anchor.MiddleLeft:
-                    return new PointF(x, res.Height / 2 + y);
+                    return new PointF(x, res.Height / 2 + y - yOffset / 2);
                 case Anchor.MiddleCenter:
-                    return new PointF(res.Width / 2 + x, res.Height / 2 + y);
+                    return new PointF(res.Width / 2 + x, res.Height / 2 + y - yOffset / 2);
                 case Anchor.MiddleRight:
-                    return new PointF(res.Width - x - xOffset, res.Height / 2 + y);
+                    return new PointF(res.Width - x - xOffset, res.Height / 2 + y - yOffset/2);
                 case Anchor.BottomLeft:
                     return new PointF(x, res.Height - y - yOffset);
                 case Anchor.BottomCenter:

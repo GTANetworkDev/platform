@@ -1310,6 +1310,7 @@ namespace GTANetwork
         {
             if (IsSpectating) return;
             var player = Game.Player.Character;
+            
             if (player.IsInVehicle())
             {
                 var veh = player.CurrentVehicle;
@@ -3033,10 +3034,9 @@ namespace GTANetwork
 
                         _currentOnlinePlayers += data.PlayerCount;
 
-                        MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " +
-                                         _currentOnlinePlayers;
+                        MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " + _currentOnlinePlayers;
                         
-                        if (data.LAN && matchedItems.Count == 0)
+                        if (data.LAN) //  && matchedItems.Count == 0
                         {
                             var item = new UIMenuItem(data.ServerName);
                             var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;

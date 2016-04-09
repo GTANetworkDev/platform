@@ -248,7 +248,7 @@ namespace GTANetworkServer
             return allScripts;
         }
 
-        public void StartResource(string resourceName)
+        public void StartResource(string resourceName, string father = null)
         {
             try
             {
@@ -272,6 +272,13 @@ namespace GTANetworkServer
                 ourResource.DirectoryName = resourceName;
                 ourResource.Engines = new List<ScriptingEngine>();
                 ourResource.ClientsideScripts = new List<ClientsideScript>();
+
+                if (currentResInfo.Includes != null)
+                    foreach (var resource in currentResInfo.Includes)
+                    {
+                        if (string.IsNullOrWhiteSpace(resource.Resource) || resource.Resource == father) continue;
+                        StartResource(resource.Resource, resourceName);
+                    }
 
                 foreach (var filePath in currentResInfo.Files)
                 {
