@@ -387,7 +387,7 @@ namespace GTANetworkServer
             catch (Exception ex)
             {
                 Program.Output("ERROR STARTING RESOURCE " + resourceName);
-                Program.Output(ex.Message);
+                Program.Output(ex.ToString());
             }
         }
 

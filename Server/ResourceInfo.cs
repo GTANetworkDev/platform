@@ -26,6 +26,7 @@ namespace GTANetworkServer
         public ScriptingEngineLanguage Language { get; private set; }
         public string Filename { get; set; }
         public Resource ResourceParent { get; set; }
+        public List<Thread> ActiveThreads = new List<Thread>();
 
         private Thread _workerThread;
         private JScriptEngine _jsEngine;
@@ -61,14 +62,9 @@ namespace GTANetworkServer
 
             Language = ScriptingEngineLanguage.compiled;
             Filename = name;
-            
-            
-            lock (_mainQueue.SyncRoot)
-            _mainQueue.Enqueue(new Action(() =>
-            {
-                _compiledScript = sc;
-                _compiledScript.API.ResourceParent = this;
-            }));
+
+            _compiledScript = sc;
+            _compiledScript.API.ResourceParent = this;
         }
 
         private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
@@ -141,9 +137,17 @@ namespace GTANetworkServer
                 }
 
                 Thread.Sleep(10);
+                lock (ActiveThreads) ActiveThreads.RemoveAll(t => t == null || !t.IsAlive);
             }
         }
 
+        internal void AddTrackedThread(Thread th)
+        {
+            lock (ActiveThreads)
+            {
+                ActiveThreads.Add(th);
+            }
+        }
 
         #region Interface
 
@@ -206,7 +210,11 @@ namespace GTANetworkServer
             }));
             DateTime start = DateTime.Now;
             while (!canContinue && DateTime.Now.Subtract(start).TotalMilliseconds < 10000) { Thread.Sleep(10); }
-            
+            lock (ActiveThreads)
+            {
+                ActiveThreads.Where(t => t != null && t.IsAlive).ToList().ForEach(t => t.Abort());
+                ActiveThreads.Clear();
+            }
             HasTerminated = true;
         }
 

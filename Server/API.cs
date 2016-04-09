@@ -182,11 +182,43 @@ namespace GTANetworkServer
 
         public void sleep(int ms)
         {
-            Thread.Sleep(ms);
+            var start = DateTime.Now;
+            while (DateTime.Now.Subtract(start).TotalMilliseconds < ms)
+            {
+                Thread.Sleep(10);
+            }
         }
 
+        /// <summary>
+        /// Notice: not available in the Script constructor. Use onResourceStart even instead.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public Thread startThread(ThreadStart target)
+        {
+            if (ResourceParent == null)
+            {
+                throw new NullReferenceException("Illegal call to function inside constructor.");
+            }
+
+            var t = new Thread(target);
+            t.IsBackground = true;
+            t.Start();
+            ResourceParent.AddTrackedThread(t);
+            return t;
+        }
+
+        /// <summary>
+        /// Notice: not available in the Script constructor. Use onResourceStart even instead.
+        /// </summary>
+        /// <returns></returns>
         public string getThisResource()
         {
+            if (ResourceParent == null)
+            {
+                throw new NullReferenceException("Illegal call to function inside constructor.");
+            }
+
             return ResourceParent.ResourceParent.DirectoryName;
         }
 
