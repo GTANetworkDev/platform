@@ -60,6 +60,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\ScriptHookVDotNet.dll</HintPath>
     </Reference>
+    <Reference Include="SharpDX">
+      <HintPath>$(SharpDXPackageBinDir)\SharpDX.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -124,6 +127,9 @@
   <PropertyGroup>
     <PostBuildEvent>copy /y "$(TargetPath)" "A:\Program Files\Rockstar Games\Grand Theft Auto V\scripts\$(TargetFileName)"</PostBuildEvent>
   </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>"C:\Program Files (x86)\Common Files\Microsoft Shared\TextTemplating\14.0\TextTransform.exe" -out "$(ProjectDir)Properties\AssemblyInfo.cs" "$(ProjectDir)Properties\AssemblyInfo.tt"</PreBuildEvent>
+  </PropertyGroup>
   <Import Project="..\packages\SharpDX.2.6.3\build\SharpDX.targets" Condition="Exists('..\packages\SharpDX.2.6.3\build\SharpDX.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -131,9 +137,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\SharpDX.2.6.3\build\SharpDX.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SharpDX.2.6.3\build\SharpDX.targets'))" />
   </Target>
-  <PropertyGroup>
-    <PreBuildEvent>"C:\Program Files (x86)\Common Files\Microsoft Shared\TextTemplating\14.0\TextTransform.exe" -out "$(ProjectDir)Properties\AssemblyInfo.cs" "$(ProjectDir)Properties\AssemblyInfo.tt"</PreBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
