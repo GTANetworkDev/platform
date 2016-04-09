@@ -69,6 +69,8 @@ namespace GTANetwork
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
 
+        private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
+
         // STATS
         private static int _bytesSent = 0;
         private static int _bytesReceived = 0;
@@ -491,8 +493,6 @@ namespace GTANetwork
                             _favBrowser.Index = lastIndx;
                         }
                     }
-
-                    _currentOnlineServers = list.Count;
 
                     Client.DiscoverLocalPeers(Port);
 
@@ -1253,10 +1253,7 @@ namespace GTANetwork
         public static void StartClientsideScripts(ScriptCollection scripts)
         {
             if (scripts.ClientsideScripts != null)
-                foreach (var scr in scripts.ClientsideScripts)
-                {
-                    JavascriptHook.StartScript(scr);
-                }
+                JavascriptHook.StartScripts(scripts);
         }
 
         public static Dictionary<int, int> CheckPlayerVehicleMods()
@@ -1535,6 +1532,7 @@ namespace GTANetwork
         private DateTime _start;
 
         private bool _hasInitialized;
+        private bool _hasPlayerSpawned;
 
         private int _debugStep;
 
@@ -1544,7 +1542,7 @@ namespace GTANetwork
             set
             {
                 _debugStep = value;
-                //UI.ShowSubtitle(_debugStep.ToString());
+                LogManager.DebugLog(value.ToString());
             }
         }
 
@@ -1561,12 +1559,23 @@ namespace GTANetwork
             if (!_hasInitialized)
             {
                 RebuildServerBrowser();
+                
+                _hasInitialized = true;
+            }
 
+            if (!_hasPlayerSpawned && player != null && player.Handle != 0 && !Game.IsLoading)
+            {
+                Game.FadeScreenOut(1);
+                
+                Game.Player.Character.Position = _vinewoodSign;
+                Script.Wait(100);
+                Util.SetPlayerSkin(PedHash.Clown01SMY);
+                Game.Player.Character.SetDefaultClothes();
                 MainMenu.Visible = true;
                 World.RenderingCamera = MainMenuCamera;
                 MainMenu.RefreshIndex();
-
-                _hasInitialized = true;
+                _hasPlayerSpawned = true;
+                Game.FadeScreenIn(1000);
             }
 
             DEBUG_STEP = 0;
@@ -2921,16 +2930,18 @@ namespace GTANetwork
                                 var reason = msg.ReadString();
                                 Util.SafeNotify("You have been disconnected" +
                                           (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
-
+                                DEBUG_STEP = 40;
                                 lock (Opponents)
                                 {
+                                    DEBUG_STEP = 41;
                                     if (Opponents != null)
                                     {
+                                        DEBUG_STEP = 42;
                                         Opponents.ToList().ForEach(pair => pair.Value.Clear());
                                         Opponents.Clear();
                                     }
                                 }
-
+                                DEBUG_STEP = 43;
                                 lock (Npcs)
                                 {
                                     if (Npcs != null)
@@ -2939,45 +2950,66 @@ namespace GTANetwork
                                         Npcs.Clear();
                                     }
                                 }
-
+                                DEBUG_STEP = 44;
                                 lock (_dcNatives)
                                     if (_dcNatives != null && _dcNatives.Any())
                                     {
                                         _dcNatives.ToList().ForEach(pair => DecodeNativeCall(pair.Value));
                                         _dcNatives.Clear();
                                     }
-
+                                DEBUG_STEP = 45;
                                 lock (_tickNatives) if (_tickNatives != null) _tickNatives.Clear();
-
+                                DEBUG_STEP = 46;
                                 lock (EntityCleanup)
                                 {
                                     EntityCleanup.ForEach(ent => new Prop(ent).Delete());
                                     EntityCleanup.Clear();
                                 }
+
+                                DEBUG_STEP = 47;
+
                                 lock (BlipCleanup)
                                 {
                                     BlipCleanup.ForEach(blip => new Blip(blip).Remove());
                                     BlipCleanup.Clear();
                                 }
 
+                                DEBUG_STEP = 48;
+
                                 _chat.Clear();
+                                DEBUG_STEP = 49;
+
                                 NetEntityHandler.ClearAll();
+                                DEBUG_STEP = 50;
                                 JavascriptHook.StopAllScripts();
+                                DEBUG_STEP = 51;
                                 DownloadManager.Cancel();
+                                DEBUG_STEP = 52;
                                 MainMenu.TemporarilyHidden = false;
                                 JustJoinedServer = false;
+                                DEBUG_STEP = 53;
                                 MainMenu.Tabs.Remove(_serverItem);
                                 MainMenu.Tabs.Remove(_mainMapItem);
+                                DEBUG_STEP = 54;
                                 if (!MainMenu.Tabs.Contains(_welcomePage))
                                     MainMenu.Tabs.Insert(0, _welcomePage);
+                                DEBUG_STEP = 55;
                                 MainMenu.RefreshIndex();
                                 _localMarkers.Clear();
+
+                                DEBUG_STEP = 56;
+
                                 World.RenderingCamera = MainMenuCamera;
                                 MainMenu.Visible = true;
                                 IsSpectating = false;
                                 Weather = null;
                                 Time = null;
                                 LocalTeam = -1;
+                                DEBUG_STEP = 57;
+
+                                Game.Player.Character.Position = _vinewoodSign; 
+                                Util.SetPlayerSkin(PedHash.Clown01SMY);
+                                Game.Player.Character.SetDefaultClothes();
                                 break;
                         }
                     }
@@ -3001,7 +3033,7 @@ namespace GTANetwork
 
                         _currentOnlinePlayers += data.PlayerCount;
 
-                        MainMenu.Money = "Servers Online: " + _currentOnlineServers + " | Players Online: " +
+                        MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " +
                                          _currentOnlinePlayers;
                         
                         if (data.LAN && matchedItems.Count == 0)

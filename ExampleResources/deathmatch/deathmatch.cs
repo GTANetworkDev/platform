@@ -22,11 +22,22 @@ public class Deathmatch : Script
         
         API.onPlayerConnected += OnPlayerConnected;
         API.onPlayerRespawn += OnPlayerRespawn;
+        API.onResourceStart += onResourceStart;
+    }
+
+    private void onResourceStart(object sender, EventArgs e)
+    {
+        var players = API.getAllPlayers();
+
+        foreach (var player in players)
+        {
+            Respawn(player);
+        }
     }
     
     private void Respawn(Client player)
     {
-        API.sendNativeToPlayer(player, "17464388802800305651", new EntityArgument(player.CharacterHandle.Value), true);
+        API.sendNativeToPlayer(player, 17464388802800305651, new EntityArgument(player.CharacterHandle.Value), true);
         var rand = spawns[rInst.Next(spawns.Count)];
         API.setEntityPosition(player.CharacterHandle, rand);
         API.givePlayerWeapon(player, 324215364, 500, false, true);

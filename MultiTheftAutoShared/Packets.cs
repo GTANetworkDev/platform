@@ -371,6 +371,9 @@ namespace GTANetworkShared
 
         [ProtoMember(2)]
         public string Script { get; set; }
+
+        [ProtoMember(3)]
+        public string Filename { get; set; }
     }
 
 

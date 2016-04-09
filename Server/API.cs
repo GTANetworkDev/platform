@@ -129,8 +129,7 @@ namespace GTANetworkServer
 
         public object call(string resourceName, string scriptName, string methodName, params object[] arguments)
         {
-            var ourResource =
-                Program.ServerInstance.RunningResources.FirstOrDefault(k => k.DirectoryName == resourceName);
+            var ourResource = Program.ServerInstance.RunningResources.FirstOrDefault(k => k.DirectoryName == resourceName);
             if (ourResource == null)
             {
                 Program.Output("ERROR: call() - No resource named '" + resourceName + "' found.");
@@ -222,7 +221,7 @@ namespace GTANetworkServer
             return ResourceParent.ResourceParent.DirectoryName;
         }
 
-        public int getGameHash(string input)
+        public int getHashKey(string input)
         {
             return Program.GetHash(input);
         }
@@ -527,14 +526,27 @@ namespace GTANetworkServer
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
         }
 
-        public void sendNativeToPlayer(Client player, string longHash, params object[] args)
+        public void sendNativeToPlayer(Client player, ulong longHash, params object[] args)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, ulong.Parse(longHash), args);
+            Program.ServerInstance.SendNativeCallToPlayer(player, longHash, args);
         }
 
-        public void sendNativeToAllPlayers(string longHash, params object[] args)
+        public void sendNativeToAllPlayers(ulong longHash, params object[] args)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(ulong.Parse(longHash), args);
+            Program.ServerInstance.SendNativeCallToAllPlayers(longHash, args);
+        }
+
+        public T fetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
+        {
+            var returnType = Program.ServerInstance.ParseReturnType(typeof (T));
+
+            if (returnType == null)
+            {
+                throw new ArgumentException("Type \"" + typeof(T) + "\" is not a valid return type.");
+            }
+
+            return (T) Program.ServerInstance.ReturnNativeCallFromPlayer(player, longHash,
+                returnType, args);
         }
 
         public  void givePlayerWeapon(Client player, int weaponHash, int ammo, bool equipNow, bool ammoLoaded)

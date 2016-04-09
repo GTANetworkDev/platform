@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
@@ -18,14 +19,16 @@ namespace GTANetwork
 {
     public class ClientsideScriptWrapper
     {
-        public ClientsideScriptWrapper(JScriptEngine en, string rs)
+        public ClientsideScriptWrapper(JScriptEngine en, string rs, string filename)
         {
             Engine = en;
             ResourceParent = rs;
+            Filename = filename;
         }
 
         public JScriptEngine Engine { get; set; }
         public string ResourceParent { get; set; }
+        public string Filename { get; set; }
     }
 
     public class JavascriptHook : Script
@@ -72,7 +75,7 @@ namespace GTANetwork
                 }
             });
         }
-
+        
         public void OnTick(object sender, EventArgs e)
         {
             if (ThreadJumper.Count > 0)
@@ -143,38 +146,63 @@ namespace GTANetwork
             }
         }
 
-        public static void StartScript(ClientsideScript script)
+        public static void StartScripts(ScriptCollection sc)
         {
-            ThreadJumper.Add((() =>
+            ThreadJumper.Add(() =>
             {
-                var scriptEngine = new JScriptEngine();
-                scriptEngine.AddHostObject("host", new HostFunctions());
-                scriptEngine.AddHostObject("API", new ScriptContext());
-                scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
-                scriptEngine.AddHostType("List", typeof(IList));
-                scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
-                scriptEngine.AddHostType("Keys", typeof(Keys));
-                scriptEngine.AddHostType("Point", typeof(Point));
-                scriptEngine.AddHostType("Size", typeof(Size));
-                scriptEngine.AddHostType("Vector3", typeof(Vector3));
-                scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
+                List<ClientsideScriptWrapper> scripts = sc.ClientsideScripts.Select(StartScript).ToList();
+
+                foreach (var compiledResources in scripts)
+                {
+                    dynamic obj = new ExpandoObject();
+
+                    foreach (var resourceEngine in
+                            scripts.Where(
+                                s => s.ResourceParent == compiledResources.ResourceParent &&
+                                s != compiledResources))
+                    {
+                        obj[resourceEngine.Filename] = resourceEngine.Engine.Script;
+                    }
+                    
+                    compiledResources.Engine.AddHostObject("resource", obj);
+                    compiledResources.Engine.Script.API.invokeResourceStart();
+                }
+            });
+        }
+
+        public static ClientsideScriptWrapper StartScript(ClientsideScript script)
+        {
+            ClientsideScriptWrapper csWrapper = null;
+            
+            var scriptEngine = new JScriptEngine();
+            scriptEngine.AddHostObject("host", new HostFunctions());
+            scriptEngine.AddHostObject("API", new ScriptContext());
+            scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
+            scriptEngine.AddHostType("List", typeof(IList));
+            scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
+            scriptEngine.AddHostType("Keys", typeof(Keys));
+            scriptEngine.AddHostType("Point", typeof(Point));
+            scriptEngine.AddHostType("Size", typeof(Size));
+            scriptEngine.AddHostType("Vector3", typeof(Vector3));
+            scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
                 
 
-                try
-                {
-                    scriptEngine.Execute(script.Script);
-                    scriptEngine.Script.API.ParentResourceName = script.ResourceParent;
-                }
-                catch (ScriptEngineException ex)
-                {
-                    LogException(ex);
-                }
-                finally
-                {
-                    scriptEngine.Script.API.invokeResourceStart();
-                    lock (ScriptEngines) ScriptEngines.Add(new ClientsideScriptWrapper(scriptEngine, script.ResourceParent));
-                }
-            }));
+            try
+            {
+                scriptEngine.Execute(script.Script);
+                scriptEngine.Script.API.ParentResourceName = script.ResourceParent;
+            }
+            catch (ScriptEngineException ex)
+            {
+                LogException(ex);
+            }
+            finally
+            {
+                csWrapper = new ClientsideScriptWrapper(scriptEngine, script.ResourceParent, script.Filename);
+                lock (ScriptEngines) ScriptEngines.Add(csWrapper);
+            }
+    
+            return csWrapper;
         }
 
         public static void StopAllScripts()

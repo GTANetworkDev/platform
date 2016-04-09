@@ -15,18 +15,6 @@ public class RaceGamemode : Script
 {
     public RaceGamemode()
     {
-        AvailableRaces = new List<Race>();
-        Opponents = new List<Opponent>();
-        RememberedBlips = new Dictionary<long, int>();
-        CurrentRaceCheckpoints = new List<Vector3>();
-        Objects = new List<NetHandle>();
-        ActiveThreads = new List<Thread>();
-        LoadRaces();
-
-        API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
-
-        StartVote();
-
         API.onUpdate += onUpdate;
         API.onPlayerDisconnected += onDisconnect;
         API.onChatCommand += onChatCommand;
@@ -34,10 +22,7 @@ public class RaceGamemode : Script
         API.onPlayerRespawn += onPlayerRespawn;
         API.onClientEventTrigger += onClientEvent;
         API.onResourceStop += onResourceStop;
-
-        var calcThread = new Thread(CalculatePositions);
-        calcThread.IsBackground = true;
-        calcThread.Start();
+        API.onResourceStart += onResourceStart;
     }
 
     public bool IsRaceOngoing { get; set; }
@@ -55,6 +40,23 @@ public class RaceGamemode : Script
     public List<Client> Voters { get; set; }
     public Dictionary<int, int> Votes { get; set; }
     public Dictionary<int, Race> AvailableChoices { get; set; }
+
+    public void onResourceStart(object sender, EventArgs e)
+    {
+        AvailableRaces = new List<Race>();
+        Opponents = new List<Opponent>();
+        RememberedBlips = new Dictionary<long, int>();
+        CurrentRaceCheckpoints = new List<Vector3>();
+        Objects = new List<NetHandle>();
+        ActiveThreads = new List<Thread>();
+        LoadRaces();
+
+        API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
+
+        StartVote();
+
+        API.startThread(CalculatePositions);
+    }
 
     public bool IsVoteActive()
     {
@@ -145,22 +147,16 @@ public class RaceGamemode : Script
                         {
                             if (Opponents.All(op => !op.HasFinished))
                             {
-                                var t = new Thread((ThreadStart)delegate
+                                API.startThread((ThreadStart)delegate
                                 {
-                                    Thread.Sleep(10000);
+                                    API.sleep(10000);
                                     API.sendChatMessageToAll("Vote for next map will start in 60 seconds!");
-                                    Thread.Sleep(30000);
+                                    API.sleep(30000);
                                     API.sendChatMessageToAll("Vote for next map will start in 30 seconds!");
-                                    Thread.Sleep(30000);
+                                    API.sleep(30000);
                                     if (!IsVoteActive())
                                         StartVote();
                                 });
-
-                                t.IsBackground = true;
-                                t.Start();
-
-                                ActiveThreads.RemoveAll(th => !th.IsAlive);
-                                ActiveThreads.Add(t);
                             }
 
                             opponent.HasFinished = true;
@@ -332,11 +328,11 @@ public class RaceGamemode : Script
 
         API.consoleOutput("RACE: Starting race " + race.Name);
 
-        var t = new Thread((ThreadStart)delegate
+        API.startThread((ThreadStart)delegate
         {
-            Thread.Sleep(10000);
+            API.sleep(10000);
             API.triggerClientEventForAll("startRaceCountdown");
-            Thread.Sleep(3000);
+            API.sleep(3000);
             IsRaceOngoing = true;
 
             var nat = 0x428CA6DBD1094446;
@@ -348,12 +344,6 @@ public class RaceGamemode : Script
                     opponent.HasStarted = true;
                 }
         });
-
-        t.IsBackground = true;
-        t.Start();
-
-        ActiveThreads.RemoveAll(th => !th.IsAlive);
-        ActiveThreads.Add(t);
     }
 
     private void EndRace()
@@ -484,18 +474,16 @@ public class RaceGamemode : Script
 
         VoteStart = DateTime.Now;
         
-        var t = new Thread((ThreadStart)delegate
+        API.startThread((ThreadStart)delegate
         {
-            Thread.Sleep(60 * 1000);
+            API.sleep(60000);
             EndRace();
             var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
             API.sendChatMessageToAll("Race ~b~" + raceWon.Name + "~w~ has won the vote!");
 
-            Thread.Sleep(1000);
+            API.sleep(1000);
             StartRace(raceWon);
         });
-        t.IsBackground = true;
-        t.Start();
     }
 
     private string GetVoteHelpString()

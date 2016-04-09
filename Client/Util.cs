@@ -20,6 +20,16 @@ namespace GTANetwork
             return Function.Call<int>(Hash.GET_PLAYER_RADIO_STATION_INDEX);
         }
 
+        public static void SetPlayerSkin(PedHash skin)
+        {
+            var model = new Model(skin);
+            model.Request(10000);
+
+            Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
+
+            model.MarkAsNoLongerNeeded();
+        }
+
         public static float Denormalize(this float h)
         {
             return h < 0f ? h + 360f : h;

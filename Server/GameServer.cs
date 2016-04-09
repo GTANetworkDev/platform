@@ -300,6 +300,7 @@ namespace GTANetworkServer
                             {
                                 ResourceParent = resourceName,
                                 Script = scrTxt,
+                                Filename = Path.GetFileNameWithoutExtension(script.Path)?.Replace('.', '_'),
                             };
 
                             ourResource.ClientsideScripts.Add(csScript);
@@ -1470,6 +1471,42 @@ namespace GTANetworkServer
         public byte GetChannelIdForConnection(Client conn)
         {
             lock (Clients) return (byte)(((Clients.IndexOf(conn)) % 31) + 1);
+        }
+
+        public NativeArgument ParseReturnType(Type t)
+        {
+            if (t == typeof(int))
+            {
+                return new IntArgument();
+            }
+            else if (t == typeof(uint))
+            {
+                return new UIntArgument();
+            }
+            else if (t == typeof(string))
+            {
+                return new StringArgument();
+            }
+            else if (t == typeof(float))
+            {
+                return new FloatArgument();
+            }
+            else if (t == typeof(double))
+            {
+                return new FloatArgument();
+            }
+            else if (t == typeof(bool))
+            {
+                return new BooleanArgument();
+            }
+            else if (t == typeof(Vector3))
+            {
+                return new Vector3Argument();
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public List<NativeArgument> ParseNativeArguments(params object[] args)
