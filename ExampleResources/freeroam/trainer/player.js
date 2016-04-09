@@ -46,6 +46,14 @@ API.onResourceStart.connect(function (sender, e) {
 	});
 
 	mainWindow.AddItem(armor);
+
+	var suicide = API.createMenuItem("Suicide", "");
+
+	suicide.Activated.connect(function (menu, item) {
+		API.setPlayerHealth(API.getLocalPlayer(), -1);		
+	});
+
+	mainWindow.AddItem(suicide);
 });
 
 

@@ -385,6 +385,27 @@ namespace GTANetwork
             return new Ped(ped.Value).Armor;
         }
 
+        public LocalHandle[] getAllPlayers()
+        {
+            return Main.Opponents.Select(op => new LocalHandle(op.Value.Character?.Handle ?? 0)).ToArray();
+        }
+
+        public LocalHandle getPlayerByName(string name)
+        {
+            var opp = Main.Opponents.FirstOrDefault(op => op.Value.Name == name);
+            if (opp.Value != null && opp.Value.Character != null)
+                return new LocalHandle(opp.Value.Character.Handle);
+            return new LocalHandle(0);
+        }
+
+        public string getPlayerName(LocalHandle player)
+        {
+            var opp = Main.Opponents.FirstOrDefault(op => op.Value.Character != null && op.Value.Character.Handle == player.Value);
+            if (opp.Value != null)
+                return opp.Value.Name;
+            return null;
+        }
+
         public LocalHandle createBlip(Vector3 pos)
         {
             var blip = World.CreateBlip(pos.ToVector());
