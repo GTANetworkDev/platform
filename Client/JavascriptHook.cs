@@ -155,13 +155,14 @@ namespace GTANetwork
                 foreach (var compiledResources in scripts)
                 {
                     dynamic obj = new ExpandoObject();
+                    var asDict = obj as IDictionary<string, object>;
 
                     foreach (var resourceEngine in
                             scripts.Where(
                                 s => s.ResourceParent == compiledResources.ResourceParent &&
                                 s != compiledResources))
                     {
-                        obj[resourceEngine.Filename] = resourceEngine.Engine.Script;
+                        asDict.Add(resourceEngine.Filename, resourceEngine.Engine.Script);
                     }
                     
                     compiledResources.Engine.AddHostObject("resource", obj);
