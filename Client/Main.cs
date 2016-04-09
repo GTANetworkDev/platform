@@ -1931,6 +1931,9 @@ namespace GTANetwork
 
             Function.Call((Hash) 0x2F9A292AD0A3BD89);
             Function.Call((Hash) 0x5F3B7749C112D552);
+            
+            if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS))
+                Function.Call(Hash.CANCEL_STUNT_JUMP);
 
             DEBUG_STEP = 23;
             if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character) == 2)
@@ -2914,8 +2917,6 @@ namespace GTANetwork
                                 var reason = msg.ReadString();
                                 Util.SafeNotify("You have been disconnected" +
                                           (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
-
-                                //Script.Wait(500);
 
                                 lock (Opponents)
                                 {

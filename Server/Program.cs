@@ -98,6 +98,13 @@ namespace GTANetworkServer
 
             if (Type.GetType("Mono.Runtime") == null)
                 SetConsoleCtrlHandler(new HandlerRoutine(ConsoleCtrlCheck), true);
+            else
+            {
+                Console.CancelKeyPress += (sender, eventArgs) =>
+                {
+                    ConsoleCtrlCheck(CtrlTypes.CTRL_C_EVENT);
+                };
+            }
 
             while (!CloseProgram)
             {
