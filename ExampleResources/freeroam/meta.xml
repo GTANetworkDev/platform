@@ -1,5 +1,5 @@
 <meta>
-    <info name="Freeroam" author="Guadmaz" type="script" />
+    <info name="Freeroam" author="Guadmaz" type="gamemode" />
     
     <script src="freeroam.cs" type="server" lang="csharp" />
     <script src="freeroam_local.js" type="client" lang="javascript" />

@@ -1,4 +1,4 @@
 <meta>
-    <info name="Cops 'n' Crooks" author="Guadmaz" type="script" />        
+    <info name="Cops 'n' Crooks" author="Guadmaz" type="gamemode" />        
     <script src="copsncrooks.cs" type="server" lang="csharp" />    
 </meta>

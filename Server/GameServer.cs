@@ -273,6 +273,9 @@ namespace GTANetworkServer
                 ourResource.Engines = new List<ScriptingEngine>();
                 ourResource.ClientsideScripts = new List<ClientsideScript>();
 
+                if (currentResInfo.Info.Type == ResourceType.gamemode)
+                    GamemodeName = ourResource.DirectoryName;
+
                 if (currentResInfo.Includes != null)
                     foreach (var resource in currentResInfo.Includes)
                     {

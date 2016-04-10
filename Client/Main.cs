@@ -147,8 +147,9 @@ namespace GTANetwork
 
             _debug = new DebugWindow();
 
+            Function.Call((Hash)0x0888C3502DBBEEF5); // _LOAD_MP_DLC_MAPS
             Function.Call((Hash)0x9BAE5AD2508DF078, true); // _ENABLE_MP_DLC_MAPS
-
+            
             MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(),
                 GameplayCamera.FieldOfView);
             MainMenuCamera.PointAt(new Vector3(707.86f, 1228.09f, 333.66f));
