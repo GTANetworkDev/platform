@@ -22,7 +22,7 @@ namespace GTANetwork
             CurrentInput = "";
             _mainScaleform = new Scaleform(0);
             _mainScaleform.Load("multiplayer_chat");
-            _messages = new List<string>();
+            _messages = new List<Tuple<string, Color>>();
         }
 
         public bool HasInitialized;
@@ -63,7 +63,7 @@ namespace GTANetwork
         private DateTime _lastMsg = DateTime.MinValue;
         private DateTime _focusStart = DateTime.MinValue;
         private bool _lastFadedOut;
-        private List<string> _messages;
+        private List<Tuple<string, Color>> _messages;
 
         public void Clear()
         {
@@ -128,12 +128,7 @@ namespace GTANetwork
                 alpha = (int)MiscExtensions.QuadraticEasingLerp(100f, 0f, (int)Math.Min(timePassed - 15000, 2000), 2000);
             if (timePassed < 300 && _lastFadedOut)
                 alpha = (int)MiscExtensions.QuadraticEasingLerp(0f, 100f, (int)Math.Min(timePassed, 300), 300);
-
-            int maxWidth = 0;
-            if (_messages.Count > 0)
-            {
-                maxWidth = _messages.Max(f => StringMeasurer.MeasureString(f));
-            }
+            
             
             var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
             _mainScaleform.Render2DScreenSpace(new PointF(pos.X, pos.Y), new PointF(UI.WIDTH, UI.HEIGHT));
@@ -142,7 +137,7 @@ namespace GTANetwork
             var c = 0;
             foreach (var msg in _messages)
             {
-                string output = msg;
+                string output = msg.Item1;
                 var limit = UIMenu.GetScreenResolutionMantainRatio().Width - UIMenu.GetSafezoneBounds().X;
                 while (StringMeasurer.MeasureString(output) > limit)
                     output = output.Substring(0, output.Length - 5);
@@ -150,7 +145,7 @@ namespace GTANetwork
                 if (Main.PlayerSettings.ScaleChatWithSafezone)
                 {
                     new UIResText(output, UIMenu.GetSafezoneBounds() + new Size(0, 25*c), 0.35f,
-                        Color.FromArgb((int) textAlpha, 255, 255, 255))
+                        Color.FromArgb((int) textAlpha, msg.Item2))
                     {
                         Outline = true,
                     }.Draw();
@@ -158,7 +153,7 @@ namespace GTANetwork
                 else
                 {
                     new UIResText(output, new Point(0, 25 * c), 0.35f,
-                        Color.FromArgb((int)textAlpha, 255, 255, 255))
+                        Color.FromArgb((int)textAlpha, msg.Item2))
                     {
                         Outline = true,
                     }.Draw();
@@ -172,13 +167,18 @@ namespace GTANetwork
 
         public void AddMessage(string sender, string msg)
         {
+            Color textColor = Color.White;
+            if (Regex.IsMatch(sender, "^~(#[a-fA-F0-9]{6})~"))
+                textColor = ColorTranslator.FromHtml(sender.Substring(1, 7));
+
             if (string.IsNullOrEmpty(sender))
-                _messages.Add(msg);
+                _messages.Add(new Tuple<string, Color>(msg, textColor));
             else
-                _messages.Add(sender + ": " + msg);
+                _messages.Add(new Tuple<string, Color>(sender + ": " + msg, textColor));
 
             if (_messages.Count > 10)
                 _messages.RemoveAt(0);
+
             _lastFadedOut = DateTime.Now.Subtract(_lastMsg).TotalMilliseconds > 15000;
             _lastMsg = DateTime.Now;
         }
