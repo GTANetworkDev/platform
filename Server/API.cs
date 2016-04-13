@@ -409,6 +409,20 @@ namespace GTANetworkServer
             return getAllPlayers().FirstOrDefault(c => c.Name == name);
         }
 
+        public List<Client> getPlayersInRadiusOfPlayer(float radius, Client player)
+        {
+            return getPlayersInRadiusOfPosition(radius, player.Position);
+        }
+
+        public List<Client> getPlayersInRadiusOfPosition(float radius, Vector3 position)
+        {
+            Func<Client, bool> filterByRadius = player => 
+                Math.Pow(position.X - player.Position.X, 2) + 
+                Math.Pow(position.Y - player.Position.Y, 2) + 
+                Math.Pow(position.Z - player.Position.Z, 2) < Math.Pow(radius, 2);
+            return getAllPlayers().Where(filterByRadius).ToList();
+        }
+
         public void setPlayerProp(Client player, int slot, int drawable, int texture)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
