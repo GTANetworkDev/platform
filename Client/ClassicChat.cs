@@ -168,8 +168,11 @@ namespace GTANetwork
         public void AddMessage(string sender, string msg)
         {
             Color textColor = Color.White;
-            if (Regex.IsMatch(sender, "^~(#[a-fA-F0-9]{6})~"))
+            if (Regex.IsMatch(sender, "^~#[a-fA-F0-9]{6}~"))
+            {
                 textColor = ColorTranslator.FromHtml(sender.Substring(1, 7));
+                if (sender.Length == 9) sender = null;
+            }
 
             if (string.IsNullOrEmpty(sender))
                 _messages.Add(new Tuple<string, Color>(msg, textColor));

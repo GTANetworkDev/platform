@@ -20,6 +20,12 @@ public class FreeroamScript : Script
 	private void onPlayerCommand(Client sender, string cmd, CancelEventArgs cancel)
 	{
 		var args = cmd.Split();
+
+		if (args[0] == "/me")
+		{
+			API.sendChatMessageToAll("~#CB15EB~", sender.Name + " " + cmd.Substring(4) + ".");
+		}
+
 		if (args[0] == "/spec")
 		{
 			if (args.Length >= 2)

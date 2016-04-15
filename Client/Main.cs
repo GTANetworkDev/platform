@@ -386,10 +386,26 @@ namespace GTANetwork
             _currentOnlinePlayers = 0;
             _currentOnlineServers = 0;
 
+            
             var fetchThread = new Thread((ThreadStart)delegate
             {
                 try
                 {
+                    if (Client == null)
+                    {
+                        var port = GetOpenUdpPort();
+                        if (port == 0)
+                        {
+                            Util.SafeNotify("No available UDP port was found.");
+                            return;
+                        }
+                        _config.Port = port;
+                        Client = new NetClient(_config);
+                        Client.Start();
+                    }
+
+                    Client.DiscoverLocalPeers(Port);
+
                     if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
                         return;
                     string response = String.Empty;
@@ -422,19 +438,6 @@ namespace GTANetwork
                     var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
 
                     if (dejson == null) return;
-
-                    if (Client == null)
-                    {
-                        var port = GetOpenUdpPort();
-                        if (port == 0)
-                        {
-                            Util.SafeNotify("No available UDP port was found.");
-                            return;
-                        }
-                        _config.Port = port;
-                        Client = new NetClient(_config);
-                        Client.Start();
-                    }
 
                     var list = new List<string>();
 
@@ -494,8 +497,6 @@ namespace GTANetwork
                             _favBrowser.Index = lastIndx;
                         }
                     }
-
-                    Client.DiscoverLocalPeers(Port);
 
                     for (int i = 0; i < list.Count; i++)
                     {
