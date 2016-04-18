@@ -3,8 +3,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using GTA;
-using GTA.Native;
 
 namespace GTANetwork
 {

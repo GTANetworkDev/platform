@@ -1,7 +1,8 @@
 ﻿using System.Drawing;
 using System.Linq;
-using GTA;
+using System.Windows.Forms;
 using NativeUI;
+using Rage;
 
 namespace GTANetwork
 {
@@ -14,13 +15,13 @@ namespace GTANetwork
         {
             if (!Visible) return;
 
-            if (Game.IsControlJustPressed(0, Control.FrontendLeft))
+            if (Game.IsControlJustPressed(0, GameControl.FrontendLeft))
             {
                 PlayerIndex--;
                 UI.ShowSubtitle("NewIndex: " + PlayerIndex);
             }
 
-            else if (Game.IsControlJustPressed(0, Control.FrontendRight))
+            else if (Game.IsControlJustPressed(0, GameControl.FrontendRight))
             {
                 PlayerIndex++;
                 UI.ShowSubtitle("NewIndex: " + PlayerIndex);

@@ -6,10 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using GTA;
-using GTA.Native;
 using NativeUI;
-using Control = GTA.Control;
 
 namespace GTANetwork
 {
