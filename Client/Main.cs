@@ -8,23 +8,22 @@ using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
-using GTA;
-using GTA.Math;
-using GTA.Native;
 using GTANetwork.GUI;
 using GTANetworkShared;
 using Lidgren.Network;
 using Microsoft.Win32;
-using NativeUI;
-using NativeUI.PauseMenu;
 using Newtonsoft.Json;
 using ProtoBuf;
-using Control = GTA.Control;
-using Vector3 = GTA.Math.Vector3;
+using Rage;
+using RAGENativeUI;
+using RAGENativeUI.Elements;
+using RAGENativeUI.PauseMenu;
+using KeyEventArgs = System.Windows.Forms.KeyEventArgs;
+using Vector3 = Rage.Vector3;
 
 namespace GTANetwork
 {
-    public class Main : Script
+    public class Main
     {
         public static PlayerSettings PlayerSettings;
         
@@ -149,10 +148,17 @@ namespace GTANetwork
 
             Function.Call((Hash)0x0888C3502DBBEEF5); // _LOAD_MP_DLC_MAPS
             Function.Call((Hash)0x9BAE5AD2508DF078, true); // _ENABLE_MP_DLC_MAPS
-            
-            MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(),
-                GameplayCamera.FieldOfView);
-            MainMenuCamera.PointAt(new Vector3(707.86f, 1228.09f, 333.66f));
+
+            var origin = new Vector3(743.76f, 1070.7f, 350.24f);
+            var dest = new Vector3(707.86f, 1228.09f, 333.66f);
+
+            var dir = (dest - origin);
+            dir.Normalize();
+
+            MainMenuCamera = new Camera(false);
+            MainMenuCamera.Position = origin;
+            MainMenuCamera.FOV = Camera.RenderingCamera.FOV;
+            MainMenuCamera.Rotation = DirectionToRotation(dir).ToRotator();
 
             GetWelcomeMessage();
         }
