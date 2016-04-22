@@ -1,12 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Windows.Forms;
 using Rage;
 using Rage.Native;
 
@@ -42,9 +34,9 @@ namespace GTANetwork
             NativeFunction.CallByHash<int>((ulong) hash, args);
         }
 
-        public static void Call<T>(Hash hash, params NativeArgument[] args)
+        public static T Call<T>(Hash hash, params NativeArgument[] args)
         {
-            NativeFunction.CallByHash((ulong) hash, typeof(T), args);
+            return (T)NativeFunction.CallByHash((ulong) hash, typeof(T), args);
         }
     }
 }

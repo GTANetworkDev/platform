@@ -3,11 +3,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using GTA;
-using GTA.Math;
-using GTA.Native;
-using NativeUI;
-using Font = GTA.Font;
+using Rage;
 
 namespace GTANetwork
 {
@@ -283,11 +279,11 @@ namespace GTANetwork
 
             RelGroup = World.AddRelationshipGroup("SYNCPED");
             FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.LocalPlayer.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.LocalPlayer.Character.RelationshipGroup, RelGroup);
 
-            World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.LocalPlayer.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Companion, Game.LocalPlayer.Character.RelationshipGroup, FriendRelGroup);
         }
             
         public void SetBlipNameFromTextFile(Blip blip, string text)
@@ -325,7 +321,7 @@ namespace GTANetwork
                 
                 const float hRange = 300f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
-                var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
+                var inRange = Game.LocalPlayer..Character.IsInRangeOf(gPos, hRange);
 
                 DEBUG_STEP = 1;
 
@@ -430,12 +426,12 @@ namespace GTANetwork
                 if (!IsInVehicle)
                 {
                     bool isAiming = false;
-                    if ((!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f))) ||
+                    if ((!Character.IsOccluded && (Character.IsInRangeOf(Game.LocalPlayer.Character.Position, 30f))) ||
                         (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
                     {
                         var ray = World.Raycast(GameplayCamera.Position, Character.GetBoneCoord(Bone.IK_Head),
                             IntersectOptions.Everything,
-                            Game.Player.Character);
+                            Game.LocalPlayer.Character);
                         if (ray.HitEntity == Character || isAiming)
                         {
                             var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
@@ -537,9 +533,9 @@ namespace GTANetwork
                 DEBUG_STEP = 9;
                 if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
                     (_lastVehicle && IsInVehicle &&
-                     (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
+                     (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.LocalPlayer.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
                       Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
-                      (VehicleSeat != Util.GetPedSeat(Character) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle))))
+                      (VehicleSeat != Util.GetPedSeat(Character) && Game.LocalPlayer.Character.GetVehicleIsTryingToEnter() != MainVehicle))))
                 {
                     if (Debug)
                     {
@@ -551,10 +547,10 @@ namespace GTANetwork
                     DEBUG_STEP = 10;
 
 
-                    if (Game.Player.Character.IsInVehicle(MainVehicle) &&
-                        VehicleSeat == Util.GetPedSeat(Game.Player.Character))
+                    if (Game.LocalPlayer.Character.IsInVehicle(MainVehicle) &&
+                        VehicleSeat == Util.GetPedSeat(Game.LocalPlayer.Character))
                     {
-                        Game.Player.Character.Task.WarpOutOfVehicle(MainVehicle);
+                        Game.LocalPlayer.Character.Task.WarpOutOfVehicle(MainVehicle);
                         Util.SafeNotify("~r~Car jacked!");
                     }
                     DEBUG_STEP = 11;
@@ -642,7 +638,7 @@ namespace GTANetwork
                         //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
 
                         if (VehicleMods != null && _modSwitch%50 == 0 &&
-                            Game.Player.Character.IsInRangeOf(VehiclePosition, 30f))
+                            Game.LocalPlayer.Character.IsInRangeOf(VehiclePosition, 30f))
                         {
                             var id = _modSwitch/50;
 
@@ -951,7 +947,7 @@ namespace GTANetwork
                 }
                 else
                 {
-                    if (PedProps != null && _clothSwitch%50 == 0 && Game.Player.Character.IsInRangeOf(_position, 30f))
+                    if (PedProps != null && _clothSwitch%50 == 0 && Game.LocalPlayer.Character.IsInRangeOf(_position, 30f))
                     {
                         var id = _clothSwitch/50;
 
@@ -1105,9 +1101,9 @@ namespace GTANetwork
                                         IntersectOptions.Peds1, Character);
                                     //Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
                                     if (ray.DitHitAnything && ray.DitHitEntity &&
-                                        ray.HitEntity.Handle == Game.Player.Character.Handle)
+                                        ray.HitEntity.Handle == Game.LocalPlayer.Character.Handle)
                                     {
-                                        Game.Player.Character.ApplyDamage(25);
+                                        Game.LocalPlayer.Character.ApplyDamage(25);
                                         meleeSwingDone = true;
                                     }
                                 }
@@ -1118,9 +1114,9 @@ namespace GTANetwork
                                 var start = rightfist - new Vector3(0, 0, 0.5f);
                                 var end = rightfist + new Vector3(0, 0, 0.5f);
                                 var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
-                                if (ray.DitHitAnything && ray.DitHitEntity && ray.HitEntity.Handle == Game.Player.Character.Handle)
+                                if (ray.DitHitAnything && ray.DitHitEntity && ray.HitEntity.Handle == Game.LocalPlayer.Character.Handle)
                                 {
-                                    Game.Player.Character.ApplyDamage(25);
+                                    Game.LocalPlayer.Character.ApplyDamage(25);
                                     meleeSwingDone = true;
                                 }
                             }

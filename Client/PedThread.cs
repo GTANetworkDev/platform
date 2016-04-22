@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GTA;
 
 namespace GTANetwork
 {
-    public class PedThread : Script
+    public class PedThread// : Script
     {
         public PedThread()
         {
-            Tick += OnTick;
+            //Tick += OnTick;
         }
         
         public static void OnTick(object sender, EventArgs e)

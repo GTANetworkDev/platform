@@ -6,7 +6,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using NativeUI;
+using Rage;
+using RAGENativeUI;
+using RAGENativeUI.Elements;
 
 namespace GTANetwork
 {
@@ -62,6 +64,9 @@ namespace GTANetwork
         private bool _lastFadedOut;
         private List<Tuple<string, Color>> _messages;
 
+        public const float UIWIDTH = 1280f;
+        public const float UIHEIGHT = 720f;
+
         public void Clear()
         {
             _messages.Clear();
@@ -70,48 +75,50 @@ namespace GTANetwork
 
         private PointF GetInputboxPos(bool scaleWithSafezone)
         {
-            var aspectRatio = (Game.ScreenResolution.Width/(float) Game.ScreenResolution.Height);
+            var aspectRatio = (Game.Resolution.Width/(float) Game.Resolution.Height);
             var res = UIMenu.GetScreenResolutionMantainRatio();
             var safezone = UIMenu.GetSafezoneBounds();
             PointF offset = new PointF(0, 0);
+
+            
 
             if (!scaleWithSafezone)
                 offset = new PointF(-safezone.X, -safezone.Y);
 
             if (Math.Abs(aspectRatio - 1.777778f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UIHEIGHT);
             }
             else if (Math.Abs(aspectRatio - 1.6f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1122 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1122 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UIHEIGHT);
             }
             else if (Math.Abs(aspectRatio - 1.481481f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1054 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1054 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UIHEIGHT);
             }
             else if (Math.Abs(aspectRatio - 1.5625f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1100 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1100 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UIHEIGHT);
             }
             else if (Math.Abs(aspectRatio - 1.770833f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1216 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1216 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UIHEIGHT);
             }
             else if (Math.Abs(aspectRatio - 1.25f) < 0.001f)
             {
-                return new PointF(((safezone.X - 857 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 857 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UIHEIGHT);
             }
             else if (Math.Abs(aspectRatio - 1.33333f) < 0.001f)
             {
-                return new PointF(((safezone.X - 915 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 915 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UIHEIGHT);
             }
             else if (Math.Abs(aspectRatio - 1.66666f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UIHEIGHT);
             }
 
-            return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UI.HEIGHT);
+            return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UIWIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UIHEIGHT);
         }
         
         public void Tick()
@@ -128,7 +135,7 @@ namespace GTANetwork
             
             
             var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
-            _mainScaleform.Render2DScreenSpace(new PointF(pos.X, pos.Y), new PointF(UI.WIDTH, UI.HEIGHT));
+            _mainScaleform.Render2DScreenSpace(new PointF(pos.X, pos.Y), new PointF(UIWIDTH, UIHEIGHT));
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;
@@ -141,7 +148,7 @@ namespace GTANetwork
 
                 if (Main.PlayerSettings.ScaleChatWithSafezone)
                 {
-                    new UIResText(output, UIMenu.GetSafezoneBounds() + new Size(0, 25*c), 0.35f,
+                    new ResText(output, UIMenu.GetSafezoneBounds() + new Size(0, 25*c), 0.35f,
                         Color.FromArgb((int) textAlpha, msg.Item2))
                     {
                         Outline = true,
@@ -149,7 +156,7 @@ namespace GTANetwork
                 }
                 else
                 {
-                    new UIResText(output, new Point(0, 25 * c), 0.35f,
+                    new ResText(output, new Point(0, 25 * c), 0.35f,
                         Color.FromArgb((int)textAlpha, msg.Item2))
                     {
                         Outline = true,
@@ -211,7 +218,7 @@ namespace GTANetwork
             }
 
             
-            var keyChar = GetCharFromKey(key, Game.IsKeyPressed(Keys.ShiftKey), false);
+            var keyChar = GetCharFromKey(key, Game.IsKeyDownRightNow(Keys.ShiftKey), false);
 
             if (keyChar.Length == 0) return;
 

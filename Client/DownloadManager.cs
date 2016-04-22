@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using GTA;
 using GTANetworkShared;
+using Rage;
 
 namespace GTANetwork
 {
@@ -48,12 +48,14 @@ namespace GTANetwork
                 return;
             }
             
+            // TODO: Prettier progress bar
+
             CurrentFile.Write(bytes);
-            UI.ShowSubtitle("Downloading " +
+            Game.DisplaySubtitle("Downloading " +
                             (CurrentFile.Type == FileType.Normal
                                 ? CurrentFile.Filename
                                 : CurrentFile.Type.ToString()) + ": " +
-                            (CurrentFile.DataWritten/(float) CurrentFile.Length).ToString("P"));
+                            (CurrentFile.DataWritten/(float) CurrentFile.Length).ToString("P"), 2500);
         }
 
         public static void End(int id)
@@ -89,7 +91,8 @@ namespace GTANetwork
 
                     if (Main.JustJoinedServer)
                     {
-                        World.RenderingCamera = null;
+                        //World.RenderingCamera = null;
+                        Main.MainMenuCamera.Active = false;
                         Main.MainMenu.TemporarilyHidden = false;
                         Main.MainMenu.Visible = false;
                         Main.JustJoinedServer = false;

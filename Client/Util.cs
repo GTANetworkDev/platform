@@ -4,11 +4,10 @@ using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Xml.Serialization;
-using GTA;
-using GTA.Native;
 using GTANetworkShared;
-using Quaternion = GTA.Math.Quaternion;
-using Vector3 = GTA.Math.Vector3;
+using Rage;
+using Quaternion = Rage.Quaternion;
+using Vector3 = Rage.Vector3;
 
 namespace GTANetwork
 {
@@ -16,18 +15,25 @@ namespace GTANetwork
     {
         public static int GetStationId()
         {
-            if (!Game.Player.Character.IsInVehicle()) return -1;
+            if (!Game.LocalPlayer.Character.IsInAnyVehicle(false)) return -1;
             return Function.Call<int>(Hash.GET_PLAYER_RADIO_STATION_INDEX);
         }
 
-        public static void SetPlayerSkin(PedHash skin)
+        public static void DrawMarker(int type, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, Color color)
+        {
+            Function.Call(Hash.DRAW_MARKER, type, pos.X, pos.Y, pos.Z, dir.X, dir.Y, dir.Z, rot.X, rot.Y, rot.Z, scale.X, scale.Y, scale.Z, (int)color.R, (int)color.G, (int)color.B, (int)color.A, false, false, 2, false, 0, 0, false);
+        }
+
+        public static void SetPlayerSkin(uint skin)
         {
             var model = new Model(skin);
-            model.Request(10000);
+            if (!model.IsValid) return;
+            model.LoadAndWait();
 
-            Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
+            //Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
+            Game.LocalPlayer.Model = model;
 
-            model.MarkAsNoLongerNeeded();
+            model.Dismiss();
         }
 
         public static float Denormalize(this float h)
@@ -61,7 +67,7 @@ namespace GTANetwork
             {
                 try
                 {
-                    UI.Notify(msg);
+                    Game.DisplayNotification(msg);
                 }
                 catch (Exception) { }
             }
@@ -74,26 +80,26 @@ namespace GTANetwork
         
         public static void DxDrawTexture(int idx, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a)
         {
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = Game.Resolution.Width;
+            int screenh = Game.Resolution.Height;
 
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             float width = height * ratio;
 
-            float reduceX = UI.WIDTH / width;
-            float reduceY = UI.HEIGHT / height;
+            float reduceX = ClassicChat.UIWIDTH / width;
+            float reduceY = ClassicChat.UIWIDTH / height;
 
 
             Point extra = new Point(0, 0);
             if (screenw == 1914 && screenh == 1052)
                 extra = new Point(15, 0);
 
-            UI.DrawTexture(filename, idx, 1, 60,
+            /*UI.DrawTexture(filename, idx, 1, 60,
                 new PointF(xPos * reduceX + extra.X, yPos * reduceY + extra.Y),
                 new PointF(0f, 0f),
                 new SizeF(txdWidth * reduceX, txdHeight * reduceY),
-                rot, Color.FromArgb(a, r, g, b), 1f);
+                rot, Color.FromArgb(a, r, g, b), 1f);*/
         }
 
         public static Vector3 ToEuler(this Quaternion q)
@@ -142,20 +148,14 @@ namespace GTANetwork
 
         public static int GetTrackId()
         {
-            if (!Game.Player.Character.IsInVehicle()) return -1;
+            if (!Game.LocalPlayer.Character.IsInAnyVehicle(false)) return -1;
             return Function.Call<int>(Hash.GET_AUDIBLE_MUSIC_TRACK_TEXT_ID);
         }
 
         public static bool IsVehicleEmpty(Vehicle veh)
         {
             if (veh == null) return true;
-            if (!veh.IsSeatFree(VehicleSeat.Driver)) return false;
-            for (int i = 0; i < veh.PassengerSeats; i++)
-            {
-                if (!veh.IsSeatFree((VehicleSeat)i))
-                    return false;
-            }
-            return true;
+            return veh.IsEmpty;
         }
 
         public static string LoadDict(string dict)
@@ -164,10 +164,24 @@ namespace GTANetwork
             while (counter < 200 && !Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict))
             {
                 Function.Call(Hash.REQUEST_ANIM_DICT, dict);
-                Script.Yield();
+                GameFiber.Yield();
                 counter++;
             }
             return dict;
+        }
+
+        private static string[] _radioNames = { "RADIO_01_CLASS_ROCK", "RADIO_02_POP", "RADIO_03_HIPHOP_NEW", "RADIO_04_PUNK", "RADIO_05_TALK_01", "RADIO_06_COUNTRY", "RADIO_07_DANCE_01", "RADIO_08_MEXICAN", "RADIO_09_HIPHOP_OLD", "RADIO_11_TALK_02", "RADIO_12_REGGAE", "RADIO_13_JAZZ", "RADIO_14_DANCE_02", "RADIO_15_MOTOWN", "RADIO_16_SILVERLAKE", "RADIO_17_FUNK", "RADIO_18_90S_ROCK", "RADIO_19_USER", "RADIO_20_THELAB", "RADIO_OFF" };
+        public static int GetRadioStation()
+        {
+            string radioName = Function.Call<string>(Hash.GET_PLAYER_RADIO_STATION_NAME);
+            if (radioName == "")
+            {
+                return (int)RadioStation.OFF;
+            }
+            else
+            {
+                return Array.IndexOf(_radioNames, radioName);
+            }
         }
 
         public static Vector3 LinearVectorLerp(Vector3 start, Vector3 end, int currentTime, int duration)
@@ -191,7 +205,7 @@ namespace GTANetwork
             var dict = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++)
             {
-                dict.Add(i, veh.GetMod((VehicleMod)i));
+                dict.Add(i, Function.Call<int>(Hash.GET_VEHICLE_MOD, veh.Handle.Value, i));
             }
             return dict;
         }
@@ -201,7 +215,7 @@ namespace GTANetwork
             var props = new Dictionary<int, int>();
             for (int i = 0; i < 15; i++)
             {
-                var mod = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, ped.Handle, i);
+                var mod = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, ped.Handle.Value, i);
                 if (mod == -1) continue;
                 props.Add(i, mod);
             }
@@ -210,25 +224,14 @@ namespace GTANetwork
 
         public static int GetPedSeat(Ped ped)
         {
-            if (ped == null || !ped.IsInVehicle()) return -3;
-            if (ped.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver) == ped) return (int)VehicleSeat.Driver;
-            for (int i = 0; i < ped.CurrentVehicle.PassengerSeats; i++)
-            {
-                if (ped.CurrentVehicle.GetPedOnSeat((VehicleSeat)i) == ped)
-                    return i;
-            }
-            return -3;
+            if (ped == null || !ped.IsInAnyVehicle(false)) return -3;
+            return ped.SeatIndex;
         }
 
         public static int GetFreePassengerSeat(Vehicle veh)
         {
             if (veh == null) return -3;
-            for (int i = 0; i < veh.PassengerSeats; i++)
-            {
-                if (veh.IsSeatFree((VehicleSeat)i))
-                    return i;
-            }
-            return -3;
+            return veh.GetFreePassengerSeatIndex() ?? -3;
         }
 
         
@@ -244,7 +247,7 @@ namespace GTANetwork
 
                 if (string.IsNullOrWhiteSpace(settings.DisplayName))
                 {
-                    settings.DisplayName = string.IsNullOrWhiteSpace(GTA.Game.Player.Name) ? "Player" : GTA.Game.Player.Name;
+                    settings.DisplayName = string.IsNullOrWhiteSpace(Function.Call<string>(Hash.GET_PLAYER_NAME, Game.LocalPlayer.Id)) ? "Player" : Function.Call<string>(Hash.GET_PLAYER_NAME, Game.LocalPlayer.Id);
                 }
 
                 using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
@@ -267,14 +270,14 @@ namespace GTANetwork
             using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, Main.PlayerSettings);
         }
 
-        public static Vector3 GetLastWeaponImpact(Ped ped)
+        public static unsafe Vector3 GetLastWeaponImpact(Ped ped)
         {
-            var coord = new OutputArgument();
-            if (!Function.Call<bool>(Hash.GET_PED_LAST_WEAPON_IMPACT_COORD, ped.Handle, coord))
+            Vector3 coord;
+            if (!Function.Call<bool>(Hash.GET_PED_LAST_WEAPON_IMPACT_COORD, ped.Handle.Value, &coord))
             {
                 return new Vector3();
             }
-            return coord.GetResult<Vector3>();
+            return coord;
         }
 
         public static Quaternion LerpQuaternion(Quaternion start, Quaternion end, float speed)
@@ -323,19 +326,46 @@ namespace GTANetwork
         }
     }
 
+    public static class EntityExtensions
+    {
+        public static unsafe bool HighBeamsOn(this Vehicle veh)
+        {
+            int lightState1, lightState2;
+            Function.Call(Hash.GET_VEHICLE_LIGHTS_STATE, veh.Handle.Value, &lightState1, &lightState2);
+            return lightState2 == 1;
+        }
+
+        public static unsafe bool LightsOn(this Vehicle veh)
+        {
+            int lightState1, lightState2;
+            Function.Call(Hash.GET_VEHICLE_LIGHTS_STATE, veh.Handle.Value, &lightState1, &lightState2);
+            return lightState1 == 1;
+        }
+
+        public static bool IsTireBurst(this Vehicle veh, int wheel)
+        {
+            return Function.Call<bool>(Hash.IS_VEHICLE_TYRE_BURST, veh.Handle.Value, wheel, false);
+        }
+    }
+
     public static class VectorExtensions
     {
-        public static GTA.Math.Quaternion ToQuaternion(this GTANetworkShared.Quaternion q)
+        public static bool IsInRangeOf(this ISpatial spatial, Vector3 pos, float range)
         {
-            return new GTA.Math.Quaternion(q.X, q.Y, q.Z, q.W);
+            return (spatial.Position - pos).LengthSquared() < range*range;
         }
 
-        public static GTA.Math.Vector3 ToVector(this GTANetworkShared.Vector3 v)
+        public static Rage.Quaternion ToQuaternion(this GTANetworkShared.Quaternion q)
         {
-            return new GTA.Math.Vector3(v.X, v.Y, v.Z);
+            return new Rage.Quaternion(q.X, q.Y, q.Z, q.W);
         }
 
-        public static GTANetworkShared.Vector3 ToLVector(this GTA.Math.Vector3 vec)
+        public static Rage.Vector3 ToVector(this GTANetworkShared.Vector3 v)
+        {
+            return new Rage.Vector3(v.X, v.Y, v.Z);
+        }
+
+        public static GTANetworkShared.Vector3 ToLVector(this Rage.Vector3 vec)
         {
             return new GTANetworkShared.Vector3()
             {
@@ -345,7 +375,7 @@ namespace GTANetwork
             };
         }
 
-        public static GTANetworkShared.Quaternion ToLQuaternion(this GTA.Math.Quaternion vec)
+        public static GTANetworkShared.Quaternion ToLQuaternion(this Rage.Quaternion vec)
         {
             return new GTANetworkShared.Quaternion()
             {

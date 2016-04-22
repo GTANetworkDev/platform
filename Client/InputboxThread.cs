@@ -4,19 +4,8 @@ using Rage;
 
 namespace GTANetwork
 {
-    public class InputboxThread : Script
+    public class InputboxThread 
     {
-        public InputboxThread()
-        {
-            Tick += (sender, args) =>
-            {
-                if (ThreadJumper.Count > 0)
-                {
-                    ThreadJumper.Dequeue().Invoke();
-                }
-            };
-        }
-
         public static string GetUserInput(string defaultText, int maxLen, Action spinner)
         {
             string output = null;

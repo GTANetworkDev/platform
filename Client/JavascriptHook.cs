@@ -6,13 +6,13 @@ using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using GTA;
-using GTA.Math;
-using GTA.Native;
 using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
-using NativeUI;
+using Rage;
+using RAGENativeUI;
+using RAGENativeUI.Elements;
+using KeyEventArgs = System.Windows.Forms.KeyEventArgs;
 using Vector3 = GTANetworkShared.Vector3;
 
 namespace GTANetwork
@@ -31,13 +31,13 @@ namespace GTANetwork
         public string Filename { get; set; }
     }
 
-    public class JavascriptHook : Script
+    public class JavascriptHook// : Script
     {
         public JavascriptHook()
         {
-            Tick += OnTick;
-            KeyDown += OnKeyDown;
-            KeyUp += OnKeyUp;
+            //Tick += OnTick;
+            //KeyDown += OnKeyDown;
+            //KeyUp += OnKeyUp;
             ScriptEngines = new List<ClientsideScriptWrapper>();
             ThreadJumper = new List<Action>();
         }
@@ -185,7 +185,7 @@ namespace GTANetwork
             scriptEngine.AddHostType("Point", typeof(Point));
             scriptEngine.AddHostType("Size", typeof(Size));
             scriptEngine.AddHostType("Vector3", typeof(Vector3));
-            scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
+            scriptEngine.AddHostType("menuControl", typeof(RAGENativeUI.Common.MenuControls));
                 
 
             try
@@ -264,6 +264,7 @@ namespace GTANetwork
     public class ScriptContext
     {
         internal string ParentResourceName;
+        private BigMessageThread _bigMessageThread = new BigMessageThread(true);
 
         public enum ReturnType
         {
@@ -282,20 +283,20 @@ namespace GTANetwork
             return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
         }
 
-        public void callNative(string hash, params object[] args)
+        public void callNative(string hash, params Rage.Native.NativeArgument[] args)
         {
             Hash ourHash;
             if (!Hash.TryParse(hash, out ourHash))
                 return;
-            Function.Call(ourHash, args.Select(o => new InputArgument(o)).ToArray());
+            Function.Call(ourHash, args);
         }
 
-        public object returnNative(string hash, int returnType, params object[] args)
+        public object returnNative(string hash, int returnType, params Rage.Native.NativeArgument[] args)
         {
             Hash ourHash;
             if (!Hash.TryParse(hash, out ourHash))
                 return null;
-            var fArgs = args.Select(o => new InputArgument(o)).ToArray();
+            var fArgs = args;
             switch ((ReturnType)returnType)
             {
                 case ReturnType.Int:
@@ -321,12 +322,12 @@ namespace GTANetwork
 
         public int getGamePlayer()
         {
-            return Game.Player.Handle;
+            return Game.LocalPlayer.Id;
         }
 
-        public LocalHandle getLocalPlayer()
+        public LocalHandle getLocalPlayerCharacter()
         {
-            return new LocalHandle(Game.Player.Character.Handle);
+            return new LocalHandle(Game.LocalPlayer.Character.Handle.Value);
         }
 
         public void playSoundFrontEnd(string audioLib, string audioName)
@@ -337,12 +338,12 @@ namespace GTANetwork
 
         public void showShard(string text)
         {
-            NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
+            _bigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
         }
 
         public void showShard(string text, int timeout)
         {
-            NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
+            _bigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
         }
 
         public SizeF getScreenResolutionMantainRatio()
@@ -357,32 +358,32 @@ namespace GTANetwork
 
         public void setPlayerInvincible(bool invinc)
         {
-            Game.Player.IsInvincible = invinc;
+            Game.LocalPlayer.IsInvincible = invinc;
         }
 
         public bool getPlayerInvincible()
         {
-            return Game.Player.IsInvincible;
+            return Game.LocalPlayer.IsInvincible;
         }
 
         public void setPlayerHealth(LocalHandle ped, int health)
         {
-            new Ped(ped.Value).Health = health;
+            World.GetEntityByHandle<Ped>(new PoolHandle(ped.Value)).Health = health;
         }
 
         public int getPlayerHealth(LocalHandle ped)
         {
-            return new Ped(ped.Value).Health;
+            return World.GetEntityByHandle<Ped>(new PoolHandle(ped.Value)).Health;
         }
 
         public void setPlayerArmor(LocalHandle ped, int armor)
         {
-            new Ped(ped.Value).Armor = armor;
+            World.GetEntityByHandle<Ped>(new PoolHandle(ped.Value)).Armor = armor;
         }
 
         public int getPlayerArmor(LocalHandle ped)
         {
-            return new Ped(ped.Value).Armor;
+            return World.GetEntityByHandle<Ped>(new PoolHandle(ped.Value)).Armor;
         }
 
         public LocalHandle[] getAllPlayers()
@@ -408,25 +409,25 @@ namespace GTANetwork
 
         public LocalHandle createBlip(Vector3 pos)
         {
-            var blip = World.CreateBlip(pos.ToVector());
-            if (!Main.BlipCleanup.Contains(blip.Handle))
-                Main.BlipCleanup.Add(blip.Handle);
+            var blip = new Blip(pos.ToVector());
+            if (!Main.BlipCleanup.Contains(blip.Handle.Value))
+                Main.BlipCleanup.Add(blip.Handle.Value);
             return new LocalHandle(blip.Handle);
         }
 
         public void setBlipPosition(LocalHandle blip, Vector3 pos)
         {
-            if (new Blip(blip.Value).Exists())
+            if (World.GetBlipByHandle(blip.Value).Exists())
             {
-                new Blip(blip.Value).Position = pos.ToVector();
+                World.GetBlipByHandle(blip.Value).Position = pos.ToVector();
             }
         }
 
         public void removeBlip(LocalHandle blip)
         {
-            if (new Blip(blip.Value).Exists())
+            if (World.GetBlipByHandle(blip.Value).Exists())
             {
-                new Blip(blip.Value).Remove();
+                World.GetBlipByHandle(blip.Value).Delete();
             }
         }
         
@@ -437,9 +438,9 @@ namespace GTANetwork
 
         public void setBlipScale(LocalHandle blip, float scale)
         {
-            if (new Blip(blip.Value).Exists())
+            if (World.GetBlipByHandle(blip.Value).Exists())
             {
-                new Blip(blip.Value).Scale = scale;
+                World.GetBlipByHandle(blip.Value).Scale = scale;
             }
         }
 
@@ -450,7 +451,7 @@ namespace GTANetwork
 
         public void deleteMarker(LocalHandle handle)
         {
-            Main.NetEntityHandler.DeleteLocalMarker(handle.Value);
+            Main.NetEntityHandler.DeleteLocalMarker(unchecked((int)handle.Value));
         }
         
         public string getResourceFilePath(string fileName)
@@ -470,8 +471,8 @@ namespace GTANetwork
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = Game.Resolution.Width;
+            int screenh = Game.Resolution.Height;
             const float hh = 1080f;
             float ratio = (float)screenw / screenh;
             var ww = hh * ratio;
@@ -482,13 +483,13 @@ namespace GTANetwork
             float xx = (float)(x / ww) + w * 0.5f;
             float yy = (float)(y / hh) + h * 0.5f;
 
-            Function.Call(Hash.DRAW_SPRITE, dict, txtName, xx, yy, w, h, heading, r, g, b, alpha);
+            Function.Call(Hash.DRAW_SPRITE, dict, txtName, xx, yy, w, h, (float)heading, r, g, b, alpha);
         }
 
         public void drawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
         {
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = Game.Resolution.Width;
+            int screenh = Game.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;
@@ -504,8 +505,8 @@ namespace GTANetwork
         public void drawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
             int justify, bool shadow, bool outline, int wordWrap)
         {
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = Game.Resolution.Width;
+            int screenh = Game.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;
@@ -514,7 +515,7 @@ namespace GTANetwork
             float y = (float)(yPos) / height;
 
             Function.Call(Hash.SET_TEXT_FONT, font);
-            Function.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
+            Function.Call(Hash.SET_TEXT_SCALE, 1.0f, (float)scale);
             Function.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
             if (shadow)
                 Function.Call(Hash.SET_TEXT_DROP_SHADOW);
@@ -538,7 +539,7 @@ namespace GTANetwork
             }
 
             Function.Call(Hash._SET_TEXT_ENTRY, "jamyfafi");
-            NativeUI.UIResText.AddLongString(caption);
+            ResText.AddLongString(caption);
             Function.Call(Hash._DRAW_TEXT, x, y);
         }
 
@@ -564,7 +565,7 @@ namespace GTANetwork
 
         public void wait(int ms)
         {
-            Script.Wait(ms);
+            GameFiber.Sleep(ms);
         }
 
         public void triggerServerEvent(string eventName, params object[] arguments)
@@ -638,7 +639,7 @@ namespace GTANetwork
             var offset = convertAnchorPos((float)x, (float)y - 107, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
             var newM = new UIMenu("", subtitle, new Point((int)(offset.X), (int)(offset.Y)));
             newM.ScaleWithSafezone = false;
-            newM.SetBannerType(new UIResRectangle());
+            newM.SetBannerType(new ResRectangle());
             return newM;
         }
 

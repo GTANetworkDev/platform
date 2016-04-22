@@ -1,6 +1,5 @@
-﻿using GTA;
-using GTA.Native;
-using GTANetworkShared;
+﻿using GTANetworkShared;
+using Rage;
 
 namespace GTANetwork
 {
@@ -25,13 +24,13 @@ namespace GTANetwork
 
         private Vehicle _lastTrailer;
 
-        private Vehicle GetVehicleTrailerVehicle(Vehicle tanker)
+        private unsafe Vehicle GetVehicleTrailerVehicle(Vehicle tanker)
         {
             if (!Function.Call<bool>(Hash.IS_VEHICLE_ATTACHED_TO_TRAILER, tanker))
                 return null;
-            var trailerArg = new OutputArgument();
-            Function.Call<bool>(Hash.GET_VEHICLE_TRAILER_VEHICLE, tanker, trailerArg);
-            return trailerArg.GetResult<Vehicle>();
+            int trailerArg;
+            Function.Call<bool>(Hash.GET_VEHICLE_TRAILER_VEHICLE, tanker, &trailerArg);
+            return World.GetEntityByHandle<Vehicle>(unchecked((uint)trailerArg));
         }
 
         private void SendSyncEvent(SyncEventType type, params object[] args)
@@ -47,13 +46,13 @@ namespace GTANetwork
 
         public void Tick()
         {
-            var player = Game.Player.Character;
-            var car = Game.Player.Character.CurrentVehicle;
+            var player = Game.LocalPlayer.Character;
+            var car = Game.LocalPlayer.Character.CurrentVehicle;
 
             foreach (var pickup in Main.NetEntityHandler.Pickups)
             {
                 if (!Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup)) continue;
-                if (!player.IsInRangeOf(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup), 20f)) continue;
+                if (!player.IsInRangeOf(Function.Call<Rage.Vector3>(Hash.GET_PICKUP_COORDS, pickup), 20f)) continue;
                 if (Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup) == -1)
                 {
                     Function.Call(Hash.REMOVE_PICKUP, pickup);
@@ -82,7 +81,7 @@ namespace GTANetwork
             }
             _lastCar = car;
 
-            if (player.IsInVehicle() && SyncPed.GetResponsiblePed(player.CurrentVehicle).Handle == Game.Player.Character.Handle)
+            if (player.IsInAnyVehicle(false) && SyncPed.GetResponsiblePed(player.CurrentVehicle).Handle == Game.LocalPlayer.Character.Handle)
             {
                 var lg = Function.Call<int>(Hash._GET_VEHICLE_LANDING_GEAR, car);
                 if (lg != _lastLandingGear)
@@ -95,7 +94,7 @@ namespace GTANetwork
                 for (int i = 0; i < _doors.Length; i++)
                 {
                     bool isOpen = false;
-                    if ((isOpen = (Function.Call<float>(Hash.GET_VEHICLE_DOOR_ANGLE_RATIO, car.Handle, i) > 0.5f)) != _doors[i])
+                    if ((isOpen = (Function.Call<float>(Hash.GET_VEHICLE_DOOR_ANGLE_RATIO, unchecked((int)car.Handle.Value), i) > 0.5f)) != _doors[i])
                     {
                         if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
                             SendSyncEvent(SyncEventType.DoorStateChange, Main.NetEntityHandler.EntityToNet(car.Handle), i, isOpen);
@@ -103,19 +102,19 @@ namespace GTANetwork
                     _doors[i] = isOpen;
                 }
 
-                if (car.HighBeamsOn != _highBeams)
+                if (car.HighBeamsOn() != _highBeams)
                 {
                     if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
-                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.Highbeams, car.HighBeamsOn);
+                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.Highbeams, car.HighBeamsOn());
                 }
-                _highBeams = car.HighBeamsOn;
+                _highBeams = car.HighBeamsOn();
 
-                if (car.LightsOn != _lights)
+                if (car.LightsOn() != _lights)
                 {
                     if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
-                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.NormalLights, car.LightsOn);
+                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.NormalLights, car.LightsOn());
                 }
-                _lights = car.LightsOn;
+                _lights = car.LightsOn();
 
                 var trailer = GetVehicleTrailerVehicle(car);
 
@@ -141,7 +140,6 @@ namespace GTANetwork
                     bool isBusted = false;
                     if ((isBusted = car.IsTireBurst(i)) != _tires[i])
                     {
-                        Util.SafeNotify("TIRE " + i + "is burst? " + isBusted);
                         if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
                             SendSyncEvent(SyncEventType.TireBurst, Main.NetEntityHandler.EntityToNet(car.Handle), i, isBusted);
                     }
@@ -149,7 +147,7 @@ namespace GTANetwork
                 }
 
 
-                var newStation = (int) Game.RadioStation;
+                var newStation = Util.GetRadioStation();
 
                 if (newStation != _radioStation)
                 {

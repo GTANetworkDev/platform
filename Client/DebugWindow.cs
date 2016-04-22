@@ -1,8 +1,8 @@
 ﻿using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using NativeUI;
 using Rage;
+using RAGENativeUI.Elements;
 
 namespace GTANetwork
 {
@@ -18,13 +18,13 @@ namespace GTANetwork
             if (Game.IsControlJustPressed(0, GameControl.FrontendLeft))
             {
                 PlayerIndex--;
-                UI.ShowSubtitle("NewIndex: " + PlayerIndex);
+                Game.DisplaySubtitle("NewIndex: " + PlayerIndex, 2500);
             }
 
             else if (Game.IsControlJustPressed(0, GameControl.FrontendRight))
             {
                 PlayerIndex++;
-                UI.ShowSubtitle("NewIndex: " + PlayerIndex);
+                Game.DisplaySubtitle("NewIndex: " + PlayerIndex, 2500);
             }
 
             if (PlayerIndex >= Main.Opponents.Count || PlayerIndex < 0)
@@ -41,14 +41,14 @@ namespace GTANetwork
             output += "VehiclePosition: " + player.Value.VehiclePosition + "\n";
             output += "Last Updated: " + player.Value.LastUpdateReceived + "\n";
             output += "Character Pos: " + player.Value.Character?.Position + "\n";
-            output += "BlipPos: " + player.Value.Character?.CurrentBlip?.Position + "\n";
+            output += "BlipPos: " + player.Value.Character?.GetAttachedBlip()?.Position + "\n";
             if (player.Value.MainVehicle != null)
             {
-                output += "CharacterIsInVeh: " + player.Value.Character?.IsInVehicle() + "\n";
+                output += "CharacterIsInVeh: " + player.Value.Character?.IsInAnyVehicle(false) + "\n";
                 output += "ActualCarPos: " + player.Value.MainVehicle?.Position + "\n";
             }
             
-            new UIResText(output, new Point(500, 10), 0.5f) {Outline = true}.Draw();
+            new ResText(output, new Point(500, 10), 0.5f) {Outline = true}.Draw();
         }
     }
 }

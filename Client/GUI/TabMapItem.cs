@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using GTA;
-using GTA.Math;
-using GTA.Native;
-using NativeUI;
-using NativeUI.PauseMenu;
+using System.Windows.Forms;
+using Rage;
+using RAGENativeUI;
+using RAGENativeUI.Elements;
+using RAGENativeUI.PauseMenu;
 
 namespace GTANetwork.GUI
 {
@@ -43,7 +43,7 @@ namespace GTANetwork.GUI
                 if (!_focused && value)
                 {
                     Main.MainMenu.HideTabs = true;
-                    var newPos = World3DToMap2D(Game.Player.Character.Position);
+                    var newPos = World3DToMap2D(Game.LocalPlayer.Character.Position);
                     Position = new PointF(newPos.Width/Zoom, newPos.Height/Zoom);
                 }
                 else if (_focused && !value)
@@ -173,8 +173,8 @@ namespace GTANetwork.GUI
                 if (_showPlayerBlip)
                 {
                     Sprite.DrawTexture(BLIP_PATH + "163.png",
-                        new Point((int) (newPos.X + World3DToMap2D(Game.Player.Character.Position).Width - 16),
-                            (int) (newPos.Y + World3DToMap2D(Game.Player.Character.Position).Height - 16)),
+                        new Point((int) (newPos.X + World3DToMap2D(Game.LocalPlayer.Character.Position).Width - 16),
+                            (int) (newPos.Y + World3DToMap2D(Game.LocalPlayer.Character.Position).Height - 16)),
                         new Size(32, 32));
                 }
 

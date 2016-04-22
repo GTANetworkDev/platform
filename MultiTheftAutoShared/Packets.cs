@@ -93,10 +93,15 @@ namespace GTANetworkShared
     {
         public LocalHandle(int handle)
         {
+            Value = unchecked((uint)handle);
+        }
+
+        public LocalHandle(uint handle)
+        {
             Value = handle;
         }
 
-        public int Value { get; set; }
+        public uint Value { get; set; }
 
         public override bool Equals(object obj)
         {

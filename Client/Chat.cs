@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using Rage;
+using RAGENativeUI.Elements;
 
 namespace GTANetwork
 {
@@ -99,7 +101,7 @@ namespace GTANetwork
                 CurrentInput = "";
             }
 
-            var keyChar = GetCharFromKey(key, Game.IsKeyPressed(Keys.ShiftKey), false);
+            var keyChar = GetCharFromKey(key, Game.IsKeyDownRightNow(Keys.ShiftKey), false);
 
             if (keyChar.Length == 0) return;
 
