@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using GTANetworkShared;
 using Rage;
+using Rage.Native;
+using RAGENativeUI;
 using Quaternion = Rage.Quaternion;
 using Vector3 = Rage.Vector3;
 
@@ -17,6 +20,38 @@ namespace GTANetwork
         {
             if (!Game.LocalPlayer.Character.IsInAnyVehicle(false)) return -1;
             return Function.Call<int>(Hash.GET_PLAYER_RADIO_STATION_INDEX);
+        }
+
+        public static string GetUserInput(string defaultText, int maxLen)
+        {
+            NativeFunction.CallByName<uint>("DISPLAY_ONSCREEN_KEYBOARD", true, "FMMC_KEY_TIP8", "", defaultText, "", "", "", maxLen + 1);
+            int result = 0;
+            while (result == 0)
+            {
+                NativeFunction.CallByName<uint>("DISABLE_ALL_CONTROL_ACTIONS", 0);
+                result = NativeFunction.CallByHash<int>(0x0CF2B696BBF945AE);
+                GameFiber.Yield();
+            }
+            if (result == 2)
+                return null;
+            return (string)NativeFunction.CallByName("GET_ONSCREEN_KEYBOARD_RESULT", typeof(string));
+        }
+
+        public static Vector3 GetGameplayCameraPos()
+        {
+            return Function.Call<Vector3>(Hash.GET_GAMEPLAY_CAM_COORD);
+        }
+
+        public static unsafe PointF WorldToScreen(Vector3 pos)
+        {
+            float pointX, pointY;
+
+            if (!Function.Call<bool>(Hash._WORLD3D_TO_SCREEN2D, pos.X, pos.Y, pos.Z, &pointX, &pointY))
+            {
+                return new PointF();
+            }
+
+            return new PointF(pointX * ClassicChat.UIWIDTH, pointY * ClassicChat.UIHEIGHT);
         }
 
         public static void DrawMarker(int type, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, Color color)
@@ -345,6 +380,15 @@ namespace GTANetwork
         public static bool IsTireBurst(this Vehicle veh, int wheel)
         {
             return Function.Call<bool>(Hash.IS_VEHICLE_TYRE_BURST, veh.Handle.Value, wheel, false);
+        }
+
+        public static void SetCurrentRPM(this Vehicle veh, float newRPM)
+        {
+            if (veh == null) return;
+            int offset = 0x7D4;
+            var address = veh.MemoryAddress + offset;
+            byte[] newBytes = BitConverter.GetBytes(newRPM);
+            Marshal.Copy(newBytes, 0, address, newBytes.Length);
         }
     }
 

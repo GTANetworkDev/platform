@@ -260,19 +260,19 @@ namespace GTANetwork.GUI
             }
         }
 
-        public static Color GetBlipcolor(BlipColor col, int a)
+        public static Color GetBlipcolor(int col, int a)
         {
             switch (col)
             {
-                case BlipColor.White:
+                case 0:
                 default: return Color.FromArgb(a, 255, 255, 255);
-                case BlipColor.Blue:
+                case 3:
                     return Color.FromArgb(a, 93, 182, 229);
-                case BlipColor.Green:
+                case 2:
                     return Color.FromArgb(a, 114, 204, 114);
-                case BlipColor.Red:
+                case 1:
                     return Color.FromArgb(a, 224, 50, 50);
-                case BlipColor.Yellow:
+                case 66:
                     return Color.FromArgb(a, 250, 200, 80);
 
             }

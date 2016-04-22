@@ -10,20 +10,20 @@ namespace GTANetwork
         {
             string output = null;
 
-            ThreadJumper.Enqueue(delegate
+            var newFiber = GameFiber.StartNew(delegate
             {
-                output = Game.GetUserInput(defaultText, maxLen);
+                output = Util.GetUserInput(defaultText, maxLen);
             });
-
+            
             Main.BlockControls = true;
 
-            Script.Yield();
-
+            
             while (output == null)
             {
                 spinner.Invoke();
-                Script.Yield();
+                GameFiber.Yield();
             }
+
             Main.BlockControls = false;
             return output;
         }
@@ -37,7 +37,5 @@ namespace GTANetwork
         {
             return GetUserInput("", 40, spinner);
         }
-
-        public static Queue<Action> ThreadJumper = new Queue<Action>();
     }
 }

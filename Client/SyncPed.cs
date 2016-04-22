@@ -3,7 +3,9 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using GTANetwork.GUI;
 using Rage;
+using RAGENativeUI.Elements;
 
 namespace GTANetwork
 {
@@ -34,7 +36,7 @@ namespace GTANetwork
         public bool IsInVehicle;
         public bool IsJumping;
         public Animation CurrentAnimation;
-        public int ModelHash;
+        public uint ModelHash;
         public int CurrentWeapon;
         public bool IsAiming;
         public Vector3 AimCoords;
@@ -58,7 +60,7 @@ namespace GTANetwork
         public int PedHealth;
 
         public float VehicleHealth;
-        public int VehicleHash;
+        public uint VehicleHash;
         public Vector3 _vehicleRotation;
         public int VehiclePrimaryColor;
         public int VehicleSecondaryColor;
@@ -216,7 +218,7 @@ namespace GTANetwork
                     if (Character != null)
                     {
                         Character.CanRagdoll = false;
-                        Character.Task.ClearAllImmediately();
+                        Character.Tasks.ClearImmediately();
                     }
                 }
                 
@@ -233,7 +235,7 @@ namespace GTANetwork
                 LogManager.DebugLog("NEXTSTEP FOR " + Name + ": " + value);
 
                 if (Main.SlowDownClientForDebug)
-                    Script.Yield();
+                    GameFiber.Yield();
             }
         }
 
@@ -246,8 +248,8 @@ namespace GTANetwork
         private bool _blip;
         private bool _justEnteredVeh;
         private DateTime _lastHornPress = DateTime.Now;
-        public int RelGroup;
-        public int FriendRelGroup;
+        public RelationshipGroup RelGroup;
+        public RelationshipGroup FriendRelGroup;
         private DateTime _enterVehicleStarted;
         private Vector3 _vehiclePosition;
         private Dictionary<int, int> _vehicleMods;
@@ -265,10 +267,10 @@ namespace GTANetwork
         private bool _isStreamedIn;
         private Blip _mainBlip;
         private bool _lastHorn;
-        private Prop _parachuteProp;
+        private Rage.Object _parachuteProp;
         private bool _leftSide;
 
-        public SyncPed(int hash, Vector3 pos, Vector3 rot, bool blip = true)
+        public SyncPed(uint hash, Vector3 pos, Vector3 rot, bool blip = true)
         {
             _position = pos;
             _rotation = rot;
@@ -277,13 +279,15 @@ namespace GTANetwork
             
             _latencyAverager = new Queue<double>();
 
-            RelGroup = World.AddRelationshipGroup("SYNCPED");
-            FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.LocalPlayer.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.LocalPlayer.Character.RelationshipGroup, RelGroup);
+            
+            RelGroup = new RelationshipGroup("SYNCPED");
+            FriendRelGroup = new RelationshipGroup("SYNCPED_TEAMMATES");
 
-            World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.LocalPlayer.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Companion, Game.LocalPlayer.Character.RelationshipGroup, FriendRelGroup);
+            Game.SetRelationshipBetweenRelationshipGroups(RelGroup, Game.LocalPlayer.Character.RelationshipGroup, Relationship.Neutral);
+            Game.SetRelationshipBetweenRelationshipGroups(Game.LocalPlayer.Character.RelationshipGroup, RelGroup, Relationship.Neutral);
+
+            Game.SetRelationshipBetweenRelationshipGroups(FriendRelGroup, Game.LocalPlayer.Character.RelationshipGroup, Relationship.Companion);
+            Game.SetRelationshipBetweenRelationshipGroups(Game.LocalPlayer.Character.RelationshipGroup, FriendRelGroup, Relationship.Companion);
         }
             
         public void SetBlipNameFromTextFile(Blip blip, string text)
@@ -305,7 +309,7 @@ namespace GTANetwork
         private bool meleeSwingDone;
         private bool _lastFreefall;
         private DateTime _lastRocketshot;
-        private int _lastVehicleAimUpdate;
+        private uint _lastVehicleAimUpdate;
 
         private int DEBUG_STEP_backend;
 
@@ -321,7 +325,7 @@ namespace GTANetwork
                 
                 const float hRange = 300f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
-                var inRange = Game.LocalPlayer..Character.IsInRangeOf(gPos, hRange);
+                var inRange = Game.LocalPlayer.Character.IsInRangeOf(gPos, hRange);
 
                 DEBUG_STEP = 1;
 
@@ -374,21 +378,23 @@ namespace GTANetwork
                     LogManager.DebugLog("NEW PLAYER " + Name);
                     var charModel = new Model(ModelHash);
                     LogManager.DebugLog("REQUESTING MODEL FOR " + Name);
-                    charModel.Request(10000);
+                    if (charModel.IsValid)
+                        charModel.LoadAndWait();
+                    else LogManager.SimpleLog("error", "INVALID PED MODEL HASH FOR " + Name);
                     LogManager.DebugLog("CREATING PED FOR " + Name);
-                    Character = World.CreatePed(charModel, gPos, _rotation.Z);
-                    charModel.MarkAsNoLongerNeeded();
+                    Character = new Ped(charModel, gPos, _rotation.Z);
+                    charModel.Dismiss();
                     if (Character == null) return;
                     DEBUG_STEP = 4;
                     Character.BlockPermanentEvents = true;
-                    Character.IsInvincible = true;
+                    Character.Invincible = true;
                     Character.CanRagdoll = false;
                     if (Team == -1 || Team != Main.LocalTeam)
                         Character.RelationshipGroup = RelGroup;
                     else
                         Character.RelationshipGroup = FriendRelGroup;
                     LogManager.DebugLog("SETTINGS FIRING PATTERN " + Name);
-                    Character.FiringPattern = FiringPattern.FullAuto;
+                    Character.FiringPattern = FiringPattern.FullAutomatic;
 
                     Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character);
 
@@ -402,21 +408,20 @@ namespace GTANetwork
                     LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
                     if (_blip)
                     {
-                        Character.AddBlip();
-                        if (Character.CurrentBlip == null || !Character.CurrentBlip.Exists()) return;
+                        var playerBlip = new Blip(Character);
                         LogManager.DebugLog("SETTING BLIP COLOR FOR" + Name);
                         if (BlipColor != -1)
-                            Character.CurrentBlip.Color = (BlipColor) BlipColor;
+                            playerBlip.Color = TabMapItem.GetBlipcolor(BlipColor, 255);
                         else
-                            Character.CurrentBlip.Color = GTA.BlipColor.White;
+                            playerBlip.Color = TabMapItem.GetBlipcolor(0, 255);
                         LogManager.DebugLog("SETTING BLIP SCALE FOR" + Name);
-                        Character.CurrentBlip.Scale = 0.8f;
+                        playerBlip.Scale = 0.8f;
                         LogManager.DebugLog("SETTING BLIP NAME FOR" + Name);
-                        SetBlipNameFromTextFile(Character.CurrentBlip, Name);
+                        SetBlipNameFromTextFile(playerBlip, Name);
                         if (BlipSprite != -1)
-                            Character.CurrentBlip.Sprite = (BlipSprite) BlipSprite;
+                            playerBlip.Sprite = (BlipSprite) BlipSprite;
                         if (BlipAlpha != -1)
-                            Character.CurrentBlip.Alpha = BlipAlpha;
+                            playerBlip.Alpha = BlipAlpha;
                         LogManager.DebugLog("BLIP DONE FOR" + Name);
                     }
                     
@@ -426,15 +431,15 @@ namespace GTANetwork
                 if (!IsInVehicle)
                 {
                     bool isAiming = false;
-                    if ((!Character.IsOccluded && (Character.IsInRangeOf(Game.LocalPlayer.Character.Position, 30f))) ||
-                        (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
+                    if ((Character.IsOnScreen && (Character.IsInRangeOf(Game.LocalPlayer.Character.Position, 30f))) ||
+                        (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.LocalPlayer, Character)))
                     {
-                        var ray = World.Raycast(GameplayCamera.Position, Character.GetBoneCoord(Bone.IK_Head),
-                            IntersectOptions.Everything,
+                        var ray = World.TraceLine(Util.GetGameplayCameraPos(), Character.GetBonePosition(PedBoneId.Head),
+                            TraceFlags.IntersectEverything,
                             Game.LocalPlayer.Character);
                         if (ray.HitEntity == Character || isAiming)
                         {
-                            var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
+                            var oldPos = Util.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
                             var targetPos = Character.Position + new Vector3(0, 0, 1.2f);
                             if (oldPos.X != 0 && oldPos.Y != 0)
                             {
@@ -445,11 +450,11 @@ namespace GTANetwork
                                 if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
                                     nameText = "~r~AFK~w~~n~" + nameText;
 
-                                var dist = (GameplayCamera.Position - Character.Position).Length();
+                                var dist = (Util.GetGameplayCameraPos() - Character.Position).Length();
                                 var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
 
-                                new UIResText(nameText, new Point(0, 0), 0.4f*sizeOffset, Color.WhiteSmoke,
-                                    Font.ChaletLondon, UIResText.Alignment.Centered)
+                                new ResText(nameText, new Point(0, 0), 0.4f*sizeOffset, Color.WhiteSmoke,
+                                    RAGENativeUI.Common.EFont.ChaletLondon, ResText.Alignment.Centered)
                                 {
                                     Outline = true,
                                 }.Draw();
@@ -462,18 +467,18 @@ namespace GTANetwork
                                     var armorBar = (int) Math.Round(150*armorPercent);
                                     armorBar = (int) (armorBar*sizeOffset);
 
-                                    new UIResRectangle(
+                                    new ResRectangle(
                                         new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)),
                                         new Size(armorBar, (int) (20*sizeOffset)),
                                         armorColor).Draw();
 
-                                    new UIResRectangle(
+                                    new ResRectangle(
                                         new Point(0, 0) - new Size((int) (75*sizeOffset), (int) (-36*sizeOffset)) +
                                         new Size(armorBar, 0),
                                         new Size((int) (sizeOffset*150) - armorBar, (int) (sizeOffset*20)),
                                         bgColor).Draw();
 
-                                    new UIResRectangle(
+                                    new ResRectangle(
                                         new Point(0, 0) - new Size((int) (71*sizeOffset), (int) (-40*sizeOffset)),
                                         new Size(
                                             (int) ((142*Math.Min(Math.Max(2*(PedHealth/100f), 0f), 1f))*sizeOffset),
@@ -486,10 +491,10 @@ namespace GTANetwork
                         }
                     }
                 }
-                else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) && !Character.IsOccluded && MainVehicle.IsOnScreen)
+                else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(Util.GetGameplayCameraPos(), 100f) && Character.IsOnScreen && MainVehicle.IsOnScreen)
                 {
                     
-                    var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 2f));
+                    var oldPos = Util.WorldToScreen(Character.Position + new Vector3(0, 0, 2f));
                     var targetPos = Character.Position + new Vector3(0, 0, 2f);
                     if (oldPos.X != 0 && oldPos.Y != 0)
                     {
@@ -500,11 +505,11 @@ namespace GTANetwork
                         if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
                             nameText = "~r~AFK~w~~n~" + nameText;
 
-                        var dist = (GameplayCamera.Position - Character.Position).Length();
+                        var dist = (Util.GetGameplayCameraPos() - Character.Position).Length();
                         var sizeOffset = Math.Max(1f - (dist / 100f), 0.3f);
 
-                        new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
-                            Font.ChaletLondon, UIResText.Alignment.Centered)
+                        new ResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
+                            RAGENativeUI.Common.EFont.ChaletLondon, ResText.Alignment.Centered)
                         {
                             Outline = true,
                         }.Draw();
@@ -513,11 +518,11 @@ namespace GTANetwork
                         {
                             var bgColor = Color.FromArgb(100, 0, 0, 0);
 
-                            new UIResRectangle(new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)),
+                            new ResRectangle(new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)),
                                 new Size((int)(sizeOffset * 150), (int)(sizeOffset * 20)),
                                 bgColor).Draw();
 
-                            new UIResRectangle(
+                            new ResRectangle(
                                 new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
                                 new Size(
                                     (int)((142 * Math.Min(Math.Max(((VehicleHealth) / 1000f), 0f), 1f)) * sizeOffset),
@@ -533,24 +538,24 @@ namespace GTANetwork
                 DEBUG_STEP = 9;
                 if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
                     (_lastVehicle && IsInVehicle &&
-                     (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.LocalPlayer.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
+                     (MainVehicle == null || (!Character.IsInVehicle(MainVehicle, true)) ||
                       Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
-                      (VehicleSeat != Util.GetPedSeat(Character) && Game.LocalPlayer.Character.GetVehicleIsTryingToEnter() != MainVehicle))))
+                      (VehicleSeat != Util.GetPedSeat(Character) && !Game.LocalPlayer.Character.IsInVehicle(MainVehicle, true)))))
                 {
                     if (Debug)
                     {
                         if (MainVehicle != null) MainVehicle.Delete();
-                        MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
+                        MainVehicle = new Vehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
                     }
                     else
-                        MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
+                        MainVehicle = World.GetEntityByHandle<Vehicle>(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
                     DEBUG_STEP = 10;
 
 
-                    if (Game.LocalPlayer.Character.IsInVehicle(MainVehicle) &&
+                    if (Game.LocalPlayer.Character.IsInVehicle(MainVehicle, false) &&
                         VehicleSeat == Util.GetPedSeat(Game.LocalPlayer.Character))
                     {
-                        Game.LocalPlayer.Character.Task.WarpOutOfVehicle(MainVehicle);
+                        Game.LocalPlayer.Character.Tasks.LeaveVehicle(LeaveVehicleFlags.WarpOut);
                         Util.SafeNotify("~r~Car jacked!");
                     }
                     DEBUG_STEP = 11;
@@ -559,13 +564,11 @@ namespace GTANetwork
                     {
                         if (VehicleSeat == -1)
                             MainVehicle.Position = VehiclePosition;
-                        MainVehicle.EngineRunning = true;
-                        //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
-                        //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
-                        MainVehicle.Rotation = _vehicleRotation;
-                        MainVehicle.IsInvincible = true;
+                        MainVehicle.IsEngineOn = true;
+                        MainVehicle.Rotation = _vehicleRotation.ToRotator();
+                        MainVehicle.Invincible = true;
                         //Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
-                        Character.SetIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
+                        Character.WarpIntoVehicle(MainVehicle, VehicleSeat);
                         DEBUG_STEP = 12;
                     }
                     DEBUG_STEP = 13;
@@ -575,16 +578,16 @@ namespace GTANetwork
                     return;
                 }
 
-                if (_lastVehicle && _justEnteredVeh && IsInVehicle && !Character.IsInVehicle(MainVehicle) &&
+                /*if (_lastVehicle && _justEnteredVeh && IsInVehicle && !Character.IsInVehicle(MainVehicle, false) &&
                     DateTime.Now.Subtract(_enterVehicleStarted).TotalSeconds <= 4)
                 {
                     return;
-                }
+                }*/
                 _justEnteredVeh = false;
                 DEBUG_STEP = 14;
                 if (_lastVehicle && !IsInVehicle && MainVehicle != null)
                 {
-                    if (Character != null) Character.Task.LeaveVehicle(MainVehicle, true);
+                    if (Character != null) Character.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
                 }
 
                 if (Character != null)
@@ -596,13 +599,13 @@ namespace GTANetwork
                 DEBUG_STEP = 15;
                 if (!inRange)
                 {
-                    if (Character != null)
+                    if (Character != null && DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds < 5000)
                     {
                         if (!IsInVehicle) Character.Position = gPos;
                         else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
                         {
                             MainVehicle.Position = VehiclePosition;
-                            MainVehicle.Rotation = VehicleRotation;
+                            MainVehicle.Rotation = VehicleRotation.ToRotator();
                             Character.Position = gPos;
                         }
                     }
@@ -611,7 +614,7 @@ namespace GTANetwork
 
                 DEBUG_STEP = 16;
 
-                if ((Character.CurrentBlip == null || (Character.CurrentBlip.Position - Character.Position).Length() > 5f) && _blip)
+                if ((Character.GetAttachedBlip() == null || (Character.GetAttachedBlip().Position - Character.Position).Length() > 20f) && _blip)
                 {
                     LogManager.DebugLog("Blip was too far away -- deleting");
                     Character.Delete();
@@ -624,28 +627,26 @@ namespace GTANetwork
                         MainVehicle.EngineHealth = VehicleHealth;
                         if (IsVehDead && !MainVehicle.IsDead)
                         {
-                            MainVehicle.IsInvincible = false;
+                            MainVehicle.Invincible = false;
                             MainVehicle.Explode();
                         }
                         else if (!IsVehDead && MainVehicle.IsDead)
                         {
-                            MainVehicle.IsInvincible = true;
+                            MainVehicle.Invincible = true;
                             if (MainVehicle.IsDead)
                                 MainVehicle.Repair();
                         }
                         DEBUG_STEP = 17;
-                        //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
-                        //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
 
                         if (VehicleMods != null && _modSwitch%50 == 0 &&
                             Game.LocalPlayer.Character.IsInRangeOf(VehiclePosition, 30f))
                         {
                             var id = _modSwitch/50;
 
-                            if (VehicleMods.ContainsKey(id) && VehicleMods[id] != MainVehicle.GetMod((VehicleMod) id))
+                            if (VehicleMods.ContainsKey(id) && VehicleMods[id] != Function.Call<int>(Hash.GET_VEHICLE_MOD, MainVehicle.Handle.Value, id))
                             {
-                                Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle.Handle, 0);
-                                MainVehicle.SetMod((VehicleMod) id, VehicleMods[id], false);
+                                Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle.Handle.Value, 0);
+                                Function.Call<int>(Hash.SET_VEHICLE_MOD, MainVehicle.Handle.Value, id, VehicleMods[id], false);
                                 Function.Call(Hash.RELEASE_PRELOAD_MODS, id);
                             }
                         }
@@ -657,23 +658,23 @@ namespace GTANetwork
                         if (IsHornPressed && !_lastHorn)
                         {
                             _lastHorn = true;
-                            MainVehicle.SoundHorn(99999);
+                            Function.Call(Hash.START_VEHICLE_HORN, MainVehicle.Handle.Value, 99999, Game.GetHashKey("HELDDOWN"), 0);
                         }
 
                         if (!IsHornPressed && _lastHorn)
                         {
                             _lastHorn = false;
-                            MainVehicle.SoundHorn(1);
+                            Function.Call(Hash.START_VEHICLE_HORN, MainVehicle.Handle.Value, 0, Game.GetHashKey("HELDDOWN"), 0);
                         }
                         DEBUG_STEP = 18;
 
-                        if (MainVehicle.SirenActive && !Siren)
-                            MainVehicle.SirenActive = Siren;
-                        else if (!MainVehicle.SirenActive && Siren)
-                            MainVehicle.SirenActive = Siren;
+                        if (MainVehicle.IsSirenOn && !Siren)
+                            MainVehicle.IsSirenOn = Siren;
+                        else if (!MainVehicle.IsSirenOn && Siren)
+                            MainVehicle.IsSirenOn = Siren;
 
-                        MainVehicle.CurrentRPM = VehicleRPM;
-                        
+                        // TODO: CHECK WHETHER THIS CRASHES
+                        //MainVehicle.SetCurrentRPM(VehicleRPM);
                         DEBUG_STEP = 19;
 
                         
@@ -811,7 +812,7 @@ namespace GTANetwork
                             _leftSide = !_leftSide;
 
                             var start =
-                                MainVehicle.GetOffsetInWorldCoords(muzzle);
+                                MainVehicle.GetOffsetPosition(muzzle);
                             var end = start + Main.RotationToDirection(VehicleRotation) * 100f;
                             var hash = CurrentWeapon;
                             var speed = 0xbf800000;
@@ -819,7 +820,7 @@ namespace GTANetwork
                             if (isRocket)
                                 speed = 500;
                             else
-                                hash = unchecked((int)WeaponHash.CombatPDW);
+                                hash = 0x0A3D4D34; // CombatPDW
 
                             Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
                                     end.Y, end.Z, 75, true, hash, Character, true, false, speed);
@@ -837,14 +838,14 @@ namespace GTANetwork
 
                         if (IsShooting)
                         {
-                            if (((VehicleHash) VehicleHash == GTA.Native.VehicleHash.Rhino &&
+                            if (((VehicleHash) VehicleHash == GTANetwork.VehicleHash.Rhino &&
                                  DateTime.Now.Subtract(_lastRocketshot).TotalMilliseconds > 1000) ||
-                                ((VehicleHash) VehicleHash != GTA.Native.VehicleHash.Rhino))
+                                ((VehicleHash) VehicleHash != GTANetwork.VehicleHash.Rhino))
                             {
                                 _lastRocketshot = DateTime.Now;
 
                                 var baseTurretPos =
-                                    MainVehicle.GetOffsetInWorldCoords(
+                                    MainVehicle.GetOffsetPosition(
                                         WeaponDataProvider.GetVehicleWeaponMuzzle((VehicleHash) VehicleHash, false));
                                 var doesBaseTurretDiffer =
                                     WeaponDataProvider.DoesVehiclesMuzzleDifferFromVehicleGunPos(
@@ -852,10 +853,10 @@ namespace GTANetwork
                                 var barrellLength = WeaponDataProvider.GetVehicleTurretLength((VehicleHash) VehicleHash);
 
                                 var speed = 0xbf800000;
-                                var hash = WeaponHash.CombatPDW;
-                                if ((VehicleHash) VehicleHash == GTA.Native.VehicleHash.Rhino)
+                                var hash = 0x0A3D4D34; // CombatPDW
+                                if ((VehicleHash) VehicleHash == GTANetwork.VehicleHash.Rhino)
                                 {
-                                    hash = WeaponHash.RPG;
+                                    hash = unchecked((int)WeaponHash.RPG);
                                 }
 
                                 Vector3 tPos = baseTurretPos;
@@ -866,7 +867,7 @@ namespace GTANetwork
                                     var muzzle = WeaponDataProvider.GetVehicleWeaponMuzzle((VehicleHash) VehicleHash,
                                         false);
                                     tPos =
-                                        MainVehicle.GetOffsetInWorldCoords(new Vector3(muzzle.X*-1f, muzzle.Y, muzzle.Z));
+                                        MainVehicle.GetOffsetPosition(new Vector3(muzzle.X*-1f, muzzle.Y, muzzle.Z));
                                 }
 
                                 if (doesBaseTurretDiffer)
@@ -892,7 +893,7 @@ namespace GTANetwork
                                 _lastEnd = end;
 
                                 var damage = WeaponDataProvider.GetWeaponDamage(WeaponHash.Minigun);
-                                if ((VehicleHash) VehicleHash == GTA.Native.VehicleHash.Rhino)
+                                if ((VehicleHash) VehicleHash == GTANetwork.VehicleHash.Rhino)
                                     damage = 210;
 
                                 Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
@@ -902,11 +903,11 @@ namespace GTANetwork
                     }
                     else if (!WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash) VehicleHash) || VehicleSeat != -1)
                     {
-                        if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
+                        if (Character.Inventory.EquippedWeapon.Hash != (WeaponHash) CurrentWeapon)
                         {
                             //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
                             //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
-                            Character.Weapons.Give((WeaponHash) CurrentWeapon, -1, true, true);
+                            Character.Inventory.GiveNewWeapon((WeaponHash) CurrentWeapon, -1, true);
                         }
 
                         if (IsShooting)
@@ -920,7 +921,7 @@ namespace GTANetwork
                             if (IsShooting && !_lastShooting)
                             {
                                 Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
-                                    0, 0, 0, unchecked((int) FiringPattern.FullAuto));
+                                    0, 0, 0, unchecked((int) FiringPattern.FullAutomatic));
                             }
 
                             _lastVehicleAimUpdate = Game.GameTime;
@@ -929,12 +930,12 @@ namespace GTANetwork
 
                         if (!IsShooting && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
                         {
-                            Character.Task.ClearAll();
-                            Character.Task.ClearSecondary();
+                            Character.Tasks.Clear();
+                            Character.Tasks.ClearSecondary();
                             Function.Call(Hash.CLEAR_DRIVEBY_TASK_UNDERNEATH_DRIVING_TASK, Character);
                             //Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                             //Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, 0, 0, 0);
-                            Character.Task.ClearLookAt();
+                            //Character.Task.ClearLookAt();
                             //UI.Notify("Done shooting");
                             //UI.ShowSubtitle("Done Shooting1", 300);
                             _lastDrivebyShooting = false;
@@ -952,9 +953,9 @@ namespace GTANetwork
                         var id = _clothSwitch/50;
 
                         if (PedProps.ContainsKey(id) &&
-                            PedProps[id] != Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, Character.Handle, id))
+                            PedProps[id] != Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, Character.Handle.Value, id))
                         {
-                            Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character.Handle, id, PedProps[id], 0, 0);
+                            Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character.Handle.Value, id, PedProps[id], 0, 0);
                         }
                     }
                     DEBUG_STEP = 22;
@@ -963,18 +964,18 @@ namespace GTANetwork
                         _clothSwitch = 0;
                     DEBUG_STEP = 23;
 
-                    if (Character.Weapons.Current.Hash != (WeaponHash) CurrentWeapon)
+                    if (Character.Inventory.EquippedWeapon.Hash != (WeaponHash) CurrentWeapon)
                     {
                         //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
                         //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
 
-                        Character.Weapons.Give((WeaponHash) CurrentWeapon, -1, true, true);
+                        Character.Inventory.GiveNewWeapon((WeaponHash) CurrentWeapon, -1, true);
                     }
 
                     if (!_lastJumping && IsJumping)
                     {
                         //Character.FreezePosition = false;
-                        Character.Task.Jump();
+                        Character.Tasks.Jump();
                     }
 
                     if (!IsJumping && _lastJumping)
@@ -985,13 +986,13 @@ namespace GTANetwork
                     DEBUG_STEP = 24;
                     if (IsFreefallingWithParachute)
                     {
-                        Character.FreezePosition = true;
+                        Character.IsPositionFrozen = true;
                         Character.CanRagdoll = false;
 
                         if (!_lastFreefall)
                         {
-                            Character.Task.ClearAllImmediately();
-                            Character.Task.ClearSecondary();
+                            Character.Tasks.ClearImmediately();
+                            Character.Tasks.ClearSecondary();
                         }
 
                         var target = Util.LinearVectorLerp(_lastPosition,
@@ -1026,15 +1027,14 @@ namespace GTANetwork
                     {
                         if (_parachuteProp == null)
                         {
-                            _parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,
-                                Character.Rotation, false, false);
-                            _parachuteProp.FreezePosition = true;
-                            Function.Call(Hash.SET_ENTITY_COLLISION, _parachuteProp.Handle, false, 0);
-                            Character.Task.ClearAllImmediately();
-                            Character.Task.ClearSecondary();
+                            _parachuteProp = new Rage.Object(new Model(1740193300), Character.Position);
+                            _parachuteProp.IsPositionFrozen = true;
+                            Function.Call(Hash.SET_ENTITY_COLLISION, _parachuteProp.Handle.Value, false, 0);
+                            Character.Tasks.ClearImmediately();
+                            Character.Tasks.ClearSecondary();
                         }
 
-                        Character.FreezePosition = true;
+                        Character.IsPositionFrozen = true;
                         Character.CanRagdoll = false;
                         
                         var target = Util.LinearVectorLerp(_lastPosition,
@@ -1072,7 +1072,7 @@ namespace GTANetwork
                     }
                     else
                     {
-                        Character.FreezePosition = false;
+                        Character.IsPositionFrozen = false;
 
                         if (_parachuteProp != null)
                         {
@@ -1087,7 +1087,7 @@ namespace GTANetwork
 
                             UpdatePlayerPedPos();
 
-                            if (!meleeSwingDone && CurrentWeapon != unchecked ((int)WeaponHash.Unarmed))
+                            if (!meleeSwingDone && CurrentWeapon != -1569615261)
                             {
                                 var gunEntity = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
                                 if (gunEntity != null)
@@ -1095,28 +1095,28 @@ namespace GTANetwork
                                     Vector3 min;
                                     Vector3 max;
                                     gunEntity.Model.GetDimensions(out min, out max);
-                                    var start = gunEntity.GetOffsetInWorldCoords(min);
-                                    var end = gunEntity.GetOffsetInWorldCoords(max);
-                                    var ray = World.RaycastCapsule(start, end, (int) Math.Abs(end.X - start.X),
-                                        IntersectOptions.Peds1, Character);
+                                    var start = gunEntity.GetOffsetPosition(min);
+                                    var end = gunEntity.GetOffsetPosition(max);
+                                    var ray = World.TraceExtent(start, end, (int) Math.Abs(end.X - start.X),
+                                        TraceFlags.IntersectPeds, Character);
                                     //Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
-                                    if (ray.DitHitAnything && ray.DitHitEntity &&
+                                    if (ray.Hit && ray.HitEntity &&
                                         ray.HitEntity.Handle == Game.LocalPlayer.Character.Handle)
                                     {
-                                        Game.LocalPlayer.Character.ApplyDamage(25);
+                                        Function.Call(Hash.APPLY_DAMAGE_TO_PED, Game.LocalPlayer.Character.Handle.Value, 25, true);
                                         meleeSwingDone = true;
                                     }
                                 }
                             }
-                            else if (!meleeSwingDone && CurrentWeapon == unchecked((int)WeaponHash.Unarmed))
+                            else if (!meleeSwingDone && CurrentWeapon == -1569615261)
                             {
-                                var rightfist = Character.GetBoneCoord(Bone.IK_R_Hand);
+                                var rightfist = Character.GetBonePosition(PedBoneId.RightHand);
                                 var start = rightfist - new Vector3(0, 0, 0.5f);
                                 var end = rightfist + new Vector3(0, 0, 0.5f);
-                                var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
-                                if (ray.DitHitAnything && ray.DitHitEntity && ray.HitEntity.Handle == Game.LocalPlayer.Character.Handle)
+                                var ray = World.TraceExtent(start, end, (int)Math.Abs(end.X - start.X), TraceFlags.IntersectPeds, Character);
+                                if (ray.Hit && ray.HitEntity && ray.HitEntity.Handle == Game.LocalPlayer.Character.Handle)
                                 {
-                                    Game.LocalPlayer.Character.ApplyDamage(25);
+                                    Function.Call(Hash.APPLY_DAMAGE_TO_PED, Game.LocalPlayer.Character.Handle.Value, 25, true);
                                     meleeSwingDone = true;
                                 }
                             }
@@ -1129,7 +1129,7 @@ namespace GTANetwork
                             }
                             if (currentTime >= meleeanimationend)
                             {
-                                Character.Task.ClearAnimation(lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
+                                Character.Tasks.Clear();
                                 lastMeleeAnim = null;
                                 meleeSwingDone = false;
                             }
@@ -1177,7 +1177,7 @@ namespace GTANetwork
                             if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
                             {
                                 //Character.FreezePosition = false;
-                                Character.Task.AimAt(AimCoords, -1);
+                                Character.Tasks.AimWeaponAt(AimCoords, -1);
                             }
 
                             var dirVector = Position - _lastPosition;
@@ -1197,7 +1197,7 @@ namespace GTANetwork
 
                             if (hands == 3 || hands == 4 || hands == 0)
                             {
-                                if (Character != null) Character.Task.ClearSecondary();
+                                if (Character != null) Character.Tasks.ClearSecondary();
 
                                 var ourAnim = "";
                                 var anim = 0;
@@ -1220,7 +1220,7 @@ namespace GTANetwork
                                     anim = 2;
                                 }
                                 if (CurrentWeapon == unchecked((int) WeaponHash.Knife) || CurrentWeapon == -538741184 ||
-                                    CurrentWeapon == unchecked((int) WeaponHash.Dagger))
+                                    CurrentWeapon == unchecked((int)0x92A27487))
                                 {
                                     ourAnim = "melee@knife@streamed_core knife_short_range_0";
                                     meleeanimationend = 0.9f;
@@ -1246,35 +1246,35 @@ namespace GTANetwork
                                          Util.Denormalize(Rotation.Z) > 180f) ||
                                         (Util.Denormalize(_lastRotation.Z) > 180f &&
                                          Util.Denormalize(Rotation.Z) < 180f))
-                                        Character.Rotation = Rotation;
+                                        Character.Rotation = Rotation.ToRotator();
                                     else
                                         Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
                                             (int) DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                                            (int) AverageLatency);
+                                            (int) AverageLatency).ToRotator();
                                 }
                                 else
                                 {
-                                    Character.Rotation = Rotation;
+                                    Character.Rotation = Rotation.ToRotator();
                                 }
                             }
                             else
                             {
                                 //Character.FreezePosition = false;
-                                Character.Task.AimAt(AimCoords, -1);
+                                Character.Tasks.AimWeaponAt(AimCoords, -1);
 
                                 var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
                                 if (gunEnt != null)
                                 {
-                                    var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+                                    var start = gunEnt.GetOffsetPosition(new Vector3(0, 0, -0.01f));
                                     var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
                                     var speed = 0xbf800000;
                                     var weaponH = (WeaponHash) CurrentWeapon;
-                                    if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
-                                        weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
+                                    if (weaponH == WeaponHash.RPG || weaponH == (WeaponHash)0x63AB0442 ||
+                                        weaponH == WeaponHash.GrenadeLauncher || weaponH == (WeaponHash)0x7F7497E5)
                                         speed = 500;
 
                                     if (weaponH == WeaponHash.Minigun)
-                                        weaponH = WeaponHash.CombatPDW;
+                                        weaponH = (WeaponHash)0x0A3D4D34;
 
                                     var dir = (AimCoords - start);
                                     dir.Normalize();
@@ -1348,21 +1348,21 @@ namespace GTANetwork
 
         public static Ped GetResponsiblePed(Vehicle veh)
         {
-            if (veh.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle != 0) return veh.GetPedOnSeat(GTA.VehicleSeat.Driver);
+            if (veh.GetPedOnSeat(-1).Handle != 0) return veh.GetPedOnSeat(-1);
 
-            for (int i = 0; i < veh.PassengerSeats; i++)
+            for (int i = 0; i < Function.Call<int>(Hash.GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS, veh.Handle.Value); i++)
             {
-                if (veh.GetPedOnSeat((VehicleSeat)i).Handle != 0) return veh.GetPedOnSeat((VehicleSeat)i);
+                if (veh.GetPedOnSeat(i).Handle != 0) return veh.GetPedOnSeat(i);
             }
 
-            return new Ped(0);
+            return null;
         }
 
         public string GetAnimDictionary(string ourAnim = "")
         {
             string dict = "move_m@generic";
 
-            if (Character.Gender == Gender.Female)
+            if (!Character.IsMale)
                 dict = "move_f@generic";
 
             dict = Character.IsInWater ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : dict;
@@ -1445,28 +1445,28 @@ namespace GTANetwork
                      Util.Denormalize(Rotation.Z) > 180f) ||
                     (Util.Denormalize(_lastRotation.Z) > 180f &&
                      Util.Denormalize(Rotation.Z) < 180f))
-                    Character.Rotation = Rotation;
+                    Character.Rotation = Rotation.ToRotator();
                 else
                     Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
                         (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                        (int)AverageLatency);
+                        (int)AverageLatency).ToRotator();
             }
             else
             {
-                Character.Rotation = Rotation;
+                Character.Rotation = Rotation.ToRotator();
             }
         }
 
         public string GetSecondaryAnimDict()
         {
-            if (CurrentWeapon == unchecked((int) WeaponHash.Unarmed)) return GetAnimDictionary();
+            if (CurrentWeapon == unchecked((int)0xA2719263)) return GetAnimDictionary();
             if (CurrentWeapon == unchecked((int) WeaponHash.RPG) ||
-                CurrentWeapon == unchecked((int) WeaponHash.HomingLauncher) ||
-                CurrentWeapon == unchecked((int)WeaponHash.Firework))
+                CurrentWeapon == unchecked((int)0x63AB0442) ||
+                CurrentWeapon == unchecked((int)0x7F7497E5))
                 return "weapons@heavy@rpg";
             if (CurrentWeapon == unchecked((int) WeaponHash.Minigun))
                 return "weapons@heavy@minigun";
-            if (CurrentWeapon == unchecked((int) WeaponHash.GolfClub) ||
+            if (CurrentWeapon == unchecked((int)0x440E4788) ||
                 CurrentWeapon == unchecked((int) WeaponHash.Bat))
                 return "weapons@melee_2h";
             if (Function.Call<int>(Hash.GET_WEAPONTYPE_SLOT, CurrentWeapon) ==
@@ -1475,15 +1475,15 @@ namespace GTANetwork
             if (CurrentWeapon == -1357824103 || CurrentWeapon == -1074790547 ||
                 (CurrentWeapon == 2132975508 || CurrentWeapon == -2084633992) ||
                 (CurrentWeapon == -952879014 || CurrentWeapon == 100416529) ||
-                CurrentWeapon == unchecked((int) WeaponHash.Gusenberg) ||
+                CurrentWeapon == unchecked((int)0x61012683) ||
                 CurrentWeapon == unchecked((int) WeaponHash.MG) || CurrentWeapon == unchecked((int) WeaponHash.CombatMG) ||
-                CurrentWeapon == unchecked((int) WeaponHash.CombatPDW) ||
+                CurrentWeapon == unchecked((int)0x0A3D4D34) ||
                 CurrentWeapon == unchecked((int) WeaponHash.AssaultSMG) ||
-                CurrentWeapon == unchecked((int) WeaponHash.SMG) ||
+                CurrentWeapon == unchecked((int)0x2BE6766B) ||
                 CurrentWeapon == unchecked((int) WeaponHash.HeavySniper) ||
                 CurrentWeapon == unchecked((int) WeaponHash.PumpShotgun) ||
-                CurrentWeapon == unchecked((int) WeaponHash.HeavyShotgun) ||
-                CurrentWeapon == unchecked((int) WeaponHash.Musket) ||
+                CurrentWeapon == unchecked((int)0x3AABBBAA) ||
+                CurrentWeapon == unchecked((int)0xA89CB99E) ||
                 CurrentWeapon == unchecked((int) WeaponHash.AssaultShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.BullpupShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.SawnOffShotgun))
@@ -1493,33 +1493,33 @@ namespace GTANetwork
 
         public int GetWeaponHandsHeld(int weapon)
         {
-            if (weapon == unchecked((int) WeaponHash.Unarmed)) return 0;
+            if (weapon == unchecked((int)0xA2719263)) return 0;
             if (weapon == unchecked((int)WeaponHash.RPG) ||
-                weapon == unchecked((int)WeaponHash.HomingLauncher) ||
-                weapon == unchecked((int)WeaponHash.Firework))
+                weapon == unchecked((int)0x63AB0442) ||
+                weapon == unchecked((int)0x7F7497E5))
                 return 5;
             if (weapon == unchecked((int)WeaponHash.Minigun))
                 return 5;
-            if (weapon == unchecked((int)WeaponHash.GolfClub) ||
+            if (weapon == unchecked((int)0x440E4788) ||
                 weapon == unchecked((int)WeaponHash.Bat))
                 return 4;
             if (weapon == unchecked((int) WeaponHash.Knife) || weapon == unchecked((int) WeaponHash.Nightstick) ||
                 weapon == unchecked((int) WeaponHash.Hammer) || weapon == unchecked((int) WeaponHash.Crowbar) ||
-                weapon == unchecked((int) WeaponHash.Dagger) || weapon == unchecked((int) WeaponHash.Hatchet) ||
-                weapon == unchecked((int) WeaponHash.KnuckleDuster) || weapon == -581044007 || weapon == -102323637 || weapon == -538741184)
+                weapon == unchecked((int)0x92A27487) || weapon == unchecked((int)0xF9DCBF2D) ||
+                weapon == unchecked((int)0xD8DF3C3C) || weapon == -581044007 || weapon == -102323637 || weapon == -538741184)
                 return 3;
             if (weapon == -1357824103 || weapon == -1074790547 ||
                 (weapon == 2132975508 || weapon == -2084633992) ||
                 (weapon == -952879014 || weapon == 100416529) ||
-                weapon == unchecked((int)WeaponHash.Gusenberg) ||
+                weapon == unchecked((int)0x61012683) ||
                 weapon == unchecked((int)WeaponHash.MG) || weapon == unchecked((int)WeaponHash.CombatMG) ||
-                weapon == unchecked((int)WeaponHash.CombatPDW) ||
+                weapon == unchecked((int)0x0A3D4D34) ||
                 weapon == unchecked((int)WeaponHash.AssaultSMG) ||
-                weapon == unchecked((int)WeaponHash.SMG) ||
+                weapon == unchecked((int)0x2BE6766B) ||
                 weapon == unchecked((int)WeaponHash.HeavySniper) ||
                 weapon == unchecked((int)WeaponHash.PumpShotgun) ||
-                weapon == unchecked((int)WeaponHash.HeavyShotgun) ||
-                weapon == unchecked((int)WeaponHash.Musket) ||
+                weapon == unchecked((int)0x3AABBBAA) ||
+                weapon == unchecked((int)0xA89CB99E) ||
                 weapon == unchecked((int)WeaponHash.AssaultShotgun) ||
                 weapon == unchecked((int)WeaponHash.BullpupShotgun) ||
                 weapon == unchecked((int)WeaponHash.SawnOffShotgun))
@@ -1560,12 +1560,12 @@ namespace GTANetwork
             LogManager.DebugLog("CLEAR FOR " + Name);
             if (Character != null)
             {
-                Character.Model.MarkAsNoLongerNeeded();
+                Character.Model.Dismiss();
                 Character.Delete();
             }
             if (_mainBlip != null && _mainBlip.Exists())
             {
-                _mainBlip.Remove();
+                _mainBlip.Delete();
                 _mainBlip = null;
             }
 
@@ -1719,10 +1719,10 @@ namespace GTANetwork
         {
             if (vehicle == VehicleHash.Rhino && (vehiclepos == -1 || anySeat)) return true;
             if (vehicle == VehicleHash.Insurgent && (vehiclepos == 7 || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == (int) VehicleSeat.Passenger || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == 0 || anySeat)) return true;
             if (vehicle == VehicleHash.Valkyrie && (vehiclepos == 1 || anySeat)) return true;
             if (vehicle == VehicleHash.Valkyrie && (vehiclepos == 2 || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == (int)VehicleSeat.Passenger || anySeat)) return true;
+            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == 0 || anySeat)) return true;
             if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == 1 || anySeat)) return true;
             if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == 2 || anySeat)) return true;
             if (vehicle == VehicleHash.Technical && (vehiclepos == 1 || anySeat)) return true;
@@ -1736,7 +1736,7 @@ namespace GTANetwork
             {
                 default:
                     return 0;
-                case WeaponHash.SMG:
+                case (WeaponHash)0x2BE6766B:
                     return 22;
                 case WeaponHash.AssaultSMG:
                     return 23;
@@ -1776,41 +1776,41 @@ namespace GTANetwork
                     return 51;
                 case WeaponHash.MicroSMG:
                     return 21;
-                case WeaponHash.Snowball:
+                case (WeaponHash)0x787F0BB:
                     return 25;
-                case WeaponHash.CombatPDW:
+                case (WeaponHash)0x0A3D4D34:
                     return 28;
-                case WeaponHash.MarksmanPistol:
+                case (WeaponHash)0xDC4DB296:
                     return 220;
                 case (WeaponHash)0x47757124:
                     return 10;
-                case WeaponHash.SNSPistol:
+                case (WeaponHash)0xBFD21232:
                     return 28;
-                case WeaponHash.HeavyPistol:
+                case (WeaponHash)0xD205520E:
                     return 40;
-                case WeaponHash.VintagePistol:
+                case (WeaponHash)0x83839C4:
                     return 34;
                 case (WeaponHash)0xC1B3C3D1:
                     return 160;
-                case WeaponHash.Musket:
+                case (WeaponHash)0xA89CB99E:
                     return 165;
-                case WeaponHash.HeavyShotgun:
+                case (WeaponHash)0x3AABBBAA:
                     return 117;
-                case WeaponHash.SpecialCarbine:
+                case (WeaponHash)0xC0A3098D:
                     return 34;
-                case WeaponHash.BullpupRifle:
+                case (WeaponHash)0x7F229F94:
                     return 32;
-                case WeaponHash.Gusenberg:
+                case (WeaponHash)0x61012683:
                     return 34;
-                case WeaponHash.MarksmanRifle:
+                case (WeaponHash)0xC734385A:
                     return 65;
                 case WeaponHash.RPG:
                     return 50;
                 case WeaponHash.GrenadeLauncher:
                     return 75;
-                case WeaponHash.Firework:
+                case (WeaponHash)0x7F7497E5:
                     return 20;
-                case WeaponHash.Railgun:
+                case (WeaponHash)0x6D544C99:
                     return 30;
                 case (WeaponHash) 1649403952:
                     return 36;
