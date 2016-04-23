@@ -1150,10 +1150,10 @@ namespace GTANetwork
                         pair.Value.Rotation.ToVector(), pair.Key);
                     LogManager.DebugLog("VEHICLE COLORS: " + (VehicleColor)pair.Value.PrimaryColor + (VehicleColor)pair.Value.SecondaryColor);
                     ourVeh.SetColors((VehicleColor)pair.Value.PrimaryColor, (VehicleColor)pair.Value.SecondaryColor);
-                    ourVeh.PearlescentColor = Color.White;
-                    ourVeh.RimColor = Color.White;
+                    ourVeh.SetExtraColors(0, 0);
                     ourVeh.EngineHealth = pair.Value.Health;
                     ourVeh.IsSirenOn = pair.Value.Siren;
+                    ourVeh.IsDeformationEnabled = false;
                     
                     for (int i = 0; i < pair.Value.Doors.Length; i++)
                     {
@@ -2024,10 +2024,7 @@ namespace GTANetwork
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
                 */
             //UI.ShowSubtitle(stats);
-
-            if (!Multithreading)
-                PedThread.OnTick("thisaintnullnigga", e);
-
+            
             lock (_threadJumping)
             {
                 if (_threadJumping.Any())
@@ -2415,6 +2412,7 @@ namespace GTANetwork
                                             veh.SetColors((VehicleColor)prop.PrimaryColor, (VehicleColor)prop.SecondaryColor);
                                             LogManager.DebugLog("Settings vehicle extra colors");
                                             Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
+                                            veh.IsDeformationEnabled = false;
                                             LogManager.DebugLog("CreateEntity done");
                                         }
                                         else if (data.EntityType == (byte) EntityType.Prop)

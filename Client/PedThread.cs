@@ -1,20 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Rage;
 
 namespace GTANetwork
 {
-    public class PedThread// : Script
+    public class PedThread
     {
-        public PedThread()
+        public static void Start()
         {
-            //Tick += OnTick;
+            GameFiber.StartNew(delegate
+            {
+                while (true)
+                {
+                    OnTick();
+                    GameFiber.Yield();
+                }
+            });
         }
         
-        public static void OnTick(object sender, EventArgs e)
+        public static void OnTick()
         {
             if (!Main.IsOnServer()) return;
-            if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
 
             //UI.ShowSubtitle("MT: " + Main.Multithreading + " sender: " + sender.GetType());
 

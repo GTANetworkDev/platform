@@ -354,6 +354,42 @@ namespace GTANetwork
             heading = -2 * atan2(x,w)
             bank = 0 */
         }
+
+        public static Blip GetBlipByHandle(uint handle)
+        {
+            try
+            {
+                return World.GetBlipByHandle(handle);
+            }
+            catch (System.ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        public static Entity GetEntityByHandle(uint handle)
+        {
+            try
+            {
+                return World.GetEntityByHandle<Entity>(handle);
+            }
+            catch (System.ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        public static T GetEntityByHandle<T>(uint handle) where T : Rage.Entity
+        {
+            try
+            {
+                return World.GetEntityByHandle<T>(handle);
+            }
+            catch (System.ArgumentException)
+            {
+                return default(T);
+            }
+        }
     }
 
     public static class EntityExtensions
@@ -421,6 +457,11 @@ namespace GTANetwork
         public static void SetColors(this Vehicle veh, VehicleColor color1, VehicleColor color2)
         {
             Function.Call(Hash.SET_VEHICLE_COLOURS, veh.Handle.Value, (int)color1, (int)color2);
+        }
+
+        public static void SetExtraColors(this Vehicle veh, int color1, int color2)
+        {
+            Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh.Handle.Value, color1, color2);
         }
 
         public static unsafe int GetPrimaryColor(this Vehicle veh)
