@@ -1350,11 +1350,10 @@ namespace GTANetwork
 
         public static Ped GetResponsiblePed(Vehicle veh)
         {
-            if (veh.GetPedOnSeat(-1).Handle != 0) return veh.GetPedOnSeat(-1);
-
+            if (veh.GetPedOnSeat(-1) != null && veh.GetPedOnSeat(-1).Handle.Value != 0) return veh.GetPedOnSeat(-1);
             for (int i = 0; i < Function.Call<int>(Hash.GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS, veh.Handle.Value); i++)
             {
-                if (veh.GetPedOnSeat(i).Handle != 0) return veh.GetPedOnSeat(i);
+                if (veh.GetPedOnSeat(i) != null && veh.GetPedOnSeat(i).Handle.Value != 0) return veh.GetPedOnSeat(i);
             }
 
             return null;

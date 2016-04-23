@@ -263,18 +263,23 @@ namespace GTANetwork
             return newPickup;
         }
 
-        public void ClearAll()
+        public unsafe void ClearAll()
         {
             lock (HandleMap)
             {
                 foreach (var pair in HandleMap)
                 {
+                    if (pair.Value == uint.MaxValue) continue;
                     if (Blips.Contains(pair.Value))
-                        World.GetBlipByHandle(pair.Value).Delete();
-                    else if(Pickups.Contains(pair.Value))
-                        Function.Call(Hash.REMOVE_PICKUP, unchecked((int)pair.Value));
+                        World.GetBlipByHandle(pair.Value)?.Delete();
+                    else if (Pickups.Contains(pair.Value))
+                        Function.Call(Hash.REMOVE_PICKUP, unchecked((int) pair.Value));
                     else
-                        World.GetEntityByHandle<Rage.Object>(pair.Value).Delete();
+                    {
+                        int handle = pair.Value.ToInt();
+                        Function.Call(Hash.SET_ENTITY_AS_MISSION_ENTITY, handle, true, false);
+                        Function.Call(Hash.DELETE_ENTITY, &handle);
+                    }
                 }
 
                 HandleMap.Clear();

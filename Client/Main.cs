@@ -164,6 +164,15 @@ namespace GTANetwork
             GetWelcomeMessage();
 
             JavascriptHook = new JavascriptHook();
+
+            GameFiber.StartNew(delegate
+            {
+                while (true)
+                {
+                    if (Client != null) ProcessMessages();
+                    GameFiber.Yield();
+                }
+            }, "Process Messages");
         }
 
         // Debug stuff
@@ -564,7 +573,7 @@ namespace GTANetwork
             OnTick(null, EventArgs.Empty);
         }
 
-        private BigMessageThread _bigMessageThread = new BigMessageThread(true);
+        public static BigMessageThread BigMessageThread = new BigMessageThread(true);
         private TabMapItem _mainMapItem;
         private void BuildMainMenu()
         {
@@ -1139,6 +1148,7 @@ namespace GTANetwork
                 {
                     var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash.ToUint()), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), pair.Key);
+                    LogManager.DebugLog("VEHICLE COLORS: " + (VehicleColor)pair.Value.PrimaryColor + (VehicleColor)pair.Value.SecondaryColor);
                     ourVeh.SetColors((VehicleColor)pair.Value.PrimaryColor, (VehicleColor)pair.Value.SecondaryColor);
                     ourVeh.PearlescentColor = Color.White;
                     ourVeh.RimColor = Color.White;
@@ -1621,6 +1631,12 @@ namespace GTANetwork
                 {
                     Game.DisableControlAction(0, GameControl.MoveLeftRight, true);
                     Game.DisableControlAction(0, GameControl.MoveUpDown, true);
+                    Game.DisableControlAction(0, GameControl.VehicleAccelerate, true);
+                    Game.DisableControlAction(0, GameControl.VehicleBrake, true);
+                    Game.DisableControlAction(0, GameControl.VehicleAim, true);
+                    Game.DisableControlAction(0, GameControl.VehicleRadioWheel, true);
+                    Game.DisableControlAction(0, GameControl.VehicleNextRadio, true);
+                    Game.DisableControlAction(0, GameControl.VehiclePrevRadio, true);
                     Game.DisableControlAction(0, GameControl.Aim, true);
                     Game.DisableControlAction(0, GameControl.Attack, true);
                     Game.DisableControlAction(0, GameControl.CharacterWheel, true);
@@ -1789,7 +1805,6 @@ namespace GTANetwork
             }*/
 #endif
             DEBUG_STEP = 5;
-            ProcessMessages();
             DEBUG_STEP = 6;
 
             if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected ||
@@ -1894,7 +1909,7 @@ namespace GTANetwork
                 */
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 
-                _bigMessageThread.MessageInstance.ShowColoredShard("WASTED", "", HudColor.HUD_COLOUR_BLACK, HudColor.HUD_COLOUR_RED, 7000);
+                BigMessageThread.MessageInstance.ShowColoredShard("WASTED", "", HudColor.HUD_COLOUR_BLACK, HudColor.HUD_COLOUR_RED, 7000);
                 Function.Call(Hash.REQUEST_SCRIPT_AUDIO_BANK, "HUD_MINI_GAME_SOUNDSET", true);
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
             }
@@ -1990,7 +2005,7 @@ namespace GTANetwork
             {
                 foreach (var entity in World.GetAllPeds())
                 {
-                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.LocalPlayer.Character)
+                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.LocalPlayer.Character && entity.IsValid())
                         entity.Delete();
                 }
             }
@@ -1998,7 +2013,7 @@ namespace GTANetwork
             {
                 foreach (var entity in World.GetAllVehicles())
                 {
-                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity.IsValid())
                         entity.Delete();
                 }
             }
@@ -2202,438 +2217,422 @@ namespace GTANetwork
             NetIncomingMessage msg;
             while (Client != null && (msg = Client.ReadMessage()) != null)
             {
-                PacketType type = PacketType.WorldSharingStop;
-                LogManager.DebugLog("RECEIVED MESSAGE " + msg.MessageType);
-                try
+                var msg1 = msg;
+                GameFiber.StartNew(delegate
                 {
-                    _messagesReceived++;
-                    _bytesReceived += msg.LengthBytes;
-
-                    if (msg.MessageType == NetIncomingMessageType.Data)
+                    PacketType type = PacketType.WorldSharingStop;
+                    LogManager.DebugLog("RECEIVED MESSAGE " + msg1.MessageType);
+                    try
                     {
-                        type = (PacketType) msg.ReadInt32();
-                        LogManager.DebugLog("RECEIVED DATATYPE " + type);
-                        switch (type)
+                        _messagesReceived++;
+                        _bytesReceived += msg1.LengthBytes;
+
+                        if (msg1.MessageType == NetIncomingMessageType.Data)
                         {
-                            case PacketType.VehiclePositionData:
+                            type = (PacketType) msg1.ReadInt32();
+                            LogManager.DebugLog("RECEIVED DATATYPE " + type);
+                            switch (type)
                             {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
-                                if (data == null) return;
-                                lock (Opponents)
+                                case PacketType.VehiclePositionData:
                                 {
-                                    if (!Opponents.ContainsKey(data.Id))
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<VehicleData>(msg1.ReadBytes(len)) as VehicleData;
+                                    if (data == null) return;
+                                    lock (Opponents)
                                     {
-                                        var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            //data.Quaternion.ToQuaternion());
-                                            data.Quaternion.ToVector());
-                                        Opponents.Add(data.Id, repr);
-                                    }
-                                    if (Opponents[data.Id].Character != null)
-                                        NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
-                                    Opponents[data.Id].VehicleNetHandle = data.VehicleHandle;
-                                    Opponents[data.Id].Name = data.Name;
-                                    Opponents[data.Id].LastUpdateReceived = DateTime.Now;
-                                    Opponents[data.Id].VehiclePosition =
-                                        data.Position.ToVector();
-                                    Opponents[data.Id].VehicleVelocity = data.Velocity.ToVector();
-                                    Opponents[data.Id].IsVehDead = data.IsVehicleDead;
-                                    Opponents[data.Id].ModelHash = unchecked((uint)data.PedModelHash);
-                                    Opponents[data.Id].VehicleHash = unchecked((uint)data.VehicleModelHash);
-                                    Opponents[data.Id].PedArmor = data.PedArmor;
-                                    Opponents[data.Id].VehicleRPM = data.RPM;
-                                    Opponents[data.Id].VehicleRotation =
-                                        //data.Quaternion.ToQuaternion();
-                                        data.Quaternion.ToVector();
-                                    Opponents[data.Id].PedHealth = data.PlayerHealth;
-                                    Opponents[data.Id].VehicleHealth = data.VehicleHealth;
-                                    //Opponents[data.Id].VehiclePrimaryColor = data.PrimaryColor;
-                                    //Opponents[data.Id].VehicleSecondaryColor = data.SecondaryColor;
-                                    Opponents[data.Id].VehicleSeat = data.VehicleSeat;
-                                    Opponents[data.Id].IsInVehicle = true;
-                                    Opponents[data.Id].Latency = data.Latency;
-
-                                    //Opponents[data.Id].VehicleMods = data.VehicleMods;
-                                    Opponents[data.Id].IsHornPressed = data.IsPressingHorn;
-                                    Opponents[data.Id].Speed = data.Speed;
-                                    Opponents[data.Id].Siren = data.IsSirenActive;
-                                    Opponents[data.Id].IsShooting = data.IsShooting;
-                                    Opponents[data.Id].CurrentWeapon = data.WeaponHash;
-                                    if (data.AimCoords != null)
-                                        Opponents[data.Id].AimCoords = data.AimCoords.ToVector();
-                                }
-                            }
-                                break;
-                            case PacketType.PedPositionData:
-                            {
-
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
-                                if (data == null) return;
-                                lock (Opponents)
-                                {
-                                    if (!Opponents.ContainsKey(data.Id))
-                                    {
-                                        var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            data.Quaternion.ToVector());
-                                        Opponents.Add(data.Id, repr);
-                                    }
-
-                                    if (Opponents[data.Id].Character != null)
-                                        NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
-                                    Opponents[data.Id].Speed = data.Speed;
-                                    Opponents[data.Id].Name = data.Name;
-                                    Opponents[data.Id].IsRagdoll = data.IsRagdoll;
-                                    Opponents[data.Id].PedArmor = data.PedArmor;
-                                    Opponents[data.Id].LastUpdateReceived = DateTime.Now;
-                                    Opponents[data.Id].Position = data.Position.ToVector();
-                                    Opponents[data.Id].ModelHash = unchecked((uint)data.PedModelHash);
-                                    Opponents[data.Id].IsInMeleeCombat = data.IsInMeleeCombat;
-                                    Opponents[data.Id].Rotation = data.Quaternion.ToVector();
-                                    Opponents[data.Id].IsFreefallingWithParachute = data.IsFreefallingWithChute;
-                                    Opponents[data.Id].PedHealth = data.PlayerHealth;
-                                    Opponents[data.Id].IsInVehicle = false;
-                                    Opponents[data.Id].AimCoords = data.AimCoords.ToVector();
-                                    Opponents[data.Id].CurrentWeapon = data.WeaponHash;
-                                    Opponents[data.Id].IsAiming = data.IsAiming;
-                                    Opponents[data.Id].IsJumping = data.IsJumping;
-                                    Opponents[data.Id].IsShooting = data.IsShooting;
-                                    Opponents[data.Id].Latency = data.Latency;
-                                    Opponents[data.Id].IsParachuteOpen = data.IsParachuteOpen;
-                                }
-                            }
-                                break;
-                            case PacketType.NpcVehPositionData:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
-                                if (data == null) return;
-
-                                lock (Npcs)
-                                {
-                                    if (!Npcs.ContainsKey(data.Name))
-                                    {
-                                        var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            //data.Quaternion.ToQuaternion(), false);
-                                            data.Quaternion.ToVector(), false);
-                                        Npcs.Add(data.Name, repr);
-                                        Npcs[data.Name].Name = "";
-                                        Npcs[data.Name].Host = data.Id;
-                                    }
-                                    if (Npcs[data.Name].Character != null)
-                                        NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
-
-                                    Npcs[data.Name].LastUpdateReceived = DateTime.Now;
-                                    Npcs[data.Name].VehiclePosition = data.Position.ToVector();
-                                    Npcs[data.Name].ModelHash = unchecked((uint)data.PedModelHash);
-                                    Npcs[data.Name].VehicleHash = unchecked((uint)data.VehicleModelHash);
-                                    Npcs[data.Name].VehicleRotation = data.Quaternion.ToVector();
-                                    //data.Quaternion.ToQuaternion();
-                                    Npcs[data.Name].PedHealth = data.PlayerHealth;
-                                    Npcs[data.Name].VehicleHealth = data.VehicleHealth;
-                                    //Npcs[data.Name].VehiclePrimaryColor = data.PrimaryColor;
-                                    //Npcs[data.Name].VehicleSecondaryColor = data.SecondaryColor;
-                                    Npcs[data.Name].VehicleSeat = data.VehicleSeat;
-                                    Npcs[data.Name].IsInVehicle = true;
-
-                                    Npcs[data.Name].IsHornPressed = data.IsPressingHorn;
-                                    Npcs[data.Name].Speed = data.Speed;
-                                    Npcs[data.Name].Siren = data.IsSirenActive;
-                                }
-                            }
-                                break;
-                            case PacketType.NpcPedPositionData:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
-                                if (data == null) return;
-
-                                lock (Npcs)
-                                {
-                                    if (!Npcs.ContainsKey(data.Name))
-                                    {
-                                        var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                            //data.Quaternion.ToQuaternion(), false);
-                                            data.Quaternion.ToVector(), false);
-                                        Npcs.Add(data.Name, repr);
-                                        Npcs[data.Name].Name = "";
-                                        Npcs[data.Name].Host = data.Id;
-                                    }
-                                    if (Npcs[data.Name].Character != null)
-                                        NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
-
-                                    Npcs[data.Name].LastUpdateReceived = DateTime.Now;
-                                    Npcs[data.Name].Position = data.Position.ToVector();
-                                    Npcs[data.Name].ModelHash = unchecked((uint)data.PedModelHash);
-                                    //Npcs[data.Name].Rotation = data.Quaternion.ToVector();
-                                    Npcs[data.Name].Rotation = data.Quaternion.ToVector();
-                                    Npcs[data.Name].PedHealth = data.PlayerHealth;
-                                    Npcs[data.Name].IsInVehicle = false;
-                                    Npcs[data.Name].AimCoords = data.AimCoords.ToVector();
-                                    Npcs[data.Name].CurrentWeapon = data.WeaponHash;
-                                    Npcs[data.Name].IsAiming = data.IsAiming;
-                                    Npcs[data.Name].IsJumping = data.IsJumping;
-                                    Npcs[data.Name].IsShooting = data.IsShooting;
-                                    Npcs[data.Name].IsParachuteOpen = data.IsParachuteOpen;
-                                }
-                            }
-                                break;
-                            case PacketType.CreateEntity:
-                            {
-                                var len = msg.ReadInt32();
-                                    LogManager.DebugLog("Received CreateEntity");
-                                var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
-                                if (data != null && data.Properties != null)
-                                {
-                                    LogManager.DebugLog("CreateEntity was not null. Type: " + data.EntityType);
-                                    LogManager.DebugLog("Model: " + data.Properties.ModelHash);
-                                    if (data.EntityType == (byte) EntityType.Vehicle)
-                                    {
-                                        var prop = (VehicleProperties) data.Properties;
-                                        var veh = NetEntityHandler.CreateVehicle(new Model(unchecked((uint)data.Properties.ModelHash)),
-                                            data.Properties.Position?.ToVector() ?? new Vector3(),
-                                            data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
-                                        LogManager.DebugLog("Settings vehicle color 1");
-                                        veh.SetColors((VehicleColor)prop.PrimaryColor, (VehicleColor)prop.SecondaryColor);
-                                        LogManager.DebugLog("Settings vehicle extra colors");
-                                        Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
-                                        LogManager.DebugLog("CreateEntity done");
-                                    }
-                                    else if (data.EntityType == (byte) EntityType.Prop)
-                                    {
-                                        LogManager.DebugLog("It was a prop. Spawning...");
-                                        NetEntityHandler.CreateObject(new Model(unchecked((uint)data.Properties.ModelHash)),
-                                            data.Properties.Position?.ToVector() ?? new Vector3(),
-                                            data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
-                                    }
-                                    else if (data.EntityType == (byte) EntityType.Blip)
-                                    {
-                                        var hasBlip = ((BlipProperties) data.Properties).AttachedNetEntity != 0;
-                                        if (hasBlip)
-                                            NetEntityHandler.CreateBlip(NetEntityHandler.NetToEntity(((BlipProperties) data.Properties).AttachedNetEntity), data.NetHandle);
-                                        else
-                                            NetEntityHandler.CreateBlip(data.Properties.Position.ToVector(),
-                                                data.NetHandle);
-                                    }
-                                    else if (data.EntityType == (byte) EntityType.Marker)
-                                    {
-                                        var prop = (MarkerProperties) data.Properties;
-                                        NetEntityHandler.CreateMarker(prop.MarkerType, prop.Position, prop.Rotation,
-                                            prop.Direction, prop.Scale, prop.Red, prop.Green, prop.Blue, prop.Alpha,
-                                            data.NetHandle);
-                                    }
-                                    else if (data.EntityType == (byte) EntityType.Pickup)
-                                    {
-                                        var amount = ((PickupProperties) data.Properties).Amount;
-                                        NetEntityHandler.CreatePickup(data.Properties.Position.ToVector(),
-                                            data.Properties.Rotation.ToVector(), data.Properties.ModelHash, amount,
-                                            data.NetHandle);
-                                    }
-                                }
-                            }
-                                break;
-                            case PacketType.UpdateMarkerProperties:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
-                                if (data != null && data.Properties != null)
-                                {
-                                    if (data.EntityType == (byte) EntityType.Marker &&
-                                        NetEntityHandler.Markers.ContainsKey(data.NetHandle))
-                                    {
-                                        var prop = (MarkerProperties) data.Properties;
-                                        NetEntityHandler.Markers[data.NetHandle] = new MarkerProperties()
+                                        if (!Opponents.ContainsKey(data.Id))
                                         {
-                                            MarkerType = prop.MarkerType,
-                                            Alpha = prop.Alpha,
-                                            Blue = prop.Blue,
-                                            Direction = prop.Direction,
-                                            Green = prop.Green,
-                                            Position = prop.Position,
-                                            Red = prop.Red,
-                                            Rotation = prop.Rotation,
-                                            Scale = prop.Scale,
-                                        };
+                                            var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
+                                                //data.Quaternion.ToQuaternion());
+                                                data.Quaternion.ToVector());
+                                            Opponents.Add(data.Id, repr);
+                                        }
+                                        if (Opponents[data.Id].Character != null)
+                                            NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
+                                        Opponents[data.Id].VehicleNetHandle = data.VehicleHandle;
+                                        Opponents[data.Id].Name = data.Name;
+                                        Opponents[data.Id].LastUpdateReceived = DateTime.Now;
+                                        Opponents[data.Id].VehiclePosition =
+                                            data.Position.ToVector();
+                                        Opponents[data.Id].VehicleVelocity = data.Velocity.ToVector();
+                                        Opponents[data.Id].IsVehDead = data.IsVehicleDead;
+                                        Opponents[data.Id].ModelHash = unchecked((uint)data.PedModelHash);
+                                        Opponents[data.Id].VehicleHash = unchecked((uint)data.VehicleModelHash);
+                                        Opponents[data.Id].PedArmor = data.PedArmor;
+                                        Opponents[data.Id].VehicleRPM = data.RPM;
+                                        Opponents[data.Id].VehicleRotation =
+                                            //data.Quaternion.ToQuaternion();
+                                            data.Quaternion.ToVector();
+                                        Opponents[data.Id].PedHealth = data.PlayerHealth;
+                                        Opponents[data.Id].VehicleHealth = data.VehicleHealth;
+                                        //Opponents[data.Id].VehiclePrimaryColor = data.PrimaryColor;
+                                        //Opponents[data.Id].VehicleSecondaryColor = data.SecondaryColor;
+                                        Opponents[data.Id].VehicleSeat = data.VehicleSeat;
+                                        Opponents[data.Id].IsInVehicle = true;
+                                        Opponents[data.Id].Latency = data.Latency;
+
+                                        //Opponents[data.Id].VehicleMods = data.VehicleMods;
+                                        Opponents[data.Id].IsHornPressed = data.IsPressingHorn;
+                                        Opponents[data.Id].Speed = data.Speed;
+                                        Opponents[data.Id].Siren = data.IsSirenActive;
+                                        Opponents[data.Id].IsShooting = data.IsShooting;
+                                        Opponents[data.Id].CurrentWeapon = data.WeaponHash;
+                                        if (data.AimCoords != null)
+                                            Opponents[data.Id].AimCoords = data.AimCoords.ToVector();
                                     }
                                 }
-                            }
-                                break;
-                            case PacketType.DeleteEntity:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<DeleteEntity>(msg.ReadBytes(len)) as DeleteEntity;
-                                if (data != null)
+                                    break;
+                                case PacketType.PedPositionData:
                                 {
-                                    LogManager.DebugLog("RECEIVED DELETE ENTITY " + data.NetHandle);
-                                    if (NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<PedData>(msg1.ReadBytes(len)) as PedData;
+                                    if (data == null) return;
+                                    lock (Opponents)
                                     {
-                                        NetEntityHandler.Markers.Remove(data.NetHandle);
+                                        if (!Opponents.ContainsKey(data.Id))
+                                        {
+                                            var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
+                                                data.Quaternion.ToVector());
+                                            Opponents.Add(data.Id, repr);
+                                        }
+
+                                        if (Opponents[data.Id].Character != null)
+                                            NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.Id].Character.Handle);
+                                        Opponents[data.Id].Speed = data.Speed;
+                                        Opponents[data.Id].Name = data.Name;
+                                        Opponents[data.Id].IsRagdoll = data.IsRagdoll;
+                                        Opponents[data.Id].PedArmor = data.PedArmor;
+                                        Opponents[data.Id].LastUpdateReceived = DateTime.Now;
+                                        Opponents[data.Id].Position = data.Position.ToVector();
+                                        Opponents[data.Id].ModelHash = unchecked((uint)data.PedModelHash);
+                                        Opponents[data.Id].IsInMeleeCombat = data.IsInMeleeCombat;
+                                        Opponents[data.Id].Rotation = data.Quaternion.ToVector();
+                                        Opponents[data.Id].IsFreefallingWithParachute = data.IsFreefallingWithChute;
+                                        Opponents[data.Id].PedHealth = data.PlayerHealth;
+                                        Opponents[data.Id].IsInVehicle = false;
+                                        Opponents[data.Id].AimCoords = data.AimCoords.ToVector();
+                                        Opponents[data.Id].CurrentWeapon = data.WeaponHash;
+                                        Opponents[data.Id].IsAiming = data.IsAiming;
+                                        Opponents[data.Id].IsJumping = data.IsJumping;
+                                        Opponents[data.Id].IsShooting = data.IsShooting;
+                                        Opponents[data.Id].Latency = data.Latency;
+                                        Opponents[data.Id].IsParachuteOpen = data.IsParachuteOpen;
+                                    }
+                                }
+                                    break;
+                                case PacketType.NpcVehPositionData:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<VehicleData>(msg1.ReadBytes(len)) as VehicleData;
+                                    if (data == null) return;
+
+                                    lock (Npcs)
+                                    {
+                                        if (!Npcs.ContainsKey(data.Name))
+                                        {
+                                            var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
+                                                //data.Quaternion.ToQuaternion(), false);
+                                                data.Quaternion.ToVector(), false);
+                                            Npcs.Add(data.Name, repr);
+                                            Npcs[data.Name].Name = "";
+                                            Npcs[data.Name].Host = data.Id;
+                                        }
+                                        if (Npcs[data.Name].Character != null)
+                                            NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
+
+                                        Npcs[data.Name].LastUpdateReceived = DateTime.Now;
+                                        Npcs[data.Name].VehiclePosition = data.Position.ToVector();
+                                        Npcs[data.Name].ModelHash = unchecked((uint)data.PedModelHash);
+                                        Npcs[data.Name].VehicleHash = unchecked((uint)data.VehicleModelHash);
+                                        Npcs[data.Name].VehicleRotation = data.Quaternion.ToVector();
+                                        //data.Quaternion.ToQuaternion();
+                                        Npcs[data.Name].PedHealth = data.PlayerHealth;
+                                        Npcs[data.Name].VehicleHealth = data.VehicleHealth;
+                                        //Npcs[data.Name].VehiclePrimaryColor = data.PrimaryColor;
+                                        //Npcs[data.Name].VehicleSecondaryColor = data.SecondaryColor;
+                                        Npcs[data.Name].VehicleSeat = data.VehicleSeat;
+                                        Npcs[data.Name].IsInVehicle = true;
+
+                                        Npcs[data.Name].IsHornPressed = data.IsPressingHorn;
+                                        Npcs[data.Name].Speed = data.Speed;
+                                        Npcs[data.Name].Siren = data.IsSirenActive;
+                                    }
+                                }
+                                    break;
+                                case PacketType.NpcPedPositionData:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<PedData>(msg1.ReadBytes(len)) as PedData;
+                                    if (data == null) return;
+
+                                    lock (Npcs)
+                                    {
+                                        if (!Npcs.ContainsKey(data.Name))
+                                        {
+                                            var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
+                                                //data.Quaternion.ToQuaternion(), false);
+                                                data.Quaternion.ToVector(), false);
+                                            Npcs.Add(data.Name, repr);
+                                            Npcs[data.Name].Name = "";
+                                            Npcs[data.Name].Host = data.Id;
+                                        }
+                                        if (Npcs[data.Name].Character != null)
+                                            NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
+
+                                        Npcs[data.Name].LastUpdateReceived = DateTime.Now;
+                                        Npcs[data.Name].Position = data.Position.ToVector();
+                                        Npcs[data.Name].ModelHash = unchecked((uint)data.PedModelHash);
+                                        //Npcs[data.Name].Rotation = data.Quaternion.ToVector();
+                                        Npcs[data.Name].Rotation = data.Quaternion.ToVector();
+                                        Npcs[data.Name].PedHealth = data.PlayerHealth;
+                                        Npcs[data.Name].IsInVehicle = false;
+                                        Npcs[data.Name].AimCoords = data.AimCoords.ToVector();
+                                        Npcs[data.Name].CurrentWeapon = data.WeaponHash;
+                                        Npcs[data.Name].IsAiming = data.IsAiming;
+                                        Npcs[data.Name].IsJumping = data.IsJumping;
+                                        Npcs[data.Name].IsShooting = data.IsShooting;
+                                        Npcs[data.Name].IsParachuteOpen = data.IsParachuteOpen;
+                                    }
+                                }
+                                    break;
+                                case PacketType.CreateEntity:
+                                {
+                                    var len = msg1.ReadInt32();
+                                        LogManager.DebugLog("Received CreateEntity");
+                                    var data = DeserializeBinary<CreateEntity>(msg1.ReadBytes(len)) as CreateEntity;
+                                    if (data != null && data.Properties != null)
+                                    {
+                                        LogManager.DebugLog("CreateEntity was not null. Type: " + data.EntityType);
+                                        LogManager.DebugLog("Model: " + data.Properties.ModelHash);
+                                        if (data.EntityType == (byte) EntityType.Vehicle)
+                                        {
+                                            var prop = (VehicleProperties) data.Properties;
+                                            var veh = NetEntityHandler.CreateVehicle(new Model(unchecked((uint)data.Properties.ModelHash)),
+                                                data.Properties.Position?.ToVector() ?? new Vector3(),
+                                                data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
+                                            LogManager.DebugLog("Settings vehicle color 1");
+                                            veh.SetColors((VehicleColor)prop.PrimaryColor, (VehicleColor)prop.SecondaryColor);
+                                            LogManager.DebugLog("Settings vehicle extra colors");
+                                            Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
+                                            LogManager.DebugLog("CreateEntity done");
+                                        }
+                                        else if (data.EntityType == (byte) EntityType.Prop)
+                                        {
+                                            LogManager.DebugLog("It was a prop. Spawning...");
+                                            NetEntityHandler.CreateObject(new Model(unchecked((uint)data.Properties.ModelHash)),
+                                                data.Properties.Position?.ToVector() ?? new Vector3(),
+                                                data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
+                                        }
+                                        else if (data.EntityType == (byte) EntityType.Blip)
+                                        {
+                                            var hasBlip = ((BlipProperties) data.Properties).AttachedNetEntity != 0;
+                                            if (hasBlip)
+                                                NetEntityHandler.CreateBlip(NetEntityHandler.NetToEntity(((BlipProperties) data.Properties).AttachedNetEntity), data.NetHandle);
+                                            else
+                                                NetEntityHandler.CreateBlip(data.Properties.Position.ToVector(),
+                                                    data.NetHandle);
+                                        }
+                                        else if (data.EntityType == (byte) EntityType.Marker)
+                                        {
+                                            var prop = (MarkerProperties) data.Properties;
+                                            NetEntityHandler.CreateMarker(prop.MarkerType, prop.Position, prop.Rotation,
+                                                prop.Direction, prop.Scale, prop.Red, prop.Green, prop.Blue, prop.Alpha,
+                                                data.NetHandle);
+                                        }
+                                        else if (data.EntityType == (byte) EntityType.Pickup)
+                                        {
+                                            var amount = ((PickupProperties) data.Properties).Amount;
+                                            NetEntityHandler.CreatePickup(data.Properties.Position.ToVector(),
+                                                data.Properties.Rotation.ToVector(), data.Properties.ModelHash, amount,
+                                                data.NetHandle);
+                                        }
+                                    }
+                                }
+                                    break;
+                                case PacketType.UpdateMarkerProperties:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<CreateEntity>(msg1.ReadBytes(len)) as CreateEntity;
+                                    if (data != null && data.Properties != null)
+                                    {
+                                        if (data.EntityType == (byte) EntityType.Marker &&
+                                            NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                                        {
+                                            var prop = (MarkerProperties) data.Properties;
+                                            NetEntityHandler.Markers[data.NetHandle] = new MarkerProperties()
+                                            {
+                                                MarkerType = prop.MarkerType,
+                                                Alpha = prop.Alpha,
+                                                Blue = prop.Blue,
+                                                Direction = prop.Direction,
+                                                Green = prop.Green,
+                                                Position = prop.Position,
+                                                Red = prop.Red,
+                                                Rotation = prop.Rotation,
+                                                Scale = prop.Scale,
+                                            };
+                                        }
+                                    }
+                                }
+                                    break;
+                                case PacketType.DeleteEntity:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<DeleteEntity>(msg1.ReadBytes(len)) as DeleteEntity;
+                                    if (data != null)
+                                    {
+                                        LogManager.DebugLog("RECEIVED DELETE ENTITY " + data.NetHandle);
+                                        if (NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                                        {
+                                            NetEntityHandler.Markers.Remove(data.NetHandle);
+                                        }
+                                        else
+                                        {
+                                            var entity = NetEntityHandler.NetToEntity(data.NetHandle);
+                                            if (entity != null)
+                                            {
+                                                if (NetEntityHandler.IsBlip(entity.Handle))
+                                                {
+                                                    var ourBlip = World.GetBlipByHandle(entity.Handle);
+                                                    if (ourBlip != null && ourBlip.IsValid()) ourBlip.Delete();
+                                                }
+                                                else if (NetEntityHandler.IsPickup(entity.Handle))
+                                                {
+                                                    Function.Call(Hash.REMOVE_PICKUP, entity.Handle.Value);
+                                                }
+                                                else
+                                                {
+                                                    if (entity.IsValid()) entity.Delete();
+                                                }
+                                                NetEntityHandler.RemoveByNetHandle(data.NetHandle);
+                                            }
+                                        }
+                                    }
+                                }
+                                    break;
+                                case PacketType.StopResource:
+                                {
+                                    var resourceName = msg1.ReadString();
+                                    JavascriptHook.StopScript(resourceName);
+                                }
+                                    break;
+                                case PacketType.FileTransferRequest:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<DataDownloadStart>(msg1.ReadBytes(len)) as DataDownloadStart;
+                                    if (data != null)
+                                    {
+                                        var acceptDownload = DownloadManager.StartDownload(data.Id,
+                                            data.ResourceParent + Path.DirectorySeparatorChar + data.FileName,
+                                            (FileType) data.FileType, data.Length, data.Md5Hash);
+                                        var newMsg = Client.CreateMessage();
+                                        newMsg.Write((int)PacketType.FileAcceptDeny);
+                                        newMsg.Write(data.Id);
+                                        newMsg.Write(acceptDownload);
+                                        Client.SendMessage(newMsg, NetDeliveryMethod.ReliableOrdered, 29);
                                     }
                                     else
                                     {
-                                        var entity = NetEntityHandler.NetToEntity(data.NetHandle);
-                                        if (entity != null)
-                                        {
-                                            if (NetEntityHandler.IsBlip(entity.Handle))
-                                            {
-                                                World.GetBlipByHandle(entity.Handle).Delete();
-                                            }
-                                            else if (NetEntityHandler.IsPickup(entity.Handle))
-                                            {
-                                                Function.Call(Hash.REMOVE_PICKUP, entity.Handle.Value);
-                                            }
-                                            else
-                                            {
-                                                entity.Delete();
-                                            }
-                                            NetEntityHandler.RemoveByNetHandle(data.NetHandle);
-                                        }
+                                        LogManager.DebugLog("DATA WAS NULL ON REQUEST");
                                     }
                                 }
-                            }
-                                break;
-                            case PacketType.StopResource:
-                            {
-                                var resourceName = msg.ReadString();
-                                JavascriptHook.StopScript(resourceName);
-                            }
-                                break;
-                            case PacketType.FileTransferRequest:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<DataDownloadStart>(msg.ReadBytes(len)) as DataDownloadStart;
-                                if (data != null)
+                                    break;
+                                case PacketType.FileTransferTick:
                                 {
-                                    var acceptDownload = DownloadManager.StartDownload(data.Id,
-                                        data.ResourceParent + Path.DirectorySeparatorChar + data.FileName,
-                                        (FileType) data.FileType, data.Length, data.Md5Hash);
-                                    var newMsg = Client.CreateMessage();
-                                    newMsg.Write((int)PacketType.FileAcceptDeny);
-                                    newMsg.Write(data.Id);
-                                    newMsg.Write(acceptDownload);
-                                    Client.SendMessage(newMsg, NetDeliveryMethod.ReliableOrdered, 29);
+                                    var channel = msg1.ReadInt32();
+                                    var len = msg1.ReadInt32();
+                                    var data = msg1.ReadBytes(len);
+                                    DownloadManager.DownloadPart(channel, data);
                                 }
-                                else
+                                    break;
+                                case PacketType.FileTransferComplete:
                                 {
-                                    LogManager.DebugLog("DATA WAS NULL ON REQUEST");
-                                }
-                            }
-                                break;
-                            case PacketType.FileTransferTick:
-                            {
-                                var channel = msg.ReadInt32();
-                                var len = msg.ReadInt32();
-                                var data = msg.ReadBytes(len);
-                                DownloadManager.DownloadPart(channel, data);
-                            }
-                                break;
-                            case PacketType.FileTransferComplete:
-                            {
-                                LogManager.DebugLog("GET TRANSFER COMPLETE");
-                                var id = msg.ReadInt32();
-                                LogManager.DebugLog("ENDING TRANSFER COMPLETE");
-                                DownloadManager.End(id);
-                                LogManager.DebugLog("TRANSFER OVER");
-                             }
-                                break;
-                            case PacketType.ChatData:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<ChatData>(msg.ReadBytes(len)) as ChatData;
-                                if (data != null && !string.IsNullOrEmpty(data.Message))
+                                    LogManager.DebugLog("GET TRANSFER COMPLETE");
+                                    var id = msg1.ReadInt32();
+                                    LogManager.DebugLog("ENDING TRANSFER COMPLETE");
+                                    DownloadManager.End(id);
+                                    LogManager.DebugLog("TRANSFER OVER");
+                                 }
+                                    break;
+                                case PacketType.ChatData:
                                 {
-                                    _chat.AddMessage(data.Sender, data.Message);
-                                }
-                            }
-                                break;
-                            case PacketType.ServerEvent:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
-                                if (data != null)
-                                {
-                                    var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
-                                    switch ((ServerEventType) data.EventType)
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<ChatData>(msg1.ReadBytes(len)) as ChatData;
+                                    if (data != null && !string.IsNullOrEmpty(data.Message))
                                     {
-                                        case ServerEventType.PlayerSpectatorChange:
+                                        _chat.AddMessage(data.Sender, data.Message);
+                                    }
+                                }
+                                    break;
+                                case PacketType.ServerEvent:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<SyncEvent>(msg1.ReadBytes(len)) as SyncEvent;
+                                    if (data != null)
+                                    {
+                                        var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
+                                        switch ((ServerEventType) data.EventType)
                                         {
-                                            var netHandle = (int)args[0];
-                                            var spectating = (bool)args[1];
-                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                            lock (Opponents)
-                                            if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
+                                            case ServerEventType.PlayerSpectatorChange:
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
-                                                {
-                                                    pair.Value.IsSpectating = spectating;
-                                                    if (spectating)
-                                                        pair.Value.Clear();
-                                                }
-                                            }
-                                            else if (lclHndl != null && lclHndl.Handle == Game.LocalPlayer.Character.Handle)
-                                            {
-                                                IsSpectating = spectating;
-                                                if (spectating && args.Count >= 3)
-                                                {
-                                                    var target = (int) args[2];
-                                                    var targetHandle = NetEntityHandler.NetToEntity(target);
-
-                                                    var pair =
-                                                        Opponents.FirstOrDefault(
-                                                            op => op.Value.Character?.Handle == targetHandle.Handle);
-                                                    if (pair.Value != null)
-                                                    {
-                                                        pair.Value.Clear();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                            break;
-                                        case ServerEventType.PlayerBlipColorChange:
-                                        {
-                                            var netHandle = (int)args[0];
-                                            var newColor = (int)args[1];
-                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                            lock (Opponents)
-                                            if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
-                                            {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
-                                                {
-                                                    pair.Value.BlipColor = newColor;
-                                                    if (pair.Value.Character != null && pair.Value.Character.GetAttachedBlip() != null)
-                                                        pair.Value.Character.GetAttachedBlip().Color = TabMapItem.GetBlipcolor(newColor, 255);
-                                                }
-                                            }
-                                        }
-                                            break;
-                                        case ServerEventType.PlayerBlipSpriteChange:
-                                        {
-                                            var netHandle = (int)args[0];
-                                            var newSprite = (int)args[1];
-                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                            lock (Opponents)
-                                            if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
+                                                var netHandle = (int)args[0];
+                                                var spectating = (bool)args[1];
+                                                var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                                lock (Opponents)
+                                                if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
                                                 {
                                                     var pair = Opponents.FirstOrDefault(
                                                         op => op.Value.Character?.Handle == lclHndl.Handle);
                                                     if (pair.Value != null)
                                                     {
-                                                        pair.Value.BlipSprite = newSprite;
-                                                        if (pair.Value.Character != null && pair.Value.Character.GetAttachedBlip() != null)
-                                                            pair.Value.Character.GetAttachedBlip().Sprite =
-                                                                (BlipSprite) newSprite;
+                                                        pair.Value.IsSpectating = spectating;
+                                                        if (spectating)
+                                                            pair.Value.Clear();
                                                     }
                                                 }
-                                        }
-                                            break;
-                                        case ServerEventType.PlayerBlipAlphaChange:
+                                                else if (lclHndl != null && lclHndl.Handle == Game.LocalPlayer.Character.Handle)
+                                                {
+                                                    IsSpectating = spectating;
+                                                    if (spectating && args.Count >= 3)
+                                                    {
+                                                        var target = (int) args[2];
+                                                        var targetHandle = NetEntityHandler.NetToEntity(target);
+
+                                                        var pair =
+                                                            Opponents.FirstOrDefault(
+                                                                op => op.Value.Character?.Handle == targetHandle.Handle);
+                                                        if (pair.Value != null)
+                                                        {
+                                                            pair.Value.Clear();
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                                break;
+                                            case ServerEventType.PlayerBlipColorChange:
                                             {
                                                 var netHandle = (int)args[0];
-                                                var newAlpha = (int)args[1];
+                                                var newColor = (int)args[1];
+                                                var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                                lock (Opponents)
+                                                if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
+                                                {
+                                                    var pair = Opponents.FirstOrDefault(
+                                                        op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                    if (pair.Value != null)
+                                                    {
+                                                        pair.Value.BlipColor = newColor;
+                                                        if (pair.Value.Character != null && pair.Value.Character.GetAttachedBlip() != null)
+                                                            pair.Value.Character.GetAttachedBlip().Color = TabMapItem.GetBlipcolor(newColor, 255);
+                                                    }
+                                                }
+                                            }
+                                                break;
+                                            case ServerEventType.PlayerBlipSpriteChange:
+                                            {
+                                                var netHandle = (int)args[0];
+                                                var newSprite = (int)args[1];
                                                 var lclHndl = NetEntityHandler.NetToEntity(netHandle);
                                                 lock (Opponents)
                                                 if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
@@ -2642,569 +2641,595 @@ namespace GTANetwork
                                                             op => op.Value.Character?.Handle == lclHndl.Handle);
                                                         if (pair.Value != null)
                                                         {
-                                                            pair.Value.BlipAlpha = newAlpha;
-                                                            if (pair.Value.Character != null &&
-                                                                pair.Value.Character.GetAttachedBlip() != null)
-                                                                pair.Value.Character.GetAttachedBlip().Alpha = newAlpha;
+                                                            pair.Value.BlipSprite = newSprite;
+                                                            if (pair.Value.Character != null && pair.Value.Character.GetAttachedBlip() != null)
+                                                                pair.Value.Character.GetAttachedBlip().Sprite =
+                                                                    (BlipSprite) newSprite;
                                                         }
                                                     }
                                             }
-                                            break;
-                                        case ServerEventType.PlayerTeamChange:
-                                        {
-                                            var netHandle = (int)args[0];
-                                            var newTeam = (int) args[1];
-                                            var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                            lock (Opponents)
-                                            if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
-                                            {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
+                                                break;
+                                            case ServerEventType.PlayerBlipAlphaChange:
                                                 {
-                                                    pair.Value.Team = newTeam;
-                                                    if (pair.Value.Character != null)
-                                                        pair.Value.Character.RelationshipGroup = (newTeam == LocalTeam &&
-                                                                                                  newTeam != -1)
-                                                            ? pair.Value.FriendRelGroup
-                                                            : pair.Value.RelGroup;
+                                                    var netHandle = (int)args[0];
+                                                    var newAlpha = (int)args[1];
+                                                    var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                                    lock (Opponents)
+                                                    if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
+                                                        {
+                                                            var pair = Opponents.FirstOrDefault(
+                                                                op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                            if (pair.Value != null)
+                                                            {
+                                                                pair.Value.BlipAlpha = newAlpha;
+                                                                if (pair.Value.Character != null &&
+                                                                    pair.Value.Character.GetAttachedBlip() != null)
+                                                                    pair.Value.Character.GetAttachedBlip().Alpha = newAlpha;
+                                                            }
+                                                        }
+                                                }
+                                                break;
+                                            case ServerEventType.PlayerTeamChange:
+                                            {
+                                                var netHandle = (int)args[0];
+                                                var newTeam = (int) args[1];
+                                                var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                                lock (Opponents)
+                                                if (lclHndl != null && lclHndl.Handle != Game.LocalPlayer.Character.Handle)
+                                                {
+                                                    var pair = Opponents.FirstOrDefault(
+                                                        op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                    if (pair.Value != null)
+                                                    {
+                                                        pair.Value.Team = newTeam;
+                                                        if (pair.Value.Character != null)
+                                                            pair.Value.Character.RelationshipGroup = (newTeam == LocalTeam &&
+                                                                                                      newTeam != -1)
+                                                                ? pair.Value.FriendRelGroup
+                                                                : pair.Value.RelGroup;
+                                                    }
+                                                }
+                                                else if (lclHndl != null && lclHndl.Handle == Game.LocalPlayer.Character.Handle)
+                                                {
+                                                    LocalTeam = newTeam;
+                                                    foreach (var opponent in Opponents)
+                                                    {
+                                                        if (opponent.Value.Character != null &&
+                                                            (opponent.Value.Team == newTeam && newTeam != -1))
+                                                        {
+                                                            opponent.Value.Character.RelationshipGroup =
+                                                                opponent.Value.FriendRelGroup;
+                                                        }
+                                                        else
+                                                        {
+                                                            opponent.Value.Character.RelationshipGroup =
+                                                                opponent.Value.RelGroup;
+                                                        }
+                                                    }
                                                 }
                                             }
-                                            else if (lclHndl != null && lclHndl.Handle == Game.LocalPlayer.Character.Handle)
-                                            {
-                                                LocalTeam = newTeam;
-                                                foreach (var opponent in Opponents)
-                                                {
-                                                    if (opponent.Value.Character != null &&
-                                                        (opponent.Value.Team == newTeam && newTeam != -1))
-                                                    {
-                                                        opponent.Value.Character.RelationshipGroup =
-                                                            opponent.Value.FriendRelGroup;
-                                                    }
-                                                    else
-                                                    {
-                                                        opponent.Value.Character.RelationshipGroup =
-                                                            opponent.Value.RelGroup;
-                                                    }
-                                                }
-                                            }
+                                                break;
                                         }
-                                            break;
                                     }
                                 }
-                            }
-                                break;
-                            case PacketType.SyncEvent:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
-                                if (data != null)
+                                    break;
+                                case PacketType.SyncEvent:
                                 {
-                                    var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
-                                    LogManager.DebugLog("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
-                                    switch ((SyncEventType) data.EventType)
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<SyncEvent>(msg1.ReadBytes(len)) as SyncEvent;
+                                    if (data != null)
                                     {
-                                        case SyncEventType.LandingGearChange:
+                                        var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
+                                        LogManager.DebugLog("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
+                                        switch ((SyncEventType) data.EventType)
                                         {
-                                            var veh = NetEntityHandler.NetToEntity((int) args[0]);
-                                            var newState = (int) args[1];
-                                            if (veh == null) return;
-                                            Function.Call(Hash._SET_VEHICLE_LANDING_GEAR, veh, newState);
-                                        }
-                                            break;
-                                        case SyncEventType.DoorStateChange:
-                                        {
-                                            var veh = (Vehicle)NetEntityHandler.NetToEntity((int) args[0]);
-                                            if (veh == null) return;
+                                            case SyncEventType.LandingGearChange:
+                                            {
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var newState = (int) args[1];
+                                                if (veh == null) return;
+                                                Function.Call(Hash._SET_VEHICLE_LANDING_GEAR, veh, newState);
+                                            }
+                                                break;
+                                            case SyncEventType.DoorStateChange:
+                                            {
+                                                var veh = (Vehicle)NetEntityHandler.NetToEntity((int) args[0]);
+                                                if (veh == null) return;
 
-                                            var doorId = (int) args[1];
-                                            var newFloat = (bool) args[2];
+                                                var doorId = (int) args[1];
+                                                var newFloat = (bool) args[2];
                                             
-                                            if (newFloat)
-                                                veh.Doors[doorId].Open(false, true);
-                                            else
-                                                veh.Doors[doorId].Close(true);
-                                        }
-                                            break;
-                                        case SyncEventType.BooleanLights:
-                                        {
-                                            var veh = NetEntityHandler.NetToEntity((int) args[0]);
-                                            var lightId = (Lights) (int) args[1];
-                                            var state = (bool) args[2];
-                                            if (veh == null) return;
-                                            if (lightId == Lights.NormalLights)
-                                                World.GetEntityByHandle<Vehicle>(veh.Handle).LightsOn(state);
-                                            else if (lightId == Lights.Highbeams)
-                                                Function.Call(Hash.SET_VEHICLE_FULLBEAM, veh.Handle.Value, state);
-                                        }
-                                            break;
-                                        case SyncEventType.TrailerDeTach:
-                                        {
-                                            var newState = (bool) args[0];
-                                            if (!newState)
-                                            {
-                                                var car = NetEntityHandler.NetToEntity((int) args[1]);
-                                                if (car != null)
-                                                    Function.Call(Hash.DETACH_VEHICLE_FROM_TRAILER, car.Handle.Value);
+                                                if (newFloat)
+                                                    veh.Doors[doorId].Open(false, true);
+                                                else
+                                                    veh.Doors[doorId].Close(true);
                                             }
-                                            else
+                                                break;
+                                            case SyncEventType.BooleanLights:
                                             {
-                                                var car = NetEntityHandler.NetToEntity((int) args[1]);
-                                                var trailer = NetEntityHandler.NetToEntity((int) args[2]);
-                                                if (car != null && trailer != null)
-                                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, car, trailer, 4f);
+                                                var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                                var lightId = (Lights) (int) args[1];
+                                                var state = (bool) args[2];
+                                                if (veh == null) return;
+                                                if (lightId == Lights.NormalLights)
+                                                    World.GetEntityByHandle<Vehicle>(veh.Handle).LightsOn(state);
+                                                else if (lightId == Lights.Highbeams)
+                                                    Function.Call(Hash.SET_VEHICLE_FULLBEAM, veh.Handle.Value, state);
                                             }
-                                        }
-                                        break;
-                                        case SyncEventType.TireBurst:
-                                        {
-                                            var veh = (Vehicle)NetEntityHandler.NetToEntity((int)args[0]);
-                                            var tireId = (int)args[1];
-                                            var isBursted = (bool)args[2];
-                                            if (veh == null) return;
-                                            if (isBursted)
-                                                veh.Wheels[tireId].BurstTire();
-                                            else
-                                                veh.Wheels[tireId].FixTire();
-                                        }
-                                        break;
-                                        case SyncEventType.RadioChange:
-                                        {
-                                            var veh = NetEntityHandler.NetToEntity((int)args[0]);
-                                            var newRadio = (int) args[1];
-                                            if (veh != null)
+                                                break;
+                                            case SyncEventType.TrailerDeTach:
                                             {
-                                                var rad = (RadioStation) newRadio;
-                                                string radioName = "OFF";
-                                                if (rad != RadioStation.OFF)
+                                                var newState = (bool) args[0];
+                                                if (!newState)
                                                 {
-                                                    radioName = Function.Call<string>(Hash.GET_RADIO_STATION_NAME,
-                                                        newRadio);
+                                                    var car = NetEntityHandler.NetToEntity((int) args[1]);
+                                                    if (car != null)
+                                                        Function.Call(Hash.DETACH_VEHICLE_FROM_TRAILER, car.Handle.Value);
                                                 }
-                                                Function.Call(Hash.SET_VEH_RADIO_STATION, veh, radioName);
+                                                else
+                                                {
+                                                    var car = NetEntityHandler.NetToEntity((int) args[1]);
+                                                    var trailer = NetEntityHandler.NetToEntity((int) args[2]);
+                                                    if (car != null && trailer != null)
+                                                        Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, car, trailer, 4f);
+                                                }
                                             }
-                                        }
-                                        break;
-                                        case SyncEventType.PickupPickedUp:
-                                        {
-                                            var pickupId = NetEntityHandler.NetToEntity((int) args[0]);
-                                            if (pickupId != null && NetEntityHandler.IsPickup(pickupId.Handle))
-                                            {
-                                                Function.Call(Hash.REMOVE_PICKUP, pickupId.Handle.Value);
-                                            }
-                                        }
                                             break;
+                                            case SyncEventType.TireBurst:
+                                            {
+                                                var veh = (Vehicle)NetEntityHandler.NetToEntity((int)args[0]);
+                                                var tireId = (int)args[1];
+                                                var isBursted = (bool)args[2];
+                                                if (veh == null) return;
+                                                if (isBursted)
+                                                    veh.Wheels[tireId].BurstTire();
+                                                else
+                                                    veh.Wheels[tireId].FixTire();
+                                            }
+                                            break;
+                                            case SyncEventType.RadioChange:
+                                            {
+                                                var veh = NetEntityHandler.NetToEntity((int)args[0]);
+                                                var newRadio = (int) args[1];
+                                                if (veh != null)
+                                                {
+                                                    var rad = (RadioStation) newRadio;
+                                                    string radioName = "OFF";
+                                                    if (rad != RadioStation.OFF)
+                                                    {
+                                                        radioName = Function.Call<string>(Hash.GET_RADIO_STATION_NAME,
+                                                            newRadio);
+                                                    }
+                                                    Function.Call(Hash.SET_VEH_RADIO_STATION, veh, radioName);
+                                                }
+                                            }
+                                            break;
+                                            case SyncEventType.PickupPickedUp:
+                                            {
+                                                var pickupId = NetEntityHandler.NetToEntity((int) args[0]);
+                                                if (pickupId != null && NetEntityHandler.IsPickup(pickupId.Handle))
+                                                {
+                                                    Function.Call(Hash.REMOVE_PICKUP, pickupId.Handle.Value);
+                                                }
+                                            }
+                                                break;
+                                        }
                                     }
                                 }
-                            }
-                                break;
-                            case PacketType.PlayerDisconnect:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<PlayerDisconnect>(msg.ReadBytes(len)) as PlayerDisconnect;
-                                lock (Opponents)
+                                    break;
+                                case PacketType.PlayerDisconnect:
                                 {
-                                    if (data != null && Opponents.ContainsKey(data.Id))
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<PlayerDisconnect>(msg1.ReadBytes(len)) as PlayerDisconnect;
+                                    lock (Opponents)
                                     {
-                                        Opponents[data.Id].Clear();
-                                        Opponents.Remove(data.Id);
-
-                                        lock (Npcs)
+                                        if (data != null && Opponents.ContainsKey(data.Id))
                                         {
-                                            foreach (
-                                                var pair in
-                                                    new Dictionary<string, SyncPed>(Npcs).Where(
-                                                        p => p.Value.Host == data.Id))
+                                            Opponents[data.Id].Clear();
+                                            Opponents.Remove(data.Id);
+
+                                            lock (Npcs)
                                             {
-                                                pair.Value.Clear();
-                                                Npcs.Remove(pair.Key);
+                                                foreach (
+                                                    var pair in
+                                                        new Dictionary<string, SyncPed>(Npcs).Where(
+                                                            p => p.Value.Host == data.Id))
+                                                {
+                                                    pair.Value.Clear();
+                                                    Npcs.Remove(pair.Key);
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
-                                break;
-                            case PacketType.ScriptEventTrigger:
-                            {
-                                var len = msg.ReadInt32();
-                                var data =
-                                    DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
-                                if (data != null)
+                                    break;
+                                case PacketType.ScriptEventTrigger:
                                 {
-                                    if (data.Arguments != null)
-                                        JavascriptHook.InvokeServerEvent(data.EventName,
-                                            DecodeArgumentListPure(data.Arguments.ToArray()).ToArray());
-                                    else
-                                        JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
-                                }
-                            }
-                                break;
-                            case PacketType.WorldSharingStop:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = DeserializeBinary<PlayerDisconnect>(msg.ReadBytes(len)) as PlayerDisconnect;
-                                if (data == null) return;
-                                lock (Npcs)
-                                {
-                                    foreach (
-                                        var pair in
-                                            new Dictionary<string, SyncPed>(Npcs).Where(p => p.Value.Host == data.Id)
-                                                .ToList())
+                                    var len = msg1.ReadInt32();
+                                    var data =
+                                        DeserializeBinary<ScriptEventTrigger>(msg1.ReadBytes(len)) as ScriptEventTrigger;
+                                    if (data != null)
                                     {
-                                        pair.Value.Clear();
-                                        Npcs.Remove(pair.Key);
+                                        if (data.Arguments != null)
+                                            JavascriptHook.InvokeServerEvent(data.EventName,
+                                                DecodeArgumentListPure(data.Arguments.ToArray()).ToArray());
+                                        else
+                                            JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
                                     }
                                 }
-                            }
-                                break;
-                            case PacketType.NativeCall:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
-                                if (data == null) return;
-                                LogManager.DebugLog("RECEIVED NATIVE CALL " + data.Hash);
-                                DecodeNativeCall(data);
-                            }
-                                break;
-                            case PacketType.NativeTick:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = (NativeTickCall) DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
-                                if (data == null) return;
-                                lock (_tickNatives)
+                                    break;
+                                case PacketType.WorldSharingStop:
                                 {
-                                    if (!_tickNatives.ContainsKey(data.Identifier))
-                                        _tickNatives.Add(data.Identifier, data.Native);
+                                    var len = msg1.ReadInt32();
+                                    var data = DeserializeBinary<PlayerDisconnect>(msg1.ReadBytes(len)) as PlayerDisconnect;
+                                    if (data == null) return;
+                                    lock (Npcs)
+                                    {
+                                        foreach (
+                                            var pair in
+                                                new Dictionary<string, SyncPed>(Npcs).Where(p => p.Value.Host == data.Id)
+                                                    .ToList())
+                                        {
+                                            pair.Value.Clear();
+                                            Npcs.Remove(pair.Key);
+                                        }
+                                    }
+                                }
+                                    break;
+                                case PacketType.NativeCall:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = (NativeData) DeserializeBinary<NativeData>(msg1.ReadBytes(len));
+                                    if (data == null) return;
+                                    LogManager.DebugLog("RECEIVED NATIVE CALL " + data.Hash);
+                                    DecodeNativeCall(data);
+                                }
+                                    break;
+                                case PacketType.NativeTick:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = (NativeTickCall) DeserializeBinary<NativeTickCall>(msg1.ReadBytes(len));
+                                    if (data == null) return;
+                                    lock (_tickNatives)
+                                    {
+                                        if (!_tickNatives.ContainsKey(data.Identifier))
+                                            _tickNatives.Add(data.Identifier, data.Native);
 
-                                    _tickNatives[data.Identifier] = data.Native;
+                                        _tickNatives[data.Identifier] = data.Native;
+                                    }
                                 }
-                            }
-                                break;
-                            case PacketType.NativeTickRecall:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = (NativeTickCall) DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
-                                if (data == null) return;
-                                lock (_tickNatives)
-                                    if (_tickNatives.ContainsKey(data.Identifier)) _tickNatives.Remove(data.Identifier);
-                            }
-                                break;
-                            case PacketType.NativeOnDisconnect:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
-                                if (data == null) return;
-                                lock (_dcNatives)
+                                    break;
+                                case PacketType.NativeTickRecall:
                                 {
-                                    if (!_dcNatives.ContainsKey(data.Id)) _dcNatives.Add(data.Id, data);
-                                    _dcNatives[data.Id] = data;
+                                    var len = msg1.ReadInt32();
+                                    var data = (NativeTickCall) DeserializeBinary<NativeTickCall>(msg1.ReadBytes(len));
+                                    if (data == null) return;
+                                    lock (_tickNatives)
+                                        if (_tickNatives.ContainsKey(data.Identifier)) _tickNatives.Remove(data.Identifier);
                                 }
+                                    break;
+                                case PacketType.NativeOnDisconnect:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = (NativeData) DeserializeBinary<NativeData>(msg1.ReadBytes(len));
+                                    if (data == null) return;
+                                    lock (_dcNatives)
+                                    {
+                                        if (!_dcNatives.ContainsKey(data.Id)) _dcNatives.Add(data.Id, data);
+                                        _dcNatives[data.Id] = data;
+                                    }
+                                }
+                                    break;
+                                case PacketType.NativeOnDisconnectRecall:
+                                {
+                                    var len = msg1.ReadInt32();
+                                    var data = (NativeData) DeserializeBinary<NativeData>(msg1.ReadBytes(len));
+                                    if (data == null) return;
+                                    lock (_dcNatives) if (_dcNatives.ContainsKey(data.Id)) _dcNatives.Remove(data.Id);
+                                }
+                                    break;
                             }
-                                break;
-                            case PacketType.NativeOnDisconnectRecall:
-                            {
-                                var len = msg.ReadInt32();
-                                var data = (NativeData) DeserializeBinary<NativeData>(msg.ReadBytes(len));
-                                if (data == null) return;
-                                lock (_dcNatives) if (_dcNatives.ContainsKey(data.Id)) _dcNatives.Remove(data.Id);
-                            }
-                                break;
                         }
-                    }
-                    else if (msg.MessageType == NetIncomingMessageType.ConnectionLatencyUpdated)
-                    {
-                        Latency = msg.ReadFloat();
-                    }
-                    else if (msg.MessageType == NetIncomingMessageType.StatusChanged)
-                    {
-                        var newStatus = (NetConnectionStatus) msg.ReadByte();
-                        LogManager.DebugLog("NEW STATUS: " + newStatus);
-                        switch (newStatus)
+                        else if (msg1.MessageType == NetIncomingMessageType.ConnectionLatencyUpdated)
                         {
-                            case NetConnectionStatus.InitiatedConnect:
-                                Util.SafeNotify("Connecting...");
-                                LocalTeam = -1;
-                                Function.Call(Hash.REMOVE_ALL_PED_WEAPONS, Game.LocalPlayer.Character, true);
-                                Game.LocalPlayer.Character.Health = Game.LocalPlayer.Character.MaxHealth;
-                                Game.LocalPlayer.Character.Armor = 0;
-                                break;
-                            case NetConnectionStatus.Connected:
-                                Util.SafeNotify("Connection successful!");
-                                var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
-                                var respObj =
-                                    DeserializeBinary<ConnectionResponse>(
-                                        msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
-                                if (respObj == null)
-                                {
-                                    Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
-                                    return;
-                                }
-                                _channel = respObj.AssignedChannel;
-                                NetEntityHandler.AddEntity(respObj.CharacterHandle, uint.MaxValue);
-
-                                var confirmObj = Client.CreateMessage();
-                                confirmObj.Write((int) PacketType.ConnectionConfirmed);
-                                confirmObj.Write(false);
-                                Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
-                                JustJoinedServer = true;
-                                MainMenu.Tabs.RemoveAt(0);
-                                MainMenu.Tabs.Insert(0, _serverItem);
-                                MainMenu.Tabs.Insert(0, _mainMapItem);
-                                MainMenu.RefreshIndex();
-                                break;
-                            case NetConnectionStatus.Disconnected:
-                                var reason = msg.ReadString();
-                                Util.SafeNotify("You have been disconnected" +
-                                          (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
-                                DEBUG_STEP = 40;
-                                lock (Opponents)
-                                {
-                                    DEBUG_STEP = 41;
-                                    if (Opponents != null)
-                                    {
-                                        DEBUG_STEP = 42;
-                                        Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                        Opponents.Clear();
-                                    }
-                                }
-                                DEBUG_STEP = 43;
-                                lock (Npcs)
-                                {
-                                    if (Npcs != null)
-                                    {
-                                        Npcs.ToList().ForEach(pair => pair.Value.Clear());
-                                        Npcs.Clear();
-                                    }
-                                }
-                                DEBUG_STEP = 44;
-                                lock (EntityCleanup)
-                                {
-                                    EntityCleanup.ForEach(ent => World.GetEntityByHandle<Rage.Object>((uint)ent).Delete());
-                                    EntityCleanup.Clear();
-                                }
-
-                                DEBUG_STEP = 47;
-
-                                lock (BlipCleanup)
-                                {
-                                    BlipCleanup.ForEach(blip => World.GetBlipByHandle(blip).Delete());
-                                    BlipCleanup.Clear();
-                                }
-
-                                DEBUG_STEP = 48;
-
-                                _chat.Clear();
-                                DEBUG_STEP = 49;
-
-                                NetEntityHandler.ClearAll();
-                                DEBUG_STEP = 50;
-                                JavascriptHook.StopAllScripts();
-                                DEBUG_STEP = 51;
-                                DownloadManager.Cancel();
-                                DEBUG_STEP = 52;
-                                MainMenu.TemporarilyHidden = false;
-                                JustJoinedServer = false;
-                                DEBUG_STEP = 53;
-                                MainMenu.Tabs.Remove(_serverItem);
-                                MainMenu.Tabs.Remove(_mainMapItem);
-                                DEBUG_STEP = 54;
-                                if (!MainMenu.Tabs.Contains(_welcomePage))
-                                    MainMenu.Tabs.Insert(0, _welcomePage);
-                                DEBUG_STEP = 55;
-                                MainMenu.RefreshIndex();
-                                _localMarkers.Clear();
-
-                                DEBUG_STEP = 56;
-
-                                MainMenuCamera.Active = true;
-                                MainMenu.Visible = true;
-                                IsSpectating = false;
-                                Weather = null;
-                                Time = null;
-                                LocalTeam = -1;
-                                DEBUG_STEP = 57;
-
-                                Game.LocalPlayer.Character.Position = _vinewoodSign;
-                                Util.SetPlayerSkin(0x4498DDE); // Clown01SMY
-                                Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Game.LocalPlayer.Character.Handle.Value);
-                                break;
+                            Latency = msg1.ReadFloat();
                         }
-                    }
-                    else if (msg.MessageType == NetIncomingMessageType.DiscoveryResponse)
-                    {
-                        var discType = msg.ReadInt32();
-                        var len = msg.ReadInt32();
-                        var bin = msg.ReadBytes(len);
-                        var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;
-                        if (data == null) return;
+                        else if (msg1.MessageType == NetIncomingMessageType.StatusChanged)
+                        {
+                            var newStatus = (NetConnectionStatus) msg1.ReadByte();
+                            LogManager.DebugLog("NEW STATUS: " + newStatus);
+                            switch (newStatus)
+                            {
+                                case NetConnectionStatus.InitiatedConnect:
+                                    Util.SafeNotify("Connecting...");
+                                    LocalTeam = -1;
+                                    Function.Call(Hash.REMOVE_ALL_PED_WEAPONS, Game.LocalPlayer.Character, true);
+                                    Game.LocalPlayer.Character.Health = Game.LocalPlayer.Character.MaxHealth;
+                                    Game.LocalPlayer.Character.Armor = 0;
+                                    break;
+                                case NetConnectionStatus.Connected:
+                                    Util.SafeNotify("Connection successful!");
+                                    var respLen = msg1.SenderConnection.RemoteHailMessage.ReadInt32();
+                                    var respObj =
+                                        DeserializeBinary<ConnectionResponse>(
+                                            msg1.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
+                                    if (respObj == null)
+                                    {
+                                        Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
+                                        return;
+                                    }
+                                    _channel = respObj.AssignedChannel;
+                                    NetEntityHandler.AddEntity(respObj.CharacterHandle, uint.MaxValue);
 
-                        var itemText = msg.SenderEndPoint.Address.ToString() + ":" + data.Port;
+                                    var confirmObj = Client.CreateMessage();
+                                    confirmObj.Write((int) PacketType.ConnectionConfirmed);
+                                    confirmObj.Write(false);
+                                    Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+                                    JustJoinedServer = true;
+                                    MainMenu.Tabs.RemoveAt(0);
+                                    MainMenu.Tabs.Insert(0, _serverItem);
+                                    MainMenu.Tabs.Insert(0, _mainMapItem);
+                                    MainMenu.RefreshIndex();
+                                    break;
+                                case NetConnectionStatus.Disconnected:
+                                    var reason = msg1.ReadString();
+                                    Util.SafeNotify("You have been disconnected" +
+                                              (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
+                                    DEBUG_STEP = 40;
+                                    lock (Opponents)
+                                    {
+                                        DEBUG_STEP = 41;
+                                        if (Opponents != null)
+                                        {
+                                            DEBUG_STEP = 42;
+                                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                            Opponents.Clear();
+                                        }
+                                    }
+                                    DEBUG_STEP = 43;
+                                    lock (Npcs)
+                                    {
+                                        if (Npcs != null)
+                                        {
+                                            Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                            Npcs.Clear();
+                                        }
+                                    }
+                                    DEBUG_STEP = 44;
+                                    lock (EntityCleanup)
+                                    {
+                                        EntityCleanup.ForEach(ent =>
+                                        {
+                                            int handle = ent.ToInt();
+                                            Function.Call(Hash.SET_ENTITY_AS_MISSION_ENTITY, handle, true, false);
+                                            unsafe { Function.Call(Hash.DELETE_ENTITY, &handle); }
+                                        });
+                                        EntityCleanup.Clear();
+                                    }
 
-                        var matchedItems = new List<UIMenuItem>();
+                                    DEBUG_STEP = 47;
 
-                        matchedItems.Add(_serverBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-                        matchedItems.Add(_recentBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-                        matchedItems.Add(_favBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-                        matchedItems.Add(_lanBrowser.Items.FirstOrDefault(i => i.Description == itemText));
-                        matchedItems = matchedItems.Distinct().ToList();
+                                    lock (BlipCleanup)
+                                    {
+                                        BlipCleanup.ForEach(blip => World.GetBlipByHandle(blip)?.Delete());
+                                        BlipCleanup.Clear();
+                                    }
 
-                        _currentOnlinePlayers += data.PlayerCount;
+                                    DEBUG_STEP = 48;
 
-                        MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " + _currentOnlinePlayers;
+                                    _chat.Clear();
+                                    DEBUG_STEP = 49;
+
+                                    NetEntityHandler.ClearAll();
+                                    DEBUG_STEP = 50;
+                                    JavascriptHook.StopAllScripts();
+                                    DEBUG_STEP = 51;
+                                    DownloadManager.Cancel();
+                                    DEBUG_STEP = 52;
+                                    MainMenu.TemporarilyHidden = false;
+                                    JustJoinedServer = false;
+                                    DEBUG_STEP = 53;
+                                    MainMenu.Tabs.Remove(_serverItem);
+                                    MainMenu.Tabs.Remove(_mainMapItem);
+                                    DEBUG_STEP = 54;
+                                    if (!MainMenu.Tabs.Contains(_welcomePage))
+                                        MainMenu.Tabs.Insert(0, _welcomePage);
+                                    DEBUG_STEP = 55;
+                                    MainMenu.RefreshIndex();
+                                    _localMarkers.Clear();
+
+                                    DEBUG_STEP = 56;
+
+                                    MainMenuCamera.Active = true;
+                                    MainMenu.Visible = true;
+                                    IsSpectating = false;
+                                    Weather = null;
+                                    Time = null;
+                                    LocalTeam = -1;
+                                    DEBUG_STEP = 57;
+
+                                    Game.LocalPlayer.Character.Position = _vinewoodSign;
+                                    Util.SetPlayerSkin(0x4498DDE); // Clown01SMY
+                                    Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Game.LocalPlayer.Character.Handle.Value);
+                                    break;
+                            }
+                        }
+                        else if (msg1.MessageType == NetIncomingMessageType.DiscoveryResponse)
+                        {
+                            var discType = msg1.ReadInt32();
+                            var len = msg1.ReadInt32();
+                            var bin = msg1.ReadBytes(len);
+                            var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;
+                            if (data == null) return;
+
+                            var itemText = msg1.SenderEndPoint.Address.ToString() + ":" + data.Port;
+
+                            var matchedItems = new List<UIMenuItem>();
+
+                            matchedItems.Add(_serverBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                            matchedItems.Add(_recentBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                            matchedItems.Add(_favBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                            matchedItems.Add(_lanBrowser.Items.FirstOrDefault(i => i.Description == itemText));
+                            matchedItems = matchedItems.Distinct().ToList();
+
+                            _currentOnlinePlayers += data.PlayerCount;
+
+                            MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " + _currentOnlinePlayers;
                         
-                        if (data.LAN) //  && matchedItems.Count == 0
-                        {
-                            var item = new UIMenuItem(data.ServerName);
-                            var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
-
-                            item.Text = data.ServerName;
-                            item.Description = itemText;
-                            item.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
-
-                            if (data.PasswordProtected)
-                                item.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
-
-                            int lastIndx = 0;
-                            if (_serverBrowser.Items.Count > 0)
-                                lastIndx = _serverBrowser.Index;
-
-                            var gMsg = msg;
-                            item.Activated += (sender, selectedItem) =>
+                            if (data.LAN) //  && matchedItems.Count == 0
                             {
-                                if (IsOnServer())
-                                {
-                                    Client.Disconnect("Switching servers.");
+                                var item = new UIMenuItem(data.ServerName);
+                                var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
 
-                                    if (Opponents != null)
-                                    {
-                                        Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                        Opponents.Clear();
-                                    }
-
-                                    if (Npcs != null)
-                                    {
-                                        Npcs.ToList().ForEach(pair => pair.Value.Clear());
-                                        Npcs.Clear();
-                                    }
-
-                                    while (IsOnServer()) GameFiber.Yield();
-                                }
+                                item.Text = data.ServerName;
+                                item.Description = itemText;
+                                item.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
 
                                 if (data.PasswordProtected)
+                                    item.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+
+                                int lastIndx = 0;
+                                if (_serverBrowser.Items.Count > 0)
+                                    lastIndx = _serverBrowser.Index;
+
+                                var gMsg = msg1;
+                                item.Activated += (sender, selectedItem) =>
                                 {
-                                    _password = Util.GetUserInput("", 256);
-                                }
+                                    if (IsOnServer())
+                                    {
+                                        Client.Disconnect("Switching servers.");
 
-                                _connectTab.RefreshIndex();
-                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
-                                MainMenu.TemporarilyHidden = true;
-                                AddServerToRecent(item);
-                            };
+                                        if (Opponents != null)
+                                        {
+                                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                            Opponents.Clear();
+                                        }
 
-                            _lanBrowser.Items.Add(item);
-                        }
+                                        if (Npcs != null)
+                                        {
+                                            Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                            Npcs.Clear();
+                                        }
+
+                                        while (IsOnServer()) GameFiber.Yield();
+                                    }
+
+                                    if (data.PasswordProtected)
+                                    {
+                                        _password = Util.GetUserInput("", 256);
+                                    }
+
+                                    _connectTab.RefreshIndex();
+                                    ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                                    MainMenu.TemporarilyHidden = true;
+                                    AddServerToRecent(item);
+                                };
+
+                                _lanBrowser.Items.Add(item);
+                            }
                         
 
-                        foreach (var ourItem in matchedItems.Where(k => k != null))
-                        {
-                            var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
-
-                            ourItem.Text = data.ServerName;
-                            ourItem.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
-                            if (PlayerSettings.FavoriteServers.Contains(ourItem.Description))
-                                ourItem.SetRightBadge(UIMenuItem.BadgeStyle.Star);
-
-                            if (data.PasswordProtected)
-                                ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
-
-                            int lastIndx = 0;
-                            if (_serverBrowser.Items.Count > 0)
-                                lastIndx = _serverBrowser.Index;
-
-                            var gMsg = msg;
-                            var data1 = data;
-                            ourItem.Activated += (sender, selectedItem) =>
+                            foreach (var ourItem in matchedItems.Where(k => k != null))
                             {
-                                if (IsOnServer())
-                                {
-                                    Client.Disconnect("Switching servers.");
+                                var gamemode = data.Gamemode == null ? "Unknown" : data.Gamemode;
 
-                                    if (Opponents != null)
+                                ourItem.Text = data.ServerName;
+                                ourItem.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
+                                if (PlayerSettings.FavoriteServers.Contains(ourItem.Description))
+                                    ourItem.SetRightBadge(UIMenuItem.BadgeStyle.Star);
+
+                                if (data.PasswordProtected)
+                                    ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+
+                                int lastIndx = 0;
+                                if (_serverBrowser.Items.Count > 0)
+                                    lastIndx = _serverBrowser.Index;
+
+                                var gMsg = msg1;
+                                var data1 = data;
+                                ourItem.Activated += (sender, selectedItem) =>
+                                {
+                                    if (IsOnServer())
                                     {
-                                        Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                        Opponents.Clear();
+                                        Client.Disconnect("Switching servers.");
+
+                                        if (Opponents != null)
+                                        {
+                                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
+                                            Opponents.Clear();
+                                        }
+
+                                        if (Npcs != null)
+                                        {
+                                            Npcs.ToList().ForEach(pair => pair.Value.Clear());
+                                            Npcs.Clear();
+                                        }
+
+                                        while (IsOnServer()) GameFiber.Yield();
                                     }
 
-                                    if (Npcs != null)
+                                    if (data1.PasswordProtected)
                                     {
-                                        Npcs.ToList().ForEach(pair => pair.Value.Clear());
-                                        Npcs.Clear();
+                                        _password = Util.GetUserInput("", 256);
                                     }
 
-                                    while (IsOnServer()) GameFiber.Yield();
-                                }
 
-                                if (data1.PasswordProtected)
+                                    ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data1.Port);
+                                    MainMenu.TemporarilyHidden = true;
+                                    _connectTab.RefreshIndex();
+                                    AddServerToRecent(ourItem);
+                                };
+
+
+                                if (_serverBrowser.Items.Contains(ourItem))
                                 {
-                                    _password = Util.GetUserInput("", 256);
+                                    _serverBrowser.Items.Remove(ourItem);
+                                    _serverBrowser.Items.Insert(0, ourItem);
+                                    if (_serverBrowser.Focused)
+                                        _serverBrowser.MoveDown();
+                                    else
+                                        _serverBrowser.RefreshIndex();
                                 }
-
-
-                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data1.Port);
-                                MainMenu.TemporarilyHidden = true;
-                                _connectTab.RefreshIndex();
-                                AddServerToRecent(ourItem);
-                            };
-
-
-                            if (_serverBrowser.Items.Contains(ourItem))
-                            {
-                                _serverBrowser.Items.Remove(ourItem);
-                                _serverBrowser.Items.Insert(0, ourItem);
-                                if (_serverBrowser.Focused)
-                                    _serverBrowser.MoveDown();
-                                else
-                                    _serverBrowser.RefreshIndex();
-                            }
-                            else if (_lanBrowser.Items.Contains(ourItem))
-                            {
-                                _lanBrowser.Items.Remove(ourItem);
-                                _lanBrowser.Items.Insert(0, ourItem);
-                                if (_lanBrowser.Focused)
-                                    _lanBrowser.MoveDown();
-                                else
-                                    _lanBrowser.RefreshIndex();
-                            }
-                            else if (_favBrowser.Items.Contains(ourItem))
-                            {
-                                _favBrowser.Items.Remove(ourItem);
-                                _favBrowser.Items.Insert(0, ourItem);
-                                if (_favBrowser.Focused)
-                                    _favBrowser.MoveDown();
-                                else
-                                    _favBrowser.RefreshIndex();
-                            }
-                            else if (_recentBrowser.Items.Contains(ourItem))
-                            {
-                                _recentBrowser.Items.Remove(ourItem);
-                                _recentBrowser.Items.Insert(0, ourItem);
-                                if (_recentBrowser.Focused)
-                                    _recentBrowser.MoveDown();
-                                else
-                                    _recentBrowser.RefreshIndex();
+                                else if (_lanBrowser.Items.Contains(ourItem))
+                                {
+                                    _lanBrowser.Items.Remove(ourItem);
+                                    _lanBrowser.Items.Insert(0, ourItem);
+                                    if (_lanBrowser.Focused)
+                                        _lanBrowser.MoveDown();
+                                    else
+                                        _lanBrowser.RefreshIndex();
+                                }
+                                else if (_favBrowser.Items.Contains(ourItem))
+                                {
+                                    _favBrowser.Items.Remove(ourItem);
+                                    _favBrowser.Items.Insert(0, ourItem);
+                                    if (_favBrowser.Focused)
+                                        _favBrowser.MoveDown();
+                                    else
+                                        _favBrowser.RefreshIndex();
+                                }
+                                else if (_recentBrowser.Items.Contains(ourItem))
+                                {
+                                    _recentBrowser.Items.Remove(ourItem);
+                                    _recentBrowser.Items.Insert(0, ourItem);
+                                    if (_recentBrowser.Focused)
+                                        _recentBrowser.MoveDown();
+                                    else
+                                        _recentBrowser.RefreshIndex();
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception e)
-                {
-                    Util.SafeNotify("Unhandled Exception ocurred in Process Messages");
-                    Util.SafeNotify("Message Type: " + msg.MessageType);
-                    Util.SafeNotify("Data Type: " + type);
-                    Util.SafeNotify(e.Message);
+                    catch (Exception e)
+                    {
+                        Util.SafeNotify("Unhandled Exception ocurred in Process Messages");
+                        Util.SafeNotify("Message Type: " + msg1.MessageType);
+                        Util.SafeNotify("Data Type: " + type);
+                        Util.SafeNotify(e.Message);
 
-                    LogManager.LogException(e, "MAIN PROCESSMESSAGES");
-                }
+                        LogManager.LogException(e, "MAIN PROCESSMESSAGES");
+                    }
+                });
             }
         }
 
@@ -3224,7 +3249,10 @@ namespace GTANetwork
             foreach (var blip in World.GetAllBlips())
             {
                 if (!blip.IsValid()) continue;
-                if (!NetEntityHandler.ContainsLocalHandle(blip.Handle)) blip.Delete();
+                if (!NetEntityHandler.ContainsLocalHandle(blip.Handle))
+                {
+                    blip.Delete();
+                }
             }
 
 
@@ -3529,6 +3557,48 @@ namespace GTANetwork
                 else if (o is NetHandle)
                 {
                     list.Add(new EntityArgument(((NetHandle)o).Value));
+                }
+                else
+                {
+                    list.Add(null);
+                }
+            }
+
+            return list;
+        }
+
+        public static List<Rage.Native.NativeArgument> ParseRageArguments(params object[] args)
+        {
+            var list = new List<Rage.Native.NativeArgument>();
+            foreach (var o in args)
+            {
+                if (o is int)
+                {
+                    list.Add((int)o);
+                }
+                else if (o is uint)
+                {
+                    list.Add((uint)o);
+                }
+                else if (o is string)
+                {
+                    list.Add((string)o);
+                }
+                else if (o is float)
+                {
+                    list.Add((float)o);
+                }
+                else if (o is double)
+                {
+                    list.Add(((float)(double)o));
+                }
+                else if (o is bool)
+                {
+                    list.Add((bool)o);
+                }
+                else if (o is LocalHandle)
+                {
+                    list.Add(((LocalHandle)o).Value.ToInt());
                 }
                 else
                 {

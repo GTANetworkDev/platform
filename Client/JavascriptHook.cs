@@ -278,7 +278,6 @@ namespace GTANetwork
     public class ScriptContext
     {
         internal string ParentResourceName;
-        private BigMessageThread _bigMessageThread = new BigMessageThread(true);
 
         public enum ReturnType
         {
@@ -312,20 +311,20 @@ namespace GTANetwork
             return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
         }
 
-        public void callNative(string hash, params Rage.Native.NativeArgument[] args)
+        public void callNative(string hash, params object[] args)
         {
             Hash ourHash;
             if (!Hash.TryParse(hash, out ourHash))
                 return;
-            Function.Call(ourHash, args);
+            Function.Call(ourHash, Main.ParseRageArguments(args).ToArray());
         }
 
-        public object returnNative(string hash, int returnType, params Rage.Native.NativeArgument[] args)
+        public object returnNative(string hash, int returnType, params object[] args)
         {
             Hash ourHash;
             if (!Hash.TryParse(hash, out ourHash))
                 return null;
-            var fArgs = args;
+            var fArgs = Main.ParseRageArguments(args).ToArray();
             switch ((ReturnType)returnType)
             {
                 case ReturnType.Int:
@@ -367,12 +366,12 @@ namespace GTANetwork
 
         public void showShard(string text)
         {
-            _bigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
+            Main.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
         }
 
         public void showShard(string text, int timeout)
         {
-            _bigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
+            Main.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
         }
 
         public SizeF getScreenResolutionMantainRatio()
