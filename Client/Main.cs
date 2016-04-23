@@ -1142,16 +1142,16 @@ namespace GTANetwork
                     for (int i = 0; i < pair.Value.Doors.Length; i++)
                     {
                         if (pair.Value.Doors[i])
-                            ourVeh.Doors[i].Open((VehicleDoor) i, false, true);
-                        else ourVeh.CloseDoor((VehicleDoor) i, true);
+                            ourVeh.Doors[i].Open(false, true);
+                        else ourVeh.Doors[i].Close(true);
                     }
 
                     for (int i = 0; i < pair.Value.Tires.Length; i++)
                     {
                         if (pair.Value.Tires[i])
                         {
-                            ourVeh.IsInvincible = false;
-                            ourVeh.BurstTire(i);
+                            ourVeh.Invincible = false;
+                            ourVeh.Wheels[i].BurstTire();
                         }
                     }
 
@@ -1174,11 +1174,11 @@ namespace GTANetwork
 
                     if (pair.Value.IsDead)
                     {
-                        ourVeh.IsInvincible = false;
+                        ourVeh.Invincible = false;
                         ourVeh.Explode();
                     }
                     else
-                        ourVeh.IsInvincible = true;
+                        ourVeh.Invincible = true;
 
                     ourVeh.Opacity = pair.Value.Alpha / 255f;
                 }
@@ -1249,7 +1249,7 @@ namespace GTANetwork
                 }
             }
 
-            World.CurrentDayTime = new TimeSpan(map.Hours, map.Minutes, 00);
+            World.TimeOfDay = new TimeSpan(map.Hours, map.Minutes, 00);
             Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, map.Weather);
 
             Time = new TimeSpan(map.Hours, map.Minutes, 00);
@@ -1333,7 +1333,7 @@ namespace GTANetwork
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.VehicleSeat = Util.GetPedSeat(player);
                 obj.IsPressingHorn = Game.LocalPlayer.IsPressingHorn;
-                obj.IsSirenActive = veh.SirenActive;
+                obj.IsSirenActive = veh.IsSirenOn;
                 obj.Speed = veh.Speed;
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = player.Armor;
@@ -1343,16 +1343,16 @@ namespace GTANetwork
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.LocalPlayer.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
                     obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.LocalPlayer.Character);
-                    obj.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
+                    obj.IsShooting = Game.IsControlPressed(0, GameControl.VehicleFlyAttack);
                 }
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.LocalPlayer.Character)))
                 {
-                    obj.IsShooting = Game.IsControlPressed(0, Control.VehicleAttack);
+                    obj.IsShooting = Game.IsControlPressed(0, GameControl.VehicleAttack);
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
                 }
                 else
                 {
-                    obj.IsShooting = Game.IsControlPressed(0, Control.Attack);
+                    obj.IsShooting = Game.IsControlPressed(0, GameControl.Attack);
                     //obj.IsShooting = Game.LocalPlayer.Character.IsShooting;
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
 
@@ -1382,8 +1382,8 @@ namespace GTANetwork
             }
             else
             {
-                bool aiming = Game.IsControlPressed(0, GTA.Control.Aim);
-                bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, player.Handle);
+                bool aiming = Game.IsControlPressed(0, GameControl.Aim);
+                bool shooting = player.IsShooting;
 
                 Vector3 aimCoord = new Vector3();
                 if (aiming || shooting)
@@ -1397,17 +1397,15 @@ namespace GTANetwork
                 obj.Quaternion = player.Rotation.ToVector().ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsRagdoll = player.IsRagdoll;
-                obj.IsFreefallingWithChute =
-                        Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.LocalPlayer.Character.Handle) == 0 &&
-                        Game.LocalPlayer.Character.IsInAir;
+                obj.IsFreefallingWithChute = player.IsInParachuteFreeFall;
                 obj.IsInMeleeCombat = player.IsInMeleeCombat;
                 obj.PedModelHash = unchecked((int)player.Model.Hash);
                 obj.WeaponHash = (int)player.Inventory.EquippedWeapon.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.IsAiming = aiming;
-                obj.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack));
-                obj.IsJumping = Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle);
-                obj.IsParachuteOpen = Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.LocalPlayer.Character.Handle) == 2;
+                obj.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, GameControl.Attack));
+                obj.IsJumping = player.IsJumping;
+                obj.IsParachuteOpen = player.ParachuteState != ParachuteState.None;
                 obj.Speed = player.Velocity.Length();
 
                 //obj.PedProps = CheckPlayerProps();
@@ -1589,9 +1587,8 @@ namespace GTANetwork
 
             DEBUG_STEP = 0;
 
-            Game.DisableControl(0, Control.FrontendPauseAlternate);
-            
-            if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
+            Game.DisableControlAction(0, GameControl.FrontendPauseAlternate, true);            
+            if (Game.IsControlJustPressed(0, GameControl.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
             {
                 MainMenu.Visible = true;
 
@@ -1621,7 +1618,7 @@ namespace GTANetwork
             if (!MainMenu.Visible || MainMenu.TemporarilyHidden)
                 _chat.Tick();
             
-            if (_isGoingToCar && Game.IsControlJustPressed(0, Control.PhoneCancel))
+            if (_isGoingToCar && Game.IsControlJustPressed(0, GameControl.CellphoneCancel))
             {
                 Game.LocalPlayer.Character.Tasks.Clear();
                 _isGoingToCar = false;
@@ -1778,7 +1775,7 @@ namespace GTANetwork
             _verionLabel.Draw();
             DEBUG_STEP = 7;
             if (_wasTyping)
-                Game.DisableControl(0, Control.FrontendPauseAlternate);
+                Game.DisableControlAction(0, GameControl.FrontendPauseAlternate, true);
             DEBUG_STEP = 8;
             var playerCar = Game.LocalPlayer.Character.CurrentVehicle;
             DEBUG_STEP = 9;
@@ -1786,22 +1783,22 @@ namespace GTANetwork
             DEBUG_STEP = 10;
             if (playerCar != _lastPlayerCar)
             {
-                if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = true;
-                if (playerCar != null) playerCar.IsInvincible = false;
+                if (_lastPlayerCar != null) _lastPlayerCar.Invincible = true;
+                if (playerCar != null) playerCar.Invincible = false;
             }
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;
 
-            Game.DisableControl(0, Control.SpecialAbility);
-            Game.DisableControl(0, Control.SpecialAbilityPC);
-            Game.DisableControl(0, Control.SpecialAbilitySecondary);
-            Game.DisableControl(0, Control.CharacterWheel);
-            Game.DisableControl(0, Control.Phone);
+            Game.DisableControlAction(0, GameControl.SpecialAbility, true);
+            Game.DisableControlAction(0, GameControl.SpecialAbilityPC, true);
+            Game.DisableControlAction(0, GameControl.SpecialAbilitySecondary, true);
+            Game.DisableControlAction(0, GameControl.CharacterWheel, true);
+            Game.DisableControlAction(0, GameControl.Phone, true);
             DEBUG_STEP = 12;
-            if (Game.IsControlPressed(0, Control.Aim) && !Game.LocalPlayer.Character.IsInVehicle() &&
+            if (Game.IsControlPressed(0, GameControl.Aim) && !Game.LocalPlayer.Character.IsInVehicle() &&
                 Game.LocalPlayer.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
             {
-                Game.DisableControl(0, Control.Jump);
+                Game.DisableControlAction(0, GameControl.Jump, true);
             }
             DEBUG_STEP = 13;
             Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f);
@@ -1824,7 +1821,7 @@ namespace GTANetwork
             DEBUG_STEP = 16;
             var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
-                                Game.LocalPlayer.CanControlCharacter);
+                                Game.LocalPlayer.HasControl);
 
             if (hasRespawned && !_lastDead)
             {
@@ -1834,7 +1831,7 @@ namespace GTANetwork
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 
                 if (Weather != null) Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Weather);
-                if (Time.HasValue) World.CurrentDayTime = new TimeSpan(Time.Value.Hours, Time.Value.Minutes, 00);
+                if (Time.HasValue) World.TimeOfDay = new TimeSpan(Time.Value.Hours, Time.Value.Minutes, 00);
 
                 Function.Call(Hash.PAUSE_CLOCK, true);
             }
@@ -1896,17 +1893,17 @@ namespace GTANetwork
             if (IsSpectating && !_lastSpectating)
             {
                 Game.LocalPlayer.Character.Opacity = 0;
-                Game.LocalPlayer.Character.FreezePosition = true;
+                Game.LocalPlayer.Character.IsPositionFrozen = true;
                 Game.LocalPlayer.IsInvincible = true;
-                Game.LocalPlayer.Character.HasCollision = false;
+                Game.LocalPlayer.Character.NeedsCollision = false;
             }
 
             else if (!IsSpectating && _lastSpectating)
             {
                 Game.LocalPlayer.Character.Opacity = 1F;
-                Game.LocalPlayer.Character.FreezePosition = false;
+                Game.LocalPlayer.Character.IsPositionFrozen = false;
                 Game.LocalPlayer.IsInvincible = false;
-                Game.LocalPlayer.Character.HasCollision = true;
+                Game.LocalPlayer.Character.NeedsCollision = true;
                 SpectatingEntity = 0;
                 _currentSpectatingPlayer = null;
                 _currentSpectatingPlayerIndex = 0;
@@ -1924,12 +1921,12 @@ namespace GTANetwork
             {
                 Game.LocalPlayer.Character.PositionNoOffset = _currentSpectatingPlayer.Character.Position;
 
-                if (Game.IsControlJustPressed(0, Control.PhoneLeft))
+                if (Game.IsControlJustPressed(0, GameControl.CellphoneLeft))
                 {
                     _currentSpectatingPlayerIndex--;
                     _currentSpectatingPlayer = null;
                 }
-                else if (Game.IsControlJustPressed(0, Control.PhoneRight))
+                else if (Game.IsControlJustPressed(0, GameControl.CellphoneRight))
                 {
                     _currentSpectatingPlayerIndex++;
                     _currentSpectatingPlayer = null;
@@ -1960,8 +1957,8 @@ namespace GTANetwork
             DEBUG_STEP = 23;
             if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.LocalPlayer.Character) == 2)
             {
-                Game.DisableControl(0, Control.Aim);
-                Game.DisableControl(0, Control.Attack);
+                Game.DisableControlAction(0, GameControl.Aim, true);
+                Game.DisableControlAction(0, GameControl.Attack, true);
             }
             DEBUG_STEP = 24;
             if (_whoseturnisitanyways)
@@ -2150,7 +2147,7 @@ namespace GTANetwork
             var msg = Client.CreateMessage();
 
             var obj = new ConnectionRequest();
-            obj.SocialClubName = string.IsNullOrWhiteSpace(Game.LocalPlayer.Name) ? "Unknown" : Game.LocalPlayer.Name; // To be used as identifiers in server files
+            obj.SocialClubName = string.IsNullOrWhiteSpace(Game.LocalPlayer) ? "Unknown" : Game.LocalPlayer.Name; // To be used as identifiers in server files
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrEmpty(_password)) obj.Password = _password;
             obj.ScriptVersion = (byte)LocalScriptVersion;
@@ -2585,8 +2582,8 @@ namespace GTANetwork
                                                 if (pair.Value != null)
                                                 {
                                                     pair.Value.BlipColor = newColor;
-                                                    if (pair.Value.Character != null && pair.Value.Character.CurrentBlip != null)
-                                                        pair.Value.Character.CurrentBlip.Color = (BlipColor)newColor;
+                                                    if (pair.Value.Character != null && pair.Value.Character.GetAttachedBlip() != null)
+                                                        pair.Value.Character.GetAttachedBlip().Color = (BlipColor)newColor;
                                                 }
                                             }
                                         }
@@ -2604,8 +2601,8 @@ namespace GTANetwork
                                                     if (pair.Value != null)
                                                     {
                                                         pair.Value.BlipSprite = newSprite;
-                                                        if (pair.Value.Character != null && pair.Value.Character.CurrentBlip != null)
-                                                            pair.Value.Character.CurrentBlip.Sprite =
+                                                        if (pair.Value.Character != null && pair.Value.Character.GetAttachedBlip() != null)
+                                                            pair.Value.Character.GetAttachedBlip().Sprite =
                                                                 (BlipSprite) newSprite;
                                                     }
                                                 }
@@ -2625,8 +2622,8 @@ namespace GTANetwork
                                                         {
                                                             pair.Value.BlipAlpha = newAlpha;
                                                             if (pair.Value.Character != null &&
-                                                                pair.Value.Character.CurrentBlip != null)
-                                                                pair.Value.Character.CurrentBlip.Alpha = newAlpha;
+                                                                pair.Value.Character.GetAttachedBlip() != null)
+                                                                pair.Value.Character.GetAttachedBlip().Alpha = newAlpha;
                                                         }
                                                     }
                                             }
@@ -2695,14 +2692,16 @@ namespace GTANetwork
                                             break;
                                         case SyncEventType.DoorStateChange:
                                         {
-                                            var veh = NetEntityHandler.NetToEntity((int) args[0]);
+                                            var veh = (Vehicle)NetEntityHandler.NetToEntity((int) args[0]);
+                                            if (veh == null) return;
+
                                             var doorId = (int) args[1];
                                             var newFloat = (bool) args[2];
-                                            if (veh == null) return;
+                                            
                                             if (newFloat)
-                                                new Vehicle(veh.Handle).OpenDoor((VehicleDoor) doorId, false, true);
+                                                veh.Doors[doorId].Open(false, true);
                                             else
-                                                new Vehicle(veh.Handle).CloseDoor((VehicleDoor) doorId, true);
+                                                veh.Doors[doorId].Close(true);
                                         }
                                             break;
                                         case SyncEventType.BooleanLights:
@@ -2737,15 +2736,15 @@ namespace GTANetwork
                                         break;
                                         case SyncEventType.TireBurst:
                                         {
-                                            var veh = NetEntityHandler.NetToEntity((int)args[0]);
+                                            var veh = (Vehicle)NetEntityHandler.NetToEntity((int)args[0]);
                                             var tireId = (int)args[1];
                                             var isBursted = (bool)args[2];
                                             if (veh == null) return;
                                             if (isBursted)
-                                                new Vehicle(veh.Handle).BurstTire(tireId);
+                                                veh.Wheels[tireId].BurstTire();
                                             else
-                                                new Vehicle(veh.Handle).FixTire(tireId);
-                                         }
+                                                veh.Wheels[tireId].FixTire();
+                                        }
                                         break;
                                         case SyncEventType.RadioChange:
                                         {
@@ -2755,7 +2754,7 @@ namespace GTANetwork
                                             {
                                                 var rad = (RadioStation) newRadio;
                                                 string radioName = "OFF";
-                                                if (rad != RadioStation.RadioOff)
+                                                if (rad != RadioStation.OFF)
                                                 {
                                                     radioName = Function.Call<string>(Hash.GET_RADIO_STATION_NAME,
                                                         newRadio);
@@ -3207,9 +3206,10 @@ namespace GTANetwork
         {
             var player = Game.LocalPlayer.Character;
 
-            foreach (var blip in World.GetActiveBlips())
+            foreach (var blip in World.GetAllBlips())
             {
-                if (!NetEntityHandler.ContainsLocalHandle(blip.Handle)) blip.Remove();
+                if (!blip.IsValid()) continue;
+                if (!NetEntityHandler.ContainsLocalHandle(blip.Handle)) blip.Delete();
             }
 
 
@@ -3239,7 +3239,7 @@ namespace GTANetwork
                     _debugSyncPed.VehicleHealth = veh.Health;
                     _debugSyncPed.VehicleSeat = Util.GetPedSeat(player);
                     _debugSyncPed.IsHornPressed = Game.LocalPlayer.IsPressingHorn;
-                    _debugSyncPed.Siren = veh.SirenActive;
+                    _debugSyncPed.Siren = veh.IsSirenOn;
                     _debugSyncPed.VehicleMods = CheckPlayerVehicleMods();
                     _debugSyncPed.Speed = veh.Speed;
                     _debugSyncPed.IsInVehicle = true;
@@ -3249,11 +3249,11 @@ namespace GTANetwork
                     if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.LocalPlayer.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                     {
                         _debugSyncPed.CurrentWeapon = GetCurrentVehicleWeaponHash(Game.LocalPlayer.Character);
-                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
+                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, GameControl.VehicleFlyAttack);
                     }
                     else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.LocalPlayer.Character)))
                     {
-                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleAttack);
+                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, GameControl.VehicleAttack);
                         _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
                     }
                     else
@@ -3266,8 +3266,8 @@ namespace GTANetwork
                 }
                 else
                 {
-                    bool aiming = Game.IsControlPressed(0, GTA.Control.Aim);
-                    bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, player.Handle);
+                    bool aiming = Game.IsControlPressed(0, GameControl.Aim);
+                    bool shooting = player.IsShooting;
 
                     Vector3 aimCoord = new Vector3();
                     if (aiming || shooting)
@@ -3279,9 +3279,7 @@ namespace GTANetwork
                     _debugSyncPed.PedVelocity = player.Velocity;
                     _debugSyncPed.PedHealth = player.Health;
                     _debugSyncPed.AimCoords = aimCoord;
-                    _debugSyncPed.IsFreefallingWithParachute =
-                        Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.LocalPlayer.Character.Handle) == 0 &&
-                        Game.LocalPlayer.Character.IsInAir;
+                    _debugSyncPed.IsFreefallingWithParachute = Game.LocalPlayer.Character.IsInParachuteFreeFall;
                     _debugSyncPed.PedArmor = player.Armor;
                     _debugSyncPed.Speed = player.Velocity.Length();
                     _debugSyncPed.Position = player.Position + new Vector3(1f, 0, 0);
@@ -3290,10 +3288,10 @@ namespace GTANetwork
                     _debugSyncPed.CurrentWeapon = (int)player.Inventory.EquippedWeapon.Hash;
                     _debugSyncPed.PedHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                     _debugSyncPed.IsAiming = aiming;
-                    _debugSyncPed.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack));
+                    _debugSyncPed.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, GameControl.Attack));
                     //_debugSyncPed.IsInCover = player.IsInCover();
-                    _debugSyncPed.IsJumping = Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle);
-                    _debugSyncPed.IsParachuteOpen = Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.LocalPlayer.Character.Handle) == 2;
+                    _debugSyncPed.IsJumping = player.IsJumping;
+                    _debugSyncPed.IsParachuteOpen = player.ParachuteState != ParachuteState.None;
                     _debugSyncPed.IsInVehicle = false;
                     _debugSyncPed.PedProps = CheckPlayerProps();
                     _debugSyncPed.LastUpdateReceived = DateTime.Now;
@@ -3580,7 +3578,8 @@ namespace GTANetwork
                 if (model.IsValid)
                 {
                     LogManager.DebugLog("MODEL IS VALID, REQUESTING");
-                    model.Request(10000);
+                    if (!model.IsLoaded)
+                        model.Load();
                 }
             }
 
@@ -3594,7 +3593,7 @@ namespace GTANetwork
                 }
 
                 if (model != null)
-                    model.MarkAsNoLongerNeeded();
+                    model.Dismiss();
                 return;
             }
 
