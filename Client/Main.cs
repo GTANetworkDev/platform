@@ -2060,13 +2060,13 @@ namespace GTANetwork
                         seat = VehicleSeat.RightRear;
                     }
 
-                    if (vehs[0].PassengerSeats == 2) seat = VehicleSeat.Passenger;
+                    if (vehs[0].PassengerCapacity == 2) seat = VehicleSeat.Passenger;
 
-                    if (vehs[0].PassengerSeats > 4 && vehs[0].GetPedOnSeat(seat).Handle != 0)
+                    if (vehs[0].PassengerCapacity > 4 && vehs[0].GetPedOnSeat(seat).Handle != 0)
                     {
                         if (seat == VehicleSeat.LeftRear)
                         {
-                            for (int i = 3; i < vehs[0].PassengerSeats; i += 2)
+                            for (int i = 3; i < vehs[0].PassengerCapacity; i += 2)
                             {
                                 if (vehs[0].GetPedOnSeat((VehicleSeat) i).Handle == 0)
                                 {
@@ -2077,9 +2077,9 @@ namespace GTANetwork
                         }
                         else if (seat == VehicleSeat.RightRear)
                         {
-                            for (int i = 4; i < vehs[0].PassengerSeats; i += 2)
+                            for (int i = 4; i < vehs[0].PassengerCapacity; i += 2)
                             {
-                                if (vehs[0].GetPedOnSeat((VehicleSeat)i).Handle == 0)
+                                if (!vehs[0].GetPedOnSeat(i).IsValid())
                                 {
                                     seat = (VehicleSeat)i;
                                     break;
@@ -2967,7 +2967,7 @@ namespace GTANetwork
                                 DEBUG_STEP = 46;
                                 lock (EntityCleanup)
                                 {
-                                    EntityCleanup.ForEach(ent => new Prop(ent).Delete());
+                                    EntityCleanup.ForEach(ent => World.GetEntityByHandle<Entity>((uint)ent).Delete());
                                     EntityCleanup.Clear();
                                 }
 
