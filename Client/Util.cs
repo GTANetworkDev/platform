@@ -47,6 +47,11 @@ namespace GTANetwork
             return Function.Call<Vector3>(Hash.GET_GAMEPLAY_CAM_ROT, 2);
         }
 
+        public static void EnableControl(int controlGroup, GameControl control)
+        {
+            Function.Call(Hash.ENABLE_CONTROL_ACTION, controlGroup, (int)control, true);
+        }
+
         public static unsafe PointF WorldToScreen(Vector3 pos)
         {
             float pointX, pointY;
@@ -118,28 +123,13 @@ namespace GTANetwork
             return Function.Call<string>(Hash.GET_RADIO_STATION_NAME, id);
         }
         
-        public static void DxDrawTexture(int idx, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a)
+        public static void DxDrawTexture(Texture texture, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a)
         {
-            int screenw = Game.Resolution.Width;
-            int screenh = Game.Resolution.Height;
-
-            const float height = 1080f;
-            float ratio = (float)screenw / screenh;
-            float width = height * ratio;
-
-            float reduceX = ClassicChat.UIWIDTH / width;
-            float reduceY = ClassicChat.UIWIDTH / height;
-
-
-            Point extra = new Point(0, 0);
-            if (screenw == 1914 && screenh == 1052)
-                extra = new Point(15, 0);
-
-            /*UI.DrawTexture(filename, idx, 1, 60,
-                new PointF(xPos * reduceX + extra.X, yPos * reduceY + extra.Y),
-                new PointF(0f, 0f),
-                new SizeF(txdWidth * reduceX, txdHeight * reduceY),
-                rot, Color.FromArgb(a, r, g, b), 1f);*/
+            var origRes = Game.Resolution;
+            float aspectRaidou = origRes.Width / (float)origRes.Height;
+            PointF pos = new PointF(xPos / (1080 * aspectRaidou), yPos / 1080f);
+            SizeF siz = new SizeF(txdWidth / (1080 * aspectRaidou), txdHeight / 1080f);
+            EntryPoint.Canvas.Graphics.DrawTexture(texture, pos.X * Game.Resolution.Width, pos.Y * Game.Resolution.Height, siz.Width * Game.Resolution.Width, siz.Height * Game.Resolution.Height);
         }
 
         public static Vector3 ToEuler(this Quaternion q)

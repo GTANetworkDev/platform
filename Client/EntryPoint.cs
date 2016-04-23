@@ -10,9 +10,16 @@ namespace GTANetwork
     {
         private static Main _mainEntry;
 
+        public static GraphicsEventArgs Canvas;
+
         public static void Main()
         {
             _mainEntry = new Main();
+
+            Game.FrameRender += (sender, args) =>
+            {
+                Canvas = args;
+            };
 
             while (true)
             {

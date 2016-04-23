@@ -278,6 +278,21 @@ namespace GTANetwork
             Float = 7
         }
 
+        private Dictionary<string, Texture> TextureDict = new Dictionary<string, Texture>();
+        private Texture GetTexture(string filepath)
+        {
+            if (!TextureDict.ContainsKey(filepath))
+            {
+                var newTxt = Game.CreateTextureFromFile(filepath);
+                TextureDict.Add(filepath, newTxt);
+                return newTxt;
+            }
+            else
+            {
+                return TextureDict[filepath];
+            }
+        }
+
         public LocalHandle NetToLocal(NetHandle handle)
         {
             return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
@@ -459,10 +474,12 @@ namespace GTANetwork
             return FileTransferId._DOWNLOADFOLDER_ + ParentResourceName + "\\" + fileName;
         }
         
-        public void dxDrawTexture(string path, Point pos, Size size, int id = 60)
+
+        
+        public void dxDrawTexture(string path, Point pos, Size size)
         {
             path = getResourceFilePath(path);
-            Util.DxDrawTexture(id, path, pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
+            Util.DxDrawTexture(GetTexture(path), pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
         }
 
         public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading,

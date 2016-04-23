@@ -81,7 +81,7 @@ namespace GTANetwork
             {
                 if (HandleMap.ContainsKey(netId))
                 {
-                    if (HandleMap[netId] == -2) return Game.LocalPlayer.Character;
+                    if (HandleMap[netId] == uint.MaxValue) return Game.LocalPlayer.Character;
                     return World.GetEntityByHandle<Entity>(HandleMap[netId]);
                 }
             }

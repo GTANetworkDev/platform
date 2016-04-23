@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using GTA;
-using GTA.Native;
-using NativeUI;
-using NativeUI.PauseMenu;
-using Font = GTA.Font;
+using System.Windows.Forms;
+using Rage;
+using RAGENativeUI;
+using RAGENativeUI.Elements;
+using RAGENativeUI.PauseMenu;
 
 namespace GTANetwork.GUI
 {
@@ -52,19 +52,19 @@ namespace GTANetwork.GUI
                 return;
             }
 
-            if (Game.IsControlJustPressed(0, Control.FrontendUp) || Game.IsControlJustPressed(0, Control.MoveUpOnly))
+            if (Game.IsControlJustPressed(0, GameControl.FrontendUp) || Game.IsControlJustPressed(0, GameControl.MoveUpOnly))
             {
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET", 1);
                 Index--;
             }
 
-            else if (Game.IsControlJustPressed(0, Control.FrontendDown) || Game.IsControlJustPressed(0, Control.MoveDownOnly))
+            else if (Game.IsControlJustPressed(0, GameControl.FrontendDown) || Game.IsControlJustPressed(0, GameControl.MoveDownOnly))
             {
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET", 1);
                 Index++;
             }
 
-            if (Game.IsControlJustPressed(0, Control.FrontendAccept))
+            if (Game.IsControlJustPressed(0, GameControl.FrontendAccept))
             {
                 Buttons[Index].OnActivated();
             }
@@ -84,7 +84,7 @@ namespace GTANetwork.GUI
                 var hovered = UIMenu.IsMouseInBounds(Buttons[i].Position, Buttons[i].Size);
                 Buttons[i].Hovered = hovered && Index != i;
 
-                if (hovered && Game.IsControlJustPressed(0, Control.CursorAccept))
+                if (hovered && Game.IsControlJustPressed(0, GameControl.CursorAccept))
                 {
                     if (Index != i)
                         Index = i;
@@ -119,11 +119,11 @@ namespace GTANetwork.GUI
         {
             if (!Visible) return;
             var col = Focused ? Hovered ? Active ? Color.FromArgb(200, 255, 255, 255) : Color.FromArgb(100, 50, 50, 50) : Active ? Color.FromArgb(200, 255, 255, 255) : Color.FromArgb(200, 0, 0, 0) : Color.FromArgb(100, 0, 0, 0);
-            new UIResRectangle(Position, Size, col).Draw();
-            new UIResText(Text, Position + new Size(Size.Width/2, 5), 0.35f, Focused ? Active ? Color.Black : Color.White : Color.White, Font.ChaletLondon, UIResText.Alignment.Centered).Draw();
+            new ResRectangle(Position, Size, col).Draw();
+            new ResText(Text, Position + new Size(Size.Width/2, 5), 0.35f, Focused ? Active ? Color.Black : Color.White : Color.White, Common.EFont.ChaletLondon, ResText.Alignment.Centered).Draw();
             if (Active)
             {
-                new UIResRectangle(Position.SubtractPoints(new Point(0, 5)), new Size(Size.Width, 5), Focused ? Color.DodgerBlue : Color.FromArgb(50, Color.DodgerBlue)).Draw();
+                new ResRectangle(Position.SubtractPoints(new Point(0, 5)), new Size(Size.Width, 5), Focused ? Color.DodgerBlue : Color.FromArgb(50, Color.DodgerBlue)).Draw();
             }
         }
     }

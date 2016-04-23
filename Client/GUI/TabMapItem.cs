@@ -28,6 +28,8 @@ namespace GTANetwork.GUI
         private bool _showPlayerBlip;
         private DateTime _lastShowPlayerBlip;
 
+        private Dictionary<string, Texture> TextureDict = new Dictionary<string, Texture>();
+
 
         public TabMapItem() : base("Map")
         {
@@ -56,38 +58,53 @@ namespace GTANetwork.GUI
 
         public override void ProcessControls()
         {
-            if (Game.IsControlPressed(0, Control.MoveDownOnly))
+            if (Game.IsControlPressed(0, GameControl.MoveDownOnly))
             {
                 Position = new PointF(Position.X, Position.Y + (20 / Zoom));
             }
 
-            if (Game.IsControlPressed(0, Control.MoveUpOnly))
+            if (Game.IsControlPressed(0, GameControl.MoveUpOnly))
             {
                 Position = new PointF(Position.X, Position.Y - (20 / Zoom));
             }
 
-            if (Game.IsControlPressed(0, Control.MoveLeftOnly))
+            if (Game.IsControlPressed(0, GameControl.MoveLeftOnly))
             {
                 Position = new PointF(Position.X - (20 / Zoom), Position.Y);
             }
 
-            if (Game.IsControlPressed(0, Control.MoveRightOnly))
+            if (Game.IsControlPressed(0, GameControl.MoveRightOnly))
             {
                 Position = new PointF(Position.X + (20 / Zoom), Position.Y);
             }
 
-            if (Game.IsControlPressed(0, Control.CursorScrollDown))
+            if (Game.IsControlPressed(0, GameControl.CursorScrollDown))
             {
                 Zoom /= 1.1f;
             }
 
-            if (Game.IsControlPressed(0, Control.CursorScrollUp))
+            if (Game.IsControlPressed(0, GameControl.CursorScrollUp))
             {
                 Zoom *= 1.1f;
             }
         }
 
-        public override void Draw()
+        public Texture GetTexture(string filepath)
+        {
+            if (!TextureDict.ContainsKey(filepath))
+            {
+                var newTxt = Game.CreateTextureFromFile(filepath);
+                TextureDict.Add(filepath, newTxt);
+                return newTxt;
+            }
+            else
+            {
+                return TextureDict[filepath];
+            }
+        }
+
+        
+        public void Draw(GraphicsEventArgs e)
         {
             base.Draw();
 
@@ -97,21 +114,21 @@ namespace GTANetwork.GUI
             }
             else
             {
-                Game.EnableControl(0, Control.CursorX);
-                Game.EnableControl(0, Control.CursorY);
+                Util.EnableControl(0, GameControl.CursorX);
+                Util.EnableControl(0, GameControl.CursorY);
                 var res = UIMenu.GetScreenResolutionMantainRatio();
-                var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.CursorX) * res.Width;
-                var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.CursorY) * res.Height;
+                var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GameControl.CursorX) * res.Width;
+                var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GameControl.CursorY) * res.Height;
                 var center = new Point((int)(res.Width/2), (int)(res.Height/2));
 
-                if (Game.IsControlJustPressed(0, Control.CursorAccept))
+                if (Game.IsControlJustPressed(0, GameControl.CursorAccept))
                 {
                     _isHeldDown = true;
                     _heldDownPoint = new PointF(mouseX, mouseY);
                     _mapPosAtHelddown = Position;
                     _holdDownTime = DateTime.Now;
                 }
-                else if (Game.IsControlJustReleased(0, Control.CursorAccept))
+                else if (Game.IsControlJustReleased(0, GameControl.CursorAccept))
                 {
                     Position = _mapPosAtHelddown + new SizeF((_heldDownPoint.X - mouseX) / Zoom, (_heldDownPoint.Y - mouseY) / Zoom);
                     _isHeldDown = false;
@@ -172,10 +189,10 @@ namespace GTANetwork.GUI
 
                 if (_showPlayerBlip)
                 {
-                    Sprite.DrawTexture(BLIP_PATH + "163.png",
+                    Sprite.DrawTexture(GetTexture(BLIP_PATH + "163.png"),
                         new Point((int) (newPos.X + World3DToMap2D(Game.LocalPlayer.Character.Position).Width - 16),
                             (int) (newPos.Y + World3DToMap2D(Game.LocalPlayer.Character.Position).Height - 16)),
-                        new Size(32, 32));
+                        new Size(32, 32), e);
                 }
 
                 if (DateTime.Now.Subtract(_lastShowPlayerBlip).TotalMilliseconds >= 1000)
@@ -187,7 +204,7 @@ namespace GTANetwork.GUI
 
                 var blipList = new List<string>();
 
-                foreach (var blip in World.GetActiveBlips())
+                foreach (var blip in World.GetAllBlips())
                 {
                     if (((int)blip.Sprite) == 8 && File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
                     {
@@ -196,14 +213,14 @@ namespace GTANetwork.GUI
                         var siz = new Size(32, 32);
                         var col = Color.Purple;
 
-                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(GetTexture(fname), pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
                 
                 foreach (var blipHandle in Main.NetEntityHandler.Blips)
                 {
-                    var blip = new Blip(blipHandle);
+                    var blip = World.GetBlipByHandle(blipHandle);
                     if (!blip.Exists()) continue;
 
                     if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
@@ -211,36 +228,34 @@ namespace GTANetwork.GUI
                         var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
                         var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
                         var siz = new Size(32, 32);
-                        var col = GetBlipcolor(blip.Color, blip.Alpha);
                         var ident = fname +
                                     (blipList.Count(k => k == fname) > 0
                                         ? blipList.Count(k => k == fname).ToString()
                                         : "");
-                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(GetTexture(fname), pos.X, pos.Y, siz.Width, siz.Height, 0f, blip.Color.R, blip.Color.G, blip.Color.B, blip.Color.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
 
                 foreach (var opp in Main.Opponents)
                 {
-                    if (opp.Value.Character?.CurrentBlip == null) continue;
+                    if (opp.Value.Character?.GetAttachedBlip() == null) continue;
 
-                    var blip = opp.Value.Character.CurrentBlip;
+                    var blip = opp.Value.Character.GetAttachedBlip();
 
                     if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
                     {
                         var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
                         var pos = newPos + World3DToMap2D(blip.Position) - new Size(8, 8);
                         var siz = new Size(16, 16);
-                        var col = GetBlipcolor(blip.Color, blip.Alpha);
-                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(GetTexture(fname), pos.X, pos.Y, siz.Width, siz.Height, 0f, blip.Color.R, blip.Color.G, blip.Color.B, blip.Color.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
 
                 foreach (var blipHandle in Main.BlipCleanup)
                 {
-                    var blip = new Blip(blipHandle);
+                    var blip = World.GetBlipByHandle(blipHandle);
                     if (!blip.Exists()) continue;
 
                     if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
@@ -248,12 +263,11 @@ namespace GTANetwork.GUI
                         var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
                         var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
                         var siz = new Size(32, 32);
-                        var col = GetBlipcolor(blip.Color, blip.Alpha);
                         var ident = fname +
                                     (blipList.Count(k => k == fname) > 0
                                         ? blipList.Count(k => k == fname).ToString()
                                         : "");
-                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+                        Util.DxDrawTexture(GetTexture(fname), pos.X, pos.Y, siz.Width, siz.Height, 0f, blip.Color.R, blip.Color.G, blip.Color.B, blip.Color.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
@@ -317,8 +331,8 @@ namespace GTANetwork.GUI
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = Game.Resolution.Width;
+            int screenh = Game.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;
@@ -337,8 +351,8 @@ namespace GTANetwork.GUI
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = Game.Resolution.Width;
+            int screenh = Game.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;
@@ -349,7 +363,7 @@ namespace GTANetwork.GUI
             float x = (pos.X / width) + w * 0.5f;
             float y = (pos.Y / height) + h * 0.5f;
 
-            Function.Call(Hash.DRAW_SPRITE, dict, name, x, y, w, h, 0f, col.R, col.G, col.B, col.A);
+            Function.Call(Hash.DRAW_SPRITE, dict, name, x, y, w, h, 0f, (int)col.R, (int)col.G, (int)col.B, (int)col.A);
         }
     }
 }

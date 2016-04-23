@@ -67,7 +67,7 @@ namespace GTANetwork
         
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
-
+        private RageKeyboardHooker _hooker = new RageKeyboardHooker();
         private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
 
         // STATS
@@ -123,16 +123,16 @@ namespace GTANetwork
                 _chat.IsFocused = false;
             };
 
-            //Tick += OnTick;
-            //KeyDown += OnKeyDown;
 
-            //KeyUp += (sender, args) =>
-            //{
-                //if (args.KeyCode == Keys.Escape && _wasTyping)
-                //{
-                    //_wasTyping = false;
-                //}
-            //};
+            _hooker.OnKeyDown += OnKeyDown;
+
+            _hooker.OnKeyUp += (sender, args) =>
+            {
+                if (args.KeyCode == Keys.Escape && _wasTyping)
+                {
+                    _wasTyping = false;
+                }
+            };
 
             _config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             _config.Port = 8888;
@@ -230,6 +230,7 @@ namespace GTANetwork
             catch (WebException ex)
             {
             }
+            
         }
 
         private void AddToFavorites(string server)
@@ -649,17 +650,17 @@ namespace GTANetwork
                 MainMenu.AddTab(_connectTab);
                 _connectTab.DrawInstructionalButtons += (sender, args) =>
                 {
-                    MainMenu.DrawInstructionalButton(4, Control.Jump, "Refresh");
+                    MainMenu.DrawInstructionalButton(4, GameControl.Jump, "Refresh");
 
-                    if (Game.IsControlJustPressed(0, Control.Jump))
+                    if (Game.IsControlJustPressed(0, GameControl.Jump))
                     {
                         RebuildServerBrowser();
                     }
 
                     if (_connectTab.Index == 1 && _connectTab.Items[1].Focused)
                     {
-                        MainMenu.DrawInstructionalButton(5, Control.Enter, "Favorite");
-                        if (Game.IsControlJustPressed(0, Control.Enter))
+                        MainMenu.DrawInstructionalButton(5, GameControl.Enter, "Favorite");
+                        if (Game.IsControlJustPressed(0, GameControl.Enter))
                         {
                             var selectedServer = _serverBrowser.Items[_serverBrowser.Index];
                             selectedServer.SetRightBadge(UIMenuItem.BadgeStyle.None);
@@ -699,12 +700,12 @@ namespace GTANetwork
                                             Npcs.Clear();
                                         }
 
-                                        while (IsOnServer()) Script.Yield();
+                                        while (IsOnServer()) GameFiber.Yield();
                                     }
 
                                     if (selectedServer.LeftBadge == UIMenuItem.BadgeStyle.Lock)
                                     {
-                                        _password = Game.GetUserInput(256);
+                                        _password = Util.GetUserInput("", 256);
                                     }
 
                                     var splt = selectedServer.Description.Split(':');
@@ -725,8 +726,8 @@ namespace GTANetwork
 
                     if (_connectTab.Index == 3 && _connectTab.Items[3].Focused)
                     {
-                        MainMenu.DrawInstructionalButton(5, Control.Enter, "Favorite by IP");
-                        if (Game.IsControlJustPressed(0, Control.Enter))
+                        MainMenu.DrawInstructionalButton(5, GameControl.Enter, "Favorite by IP");
+                        if (Game.IsControlJustPressed(0, GameControl.Enter))
                         {
                             var serverIp = InputboxThread.GetUserInput("Server IP:Port", 40, TickSpinner);
 
@@ -759,7 +760,7 @@ namespace GTANetwork
                                             Npcs.Clear();
                                         }
 
-                                        while (IsOnServer()) Script.Yield();
+                                        while (IsOnServer()) GameFiber.Yield();
                                     }
 
                                     var splt = serverIp.Split(':');
@@ -1029,7 +1030,7 @@ namespace GTANetwork
                 welcomeItem.Activated += (sender, args) =>
                 {
                     MainMenu.Visible = false;
-                    World.RenderingCamera = null;
+                    MainMenuCamera.Active = false;
                 };
                 MainMenu.Tabs.Add(welcomeItem);
             }
@@ -1068,7 +1069,7 @@ namespace GTANetwork
                             Npcs.Clear();
                         }
 
-                        while (IsOnServer()) Script.Yield();
+                        while (IsOnServer()) GameFiber.Yield();
                     }
                     
                     var splt = serb.Split(':');
@@ -1561,6 +1562,8 @@ namespace GTANetwork
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.LocalPlayer.Character;
+
+            _hooker.Update();
 
             if (!_hasInitialized)
             {
@@ -2668,7 +2671,7 @@ namespace GTANetwork
                                 var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
                                 if (data != null)
                                 {
-                                    var args = DecodeArgumentList(data.Arguments.ToArray()).ToList();
+                                    var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
                                     LogManager.DebugLog("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
                                     switch ((SyncEventType) data.EventType)
                                     {
@@ -2908,7 +2911,7 @@ namespace GTANetwork
                                     return;
                                 }
                                 _channel = respObj.AssignedChannel;
-                                NetEntityHandler.AddEntity(respObj.CharacterHandle, -2);
+                                NetEntityHandler.AddEntity(respObj.CharacterHandle, uint.MaxValue);
 
                                 var confirmObj = Client.CreateMessage();
                                 confirmObj.Write((int) PacketType.ConnectionConfirmed);
@@ -3069,7 +3072,7 @@ namespace GTANetwork
 
                                 if (data.PasswordProtected)
                                 {
-                                    _password = Game.GetUserInput("", 256);
+                                    _password = Util.GetUserInput("", 256);
                                 }
 
                                 _connectTab.RefreshIndex();
@@ -3123,7 +3126,7 @@ namespace GTANetwork
 
                                 if (data1.PasswordProtected)
                                 {
-                                    _password = Game.GetUserInput("", 256);
+                                    _password = Util.GetUserInput("", 256);
                                 }
 
 
