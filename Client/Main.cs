@@ -3208,6 +3208,7 @@ namespace GTANetwork
 
             foreach (var blip in World.GetAllBlips())
             {
+                if (!blip.IsValid()) continue;
                 if (!NetEntityHandler.ContainsLocalHandle(blip.Handle)) blip.Delete();
             }
 
