@@ -1895,7 +1895,7 @@ namespace GTANetwork
                 Game.LocalPlayer.Character.Opacity = 0;
                 Game.LocalPlayer.Character.IsPositionFrozen = true;
                 Game.LocalPlayer.IsInvincible = true;
-                Game.LocalPlayer.Character.NeedsCollision = false;
+                Function.Call(Hash.SET_ENTITY_COLLISION, Game.LocalPlayer.Character.Handle.Value, false);
             }
 
             else if (!IsSpectating && _lastSpectating)
@@ -1903,7 +1903,7 @@ namespace GTANetwork
                 Game.LocalPlayer.Character.Opacity = 1F;
                 Game.LocalPlayer.Character.IsPositionFrozen = false;
                 Game.LocalPlayer.IsInvincible = false;
-                Game.LocalPlayer.Character.NeedsCollision = true;
+                Function.Call(Hash.SET_ENTITY_COLLISION, Game.LocalPlayer.Character.Handle.Value, true);
                 SpectatingEntity = 0;
                 _currentSpectatingPlayer = null;
                 _currentSpectatingPlayerIndex = 0;
@@ -2147,7 +2147,7 @@ namespace GTANetwork
             var msg = Client.CreateMessage();
 
             var obj = new ConnectionRequest();
-            obj.SocialClubName = string.IsNullOrWhiteSpace(Game.LocalPlayer) ? "Unknown" : Game.LocalPlayer.Name; // To be used as identifiers in server files
+            obj.SocialClubName = string.IsNullOrWhiteSpace(Function.Call<string>(Hash.GET_PLAYER_NAME, Game.LocalPlayer.Id)) ? "Unknown" : Function.Call<string>(Hash.GET_PLAYER_NAME, Game.LocalPlayer.Id);
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrEmpty(_password)) obj.Password = _password;
             obj.ScriptVersion = (byte)LocalScriptVersion;
