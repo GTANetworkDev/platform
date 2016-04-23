@@ -1124,7 +1124,7 @@ namespace GTANetwork
                 {
                     var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
-                    ourVeh.Alpha = (int) pair.Value.Alpha;
+                    ourVeh.Opacity = pair.Value.Alpha / int.MaxValue;
                 }
 
             if (map.Vehicles != null)
@@ -1180,7 +1180,7 @@ namespace GTANetwork
                     else
                         ourVeh.IsInvincible = true;
 
-                    ourVeh.Alpha = (int)pair.Value.Alpha;
+                    ourVeh.Opacity = (float)pair.Value.Alpha / int.MaxValue;
                 }
 
             if (map.Blips != null)
@@ -1233,7 +1233,7 @@ namespace GTANetwork
                         {
                             Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props[i], pair.Value.Textures[i], 2);
                         }
-                        ourPed.Alpha = pair.Value.Alpha;
+                        ourPed.Opacity = pair.Value.Alpha / int.MaxValue;
 
                         var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle);
                         if (ourSyncPed.Value != null)
@@ -1895,7 +1895,7 @@ namespace GTANetwork
 
             if (IsSpectating && !_lastSpectating)
             {
-                Game.LocalPlayer.Character.Alpha = 0;
+                Game.LocalPlayer.Character.Opacity = 0;
                 Game.LocalPlayer.Character.FreezePosition = true;
                 Game.LocalPlayer.IsInvincible = true;
                 Game.LocalPlayer.Character.HasCollision = false;
@@ -1903,7 +1903,7 @@ namespace GTANetwork
 
             else if (!IsSpectating && _lastSpectating)
             {
-                Game.LocalPlayer.Character.Alpha = 255;
+                Game.LocalPlayer.Character.Opacity = 1F;
                 Game.LocalPlayer.Character.FreezePosition = false;
                 Game.LocalPlayer.IsInvincible = false;
                 Game.LocalPlayer.Character.HasCollision = true;
@@ -3230,7 +3230,7 @@ namespace GTANetwork
                 if (player.IsInVehicle())
                 {
                     var veh = player.CurrentVehicle;
-                    veh.Alpha = 50;
+                    veh.Opacity = (float)50 / int.MaxValue;
 
                     _debugSyncPed.VehiclePosition = veh.Position;
                     _debugSyncPed.VehicleRotation = veh.Rotation;
