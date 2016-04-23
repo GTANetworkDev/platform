@@ -289,6 +289,8 @@ namespace GTANetwork
             Game.SetRelationshipBetweenRelationshipGroups(FriendRelGroup, Game.LocalPlayer.Character.RelationshipGroup, Relationship.Companion);
             Game.SetRelationshipBetweenRelationshipGroups(Game.LocalPlayer.Character.RelationshipGroup, FriendRelGroup, Relationship.Companion);
         }
+
+        public SyncPed(int hash, Vector3 pos, Vector3 rot, bool blip = true) : this(unchecked((uint)hash), pos, rot, blip) { }
             
         public void SetBlipNameFromTextFile(Blip blip, string text)
         {
