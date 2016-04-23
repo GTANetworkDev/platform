@@ -1326,7 +1326,7 @@ namespace GTANetwork
                 var obj = new VehicleData();
                 obj.Position = veh.Position.ToLVector();
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
-                obj.Quaternion = veh.Rotation.ToLVector();
+                obj.Quaternion = veh.Rotation.ToVector().ToLVector();
                 obj.PedModelHash = unchecked((int)player.Model.Hash);
                 obj.VehicleModelHash = unchecked((int)veh.Model.Hash);
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
@@ -1394,7 +1394,7 @@ namespace GTANetwork
                 var obj = new PedData();
                 obj.AimCoords = aimCoord.ToLVector();
                 obj.Position = player.Position.ToLVector();
-                obj.Quaternion = player.Rotation.ToLVector();
+                obj.Quaternion = player.Rotation.ToVector().ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsRagdoll = player.IsRagdoll;
                 obj.IsFreefallingWithChute =
@@ -3215,7 +3215,7 @@ namespace GTANetwork
 
             if (_debugSyncPed == null)
             {
-                _debugSyncPed = new SyncPed(player.Model.Hash, player.Position, player.Rotation, false);
+                _debugSyncPed = new SyncPed(player.Model.Hash, player.Position, player.Rotation.ToVector(), false);
                 _debugSyncPed.Debug = true;
             }
 
@@ -3229,7 +3229,7 @@ namespace GTANetwork
                     veh.Opacity = 50f / 255f;
 
                     _debugSyncPed.VehiclePosition = veh.Position;
-                    _debugSyncPed.VehicleRotation = veh.Rotation;
+                    _debugSyncPed.VehicleRotation = veh.Rotation.ToVector();
                     _debugSyncPed.VehicleVelocity = veh.Velocity;
                     _debugSyncPed.ModelHash = player.Model.Hash;
                     _debugSyncPed.VehicleHash = veh.Model.Hash;
@@ -3285,7 +3285,7 @@ namespace GTANetwork
                     _debugSyncPed.PedArmor = player.Armor;
                     _debugSyncPed.Speed = player.Velocity.Length();
                     _debugSyncPed.Position = player.Position + new Vector3(1f, 0, 0);
-                    _debugSyncPed.Rotation = player.Rotation;
+                    _debugSyncPed.Rotation = player.Rotation.ToVector();
                     _debugSyncPed.ModelHash = player.Model.Hash;
                     _debugSyncPed.CurrentWeapon = (int)player.Inventory.EquippedWeapon.Hash;
                     _debugSyncPed.PedHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
