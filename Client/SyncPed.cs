@@ -1560,18 +1560,18 @@ namespace GTANetwork
         public void Clear()
         {
             LogManager.DebugLog("CLEAR FOR " + Name);
-            if (Character != null)
+            if (Character != null && Character.IsValid())
             {
                 Character.Model.Dismiss();
                 Character.Delete();
             }
-            if (_mainBlip != null && _mainBlip.Exists())
+            if (_mainBlip != null && _mainBlip.Exists() && _mainBlip.IsValid())
             {
                 _mainBlip.Delete();
                 _mainBlip = null;
             }
 
-            if (_parachuteProp != null)
+            if (_parachuteProp != null && _parachuteProp.IsValid())
             {
                 _parachuteProp.Delete();
                 _parachuteProp = null;

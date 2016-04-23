@@ -162,6 +162,8 @@ namespace GTANetwork
             Function.Call(Hash.POINT_CAM_AT_COORD, MainMenuCamera.Handle.Value, dest.X, dest.Y, dest.Z);
             Game.LogTrivial("Fetching welcome message.");
             GetWelcomeMessage();
+
+            JavascriptHook = new JavascriptHook();
         }
 
         // Debug stuff
@@ -178,6 +180,8 @@ namespace GTANetwork
         private bool _oldChat;
         private bool _isGoingToCar;
         //
+
+        public JavascriptHook JavascriptHook;
 
         public static bool JustJoinedServer { get; set; }
         private int _currentOnlinePlayers;
@@ -1143,8 +1147,8 @@ namespace GTANetwork
                     
                     for (int i = 0; i < pair.Value.Doors.Length; i++)
                     {
-                        if (pair.Value.Doors[i])
-                            ourVeh.Doors[i].Open(false, true);
+                        if (!ourVeh.Doors[i].IsValid()) continue;
+                        if (pair.Value.Doors[i]) ourVeh.Doors[i].Open(false, true);
                         else ourVeh.Doors[i].Close(true);
                     }
 
@@ -1320,6 +1324,8 @@ namespace GTANetwork
         {
             if (IsSpectating) return;
             var player = Game.LocalPlayer.Character;
+
+            //Game.LogTrivial("1");
             
             if (player.IsInAnyVehicle(false))
             {
@@ -1359,7 +1365,7 @@ namespace GTANetwork
                     //obj.IsShooting = Game.LocalPlayer.Character.IsShooting;
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
 
-                    obj.WeaponHash = (int)Game.LocalPlayer.Character.Inventory.EquippedWeapon.Hash;
+                    obj.WeaponHash = ((int?)player.Inventory.EquippedWeapon?.Hash) ?? -1569615261;
                 }
 
 
@@ -1383,42 +1389,44 @@ namespace GTANetwork
             }
             else
             {
+                //Game.LogTrivial("2");
                 bool aiming = Game.IsControlPressed(0, GameControl.Aim);
                 bool shooting = player.IsShooting;
-
+                //Game.LogTrivial("3");
                 Vector3 aimCoord = new Vector3();
                 if (aiming || shooting)
                 {
                     aimCoord = RaycastEverything(new Vector2(0, 0));
                 }
-
+                //Game.LogTrivial("4");
                 var obj = new PedData();
                 obj.AimCoords = aimCoord.ToLVector();
+                //Game.LogTrivial("5");
                 obj.Position = player.Position.ToLVector();
                 obj.Quaternion = player.Rotation.ToVector().ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsRagdoll = player.IsRagdoll;
+                //Game.LogTrivial("6");
                 obj.IsFreefallingWithChute = player.IsInParachuteFreeFall;
                 obj.IsInMeleeCombat = player.IsInMeleeCombat;
                 obj.PedModelHash = unchecked((int)player.Model.Hash);
-                obj.WeaponHash = (int)player.Inventory.EquippedWeapon.Hash;
+                //Game.LogTrivial("7");
+                obj.WeaponHash = ((int?)player.Inventory.EquippedWeapon?.Hash) ?? -1569615261;
+                //Game.LogTrivial("8");
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.IsAiming = aiming;
                 obj.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, GameControl.Attack));
                 obj.IsJumping = player.IsJumping;
                 obj.IsParachuteOpen = player.ParachuteState != ParachuteState.None;
                 obj.Speed = player.Velocity.Length();
-
                 //obj.PedProps = CheckPlayerProps();
-
                 var bin = SerializeBinary(obj);
 
                 var msg = Client.CreateMessage();
-
                 msg.Write((int)PacketType.PedPositionData);
                 msg.Write(bin.Length);
                 msg.Write(bin);
-
+                //Game.LogTrivial("8");
                 try
                 {
                     Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
@@ -1428,7 +1436,7 @@ namespace GTANetwork
                     Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
                     LogManager.LogException(ex, "SENDPLAYERDATAPED");
                 }
-
+                //Game.LogTrivial("9");
                 _bytesSent += bin.Length;
                 _messagesSent++;
             }
@@ -1589,9 +1597,10 @@ namespace GTANetwork
             }
 
             DEBUG_STEP = 0;
-
+            if (_wasTyping)
+                Game.DisableControlAction(0, GameControl.FrontendPause, true);
             Game.DisableControlAction(0, GameControl.FrontendPauseAlternate, true);            
-            if (Game.IsControlJustPressed(0, GameControl.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
+            if (Common.IsDisabledControlJustPressed(0, GameControl.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
             {
                 MainMenu.Visible = true;
 
@@ -1608,18 +1617,21 @@ namespace GTANetwork
             }
             else
             {
-                Game.DisableControlAction(0, GameControl.MoveLeftRight, true);
-                Game.DisableControlAction(0, GameControl.MoveUpDown, true);
-                Game.DisableControlAction(0, GameControl.Aim, true);
-                Game.DisableControlAction(0, GameControl.Attack, true);
-                Game.DisableControlAction(0, GameControl.CharacterWheel, true);
-                Game.DisableControlAction(0, GameControl.WeaponWheelNext, true);
-                Game.DisableControlAction(0, GameControl.WeaponWheelPrev, true);
-                Game.DisableControlAction(0, GameControl.WeaponWheelUpDown, true);
-                Game.DisableControlAction(0, GameControl.SelectWeapon, true);
-                Game.DisableControlAction(0, GameControl.Enter, true);
-                Game.DisableControlAction(0, GameControl.EnterCheatCode, true);
-                Game.DisableControlAction(0, GameControl.Phone, true);
+                if (MainMenu.Visible)
+                {
+                    Game.DisableControlAction(0, GameControl.MoveLeftRight, true);
+                    Game.DisableControlAction(0, GameControl.MoveUpDown, true);
+                    Game.DisableControlAction(0, GameControl.Aim, true);
+                    Game.DisableControlAction(0, GameControl.Attack, true);
+                    Game.DisableControlAction(0, GameControl.CharacterWheel, true);
+                    Game.DisableControlAction(0, GameControl.WeaponWheelNext, true);
+                    Game.DisableControlAction(0, GameControl.WeaponWheelPrev, true);
+                    Game.DisableControlAction(0, GameControl.WeaponWheelUpDown, true);
+                    Game.DisableControlAction(0, GameControl.SelectWeapon, true);
+                    Game.DisableControlAction(0, GameControl.Enter, true);
+                    Game.DisableControlAction(0, GameControl.EnterCheatCode, true);
+                    Game.DisableControlAction(0, GameControl.Phone, true);
+                }
 
                 if (!BlockControls)
                     MainMenu.ProcessControls();
@@ -1796,8 +1808,8 @@ namespace GTANetwork
             DEBUG_STEP = 10;
             if (playerCar != _lastPlayerCar)
             {
-                if (_lastPlayerCar != null) _lastPlayerCar.Invincible = true;
-                if (playerCar != null) playerCar.Invincible = false;
+                if (_lastPlayerCar != null && _lastPlayerCar.IsValid()) _lastPlayerCar.Invincible = true;
+                if (playerCar != null && playerCar.IsValid()) playerCar.Invincible = false;
             }
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;
@@ -1978,7 +1990,7 @@ namespace GTANetwork
             {
                 foreach (var entity in World.GetAllPeds())
                 {
-                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.LocalPlayer.Character)
                         entity.Delete();
                 }
             }
@@ -2517,9 +2529,12 @@ namespace GTANetwork
                                 break;
                             case PacketType.FileTransferComplete:
                             {
+                                LogManager.DebugLog("GET TRANSFER COMPLETE");
                                 var id = msg.ReadInt32();
+                                LogManager.DebugLog("ENDING TRANSFER COMPLETE");
                                 DownloadManager.End(id);
-                            }
+                                LogManager.DebugLog("TRANSFER OVER");
+                             }
                                 break;
                             case PacketType.ChatData:
                             {
@@ -2962,18 +2977,9 @@ namespace GTANetwork
                                     }
                                 }
                                 DEBUG_STEP = 44;
-                                lock (_dcNatives)
-                                    if (_dcNatives != null && _dcNatives.Any())
-                                    {
-                                        _dcNatives.ToList().ForEach(pair => DecodeNativeCall(pair.Value));
-                                        _dcNatives.Clear();
-                                    }
-                                DEBUG_STEP = 45;
-                                lock (_tickNatives) if (_tickNatives != null) _tickNatives.Clear();
-                                DEBUG_STEP = 46;
                                 lock (EntityCleanup)
                                 {
-                                    EntityCleanup.ForEach(ent => World.GetEntityByHandle<Entity>((uint)ent).Delete());
+                                    EntityCleanup.ForEach(ent => World.GetEntityByHandle<Rage.Object>((uint)ent).Delete());
                                     EntityCleanup.Clear();
                                 }
 
@@ -3196,6 +3202,8 @@ namespace GTANetwork
                     Util.SafeNotify("Message Type: " + msg.MessageType);
                     Util.SafeNotify("Data Type: " + type);
                     Util.SafeNotify(e.Message);
+
+                    LogManager.LogException(e, "MAIN PROCESSMESSAGES");
                 }
             }
         }
@@ -3557,7 +3565,7 @@ namespace GTANetwork
             LogManager.DebugLog("RETURN TYPE: " + obj.ReturnType);
             var nativeType = CheckNativeHash(obj.Hash);
             LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
-            Model model = null;
+            Model model;
             if (((int)nativeType & (int)NativeType.NeedsModel) > 0)
             {
                 LogManager.DebugLog("REQUIRES MODEL");
@@ -3589,6 +3597,8 @@ namespace GTANetwork
                         model.LoadAndWait();
                 }
             }
+
+            LogManager.DebugLog("MODEL STUFF FINISHED");
 
             if (((int)nativeType & (int)NativeType.ReturnsEntity) > 0)
             {

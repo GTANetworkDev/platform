@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Rage;
 
 namespace GTANetwork
 {
@@ -23,7 +24,8 @@ namespace GTANetwork
         {
             CreateLogDirectory();
             if (!Main.WriteDebugLog) return;
-            File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+            //File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+            Game.LogTrivial(text);
         }
 
         public static void LogException(Exception ex, string source)

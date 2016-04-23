@@ -31,20 +31,29 @@ namespace GTANetwork
         public string Filename { get; set; }
     }
 
-    public class JavascriptHook// : Script
+    public class JavascriptHook
     {
         public JavascriptHook()
         {
-            //Tick += OnTick;
-            //KeyDown += OnKeyDown;
-            //KeyUp += OnKeyUp;
-            ScriptEngines = new List<ClientsideScriptWrapper>();
-            ThreadJumper = new List<Action>();
+            _hooker = new RageKeyboardHooker();
+
+            _hooker.OnKeyDown += OnKeyDown;
+            _hooker.OnKeyUp += OnKeyUp;
+
+            GameFiber.StartNew(delegate
+            {
+                while (true)
+                {
+                    _hooker.Update();
+                    OnTick(null, EventArgs.Empty);
+                    GameFiber.Yield();
+                }
+            });
         }
 
-        public static List<ClientsideScriptWrapper> ScriptEngines;
-
-        public static List<Action> ThreadJumper;
+        public static List<ClientsideScriptWrapper> ScriptEngines = new List<ClientsideScriptWrapper>();
+        public static List<Action> ThreadJumper = new List<Action>();
+        private RageKeyboardHooker _hooker;
 
         public static void InvokeServerEvent(string eventName, object[] arguments)
         {
@@ -57,8 +66,10 @@ namespace GTANetwork
         public static void InvokeMessageEvent(string msg)
         {
             if (msg == null) return;
+            LogManager.DebugLog("INVOKING MESSAGE EVENT");
             ThreadJumper.Add(() =>
             {
+                LogManager.DebugLog("THREDJUMP START");
                 if (msg.StartsWith("/"))
                 {
                     lock (ScriptEngines)
@@ -68,9 +79,12 @@ namespace GTANetwork
                 }
                 else
                 {
+                    LogManager.DebugLog("SCRIPTENGINE LOCK");
                     lock (ScriptEngines)
                     {
+                        LogManager.DebugLog("FOREACH");
                         ScriptEngines.ForEach(en => en.Engine.Script.API.invokeChatMessage(msg));
+                        LogManager.DebugLog("FOREACH OVER");
                     }
                 }
             });
@@ -340,7 +354,7 @@ namespace GTANetwork
             return Game.LocalPlayer.Id;
         }
 
-        public LocalHandle getLocalPlayerCharacter()
+        public LocalHandle getLocalPlayer()
         {
             return new LocalHandle(Game.LocalPlayer.Character.Handle.Value);
         }
@@ -393,7 +407,7 @@ namespace GTANetwork
 
         public void setPlayerArmor(LocalHandle ped, int armor)
         {
-            World.GetEntityByHandle<Ped>(new PoolHandle(ped.Value)).Armor = armor;
+            World.GetEntityByHandle<Ped>(ped.Value).Armor = armor;
         }
 
         public int getPlayerArmor(LocalHandle ped)

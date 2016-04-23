@@ -274,7 +274,7 @@ namespace GTANetwork
                     else if(Pickups.Contains(pair.Value))
                         Function.Call(Hash.REMOVE_PICKUP, unchecked((int)pair.Value));
                     else
-                        World.GetEntityByHandle<Entity>(pair.Value).Delete();
+                        World.GetEntityByHandle<Rage.Object>(pair.Value).Delete();
                 }
 
                 HandleMap.Clear();

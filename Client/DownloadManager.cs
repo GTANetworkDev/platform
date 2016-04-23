@@ -60,11 +60,14 @@ namespace GTANetwork
 
         public static void End(int id)
         {
+            LogManager.DebugLog("END START " + id + " CURRENTFILE NULL? " + CurrentFile + " // " + CurrentFile?.Id);
             if (CurrentFile == null || CurrentFile.Id != id)
             {
                 Util.SafeNotify($"END Channel mismatch! We have {CurrentFile?.Id} and supplied was {id}");
                 return;
             }
+
+            LogManager.DebugLog("CURRENTFILE TYPE" + CurrentFile.Type);
             
             if (CurrentFile.Type == FileType.Map)
             {
@@ -91,8 +94,9 @@ namespace GTANetwork
 
                     if (Main.JustJoinedServer)
                     {
-                        //World.RenderingCamera = null;
+                        LogManager.DebugLog("DISABLING MAIN CAMERA");
                         Main.MainMenuCamera.Active = false;
+                        LogManager.DebugLog("MAIN CAMERA DISABLED");
                         Main.MainMenu.TemporarilyHidden = false;
                         Main.MainMenu.Visible = false;
                         Main.JustJoinedServer = false;
