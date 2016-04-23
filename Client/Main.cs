@@ -1102,8 +1102,8 @@ namespace GTANetwork
         private Dictionary<string, NativeData> _tickNatives;
         private Dictionary<string, NativeData> _dcNatives;
 
-        public static List<uint> EntityCleanup;
-        public static List<uint> BlipCleanup;
+        public static List<int> EntityCleanup;
+        public static List<int> BlipCleanup;
         public static Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
 
         private int _markerCount;
@@ -1124,7 +1124,7 @@ namespace GTANetwork
                 {
                     var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash.ToUint()), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
-                    ourVeh.Opacity = (int) pair.Value.Alpha;
+                    ourVeh.Opacity = pair.Value.Alpha / 255f; // byte.MaxValue -> loss of fraction
                 }
 
             if (map.Vehicles != null)
@@ -1180,7 +1180,7 @@ namespace GTANetwork
                     else
                         ourVeh.IsInvincible = true;
 
-                    ourVeh.Alpha = (int)pair.Value.Alpha;
+                    ourVeh.Opacity = pair.Value.Alpha / 255f;
                 }
 
             if (map.Blips != null)
@@ -1233,7 +1233,7 @@ namespace GTANetwork
                         {
                             Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props[i], pair.Value.Textures[i], 2);
                         }
-                        ourPed.Alpha = pair.Value.Alpha;
+                        ourPed.Opacity = pair.Value.Alpha / 255f;
 
                         var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle);
                         if (ourSyncPed.Value != null)
@@ -1266,7 +1266,7 @@ namespace GTANetwork
 
         public static Dictionary<int, int> CheckPlayerVehicleMods()
         {
-            if (!Game.LocalPlayer.Character.IsInVehicle()) return null;
+            if (!Game.LocalPlayer.Character.IsInAnyVehicle(false)) return null;
 
             if (_modSwitch % 30 == 0)
             {
@@ -1319,7 +1319,7 @@ namespace GTANetwork
             if (IsSpectating) return;
             var player = Game.LocalPlayer.Character;
             
-            if (player.IsInVehicle())
+            if (player.IsInAnyVehicle(false))
             {
                 var veh = player.CurrentVehicle;
                 
@@ -1327,8 +1327,8 @@ namespace GTANetwork
                 obj.Position = veh.Position.ToLVector();
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
-                obj.PedModelHash = player.Model.Hash;
-                obj.VehicleModelHash = veh.Model.Hash;
+                obj.PedModelHash = unchecked((int)player.Model.Hash);
+                obj.VehicleModelHash = unchecked((int)veh.Model.Hash);
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.VehicleSeat = Util.GetPedSeat(player);
@@ -1401,8 +1401,8 @@ namespace GTANetwork
                         Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.LocalPlayer.Character.Handle) == 0 &&
                         Game.LocalPlayer.Character.IsInAir;
                 obj.IsInMeleeCombat = player.IsInMeleeCombat;
-                obj.PedModelHash = player.Model.Hash;
-                obj.WeaponHash = (int)player.Weapons.Current.Hash;
+                obj.PedModelHash = unchecked((int)player.Model.Hash);
+                obj.WeaponHash = (int)player.Inventory.EquippedWeapon.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.IsAiming = aiming;
                 obj.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack));
@@ -1517,7 +1517,7 @@ namespace GTANetwork
 
         public static int GetCurrentVehicleWeaponHash(Ped ped)
         {
-            if (ped.IsInVehicle())
+            if (ped.IsInAnyVehicle(false))
             {
                 var outputArg = new OutputArgument();
                 var success = Function.Call<bool>(Hash.GET_CURRENT_PED_VEHICLE_WEAPON, ped, outputArg);
@@ -1895,7 +1895,7 @@ namespace GTANetwork
 
             if (IsSpectating && !_lastSpectating)
             {
-                Game.LocalPlayer.Character.Alpha = 0;
+                Game.LocalPlayer.Character.Opacity = 0;
                 Game.LocalPlayer.Character.FreezePosition = true;
                 Game.LocalPlayer.IsInvincible = true;
                 Game.LocalPlayer.Character.HasCollision = false;
@@ -1903,7 +1903,7 @@ namespace GTANetwork
 
             else if (!IsSpectating && _lastSpectating)
             {
-                Game.LocalPlayer.Character.Alpha = 255;
+                Game.LocalPlayer.Character.Opacity = 1F;
                 Game.LocalPlayer.Character.FreezePosition = false;
                 Game.LocalPlayer.IsInvincible = false;
                 Game.LocalPlayer.Character.HasCollision = true;
@@ -2035,7 +2035,7 @@ namespace GTANetwork
             }
             
 
-            if (e.KeyCode == Keys.G && !Game.LocalPlayer.Character.IsInVehicle() && IsOnServer() && !_chat.IsFocused)
+            if (e.KeyCode == Keys.G && !Game.LocalPlayer.Character.IsInAnyVehicle(true) && IsOnServer() && !_chat.IsFocused)
             {
                 var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.LocalPlayer.Character.Position).Length()).Take(1).ToList();
                 if (vehs.Any() && Game.LocalPlayer.Character.IsInRangeOf(vehs[0].Position, 6f))
@@ -2060,13 +2060,13 @@ namespace GTANetwork
                         seat = VehicleSeat.RightRear;
                     }
 
-                    if (vehs[0].PassengerSeats == 2) seat = VehicleSeat.Passenger;
+                    if (vehs[0].PassengerCapacity == 2) seat = VehicleSeat.Passenger;
 
-                    if (vehs[0].PassengerSeats > 4 && vehs[0].GetPedOnSeat(seat).Handle != 0)
+                    if (vehs[0].PassengerCapacity > 4 && vehs[0].GetPedOnSeat(seat).Handle != 0)
                     {
                         if (seat == VehicleSeat.LeftRear)
                         {
-                            for (int i = 3; i < vehs[0].PassengerSeats; i += 2)
+                            for (int i = 3; i < vehs[0].PassengerCapacity; i += 2)
                             {
                                 if (vehs[0].GetPedOnSeat((VehicleSeat) i).Handle == 0)
                                 {
@@ -2077,9 +2077,9 @@ namespace GTANetwork
                         }
                         else if (seat == VehicleSeat.RightRear)
                         {
-                            for (int i = 4; i < vehs[0].PassengerSeats; i += 2)
+                            for (int i = 4; i < vehs[0].PassengerCapacity; i += 2)
                             {
-                                if (vehs[0].GetPedOnSeat((VehicleSeat)i).Handle == 0)
+                                if (!vehs[0].GetPedOnSeat(i).IsValid())
                                 {
                                     seat = (VehicleSeat)i;
                                     break;
@@ -2088,8 +2088,8 @@ namespace GTANetwork
                         }
                     }
 
-                    if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash) vehs[0].Model.Hash, 0, true) && Game.LocalPlayer.Character.IsIdle && !Game.LocalPlayer.IsAiming)
-                        Game.LocalPlayer.Character.SetIntoVehicle(vehs[0], seat);
+                    if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)vehs[0].Model.Hash, 0, true) && Game.LocalPlayer.Character.IsStill && !Game.LocalPlayer.IsAiming)
+                        Game.LocalPlayer.Character.WarpIntoVehicle(vehs[0], seat);
                     else
                         Game.LocalPlayer.Character.Task.EnterVehicle(vehs[0], seat, -1, 2f);
                     _isGoingToCar = true;
@@ -2219,9 +2219,8 @@ namespace GTANetwork
                                         data.Position.ToVector();
                                     Opponents[data.Id].VehicleVelocity = data.Velocity.ToVector();
                                     Opponents[data.Id].IsVehDead = data.IsVehicleDead;
-                                    Opponents[data.Id].ModelHash = data.PedModelHash;
-                                    Opponents[data.Id].VehicleHash =
-                                        data.VehicleModelHash;
+                                    Opponents[data.Id].ModelHash = unchecked((uint)data.PedModelHash);
+                                    Opponents[data.Id].VehicleHash = unchecked((uint)data.VehicleModelHash);
                                     Opponents[data.Id].PedArmor = data.PedArmor;
                                     Opponents[data.Id].VehicleRPM = data.RPM;
                                     Opponents[data.Id].VehicleRotation =
@@ -2269,7 +2268,7 @@ namespace GTANetwork
                                     Opponents[data.Id].PedArmor = data.PedArmor;
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
                                     Opponents[data.Id].Position = data.Position.ToVector();
-                                    Opponents[data.Id].ModelHash = data.PedModelHash;
+                                    Opponents[data.Id].ModelHash = unchecked((uint)data.PedModelHash);
                                     Opponents[data.Id].IsInMeleeCombat = data.IsInMeleeCombat;
                                     Opponents[data.Id].Rotation = data.Quaternion.ToVector();
                                     Opponents[data.Id].IsFreefallingWithParachute = data.IsFreefallingWithChute;
@@ -2306,13 +2305,10 @@ namespace GTANetwork
                                         NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
 
                                     Npcs[data.Name].LastUpdateReceived = DateTime.Now;
-                                    Npcs[data.Name].VehiclePosition =
-                                        data.Position.ToVector();
-                                    Npcs[data.Name].ModelHash = data.PedModelHash;
-                                    Npcs[data.Name].VehicleHash =
-                                        data.VehicleModelHash;
-                                    Npcs[data.Name].VehicleRotation =
-                                        data.Quaternion.ToVector();
+                                    Npcs[data.Name].VehiclePosition = data.Position.ToVector();
+                                    Npcs[data.Name].ModelHash = unchecked((uint)data.PedModelHash);
+                                    Npcs[data.Name].VehicleHash = unchecked((uint)data.VehicleModelHash);
+                                    Npcs[data.Name].VehicleRotation = data.Quaternion.ToVector();
                                     //data.Quaternion.ToQuaternion();
                                     Npcs[data.Name].PedHealth = data.PlayerHealth;
                                     Npcs[data.Name].VehicleHealth = data.VehicleHealth;
@@ -2349,7 +2345,7 @@ namespace GTANetwork
 
                                     Npcs[data.Name].LastUpdateReceived = DateTime.Now;
                                     Npcs[data.Name].Position = data.Position.ToVector();
-                                    Npcs[data.Name].ModelHash = data.PedModelHash;
+                                    Npcs[data.Name].ModelHash = unchecked((uint)data.PedModelHash);
                                     //Npcs[data.Name].Rotation = data.Quaternion.ToVector();
                                     Npcs[data.Name].Rotation = data.Quaternion.ToVector();
                                     Npcs[data.Name].PedHealth = data.PlayerHealth;
@@ -2375,7 +2371,7 @@ namespace GTANetwork
                                     if (data.EntityType == (byte) EntityType.Vehicle)
                                     {
                                         var prop = (VehicleProperties) data.Properties;
-                                        var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash),
+                                        var veh = NetEntityHandler.CreateVehicle(new Model(unchecked((uint)data.Properties.ModelHash)),
                                             data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
                                         LogManager.DebugLog("Settings vehicle color 1");
@@ -2389,7 +2385,7 @@ namespace GTANetwork
                                     else if (data.EntityType == (byte) EntityType.Prop)
                                     {
                                         LogManager.DebugLog("It was a prop. Spawning...");
-                                        NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash),
+                                        NetEntityHandler.CreateObject(new Model(unchecked((uint)data.Properties.ModelHash)),
                                             data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
                                     }
@@ -2971,7 +2967,7 @@ namespace GTANetwork
                                 DEBUG_STEP = 46;
                                 lock (EntityCleanup)
                                 {
-                                    EntityCleanup.ForEach(ent => new Prop(ent).Delete());
+                                    EntityCleanup.ForEach(ent => World.GetEntityByHandle<Entity>((uint)ent).Delete());
                                     EntityCleanup.Clear();
                                 }
 
@@ -3227,10 +3223,10 @@ namespace GTANetwork
             {
                 _artificialLagCounter = DateTime.Now;
                 _debugFluctuation = _r.Next(10) - 5;
-                if (player.IsInVehicle())
+                if (player.IsInAnyVehicle(false))
                 {
                     var veh = player.CurrentVehicle;
-                    veh.Alpha = 50;
+                    veh.Opacity = 50f / 255f;
 
                     _debugSyncPed.VehiclePosition = veh.Position;
                     _debugSyncPed.VehicleRotation = veh.Rotation;
@@ -3264,7 +3260,7 @@ namespace GTANetwork
                     {
                         //_debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.Attack);
                         _debugSyncPed.IsShooting = Game.LocalPlayer.Character.IsShooting;
-                        _debugSyncPed.CurrentWeapon = (int)Game.LocalPlayer.Character.Weapons.Current.Hash;
+                        _debugSyncPed.CurrentWeapon = (int)Game.LocalPlayer.Character.Inventory.EquippedWeapon.Hash;
                         _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
                     }
                 }
@@ -3291,7 +3287,7 @@ namespace GTANetwork
                     _debugSyncPed.Position = player.Position + new Vector3(1f, 0, 0);
                     _debugSyncPed.Rotation = player.Rotation;
                     _debugSyncPed.ModelHash = player.Model.Hash;
-                    _debugSyncPed.CurrentWeapon = (int)player.Weapons.Current.Hash;
+                    _debugSyncPed.CurrentWeapon = (int)player.Inventory.EquippedWeapon.Hash;
                     _debugSyncPed.PedHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                     _debugSyncPed.IsAiming = aiming;
                     _debugSyncPed.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack));
@@ -3579,7 +3575,7 @@ namespace GTANetwork
                     modelHash = ((IntArgument)modelObj).Data;
                 }
                 LogManager.DebugLog("MODEL HASH IS " + modelHash);
-                model = new Model(modelHash);
+                model = new Model(unchecked((uint)modelHash));
 
                 if (model.IsValid)
                 {
@@ -3853,21 +3849,18 @@ namespace GTANetwork
             var source3D = camPos;
 
             Entity ignoreEntity = Game.LocalPlayer.Character;
-            if (Game.LocalPlayer.Character.IsInVehicle())
+            if (Game.LocalPlayer.Character.IsInAnyVehicle(true))
             {
                 ignoreEntity = Game.LocalPlayer.Character.CurrentVehicle;
             }
 
             var dir = (target3D - source3D);
             dir.Normalize();
-            var raycastResults = World.Raycast(source3D + dir * raycastFromDist,
-                source3D + dir * raycastToDist,
-                (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
-                , ignoreEntity);
 
-            if (raycastResults.DitHitAnything)
+            var hitResult = World.TraceLine(source3D + dir * raycastFromDist, source3D + dir * raycastToDist, TraceFlags.IntersectPeds | TraceFlags.IntersectVehicles, ignoreEntity);
+            if (hitResult.Hit)
             {
-                return raycastResults.HitCoords;
+                return hitResult.HitPosition;
             }
 
             return camPos + dir * raycastToDist;
