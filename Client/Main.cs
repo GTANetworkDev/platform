@@ -153,13 +153,14 @@ namespace GTANetwork
             var dest = new Vector3(707.86f, 1228.09f, 333.66f);
 
             var dir = (dest - origin);
-            dir.Normalize();
+
+            Game.LogTrivial("Settings up camera");
 
             MainMenuCamera = new Camera(false);
             MainMenuCamera.Position = origin;
-            MainMenuCamera.FOV = Camera.RenderingCamera.FOV;
-            MainMenuCamera.Rotation = DirectionToRotation(dir).ToRotator();
-
+            MainMenuCamera.FOV = 60;
+            Function.Call(Hash.POINT_CAM_AT_COORD, MainMenuCamera.Handle.Value, dest.X, dest.Y, dest.Z);
+            Game.LogTrivial("Fetching welcome message.");
             GetWelcomeMessage();
         }
 
@@ -1607,6 +1608,19 @@ namespace GTANetwork
             }
             else
             {
+                Game.DisableControlAction(0, GameControl.MoveLeftRight, true);
+                Game.DisableControlAction(0, GameControl.MoveUpDown, true);
+                Game.DisableControlAction(0, GameControl.Aim, true);
+                Game.DisableControlAction(0, GameControl.Attack, true);
+                Game.DisableControlAction(0, GameControl.CharacterWheel, true);
+                Game.DisableControlAction(0, GameControl.WeaponWheelNext, true);
+                Game.DisableControlAction(0, GameControl.WeaponWheelPrev, true);
+                Game.DisableControlAction(0, GameControl.WeaponWheelUpDown, true);
+                Game.DisableControlAction(0, GameControl.SelectWeapon, true);
+                Game.DisableControlAction(0, GameControl.Enter, true);
+                Game.DisableControlAction(0, GameControl.EnterCheatCode, true);
+                Game.DisableControlAction(0, GameControl.Phone, true);
+
                 if (!BlockControls)
                     MainMenu.ProcessControls();
                 MainMenu.Update();
