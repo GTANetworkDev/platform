@@ -466,7 +466,7 @@ namespace GTANetworkShared
         public string DisplayName { get; set; }
 
         [ProtoMember(4)]
-        public byte GameVersion { get; set; }
+        public short GameVersion { get; set; }
 
         [ProtoMember(5)]
         public byte ScriptVersion { get; set; }

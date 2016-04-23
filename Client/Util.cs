@@ -42,6 +42,11 @@ namespace GTANetwork
             return Function.Call<Vector3>(Hash.GET_GAMEPLAY_CAM_COORD);
         }
 
+        public static Vector3 GetGameplayCameraRot()
+        {
+            return Function.Call<Vector3>(Hash.GET_GAMEPLAY_CAM_ROT, 2);
+        }
+
         public static unsafe PointF WorldToScreen(Vector3 pos)
         {
             float pointX, pointY;
@@ -377,6 +382,11 @@ namespace GTANetwork
             return lightState1 == 1;
         }
 
+        public static unsafe void LightsOn(this Vehicle veh, bool on)
+        {
+            Function.Call(Hash.SET_VEHICLE_LIGHTS, veh.Handle.Value, on ? 3 : 4);
+        }
+
         public static bool IsTireBurst(this Vehicle veh, int wheel)
         {
             return Function.Call<bool>(Hash.IS_VEHICLE_TYRE_BURST, veh.Handle.Value, wheel, false);
@@ -421,6 +431,20 @@ namespace GTANetwork
         public static void SetColors(this Vehicle veh, VehicleColor color1, VehicleColor color2)
         {
             Function.Call(Hash.SET_VEHICLE_COLOURS, veh.Handle.Value, (int)color1, (int)color2);
+        }
+
+        public static unsafe int GetPrimaryColor(this Vehicle veh)
+        {
+            int color1, color2;
+            Function.Call(Hash.GET_VEHICLE_COLOURS, veh.Handle.Value, &color1, &color2);
+            return color1;
+        }
+
+        public static unsafe int GetSecondaryColor(this Vehicle veh)
+        {
+            int color1, color2;
+            Function.Call(Hash.GET_VEHICLE_COLOURS, veh.Handle.Value, &color1, &color2);
+            return color2;
         }
     }
 
