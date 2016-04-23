@@ -3856,14 +3856,11 @@ namespace GTANetwork
 
             var dir = (target3D - source3D);
             dir.Normalize();
-            var raycastResults = World.Raycast(source3D + dir * raycastFromDist,
-                source3D + dir * raycastToDist,
-                (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
-                , ignoreEntity);
 
-            if (raycastResults.DitHitAnything)
+            var hitResult = World.TraceLine(source3D + dir * raycastFromDist, source3D + dir * raycastToDist, TraceFlags.IntersectPeds | TraceFlags.IntersectVehicles, ignoreEntity);
+            if (hitResult.Hit)
             {
-                return raycastResults.HitCoords;
+                return hitResult.HitPosition;
             }
 
             return camPos + dir * raycastToDist;
