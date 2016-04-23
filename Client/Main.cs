@@ -1102,8 +1102,8 @@ namespace GTANetwork
         private Dictionary<string, NativeData> _tickNatives;
         private Dictionary<string, NativeData> _dcNatives;
 
-        public static List<uint> EntityCleanup;
-        public static List<uint> BlipCleanup;
+        public static List<int> EntityCleanup;
+        public static List<int> BlipCleanup;
         public static Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
 
         private int _markerCount;
@@ -1122,7 +1122,7 @@ namespace GTANetwork
             if (map.Objects != null)
                 foreach (var pair in map.Objects)
                 {
-                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                    var ourVeh = NetEntityHandler.CreateObject(new Model((uint)pair.Value.ModelHash), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
                     ourVeh.Opacity = pair.Value.Alpha / byte.MaxValue;
                 }
@@ -1130,7 +1130,7 @@ namespace GTANetwork
             if (map.Vehicles != null)
                 foreach (var pair in map.Vehicles)
                 {
-                    var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                    var ourVeh = NetEntityHandler.CreateVehicle(new Model((uint)pair.Value.ModelHash), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), pair.Key);
                     ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
                     ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
@@ -1327,8 +1327,8 @@ namespace GTANetwork
                 obj.Position = veh.Position.ToLVector();
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
-                obj.PedModelHash = player.Model.Hash;
-                obj.VehicleModelHash = veh.Model.Hash;
+                obj.PedModelHash = (int)player.Model.Hash;
+                obj.VehicleModelHash = (int)veh.Model.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.VehicleSeat = Util.GetPedSeat(player);
@@ -1401,7 +1401,7 @@ namespace GTANetwork
                         Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.LocalPlayer.Character.Handle) == 0 &&
                         Game.LocalPlayer.Character.IsInAir;
                 obj.IsInMeleeCombat = player.IsInMeleeCombat;
-                obj.PedModelHash = player.Model.Hash;
+                obj.PedModelHash = (int)player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.IsAiming = aiming;
@@ -2219,9 +2219,9 @@ namespace GTANetwork
                                         data.Position.ToVector();
                                     Opponents[data.Id].VehicleVelocity = data.Velocity.ToVector();
                                     Opponents[data.Id].IsVehDead = data.IsVehicleDead;
-                                    Opponents[data.Id].ModelHash = data.PedModelHash;
+                                    Opponents[data.Id].ModelHash = (uint)data.PedModelHash;
                                     Opponents[data.Id].VehicleHash =
-                                        data.VehicleModelHash;
+                                        (uint)data.VehicleModelHash;
                                     Opponents[data.Id].PedArmor = data.PedArmor;
                                     Opponents[data.Id].VehicleRPM = data.RPM;
                                     Opponents[data.Id].VehicleRotation =
@@ -2269,7 +2269,7 @@ namespace GTANetwork
                                     Opponents[data.Id].PedArmor = data.PedArmor;
                                     Opponents[data.Id].LastUpdateReceived = DateTime.Now;
                                     Opponents[data.Id].Position = data.Position.ToVector();
-                                    Opponents[data.Id].ModelHash = data.PedModelHash;
+                                    Opponents[data.Id].ModelHash = (uint)data.PedModelHash;
                                     Opponents[data.Id].IsInMeleeCombat = data.IsInMeleeCombat;
                                     Opponents[data.Id].Rotation = data.Quaternion.ToVector();
                                     Opponents[data.Id].IsFreefallingWithParachute = data.IsFreefallingWithChute;
@@ -2306,13 +2306,10 @@ namespace GTANetwork
                                         NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
 
                                     Npcs[data.Name].LastUpdateReceived = DateTime.Now;
-                                    Npcs[data.Name].VehiclePosition =
-                                        data.Position.ToVector();
-                                    Npcs[data.Name].ModelHash = data.PedModelHash;
-                                    Npcs[data.Name].VehicleHash =
-                                        data.VehicleModelHash;
-                                    Npcs[data.Name].VehicleRotation =
-                                        data.Quaternion.ToVector();
+                                    Npcs[data.Name].VehiclePosition = data.Position.ToVector();
+                                    Npcs[data.Name].ModelHash = (uint)data.PedModelHash;
+                                    Npcs[data.Name].VehicleHash = (uint)data.VehicleModelHash;
+                                    Npcs[data.Name].VehicleRotation = data.Quaternion.ToVector();
                                     //data.Quaternion.ToQuaternion();
                                     Npcs[data.Name].PedHealth = data.PlayerHealth;
                                     Npcs[data.Name].VehicleHealth = data.VehicleHealth;
@@ -2349,7 +2346,7 @@ namespace GTANetwork
 
                                     Npcs[data.Name].LastUpdateReceived = DateTime.Now;
                                     Npcs[data.Name].Position = data.Position.ToVector();
-                                    Npcs[data.Name].ModelHash = data.PedModelHash;
+                                    Npcs[data.Name].ModelHash = (uint)data.PedModelHash;
                                     //Npcs[data.Name].Rotation = data.Quaternion.ToVector();
                                     Npcs[data.Name].Rotation = data.Quaternion.ToVector();
                                     Npcs[data.Name].PedHealth = data.PlayerHealth;
@@ -2375,7 +2372,7 @@ namespace GTANetwork
                                     if (data.EntityType == (byte) EntityType.Vehicle)
                                     {
                                         var prop = (VehicleProperties) data.Properties;
-                                        var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash),
+                                        var veh = NetEntityHandler.CreateVehicle(new Model((uint)data.Properties.ModelHash),
                                             data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
                                         LogManager.DebugLog("Settings vehicle color 1");
@@ -2389,7 +2386,7 @@ namespace GTANetwork
                                     else if (data.EntityType == (byte) EntityType.Prop)
                                     {
                                         LogManager.DebugLog("It was a prop. Spawning...");
-                                        NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash),
+                                        NetEntityHandler.CreateObject(new Model((uint)data.Properties.ModelHash),
                                             data.Properties.Position?.ToVector() ?? new Vector3(),
                                             data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
                                     }
@@ -3579,7 +3576,7 @@ namespace GTANetwork
                     modelHash = ((IntArgument)modelObj).Data;
                 }
                 LogManager.DebugLog("MODEL HASH IS " + modelHash);
-                model = new Model(modelHash);
+                model = new Model((uint)modelHash);
 
                 if (model.IsValid)
                 {
