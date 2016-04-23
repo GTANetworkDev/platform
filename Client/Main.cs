@@ -1102,8 +1102,8 @@ namespace GTANetwork
         private Dictionary<string, NativeData> _tickNatives;
         private Dictionary<string, NativeData> _dcNatives;
 
-        public static List<int> EntityCleanup;
-        public static List<int> BlipCleanup;
+        public static List<uint> EntityCleanup; // Entity handles should be uint32, models should be int32
+        public static List<uint> BlipCleanup;
         public static Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
 
         private int _markerCount;
@@ -1132,10 +1132,9 @@ namespace GTANetwork
                 {
                     var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash.ToUint()), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), pair.Key);
-                    ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
-                    ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
-                    ourVeh.PearlescentColor = (VehicleColor) 0;
-                    ourVeh.RimColor = (VehicleColor)0;
+                    ourVeh.SetColors((VehicleColor)pair.Value.PrimaryColor, (VehicleColor)pair.Value.SecondaryColor);
+                    ourVeh.PearlescentColor = Color.White;
+                    ourVeh.RimColor = Color.White;
                     ourVeh.EngineHealth = pair.Value.Health;
                     ourVeh.IsSirenOn = pair.Value.Siren;
                     
@@ -1169,7 +1168,7 @@ namespace GTANetwork
                     for (int i = 0; i < pair.Value.Mods.Length; i++) 
                     {
                         if (pair.Value.Mods[i] != -1)
-                            ourVeh.SetMod((VehicleMod) i, pair.Value.Mods[i], false);
+                            ourVeh.SetMod(i, pair.Value.Mods[i], false);
                     }
 
                     if (pair.Value.IsDead)
@@ -1196,9 +1195,9 @@ namespace GTANetwork
 
                     if (blip.Value.Sprite != 0)
                         ourBlip.Sprite = (BlipSprite) blip.Value.Sprite;
-                    ourBlip.Color = (BlipColor)blip.Value.Color;
+                    ourBlip.Color = TabMapItem.GetBlipcolor(blip.Value.Color, 255);
                     ourBlip.Alpha = blip.Value.Alpha;
-                    ourBlip.IsShortRange = blip.Value.IsShortRange;
+                    ourBlip.SetShortRange(blip.Value.IsShortRange);
                     ourBlip.Scale = blip.Value.Scale;
                 }
             }
@@ -1231,7 +1230,7 @@ namespace GTANetwork
                     {
                         for (int i = 0; i < pair.Value.Props.Length; i++)
                         {
-                            Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props[i], pair.Value.Textures[i], 2);
+                            Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, (uint)pair.Value.Props[i], (uint)pair.Value.Textures[i], 2);
                         }
                         ourPed.Opacity = pair.Value.Alpha / 255f;
 
@@ -1271,7 +1270,7 @@ namespace GTANetwork
             if (_modSwitch % 30 == 0)
             {
                 var id = _modSwitch/30;
-                var mod = Game.LocalPlayer.Character.CurrentVehicle.GetMod((VehicleMod) id);
+                var mod = Game.LocalPlayer.Character.CurrentVehicle.GetMod(id);
                 if (mod != -1)
                 {
                     lock (_vehMods)
@@ -1295,7 +1294,7 @@ namespace GTANetwork
             if (_pedSwitch % 30 == 0)
             {
                 var id = _pedSwitch / 30;
-                var mod = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, Game.LocalPlayer.Character.Handle, id);
+                var mod = Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, Game.LocalPlayer.Character.Handle.Value, id);
                 if (mod != -1)
                 {
                     lock (_pedClothes)
@@ -1338,7 +1337,8 @@ namespace GTANetwork
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = player.Armor;
                 obj.IsVehicleDead = veh.IsDead;
-                obj.RPM = veh.CurrentRPM;
+                //obj.RPM = veh.CurrentRPM;
+                obj.RPM = veh.GetCurrentRPM();
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.LocalPlayer.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
@@ -3579,7 +3579,7 @@ namespace GTANetwork
                 {
                     LogManager.DebugLog("MODEL IS VALID, REQUESTING");
                     if (!model.IsLoaded)
-                        model.Load();
+                        model.LoadAndWait();
                 }
             }
 

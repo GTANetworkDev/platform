@@ -390,6 +390,38 @@ namespace GTANetwork
             byte[] newBytes = BitConverter.GetBytes(newRPM);
             Marshal.Copy(newBytes, 0, address, newBytes.Length);
         }
+
+        public static float GetCurrentRPM(this Vehicle veh)
+        {
+            if (veh == null) return 0f;
+            int offset = 0x7D4;
+            var address = veh.MemoryAddress + offset;
+            var rawInt32 = Marshal.ReadInt32(address);
+            int[] rawIntArray = new[] {rawInt32};
+            byte[] bytes = new byte[4];
+            Buffer.BlockCopy(rawIntArray, 0, bytes, 0, 4);
+            return BitConverter.ToSingle(bytes, 0);
+        }
+
+        public static void SetShortRange(this Blip blip, bool shortRange)
+        {
+            Function.Call(Hash.SET_BLIP_AS_SHORT_RANGE, blip, shortRange);
+        }
+
+        public static void SetMod(this Vehicle veh, int category, int index, bool modded)
+        {
+            Function.Call(Hash.SET_VEHICLE_MOD, veh.Handle.Value, category, index, modded);
+        }
+
+        public static int GetMod(this Vehicle veh, int category)
+        {
+            return Function.Call<int>(Hash.GET_VEHICLE_MOD, veh.Handle.Value, category);
+        }
+
+        public static void SetColors(this Vehicle veh, VehicleColor color1, VehicleColor color2)
+        {
+            Function.Call(Hash.SET_VEHICLE_COLOURS, veh.Handle.Value, (int)color1, (int)color2);
+        }
     }
 
     public static class VectorExtensions
