@@ -2699,7 +2699,7 @@ namespace GTANetwork
                                             var newFloat = (bool) args[2];
                                             
                                             if (newFloat)
-                                                veh.Doors[doorId].Open(true);
+                                                veh.Doors[doorId].Open(false, true);
                                             else
                                                 veh.Doors[doorId].Close(true);
                                         }
