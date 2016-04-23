@@ -1402,7 +1402,7 @@ namespace GTANetwork
                         Game.LocalPlayer.Character.IsInAir;
                 obj.IsInMeleeCombat = player.IsInMeleeCombat;
                 obj.PedModelHash = unchecked((int)player.Model.Hash);
-                obj.WeaponHash = (int)player.Weapons.Current.Hash;
+                obj.WeaponHash = (int)player.Inventory.EquippedWeapon.Hash;
                 obj.PlayerHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                 obj.IsAiming = aiming;
                 obj.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack));
@@ -2088,8 +2088,8 @@ namespace GTANetwork
                         }
                     }
 
-                    if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash) vehs[0].Model.Hash, 0, true) && Game.LocalPlayer.Character.IsIdle && !Game.LocalPlayer.IsAiming)
-                        Game.LocalPlayer.Character.SetIntoVehicle(vehs[0], seat);
+                    if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)vehs[0].Model.Hash, 0, true) && Game.LocalPlayer.Character.IsStill && !Game.LocalPlayer.IsAiming)
+                        Game.LocalPlayer.Character.WarpIntoVehicle(vehs[0], seat);
                     else
                         Game.LocalPlayer.Character.Task.EnterVehicle(vehs[0], seat, -1, 2f);
                     _isGoingToCar = true;
@@ -3260,7 +3260,7 @@ namespace GTANetwork
                     {
                         //_debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.Attack);
                         _debugSyncPed.IsShooting = Game.LocalPlayer.Character.IsShooting;
-                        _debugSyncPed.CurrentWeapon = (int)Game.LocalPlayer.Character.Weapons.Current.Hash;
+                        _debugSyncPed.CurrentWeapon = (int)Game.LocalPlayer.Character.Inventory.EquippedWeapon.Hash;
                         _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
                     }
                 }
@@ -3287,7 +3287,7 @@ namespace GTANetwork
                     _debugSyncPed.Position = player.Position + new Vector3(1f, 0, 0);
                     _debugSyncPed.Rotation = player.Rotation;
                     _debugSyncPed.ModelHash = player.Model.Hash;
-                    _debugSyncPed.CurrentWeapon = (int)player.Weapons.Current.Hash;
+                    _debugSyncPed.CurrentWeapon = (int)player.Inventory.EquippedWeapon.Hash;
                     _debugSyncPed.PedHealth = (int)(100 * (player.Health / (float)player.MaxHealth));
                     _debugSyncPed.IsAiming = aiming;
                     _debugSyncPed.IsShooting = shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack));
@@ -3849,7 +3849,7 @@ namespace GTANetwork
             var source3D = camPos;
 
             Entity ignoreEntity = Game.LocalPlayer.Character;
-            if (Game.LocalPlayer.Character.IsInVehicle())
+            if (Game.LocalPlayer.Character.IsInAnyVehicle(true))
             {
                 ignoreEntity = Game.LocalPlayer.Character.CurrentVehicle;
             }
