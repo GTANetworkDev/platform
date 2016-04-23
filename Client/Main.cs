@@ -1623,7 +1623,7 @@ namespace GTANetwork
             
             if (_isGoingToCar && Game.IsControlJustPressed(0, Control.PhoneCancel))
             {
-                Game.LocalPlayer.Character.Task.ClearAll();
+                Game.LocalPlayer.Character.Tasks.Clear();
                 _isGoingToCar = false;
             }
 
@@ -2040,48 +2040,48 @@ namespace GTANetwork
                 var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.LocalPlayer.Character.Position).Length()).Take(1).ToList();
                 if (vehs.Any() && Game.LocalPlayer.Character.IsInRangeOf(vehs[0].Position, 6f))
                 {
-                    var relPos = vehs[0].GetOffsetFromWorldCoords(Game.LocalPlayer.Character.Position);
-                    VehicleSeat seat = VehicleSeat.Any;
+                    var relPos = vehs[0].GetOffsetPosition(Game.LocalPlayer.Character.Position);
+                    int seat = -2;
 
                     if (relPos.X < 0 && relPos.Y > 0)
                     {
-                        seat = VehicleSeat.RightFront;
+                        seat = 0;
                     }
                     else if (relPos.X >= 0 && relPos.Y > 0)
                     {
-                        seat = VehicleSeat.RightFront;
+                        seat = 0;
                     }
                     else if (relPos.X < 0 && relPos.Y <= 0)
                     {
-                        seat = VehicleSeat.LeftRear;
+                        seat = 1;
                     }
                     else if (relPos.X >= 0 && relPos.Y <= 0)
                     {
-                        seat = VehicleSeat.RightRear;
+                        seat = 2;
                     }
 
-                    if (vehs[0].PassengerCapacity == 2) seat = VehicleSeat.Passenger;
+                    if (vehs[0].PassengerCapacity == 1) seat = 0;
 
-                    if (vehs[0].PassengerCapacity > 4 && vehs[0].GetPedOnSeat(seat).Handle != 0)
+                    if (vehs[0].PassengerCapacity > 3 && vehs[0].GetPedOnSeat(seat).Handle != 0)
                     {
-                        if (seat == VehicleSeat.LeftRear)
+                        if (seat == 1)
                         {
                             for (int i = 3; i < vehs[0].PassengerCapacity; i += 2)
                             {
-                                if (vehs[0].GetPedOnSeat((VehicleSeat) i).Handle == 0)
+                                if (vehs[0].GetPedOnSeat(i).Handle == 0)
                                 {
-                                    seat = (VehicleSeat) i;
+                                    seat = i;
                                     break;
                                 }
                             }
                         }
-                        else if (seat == VehicleSeat.RightRear)
+                        else if (seat == 2)
                         {
                             for (int i = 4; i < vehs[0].PassengerCapacity; i += 2)
                             {
                                 if (!vehs[0].GetPedOnSeat(i).IsValid())
                                 {
-                                    seat = (VehicleSeat)i;
+                                    seat = i;
                                     break;
                                 }
                             }
@@ -2091,7 +2091,7 @@ namespace GTANetwork
                     if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)vehs[0].Model.Hash, 0, true) && Game.LocalPlayer.Character.IsStill && !Game.LocalPlayer.IsAiming)
                         Game.LocalPlayer.Character.WarpIntoVehicle(vehs[0], seat);
                     else
-                        Game.LocalPlayer.Character.Task.EnterVehicle(vehs[0], seat, -1, 2f);
+                        Game.LocalPlayer.Character.Tasks.EnterVehicle(vehs[0], seat);
                     _isGoingToCar = true;
                 }
             }
