@@ -290,7 +290,7 @@ namespace GTANetwork
             Game.SetRelationshipBetweenRelationshipGroups(Game.LocalPlayer.Character.RelationshipGroup, FriendRelGroup, Relationship.Companion);
         }
 
-        public SyncPed(int hash, Vector3 pos, Vector3 rot, bool blip = true) : this((uint)hash, pos, rot, blip) { }
+        public SyncPed(int hash, Vector3 pos, Vector3 rot, bool blip = true) : this(unchecked((uint)hash), pos, rot, blip) { }
             
         public void SetBlipNameFromTextFile(Blip blip, string text)
         {
