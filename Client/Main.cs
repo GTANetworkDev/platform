@@ -1319,7 +1319,7 @@ namespace GTANetwork
             if (IsSpectating) return;
             var player = Game.LocalPlayer.Character;
             
-            if (player.IsInAnyVehicle(false)))
+            if (player.IsInAnyVehicle(false))
             {
                 var veh = player.CurrentVehicle;
                 
