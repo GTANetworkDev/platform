@@ -1266,7 +1266,7 @@ namespace GTANetwork
 
         public static Dictionary<int, int> CheckPlayerVehicleMods()
         {
-            if (!Game.LocalPlayer.Character.IsInVehicle()) return null;
+            if (!Game.LocalPlayer.Character.IsInAnyVehicle(false)) return null;
 
             if (_modSwitch % 30 == 0)
             {
@@ -1319,7 +1319,7 @@ namespace GTANetwork
             if (IsSpectating) return;
             var player = Game.LocalPlayer.Character;
             
-            if (player.IsInVehicle())
+            if (player.IsInAnyVehicle(false)))
             {
                 var veh = player.CurrentVehicle;
                 
@@ -1517,7 +1517,7 @@ namespace GTANetwork
 
         public static int GetCurrentVehicleWeaponHash(Ped ped)
         {
-            if (ped.IsInVehicle())
+            if (ped.IsInAnyVehicle(false))
             {
                 var outputArg = new OutputArgument();
                 var success = Function.Call<bool>(Hash.GET_CURRENT_PED_VEHICLE_WEAPON, ped, outputArg);
@@ -2035,7 +2035,7 @@ namespace GTANetwork
             }
             
 
-            if (e.KeyCode == Keys.G && !Game.LocalPlayer.Character.IsInVehicle() && IsOnServer() && !_chat.IsFocused)
+            if (e.KeyCode == Keys.G && !Game.LocalPlayer.Character.IsInAnyVehicle(true) && IsOnServer() && !_chat.IsFocused)
             {
                 var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.LocalPlayer.Character.Position).Length()).Take(1).ToList();
                 if (vehs.Any() && Game.LocalPlayer.Character.IsInRangeOf(vehs[0].Position, 6f))
@@ -3227,7 +3227,7 @@ namespace GTANetwork
             {
                 _artificialLagCounter = DateTime.Now;
                 _debugFluctuation = _r.Next(10) - 5;
-                if (player.IsInVehicle())
+                if (player.IsInAnyVehicle(false))
                 {
                     var veh = player.CurrentVehicle;
                     veh.Alpha = 50;
