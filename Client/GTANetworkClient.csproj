@@ -98,6 +98,7 @@
     <Compile Include="SyncEventWatcher.cs" />
     <Compile Include="SyncPed.cs" />
     <Compile Include="Util.cs" />
+    <Compile Include="VehicleHashes.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

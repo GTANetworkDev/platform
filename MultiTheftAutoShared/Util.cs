@@ -128,4 +128,17 @@ namespace GTANetworkShared
             };
         }
     }
+
+    public static class IntegerExtensions
+    {
+        public static uint ToUint(this int value)
+        {
+            return unchecked((uint) value);
+        }
+
+        public static int ToInt(this uint value)
+        {
+            return unchecked((int)value);
+        }
+    }
 }

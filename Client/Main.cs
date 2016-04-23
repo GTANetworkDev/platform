@@ -41,7 +41,7 @@ namespace GTANetwork
 
         private readonly MenuPool _menuPool;
 
-        private UIResText _verionLabel = new UIResText("GTAN " + CurrentVersion.ToString(), new Point(), 0.35f, Color.FromArgb(100, 200, 200, 200));
+        private ResText _verionLabel = new ResText("GTAN " + CurrentVersion.ToString(), new Point(), 0.35f, Color.FromArgb(100, 200, 200, 200));
 
         private string _clientIp;
         private readonly ClassicChat _chat;
@@ -94,8 +94,8 @@ namespace GTANetwork
             _tickNatives = new Dictionary<string, NativeData>();
             _dcNatives = new Dictionary<string, NativeData>();
 
-            EntityCleanup = new List<int>();
-            BlipCleanup = new List<int>();
+            EntityCleanup = new List<uint>();
+            BlipCleanup = new List<uint>();
             
             _emptyVehicleMods = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++) _emptyVehicleMods.Add(i, 0);
@@ -123,16 +123,16 @@ namespace GTANetwork
                 _chat.IsFocused = false;
             };
 
-            Tick += OnTick;
-            KeyDown += OnKeyDown;
+            //Tick += OnTick;
+            //KeyDown += OnKeyDown;
 
-            KeyUp += (sender, args) =>
-            {
-                if (args.KeyCode == Keys.Escape && _wasTyping)
-                {
-                    _wasTyping = false;
-                }
-            };
+            //KeyUp += (sender, args) =>
+            //{
+                //if (args.KeyCode == Keys.Escape && _wasTyping)
+                //{
+                    //_wasTyping = false;
+                //}
+            //};
 
             _config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             _config.Port = 8888;
@@ -288,12 +288,12 @@ namespace GTANetwork
                             Npcs.Clear();
                         }
 
-                        while (IsOnServer()) Script.Yield();
+                        while (IsOnServer()) GameFiber.Yield();
                     }
 
                     if (server.LeftBadge == UIMenuItem.BadgeStyle.Lock)
                     {
-                        _password = Game.GetUserInput(256);
+                        _password = Util.GetUserInput("", 256);
                     }
 
                     var splt = server.Description.Split(':');
@@ -342,12 +342,12 @@ namespace GTANetwork
                             Npcs.Clear();
                         }
 
-                        while (IsOnServer()) Script.Yield();
+                        while (IsOnServer()) GameFiber.Yield();
                     }
 
                     if (!string.IsNullOrWhiteSpace(password))
                     {
-                        _password = Game.GetUserInput(256);
+                        _password = Util.GetUserInput("", 256);
                     }
 
                     var splt = server.Split(':');
@@ -1122,27 +1122,27 @@ namespace GTANetwork
             if (map.Objects != null)
                 foreach (var pair in map.Objects)
                 {
-                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash.ToUint()), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
-                    ourVeh.Alpha = (int) pair.Value.Alpha;
+                    ourVeh.Opacity = (int) pair.Value.Alpha;
                 }
 
             if (map.Vehicles != null)
                 foreach (var pair in map.Vehicles)
                 {
-                    var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
+                    var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash.ToUint()), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), pair.Key);
                     ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
                     ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
                     ourVeh.PearlescentColor = (VehicleColor) 0;
                     ourVeh.RimColor = (VehicleColor)0;
                     ourVeh.EngineHealth = pair.Value.Health;
-                    ourVeh.SirenActive = pair.Value.Siren;
+                    ourVeh.IsSirenOn = pair.Value.Siren;
                     
                     for (int i = 0; i < pair.Value.Doors.Length; i++)
                     {
                         if (pair.Value.Doors[i])
-                            ourVeh.OpenDoor((VehicleDoor) i, false, true);
+                            ourVeh.Doors[i].Open((VehicleDoor) i, false, true);
                         else ourVeh.CloseDoor((VehicleDoor) i, true);
                     }
 
