@@ -359,7 +359,9 @@ namespace GTANetwork
         {
             try
             {
-                return World.GetBlipByHandle(handle);
+                var blip =  World.GetBlipByHandle(handle);
+                if (!blip.IsValid()) return null;
+                return blip;
             }
             catch (System.ArgumentException)
             {
@@ -371,7 +373,9 @@ namespace GTANetwork
         {
             try
             {
-                return World.GetEntityByHandle<Entity>(handle);
+                var tmpEntity = World.GetEntityByHandle<Entity>(handle);
+                if (!tmpEntity.IsValid()) return null;
+                return tmpEntity;
             }
             catch (System.ArgumentException)
             {
@@ -383,7 +387,9 @@ namespace GTANetwork
         {
             try
             {
-                return World.GetEntityByHandle<T>(handle);
+                var tmpEntity = World.GetEntityByHandle<T>(handle);
+                if (!tmpEntity.IsValid()) return null;
+                return tmpEntity;
             }
             catch (System.ArgumentException)
             {

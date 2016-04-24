@@ -82,7 +82,7 @@ namespace GTANetwork
                 if (HandleMap.ContainsKey(netId))
                 {
                     if (HandleMap[netId] == uint.MaxValue) return Game.LocalPlayer.Character;
-                    return World.GetEntityByHandle<Entity>(HandleMap[netId]);
+                    return Util.GetEntityByHandle<Entity>(HandleMap[netId]);
                 }
             }
             return null;
@@ -257,8 +257,12 @@ namespace GTANetwork
                 GameFiber.Yield();
             }
 
-            World.GetEntityByHandle<Object>(Function.Call<uint>(Hash.GET_PICKUP_OBJECT, newPickup)).IsPositionFrozen = true;
-            World.GetEntityByHandle<Object>(Function.Call<uint>(Hash.GET_PICKUP_OBJECT, newPickup)).IsPersistent = true;
+            var pickupObject = Util.GetEntityByHandle<Object>(Function.Call<uint>(Hash.GET_PICKUP_OBJECT, newPickup));
+            if (pickupObject != null)
+            {
+                pickupObject.IsPositionFrozen = true;
+                pickupObject.IsPersistent = true;
+            }
 
             return newPickup;
         }
@@ -271,7 +275,7 @@ namespace GTANetwork
                 {
                     if (pair.Value == uint.MaxValue) continue;
                     if (Blips.Contains(pair.Value))
-                        World.GetBlipByHandle(pair.Value)?.Delete();
+                        Util.GetBlipByHandle(pair.Value)?.Delete();
                     else if (Pickups.Contains(pair.Value))
                         Function.Call(Hash.REMOVE_PICKUP, unchecked((int) pair.Value));
                     else

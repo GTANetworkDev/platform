@@ -1951,7 +1951,9 @@ namespace GTANetwork
 
             if (IsSpectating && SpectatingEntity != 0)
             {
-                Game.LocalPlayer.Character.Position = World.GetEntityByHandle<Entity>(SpectatingEntity).Position;
+                var spectEntity = Util.GetEntityByHandle<Entity>(SpectatingEntity);
+                if (spectEntity != null && spectEntity.IsValid())
+                    Game.LocalPlayer.Character.Position = spectEntity.Position;
             }
             else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer == null && Opponents.Count(op => op.Value.Character != null) > 0)
             {
@@ -1959,7 +1961,8 @@ namespace GTANetwork
             }
             else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer != null)
             {
-                Game.LocalPlayer.Character.Position = _currentSpectatingPlayer.Character.Position;
+                if (_currentSpectatingPlayer.Character != null && _currentSpectatingPlayer.Character.IsValid())
+                    Game.LocalPlayer.Character.Position = _currentSpectatingPlayer.Character.Position;
 
                 if (Game.IsControlJustPressed(0, GameControl.CellphoneLeft))
                 {
@@ -2492,7 +2495,7 @@ namespace GTANetwork
                                             {
                                                 if (NetEntityHandler.IsBlip(entity.Handle))
                                                 {
-                                                    var ourBlip = World.GetBlipByHandle(entity.Handle);
+                                                    var ourBlip = Util.GetBlipByHandle(entity.Handle);
                                                     if (ourBlip != null && ourBlip.IsValid()) ourBlip.Delete();
                                                 }
                                                 else if (NetEntityHandler.IsPickup(entity.Handle))
@@ -2750,7 +2753,11 @@ namespace GTANetwork
                                                 var state = (bool) args[2];
                                                 if (veh == null) return;
                                                 if (lightId == Lights.NormalLights)
-                                                    World.GetEntityByHandle<Vehicle>(veh.Handle).LightsOn(state);
+                                                {
+                                                    var car = Util.GetEntityByHandle<Vehicle>(veh.Handle);
+                                                    if (car != null && car.IsValid())
+                                                       car.LightsOn(state);
+                                                }
                                                 else if (lightId == Lights.Highbeams)
                                                     Function.Call(Hash.SET_VEHICLE_FULLBEAM, veh.Handle.Value, state);
                                             }
@@ -3009,7 +3016,12 @@ namespace GTANetwork
 
                                     lock (BlipCleanup)
                                     {
-                                        BlipCleanup.ForEach(blip => World.GetBlipByHandle(blip)?.Delete());
+                                        BlipCleanup.ForEach(blip =>
+                                        {
+                                            var tmpBlip = Util.GetBlipByHandle(blip);
+                                            if (tmpBlip != null && tmpBlip.IsValid())
+                                                tmpBlip.Delete();
+                                        });
                                         BlipCleanup.Clear();
                                     }
 

@@ -371,7 +371,7 @@ namespace GTANetwork
             */
                 DEBUG_STEP = 2;
 
-                if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) ||
+                if (Character == null || !Character.Exists() || !Character.IsValid() || !Character.IsInRangeOf(gPos, hRange) ||
                     Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
                 {
                     LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
@@ -562,7 +562,7 @@ namespace GTANetwork
                     }
                     DEBUG_STEP = 11;
 
-                    if (MainVehicle != null)
+                    if (MainVehicle != null && MainVehicle.IsValid())
                     {
                         if (VehicleSeat == -1)
                             MainVehicle.Position = VehiclePosition;
@@ -616,7 +616,9 @@ namespace GTANetwork
 
                 DEBUG_STEP = 16;
 
-                if ((Character.GetAttachedBlip() == null || (Character.GetAttachedBlip().Position - Character.Position).Length() > 20f) && _blip)
+
+                // v- WORKAROUND
+                if ((Character.GetAttachedBlip() == null || (Character.GetAttachedBlip().Position - Character.Position).Length() > 30f) && _blip)
                 {
                     LogManager.DebugLog("Blip was too far away -- deleting");
                     Character.Delete();
