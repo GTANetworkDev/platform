@@ -165,6 +165,8 @@ namespace GTANetwork
 
             JavascriptHook = new JavascriptHook();
 
+            PedThread.Start();
+
             GameFiber.StartNew(delegate
             {
                 while (true)

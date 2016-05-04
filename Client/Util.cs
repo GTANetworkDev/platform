@@ -445,6 +445,13 @@ namespace GTANetwork
             return BitConverter.ToSingle(bytes, 0);
         }
 
+        public static unsafe uint GetCurrentWeapon(this Ped ped)
+        {
+            uint wHash;
+            Function.Call(Hash.GET_CURRENT_PED_WEAPON, ped, &wHash, true);
+            return wHash;
+        }
+
         public static void SetShortRange(this Blip blip, bool shortRange)
         {
             Function.Call(Hash.SET_BLIP_AS_SHORT_RANGE, blip, shortRange);
