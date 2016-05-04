@@ -280,14 +280,6 @@ namespace GTANetwork
             _blip = blip;
             
             _latencyAverager = new Queue<double>();
-
-            RelGroup = World.AddRelationshipGroup("SYNCPED");
-            FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
-
-            World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
         }
             
         public void SetBlipNameFromTextFile(Blip blip, string text)
@@ -312,11 +304,23 @@ namespace GTANetwork
         private int _lastVehicleAimUpdate;
 
         private int DEBUG_STEP_backend;
-
+        private bool _initialized;
         public void DisplayLocally()
         {
             try
             {
+                if (!_initialized)
+                {
+                    RelGroup = World.AddRelationshipGroup("SYNCPED");
+                    FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
+                    World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
+                    World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
+
+                    World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
+                    World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
+
+                    _initialized = true;
+                }
 
                 if (IsSpectating) return;
 
