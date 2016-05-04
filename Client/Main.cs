@@ -1170,7 +1170,7 @@ namespace GTANetwork
                     if (pair.Value.IsDead)
                     {
                         ourVeh.IsInvincible = false;
-                        ourVeh.Explode();
+                        Function.Call(Hash.EXPLODE_VEHICLE, ourVeh, false, true);
                     }
                     else
                         ourVeh.IsInvincible = true;
@@ -2076,9 +2076,9 @@ namespace GTANetwork
                         seat = VehicleSeat.RightRear;
                     }
 
-                    if (vehs[0].PassengerSeats == 2) seat = VehicleSeat.Passenger;
+                    if (vehs[0].PassengerSeats == 1) seat = VehicleSeat.Passenger;
 
-                    if (vehs[0].PassengerSeats > 4 && vehs[0].GetPedOnSeat(seat).Handle != 0)
+                    if (vehs[0].PassengerSeats > 3 && vehs[0].GetPedOnSeat(seat).Handle != 0)
                     {
                         if (seat == VehicleSeat.LeftRear)
                         {
