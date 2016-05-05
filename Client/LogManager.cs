@@ -23,7 +23,11 @@ namespace GTANetwork
         {
             CreateLogDirectory();
             if (!Main.WriteDebugLog) return;
-            File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+            try
+            {
+                File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+            }
+            catch (Exception) { }
         }
 
         public static void LogException(Exception ex, string source)

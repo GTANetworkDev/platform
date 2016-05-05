@@ -1764,24 +1764,30 @@ namespace GTANetwork
             }*/
 #endif
             DEBUG_STEP = 5;
-            //ProcessMessages();
-            NetIncomingMessage message = null;
-            while ((Client != null) && (message = Client.ReadMessage()) != null)
+
+            if (Client != null)
             {
-                if (IsMessageTypeThreadsafe(message.MessageType))
-                {
-                    var message1 = message;
-                    var pcMsgThread = new Thread((ThreadStart) delegate
+                List<NetIncomingMessage> messages = new List<NetIncomingMessage>();
+                int msgsRead = Client.ReadMessages(messages);
+                LogManager.DebugLog("READING " + msgsRead + " MESSAGES");
+                if (msgsRead > 0)
+                    foreach (var message in messages)
                     {
-                        ProcessMessages(message1, false);
-                    });
-                    pcMsgThread.IsBackground = true;
-                    pcMsgThread.Start();
-                }
-                else
-                {
-                    ProcessMessages(message, true);
-                }
+                        if (IsMessageTypeThreadsafe(message.MessageType))
+                        {
+                            var message1 = message;
+                            var pcMsgThread = new Thread((ThreadStart) delegate
+                            {
+                                ProcessMessages(message1, false);
+                            });
+                            pcMsgThread.IsBackground = true;
+                            pcMsgThread.Start();
+                        }
+                        else
+                        {
+                            ProcessMessages(message, true);
+                        }
+                    }
             }
 
             DEBUG_STEP = 6;
@@ -3063,6 +3069,7 @@ namespace GTANetwork
 
                             World.RenderingCamera = MainMenuCamera;
                             MainMenu.Visible = true;
+                            MainMenu.TemporarilyHidden = false;
                             IsSpectating = false;
                             Weather = null;
                             Time = null;
@@ -3255,7 +3262,8 @@ namespace GTANetwork
                 }
                 LogManager.LogException(e, "PROCESS MESSAGES (TYPE: " + msg.MessageType + " DATATYPE: " + type + ")");
             }
-            
+
+            //Client.Recycle(msg);
         }
 
 
