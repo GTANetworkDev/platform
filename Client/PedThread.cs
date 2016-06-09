@@ -22,8 +22,8 @@ namespace GTANetwork
             const int npcThreshold = 5000; // 5 second timeout
             const int playerThreshold = 60000 * 5; // 60 second timeout
 
-            Dictionary<long, SyncPed> localOpps = null;
-            lock (Main.Opponents) localOpps = new Dictionary<long, SyncPed>(Main.Opponents);
+            Dictionary<int, SyncPed> localOpps = null;
+            lock (Main.Opponents) localOpps = new Dictionary<int, SyncPed>(Main.Opponents);
             /*
             for (int i = localOpps.Count - 1; i >= 0; i--)
             {
@@ -46,7 +46,7 @@ namespace GTANetwork
                 }
             }
             */
-            lock (Main.Opponents) foreach (KeyValuePair<long, SyncPed> opp in new Dictionary<long, SyncPed>(Main.Opponents)) if (!localOpps.ContainsKey(opp.Key)) Main.Opponents.Remove(opp.Key);
+            lock (Main.Opponents) foreach (KeyValuePair<int, SyncPed> opp in new Dictionary<int, SyncPed>(Main.Opponents)) if (!localOpps.ContainsKey(opp.Key)) Main.Opponents.Remove(opp.Key);
 
             //lock (Main.Npcs) foreach (KeyValuePair<string, SyncPed> npc in new Dictionary<string, SyncPed>(Main.Npcs)) if (!localNpcs.ContainsKey(npc.Key)) Main.Npcs.Remove(npc.Key);
 

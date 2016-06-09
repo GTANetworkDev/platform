@@ -146,7 +146,7 @@ namespace GTANetwork
 
         public Vehicle CreateVehicle(Model model, Vector3 position, Vector3 rotation, int netHash)
         {
-            if (model == null) return null;
+            if (model == null || !model.IsValid || !model.IsInCdImage) return null;
             LogManager.DebugLog("CREATING VEHICLE FOR NETHASH " + netHash);
             model.Request(10000);
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);

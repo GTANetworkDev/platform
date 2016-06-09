@@ -563,16 +563,13 @@ namespace GTANetwork
                     }
                     DEBUG_STEP = 11;
 
-                    if (MainVehicle != null)
+                    if (MainVehicle != null && MainVehicle.Handle != 0)
                     {
                         if (VehicleSeat == -1)
                             MainVehicle.Position = VehiclePosition;
                         MainVehicle.EngineRunning = true;
-                        //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
-                        //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
                         MainVehicle.Rotation = _vehicleRotation;
                         MainVehicle.IsInvincible = true;
-                        //Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
                         Character.SetIntoVehicle(MainVehicle, (VehicleSeat) VehicleSeat);
                         DEBUG_STEP = 12;
                     }
@@ -582,12 +579,8 @@ namespace GTANetwork
                     _enterVehicleStarted = DateTime.Now;
                     return;
                 }
+                
 
-                if (_lastVehicle && _justEnteredVeh && IsInVehicle && !Character.IsInVehicle(MainVehicle) &&
-                    DateTime.Now.Subtract(_enterVehicleStarted).TotalSeconds <= 4)
-                {
-                    return;
-                }
                 _justEnteredVeh = false;
                 DEBUG_STEP = 14;
                 if (_lastVehicle && !IsInVehicle && MainVehicle != null)
@@ -1184,7 +1177,7 @@ namespace GTANetwork
 
                             if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
                             {
-                                //Character.FreezePosition = false;
+                                
                                 Character.Task.AimAt(AimCoords, -1);
                             }
 
@@ -1267,8 +1260,24 @@ namespace GTANetwork
                             }
                             else
                             {
-                                //Character.FreezePosition = false;
-                                Character.Task.AimAt(AimCoords, -1);
+								//Character.FreezePosition = false;
+
+								var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+								var animDict = GetAnimDictionary(ourAnim);
+								var secondaryAnimDict = GetSecondaryAnimDict();
+
+								if (secondaryAnimDict != null &&
+									Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
+										3))
+								{
+									Character.Task.ClearAnimation(animDict, ourAnim);
+								}
+								if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
+								{
+									Character.Task.ClearAnimation(animDict, ourAnim);
+								}
+
+								Character.Task.AimAt(AimCoords, -1);
 
                                 var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
                                 if (gunEnt != null)
@@ -1277,9 +1286,9 @@ namespace GTANetwork
                                     var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
                                     var speed = 0xbf800000;
                                     var weaponH = (WeaponHash) CurrentWeapon;
-                                    if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
+                                    /*if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
                                         weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
-                                        speed = 500;
+                                        speed = 0xbf800000;*/
 
                                     if (weaponH == WeaponHash.Minigun)
                                         weaponH = WeaponHash.CombatPDW;
@@ -1325,13 +1334,16 @@ namespace GTANetwork
                                     8f, 1f, -1, 0, -8f, 1, 1, 1);
                             }
 
+							// BUG: Animation doesn't clear for 1-2 seconds after aiming.
+
+							/*
                             if (secondaryAnimDict != null &&
                                 !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
                                     3))
                             {
                                 Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
                                     8f, 1f, -1, 32 | 16, -8f, 1, 1, 1);
-                            }
+                            }*/
                         }
                     }
                 }
@@ -1467,7 +1479,7 @@ namespace GTANetwork
 
         public string GetSecondaryAnimDict()
         {
-            if (CurrentWeapon == unchecked((int) WeaponHash.Unarmed)) return GetAnimDictionary();
+	        if (CurrentWeapon == unchecked((int) WeaponHash.Unarmed)) return null;
             if (CurrentWeapon == unchecked((int) WeaponHash.RPG) ||
                 CurrentWeapon == unchecked((int) WeaponHash.HomingLauncher) ||
                 CurrentWeapon == unchecked((int)WeaponHash.Firework))
@@ -1496,7 +1508,7 @@ namespace GTANetwork
                 CurrentWeapon == unchecked((int) WeaponHash.BullpupShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.SawnOffShotgun))
                 return "move_weapon@rifle@generic";
-            return GetAnimDictionary();
+            return null;
         }
 
         public int GetWeaponHandsHeld(int weapon)

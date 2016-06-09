@@ -87,6 +87,7 @@ namespace GTANetwork.GUI
             }
         }
 
+		
         public override void Draw()
         {
             base.Draw();
@@ -187,9 +188,9 @@ namespace GTANetwork.GUI
 
                 var blipList = new List<string>();
 
-                foreach (var blip in World.GetActiveBlips())
+                foreach (var blip in Util.GetAllBlips())
                 {
-                    if (((int)blip.Sprite) == 8 && File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
+					/*if (((int)blip.Sprite) == 8 && File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
                     {
                         var fname = BLIP_PATH + ((int) blip.Sprite) + ".png";
                         var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
@@ -198,8 +199,19 @@ namespace GTANetwork.GUI
 
                         Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
-                    }
-                }
+                    }*/
+
+					if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
+					{
+						var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
+						var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
+						var siz = new Size(32, 32);
+						var col = GetBlipcolor(blip.Color, blip.Alpha);
+
+						Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+						blipList.Add(((int)blip.Sprite) + ".png");
+					}
+				}
                 
                 foreach (var blipHandle in Main.NetEntityHandler.Blips)
                 {

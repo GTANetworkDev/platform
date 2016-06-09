@@ -20,6 +20,19 @@ namespace GTANetwork
             return Function.Call<int>(Hash.GET_PLAYER_RADIO_STATION_INDEX);
         }
 
+	    public static IEnumerable<Blip> GetAllBlips()
+	    {
+		    foreach (BlipSprite sprite in Enum.GetValues(typeof (BlipSprite)))
+		    {
+			    int Handle = Function.Call<int>(Hash.GET_FIRST_BLIP_INFO_ID, (int)sprite);
+			    while (Function.Call<bool>(Hash.DOES_BLIP_EXIST, Handle))
+			    {
+				    yield return new Blip(Handle);
+					Handle = Function.Call<int>(Hash.GET_NEXT_BLIP_INFO_ID, (int)sprite);
+			    }
+		    }
+		} 
+
         public static void SetPlayerSkin(PedHash skin)
         {
             var model = new Model(skin);

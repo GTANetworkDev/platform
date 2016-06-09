@@ -13,6 +13,20 @@ using Control = GTA.Control;
 
 namespace GTANetwork
 {
+	public class ChatThread : Script
+	{
+		public ChatThread()
+		{
+			base.Tick += (sender, args) =>
+			{
+				if (Main.Chat != null && (!Main.MainMenu.Visible || Main.MainMenu.TemporarilyHidden))
+				{
+					Main.Chat.Tick();
+				}
+			};
+		}
+	}
+
     public class ClassicChat
     {
         public event EventHandler OnComplete;

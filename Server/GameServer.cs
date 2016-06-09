@@ -717,7 +717,7 @@ namespace GTANetworkServer
 
                                     var dcObj = new PlayerDisconnect()
                                     {
-                                        Id = client.NetConnection.RemoteUniqueIdentifier,
+                                        Id = client.CharacterHandle.Value,
                                     };
 
                                     SendToAll(dcObj, PacketType.PlayerDisconnect, true);
@@ -834,7 +834,6 @@ namespace GTANetworkServer
                                             VehicleData;
                                     if (data != null)
                                     {
-                                        data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                         data.Name = client.Name;
                                         data.Latency = client.Latency;
                                         data.NetHandle = client.CharacterHandle.Value;
@@ -851,13 +850,10 @@ namespace GTANetworkServer
                                         {
                                             NetEntityHandler.ToDict()[data.VehicleHandle].Position = data.Position;
                                             NetEntityHandler.ToDict()[data.VehicleHandle].Rotation = data.Quaternion;
-                                            ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle])
-                                                .IsDead = data.IsVehicleDead;
-                                            ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle])
-                                                .Health = data.VehicleHealth;
-                                            ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle])
-                                                .Siren = data.IsSirenActive;
-                                        }
+                                            ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).IsDead = (data.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
+                                            ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Health = data.VehicleHealth;
+                                            ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Siren = (data.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
+                                            }
 
                                         if (NetEntityHandler.ToDict().ContainsKey(data.NetHandle))
                                         {
@@ -882,7 +878,6 @@ namespace GTANetworkServer
                                     var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
                                     if (data != null)
                                     {
-                                        data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                         data.Name = client.Name;
                                         data.Latency = client.Latency;
                                         data.NetHandle = client.CharacterHandle.Value;
@@ -921,7 +916,6 @@ namespace GTANetworkServer
                                             VehicleData;
                                     if (data != null)
                                     {
-                                        data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                         SendToAll(data, PacketType.NpcVehPositionData, false, client);
                                     }
                                 }
@@ -939,7 +933,6 @@ namespace GTANetworkServer
                                         DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
                                     if (data != null)
                                     {
-                                        data.Id = msg.SenderConnection.RemoteUniqueIdentifier;
                                         SendToAll(data, PacketType.NpcPedPositionData, false, client);
                                     }
                                 }

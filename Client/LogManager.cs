@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace GTANetwork
@@ -25,7 +26,8 @@ namespace GTANetwork
             if (!Main.WriteDebugLog) return;
             try
             {
-                File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+                //File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+                Debug.WriteLine(text);
             }
             catch (Exception) { }
         }

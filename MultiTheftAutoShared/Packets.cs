@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using ProtoBuf;
 
 namespace GTANetworkShared
@@ -87,6 +88,27 @@ namespace GTANetworkShared
     {
         NormalLights = 0,
         Highbeams = 1,
+    }
+
+    [Flags]
+    public enum VehicleDataFlags
+    {
+        PressingHorn = 1 << 0,
+        Shooting = 1 << 1,
+        SirenActive = 1 << 2,
+        VehicleDead = 1 << 3,
+    }
+    
+    [Flags]
+    public enum PedDataFlags
+    {
+        Jumping = 1 << 0,
+        Shooting = 1 << 1,
+        Aiming = 1 << 2,
+        ParachuteOpen = 1 << 3,
+        Ragdoll = 1 << 4,
+        InMeleeCombat = 1 << 5,
+        InFreefall = 1 << 6,
     }
 
     public struct LocalHandle
@@ -471,131 +493,79 @@ namespace GTANetworkShared
     public class VehicleData
     {
         [ProtoMember(1)]
-        public long Id { get; set; }
-        [ProtoMember(2)]
         public string Name { get; set; }
-
-        [ProtoMember(3)]
+        [ProtoMember(2)]
         public int VehicleModelHash { get; set; }
-        [ProtoMember(4)]
+        [ProtoMember(3)]
         public int PedModelHash { get; set; }
-        [ProtoMember(5)]
+        [ProtoMember(4)]
         public int WeaponHash { get; set; }
-        [ProtoMember(6)]
-        public bool IsShooting { get; set; }
-
-        [ProtoMember(7)]
+        [ProtoMember(5)]
         public Vector3 Position { get; set; }
-        [ProtoMember(8)]
+        [ProtoMember(6)]
         public Vector3 Quaternion { get; set; }
-
-        [ProtoMember(9)]
-        public int VehicleSeat { get; set; }
-
-        [ProtoMember(10)]
+        [ProtoMember(7)]
+        public short VehicleSeat { get; set; }
+        [ProtoMember(8)]
         public float VehicleHealth { get; set; }
-
-        [ProtoMember(11)]
-        public int PlayerHealth { get; set; }
-
-        [ProtoMember(12)]
+        [ProtoMember(9)]
+        public byte PlayerHealth { get; set; }
+        [ProtoMember(10)]
         public float Latency { get; set; }
-
-        [ProtoMember(13)]
-        public bool IsPressingHorn { get; set; }
-
-        [ProtoMember(14)]
-        public bool IsSirenActive { get; set; }
-
-        [ProtoMember(15)]
+        [ProtoMember(11)]
         public float Speed { get; set; }
-
-        [ProtoMember(16)]
+        [ProtoMember(12)]
         public int VehicleHandle { get; set; }
-
-        [ProtoMember(17)]
+        [ProtoMember(13)]
         public int NetHandle { get; set; }
-
-        [ProtoMember(18)]
+        [ProtoMember(14)]
         public Vector3 Velocity { get; set; }
-
-        [ProtoMember(19)]
-        public int PedArmor { get; set; }
-
-        [ProtoMember(20)]
-        public bool IsVehicleDead { get; set; }
-
-        [ProtoMember(21)]
+        [ProtoMember(15)]
+        public byte PedArmor { get; set; }
+        [ProtoMember(16)]
         public Vector3 AimCoords { get; set; }
-
-        [ProtoMember(22)]
+        [ProtoMember(17)]
         public float RPM { get; set; }
+        [ProtoMember(18)]
+        public byte Flag { get; set; }
+        [ProtoMember(19)]
+        public float Steering { get; set; }
     }
 
     [ProtoContract]
     public class PedData
     {
         [ProtoMember(1)]
-        public long Id { get; set; }
-        [ProtoMember(2)]
         public string Name { get; set; }
-
-        [ProtoMember(3)]
+        [ProtoMember(2)]
         public int PedModelHash { get; set; }
-
-        [ProtoMember(4)]
+        [ProtoMember(3)]
         public Vector3 Position { get; set; }
-
-        [ProtoMember(5)]
+        [ProtoMember(4)]
         public Vector3 Quaternion { get; set; }
-
-        [ProtoMember(6)]
+        [ProtoMember(5)]
         public Vector3 AimCoords { get; set; }
-
-        [ProtoMember(7)]
+        [ProtoMember(6)]
         public int WeaponHash { get; set; }
-
+        [ProtoMember(7)]
+        public byte PlayerHealth { get; set; }
         [ProtoMember(8)]
-        public int PlayerHealth { get; set; }
-
-        [ProtoMember(9)]
         public float Latency { get; set; }
-        
-        [ProtoMember(10)]
+        [ProtoMember(9)]
         public int NetHandle { get; set; }
-
-        [ProtoMember(11)]
+        [ProtoMember(10)]
         public float Speed { get; set; }
-
+        [ProtoMember(11)]
+        public byte PedArmor { get; set; }
         [ProtoMember(12)]
-        public int PedArmor { get; set; }
-
-        [ProtoMember(13)]
-        public bool IsJumping { get; set; }
-        [ProtoMember(14)]
-        public bool IsShooting { get; set; }
-
-        [ProtoMember(15)]
-        public bool IsAiming { get; set; }
-
-        [ProtoMember(16)]
-        public bool IsParachuteOpen { get; set; }
-
-        [ProtoMember(17)]
-        public bool IsRagdoll { get; set; }
-
-        [ProtoMember(18)]
-        public bool IsInMeleeCombat { get; set; }
-
-        [ProtoMember(19)]
-        public bool IsFreefallingWithChute { get; set; }
+        public byte Flag { get; set; }
     }
 
     [ProtoContract]
     public class PlayerDisconnect
     {
         [ProtoMember(1)]
-        public long Id { get; set; }
+        public int Id { get; set; }
     }
     
     [ProtoContract]
