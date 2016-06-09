@@ -432,46 +432,26 @@ namespace GTANetworkServer
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x262B14F48D29DE80, new EntityArgument(player.CharacterHandle.Value), slot, texture, 2);
             }
         }
+		
+		public int vehicleNameToModel(string modelName)
+		{
+			return (from object value in Enum.GetValues(typeof (VehicleHash)) where modelName.ToLower() == ((VehicleHash) value).ToString().ToLower() select (int) ((VehicleHash) value)).FirstOrDefault();
+		}
 
-        public int vehicleNameToModel(string modelName)
+	    public int pedNameToModel(string modelName)
         {
-            VehicleHash output;
-            if (!Enum.TryParse(modelName, out output))
-            {
-                return 0;
-            }
-            return (int) output;
-        }
-
-        public int pedNameToModel(string modelName)
-        {
-            PedHash output;
-            if (!Enum.TryParse(modelName, out output))
-            {
-                return 0;
-            }
-            return (int)output;
-        }
+			return (from object value in Enum.GetValues(typeof(PedHash)) where modelName.ToLower() == ((PedHash)value).ToString().ToLower() select (int)((PedHash)value)).FirstOrDefault();
+		}
 
         public int pickupNameToModel(string modelName)
         {
-            PickupHash output;
-            if (!Enum.TryParse(modelName, out output))
-            {
-                return 0;
-            }
-            return (int)output;
-        }
+			return (from object value in Enum.GetValues(typeof(PickupHash)) where modelName.ToLower() == ((PickupHash)value).ToString().ToLower() select (int)((PickupHash)value)).FirstOrDefault();
+		}
 
         public int weaponNameToModel(string modelName)
         {
-            WeaponHash output;
-            if (!Enum.TryParse(modelName, out output))
-            {
-                return 0;
-            }
-            return (int)output;
-        }
+			return (from object value in Enum.GetValues(typeof(WeaponHash)) where modelName.ToLower() == ((WeaponHash)value).ToString().ToLower() select (int)((WeaponHash)value)).FirstOrDefault();
+		}
 
         public List<Client> getAllPlayers()
         {
