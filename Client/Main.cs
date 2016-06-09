@@ -1126,6 +1126,7 @@ namespace GTANetwork
                 {
                     var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), pair.Key);
+	                if (ourVeh == null) continue;
                     ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
                     ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
                     ourVeh.PearlescentColor = (VehicleColor) 0;
@@ -1345,6 +1346,7 @@ namespace GTANetwork
                 obj.RPM = veh.CurrentRPM;
                 obj.VehicleSeat = (short)Util.GetPedSeat(player); 
                 obj.Flag = 0;
+	            obj.Steering = veh.SteeringScale;
 
                 if (horn)
                     obj.Flag |= (byte) VehicleDataFlags.PressingHorn;
@@ -1722,7 +1724,7 @@ namespace GTANetwork
 
                         UI.ShowSubtitle(Game.Player.Character.Weapons.Current.Hash.ToString());
             */
-
+			
             DEBUG_STEP = 3;
 #if DEBUG
             if (display)
@@ -1735,6 +1737,8 @@ namespace GTANetwork
                 _debug.Visible = true;
                 _debug.Draw();
             }
+			
+
 			/*
 			var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Game.Player.Character);
 
@@ -2307,8 +2311,9 @@ namespace GTANetwork
                             Opponents[data.NetHandle].VehicleSeat = data.VehicleSeat;
                             Opponents[data.NetHandle].IsInVehicle = true;
                             Opponents[data.NetHandle].Latency = data.Latency;
+	                        Opponents[data.NetHandle].SteeringScale = data.Steering;
 
-                            Opponents[data.NetHandle].IsVehDead = (data.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
+							Opponents[data.NetHandle].IsVehDead = (data.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
                             Opponents[data.NetHandle].IsHornPressed = (data.Flag & (byte)VehicleDataFlags.PressingHorn) > 0;
                             Opponents[data.NetHandle].Speed = data.Speed;
                             Opponents[data.NetHandle].Siren = (data.Flag & (byte)VehicleDataFlags.SirenActive) > 0;

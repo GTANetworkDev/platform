@@ -52,6 +52,7 @@ namespace GTANetwork
         public bool IsFreefallingWithParachute;
         public bool IsShooting;
         public float VehicleRPM;
+	    public float SteeringScale;
 
         public int Team = -1;
         public int BlipSprite = -1;
@@ -607,8 +608,8 @@ namespace GTANetwork
 				MainVehicle.SirenActive = Siren;
 
 			MainVehicle.CurrentRPM = VehicleRPM;
-
-		}
+		    MainVehicle.SteeringScale = SteeringScale;
+	    }
 
 	    void DisplayVehiclePosition()
 	    {
