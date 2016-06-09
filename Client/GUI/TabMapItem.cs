@@ -190,16 +190,6 @@ namespace GTANetwork.GUI
 
                 foreach (var blip in Util.GetAllBlips())
                 {
-					/*if (((int)blip.Sprite) == 8 && File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
-                    {
-                        var fname = BLIP_PATH + ((int) blip.Sprite) + ".png";
-                        var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
-                        var siz = new Size(32, 32);
-                        var col = Color.Purple;
-
-                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
-                        blipList.Add(((int)blip.Sprite) + ".png");
-                    }*/
 
 					if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
 					{
@@ -212,7 +202,7 @@ namespace GTANetwork.GUI
 						blipList.Add(((int)blip.Sprite) + ".png");
 					}
 				}
-                
+                /*
                 foreach (var blipHandle in Main.NetEntityHandler.Blips)
                 {
                     var blip = new Blip(blipHandle);
@@ -268,7 +258,7 @@ namespace GTANetwork.GUI
                         Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
                         blipList.Add(((int)blip.Sprite) + ".png");
                     }
-                }
+                }*/
             }
         }
 

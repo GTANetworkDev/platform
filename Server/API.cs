@@ -586,7 +586,20 @@ namespace GTANetworkServer
         public void setEntityPosition(NetHandle netHandle, Vector3 newPosition)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0x06843DA7060A026B, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
+	        if (doesEntityExist(netHandle))
+	        {
+		        Program.ServerInstance.NetEntityHandler.ToDict()[netHandle.Value].Position = newPosition;
+	        }
         }
+
+	    public void setEntityRotation(NetHandle netHandle, Vector3 newRotation)
+	    {
+			Program.ServerInstance.SendNativeCallToAllPlayers(0x8524A8B0171D5E07, new EntityArgument(netHandle.Value), newRotation.X, newRotation.Y, newRotation.Z, 2, 1);
+			if (doesEntityExist(netHandle))
+			{
+				Program.ServerInstance.NetEntityHandler.ToDict()[netHandle.Value].Rotation = newRotation;
+			}
+		}
 
         public Vector3 getEntityPosition(NetHandle entity)
         {

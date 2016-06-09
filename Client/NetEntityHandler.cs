@@ -193,7 +193,7 @@ namespace GTANetwork
                 sc.Render2D();
             }
 
-            var veh = World.CreateProp(model, position, rotation, dynamic, false);
+			var veh = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, position.X, position.Y, position.Z, true, true, dynamic));
             veh.Rotation = rotation;
             veh.Position = position;
             veh.LodDistance = 3000;
