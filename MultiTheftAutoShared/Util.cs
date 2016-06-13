@@ -14,6 +14,7 @@ namespace GTANetworkShared
         public List<string> RecentServers { get; set; }
         public bool ScaleChatWithSafezone { get; set; }
         public bool SteamPowered { get; set; }
+        public bool HideNametagsWhenZoomedOutMap { get; set; }
 
         public PlayerSettings()
         {
@@ -23,6 +24,7 @@ namespace GTANetworkShared
             RecentServers = new List<string>();
             ScaleChatWithSafezone = true;
             SteamPowered = false;
+            HideNametagsWhenZoomedOutMap = false;
         }
     }
 

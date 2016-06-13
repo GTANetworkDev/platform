@@ -224,7 +224,9 @@ namespace GTANetwork
 
             // Wait for GTA5 to exit
 
-            while (!gta5Process.HasExited)
+            var launcherProcess = Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null);
+
+            while (!gta5Process.HasExited || (launcherProcess != null && !launcherProcess.HasExited))
             {
                 Thread.Sleep(1000);
             }

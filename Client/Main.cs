@@ -52,7 +52,7 @@ namespace GTANetwork
         public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
         
         public static SynchronizationMode GlobalSyncMode;
-        public static bool LerpRotaion = false;
+        public static bool LerpRotaion = true;
         public static bool RemoveGameEntities = true;
 
         private static int _channel;
@@ -538,7 +538,7 @@ namespace GTANetwork
                 list = new List<SyncPed>(Opponents.Select(pair => pair.Value));
             }
             
-            _serverPlayers.Dictionary.Add("Total Players", list.Count.ToString());
+            _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
 
             _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
 
@@ -856,7 +856,7 @@ namespace GTANetwork
                 }
 
                 {
-                    var debugItem = new UIMenuCheckboxItem("Lerp Rotation", false);
+                    var debugItem = new UIMenuCheckboxItem("Slerp Rotation", LerpRotaion);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
                         LerpRotaion = @checked;
@@ -874,7 +874,7 @@ namespace GTANetwork
                 }
 
                 {
-                    var debugItem = new UIMenuCheckboxItem("Remove Game Entities", true);
+                    var debugItem = new UIMenuCheckboxItem("Remove Game Entities", RemoveGameEntities);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
                         RemoveGameEntities = @checked;
@@ -887,6 +887,16 @@ namespace GTANetwork
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
                         PlayerSettings.ScaleChatWithSafezone = @checked;
+                        SaveSettings();
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Hide Map Nametags When Zoomed Out", PlayerSettings.HideNametagsWhenZoomedOutMap);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.HideNametagsWhenZoomedOutMap = @checked;
                         SaveSettings();
                     };
                     internetServers.Items.Add(debugItem);

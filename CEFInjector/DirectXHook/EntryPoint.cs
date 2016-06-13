@@ -46,7 +46,6 @@ namespace CEFInjector.DirectXHook
                     dHook.OverlayEngine.Dispose();
                     dHook.OverlayEngine = null;
 
-
                     //((ImageElement) dHook.OverlayEngine.Overlays[0].Elements[0]).Bitmap = newBitmap;
                     //((TextElement) dHook.OverlayEngine.Overlays[0].Elements[1]).Text = newBitmap.GetPixel(236, 62).ToString();
                     //((TextElement) dHook.OverlayEngine.Overlays[0].Elements[1]).Text = "Hello world!";

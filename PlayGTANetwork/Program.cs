@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
@@ -13,6 +14,10 @@ namespace PlayGTANetwork
 {
     public static class Program
     {
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool DeleteFile(string name);
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -69,6 +74,12 @@ namespace PlayGTANetwork
             IEnumerable<Type> validTypes;
             try
             {
+                try
+                {
+                    DeleteFile(Path.GetFullPath("GTANetwork.dll:Zone.Identifier"));
+                }
+                catch { }
+
                 var ourAssembly = Assembly.LoadFrom("GTANetwork.dll");
 
                 var types = ourAssembly.GetExportedTypes();
@@ -109,8 +120,7 @@ namespace PlayGTANetwork
             mainBehaviour.Start();
 
             end:
-            {
-            }
+            {}
         }
     }
 

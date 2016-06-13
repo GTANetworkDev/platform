@@ -344,7 +344,7 @@ namespace GTANetwork
 
 				Character.FiringPattern = FiringPattern.FullAuto;
 
-				//Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character); //BUG: <- Maybe causes crash?
+				Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character); //BUG: <- Maybe causes crash?
 
 				LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
 
@@ -414,7 +414,7 @@ namespace GTANetwork
 							if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
 								nameText = "~r~AFK~w~~n~" + nameText;
 
-							var dist = (GameplayCamera.Position - Character.Position).Length();
+                            var dist = (GameplayCamera.Position - Character.Position).Length();
 							var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
 
 							new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
@@ -566,7 +566,7 @@ namespace GTANetwork
 
 	    void WorkaroundBlip()
 	    {
-			if ((Character.CurrentBlip == null || (Character.CurrentBlip.Position - Character.Position).Length() > 70f) && _blip)
+			if (IsInVehicle && MainVehicle != null && (Character.CurrentBlip == null || (Character.CurrentBlip.Position - MainVehicle.Position).Length() > 70f) && _blip)
 			{
 				LogManager.DebugLog("Blip was too far away -- deleting");
 				Character.Delete();
@@ -730,19 +730,8 @@ namespace GTANetwork
 			DEBUG_STEP = 21;
 			if (Main.LerpRotaion)
 			{
-				if ((Util.Denormalize(_lastVehicleRotation.Z) < 180f &&
-					 Util.Denormalize(_vehicleRotation.Z) > 180f) ||
-					(Util.Denormalize(_lastVehicleRotation.Z) > 180f &&
-					 Util.Denormalize(_vehicleRotation.Z) < 180f))
-					MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
-				else
-				{
-					var lerpedRot =
-						Util.LinearVectorLerp(_lastVehicleRotation, _vehicleRotation,
-							(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-							(int)AverageLatency);
-					MainVehicle.Quaternion = lerpedRot.ToQuaternion();
-				}
+			    MainVehicle.Quaternion = Quaternion.Slerp(_lastVehicleRotation.ToQuaternion(), _vehicleRotation.ToQuaternion(),
+			        (float) Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds/AverageLatency));
 			}
 			else
 			{
@@ -979,18 +968,9 @@ namespace GTANetwork
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
 				0);
 			DEBUG_STEP = 25;
-			if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-				 Util.Denormalize(_rotation.Z) > 180f) ||
-				(Util.Denormalize(_lastRotation.Z) > 180f &&
-				 Util.Denormalize(_rotation.Z) < 180f))
-				Character.Quaternion = _rotation.ToQuaternion();
-			else
-				Character.Quaternion =
-					Util.LinearVectorLerp(_lastRotation, _rotation,
-						(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-						(int)AverageLatency)
-						.ToQuaternion();
-			if (
+            Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
+            if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
 					"skydive@base", "free_idle",
 					3))
@@ -1023,19 +1003,10 @@ namespace GTANetwork
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
 				0);
 			DEBUG_STEP = 25;
-			if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-				 Util.Denormalize(_rotation.Z) > 180f) ||
-				(Util.Denormalize(_lastRotation.Z) > 180f &&
-				 Util.Denormalize(_rotation.Z) < 180f))
-				Character.Quaternion = _rotation.ToQuaternion();
-			else
-				Character.Quaternion =
-					Util.LinearVectorLerp(_lastRotation, _rotation,
-						(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-						(int)AverageLatency)
-						.ToQuaternion();
+            Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
 
-			_parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
+            _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
 									  Character.ForwardVector * 0.5f;
 			_parachuteProp.Quaternion = Character.Quaternion;
 			if (
@@ -1207,16 +1178,9 @@ namespace GTANetwork
 
 			if (Main.LerpRotaion)
 			{
-				if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-					 Util.Denormalize(Rotation.Z) > 180f) ||
-					(Util.Denormalize(_lastRotation.Z) > 180f &&
-					 Util.Denormalize(Rotation.Z) < 180f))
-					Character.Rotation = Rotation;
-				else
-					Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
-						(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-						(int)AverageLatency);
-			}
+                Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
+            }
 			else
 			{
 				Character.Rotation = Rotation;
@@ -1601,15 +1565,8 @@ namespace GTANetwork
             DEBUG_STEP = 33;
             if (Main.LerpRotaion)
             {
-                if ((Util.Denormalize(_lastRotation.Z) < 180f &&
-                     Util.Denormalize(Rotation.Z) > 180f) ||
-                    (Util.Denormalize(_lastRotation.Z) > 180f &&
-                     Util.Denormalize(Rotation.Z) < 180f))
-                    Character.Rotation = Rotation;
-                else
-                    Character.Rotation = Util.LinearVectorLerp(_lastRotation, Rotation,
-                        (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                        (int)AverageLatency);
+                Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
             }
             else
             {
