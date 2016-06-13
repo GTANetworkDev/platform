@@ -306,58 +306,82 @@ namespace GTANetwork
 
 	    bool CreateCharacter(Vector3 gPos, float hRange)
 	    {
-			if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) ||
-					Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
+			if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
-				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
-				if (Character != null) Character.Delete();
+				//LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
+                
+				if (Character != null && Character.Exists()) Character.Delete();
+                
 				DEBUG_STEP = 3;
+
 				LogManager.DebugLog("NEW PLAYER " + Name);
+
 				var charModel = new Model(ModelHash);
+
 				LogManager.DebugLog("REQUESTING MODEL FOR " + Name);
+
 				charModel.Request(10000);
+
 				LogManager.DebugLog("CREATING PED FOR " + Name);
+
 				Character = World.CreatePed(charModel, gPos, _rotation.Z);
 				charModel.MarkAsNoLongerNeeded();
+
 				if (Character == null) return true;
+
 				DEBUG_STEP = 4;
+
 				Character.BlockPermanentEvents = true;
 				Character.IsInvincible = true;
 				Character.CanRagdoll = false;
+
 				if (Team == -1 || Team != Main.LocalTeam)
 					Character.RelationshipGroup = RelGroup;
 				else
 					Character.RelationshipGroup = FriendRelGroup;
+
 				LogManager.DebugLog("SETTINGS FIRING PATTERN " + Name);
+
 				Character.FiringPattern = FiringPattern.FullAuto;
 
-				Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character);
+				//Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character); //BUG: <- Maybe causes crash?
 
-				//Character.FreezePosition = true;
 				LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
+
 				if (PedProps != null)
 					foreach (var pair in PedProps)
 					{
 						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, 0, 2);
 					}
+
 				LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
+
 				if (_blip)
 				{
 					Character.AddBlip();
+
 					if (Character.CurrentBlip == null || !Character.CurrentBlip.Exists()) return true;
+
 					LogManager.DebugLog("SETTING BLIP COLOR FOR" + Name);
+
 					if (BlipColor != -1)
 						Character.CurrentBlip.Color = (BlipColor)BlipColor;
 					else
 						Character.CurrentBlip.Color = GTA.BlipColor.White;
+
 					LogManager.DebugLog("SETTING BLIP SCALE FOR" + Name);
+
 					Character.CurrentBlip.Scale = 0.8f;
+
 					LogManager.DebugLog("SETTING BLIP NAME FOR" + Name);
+
 					SetBlipNameFromTextFile(Character.CurrentBlip, Name);
+
 					if (BlipSprite != -1)
 						Character.CurrentBlip.Sprite = (BlipSprite)BlipSprite;
 					if (BlipAlpha != -1)
 						Character.CurrentBlip.Alpha = BlipAlpha;
+
 					LogManager.DebugLog("BLIP DONE FOR" + Name);
 				}
 
@@ -542,7 +566,7 @@ namespace GTANetwork
 
 	    void WorkaroundBlip()
 	    {
-			if ((Character.CurrentBlip == null || (Character.CurrentBlip.Position - Character.Position).Length() > 5f) && _blip)
+			if ((Character.CurrentBlip == null || (Character.CurrentBlip.Position - Character.Position).Length() > 70f) && _blip)
 			{
 				LogManager.DebugLog("Blip was too far away -- deleting");
 				Character.Delete();
@@ -608,7 +632,7 @@ namespace GTANetwork
 				MainVehicle.SirenActive = Siren;
 
 			MainVehicle.CurrentRPM = VehicleRPM;
-		    MainVehicle.SteeringScale = SteeringScale;
+		    MainVehicle.SteeringAngle = Util.ToRadians(SteeringScale);
 	    }
 
 	    void DisplayVehiclePosition()

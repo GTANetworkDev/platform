@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTANSubprocess", "GTANSubpr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GTANMasterServer", "GTANMasterServer\GTANMasterServer.csproj", "{0221BCE6-5CFC-4316-8707-8AF74F76E7DC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CEFInjector", "CEFInjector\CEFInjector.csproj", "{887CA628-47A7-4253-8EC3-C25E36D646FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{0221BCE6-5CFC-4316-8707-8AF74F76E7DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0221BCE6-5CFC-4316-8707-8AF74F76E7DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0221BCE6-5CFC-4316-8707-8AF74F76E7DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{887CA628-47A7-4253-8EC3-C25E36D646FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{887CA628-47A7-4253-8EC3-C25E36D646FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{887CA628-47A7-4253-8EC3-C25E36D646FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{887CA628-47A7-4253-8EC3-C25E36D646FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

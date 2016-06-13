@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using GTA;
 using GTA.Native;
@@ -37,8 +38,11 @@ namespace GTANetwork
         {
             var model = new Model(skin);
             model.Request(10000);
-
-            Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
+            do
+            {
+                Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
+                Script.Yield();
+            } while ((PedHash) Game.Player.Character.Model.Hash != skin);
 
             model.MarkAsNoLongerNeeded();
         }
@@ -219,6 +223,13 @@ namespace GTANetwork
                 props.Add(i, mod);
             }
             return props;
+        }
+
+        public static unsafe void SetVehicleSteeringAngle(this Vehicle veh, float angle)
+        {
+            var address = new IntPtr(veh.MemoryAddress + 0x8AC);
+            var bytes = BitConverter.GetBytes(angle);
+            Marshal.Copy(bytes, 0, address, bytes.Length);
         }
 
         public static int GetPedSeat(Ped ped)

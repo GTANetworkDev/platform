@@ -52,7 +52,8 @@ namespace GTANetwork
         public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
         
         public static SynchronizationMode GlobalSyncMode;
-        public static bool LerpRotaion = true;
+        public static bool LerpRotaion = false;
+        public static bool RemoveGameEntities = true;
 
         private static int _channel;
         public static int LocalTeam = -1;
@@ -855,6 +856,33 @@ namespace GTANetwork
                 }
 
                 {
+                    var debugItem = new UIMenuCheckboxItem("Lerp Rotation", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        LerpRotaion = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Use COOP Synchronization", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        GlobalSyncMode = @checked ? SynchronizationMode.Teleport : SynchronizationMode.Dynamic;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Remove Game Entities", true);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        RemoveGameEntities = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
                     var debugItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
@@ -1346,7 +1374,7 @@ namespace GTANetwork
                 obj.RPM = veh.CurrentRPM;
                 obj.VehicleSeat = (short)Util.GetPedSeat(player); 
                 obj.Flag = 0;
-	            obj.Steering = veh.SteeringScale;
+	            obj.Steering = veh.SteeringAngle;
 
                 if (horn)
                     obj.Flag |= (byte) VehicleDataFlags.PressingHorn;
@@ -1582,6 +1610,7 @@ namespace GTANetwork
 
         private int _debugPickup;
         private int _debugmask;
+        private Vehicle _debugVehicle;
         private bool _lastSpectating;
         private int _currentSpectatingPlayerIndex;
         private SyncPed _currentSpectatingPlayer;
@@ -1604,7 +1633,7 @@ namespace GTANetwork
                 Game.FadeScreenOut(1);
                 
                 Game.Player.Character.Position = _vinewoodSign;
-                Script.Wait(100);
+                Script.Wait(500);
                 Util.SetPlayerSkin(PedHash.Clown01SMY);
                 Game.Player.Character.SetDefaultClothes();
                 MainMenu.Visible = true;
@@ -1737,9 +1766,23 @@ namespace GTANetwork
                 _debug.Visible = true;
                 _debug.Draw();
             }
-			
+            
 
-			/*
+            /*
+            if (Game.Player.Character.LastVehicle != null)
+            {
+                unsafe
+                {
+                    var address = new IntPtr(Game.Player.Character.LastVehicle.MemoryAddress);
+                    UI.ShowSubtitle(address + " (" + address.ToInt64() + ")\n" + Game.Player.Character.LastVehicle.SteeringScale);
+                }
+            }
+
+            if (Game.IsControlPressed(0, Control.LookBehind))
+            {
+                Game.Player.Character.LastVehicle.SteeringAngle = -0.69f;
+            }
+
 			var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Game.Player.Character);
 
 	        if (gunEnt != null)
@@ -1760,7 +1803,7 @@ namespace GTANetwork
 	        }*/
 
 
-			/*
+            /*
             if (Game.IsControlJustPressed(0, Control.Context))
             {
                 //Game.Player.Character.Task.ShootAt(World.GetCrosshairCoordinates().HitCoords, -1);
@@ -1800,7 +1843,7 @@ namespace GTANetwork
                 Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, mod.Hash);
             }
             */
-			/*
+            /*
             if (Game.IsControlPressed(0, Control.LookBehind) && Game.Player.Character.IsInVehicle())
             {
                 Game.Player.Character.CurrentVehicle.CurrentRPM = 1f;
@@ -1812,7 +1855,7 @@ namespace GTANetwork
                 UI.ShowSubtitle("RPM: " + Game.Player.Character.CurrentVehicle.CurrentRPM + " AC: " + Game.Player.Character.CurrentVehicle.Acceleration);
             }*/
 #endif
-			DEBUG_STEP = 5;
+            DEBUG_STEP = 5;
 
             if (Client != null)
             {
@@ -1868,6 +1911,8 @@ namespace GTANetwork
             Game.DisableControl(0, Control.SpecialAbilitySecondary);
             Game.DisableControl(0, Control.CharacterWheel);
             Game.DisableControl(0, Control.Phone);
+
+
             DEBUG_STEP = 12;
             if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() &&
                 Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
@@ -2035,20 +2080,23 @@ namespace GTANetwork
                 Game.DisableControl(0, Control.Attack);
             }
             DEBUG_STEP = 24;
-            if (_whoseturnisitanyways)
+            if (RemoveGameEntities)
             {
-                foreach (var entity in World.GetAllPeds())
+                if (_whoseturnisitanyways)
                 {
-                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
-                        entity.Delete();
+                    foreach (var entity in World.GetAllPeds())
+                    {
+                        if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                            entity.Delete();
+                    }
                 }
-            }
-            else
-            {
-                foreach (var entity in World.GetAllVehicles())
+                else
                 {
-                    if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
-                        entity.Delete();
+                    foreach (var entity in World.GetAllVehicles())
+                    {
+                        if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                            entity.Delete();
+                    }
                 }
             }
             DEBUG_STEP = 25;
@@ -2291,8 +2339,11 @@ namespace GTANetwork
                                     data.Quaternion.ToVector());
                                 Opponents.Add(data.NetHandle, repr);
                             }
+
+                            // Not thread safe
                             if (Opponents[data.NetHandle].Character != null)
                                 NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
+
                             Opponents[data.NetHandle].VehicleNetHandle = data.VehicleHandle;
                             Opponents[data.NetHandle].Name = data.Name;
                             Opponents[data.NetHandle].LastUpdateReceived = DateTime.Now;
@@ -2341,6 +2392,7 @@ namespace GTANetwork
 
                             if (Opponents[data.NetHandle].Character != null)
                                 NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
+
                             Opponents[data.NetHandle].Speed = data.Speed;
                             Opponents[data.NetHandle].Name = data.Name;
                             Opponents[data.NetHandle].PedArmor = data.PedArmor;
@@ -3301,7 +3353,8 @@ namespace GTANetwork
 
 			Game.Player.Character.Position = _vinewoodSign;
 			Util.SetPlayerSkin(PedHash.Clown01SMY);
-			Game.Player.Character.SetDefaultClothes();
+            //Script.Wait(500);
+			//Game.Player.Character.SetDefaultClothes();
 		}
 
 		private void OnLocalDisconnect()
