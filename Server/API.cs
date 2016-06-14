@@ -320,6 +320,24 @@ namespace GTANetworkServer
             Program.ServerInstance.SetPlayerOnSpectate(player, false);
         }
 
+        public void setVehicleLivery(NetHandle vehicle, int livery)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Livery = livery;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x60BF608F1B8CD1B6, new EntityArgument(vehicle.Value), livery);
+            }
+        }
+
+        public int getVehicleLivery(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Livery;
+            }
+            return 0;
+        }
+
         public void setVehicleMod(NetHandle vehicle, int modType, int mod)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))

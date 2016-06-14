@@ -209,6 +209,7 @@ namespace GTANetworkShared
             Health = 1000;
             Doors = new bool[7];
             Tires = new bool[8];
+            Livery = 0;
         }
 
         [ProtoMember(1)]
@@ -237,6 +238,9 @@ namespace GTANetworkShared
 
         [ProtoMember(9)]
         public bool[] Tires { get; set; }
+
+        [ProtoMember(10)]
+        public int Livery { get; set; }
     }
 
     [ProtoContract]

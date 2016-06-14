@@ -1165,6 +1165,7 @@ namespace GTANetwork
                     var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
                         pair.Value.Rotation.ToVector(), pair.Key);
 	                if (ourVeh == null) continue;
+                    ourVeh.Livery = pair.Value.Livery;
                     ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
                     ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
                     ourVeh.PearlescentColor = (VehicleColor) 0;
@@ -2520,6 +2521,7 @@ namespace GTANetwork
                                     data.Properties.Position?.ToVector() ?? new Vector3(),
                                     data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
                                 LogManager.DebugLog("Settings vehicle color 1");
+                                veh.Livery = prop.Livery;
                                 veh.PrimaryColor = (VehicleColor)prop.PrimaryColor;
                                 LogManager.DebugLog("Settings vehicle color 2");
                                 veh.SecondaryColor = (VehicleColor)prop.SecondaryColor;
