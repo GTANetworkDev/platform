@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Runtime.Remoting.Channels.Ipc;
 using System.Threading.Tasks;
 using CEFInjector.DirectXHook.Hook;
 using CEFInjector.DirectXHook.Hook.Common;
 using CEFInjector.DirectXHook.Interface;
 using SharpDX;
+using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
 namespace CEFInjector.DirectXHook
 {
@@ -41,16 +44,7 @@ namespace CEFInjector.DirectXHook
                 {
                     var dHook = (DXHookD3D11) _directXHook;
 
-                    dHook.MainBitmap = new Bitmap(newBitmap);
-
-                    dHook.OverlayEngine.Dispose();
-                    dHook.OverlayEngine = null;
-
-                    //((ImageElement) dHook.OverlayEngine.Overlays[0].Elements[0]).Bitmap = newBitmap;
-                    //((TextElement) dHook.OverlayEngine.Overlays[0].Elements[1]).Text = newBitmap.GetPixel(236, 62).ToString();
-                    //((TextElement) dHook.OverlayEngine.Overlays[0].Elements[1]).Text = "Hello world!";
-                    //dHook.OverlayEngine.FlushCache();
-
+                    dHook.SetBitmap(newBitmap.ToBitmap());
                 }
                 else if (_directXHook is DXHookD3D10_1)
                 {

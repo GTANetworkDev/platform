@@ -19,7 +19,7 @@ namespace CEFInjector.DirectXHook.Interface
     [Serializable]
     public delegate void DisplayTextEvent(DisplayTextEventArgs args);
     [Serializable]
-    public delegate void UpdateMainBitmap(Bitmap bmp);
+    public delegate void UpdateMainBitmap(byte[] bmp);
 
     [Serializable]
     public class CaptureInterface : MarshalByRefObject
@@ -241,7 +241,7 @@ namespace CEFInjector.DirectXHook.Interface
             SafeInvokeDisplayText(new DisplayTextEventArgs(text, duration));
         }
 
-        public void UpdateMainBitmap(Bitmap newbitmap)
+        public void UpdateMainBitmap(byte[] newbitmap)
         {
             SafeInvokeBitmapUpdate(newbitmap);
         }
@@ -419,7 +419,7 @@ namespace CEFInjector.DirectXHook.Interface
         }
 
 
-        private void SafeInvokeBitmapUpdate(Bitmap newBitmap)
+        private void SafeInvokeBitmapUpdate(byte[] newBitmap)
         {
             if (OnUpdateMainBitmap == null)
                 return;         //No Listeners
@@ -533,7 +533,7 @@ namespace CEFInjector.DirectXHook.Interface
                 DisplayText(args);
         }
 
-        public void UpdateMainBitmapProxyHandler(Bitmap newBitmap)
+        public void UpdateMainBitmapProxyHandler(byte[] newBitmap)
         {
             if (UpdateMainBitmap != null)
                 UpdateMainBitmap(newBitmap);

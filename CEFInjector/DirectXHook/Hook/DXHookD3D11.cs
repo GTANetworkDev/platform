@@ -316,7 +316,15 @@ namespace CEFInjector.DirectXHook.Hook
             _finalRTMapped = false;
         }
 
+        public void SetBitmap(Bitmap bt)
+        {
+            MainBitmap = bt;
+            ((ImageElement) this.OverlayEngine.Overlays[0].Elements[0]).Bitmap = bt;
+            this.OverlayEngine.FlushCache();
+        }
+
         public Bitmap MainBitmap;
+        private int counter;
 
         /// <summary>
         /// Our present hook that will grab a copy of the backbuffer when requested. Note: this supports multi-sampling (anti-aliasing)
@@ -337,23 +345,23 @@ namespace CEFInjector.DirectXHook.Hook
                 {
                     if (OverlayEngine != null)
                         OverlayEngine.Dispose();
-
                     OverlayEngine = new DX11.DXOverlayEngine();
                     OverlayEngine.Overlays.Add(new DirectXHook.Hook.Common.Overlay
                     {
                         Elements =
                         {
                             new Common.ImageElement(MainBitmap ?? new Bitmap(1920, 1080)) { Location = new System.Drawing.Point(0, 0) },
-                            new Common.TextElement(new System.Drawing.Font("Times New Roman", 22)) { Text = MainBitmap?.ToString() ?? "Test", Location = new System.Drawing.Point(200, 200), Color = System.Drawing.Color.Yellow, AntiAliased = false},
-                            new Common.FramesPerSecond(new System.Drawing.Font("Arial", 16)) { Location = new System.Drawing.Point(5,5), Color = System.Drawing.Color.Red, AntiAliased = true },
+                            new Common.TextElement(new System.Drawing.Font("Times New Roman", 22)) { Text = "CEF ENGINE RUNNING", Location = new System.Drawing.Point(0, 0), Color = System.Drawing.Color.Red, AntiAliased = false},
                         }
                     });
                     OverlayEngine.Initialise(swapChain);
 
                     _swapChainPointer = swapChain.NativePointer;
                 }
+
                 // Draw Overlay(s)
-                else if (OverlayEngine != null)
+
+                if (OverlayEngine != null)
                 {
                     foreach (var overlay in OverlayEngine.Overlays)
                         overlay.Frame();

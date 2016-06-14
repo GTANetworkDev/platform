@@ -64,7 +64,8 @@ namespace CEFInjector.DirectXHook.Hook.DX11
                 _renderTarget = renderTarget;
                 try
                 {
-                    _deviceContext = ToDispose(new DeviceContext(_device));
+                    _deviceContext = ToDispose(new DeviceContext(_device)); // TODO: Test if this fixes crash 
+                    //_deviceContext = new DeviceContext(_device);
                 }
                 catch (SharpDXException)
                 {
@@ -154,9 +155,6 @@ namespace CEFInjector.DirectXHook.Hook.DX11
                     }
                     else if (imageElement != null)
                     {
-                        
-
-
                         DXImage image = GetImageForImageElement(imageElement);
                         if (image != null)
                             _spriteEngine.DrawImage(imageElement.Location.X, imageElement.Location.Y, imageElement.Scale, imageElement.Angle, imageElement.Tint, image);

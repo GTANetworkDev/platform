@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using CEFInjector.DirectXHook;
 using CEFInjector.DirectXHook.Hook;
 using CEFInjector.DirectXHook.Interface;
+using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
 namespace CEFInjector
 {
@@ -18,18 +21,74 @@ namespace CEFInjector
         static void Main(string[] args)
         {
             Console.WriteLine("Starting...");
+
+            Console.WriteLine("Attaching to process...");
+
             AttachProcess("GTA5.exe", Direct3DVersion.Direct3D11);
+            
+            Console.WriteLine("Starting main loop...");
 
-            Console.WriteLine("Waiting on bitmap...");
+            byte[] bitmapBytes = new byte[0];
+            /*
+            Mutex mutex;
+            object numLock = new object();
 
-            Thread.Sleep(3000);
+            try
+            {
+                mutex = Mutex.OpenExisting("sharedMutex");
+            }
+            catch
+            {
+                mutex = new Mutex(true, "sharedMutex");
+            }
+            */
+            const int FPS = 1;
+            const int waitTime = 5000;
 
-            _captureProcess.CaptureInterface.UpdateMainBitmap(new Bitmap(@"A:\Dropbox\stuff\Reaction Images\gamingjournalism.png"));
+            bool continueReading = true;
 
-            Console.WriteLine("Bitmap written.");
+            Thread t = new Thread((ThreadStart) delegate
+            {
+                while (continueReading)
+                {
+                    //lock (numLock)
+                    {
+                        //if (mutex.WaitOne())
+                        {
+                            //Console.WriteLine("Got access!");
+
+                            using (
+                                var mmf = MemoryMappedFile.OpenExisting("GTANETWORKBITMAPSCREEN",
+                                    MemoryMappedFileRights.FullControl)
+                                )
+                            {
+                                using (var accessor = mmf.CreateViewStream())
+                                using (var binReader = new BinaryReader(accessor))
+                                {
+                                    var bitmapLen = binReader.ReadInt32();
+                                    bitmapBytes = new byte[bitmapLen];
+                                    binReader.Read(bitmapBytes, 0, bitmapLen);
+                                }
+                            }
+
+                            //mutex.ReleaseMutex();
+                        }
+                    }
+
+                    if (bitmapBytes.Length > 0)
+                        _captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes);
+
+                    Thread.Sleep(waitTime);
+                }
+            });
+            t.IsBackground = true;
+            t.Start();
 
             Console.ReadLine();
 
+            continueReading = false;
+
+            exit:
             Console.WriteLine("Detaching...");
             HookManager.RemoveHookedProcess(_captureProcess.Process.Id);
             _captureProcess.CaptureInterface.Disconnect();
