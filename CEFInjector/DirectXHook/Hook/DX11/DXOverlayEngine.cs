@@ -194,9 +194,19 @@ namespace CEFInjector.DirectXHook.Hook.DX11
 
         public void FlushCache()
         {
+            foreach (var dxImage in _imageCache)
+            {
+                //dxImage.Value.Dispose();
+                //var img = dxImage.Value;
+                //base.RemoveAndDispose(ref img);
+                //base.DisposeCollector.RemoveAndDispose(ref dxImage.Value);
+            }
+
             _imageCache.Clear();
             _fontCache.Clear();
             Disposable = true;
+
+            //base.DisposeCollector.DisposeAndClear();
         }
 
         DXImage GetImageForImageElement(ImageElement element)
@@ -210,7 +220,6 @@ namespace CEFInjector.DirectXHook.Hook.DX11
                 _imageCache[element] = result;
             }
 
-            
             return result;
         }
 

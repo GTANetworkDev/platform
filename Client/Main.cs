@@ -52,7 +52,7 @@ namespace GTANetwork
         public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
         
         public static SynchronizationMode GlobalSyncMode;
-        public static bool LerpRotaion = true;
+        public static bool LerpRotaion = false;
         public static bool RemoveGameEntities = true;
 
         private static int _channel;

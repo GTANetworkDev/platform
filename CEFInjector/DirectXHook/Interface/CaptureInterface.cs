@@ -19,7 +19,7 @@ namespace CEFInjector.DirectXHook.Interface
     [Serializable]
     public delegate void DisplayTextEvent(DisplayTextEventArgs args);
     [Serializable]
-    public delegate void UpdateMainBitmap(byte[] bmp);
+    public delegate void UpdateMainBitmap(byte[] bmp, int width, int height);
 
     [Serializable]
     public class CaptureInterface : MarshalByRefObject
@@ -241,9 +241,9 @@ namespace CEFInjector.DirectXHook.Interface
             SafeInvokeDisplayText(new DisplayTextEventArgs(text, duration));
         }
 
-        public void UpdateMainBitmap(byte[] newbitmap)
+        public void UpdateMainBitmap(byte[] newbitmap, int width, int height)
         {
-            SafeInvokeBitmapUpdate(newbitmap);
+            SafeInvokeBitmapUpdate(newbitmap, width, height);
         }
 
         #endregion
@@ -419,7 +419,7 @@ namespace CEFInjector.DirectXHook.Interface
         }
 
 
-        private void SafeInvokeBitmapUpdate(byte[] newBitmap)
+        private void SafeInvokeBitmapUpdate(byte[] newBitmap, int width, int height)
         {
             if (OnUpdateMainBitmap == null)
                 return;         //No Listeners
@@ -432,7 +432,7 @@ namespace CEFInjector.DirectXHook.Interface
                 try
                 {
                     listener = (UpdateMainBitmap)del;
-                    listener.Invoke(newBitmap);
+                    listener.Invoke(newBitmap, width, height);
                 }
                 catch (Exception)
                 {
@@ -533,10 +533,10 @@ namespace CEFInjector.DirectXHook.Interface
                 DisplayText(args);
         }
 
-        public void UpdateMainBitmapProxyHandler(byte[] newBitmap)
+        public void UpdateMainBitmapProxyHandler(byte[] newBitmap, int width, int height)
         {
             if (UpdateMainBitmap != null)
-                UpdateMainBitmap(newBitmap);
+                UpdateMainBitmap(newBitmap, width, height);
         }
     }
 }

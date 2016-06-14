@@ -18,7 +18,7 @@ namespace CEFInjector
 {
     class Program
     {
-        static void Main(string[] args)
+        static unsafe void Main(string[] args)
         {
             Console.WriteLine("Starting...");
 
@@ -29,54 +29,52 @@ namespace CEFInjector
             Console.WriteLine("Starting main loop...");
 
             byte[] bitmapBytes = new byte[0];
-            /*
+            
             Mutex mutex;
-            object numLock = new object();
 
             try
             {
-                mutex = Mutex.OpenExisting("sharedMutex");
+                mutex = Mutex.OpenExisting("GTANETWORKCEFMUTEX");
             }
             catch
             {
-                mutex = new Mutex(true, "sharedMutex");
+                mutex = new Mutex(false, "GTANETWORKCEFMUTEX");
             }
-            */
-            const int FPS = 1;
-            const int waitTime = 5000;
+
+            
+            const int FPS = 15;
+            const int waitTime = 1000/FPS;
 
             bool continueReading = true;
-
+            
             Thread t = new Thread((ThreadStart) delegate
             {
                 while (continueReading)
                 {
-                    //lock (numLock)
+                    int width = 0, height = 0;
+
+                    if (mutex.WaitOne())
                     {
-                        //if (mutex.WaitOne())
+                        using (var mmf = MemoryMappedFile.OpenExisting("GTANETWORKBITMAPSCREEN",
+                                MemoryMappedFileRights.FullControl))
                         {
-                            //Console.WriteLine("Got access!");
-
-                            using (
-                                var mmf = MemoryMappedFile.OpenExisting("GTANETWORKBITMAPSCREEN",
-                                    MemoryMappedFileRights.FullControl)
-                                )
+                            using (var accessor = mmf.CreateViewStream())
+                            using (var binReader = new BinaryReader(accessor))
                             {
-                                using (var accessor = mmf.CreateViewStream())
-                                using (var binReader = new BinaryReader(accessor))
-                                {
-                                    var bitmapLen = binReader.ReadInt32();
-                                    bitmapBytes = new byte[bitmapLen];
-                                    binReader.Read(bitmapBytes, 0, bitmapLen);
-                                }
-                            }
+                                var bitmapLen = binReader.ReadInt32();
+                                width = binReader.ReadInt32();
+                                height = binReader.ReadInt32();
 
-                            //mutex.ReleaseMutex();
+                                bitmapBytes = new byte[bitmapLen];
+                                accessor.SafeMemoryMappedViewHandle.ReadArray(0, bitmapBytes, 0, bitmapLen);
+                            }
                         }
+
+                        mutex.ReleaseMutex();
                     }
 
                     if (bitmapBytes.Length > 0)
-                        _captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes);
+                        _captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes, width, height);
 
                     Thread.Sleep(waitTime);
                 }

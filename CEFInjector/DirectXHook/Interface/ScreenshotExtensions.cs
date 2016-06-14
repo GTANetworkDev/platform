@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -7,6 +8,25 @@ namespace CEFInjector.DirectXHook.Interface
 {
     public static class ScreenshotExtensions
     {
+        public static Bitmap ByteArrayToBitmap(byte[] bytes, int width, int height)
+        {
+            IntPtr iptr;
+            GCHandle handle = new GCHandle();
+
+            try
+            {
+                handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+                iptr = Marshal.UnsafeAddrOfPinnedArrayElement(bytes, 0);
+                var bitmap = new Bitmap(width, height, width * 4, PixelFormat.Format32bppArgb, iptr);
+                return bitmap;
+            }
+            finally
+            {
+                iptr = IntPtr.Zero;
+                /*if (handle != new GCHandle()) */handle.Free();
+            }
+        }
+
         public static Bitmap ToBitmap(this byte[] data, int width, int height, int stride, System.Drawing.Imaging.PixelFormat pixelFormat)
         {
             GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);

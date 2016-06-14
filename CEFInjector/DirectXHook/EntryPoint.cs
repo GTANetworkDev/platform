@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.IO.MemoryMappedFiles;
+using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Channels.Ipc;
+using System.Threading;
 using System.Threading.Tasks;
 using CEFInjector.DirectXHook.Hook;
 using CEFInjector.DirectXHook.Hook.Common;
 using CEFInjector.DirectXHook.Interface;
 using SharpDX;
 using ImageFormat = System.Drawing.Imaging.ImageFormat;
+using Timer = System.Timers.Timer;
 
 namespace CEFInjector.DirectXHook
 {
@@ -37,14 +41,13 @@ namespace CEFInjector.DirectXHook
 
             _interface.OnUpdateMainBitmap += _clientEventProxy.UpdateMainBitmapProxyHandler;
             
-
-            _clientEventProxy.UpdateMainBitmap += newBitmap =>
+            _clientEventProxy.UpdateMainBitmap += (newBitmap, w, h) =>
             {
                 if (_directXHook is DXHookD3D11)
                 {
                     var dHook = (DXHookD3D11) _directXHook;
 
-                    dHook.SetBitmap(newBitmap.ToBitmap());
+                    dHook.SetBitmap(ScreenshotExtensions.ByteArrayToBitmap(newBitmap, w, h));
                 }
                 else if (_directXHook is DXHookD3D10_1)
                 {
@@ -68,7 +71,6 @@ namespace CEFInjector.DirectXHook
             
             #endregion
         }
-
 
 
         public void Run(
@@ -121,6 +123,8 @@ namespace CEFInjector.DirectXHook
 
                 // Dispose of the DXHook so any installed hooks are removed correctly
                 DisposeDirectXHook();
+
+                
             }
             catch (Exception e)
             {
