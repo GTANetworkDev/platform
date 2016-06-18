@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -24,8 +25,42 @@ using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
 {
+    public class SyncDebugPanel
+    {
+        public bool DisplayLocally;
+        public bool CreateCharacter;
+        public bool CreateVehicle;
+        public bool DisplayAimingAnimation;
+        public bool DisplayMeleeAnimation;
+        public bool DisplayMeleeCombat;
+        public bool DisplayOpenParachute;
+        public bool DisplayParachuteFreefall;
+        public bool DisplayShootingAnimation;
+        public bool DisplayVehicleDriveBy;
+        public bool DisplayVehiclePosition;
+        public bool DisplayWalkingAnimation;
+        public bool DisplayWeaponShootingAnimation;
+        public bool DrawNametag;
+        public bool UpdateCurrentWeapon;
+        public bool UpdateCustomAnimation;
+        public bool UpdateOnFootPosition;
+        public bool UpdatePlayerPedPos;
+        public bool UpdatePlayerPosOutOfRange;
+        public bool UpdatePosition;
+        public bool UpdateProps;
+        public bool UpdateVehicleInternalInfo;
+        public bool UpdateVehicleMainData;
+        public bool UpdateVehicleMountedWeapon;
+        public bool UpdateVehiclePosition;
+        public bool WorkaroundBlip;
+    }
+
+
     public class Main : Script
     {
+        public static SyncDebugPanel DebugPanel = new SyncDebugPanel();
+
+
         public static PlayerSettings PlayerSettings;
         
         public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_0_9;
@@ -360,7 +395,7 @@ namespace GTANetwork
         private bool isIPLocal(string ipaddress)
         {
             String[] straryIPAddress = ipaddress.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-            int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0]), int.Parse(straryIPAddress[1]), int.Parse(straryIPAddress[2]), int.Parse(straryIPAddress[3]) };
+            int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[1], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[2], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[3], CultureInfo.InvariantCulture) };
             if (iaryIPAddress[0] == 10 || iaryIPAddress[0] == 127 || (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) || (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
             {
                 return true;
@@ -1039,8 +1074,26 @@ namespace GTANetwork
                     };
                 }
 
-                
-                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers });
+                // TODO: Fill crash debugger
+
+                var crashDebug = new TabInteractiveListItem("Sync Debug Panel", new List<UIMenuItem>());
+
+                {
+                    var type = typeof (SyncDebugPanel);
+                    foreach (var field in type.GetFields())
+                    {
+                        var debugItem = new UIMenuCheckboxItem(field.Name, false);
+                        debugItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            field.SetValue(DebugPanel, @checked);
+                        };
+                        crashDebug.Items.Add(debugItem);
+                    }
+                }
+
+
+
+                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers, crashDebug });
                 MainMenu.AddTab(welcomeItem);
             }
 
@@ -2344,15 +2397,18 @@ namespace GTANetwork
                         if (data == null) return;
                         lock (Opponents)
                         {
+                            bool newPlayer = false;
+
                             if (!Opponents.ContainsKey(data.NetHandle))
                             {
                                 var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
                                     data.Quaternion.ToVector());
                                 Opponents.Add(data.NetHandle, repr);
+                                newPlayer = true;
                             }
 
                             // Not thread safe
-                            if (Opponents[data.NetHandle].Character != null)
+                            if (!newPlayer && Opponents[data.NetHandle].Character != null)
                                 NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
 
                             Opponents[data.NetHandle].VehicleNetHandle = data.VehicleHandle;
@@ -2394,14 +2450,17 @@ namespace GTANetwork
                         if (data == null) return;
                         lock (Opponents)
                         {
+                            bool newPlayer = false;
+
                             if (!Opponents.ContainsKey(data.NetHandle))
                             {
                                 var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
                                     data.Quaternion.ToVector());
                                 Opponents.Add(data.NetHandle, repr);
+                                newPlayer = true;
                             }
 
-                            if (Opponents[data.NetHandle].Character != null)
+                            if (!newPlayer && Opponents[data.NetHandle].Character != null)
                                 NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
 
                             Opponents[data.NetHandle].Speed = data.Speed;
@@ -3319,7 +3378,11 @@ namespace GTANetwork
 	    {
 			lock (EntityCleanup)
 			{
-				EntityCleanup.ForEach(ent => new Prop(ent).Delete());
+				EntityCleanup.ForEach(ent =>
+				{
+				    var prop = new Prop(ent);
+                    if (prop.Exists()) prop.Delete();
+				});
 				EntityCleanup.Clear();
 			}
 		}
@@ -3328,7 +3391,11 @@ namespace GTANetwork
 	    {
 			lock (BlipCleanup)
 			{
-				BlipCleanup.ForEach(blip => new Blip(blip).Remove());
+				BlipCleanup.ForEach(blip =>
+				{
+				    var b = new Blip(blip);
+                    if (b.Exists()) b.Remove();
+				});
 				BlipCleanup.Clear();
 			}
 		}
@@ -3364,6 +3431,7 @@ namespace GTANetwork
 			DEBUG_STEP = 57;
 
 			Game.Player.Character.Position = _vinewoodSign;
+
 			Util.SetPlayerSkin(PedHash.Clown01SMY);
             //Script.Wait(500);
 			//Game.Player.Character.SetDefaultClothes();

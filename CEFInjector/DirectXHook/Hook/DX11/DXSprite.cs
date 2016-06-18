@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using SharpDX;
 using SharpDX.D3DCompiler;
@@ -274,6 +275,7 @@ technique11 SpriteTech {
         public void BeginBatch(ShaderResourceView texSRV)
         {
             Debug.Assert(_initialized);
+            Debug.Assert(texSRV != null);
 
             _batchTexSRV = texSRV;
 

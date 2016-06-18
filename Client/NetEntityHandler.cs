@@ -266,17 +266,37 @@ namespace GTANetwork
 
         public void ClearAll()
         {
+            LogManager.DebugLog("STARTING CLEARALL");
+
             lock (HandleMap)
             {
+                LogManager.DebugLog("HANDLEMAP LOCKED");
+                LogManager.DebugLog("HANDLEMAP SIZE: " + HandleMap.Count);
+
                 foreach (var pair in HandleMap)
                 {
+                    if (pair.Value < 0) continue;
+
                     if (Blips.Contains(pair.Value))
-                        new Blip(pair.Value).Remove();
-                    else if(Pickups.Contains(pair.Value))
+                    {
+                        LogManager.DebugLog("REMOVING BLIP WITH ID " + pair.Value);
+                        var b = new Blip(pair.Value);
+                        if (b.Exists()) b.Remove();
+                    }
+                    else if (Pickups.Contains(pair.Value))
+                    {
+                        LogManager.DebugLog("REMOVING PICKUP WITH ID " + pair.Value);
                         Function.Call(Hash.REMOVE_PICKUP, pair.Value);
+                    }
                     else
-                        new Prop(pair.Value).Delete();
+                    {
+                        LogManager.DebugLog("REMOVING ENTITY WITH ID " + pair.Value);
+                        var p = new Prop(pair.Value);
+                        if (p.Exists()) p.Delete();
+                    }
                 }
+
+                LogManager.DebugLog("CLEARING LISTS");
 
                 HandleMap.Clear();
                 Markers.Clear();

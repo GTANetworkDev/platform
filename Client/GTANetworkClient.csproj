@@ -77,6 +77,8 @@
     <Compile Include="ClassicChat.cs" />
     <Compile Include="Chat.cs" />
     <Compile Include="ChatData.cs" />
+    <Compile Include="RemotePlayer.cs" />
+    <None Include="SyncPedCoop.cs" />
     <Compile Include="DebugWindow.cs" />
     <Compile Include="DownloadManager.cs" />
     <Compile Include="GameSettings.cs" />
@@ -96,6 +98,7 @@
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
     </Compile>
     <Compile Include="SyncEventWatcher.cs" />
+    <Compile Include="WeaponDataProvider.cs" />
     <Compile Include="SyncPed.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>

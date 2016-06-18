@@ -36,37 +36,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EasyHook">
-      <HintPath>..\libs\EasyHook.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\SharpDX.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.D3DCompiler, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\SharpDX.D3DCompiler.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Direct3D10, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\SharpDX.Direct3D10.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Direct3D11, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\SharpDX.Direct3D11.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Direct3D11.Effects, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\SharpDX.Direct3D11.Effects.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.Direct3D9, Version=2.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\SharpDX.Direct3D9.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpDX.DXGI, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\SharpDX.DXGI.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Remoting" />
@@ -80,62 +49,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DirectXHook\CaptureProcess.cs" />
-    <Compile Include="DirectXHook\EntryPoint.cs" />
-    <Compile Include="DirectXHook\Exceptions.cs" />
-    <Compile Include="DirectXHook\Hook\BaseDXHook.cs" />
-    <Compile Include="DirectXHook\Hook\Common\Element.cs" />
-    <Compile Include="DirectXHook\Hook\Common\FramesPerSecond.cs" />
-    <Compile Include="DirectXHook\Hook\Common\ImageElement.cs" />
-    <Compile Include="DirectXHook\Hook\Common\IOverlay.cs" />
-    <Compile Include="DirectXHook\Hook\Common\IOverlayElement.cs" />
-    <Compile Include="DirectXHook\Hook\Common\Overlay.cs" />
-    <Compile Include="DirectXHook\Hook\Common\TextElement.cs" />
-    <Compile Include="DirectXHook\Hook\D3D9.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\ContextState.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\DeviceManager.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\DXFont.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\DXImage.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\DXOverlayEngine.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\DXSprite.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\RendererBase.cs" />
-    <Compile Include="DirectXHook\Hook\DX11\ScreenAlignedQuadRenderer.cs" />
-    <Compile Include="DirectXHook\Hook\DX9FormatExtension.cs" />
-    <Compile Include="DirectXHook\Hook\DX9\DXOverlayEngine.cs" />
-    <Compile Include="DirectXHook\Hook\DXGI.cs" />
-    <Compile Include="DirectXHook\Hook\DXHookD3D10.cs" />
-    <Compile Include="DirectXHook\Hook\DXHookD3D10_1.cs" />
-    <Compile Include="DirectXHook\Hook\DXHookD3D11.cs" />
-    <Compile Include="DirectXHook\Hook\DXHookD3D9.cs" />
-    <Compile Include="DirectXHook\Hook\FramesPerSecond.cs" />
-    <Compile Include="DirectXHook\Hook\Hook.cs" />
-    <Compile Include="DirectXHook\Hook\HookManager.cs" />
-    <Compile Include="DirectXHook\Hook\IDXHook.cs" />
-    <Compile Include="DirectXHook\Hook\SafeHGlobal.cs" />
-    <Compile Include="DirectXHook\Hook\TextDisplay.cs" />
-    <Compile Include="DirectXHook\Interface\CaptureConfig.cs" />
-    <Compile Include="DirectXHook\Interface\CaptureInterface.cs" />
-    <Compile Include="DirectXHook\Interface\Direct3DVersion.cs" />
-    <Compile Include="DirectXHook\Interface\DisplayTextEventArgs.cs" />
-    <Compile Include="DirectXHook\Interface\ImageFormat.cs" />
-    <Compile Include="DirectXHook\Interface\MessageReceivedEventArgs.cs" />
-    <Compile Include="DirectXHook\Interface\MessageType.cs" />
-    <Compile Include="DirectXHook\Interface\Screenshot.cs" />
-    <Compile Include="DirectXHook\Interface\ScreenshotExtensions.cs" />
-    <Compile Include="DirectXHook\Interface\ScreenshotReceivedEventArgs.cs" />
-    <Compile Include="DirectXHook\Interface\ScreenshotRequest.cs" />
-    <Compile Include="DirectXHook\NativeMethods.cs" />
-    <Compile Include="Form1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -156,10 +71,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
-    <Content Include="DirectXHook\sharpdx_direct3d11_effects_x86.dll" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MultiTheftAutoShared\GTANetworkShared.csproj">

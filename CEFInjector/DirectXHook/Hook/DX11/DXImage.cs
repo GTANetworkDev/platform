@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
+using System.Threading;
 using SharpDX;
 using SharpDX.Direct3D11;
 
@@ -44,6 +46,11 @@ namespace CEFInjector.DirectXHook.Hook.DX11
             _texHeight = 0;
         }
 
+        private Texture2DDescription _textDesc;
+        private ShaderResourceViewDescription _srvDesc;
+
+        private object _srvLock = new object();
+
         public bool Initialise(System.Drawing.Bitmap bitmap)
         {
             RemoveAndDispose(ref _tex);
@@ -58,35 +65,35 @@ namespace CEFInjector.DirectXHook.Hook.DX11
             bmData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, _texWidth, _texHeight), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             try
             {
-                Texture2DDescription texDesc = new Texture2DDescription();
-                texDesc.Width = _texWidth;
-                texDesc.Height = _texHeight;
-                texDesc.MipLevels = 1;
-                texDesc.ArraySize = 1;
-                texDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
-                texDesc.SampleDescription.Count = 1;
-                texDesc.SampleDescription.Quality = 0;
-                texDesc.Usage = ResourceUsage.Immutable;
-                texDesc.BindFlags = BindFlags.ShaderResource;
-                texDesc.CpuAccessFlags = CpuAccessFlags.None;
-                texDesc.OptionFlags = ResourceOptionFlags.None;
+                _textDesc = new Texture2DDescription();
+                _textDesc.Width = _texWidth;
+                _textDesc.Height = _texHeight;
+                _textDesc.MipLevels = 1;
+                _textDesc.ArraySize = 1;
+                _textDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
+                _textDesc.SampleDescription.Count = 1;
+                _textDesc.SampleDescription.Quality = 0;
+                _textDesc.Usage = ResourceUsage.Immutable;
+                _textDesc.BindFlags = BindFlags.ShaderResource;
+                _textDesc.CpuAccessFlags = CpuAccessFlags.None;
+                _textDesc.OptionFlags = ResourceOptionFlags.None;
 
                 SharpDX.DataBox data;
                 data.DataPointer = bmData.Scan0;
                 data.RowPitch = bmData.Stride;// _texWidth * 4;
                 data.SlicePitch = 0;
 
-                _tex = ToDispose(new Texture2D(_device, texDesc, new[] { data }));
+                _tex = ToDispose(new Texture2D(_device, _textDesc, new[] { data }));
                 if (_tex == null)
                     return false;
 
-                ShaderResourceViewDescription srvDesc = new ShaderResourceViewDescription();
-                srvDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
-                srvDesc.Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
+                _srvDesc = new ShaderResourceViewDescription();
+                _srvDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
+                _srvDesc.Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D;
+                _srvDesc.Texture2D.MipLevels = 1;
+                _srvDesc.Texture2D.MostDetailedMip = 0;
 
-                _texSRV = ToDispose(new ShaderResourceView(_device, _tex, srvDesc));
+                _texSRV = ToDispose(new ShaderResourceView(_device, _tex, _srvDesc));
                 if (_texSRV == null)
                     return false;
             }
@@ -100,10 +107,71 @@ namespace CEFInjector.DirectXHook.Hook.DX11
             return true;
         }
 
+        public void Update(Bitmap bitmap)
+        {
+            Initialise(bitmap);
+
+            /*
+            System.Drawing.Imaging.BitmapData bmData;
+
+            _tex.Dispose();
+            _texSRV.Dispose();
+
+            lock (_srvLock)
+            {
+                //_tex = null;
+                //_texSRV = null;
+
+                bmData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, _texWidth, _texHeight),
+                    System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try
+                {
+                    SharpDX.DataBox data;
+                    data.DataPointer = bmData.Scan0;
+                    data.RowPitch = bmData.Stride; // _texWidth * 4;
+                    data.SlicePitch = 0;
+
+                    _textDesc = new Texture2DDescription();
+                    _textDesc.Width = _texWidth;
+                    _textDesc.Height = _texHeight;
+                    _textDesc.MipLevels = 1;
+                    _textDesc.ArraySize = 1;
+                    _textDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
+                    _textDesc.SampleDescription.Count = 1;
+                    _textDesc.SampleDescription.Quality = 0;
+                    _textDesc.Usage = ResourceUsage.Immutable;
+                    _textDesc.BindFlags = BindFlags.ShaderResource;
+                    _textDesc.CpuAccessFlags = CpuAccessFlags.None;
+                    _textDesc.OptionFlags = ResourceOptionFlags.None;
+
+                    _tex = ToDispose(new Texture2D(_device, _textDesc, new[] {data}));
+                    if (_tex == null)
+                        return;
+
+                    _srvDesc = new ShaderResourceViewDescription();
+                    _srvDesc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
+                    _srvDesc.Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D;
+                    _srvDesc.Texture2D.MipLevels = 1;
+                    _srvDesc.Texture2D.MostDetailedMip = 0;
+
+                    _texSRV = ToDispose(new ShaderResourceView(_device, _tex, _srvDesc));
+                    if (_texSRV == null)
+                        return;
+                }
+                finally
+                {
+                    bitmap.UnlockBits(bmData);
+                }
+            }*/
+        }
+
         public ShaderResourceView GetSRV()
         {
             Debug.Assert(_initialised);
-            return _texSRV;
+            lock (_srvLock)
+            {
+                return _texSRV;
+            }
         }
     }
 }

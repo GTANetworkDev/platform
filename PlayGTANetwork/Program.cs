@@ -117,7 +117,15 @@ namespace PlayGTANetwork
                 goto end;
             }
 
-            mainBehaviour.Start();
+            try
+            {
+                mainBehaviour.Start();
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("logs\\launcher.log", "LAUNCHER EXCEPTION AT " + DateTime.Now + "\r\n" + ex.ToString() + "\r\n\r\n");
+                MessageBox.Show(ex.ToString(), "FATAL ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 
             end:
             {}

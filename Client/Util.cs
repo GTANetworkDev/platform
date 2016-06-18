@@ -129,11 +129,23 @@ namespace GTANetwork
             return pitchYawRoll;
         }
 
+        public static Ped GetResponsiblePed(Vehicle veh)
+        {
+            if (veh.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle != 0) return veh.GetPedOnSeat(GTA.VehicleSeat.Driver);
+
+            for (int i = 0; i < veh.PassengerSeats; i++)
+            {
+                if (veh.GetPedOnSeat((VehicleSeat)i).Handle != 0) return veh.GetPedOnSeat((VehicleSeat)i);
+            }
+
+            return new Ped(0);
+        }
+
         public static Quaternion ToQuaternion(this Vector3 vect)
         {
-            return Quaternion.Euler(vect);
+            //return Quaternion.Euler(vect);
 
-            /*
+            
             vect = new Vector3()
             {
                 X = vect.X.Denormalize() * -1,
@@ -157,7 +169,7 @@ namespace GTANetwork
             result.Y = cosYawOver2 * cosPitchOver2 * sinRollOver2 - sinYawOver2 * sinPitchOver2 * cosRollOver2;
             result.Z = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2;
             result.W = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2;
-            return result;*/
+            return result;
         }
 
         public static int GetTrackId()

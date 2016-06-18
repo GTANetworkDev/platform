@@ -304,8 +304,12 @@ namespace GTANetwork
         private DateTime _lastRocketshot;
         private int _lastVehicleAimUpdate;
 
-	    bool CreateCharacter(Vector3 gPos, float hRange)
-	    {
+        #region NeoSyncPed
+
+        bool CreateCharacter(Vector3 gPos, float hRange)
+        {
+            if (Main.DebugPanel.CreateCharacter) return COOP_CreateCharacter(gPos, hRange);
+
 			if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
 				//LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
@@ -392,6 +396,12 @@ namespace GTANetwork
 
 	    void DrawNametag()
 	    {
+	        if (Main.DebugPanel.DrawNametag)
+	        {
+	            COOP_DrawNametag();
+	            return;
+	        }
+
 			if (!IsInVehicle)
 			{
 				bool isAiming = false;
@@ -502,6 +512,8 @@ namespace GTANetwork
 
 	    bool CreateVehicle()
 	    {
+	        if (Main.DebugPanel.CreateVehicle) return COOP_CreateVehicle();
+
 			if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
 					(_lastVehicle && IsInVehicle &&
 					 (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
@@ -547,6 +559,8 @@ namespace GTANetwork
 
 	    bool UpdatePlayerPosOutOfRange(Vector3 gPos, bool inRange)
 	    {
+	        if (Main.DebugPanel.UpdatePlayerPosOutOfRange) return COOP_UpdatePlayerPosOutOfRange(gPos, inRange);
+
 			if (!inRange)
 			{
 				if (Character != null)
@@ -566,7 +580,13 @@ namespace GTANetwork
 
 	    void WorkaroundBlip()
 	    {
-			if (IsInVehicle && MainVehicle != null && (Character.CurrentBlip == null || (Character.CurrentBlip.Position - MainVehicle.Position).Length() > 70f) && _blip)
+	        if (Main.DebugPanel.WorkaroundBlip)
+	        {
+	            COOP_WorkaroundBlip();
+	            return;
+	        }
+
+            if (IsInVehicle && MainVehicle != null && (Character.CurrentBlip == null || (Character.CurrentBlip.Position - MainVehicle.Position).Length() > 70f) && _blip)
 			{
 				LogManager.DebugLog("Blip was too far away -- deleting");
 				Character.Delete();
@@ -575,12 +595,21 @@ namespace GTANetwork
 
 	    bool UpdatePosition()
 	    {
-		    return IsInVehicle ? UpdateVehiclePosition() : UpdateOnFootPosition();
+	        if (Main.DebugPanel.UpdatePosition) return COOP_UpdatePosition();
+
+            return IsInVehicle ? UpdateVehiclePosition() : UpdateOnFootPosition();
 	    }
 
 	    void UpdateVehicleInternalInfo()
 	    {
-			MainVehicle.EngineHealth = VehicleHealth;
+	        if (Main.DebugPanel.UpdateVehicleInternalInfo)
+	        {
+	            COOP_UpdateVehicleInternalInfo();
+	            return;
+	        }
+
+
+            MainVehicle.EngineHealth = VehicleHealth;
 			if (IsVehDead && !MainVehicle.IsDead)
 			{
 				MainVehicle.IsInvincible = false;
@@ -637,8 +666,14 @@ namespace GTANetwork
 
 	    void DisplayVehiclePosition()
 	    {
+	        if (Main.DebugPanel.DisplayVehiclePosition)
+	        {
+	            COOP_DisplayVehiclePosition();
+	            return;
+	        }
 
-			var dir = VehiclePosition - _lastVehiclePos;
+
+            var dir = VehiclePosition - _lastVehiclePos;
 
 			var syncMode = Main.GlobalSyncMode;
 			if (syncMode == SynchronizationMode.Dynamic)
@@ -741,8 +776,11 @@ namespace GTANetwork
 
 	    bool DisplayVehicleDriveBy()
 	    {
+	        if (Main.DebugPanel.DisplayVehicleDriveBy) return COOP_DisplayVehicleDriveBy();
 
-			if (IsShooting && CurrentWeapon != 0 && VehicleSeat == -1 && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)VehicleHash))
+
+
+            if (IsShooting && CurrentWeapon != 0 && VehicleSeat == -1 && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)VehicleHash))
 			{
 				var isRocket = WeaponDataProvider.IsVehicleWeaponRocket(CurrentWeapon);
 				if (isRocket && DateTime.Now.Subtract(_lastRocketshot).TotalMilliseconds < 1500)
@@ -770,7 +808,7 @@ namespace GTANetwork
 				var speed = 0xbf800000;
 
 				if (isRocket)
-					speed = 500;
+					speed = 0xbf800000;
 				else
 					hash = unchecked((int)WeaponHash.CombatPDW);
 
@@ -782,8 +820,11 @@ namespace GTANetwork
 	    }
 
 		bool UpdateVehicleMainData()
-	    {
-			UpdateVehicleInternalInfo();	
+		{
+		    if (Main.DebugPanel.UpdateVehicleMainData) return COOP_UpdateVehicleMainData();
+
+
+            UpdateVehicleInternalInfo();	
 			DEBUG_STEP = 19;
 
 			DisplayVehiclePosition();
@@ -793,7 +834,14 @@ namespace GTANetwork
 
 	    void UpdateVehicleMountedWeapon()
 	    {
-			if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)VehicleHash, VehicleSeat))
+	        if (Main.DebugPanel.UpdateVehicleMountedWeapon)
+	        {
+	            COOP_UpdateVehicleMountedWeapon();
+	            return;
+	        }
+
+
+            if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)VehicleHash, VehicleSeat))
 			{
 				if (Game.GameTime - _lastVehicleAimUpdate > 30)
 				{
@@ -911,7 +959,10 @@ namespace GTANetwork
 
 	    bool UpdateVehiclePosition()
 	    {
-			if (GetResponsiblePed(MainVehicle).Handle == Character.Handle)
+	        if (Main.DebugPanel.UpdateVehiclePosition) return COOP_UpdateVehiclePosition();
+
+
+            if (GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 			{
 				if (UpdateVehicleMainData()) return true;
 			}
@@ -923,7 +974,14 @@ namespace GTANetwork
 
 	    void UpdateProps()
 	    {
-			if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(_position, 30f))
+	        if (Main.DebugPanel.UpdateProps)
+	        {
+	            COOP_UpdateProps();
+	            return;
+	        }
+
+
+            if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(_position, 30f))
 			{
 				var id = _clothSwitch / 50;
 
@@ -941,7 +999,14 @@ namespace GTANetwork
 
 	    void UpdateCurrentWeapon()
 	    {
-			if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
+	        if (Main.DebugPanel.UpdateCurrentWeapon)
+	        {
+	            COOP_UpdateCurrentWeapon();
+	            return;
+	        }
+
+
+            if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
 			{
 				//Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
 				//Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
@@ -952,7 +1017,14 @@ namespace GTANetwork
 
 	    void DisplayParachuteFreefall()
 	    {
-			Character.FreezePosition = true;
+	        if (Main.DebugPanel.DisplayParachuteFreefall)
+	        {
+	            COOP_DisplayParachuteFreefall();
+	            return;
+	        }
+
+
+            Character.FreezePosition = true;
 			Character.CanRagdoll = false;
 
 			if (!_lastFreefall)
@@ -983,7 +1055,14 @@ namespace GTANetwork
 
 	    void DisplayOpenParachute()
 	    {
-			if (_parachuteProp == null)
+	        if (Main.DebugPanel.DisplayOpenParachute)
+	        {
+	            COOP_DisplayOpenParachute();
+	            return;
+	        }
+
+
+            if (_parachuteProp == null)
 			{
 				_parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,
 					Character.Rotation, false, false);
@@ -1023,7 +1102,14 @@ namespace GTANetwork
 
 	    void UpdateCustomAnimation()
 	    {
-			var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
+	        if (Main.DebugPanel.UpdateCustomAnimation)
+	        {
+	            COOP_UpdateCustomAnimation();
+	            return;
+	        }
+
+
+            var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
 						lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
 
 			UpdatePlayerPedPos();
@@ -1078,7 +1164,14 @@ namespace GTANetwork
 
 	    void DisplayMeleeCombat()
 	    {
-			string secondaryAnimDict = null;
+	        if (Main.DebugPanel.DisplayMeleeCombat)
+	        {
+	            COOP_DisplayMeleeCombat();
+	            return;
+	        }
+
+
+            string secondaryAnimDict = null;
 			var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
 			var hands = GetWeaponHandsHeld(CurrentWeapon);
 			var secAnim = ourAnim;
@@ -1114,7 +1207,13 @@ namespace GTANetwork
 
 	    void DisplayAimingAnimation()
 	    {
-			var hands = GetWeaponHandsHeld(CurrentWeapon);
+	        if (Main.DebugPanel.DisplayAimingAnimation)
+	        {
+	            COOP_DisplayAimingAnimation();
+	            return;
+	        }
+
+            var hands = GetWeaponHandsHeld(CurrentWeapon);
 
 			if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
 			{
@@ -1133,7 +1232,14 @@ namespace GTANetwork
 
 	    void DisplayMeleeAnimation(int hands)
 	    {
-			Character.Task.ClearSecondary();
+	        if (Main.DebugPanel.DisplayMeleeAnimation)
+	        {
+	            COOP_DisplayMeleeAnimation(hands);
+	            return;
+	        }
+
+
+            Character.Task.ClearSecondary();
 
 			var ourAnim = "";
 			var anim = 0;
@@ -1189,7 +1295,14 @@ namespace GTANetwork
 
 	    void DisplayWeaponShootingAnimation()
 	    {
-			var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+	        if (Main.DebugPanel.DisplayWeaponShootingAnimation)
+	        {
+	            COOP_DisplayWeaponShootingAnimation();
+	            return;
+	        }
+
+
+            var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
 
@@ -1235,7 +1348,14 @@ namespace GTANetwork
 
 	    void DisplayShootingAnimation()
 	    {
-			var hands = GetWeaponHandsHeld(CurrentWeapon);
+	        if (Main.DebugPanel.DisplayShootingAnimation)
+	        {
+	            COOP_DisplayShootingAnimation();
+	            return;
+	        }
+
+
+            var hands = GetWeaponHandsHeld(CurrentWeapon);
 
 			if (hands == 3 || hands == 4 || hands == 0)
 			{
@@ -1258,7 +1378,14 @@ namespace GTANetwork
 
 	    void DisplayWalkingAnimation()
 	    {
-			var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+	        if (Main.DebugPanel.DisplayWalkingAnimation)
+	        {
+	            COOP_DisplayWalkingAnimation();
+	            return;
+	        }
+
+
+            var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
 			DEBUG_STEP = 34;
@@ -1283,8 +1410,11 @@ namespace GTANetwork
 		}
 
 		bool UpdateOnFootPosition()
-	    {
-			UpdateProps();
+		{
+		    if (Main.DebugPanel.UpdateOnFootPosition) return COOP_UpdateOnFootPosition();
+
+
+            UpdateProps();
 			
 			DEBUG_STEP = 23;
 
@@ -1362,6 +1492,12 @@ namespace GTANetwork
         {
             try
             {
+                if (Main.DebugPanel.DisplayLocally)
+                {
+                    COOP_DisplayLocally();
+                    return;
+                }
+
                 if (!_initialized)
                 {
                     RelGroup = World.AddRelationshipGroup("SYNCPED");
@@ -1496,6 +1632,12 @@ namespace GTANetwork
 
         private void UpdatePlayerPedPos()
         {
+            if (Main.DebugPanel.UpdatePlayerPedPos)
+            {
+                COOP_UpdatePlayerPedPos();
+                return;
+            }
+
             var syncMode = Main.GlobalSyncMode;
 
             if (syncMode == SynchronizationMode.Dynamic)
@@ -1692,248 +1834,494 @@ namespace GTANetwork
                 _parachuteProp = null;
             }
         }
-    }
 
-    public static class WeaponDataProvider
-    {
-        public static bool DoesVehicleHaveParallelWeapon(VehicleHash model, bool rockets)
+        #endregion
+
+
+        #region COOPSyncPed
+
+        bool COOP_CreateCharacter(Vector3 gPos, float hRange)
         {
-            if (model == VehicleHash.Savage)
+            if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
             {
-                if (!rockets)
-                    return false;
-                else
-                    return true;
-            }
-            else if (model == VehicleHash.Buzzard)
-            {
-                if (!rockets)
-                    return true;
-                else
-                    return true;
-            }
-            else if (model == VehicleHash.Hydra)
-            {
-                if (!rockets)
-                    return true;
-                else return true;
-            }
-            else if (model == VehicleHash.Lazer)
-            {
-                if (!rockets)
-                    return true;
-                else return true;
-            }
+                if (Character != null) Character.Delete();
 
-            if (model == VehicleHash.Valkyrie) return true;
+                Character = World.CreatePed(new Model(ModelHash), gPos, Rotation.Z);
+                if (Character == null) return true;
 
-
-            return false;
-        }
-
-        public static bool DoesVehiclesMuzzleDifferFromVehicleGunPos(VehicleHash model)
-        {
-            if (model == VehicleHash.Rhino || model == VehicleHash.Insurgent || model == VehicleHash.Limo2) return true;
-            return false;
-        }
-
-        public static bool DoesVehicleSeatHaveMountedGuns(VehicleHash vehicle)
-        {
-            if (vehicle == VehicleHash.Savage || vehicle == VehicleHash.Buzzard || vehicle == VehicleHash.Annihilator ||
-                vehicle == VehicleHash.Rhino || vehicle == VehicleHash.Hydra || vehicle == VehicleHash.Lazer ||
-                vehicle == VehicleHash.Valkyrie)
-            {
+                Character.BlockPermanentEvents = true;
+                Character.IsInvincible = true;
+                Character.CanRagdoll = false;
+                Character.RelationshipGroup = RelGroup;
+                if (_blip)
+                {
+                    Character.AddBlip();
+                    if (Character.CurrentBlip == null) return true;
+                    Character.CurrentBlip.Color = GTA.BlipColor.White;
+                    Character.CurrentBlip.Scale = 0.8f;
+                    SetBlipNameFromTextFile(Character.CurrentBlip, Name);
+                }
                 return true;
             }
             return false;
         }
 
-        public static Vector3 GetVehicleWeaponMuzzle(VehicleHash model, bool rockets)
+        bool COOP_CreateVehicle()
         {
-            if (model == VehicleHash.Savage)
+            if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) || (_lastVehicle && IsInVehicle && (MainVehicle == null || !Character.IsInVehicle(MainVehicle) || MainVehicle.Model.Hash != VehicleHash || VehicleSeat != Util.GetPedSeat(Character))))
             {
-                if (!rockets)
-                    return new Vector3(0f, 6.45f, -0.5f);
-                else
-                    return new Vector3(-2.799f, -0.599f, -0.15f);
-            }
-            else if (model == VehicleHash.Buzzard || model == VehicleHash.Annihilator)
-            {
-                if (!rockets)
-                    return new Vector3(1.1f, 0.2f, -0.25f);
-                else
-                    return new Vector3(1.55f, 0.2f, -0.35f);
-            }
-            else if (model == VehicleHash.Hydra)
-            {
-                if (!rockets)
-                    return new Vector3(0.4f, 1.6f, -1f);
-                else return new Vector3(5.05f, -0.14f, -0.9f);
-            }
-            else if (model == VehicleHash.Lazer)
-            {
-                if (!rockets)
-                    return new Vector3(0.75f, 3.19f, 0.4f);
-                else return new Vector3(4.95f, 0.55f, 0.15f);
-            }
+                MainVehicle = new Vehicle(GTANetwork.Main.NetEntityHandler.NetToEntity(VehicleNetHandle).Handle);
 
-            if (model == VehicleHash.Technical)
-                return  new Vector3(0f, -1.359f, 1.799f);
+                if (MainVehicle != null)
+                {
+                    MainVehicle.PrimaryColor = (VehicleColor)VehiclePrimaryColor;
+                    MainVehicle.SecondaryColor = (VehicleColor)VehicleSecondaryColor;
+                    MainVehicle.Rotation = VehicleRotation;
+                    MainVehicle.IsInvincible = true;
+                    Character.Task.WarpIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
 
-            if (model == VehicleHash.Rhino)
-            {
-                if (!rockets) return new Vector3(0f, 0f, 1.369f);
-                else if (rockets) return new Vector3(0, 1.699f, 0f);
+                    /*if (_playerSeat != -2 && !Game.Player.Character.IsInVehicle(_mainVehicle))
+                    { // TODO: Fix me.
+                        Game.Player.Character.Task.WarpIntoVehicle(_mainVehicle, (VehicleSeat)_playerSeat);
+                    }*/
+                }
+
+                _lastVehicle = true;
+                _justEnteredVeh = true;
+                _enterVehicleStarted = DateTime.Now;
+                return true;
             }
-
-            if (model == VehicleHash.Insurgent)
-            {
-                if (!rockets) return new Vector3(0f, -0.6599f, 2.029f);
-                else return new Vector3(0f, 0.5299f, 0f);
-            }
-
-            if (model == VehicleHash.Limo2)
-            {
-                if (!rockets) return new Vector3(0, -0.9199f, 1.2999f);
-                else return new Vector3(0f, 0.5699f, 0f);
-            }
-
-            if (model == VehicleHash.Valkyrie || model == VehicleHash.Valkyrie2)
-            {
-                return new Vector3(1.5799f, -0.03f, 0.02f);
-            }
-
-            return new Vector3();
-        }
-
-        public static float GetVehicleTurretLength(VehicleHash veh)
-        {
-            if (veh == VehicleHash.Technical) return 1.8098f;
-            if (veh == VehicleHash.Rhino) return 4.55014f;
-            if (veh == VehicleHash.Insurgent) return 0.68f;
-            if (veh == VehicleHash.Limo2) return 1.3198f;
-            if (veh == VehicleHash.Valkyrie || veh == VehicleHash.Valkyrie2) return 0.86f;
-            return 0f;
-        }
-
-        public static bool IsVehicleWeaponRocket(int hash)
-        {
-            switch (hash)
-            {
-                default:
-                    return false;
-                case 1186503822:
-                case -494786007:
-                case 1638077257:
-                    return false;
-                case -821520672:
-                case -123497569:
-                    return true;
-            }
-        }
-
-        public static bool DoesVehicleSeatHaveGunPosition(VehicleHash vehicle, int vehiclepos, bool anySeat = false)
-        {
-            if (vehicle == VehicleHash.Rhino && (vehiclepos == -1 || anySeat)) return true;
-            if (vehicle == VehicleHash.Insurgent && (vehiclepos == 7 || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == (int) VehicleSeat.Passenger || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == 1 || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie && (vehiclepos == 2 || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == (int)VehicleSeat.Passenger || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == 1 || anySeat)) return true;
-            if (vehicle == VehicleHash.Valkyrie2 && (vehiclepos == 2 || anySeat)) return true;
-            if (vehicle == VehicleHash.Technical && (vehiclepos == 1 || anySeat)) return true;
-            if (vehicle == VehicleHash.Limo2 && (vehiclepos == 3 || anySeat)) return true;
             return false;
         }
 
-        public static int GetWeaponDamage(WeaponHash weapon)
+        void COOP_DisplayAimingAnimation()
         {
-            switch (weapon)
+            var dest = Position;
+            const int threshold = 50;
+            if (IsAiming && !IsShooting && !Character.IsInRangeOf(Position, 0.5f) && _switch % threshold == 0)
             {
-                default:
-                    return 0;
-                case WeaponHash.SMG:
-                    return 22;
-                case WeaponHash.AssaultSMG:
-                    return 23;
-                case WeaponHash.AssaultRifle:
-                    return 30;
-                case WeaponHash.CarbineRifle:
-                    return 32;
-                case WeaponHash.AdvancedRifle:
-                    return 34;
-                case WeaponHash.MG:
-                    return 40;
-                case WeaponHash.CombatMG:
-                    return 45;
-                case WeaponHash.PumpShotgun:
-                    return 29;
-                case WeaponHash.SawnOffShotgun:
-                    return 40;
-                case WeaponHash.AssaultShotgun:
-                    return 32;
-                case WeaponHash.BullpupShotgun:
-                    return 14;
-                case WeaponHash.StunGun:
-                    return 1;
-                case WeaponHash.SniperRifle:
-                    return 101;
-                case WeaponHash.HeavySniper:
-                    return 216;
-                case WeaponHash.Minigun:
-                    return 30;
-                case WeaponHash.Pistol:
-                    return 26;
-                case WeaponHash.CombatPistol:
-                    return 27;
-                case WeaponHash.APPistol:
-                    return 28;
-                case WeaponHash.Pistol50:
-                    return 51;
-                case WeaponHash.MicroSMG:
-                    return 21;
-                case WeaponHash.Snowball:
-                    return 25;
-                case WeaponHash.CombatPDW:
-                    return 28;
-                case WeaponHash.MarksmanPistol:
-                    return 220;
-                case (WeaponHash)0x47757124:
-                    return 10;
-                case WeaponHash.SNSPistol:
-                    return 28;
-                case WeaponHash.HeavyPistol:
-                    return 40;
-                case WeaponHash.VintagePistol:
-                    return 34;
-                case (WeaponHash)0xC1B3C3D1:
-                    return 160;
-                case WeaponHash.Musket:
-                    return 165;
-                case WeaponHash.HeavyShotgun:
-                    return 117;
-                case WeaponHash.SpecialCarbine:
-                    return 34;
-                case WeaponHash.BullpupRifle:
-                    return 32;
-                case WeaponHash.Gusenberg:
-                    return 34;
-                case WeaponHash.MarksmanRifle:
-                    return 65;
-                case WeaponHash.RPG:
-                    return 50;
-                case WeaponHash.GrenadeLauncher:
-                    return 75;
-                case WeaponHash.Firework:
-                    return 20;
-                case WeaponHash.Railgun:
-                    return 30;
-                case (WeaponHash) 1649403952:
-                    return 36;
-                case (WeaponHash)4019527611:
-                    return 165;
+                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character.Handle, dest.X, dest.Y,
+                    dest.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 2f, 0, 0x3F000000, 0x40800000, 1, 512, 0,
+                    (uint)FiringPattern.FullAuto);
+            }
+            else if (IsAiming && !IsShooting && Character.IsInRangeOf(Position, 0.5f))
+            {
+                Character.Task.AimAt(AimCoords, 100);
             }
         }
+
+        void COOP_DisplayLocally()
+        {
+            if (!_initialized)
+            {
+                RelGroup = World.AddRelationshipGroup("SYNCPED");
+                FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
+                World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
+                World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
+
+                World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
+                World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
+
+                _initialized = true;
+            }
+
+
+
+            DEBUG_STEP = 0;
+
+            const float hRange = 300f;
+            var gPos = IsInVehicle ? VehiclePosition : _position;
+            var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
+
+            DEBUG_STEP = 1;
+            
+            if (COOP_UpdatePlayerPosOutOfRange(gPos, inRange)) return;
+
+            DEBUG_STEP = 2;
+
+            if (COOP_CreateCharacter(gPos, hRange)) return;
+
+            DEBUG_STEP = 5;
+
+            COOP_DrawNametag();
+
+            DEBUG_STEP = 9;
+
+            if (COOP_CreateVehicle()) return;
+            
+            _switch++;
+            DEBUG_STEP = 15;
+
+
+            DEBUG_STEP = 16;
+
+            COOP_WorkaroundBlip();
+
+            if (COOP_UpdatePosition()) return;
+
+            _lastJumping = IsJumping;
+            _lastFreefall = IsFreefallingWithParachute;
+            _lastShooting = IsShooting;
+            _lastAiming = IsAiming;
+            _lastVehicle = IsInVehicle;
+            DEBUG_STEP = 35;
+        }
+
+        bool COOP_DisplayMeleeAnimation(int hands)
+        {
+            return false;
+        }
+
+        void COOP_DisplayMeleeCombat()
+        {
+            
+        }
+
+        void COOP_DisplayOpenParachute()
+        {
+            if (_parachuteProp == null)
+            {
+                _parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,
+                    Character.Rotation, false, false);
+                _parachuteProp.FreezePosition = true;
+                Function.Call(Hash.SET_ENTITY_COLLISION, _parachuteProp.Handle, false, 0);
+            }
+            Character.FreezePosition = true;
+            Character.Position = Position - new Vector3(0, 0, 1);
+            Character.Rotation = Rotation;
+            _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f);
+            _parachuteProp.Quaternion = Character.Quaternion;
+
+            Character.Task.PlayAnimation("skydive@parachute@first_person", "chute_idle_right", 8f, 5000,
+                false, 8f);
+        }
+
+        void COOP_DisplayParachuteFreefall()
+        {
+            
+        }
+
+        void COOP_DisplayShootingAnimation()
+        {
+            var dest = Position;
+            const int threshold = 50;
+            if (IsAiming && !IsShooting && !Character.IsInRangeOf(Position, 0.5f) && _switch % threshold == 0)
+            {
+                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character.Handle, dest.X, dest.Y,
+                    dest.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 2f, 0, 0x3F000000, 0x40800000, 1, 512, 0,
+                    (uint)FiringPattern.FullAuto);
+            }
+            else if (IsAiming && !IsShooting && Character.IsInRangeOf(Position, 0.5f))
+            {
+                Character.Task.AimAt(AimCoords, 100);
+            }
+
+            if (!Character.IsInRangeOf(Position, 0.5f) &&
+                ((IsShooting && !_lastShooting) ||
+                 (IsShooting && _lastShooting && _switch % (threshold * 2) == 0)))
+            {
+                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character.Handle, dest.X, dest.Y,
+                    dest.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 2f, 1, 0x3F000000, 0x40800000, 1, 0, 0,
+                    (uint)FiringPattern.FullAuto);
+            }
+            else if ((IsShooting && !_lastShooting) ||
+                     (IsShooting && _lastShooting && _switch % (threshold / 2) == 0))
+            {
+                Function.Call(Hash.TASK_SHOOT_AT_COORD, Character.Handle, AimCoords.X, AimCoords.Y,
+                    AimCoords.Z, 1500, (uint)FiringPattern.FullAuto);
+            }
+        }
+
+        bool COOP_DisplayVehicleDriveBy()
+        {
+            return false;
+        }
+
+        void COOP_DisplayVehiclePosition()
+        {
+            var dir = VehiclePosition - _lastVehiclePos;
+
+            dir.Normalize();
+
+            var range = Math.Max(20f, Speed * Math.Ceiling(DateTime.Now.Subtract(LastUpdateReceived).TotalSeconds));
+
+            if (MainVehicle.IsInRangeOf(VehiclePosition, (float)range))
+            {
+                var timeElapsed = (float)DateTime.Now.Subtract(LastUpdateReceived).TotalSeconds;
+                var acceleration = Speed - _lastSpeed;
+                MainVehicle.Position = _lastVehiclePos + dir * (Speed * timeElapsed) +
+                                       dir * (0.5f * acceleration * (float)Math.Pow(timeElapsed, 2));
+            }
+            else
+            {
+                MainVehicle.Position = VehiclePosition;
+                _lastVehiclePos = VehiclePosition - (dir * 0.5f);
+            }
+#if DEBUG
+            MainVehicle.Rotation = VehicleRotation;
+#else
+                    if (MainVehicle.Heading < 270)
+                        MainVehicle.Quaternion = Util.LerpQuaternion(MainVehicle.Quaternion, VehicleRotation, 0.1f);
+                    else if (MainVehicle.Heading >= 270)
+                        MainVehicle.Quaternion = Util.LerpQuaternion(VehicleRotation, MainVehicle.Quaternion, 0.1f);
+#endif
+        }
+
+        void COOP_DisplayWalkingAnimation()
+        {
+            
+        }
+
+        void COOP_DisplayWeaponShootingAnimation()
+        {
+
+        }
+
+        void COOP_DrawNametag()
+        {
+            if (!Character.IsOccluded && Character.IsInRangeOf(Game.Player.Character.Position, 20f))
+            {
+                var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.5f));
+                if (oldPos.X != 0 && oldPos.Y != 0)
+                {
+                    var res = UIMenu.GetScreenResolutionMantainRatio();
+                    var pos = new Point((int)((oldPos.X / (float)UI.WIDTH) * res.Width),
+                        (int)((oldPos.Y / (float)UI.HEIGHT) * res.Height));
+
+
+                    new UIResText(Name == null ? "<nameless>" : Name, pos, 0.3f, Color.WhiteSmoke, Font.ChaletLondon, UIResText.Alignment.Centered)
+                    {
+                        Outline = true,
+                    }.Draw();
+                }
+            }
+        }
+
+        void COOP_UpdateCurrentWeapon()
+        {
+            if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
+            {
+                var wep = Character.Weapons.Give((WeaponHash)CurrentWeapon, 9999, true, true);
+                Character.Weapons.Select(wep);
+            }
+        }
+
+        void COOP_UpdateCustomAnimation()
+        {
+
+        }
+
+        bool COOP_UpdateOnFootPosition()
+        {
+            Character.Health = PedHealth;
+
+            if (!_lastJumping && IsJumping)
+            {
+                Character.Task.Jump();
+            }
+
+            if (IsParachuteOpen)
+            {
+                COOP_DisplayOpenParachute();
+            }
+            else
+            {
+                var dest = Position;
+                Character.FreezePosition = false;
+
+                if (_parachuteProp != null)
+                {
+                    _parachuteProp.Delete();
+                    _parachuteProp = null;
+                }
+
+                COOP_DisplayAimingAnimation();
+                COOP_DisplayShootingAnimation();
+                COOP_UpdatePlayerPedPos();
+            }
+
+            _lastJumping = IsJumping;
+            _lastShooting = IsShooting;
+            _lastAiming = IsAiming;
+            return false;
+        }
+
+        void COOP_UpdatePlayerPedPos()
+        {
+            var dest = Position;
+
+            if (!IsAiming && !IsShooting && !IsJumping)
+            {
+                switch (SyncMode)
+                {
+                    case SynchronizationMode.Dynamic:
+                        if (!Character.IsInRangeOf(Position, 0.5f))
+                        {
+                            Character.Task.RunTo(Position, true, 500);
+                            //var targetAngle = Rotation.Z/Math.Sqrt(1 - Rotation.W*Rotation.W);
+                            //Function.Call(Hash.TASK_GO_STRAIGHT_TO_COORD, Character.Handle, Position.X, Position.Y, Position.Z, 5f, 3000, targetAngle, 0);
+                        }
+                        if (!Character.IsInRangeOf(Position, 5f))
+                        {
+                            Character.Position = dest - new Vector3(0, 0, 1f);
+                            Character.Rotation = Rotation;
+                        }
+                        break;
+                    case SynchronizationMode.Teleport:
+                        Character.Position = dest - new Vector3(0, 0, 1f);
+                        Character.Rotation = Rotation;
+                        break;
+                }
+            }
+        }
+
+        bool COOP_UpdatePlayerPosOutOfRange(Vector3 gPos, bool inRange)
+        {
+
+            if (inRange && !_isStreamedIn)
+            {
+                _isStreamedIn = true;
+                if (_mainBlip != null)
+                {
+                    _mainBlip.Remove();
+                    _mainBlip = null;
+                }
+            }
+            else if (!inRange && _isStreamedIn)
+            {
+                Clear();
+                _isStreamedIn = false;
+            }
+
+            if (!inRange)
+            {
+                if (_mainBlip == null && _blip)
+                {
+                    _mainBlip = World.CreateBlip(gPos);
+                    _mainBlip.Color = GTA.BlipColor.White;
+                    _mainBlip.Scale = 0.8f;
+                    SetBlipNameFromTextFile(_mainBlip, Name == null ? "<nameless>" : Name);
+                }
+                if (_blip && _mainBlip != null)
+                    _mainBlip.Position = gPos;
+                return true;
+            }
+
+            return false;
+        }
+
+        bool COOP_UpdatePosition()
+        {
+            if (IsInVehicle)
+            {
+                return COOP_UpdateVehiclePosition();
+            }
+            else
+            {
+                return COOP_UpdateOnFootPosition();
+            }
+        }
+
+        void COOP_UpdateProps()
+        {
+            if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(Position, 30f))
+            {
+                var id = _clothSwitch / 50;
+
+                if (PedProps.ContainsKey(id) &&
+                    PedProps[id] != Function.Call<int>(Hash.GET_PED_DRAWABLE_VARIATION, Character.Handle, id))
+                {
+                    Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character.Handle, id, PedProps[id], 0, 0);
+                }
+            }
+
+            _clothSwitch++;
+            if (_clothSwitch >= 750)
+                _clothSwitch = 0;
+        }
+
+        void COOP_UpdateVehicleInternalInfo()
+        {
+            MainVehicle.EngineHealth = VehicleHealth;
+            if (MainVehicle.Health <= 0)
+            {
+                MainVehicle.IsInvincible = false;
+                //_mainVehicle.Explode();
+            }
+            else
+            {
+                MainVehicle.IsInvincible = true;
+                if (MainVehicle.IsDead)
+                    MainVehicle.Repair();
+            }
+
+            MainVehicle.PrimaryColor = (VehicleColor)VehiclePrimaryColor;
+            MainVehicle.SecondaryColor = (VehicleColor)VehicleSecondaryColor;
+
+            if (VehicleMods != null && _modSwitch % 50 == 0 &&
+                Game.Player.Character.IsInRangeOf(VehiclePosition, 30f))
+            {
+                var id = _modSwitch / 50;
+
+                if (VehicleMods.ContainsKey(id) && VehicleMods[id] != MainVehicle.GetMod((VehicleMod)id))
+                {
+                    Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle.Handle, 0);
+                    MainVehicle.SetMod((VehicleMod)id, VehicleMods[id], false);
+                    Function.Call(Hash.RELEASE_PRELOAD_MODS, id);
+                }
+            }
+            _modSwitch++;
+
+            if (_modSwitch >= 2500)
+                _modSwitch = 0;
+
+            if (IsHornPressed && !_lastHorn)
+            {
+                _lastHorn = true;
+                MainVehicle.SoundHorn(99999);
+            }
+
+            if (!IsHornPressed && _lastHorn)
+            {
+                _lastHorn = false;
+                MainVehicle.SoundHorn(1);
+            }
+
+            if (MainVehicle.SirenActive && !Siren)
+                MainVehicle.SirenActive = Siren;
+            else if (!MainVehicle.SirenActive && Siren)
+                MainVehicle.SirenActive = Siren;
+        }
+
+        bool COOP_UpdateVehicleMainData()
+        {
+            COOP_UpdateVehicleInternalInfo();
+            COOP_DisplayVehiclePosition();
+            return false;
+        }
+
+        void COOP_UpdateVehicleMountedWeapon()
+        {
+
+        }
+
+        bool COOP_UpdateVehiclePosition()
+        {
+            if (VehicleSeat == (int)GTA.VehicleSeat.Driver ||
+                    MainVehicle.GetPedOnSeat(GTA.VehicleSeat.Driver) == null)
+            {
+                return COOP_UpdateVehicleMainData();
+            }
+            return false;
+        }
+
+        void COOP_WorkaroundBlip()
+        {
+
+        }
+
+
+        #endregion
     }
+
 }

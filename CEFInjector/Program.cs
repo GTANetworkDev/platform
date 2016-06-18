@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
@@ -45,6 +46,16 @@ namespace CEFInjector
             const int FPS = 15;
             const int waitTime = 1000/FPS;
 
+            var cirno = new Bitmap(@"A:\Dropbox\stuff\Reaction Images\cirno.png");
+            Bitmap testBitmap = new Bitmap(cirno.Width, cirno.Height, PixelFormat.Format32bppArgb);
+
+            using (var graphics = Graphics.FromImage(testBitmap))
+            {
+                graphics.DrawImage(cirno, new Point(0, 0));
+            }
+
+            bitmapBytes = ScreenshotExtensions.BitmapToByteArray(testBitmap);
+
             bool continueReading = true;
             
             Thread t = new Thread((ThreadStart) delegate
@@ -53,6 +64,12 @@ namespace CEFInjector
                 {
                     int width = 0, height = 0;
 
+                    width = testBitmap.Width;
+                    height = testBitmap.Height;
+
+                    _captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes, width, height);
+
+                    /*
                     if (mutex.WaitOne())
                     {
                         using (var mmf = MemoryMappedFile.OpenExisting("GTANETWORKBITMAPSCREEN",
@@ -73,9 +90,11 @@ namespace CEFInjector
                         mutex.ReleaseMutex();
                     }
 
+
                     if (bitmapBytes.Length > 0)
                         _captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes, width, height);
 
+                    */
                     Thread.Sleep(waitTime);
                 }
             });

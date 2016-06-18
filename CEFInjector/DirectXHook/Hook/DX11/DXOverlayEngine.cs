@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using CEFInjector.DirectXHook.Hook.Common;
 using SharpDX;
 using SharpDX.Direct3D11;
@@ -194,17 +195,27 @@ namespace CEFInjector.DirectXHook.Hook.DX11
 
         public void FlushCache()
         {
-            foreach (var dxImage in _imageCache)
-            {
-                //dxImage.Value.Dispose();
-                //var img = dxImage.Value;
-                //base.RemoveAndDispose(ref img);
-                //base.DisposeCollector.RemoveAndDispose(ref dxImage.Value);
-            }
-
-            _imageCache.Clear();
-            _fontCache.Clear();
             Disposable = true;
+
+            lock (_imageCache)
+            {
+                foreach (var dxImage in _imageCache)
+                {
+                    var val = dxImage.Value;
+                    //RemoveAndDispose(ref val);
+                    val.Dispose();
+
+                    //dxImage.Value.Update(((ImageElement) dxImage.Key).Bitmap);
+
+                    //((ImageElement)dxImage.Key).Bitmap.Dispose();
+                    //dxImage.Value.Dispose();
+                    //var img = dxImage.Value;
+                    //base.RemoveAndDispose(ref img);
+                    //base.DisposeCollector.RemoveAndDispose(ref dxImage.Value);
+                }
+
+                _imageCache.Clear();
+            }
 
             //base.DisposeCollector.DisposeAndClear();
         }
@@ -213,13 +224,17 @@ namespace CEFInjector.DirectXHook.Hook.DX11
         {
             DXImage result = null;
 
-            if (!_imageCache.TryGetValue(element, out result))
+            lock (_imageCache)
             {
-                result = ToDispose(new DXImage(_device, _deviceContext));
-                result.Initialise(element.Bitmap);
-                _imageCache[element] = result;
+                if (!_imageCache.TryGetValue(element, out result))
+                {
+                    result = new DXImage(_device, _deviceContext);
+                    //result = ToDispose(new DXImage(_device, _deviceContext));
+                    result.Initialise(element.Bitmap);
+                    _imageCache[element] = result;
+                }
             }
-
+            Disposable = false;
             return result;
         }
 

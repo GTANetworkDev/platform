@@ -82,7 +82,7 @@ namespace GTANetwork
             }
             _lastCar = car;
 
-            if (player.IsInVehicle() && SyncPed.GetResponsiblePed(player.CurrentVehicle).Handle == Game.Player.Character.Handle)
+            if (player.IsInVehicle() && Util.GetResponsiblePed(player.CurrentVehicle).Handle == Game.Player.Character.Handle)
             {
                 var lg = Function.Call<int>(Hash._GET_VEHICLE_LANDING_GEAR, car);
                 if (lg != _lastLandingGear)
