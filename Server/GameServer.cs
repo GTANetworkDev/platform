@@ -82,30 +82,24 @@ namespace GTANetworkServer
         public string Resource { get; set; }
         public string Hash { get; set; }
     }
-
+    /*
     public struct ServerConfig
     {
-        /*ServerInstance.PasswordProtected = !String.IsNullOrWhiteSpace(settings.Password);
-            ServerInstance.Password = settings.Password;
-            ServerInstance.AnnounceSelf = settings.Announce;
-            ServerInstance.MasterServer = settings.MasterServer;
-            ServerInstance.MaxPlayers = settings.MaxPlayers;
-            ServerInstance.ACLEnabled = settings.UseACL;*/
-
         public int Port;
         public string Name;
         public bool PasswordProtected;
         public string Password;
         public string MasterServer;
         public bool AnnounceSelf;
+        public bool AnnounceToLan;
         public int MaxPlayers;
         public bool ACLEnabled;
 
-    }
+    }*/
 
     public class GameServer
     {
-        public GameServer(ServerConfig conf)
+        public GameServer(ServerSettings conf)
         {
             Clients = new List<Client>();
             Downloads = new List<StreamingClient>();
@@ -117,9 +111,9 @@ namespace GTANetworkServer
             
             NetEntityHandler = new NetEntityHandler();
 
-            ACLEnabled = conf.ACLEnabled;
+            ACLEnabled = conf.UseACL;
 
-            if (conf.ACLEnabled)
+            if (conf.UseACL)
             {
                 ACL = new AccessControlList("acl.xml");
             }
@@ -128,17 +122,33 @@ namespace GTANetworkServer
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             config.Port = conf.Port;
+            config.EnableUPnP = conf.UseUPnP;
             config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
             config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
+            
             Server = new NetServer(config);
 
-            PasswordProtected = conf.PasswordProtected;
+            if (conf.UseUPnP)
+            {
+                try
+                {
+                    Server.UPnP.ForwardPort(conf.Port, "GTA Network Server");
+                }
+                catch (Exception ex)
+                {
+                    Program.Output("UNHANDLED EXCEPTION DURING UPNP PORT FORWARDING. YOUR ROUTER MAY NOT SUPPORT UPNP.");
+                    Program.Output(ex.ToString());
+                }
+            }
+
+            PasswordProtected = !string.IsNullOrWhiteSpace(conf.Password);
             Password = conf.Password;
-            AnnounceSelf = conf.AnnounceSelf;
+            AnnounceSelf = conf.Announce;
             MasterServer = conf.MasterServer;
             MaxPlayers = conf.MaxPlayers;
+            AnnounceToLAN = conf.AnnounceToLan;
         }
         
         public NetServer Server;
@@ -153,10 +163,14 @@ namespace GTANetworkServer
         public string GamemodeName { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
+        public bool AnnounceToLAN { get; set; }
         public AccessControlList ACL { get; set; }
         public bool IsClosing { get; set; }
         public bool ReadyToClose { get; set; }
         public bool ACLEnabled { get; set; }
+
+        public List<string> LoadedIPL = new List<string>();
+        public List<string> RemovedIPL = new List<string>();
 
         public string Weather { get; set; } = "CLEAR";
         public DateTime TimeOfDay { get; set; } = DateTime.Now;
@@ -743,13 +757,17 @@ namespace GTANetworkServer
                                     Clients.Count(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
                         obj.Port = Port;
                         obj.LAN = isIPLocal(msg.SenderEndPoint.Address.ToString());
-                        var bin = SerializeBinary(obj);
 
-                        response.Write((int) PacketType.DiscoveryResponse);
-                        response.Write(bin.Length);
-                        response.Write(bin);
+                        if ((obj.LAN && AnnounceToLAN) || !obj.LAN)
+                        {
+                            var bin = SerializeBinary(obj);
 
-                        Server.SendDiscoveryResponse(response, msg.SenderEndPoint);
+                            response.Write((int) PacketType.DiscoveryResponse);
+                            response.Write(bin.Length);
+                            response.Write(bin);
+
+                            Server.SendDiscoveryResponse(response, msg.SenderEndPoint);
+                        }
                         break;
                     case NetIncomingMessageType.Data:
                         var packetType = (PacketType) msg.ReadInt32();
@@ -853,7 +871,16 @@ namespace GTANetworkServer
                                             ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).IsDead = (data.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
                                             ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Health = data.VehicleHealth;
                                             ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Siren = (data.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
+
+                                            if (data.Trailer != null)
+                                            {
+                                                var trailer = ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Trailer;
+                                                if (NetEntityHandler.ToDict().ContainsKey(trailer))
+                                                {
+                                                    NetEntityHandler.ToDict()[trailer].Position = data.Trailer;
+                                                }
                                             }
+                                        }
 
                                         if (NetEntityHandler.ToDict().ContainsKey(data.NetHandle))
                                         {
@@ -861,6 +888,7 @@ namespace GTANetworkServer
                                             NetEntityHandler.ToDict()[data.NetHandle].Rotation = data.Quaternion;
                                             NetEntityHandler.ToDict()[data.NetHandle].ModelHash = data.PedModelHash;
                                         }
+
 
                                         SendToAll(data, PacketType.VehiclePositionData, false, client);
                                     }
@@ -1038,6 +1066,8 @@ namespace GTANetworkServer
                                     mapObj.Hours = (byte)TimeOfDay.Hour;
                                     mapObj.Minutes = (byte)TimeOfDay.Minute;
                                     mapObj.Weather = Weather;
+                                    mapObj.LoadedIpl = LoadedIPL;
+                                    mapObj.RemovedIpl = RemovedIPL;
                                     foreach (var pair in NetEntityHandler.ToDict())
                                     {
                                         if (pair.Value.EntityType == (byte) EntityType.Vehicle)
@@ -1180,6 +1210,8 @@ namespace GTANetworkServer
                 {
                     Clients[i].NetConnection.Disconnect("Server is shutting down");
                 }
+
+                Server.UPnP.DeleteForwardingRule(Port);
 
                 ReadyToClose = true;
                 return;

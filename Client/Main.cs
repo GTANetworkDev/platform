@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define ATTACHSERVER
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -53,8 +55,50 @@ namespace GTANetwork
         public bool UpdateVehicleMountedWeapon;
         public bool UpdateVehiclePosition;
         public bool WorkaroundBlip;
+
+        public bool SendPlayerData_MountedGuns;
+        public bool SendPlayerData_GunPosition;
+        public bool SendPlayerData_DriveBy;
     }
 
+    public class MessagePump : Script
+    {
+        public MessagePump()
+        {
+            Tick += (sender, args) =>
+            {
+                if (Main.Client != null)
+                {
+                    List<NetIncomingMessage> messages = new List<NetIncomingMessage>();
+                    int msgsRead = Main.Client.ReadMessages(messages);
+                    LogManager.DebugLog("READING " + msgsRead + " MESSAGES");
+                    if (msgsRead > 0)
+                        foreach (var message in messages)
+                        {
+                            if (CrossReference.EntryPoint.IsMessageTypeThreadsafe(message.MessageType))
+                            {
+                                var message1 = message;
+                                var pcMsgThread = new Thread((ThreadStart)delegate
+                                {
+                                    CrossReference.EntryPoint.ProcessMessages(message1, false);
+                                });
+                                pcMsgThread.IsBackground = true;
+                                pcMsgThread.Start();
+                            }
+                            else
+                            {
+                                CrossReference.EntryPoint.ProcessMessages(message, true);
+                            }
+                        }
+                }
+            };
+        }
+    }
+
+    public static class CrossReference
+    {
+        public static Main EntryPoint;
+    }
 
     public class Main : Script
     {
@@ -87,7 +131,7 @@ namespace GTANetwork
         public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
         
         public static SynchronizationMode GlobalSyncMode;
-        public static bool LerpRotaion = false;
+        public static bool LerpRotaion = true;
         public static bool RemoveGameEntities = true;
 
         private static int _channel;
@@ -118,6 +162,8 @@ namespace GTANetwork
         
         public Main()
         {
+            CrossReference.EntryPoint = this;
+
             PlayerSettings = Util.ReadSettings(GTANInstallDir + "\\settings.xml");
             GameSettings = GTANetwork.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
@@ -190,8 +236,22 @@ namespace GTANetwork
                 GameplayCamera.FieldOfView);
             MainMenuCamera.PointAt(new Vector3(707.86f, 1228.09f, 333.66f));
 
+            RelGroup = World.AddRelationshipGroup("SYNCPED");
+            FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
+            World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
+
+            World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
+            
+
             GetWelcomeMessage();
+
+            UpdateSocialClubAvatar();
         }
+
+        public static int RelGroup;
+        public static int FriendRelGroup;
 
         // Debug stuff
         private bool display;
@@ -222,7 +282,9 @@ namespace GTANetwork
         private TabSubmenuItem _connectTab;
 
         private TabWelcomeMessageItem _welcomePage;
-        
+
+        private Process _serverProcess;
+
         private int _currentServerPort;
         private string _currentServerIp;
         private bool _debugWindow;
@@ -260,6 +322,25 @@ namespace GTANetwork
             catch (WebException ex)
             {
             }
+        }
+
+        public void UpdateSocialClubAvatar()
+        {
+            try
+            {
+                var scName = Game.Player.Name;
+
+                if (string.IsNullOrEmpty(scName)) return;
+
+                var uri = "https://a.rsg.sc/n/" + scName.ToLower();
+
+                using (var wc = new ImpatientWebClient())
+                {
+                    wc.DownloadFile(uri, GTANInstallDir  + "\\images\\scavatar.png");
+                }
+            }
+            catch
+            {}
         }
 
         private void AddToFavorites(string server)
@@ -835,6 +916,7 @@ namespace GTANetwork
 
                 #if DEBUG
                 {
+                    
                     var debugItem = new UIMenuCheckboxItem("Debug", false);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
@@ -1099,10 +1181,174 @@ namespace GTANetwork
 
             #endregion
             
-            #region About
+            #region Host
             {
-                var welcomeItem = new TabTextItem("about", "About", "Author: Guadmaz");
-                MainMenu.Tabs.Add(welcomeItem);
+                #if ATTACHSERVER   
+                var settingsPath = GTANInstallDir + "\\server\\settings.xml";
+                var settingsFile = ServerSettings.ReadSettings(settingsPath);
+
+                var hostStart = new TabTextItem("Start Server", "Host a Session", "Press [ENTER] to start your own server!");
+                hostStart.CanBeFocused = false;
+
+                hostStart.Activated += (sender, args) =>
+                {
+                    if (IsOnServer())
+                    {
+                        UI.Notify("~b~~h~GTA Network~h~~w~~n~Leave the current server first!");
+                        return;
+                    }
+
+                    UI.Notify("~b~~h~GTA Network~h~~w~~n~Starting server...");
+                    var startSettings = new ProcessStartInfo(GTANInstallDir + "\\server\\GTANetworkServer.exe");
+                    startSettings.CreateNoWindow = true;
+                    startSettings.RedirectStandardOutput = true;
+                    startSettings.UseShellExecute = false;
+                    startSettings.WorkingDirectory = GTANInstallDir + "\\server";
+                    
+                    _serverProcess = Process.Start(startSettings);
+                    
+                    Script.Wait(5000);
+                    ConnectToServer("127.0.0.1", settingsFile.Port);
+                };
+
+                var settingsList = new List<UIMenuItem>();
+
+                {
+                    var serverName = new UIMenuItem("Server Name");
+                    settingsList.Add(serverName);
+                    serverName.SetRightLabel(settingsFile.Name);
+                    serverName.Activated += (sender, item) =>
+                    {
+                        var newName = InputboxThread.GetUserInput(settingsFile.Name, 40, TickSpinner);
+                        if (string.IsNullOrWhiteSpace(newName))
+                        {
+                            UI.Notify("~b~~h~GTA Network~h~~w~~n~Server name must not be empty!");
+                            return;
+                        }
+                        serverName.SetRightLabel(newName);
+                        settingsFile.Name = newName;
+                        ServerSettings.WriteSettings(settingsPath, settingsFile);
+                    };
+                }
+
+                {
+                    var serverName = new UIMenuItem("Password");
+                    settingsList.Add(serverName);
+                    serverName.SetRightLabel(settingsFile.Password);
+                    serverName.Activated += (sender, item) =>
+                    {
+                        var newName = InputboxThread.GetUserInput(settingsFile.Password, 40, TickSpinner);
+                        serverName.SetRightLabel(newName);
+                        settingsFile.Password = newName;
+                        ServerSettings.WriteSettings(settingsPath, settingsFile);
+                    };
+                }
+
+                {
+                    var serverName = new UIMenuItem("Player Limit");
+                    settingsList.Add(serverName);
+                    serverName.SetRightLabel(settingsFile.MaxPlayers.ToString());
+                    serverName.Activated += (sender, item) =>
+                    {
+                        var newName = InputboxThread.GetUserInput(settingsFile.MaxPlayers.ToString(), 40, TickSpinner);
+                        int newLimit;
+                        if (string.IsNullOrWhiteSpace(newName) || !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit))
+                        {
+                            UI.Notify("~b~~h~GTA Network~h~~w~~n~Invalid input for player limit!");
+                            return;
+                        }
+
+                        serverName.SetRightLabel(newName);
+                        settingsFile.MaxPlayers = newLimit;
+                        ServerSettings.WriteSettings(settingsPath, settingsFile);
+                    };
+                }
+
+                {
+                    var serverName = new UIMenuItem("Port");
+                    settingsList.Add(serverName);
+                    serverName.SetRightLabel(settingsFile.Port.ToString());
+                    serverName.Activated += (sender, item) =>
+                    {
+                        var newName = InputboxThread.GetUserInput(settingsFile.Port.ToString(), 40, TickSpinner);
+                        int newLimit;
+                        if (string.IsNullOrWhiteSpace(newName) || !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit) || newLimit < 1024)
+                        {
+                            UI.Notify("~b~~h~GTA Network~h~~w~~n~Invalid input for server port!");
+                            return;
+                        }
+
+                        serverName.SetRightLabel(newName);
+                        settingsFile.Port = newLimit;
+                        ServerSettings.WriteSettings(settingsPath, settingsFile);
+                    };
+                }
+
+                {
+                    var serverName = new UIMenuCheckboxItem("Announce to Master Server", settingsFile.Announce);
+                    settingsList.Add(serverName);
+                    serverName.CheckboxEvent += (sender, item) =>
+                    {
+                        settingsFile.Announce = item;
+                        ServerSettings.WriteSettings(settingsPath, settingsFile);
+                    };
+                }
+
+                {
+                    var serverName = new UIMenuCheckboxItem("Auto Portforward (UPnP)", settingsFile.UseUPnP);
+                    settingsList.Add(serverName);
+                    serverName.CheckboxEvent += (sender, item) =>
+                    {
+                        settingsFile.UseUPnP = item;
+                        ServerSettings.WriteSettings(settingsPath, settingsFile);
+                    };
+                }
+
+                {
+                    var serverName = new UIMenuCheckboxItem("Use Access Control List", settingsFile.UseACL);
+                    settingsList.Add(serverName);
+                    serverName.CheckboxEvent += (sender, item) =>
+                    {
+                        settingsFile.UseACL = item;
+                        ServerSettings.WriteSettings(settingsPath, settingsFile);
+                    };
+                }
+
+                var serverSettings = new TabInteractiveListItem("Server Settings", settingsList);
+
+                var resourcesList = new List<UIMenuItem>();
+                {
+                    var resourceRoot = GTANInstallDir + "\\server\\resources";
+                    var folders = Directory.GetDirectories(resourceRoot);
+
+                    foreach (var folder in folders)
+                    {
+                        var resourceName = Path.GetFileName(folder);
+
+                        var item = new UIMenuCheckboxItem(resourceName, settingsFile.Resources.Any(res => res.Path == resourceName));
+                        resourcesList.Add(item);
+                        item.CheckboxEvent += (sender, @checked) =>
+                        {
+                            if (@checked)
+                            {
+                                settingsFile.Resources.Add(new ServerSettings.SettingsResFilepath() { Path = resourceName });
+                            }
+                            else
+                            {
+                                settingsFile.Resources.Remove(
+                                    settingsFile.Resources.FirstOrDefault(r => r.Path == resourceName));
+                            }
+                            ServerSettings.WriteSettings(settingsPath, settingsFile);
+                        };
+                    }
+                }
+
+                var resources = new TabInteractiveListItem("Resources", resourcesList);
+
+                
+                var welcomeItem = new TabSubmenuItem("host", new List<TabItem> { hostStart, serverSettings, resources });
+                MainMenu.AddTab(welcomeItem);
+                #endif
             }
             #endregion
 
@@ -1112,8 +1358,9 @@ namespace GTANetwork
                 welcomeItem.CanBeFocused = false;
                 welcomeItem.Activated += (sender, args) =>
                 {
-                    MainMenu.Visible = false;
-                    World.RenderingCamera = null;
+                    if (Client != null && IsOnServer()) Client.Disconnect("Quit");
+                    //Application.Exit();
+                    Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);
             }
@@ -1203,139 +1450,183 @@ namespace GTANetwork
 
         public static void AddMap(ServerMap map)
         {
-
-            if (map.Objects != null)
-                foreach (var pair in map.Objects)
-                {
-                    var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
-                        pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
-                    ourVeh.Alpha = (int) pair.Value.Alpha;
-                }
-
-            if (map.Vehicles != null)
-                foreach (var pair in map.Vehicles)
-                {
-                    var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash), pair.Value.Position.ToVector(),
-                        pair.Value.Rotation.ToVector(), pair.Key);
-	                if (ourVeh == null) continue;
-                    ourVeh.Livery = pair.Value.Livery;
-                    ourVeh.PrimaryColor = (VehicleColor)pair.Value.PrimaryColor;
-                    ourVeh.SecondaryColor = (VehicleColor)pair.Value.SecondaryColor;
-                    ourVeh.PearlescentColor = (VehicleColor) 0;
-                    ourVeh.RimColor = (VehicleColor)0;
-                    ourVeh.EngineHealth = pair.Value.Health;
-                    ourVeh.SirenActive = pair.Value.Siren;
-                    Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, ourVeh, 0, 0);
-
-                    for (int i = 0; i < pair.Value.Doors.Length; i++)
+            try
+            {
+                if (map.LoadedIpl != null)
+                    foreach (var ipl in map.LoadedIpl)
                     {
-                        if (pair.Value.Doors[i])
-                            ourVeh.OpenDoor((VehicleDoor) i, false, true);
-                        else ourVeh.CloseDoor((VehicleDoor) i, true);
+                        Function.Call(Hash.REQUEST_IPL, ipl);
                     }
 
-                    for (int i = 0; i < pair.Value.Tires.Length; i++)
+                if (map.RemovedIpl != null)
+                    foreach (var ipl in map.RemovedIpl)
                     {
-                        if (pair.Value.Tires[i])
+                        Function.Call(Hash.REMOVE_IPL, ipl);
+                    }
+
+                if (map.Objects != null)
+                    foreach (var pair in map.Objects)
+                    {
+                        var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash),
+                            pair.Value.Position.ToVector(),
+                            pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
+                        ourVeh.Alpha = (int) pair.Value.Alpha;
+                    }
+
+                if (map.Vehicles != null)
+                    foreach (var pair in map.Vehicles)
+                    {
+                        var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash),
+                            pair.Value.Position.ToVector(),
+                            pair.Value.Rotation.ToVector(), pair.Key);
+                        if (ourVeh == null) continue;
+                        ourVeh.Livery = pair.Value.Livery;
+                        ourVeh.PrimaryColor = (VehicleColor) pair.Value.PrimaryColor;
+                        ourVeh.SecondaryColor = (VehicleColor) pair.Value.SecondaryColor;
+                        ourVeh.PearlescentColor = (VehicleColor) 0;
+                        ourVeh.RimColor = (VehicleColor) 0;
+                        ourVeh.EngineHealth = pair.Value.Health;
+                        ourVeh.SirenActive = pair.Value.Siren;
+                        Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, ourVeh, 0, 0);
+
+                        for (int i = 0; i < pair.Value.Doors.Length; i++)
+                        {
+                            if (pair.Value.Doors[i])
+                                ourVeh.OpenDoor((VehicleDoor) i, false, true);
+                            else ourVeh.CloseDoor((VehicleDoor) i, true);
+                        }
+
+                        for (int i = 0; i < pair.Value.Tires.Length; i++)
+                        {
+                            if (pair.Value.Tires[i])
+                            {
+                                ourVeh.IsInvincible = false;
+                                ourVeh.BurstTire(i);
+                            }
+                        }
+
+                        if (pair.Value.Trailer != 0)
+                        {
+                            var trailerId = NetEntityHandler.NetToEntity(pair.Value.Trailer);
+                            if (trailerId != null)
+                            {
+                                if ((VehicleHash)ourVeh.Model.Hash == VehicleHash.TowTruck ||
+                                                    (VehicleHash)ourVeh.Model.Hash == VehicleHash.TowTruck2)
+                                {
+                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TOW_TRUCK, ourVeh, trailerId, true, 0, 0, 0);
+                                }
+                                else if ((VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob ||
+                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob2 ||
+                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob3 ||
+                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob4)
+                                {
+                                    ourVeh.DropCargobobHook(CargobobHook.Hook);
+                                    Function.Call(Hash.ATTACH_VEHICLE_TO_CARGOBOB, trailerId, ourVeh, 0, 0, 0, 0);
+                                }
+                                else
+                                {
+                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, ourVeh, trailerId, 4f);
+                                }
+                            }
+                        }
+
+                        Function.Call(Hash.SET_VEHICLE_MOD_KIT, ourVeh, 0);
+
+                        for (int i = 0; i < pair.Value.Mods.Length; i++)
+                        {
+                            if (pair.Value.Mods[i] != -1)
+                                ourVeh.SetMod((VehicleMod) i, pair.Value.Mods[i], false);
+                        }
+
+                        if (pair.Value.IsDead)
                         {
                             ourVeh.IsInvincible = false;
-                            ourVeh.BurstTire(i);
+                            Function.Call(Hash.EXPLODE_VEHICLE, ourVeh, false, true);
                         }
+                        else
+                            ourVeh.IsInvincible = true;
+
+                        ourVeh.Alpha = (int) pair.Value.Alpha;
+                        Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, ourVeh, false);
                     }
 
-                    if (pair.Value.Trailer != 0)
+                if (map.Blips != null)
+                {
+                    foreach (var blip in map.Blips)
                     {
-                        var trailerId = NetEntityHandler.NetToEntity(pair.Value.Trailer);
-                        if (trailerId != null)
-                        {
-                            Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, ourVeh, trailerId, 2f);
-                        }
+                        Blip ourBlip;
+                        if (blip.Value.AttachedNetEntity == 0)
+                            ourBlip = NetEntityHandler.CreateBlip(blip.Value.Position.ToVector(), blip.Key);
+                        else
+                            ourBlip = NetEntityHandler.CreateBlip(
+                                NetEntityHandler.NetToEntity(blip.Value.AttachedNetEntity), blip.Key);
+
+                        if (blip.Value.Sprite != 0)
+                            ourBlip.Sprite = (BlipSprite) blip.Value.Sprite;
+                        ourBlip.Color = (BlipColor) blip.Value.Color;
+                        ourBlip.Alpha = blip.Value.Alpha;
+                        ourBlip.IsShortRange = blip.Value.IsShortRange;
+                        ourBlip.Scale = blip.Value.Scale;
                     }
-
-                    Function.Call(Hash.SET_VEHICLE_MOD_KIT, ourVeh, 0);
-
-                    for (int i = 0; i < pair.Value.Mods.Length; i++) 
-                    {
-                        if (pair.Value.Mods[i] != -1)
-                            ourVeh.SetMod((VehicleMod) i, pair.Value.Mods[i], false);
-                    }
-
-                    if (pair.Value.IsDead)
-                    {
-                        ourVeh.IsInvincible = false;
-                        Function.Call(Hash.EXPLODE_VEHICLE, ourVeh, false, true);
-                    }
-                    else
-                        ourVeh.IsInvincible = true;
-
-                    ourVeh.Alpha = (int)pair.Value.Alpha;
-					Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, ourVeh, false);
                 }
 
-            if (map.Blips != null)
-            {
-                foreach (var blip in map.Blips) 
+                if (map.Markers != null)
                 {
-                    Blip ourBlip;
-                    if (blip.Value.AttachedNetEntity == 0)
-                        ourBlip = NetEntityHandler.CreateBlip(blip.Value.Position.ToVector(), blip.Key);
-                    else
-                        ourBlip = NetEntityHandler.CreateBlip(
-                            NetEntityHandler.NetToEntity(blip.Value.AttachedNetEntity), blip.Key);
+                    foreach (var marker in map.Markers)
+                    {
+                        NetEntityHandler.CreateMarker(marker.Value.MarkerType, marker.Value.Position,
+                            marker.Value.Rotation,
+                            marker.Value.Direction, marker.Value.Scale, marker.Value.Red, marker.Value.Green,
+                            marker.Value.Blue, marker.Value.Alpha, marker.Key);
+                    }
+                }
 
-                    if (blip.Value.Sprite != 0)
-                        ourBlip.Sprite = (BlipSprite) blip.Value.Sprite;
-                    ourBlip.Color = (BlipColor)blip.Value.Color;
-                    ourBlip.Alpha = blip.Value.Alpha;
-                    ourBlip.IsShortRange = blip.Value.IsShortRange;
-                    ourBlip.Scale = blip.Value.Scale;
+                if (map.Pickups != null)
+                {
+                    foreach (var pickup in map.Pickups)
+                    {
+                        NetEntityHandler.CreatePickup(pickup.Value.Position.ToVector(), pickup.Value.Rotation.ToVector(),
+                            pickup.Value.ModelHash, pickup.Value.Amount, pickup.Key);
+                    }
+                }
+
+                if (map.Players != null)
+                {
+                    foreach (var pair in map.Players)
+                    {
+                        var ourPed = NetEntityHandler.NetToEntity(pair.Key);
+                        if (ourPed != null)
+                        {
+                            for (int i = 0; i < pair.Value.Props.Length; i++)
+                            {
+                                Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props[i],
+                                    pair.Value.Textures[i], 2);
+                            }
+                            ourPed.Alpha = pair.Value.Alpha;
+
+                            var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle);
+                            if (ourSyncPed.Value != null)
+                            {
+                                ourSyncPed.Value.Team = pair.Value.Team;
+                                ourSyncPed.Value.BlipSprite = pair.Value.BlipSprite;
+                                ourSyncPed.Value.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
+                                                                                pair.Value.Team != -1)
+                                    ? Main.FriendRelGroup
+                                    : Main.RelGroup;
+                            }
+                        }
+                    }
                 }
             }
-
-            if (map.Markers != null)
+            catch(Exception ex)
             {
-                foreach (var marker in map.Markers)
-                {
-                    NetEntityHandler.CreateMarker(marker.Value.MarkerType, marker.Value.Position, marker.Value.Rotation,
-                        marker.Value.Direction, marker.Value.Scale, marker.Value.Red, marker.Value.Green,
-                        marker.Value.Blue, marker.Value.Alpha, marker.Key);
-                }
-            }
+                UI.Notify("FATAL ERROR WHEN PARSING MAP");
+                UI.Notify(ex.Message);
+                Client.Disconnect("Map Parse Error");
 
-            if (map.Pickups != null)
-            {
-                foreach (var pickup in map.Pickups)
-                {
-                    NetEntityHandler.CreatePickup(pickup.Value.Position.ToVector(), pickup.Value.Rotation.ToVector(),
-                        pickup.Value.ModelHash, pickup.Value.Amount, pickup.Key);
-                }
-            }
+                LogManager.LogException(ex, "MAP PARSE");
 
-            if (map.Players != null)
-            {
-                foreach (var pair in map.Players)
-                {
-                    var ourPed = NetEntityHandler.NetToEntity(pair.Key);
-                    if (ourPed != null)
-                    {
-                        for (int i = 0; i < pair.Value.Props.Length; i++)
-                        {
-                            Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props[i], pair.Value.Textures[i], 2);
-                        }
-                        ourPed.Alpha = pair.Value.Alpha;
-
-                        var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle);
-                        if (ourSyncPed.Value != null)
-                        {
-                            ourSyncPed.Value.Team = pair.Value.Team;
-                            ourSyncPed.Value.BlipSprite = pair.Value.BlipSprite;
-                            ourSyncPed.Value.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
-                                                                            pair.Value.Team != -1)
-                                ? ourSyncPed.Value.FriendRelGroup
-                                : ourSyncPed.Value.RelGroup;
-                        }
-                    }
-                }
+                return;
             }
 
             World.CurrentDayTime = new TimeSpan(map.Hours, map.Minutes, 00);
@@ -1449,28 +1740,54 @@ namespace GTANetwork
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
-                    obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
-                    if (Game.IsControlPressed(0, Control.VehicleFlyAttack))
-                        obj.Flag |= (byte)VehicleDataFlags.Shooting;
+                    if (!DebugPanel.SendPlayerData_MountedGuns)
+                    {
+                        obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
+                        if (Game.IsControlPressed(0, Control.VehicleFlyAttack))
+                            obj.Flag |= (byte) VehicleDataFlags.Shooting;
+                    }
                 }
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                 {
-                    obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
-                    if (Game.IsControlPressed(0, Control.VehicleAttack))
-                        obj.Flag |= (byte)VehicleDataFlags.Shooting;
+                    if (!DebugPanel.SendPlayerData_GunPosition)
+                    {
+                        obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
+                        if (Game.IsControlPressed(0, Control.VehicleAttack))
+                            obj.Flag |= (byte) VehicleDataFlags.Shooting;
+                    }
                 }
                 else
                 {
-                    if (Game.IsControlPressed(0, Control.Attack) && Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
-                        obj.Flag |= (byte)VehicleDataFlags.Shooting;
-                    //obj.IsShooting = Game.Player.Character.IsShooting;
-                    obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
+                    if (!DebugPanel.SendPlayerData_DriveBy)
+                    {
+                        if (Game.IsControlPressed(0, Control.Attack) &&
+                            Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
+                            obj.Flag |= (byte) VehicleDataFlags.Shooting;
+                        //obj.IsShooting = Game.Player.Character.IsShooting;
+                        obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
 
-                    var outputArg = new OutputArgument();
-                    Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
-                    obj.WeaponHash = outputArg.GetResult<int>();
+                        var outputArg = new OutputArgument();
+                        Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
+                        obj.WeaponHash = outputArg.GetResult<int>();
+                    }
                 }
 
+                Vehicle trailer;
+
+                if ((VehicleHash)veh.Model.Hash == VehicleHash.TowTruck ||
+                    (VehicleHash)veh.Model.Hash == VehicleHash.TowTruck2)
+                    trailer = veh.TowedVehicle;
+                else if ((VehicleHash)veh.Model.Hash == VehicleHash.Cargobob ||
+                         (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob2 ||
+                         (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob3 ||
+                         (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob4)
+                    trailer = SyncEventWatcher.GetVehicleCargobobVehicle(veh);
+                else trailer = SyncEventWatcher.GetVehicleTrailerVehicle(veh);
+
+                if (trailer != null && trailer.Exists())
+                {
+                    obj.Trailer = trailer.Position.ToLVector();
+                }
 
                 var bin = SerializeBinary(obj);
 
@@ -1678,12 +1995,13 @@ namespace GTANetwork
         private bool _lastSpectating;
         private int _currentSpectatingPlayerIndex;
         private SyncPed _currentSpectatingPlayer;
+        public static DateTime LastCarEnter;
 
         
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
-            
+            var res = UIMenu.GetScreenResolutionMantainRatio();
 
             if (!_hasInitialized)
             {
@@ -1710,7 +2028,9 @@ namespace GTANetwork
             DEBUG_STEP = 0;
 
             Game.DisableControl(0, Control.FrontendPauseAlternate);
-            
+            Game.DisableControl(0, Control.FrontendSocialClub);
+            Game.DisableControl(0, Control.FrontendSocialClubSecondary);
+
             if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
             {
                 MainMenu.Visible = true;
@@ -1735,6 +2055,11 @@ namespace GTANetwork
                     MainMenu.ProcessControls();
                 MainMenu.Update();
                 MainMenu.CanLeave = IsOnServer();
+                if (MainMenu.Visible && !MainMenu.TemporarilyHidden && !_mainMapItem.Focused && File.Exists(GTANInstallDir + "\\images\\scavatar.png"))
+                {
+                    var safe = new Point(300, 180);
+                    Sprite.DrawTexture(GTANInstallDir + "\\images\\scavatar.png", new Point((int)res.Width - safe.X - 64, safe.Y - 80), new Size(64, 64));
+                }
             }
             DEBUG_STEP = 1;
 			
@@ -1830,9 +2155,10 @@ namespace GTANetwork
                 _debug.Visible = true;
                 _debug.Draw();
             }
-            
+
 
             /*
+            UI.ShowSubtitle(Game.Player.Character.RelationshipGroup.ToString());
             if (Game.Player.Character.LastVehicle != null)
             {
                 unsafe
@@ -1921,36 +2247,10 @@ namespace GTANetwork
 #endif
             DEBUG_STEP = 5;
 
-            if (Client != null)
-            {
-                List<NetIncomingMessage> messages = new List<NetIncomingMessage>();
-                int msgsRead = Client.ReadMessages(messages);
-                LogManager.DebugLog("READING " + msgsRead + " MESSAGES");
-                if (msgsRead > 0)
-                    foreach (var message in messages)
-                    {
-                        if (IsMessageTypeThreadsafe(message.MessageType))
-                        {
-                            var message1 = message;
-                            var pcMsgThread = new Thread((ThreadStart) delegate
-                            {
-                                ProcessMessages(message1, false);
-                            });
-                            pcMsgThread.IsBackground = true;
-                            pcMsgThread.Start();
-                        }
-                        else
-                        {
-                            ProcessMessages(message, true);
-                        }
-                    }
-            }
-
             DEBUG_STEP = 6;
 
             if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected ||
                 Client.ConnectionStatus == NetConnectionStatus.None) return;
-            var res = UIMenu.GetScreenResolutionMantainRatio();
             _verionLabel.Position = new Point((int) (res.Width/2), 0);
             _verionLabel.TextAlignment = UIResText.Alignment.Centered;
             _verionLabel.Draw();
@@ -1965,7 +2265,16 @@ namespace GTANetwork
             if (playerCar != _lastPlayerCar)
             {
                 if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = true;
-                if (playerCar != null) playerCar.IsInvincible = false;
+                if (playerCar != null)
+                {
+                    LastCarEnter = DateTime.Now;
+                    playerCar.IsInvincible = false;
+                    if (!NetEntityHandler.ContainsLocalHandle(playerCar.Handle))
+                    {
+                        playerCar.Delete();
+                        playerCar = null;
+                    }
+                }
             }
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;
@@ -2165,7 +2474,7 @@ namespace GTANetwork
             }
             DEBUG_STEP = 25;
             _whoseturnisitanyways = !_whoseturnisitanyways;
-            
+
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
                 */
@@ -2361,7 +2670,7 @@ namespace GTANetwork
             _currentServerPort = port == 0 ? Port : port;
         }
 
-        private bool IsMessageTypeThreadsafe(NetIncomingMessageType msgType)
+        public bool IsMessageTypeThreadsafe(NetIncomingMessageType msgType)
         {
             if (msgType == NetIncomingMessageType.StatusChanged ||
                 msgType == NetIncomingMessageType.Data) return false;
@@ -2854,8 +3163,8 @@ namespace GTANetwork
                                                     if (pair.Value.Character != null)
                                                         pair.Value.Character.RelationshipGroup = (newTeam == LocalTeam &&
                                                                                                     newTeam != -1)
-                                                            ? pair.Value.FriendRelGroup
-                                                            : pair.Value.RelGroup;
+                                                            ? Main.FriendRelGroup
+                                                            : Main.RelGroup;
                                                 }
                                             }
                                             else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
@@ -2867,12 +3176,12 @@ namespace GTANetwork
                                                         (opponent.Value.Team == newTeam && newTeam != -1))
                                                     {
                                                         opponent.Value.Character.RelationshipGroup =
-                                                            opponent.Value.FriendRelGroup;
+                                                            Main.FriendRelGroup;
                                                     }
                                                     else
                                                     {
                                                         opponent.Value.Character.RelationshipGroup =
-                                                            opponent.Value.RelGroup;
+                                                            Main.RelGroup;
                                                     }
                                                 }
                                             }
@@ -2931,14 +3240,53 @@ namespace GTANetwork
                                         {
                                             var car = NetEntityHandler.NetToEntity((int)args[1]);
                                             if (car != null)
-                                                Function.Call(Hash.DETACH_VEHICLE_FROM_TRAILER, car.Handle);
+                                            {
+                                                if ((VehicleHash) car.Model.Hash == VehicleHash.TowTruck ||
+                                                    (VehicleHash) car.Model.Hash == VehicleHash.TowTruck2)
+                                                {
+                                                    var trailer = Function.Call<Vehicle>(Hash.GET_ENTITY_ATTACHED_TO_TOW_TRUCK, car);
+                                                    Function.Call(Hash.DETACH_VEHICLE_FROM_ANY_TOW_TRUCK, trailer);
+                                                }
+                                                else if ((VehicleHash) car.Model.Hash == VehicleHash.Cargobob ||
+                                                         (VehicleHash) car.Model.Hash == VehicleHash.Cargobob2 ||
+                                                         (VehicleHash) car.Model.Hash == VehicleHash.Cargobob3 ||
+                                                         (VehicleHash) car.Model.Hash == VehicleHash.Cargobob4)
+                                                {
+                                                    var trailer =
+                                                        Function.Call<Vehicle>(Hash.GET_VEHICLE_ATTACHED_TO_CARGOBOB,
+                                                            car);
+                                                    Function.Call(Hash.DETACH_VEHICLE_FROM_ANY_CARGOBOB, trailer);
+                                                }
+                                                else
+                                                {
+                                                    Function.Call(Hash.DETACH_VEHICLE_FROM_TRAILER, car.Handle);
+                                                }
+                                            }
                                         }
                                         else
                                         {
                                             var car = NetEntityHandler.NetToEntity((int)args[1]);
                                             var trailer = NetEntityHandler.NetToEntity((int)args[2]);
                                             if (car != null && trailer != null)
-                                                Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, car, trailer, 4f);
+                                            {
+                                                if ((VehicleHash)car.Model.Hash == VehicleHash.TowTruck ||
+                                                    (VehicleHash)car.Model.Hash == VehicleHash.TowTruck2)
+                                                {
+                                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TOW_TRUCK, car, trailer, true, 0, 0, 0);
+                                                }
+                                                else if ((VehicleHash)car.Model.Hash == VehicleHash.Cargobob ||
+                                                         (VehicleHash)car.Model.Hash == VehicleHash.Cargobob2 ||
+                                                         (VehicleHash)car.Model.Hash == VehicleHash.Cargobob3 ||
+                                                         (VehicleHash)car.Model.Hash == VehicleHash.Cargobob4)
+                                                {
+                                                    new Vehicle(car.Handle).DropCargobobHook(CargobobHook.Hook);
+                                                    Function.Call(Hash.ATTACH_VEHICLE_TO_CARGOBOB, trailer, car, 0, 0, 0, 0);
+                                                }
+                                                else
+                                                {
+                                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, car, trailer, 4f);
+                                                }
+                                            }
                                         }
                                     }
                                     break;
@@ -3465,6 +3813,14 @@ namespace GTANetwork
 			DEBUG_STEP = 56;
 
 			ResetWorld();
+
+            if (_serverProcess != null)
+            {
+                UI.Notify("~b~~h~GTA Network~h~~w~~n~Shutting down server...");
+		        _serverProcess.Kill();
+                _serverProcess.Dispose();
+		        _serverProcess = null;
+		    }
 		}
 
         #region debug stuff

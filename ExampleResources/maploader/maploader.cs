@@ -16,7 +16,18 @@ using System.Threading;
     public MapLoader()
     {        
         API.onResourceStart += OnResourceStart;
+        API.onResourceStop += OnResourceStop;
 	}
+
+    public List<NetHandle> CreatedEntities = new List<NetHandle>();
+
+    public void OnResourceStop(object sender, EventArgs e)
+    {
+        foreach (var handle in CreatedEntities)
+        {
+            API.deleteEntity(handle);
+        }
+    }
 
     public void OnResourceStart(object sender, EventArgs e)
     {
@@ -36,11 +47,11 @@ using System.Threading;
                 {
                     if (prop.Type == ObjectTypes.Prop)
                     {
-                        API.createObject(prop.Hash, prop.Position, prop.Rotation);
+                        CreatedEntities.Add(API.createObject(prop.Hash, prop.Position, prop.Rotation));
                     }
                     else if (prop.Type == ObjectTypes.Vehicle)
                     {
-                        API.createVehicle(prop.Hash, prop.Position, prop.Rotation, 0, 0);
+                        CreatedEntities.Add(API.createVehicle(prop.Hash, prop.Position, prop.Rotation, 0, 0));
                     }
                 }
             }

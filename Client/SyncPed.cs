@@ -212,16 +212,16 @@ namespace GTANetwork
                 {
                     if (Character != null)
                     {
-                        Character.CanRagdoll = true;
-                        Function.Call(Hash.SET_PED_TO_RAGDOLL, -1, -1, 0, true, true, true);
+                        //Character.CanRagdoll = true;
+                        //Function.Call(Hash.SET_PED_TO_RAGDOLL, -1, -1, 0, true, true, true);
                     }
                 }
                 else if (_isRagdoll && !value)
                 {
                     if (Character != null)
                     {
-                        Character.CanRagdoll = false;
-                        Character.Task.ClearAllImmediately();
+                        //Character.CanRagdoll = false;
+                        //Character.Task.ClearAllImmediately();
                     }
                 }
                 
@@ -251,8 +251,7 @@ namespace GTANetwork
         private bool _blip;
         private bool _justEnteredVeh;
         private DateTime _lastHornPress = DateTime.Now;
-        public int RelGroup;
-        public int FriendRelGroup;
+        
         private DateTime _enterVehicleStarted;
         private Vector3 _vehiclePosition;
         private Dictionary<int, int> _vehicleMods;
@@ -331,6 +330,8 @@ namespace GTANetwork
 				Character = World.CreatePed(charModel, gPos, _rotation.Z);
 				charModel.MarkAsNoLongerNeeded();
 
+			    Character.CanBeTargetted = true;
+
 				if (Character == null) return true;
 
 				DEBUG_STEP = 4;
@@ -339,10 +340,10 @@ namespace GTANetwork
 				Character.IsInvincible = true;
 				Character.CanRagdoll = false;
 
-				if (Team == -1 || Team != Main.LocalTeam)
-					Character.RelationshipGroup = RelGroup;
-				else
-					Character.RelationshipGroup = FriendRelGroup;
+			    if (Team == -1 || Team != Main.LocalTeam)
+			        Character.RelationshipGroup = Main.RelGroup;
+			    else
+			        Character.RelationshipGroup = Main.FriendRelGroup;
 
 				LogManager.DebugLog("SETTINGS FIRING PATTERN " + Name);
 
@@ -423,7 +424,6 @@ namespace GTANetwork
 
 							if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
 								nameText = "~r~AFK~w~~n~" + nameText;
-
                             var dist = (GameplayCamera.Position - Character.Position).Length();
 							var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
 
@@ -479,7 +479,7 @@ namespace GTANetwork
 					if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
 						nameText = "~r~AFK~w~~n~" + nameText;
 
-					var dist = (GameplayCamera.Position - Character.Position).Length();
+                    var dist = (GameplayCamera.Position - Character.Position).Length();
 					var sizeOffset = Math.Max(1f - (dist / 100f), 0.3f);
 
 					new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
@@ -514,6 +514,17 @@ namespace GTANetwork
 	    {
 	        if (Main.DebugPanel.CreateVehicle) return COOP_CreateVehicle();
 
+	        if (IsInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 &&
+	            Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER, Game.Player.Character) == -1 &&
+	            Util.GetPedSeat(Game.Player.Character) == 0)
+	        {
+	            Character.Task.WarpOutOfVehicle(MainVehicle);
+                Game.Player.Character.Task.WarpIntoVehicle(MainVehicle, GTA.VehicleSeat.Driver);
+	            Main.LastCarEnter = DateTime.Now;
+                Script.Yield();
+	            return true;
+	        }
+
 			if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
 					(_lastVehicle && IsInVehicle &&
 					 (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
@@ -529,10 +540,14 @@ namespace GTANetwork
 					MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
 				DEBUG_STEP = 10;
 
-
-				if (Game.Player.Character.IsInVehicle(MainVehicle) &&
+                if (Game.Player.Character.IsInVehicle(MainVehicle) &&
 					VehicleSeat == Util.GetPedSeat(Game.Player.Character))
 				{
+				    if (DateTime.Now.Subtract(Main.LastCarEnter).TotalMilliseconds < 1000)
+				    {
+				        return true;
+				    }
+
 					Game.Player.Character.Task.WarpOutOfVehicle(MainVehicle);
 					Util.SafeNotify("~r~Car jacked!");
 				}
@@ -774,6 +789,11 @@ namespace GTANetwork
 			}
 		}
 
+        public bool IsFriend()
+        {
+            return (Team != -1 && Team == Main.LocalTeam);
+        }
+
 	    bool DisplayVehicleDriveBy()
 	    {
 	        if (Main.DebugPanel.DisplayVehicleDriveBy) return COOP_DisplayVehicleDriveBy();
@@ -812,8 +832,10 @@ namespace GTANetwork
 				else
 					hash = unchecked((int)WeaponHash.CombatPDW);
 
+			    int damage = IsFriend() ? 0 : 75;
+
 				Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
-						end.Y, end.Z, 75, true, hash, Character, true, false, speed);
+						end.Y, end.Z, damage, true, hash, Character, true, false, speed);
 			}
 
 		    return false;
@@ -909,6 +931,9 @@ namespace GTANetwork
 						var damage = WeaponDataProvider.GetWeaponDamage(WeaponHash.Minigun);
 						if ((VehicleHash)VehicleHash == GTA.Native.VehicleHash.Rhino)
 							damage = 210;
+
+					    if (IsFriend())
+					        damage = 0;
 
 						Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, end.X,
 							end.Y, end.Z, damage, true, (int)hash, Character, true, false, speed);
@@ -1337,6 +1362,9 @@ namespace GTANetwork
 				dir.Normalize();
 				var end = start + dir * 100f;
 
+			    if (IsFriend())
+			        damage = 0;
+
 				Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z,
 					end.X,
 					end.Y, end.Z, damage, true, (int)weaponH, Character, true, false, speed);
@@ -1431,8 +1459,9 @@ namespace GTANetwork
 				//Character.FreezePosition = true;
 			}
 
+            Character.CanBeTargetted = true;
 
-			DEBUG_STEP = 24;
+            DEBUG_STEP = 24;
 			if (IsFreefallingWithParachute)
 			{
 				DisplayParachuteFreefall();
@@ -1451,6 +1480,40 @@ namespace GTANetwork
 					_parachuteProp = null;
 				}
 				DEBUG_STEP = 27;
+
+			    if (IsRagdoll)
+			    {
+                    /*
+                    var dir = Position - _lastPosition;
+                    var vdir = PedVelocity - _lastPedVel;
+                    var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
+                        (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                        (int)AverageLatency);
+
+                    var posTarget = Util.LinearVectorLerp(Position, Position + dir,
+                        (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                        (int)AverageLatency);
+                    if (GetPedSpeed(PedVelocity.Length()) > 0)
+                    {
+                        Character.Velocity = target + 2 * (posTarget - Character.Position);
+                        _stopTime = DateTime.Now;
+                        _carPosOnUpdate = Character.Position;
+                    }
+                    else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+                    {
+                        posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
+                            (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
+                            posTarget.Z, 0, 0, 0, 0);
+                    }
+                    else
+                    {
+                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
+                            Position.Z, 0, 0, 0, 0);
+                    }*/
+
+                    //return false;
+			    }
 
 				if (lastMeleeAnim != null)
 				{
@@ -1498,18 +1561,7 @@ namespace GTANetwork
                     return;
                 }
 
-                if (!_initialized)
-                {
-                    RelGroup = World.AddRelationshipGroup("SYNCPED");
-                    FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
-                    World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
-                    World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
-
-                    World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
-                    World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
-
-                    _initialized = true;
-                }
+                
 
                 if (IsSpectating) return;
 
@@ -1852,7 +1904,7 @@ namespace GTANetwork
                 Character.BlockPermanentEvents = true;
                 Character.IsInvincible = true;
                 Character.CanRagdoll = false;
-                Character.RelationshipGroup = RelGroup;
+                Character.RelationshipGroup = Main.RelGroup;
                 if (_blip)
                 {
                     Character.AddBlip();
@@ -1912,6 +1964,7 @@ namespace GTANetwork
 
         void COOP_DisplayLocally()
         {
+            /*
             if (!_initialized)
             {
                 RelGroup = World.AddRelationshipGroup("SYNCPED");
@@ -1923,7 +1976,7 @@ namespace GTANetwork
                 World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
 
                 _initialized = true;
-            }
+            }*/
 
 
 

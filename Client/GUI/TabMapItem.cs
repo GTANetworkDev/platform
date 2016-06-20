@@ -205,7 +205,7 @@ namespace GTANetwork.GUI
 						Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
 						blipList.Add(((int)blip.Sprite) + ".png");
 					}
-				}
+                }
                 
                 if (!Main.PlayerSettings.HideNametagsWhenZoomedOutMap || Zoom > 1f)
                 foreach (var opp in Main.Opponents)

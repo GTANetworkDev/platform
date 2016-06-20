@@ -127,6 +127,16 @@ namespace GTANetworkServer
 
         #region Functions
 
+        public string getResourceFolder()
+        {
+            if (ResourceParent == null)
+            {
+                throw new NullReferenceException("Illegal call to function inside constructor.");
+            }
+
+            return Path.GetFullPath("resources\\" + ResourceParent.ResourceParent.DirectoryName);
+        }
+
         public object call(string resourceName, string scriptName, string methodName, params object[] arguments)
         {
             var ourResource = Program.ServerInstance.RunningResources.FirstOrDefault(k => k.DirectoryName == resourceName);
@@ -177,6 +187,24 @@ namespace GTANetworkServer
         {
             if (newName == null) throw new ArgumentNullException(nameof(newName));
             Program.ServerInstance.GamemodeName = newName;
+        }
+
+        public void requestIpl(string iplName)
+        {
+            if (!Program.ServerInstance.LoadedIPL.Contains(iplName))
+                Program.ServerInstance.LoadedIPL.Add(iplName);
+            if (Program.ServerInstance.RemovedIPL.Contains(iplName))
+                Program.ServerInstance.RemovedIPL.Remove(iplName);
+            sendNativeToAllPlayers(0x41B4893843BBDB74, iplName);
+        }
+
+        public void removeIpl(string iplName)
+        {
+            if (!Program.ServerInstance.RemovedIPL.Contains(iplName))
+                Program.ServerInstance.RemovedIPL.Add(iplName);
+            if (Program.ServerInstance.LoadedIPL.Contains(iplName))
+                Program.ServerInstance.LoadedIPL.Remove(iplName);
+            sendNativeToAllPlayers(0xEE6C5AD3ECE0A82D, iplName);
         }
 
         public void sleep(int ms)

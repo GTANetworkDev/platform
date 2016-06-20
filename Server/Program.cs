@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
+using GTANetworkShared;
 
 namespace GTANetworkServer
 {
@@ -61,7 +62,7 @@ namespace GTANetworkServer
 
         static void Main(string[] args)
         {
-            var settings = ReadSettings(Program.Location + "settings.xml");
+            var settings = ServerSettings.ReadSettings(Program.Location + "settings.xml");
 
             Console.WriteLine("=======================================================================");
             Console.WriteLine("= GRAND THEFT AUTO NETWORK v1.0");
@@ -77,19 +78,7 @@ namespace GTANetworkServer
 
             Output("Starting...");
 
-            var config = new ServerConfig();
-
-            config.PasswordProtected = !String.IsNullOrWhiteSpace(settings.Password);
-            config.Password = settings.Password;
-            config.AnnounceSelf = settings.Announce;
-            config.MasterServer = settings.MasterServer;
-            config.MaxPlayers = settings.MaxPlayers;
-            config.ACLEnabled = settings.UseACL;
-            config.Name = settings.Name;
-            config.Port = settings.Port;
-
-
-            ServerInstance = new GameServer(config);
+            ServerInstance = new GameServer(settings);
             ServerInstance.AllowDisplayNames = true;
 
             ServerInstance.Start(settings.Resources.Select(r => r.Path).ToArray());
@@ -151,26 +140,6 @@ namespace GTANetworkServer
         }
 
         #endregion
-
-
-        static ServerSettings ReadSettings(string path)
-        {
-            var ser = new XmlSerializer(typeof(ServerSettings));
-
-            ServerSettings settings = null;
-
-            if (File.Exists(path))
-            {
-                using (var stream = File.OpenRead(path)) settings = (ServerSettings)ser.Deserialize(stream);
-
-                //using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
-            }
-            else
-            {
-                using (var stream = File.OpenWrite(path)) ser.Serialize(stream, settings = new ServerSettings());
-            }
-
-            return settings;
-        }
+        
     }
 }

@@ -57,7 +57,7 @@ namespace CEFInjector.DirectXHook.Hook.DX11
                 return false;
 
             _initialising = true;
-            
+
             try
             {
 
@@ -137,7 +137,7 @@ namespace CEFInjector.DirectXHook.Hook.DX11
             EnsureInitiliased();
 
             Begin();
-
+            
             foreach (var overlay in Overlays)
             {
                 foreach (var element in overlay.Elements)

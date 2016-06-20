@@ -380,6 +380,12 @@ namespace GTANetworkShared
 
         [ProtoMember(9)]
         public string Weather { get; set; }
+
+        [ProtoMember(10)]
+        public List<string> LoadedIpl { get; set; } 
+
+        [ProtoMember(11)]
+        public List<string> RemovedIpl { get; set; } 
     }
 
     [ProtoContract]
@@ -534,6 +540,8 @@ namespace GTANetworkShared
         public byte Flag { get; set; }
         [ProtoMember(19)]
         public float Steering { get; set; }
+        [ProtoMember(20)]
+        public Vector3 Trailer { get; set; }
     }
 
     [ProtoContract]

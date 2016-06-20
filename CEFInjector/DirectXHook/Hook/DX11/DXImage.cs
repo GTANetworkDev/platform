@@ -173,5 +173,6 @@ namespace CEFInjector.DirectXHook.Hook.DX11
                 return _texSRV;
             }
         }
+        
     }
 }

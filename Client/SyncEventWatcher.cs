@@ -25,13 +25,23 @@ namespace GTANetwork
 
         private Vehicle _lastTrailer;
 
-        private Vehicle GetVehicleTrailerVehicle(Vehicle tanker)
+        public static Vehicle GetVehicleTrailerVehicle(Vehicle tanker)
         {
             if (!Function.Call<bool>(Hash.IS_VEHICLE_ATTACHED_TO_TRAILER, tanker))
                 return null;
             var trailerArg = new OutputArgument();
             Function.Call<bool>(Hash.GET_VEHICLE_TRAILER_VEHICLE, tanker, trailerArg);
             return trailerArg.GetResult<Vehicle>();
+        }
+
+        public static Vehicle GetVehicleTowtruckVehicle(Vehicle tanker)
+        {
+            return Function.Call<Vehicle>(Hash.GET_ENTITY_ATTACHED_TO_TOW_TRUCK, tanker);
+        }
+
+        public static Vehicle GetVehicleCargobobVehicle(Vehicle tanker)
+        {
+            return Function.Call<Vehicle>(Hash.GET_VEHICLE_ATTACHED_TO_CARGOBOB, tanker);
         }
 
         private void SendSyncEvent(SyncEventType type, params object[] args)
@@ -117,7 +127,17 @@ namespace GTANetwork
                 }
                 _lights = car.LightsOn;
 
-                var trailer = GetVehicleTrailerVehicle(car);
+                Vehicle trailer;
+
+                if ((VehicleHash) car.Model.Hash == VehicleHash.TowTruck ||
+                    (VehicleHash) car.Model.Hash == VehicleHash.TowTruck2)
+                    trailer = GetVehicleTowtruckVehicle(car);
+                else if ((VehicleHash) car.Model.Hash == VehicleHash.Cargobob ||
+                         (VehicleHash) car.Model.Hash == VehicleHash.Cargobob2 ||
+                         (VehicleHash)car.Model.Hash == VehicleHash.Cargobob3 ||
+                         (VehicleHash)car.Model.Hash == VehicleHash.Cargobob4)
+                    trailer = GetVehicleCargobobVehicle(car);
+                else trailer = GetVehicleTrailerVehicle(car);
 
                 if (_lastTrailer != trailer)
                 {
@@ -141,7 +161,6 @@ namespace GTANetwork
                     bool isBusted = false;
                     if ((isBusted = car.IsTireBurst(i)) != _tires[i])
                     {
-                        Util.SafeNotify("TIRE " + i + "is burst? " + isBusted);
                         if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
                             SendSyncEvent(SyncEventType.TireBurst, Main.NetEntityHandler.EntityToNet(car.Handle), i, isBusted);
                     }

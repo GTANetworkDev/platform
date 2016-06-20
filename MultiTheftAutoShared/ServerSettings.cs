@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Xml.Serialization;
-using GTANetworkShared;
 
-namespace GTANetworkServer
+namespace GTANetworkShared
 {
     [XmlRoot("config")]
     public class ServerSettings
@@ -25,8 +25,12 @@ namespace GTANetworkServer
         [XmlElement("announce")]
         public bool Announce { get; set; }
 
-        //[XmlElement("announce_lan")]
-        //public bool AnnounceToLan { get; set; }
+
+        [XmlElement("upnp")]
+        public bool UseUPnP { get; set; }
+
+        [XmlElement("announce_lan")]
+        public bool AnnounceToLan { get; set; }
 
         [XmlElement("password")]
         public string Password { get; set; }
@@ -60,11 +64,47 @@ namespace GTANetworkServer
             //Gamemode = "freeroam";
             Announce = true;
             UseACL = true;
-            //AnnounceToLan = true;
+            AnnounceToLan = true;
             AutoUpdateMinClientVersion = true;
             //AllowDisplayNames = true;
             MasterServer = "http://148.251.18.67:8080/";
             Resources = new List<SettingsResFilepath>();
+        }
+
+        public static ServerSettings ReadSettings(string path)
+        {
+            var ser = new XmlSerializer(typeof(ServerSettings));
+
+            ServerSettings settings = null;
+
+            if (File.Exists(path))
+            {
+                using (var stream = File.OpenRead(path)) settings = (ServerSettings)ser.Deserialize(stream);
+
+                //using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
+            }
+            else
+            {
+                using (var stream = File.OpenWrite(path)) ser.Serialize(stream, settings = new ServerSettings());
+            }
+
+            return settings;
+        }
+
+        public static void WriteSettings(string path, ServerSettings sett)
+        {
+            var ser = new XmlSerializer(typeof(ServerSettings));
+
+            ServerSettings settings = sett;
+
+            if (File.Exists(path))
+            {
+                using (var stream = new FileStream(path, FileMode.Truncate, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
+            }
+            else
+            {
+                using (var stream = File.OpenWrite(path)) ser.Serialize(stream, settings = new ServerSettings());
+            }
         }
     }
 }

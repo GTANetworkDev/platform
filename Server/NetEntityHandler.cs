@@ -26,7 +26,7 @@ namespace GTANetworkServer
             obj.Rotation = rot;
             obj.ModelHash = model;
             obj.IsDead = false;
-            obj.Health = 900;
+            obj.Health = 1000;
             obj.EntityType = (byte)EntityType.Vehicle;
             obj.PrimaryColor = color1;
             obj.SecondaryColor = color2;

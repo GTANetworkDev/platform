@@ -192,8 +192,8 @@ namespace GTANetwork
 
         public static string LoadDict(string dict)
         {
-            var counter = 200;
-            while (counter < 200 && !Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict))
+            var counter = 0;
+            while (counter < 20 && !Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict))
             {
                 Function.Call(Hash.REQUEST_ANIM_DICT, dict);
                 Script.Yield();

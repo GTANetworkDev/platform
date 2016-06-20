@@ -64,7 +64,7 @@ namespace GTANetwork
                     if (lastVersion > fileVersion)
                     {
                         var updateResult =
-                            MessageBox.Show(
+                            MessageBox.Show(splashScreen.SplashScreen,
                                 "New GTA Network version is available! Download now?\n\nInternet Version: " +
                                 lastVersion + "\nOur Version: " + fileVersion, "Update Available",
                                 MessageBoxButtons.YesNo);
@@ -86,10 +86,10 @@ namespace GTANetwork
                         }
                     }
                 }
-                catch (WebException)
+                catch (WebException ex)
                 {
-                    MessageBox.Show(
-                        "The master server is unavailable at this time. Unable to check for latest version.", "Warning");
+                    MessageBox.Show(splashScreen.SplashScreen,
+                        "The master server is unavailable at this time. Unable to check for latest version.\n\nException:\n" + ex, "Warning");
                 }
             }
 
@@ -97,7 +97,7 @@ namespace GTANetwork
 
             if (Process.GetProcessesByName("GTA5").Any())
             {
-                MessageBox.Show("GTA V is already running. Please shut down the game before starting GTA Network.");
+                MessageBox.Show(splashScreen.SplashScreen, "GTA V is already running. Please shut down the game before starting GTA Network.");
                 return;
             }
 
@@ -122,7 +122,7 @@ namespace GTANetwork
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    MessageBox.Show("We require administrative privileges to continue. Please restart as administrator.", "Unauthorized access");
+                    MessageBox.Show(splashScreen.SplashScreen, "We require administrative privileges to continue. Please restart as administrator.", "Unauthorized access");
                     return;
                 }
 
@@ -161,7 +161,7 @@ namespace GTANetwork
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    MessageBox.Show("We have no access to the registry. Please start the program as Administrator.",
+                    MessageBox.Show(splashScreen.SplashScreen, "We have no access to the registry. Please start the program as Administrator.",
                         "UNAUTHORIZED ACCESS");
                     return;
                 }
@@ -342,10 +342,11 @@ namespace GTANetwork
     {
         private Thread _thread;
         private bool _hasToClose = false;
-        private SplashScreen _splashScreen;
 
         private delegate void CloseForm();
         private delegate void SetPercentDel(int newPercent);
+
+        public SplashScreen SplashScreen;
         
         public SplashScreenThread()
         {
@@ -356,25 +357,25 @@ namespace GTANetwork
 
         public void SetPercent(int newPercent)
         {
-            while (_splashScreen == null) Thread.Sleep(10);
-            if (_splashScreen.InvokeRequired)
-                _splashScreen.Invoke(new SetPercentDel(SetPercent), newPercent);
+            while (SplashScreen == null) Thread.Sleep(10);
+            if (SplashScreen.InvokeRequired)
+                SplashScreen.Invoke(new SetPercentDel(SetPercent), newPercent);
             else
-                _splashScreen.progressBar1.Value = newPercent;
+                SplashScreen.progressBar1.Value = newPercent;
         }
 
         public void Stop()
         {
-            if (_splashScreen.InvokeRequired)
-                _splashScreen.Invoke(new CloseForm(Stop));
+            if (SplashScreen.InvokeRequired)
+                SplashScreen.Invoke(new CloseForm(Stop));
             else
-                _splashScreen.Close();
+                SplashScreen.Close();
         }
 
         public void Show()
         {
-            _splashScreen = new SplashScreen();
-            _splashScreen.ShowDialog();
+            SplashScreen = new SplashScreen();
+            SplashScreen.ShowDialog();
         }
     }
 }

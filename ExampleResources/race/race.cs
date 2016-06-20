@@ -55,7 +55,7 @@ public class RaceGamemode : Script
 
         StartVote();
 
-        API.startThread(CalculatePositions);
+        //API.startThread(CalculatePositions);
     }
 
     public bool IsVoteActive()
@@ -117,7 +117,7 @@ public class RaceGamemode : Script
 
         end:
         Thread.Sleep(1000);
-        CalculatePositions();
+        CalculatePositions(); // wtf, stack overflow alert
     }
 
     private void onClientEvent(Client sender, string eventName, params object[] arguments)
