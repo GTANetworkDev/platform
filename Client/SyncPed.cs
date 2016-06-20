@@ -829,7 +829,11 @@ namespace GTANetwork
 
 				if (isRocket)
 					speed = 0xbf800000;
-				else
+				else if ((VehicleHash) VehicleHash == GTA.Native.VehicleHash.Savage ||
+				         (VehicleHash) VehicleHash == GTA.Native.VehicleHash.Hydra ||
+				         (VehicleHash) VehicleHash == GTA.Native.VehicleHash.Lazer)
+				    hash = unchecked((int) WeaponHash.Railgun);
+                else
 					hash = unchecked((int)WeaponHash.CombatPDW);
 
 			    int damage = IsFriend() ? 0 : 75;

@@ -1,5 +1,4 @@
 ﻿#define ATTACHSERVER
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1192,7 +1191,7 @@ namespace GTANetwork
 
                 hostStart.Activated += (sender, args) =>
                 {
-                    if (IsOnServer())
+                    if (IsOnServer() || _serverProcess != null)
                     {
                         UI.Notify("~b~~h~GTA Network~h~~w~~n~Leave the current server first!");
                         return;
