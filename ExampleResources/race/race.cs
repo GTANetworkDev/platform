@@ -34,8 +34,13 @@ public class RaceGamemode : Script
     public DateTime RaceStart { get; set; }
     public List<NetHandle> Objects { get; set; }
     public List<Thread> ActiveThreads { get; set; }    
+    public int RaceStartCountdown { get; set; }
+    public DateTime RaceTimer { get; set; }
 
     // Voting
+    public int TimeLeft { get; set; }
+    public int VoteEnd { get; set; }
+    public DateTime LastSecond { get; set; }
     public DateTime VoteStart { get; set; }
     public List<Client> Voters { get; set; }
     public Dictionary<int, int> Votes { get; set; }
@@ -43,6 +48,7 @@ public class RaceGamemode : Script
 
     public void onResourceStart(object sender, EventArgs e)
     {
+        TimeLeft = -1;
         AvailableRaces = new List<Race>();
         Opponents = new List<Opponent>();
         RememberedBlips = new Dictionary<long, int>();
@@ -54,8 +60,6 @@ public class RaceGamemode : Script
         API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
 
         StartVote();
-
-        //API.startThread(CalculatePositions);
     }
 
     public bool IsVoteActive()
@@ -67,7 +71,15 @@ public class RaceGamemode : Script
     {
         if (IsRaceOngoing)
         {
-            SetUpPlayerForRace(player, CurrentRace, false, 0);
+            Opponent curOp = Opponents.FirstOrDefault(op => op.Client == player);
+            if (curOp == null || curOp.HasFinished)
+            {
+                SetUpPlayerForRace(player, CurrentRace, false, 0);
+            }
+            else
+            {
+                RespawnPlayer(player, CurrentRace, curOp.CheckpointsPassed);
+            }
         }
     }
 
@@ -97,27 +109,24 @@ public class RaceGamemode : Script
         }
     }
 
+    private DateTime _lastPositionCalculation;
     private void CalculatePositions()
     {
-        if (!IsRaceOngoing)
-        {
-            goto end;
-        }
+        if (DateTime.Now.Subtract(_lastPositionCalculation).TotalMilliseconds < 1000)
+            return;
 
         foreach (var opponent in Opponents)
         {
             if (opponent.HasFinished || !opponent.HasStarted) continue;
             var newPos = CalculatePlayerPositionInRace(opponent);
-            if (newPos != opponent.RacePosition)
+            if (true)
             {
                 opponent.RacePosition = newPos;
-                API.triggerClientEvent(opponent.Client, "updatePosition", newPos, Opponents.Count);
+                API.triggerClientEvent(opponent.Client, "updatePosition", newPos, Opponents.Count, opponent.CheckpointsPassed, CurrentRaceCheckpoints.Count);
             }
         }
 
-        end:
-        Thread.Sleep(1000);
-        CalculatePositions(); // wtf, stack overflow alert
+        _lastPositionCalculation = DateTime.Now;
     }
 
     private void onClientEvent(Client sender, string eventName, params object[] arguments)
@@ -128,11 +137,80 @@ public class RaceGamemode : Script
             Votes[voteCast]++;
             Voters.Add(sender);            
         }
+        else if (eventName == "race_requestRespawn")
+        {
+            Opponent curOp = Opponents.FirstOrDefault(op => op.Client == sender);
+            if (curOp == null || curOp.HasFinished || !curOp.HasStarted || curOp.CheckpointsPassed == 0) return;
+            RespawnPlayer(sender, CurrentRace, curOp.CheckpointsPassed - 1);
+        }
     }
 
     public void onUpdate(object sender, EventArgs e)
     {
+        if (DateTime.Now.Subtract(LastSecond).TotalMilliseconds > 1000)
+        {
+            LastSecond = DateTime.Now;
+            if (TimeLeft > 0)
+            {
+                TimeLeft--;
+
+                if (TimeLeft == 0)
+                {
+                    if (!IsVoteActive())
+                        StartVote();
+                }
+                else if (TimeLeft == 30)
+                {
+                    API.sendChatMessageToAll("Vote for next map will start in 30 seconds!");
+                }
+                else if (TimeLeft == 59)
+                {
+                    API.sendChatMessageToAll("Vote for next map will start in 60 seconds!");
+                }
+            }
+
+            if (RaceStartCountdown > 0)
+            {
+                RaceStartCountdown--;
+
+                if (RaceStartCountdown == 3)
+                {
+                    API.triggerClientEventForAll("startRaceCountdown");
+                }
+                else if (RaceStartCountdown == 0)
+                {
+                    IsRaceOngoing = true;
+
+                    lock (Opponents)
+                    foreach (var opponent in Opponents)
+                        {
+                            API.setEntityPositionFrozen(opponent.Client, opponent.Vehicle, false);
+                            opponent.HasStarted = true;
+                        }
+
+                    RaceTimer = DateTime.Now;
+                }
+            }
+
+            if (VoteEnd > 0)
+            {
+                VoteEnd--;
+                if (VoteEnd == 0)
+                {
+                    EndRace();
+                    var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
+                    API.sendChatMessageToAll("Race ~b~" + raceWon.Name + "~w~ has won the vote!");
+
+                    API.sleep(1000);
+                    StartRace(raceWon);
+                }
+            }
+        }
+        
+
         if (!IsRaceOngoing) return;
+
+        CalculatePositions();
 
         lock (Opponents)
         {
@@ -147,16 +225,7 @@ public class RaceGamemode : Script
                         {
                             if (Opponents.All(op => !op.HasFinished))
                             {
-                                API.startThread((ThreadStart)delegate
-                                {
-                                    API.sleep(10000);
-                                    API.sendChatMessageToAll("Vote for next map will start in 60 seconds!");
-                                    API.sleep(30000);
-                                    API.sendChatMessageToAll("Vote for next map will start in 30 seconds!");
-                                    API.sleep(30000);
-                                    if (!IsVoteActive())
-                                        StartVote();
-                                });
+                                TimeLeft = 60;
                             }
 
                             opponent.HasFinished = true;
@@ -164,7 +233,8 @@ public class RaceGamemode : Script
                             var suffix = pos.ToString().EndsWith("1")
                                 ? "st"
                                 : pos.ToString().EndsWith("2") ? "nd" : pos.ToString().EndsWith("3") ? "rd" : "th";
-                            API.sendChatMessageToAll("~h~" + opponent.Client.Name + "~h~ has finished " + pos + suffix);
+                            var timeElapsed = DateTime.Now.Subtract(RaceTimer);
+                            API.sendChatMessageToAll("~h~" + opponent.Client.Name + "~h~ has finished " + pos + suffix + " (" + timeElapsed.ToString("mm\\:ss\\.fff") + ")");
                             API.triggerClientEvent(opponent.Client, "finishRace");
                             continue;
                         }
@@ -214,39 +284,21 @@ public class RaceGamemode : Script
             StartVote();
             return;
         }
-        else if (message.StartsWith("/vote"))
+        else if (message.StartsWith("/forcemap") && message.Length > 10 && API.isAclEnabled() && API.doesPlayerHaveAccessToCommand(sender, "/forcemap"))
         {
-            if (DateTime.Now.Subtract(VoteStart).TotalSeconds > 60)
+            var mapName = message.Substring(10);
+            var locatedMap = AvailableRaces.FirstOrDefault(m => m.Filename == mapName);
+            if (locatedMap == null)
             {
-                API.sendChatMessageToPlayer(sender, "No current vote is in progress.");
+                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ No map found: " + mapName + "!");
                 return;
             }
 
-            var args = message.Split();
-
-            if (args.Length <= 1)
-            {
-                API.sendChatMessageToPlayer(sender, "USAGE", "/vote [id]");
-                return;
-            }
-
-            if (Voters.Contains(sender))
-            {
-                API.sendChatMessageToPlayer(sender, "ERROR", "You have already voted!");
-                return;
-            }
-
-            int choice;
-            if (!int.TryParse(args[1], out choice) || choice <= 0 || choice > AvailableChoices.Count)
-            {
-                API.sendChatMessageToPlayer(sender, "USAGE", "/vote [id]");
-                return;
-            }
-
-            Votes[choice]++;
-            API.sendChatMessageToPlayer(sender, "You have voted for " + AvailableChoices[choice].Name);
-            Voters.Add(sender);
-            return;
+            VoteEnd = 0;
+            EndRace();
+            API.sendChatMessageToAll("Starting map ~b~" + locatedMap.Name + "!");
+            API.sleep(1000);
+            StartRace(locatedMap);
         }
     }
 
@@ -281,6 +333,7 @@ public class RaceGamemode : Script
             StreamReader file = new StreamReader(path);
             var raceout = (Race)serializer.Deserialize(file);
             file.Close();
+            raceout.Filename = Path.GetFileName(path);
             AvailableRaces.Add(raceout);
             counter++;
         }
@@ -328,22 +381,7 @@ public class RaceGamemode : Script
 
         API.consoleOutput("RACE: Starting race " + race.Name);
 
-        API.startThread((ThreadStart)delegate
-        {
-            API.sleep(10000);
-            API.triggerClientEventForAll("startRaceCountdown");
-            API.sleep(3000);
-            IsRaceOngoing = true;
-
-            var nat = 0x428CA6DBD1094446;
-
-            lock (Opponents)
-            foreach (var opponent in Opponents)
-                {
-                    API.setEntityPositionFrozen(opponent.Client, opponent.Vehicle, false);
-                    opponent.HasStarted = true;
-                }
-        });
+        RaceStartCountdown = 13;
     }
 
     private void EndRace()
@@ -393,9 +431,8 @@ public class RaceGamemode : Script
         {
             API.triggerClientEvent(client, "setNextCheckpoint", nextPos, false, false, newDir, race.Checkpoints[1]);
         }
-
-
-        var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), 0, 0);
+        
+        var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), randGen.Next(70), randGen.Next(70));
         Thread.Sleep(500);
         API.setPlayerIntoVehicle(client, playerVehicle, -1);
 
@@ -418,10 +455,90 @@ public class RaceGamemode : Script
         }
     }
 
+    private void RespawnPlayer(Client client, Race race, int checkpoint)
+    {
+        if (race == null) return;
+
+        Opponent inOp = Opponents.FirstOrDefault(op => op.Client == client);
+
+        int selectedModel = 0;
+        int color1 = 0;
+        int color2 = 0;
+
+        if (inOp != null)
+        {
+            selectedModel = API.getVehicleModel(inOp.Vehicle);
+            color1 = API.getVehiclePrimaryColor(inOp.Vehicle);
+            color2 = API.getVehicleSecondaryColor(inOp.Vehicle);
+        }
+
+        if (selectedModel == 0)
+            selectedModel = unchecked((int)((uint)race.AvailableVehicles[randGen.Next(race.AvailableVehicles.Length)]));
+        
+            
+        var position = CurrentRaceCheckpoints[checkpoint];
+        var next = position;
+
+        if (CurrentRaceCheckpoints.Count > checkpoint + 1)
+        {
+            next = CurrentRaceCheckpoints[checkpoint + 1];
+        }
+        else
+        {
+            next = CurrentRaceCheckpoints[checkpoint - 1];
+        }
+
+        
+        var heading = (float)Math.Abs((Math.Atan2(next.Y, next.X) - Math.Atan2(position.Y, position.X)) * (180.0 / Math.PI));
+
+        API.setEntityPosition(client.CharacterHandle, position);
+
+        Vector3 newDir = null;
+
+        if (CurrentRaceCheckpoints.Count > checkpoint + 2)
+        {
+            Vector3 dir = CurrentRaceCheckpoints[checkpoint+2].Subtract(CurrentRaceCheckpoints[checkpoint+1]);
+            dir = dir.Normalize();
+            newDir = dir;
+        }
+
+
+        var nextPos = CurrentRaceCheckpoints[checkpoint+1];
+        if (newDir == null)
+        {
+            API.triggerClientEvent(client, "setNextCheckpoint", nextPos, true, false);
+        }
+        else
+        {
+            API.triggerClientEvent(client, "setNextCheckpoint", nextPos, false, false, newDir, CurrentRaceCheckpoints[checkpoint + 2]);
+        }
+
+
+        var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), color1, color2);
+        API.sleep(500);
+        API.setPlayerIntoVehicle(client, playerVehicle, -1);
+
+        lock (Opponents)
+        {
+            if (inOp != null)
+            {
+                API.deleteEntity(inOp.Vehicle);
+                inOp.Vehicle = playerVehicle;
+                inOp.HasStarted = true;
+            }
+            else
+            {
+                Opponents.Add(new Opponent(client) { Vehicle = playerVehicle, HasStarted = true });
+            }
+        }
+    }
+
     private int CalculatePlayerPositionInRace(Opponent player)
     {
+        if (CurrentRace == null) return 0;
+
         int output = 1;
-        int playerCheckpoint = CurrentRace.Checkpoints.Length - player.CheckpointsPassed;
+        int playerCheckpoint = player.CheckpointsPassed;
         int beforeYou = Opponents.Count(tuple => {
             if (tuple == player) return false;
             return tuple.CheckpointsPassed > playerCheckpoint;
@@ -473,17 +590,7 @@ public class RaceGamemode : Script
         API.triggerClientEventForAll("race_startVotemap", argumentList);
 
         VoteStart = DateTime.Now;
-        
-        API.startThread((ThreadStart)delegate
-        {
-            API.sleep(60000);
-            EndRace();
-            var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
-            API.sendChatMessageToAll("Race ~b~" + raceWon.Name + "~w~ has won the vote!");
-
-            API.sleep(1000);
-            StartRace(raceWon);
-        });
+        VoteEnd = 60;
     }
 
     private string GetVoteHelpString()
@@ -558,6 +665,8 @@ public class Race
     public bool LapsAvailable = true;
     public Vector3 Trigger;
     public SavedProp[] DecorativeProps;
+
+    public string Filename;
 
     public string Name;
     public string Description;

@@ -149,6 +149,7 @@ namespace GTANetworkServer
             MasterServer = conf.MasterServer;
             MaxPlayers = conf.MaxPlayers;
             AnnounceToLAN = conf.AnnounceToLan;
+            UseUPnP = conf.UseUPnP;
         }
         
         public NetServer Server;
@@ -168,6 +169,7 @@ namespace GTANetworkServer
         public bool IsClosing { get; set; }
         public bool ReadyToClose { get; set; }
         public bool ACLEnabled { get; set; }
+        public bool UseUPnP { get; set; }
 
         public List<string> LoadedIPL = new List<string>();
         public List<string> RemovedIPL = new List<string>();
@@ -994,7 +996,7 @@ namespace GTANetworkServer
                                                 en.Engines.ForEach(fs =>
                                                 {
                                                     fs.InvokeClientEvent(client, data.EventName,
-                                                        DecodeArgumentListPure(data.Arguments.ToArray()).ToArray());
+                                                        DecodeArgumentListPure(data.Arguments?.ToArray() ?? new NativeArgument[0]).ToArray());
                                                 }
                                                     ));
                                 }
@@ -1211,7 +1213,7 @@ namespace GTANetworkServer
                     Clients[i].NetConnection.Disconnect("Server is shutting down");
                 }
 
-                Server.UPnP.DeleteForwardingRule(Port);
+                if (UseUPnP) Server.UPnP.DeleteForwardingRule(Port);
 
                 ReadyToClose = true;
                 return;

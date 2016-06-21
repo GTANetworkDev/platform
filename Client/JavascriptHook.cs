@@ -13,6 +13,7 @@ using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using NativeUI;
+using NAudio.Wave;
 using Vector3 = GTANetworkShared.Vector3;
 
 namespace GTANetwork
@@ -40,11 +41,17 @@ namespace GTANetwork
             KeyUp += OnKeyUp;
             ScriptEngines = new List<ClientsideScriptWrapper>();
             ThreadJumper = new List<Action>();
+            TextElements = new List<UIResText>();
         }
+
+        public static List<UIResText> TextElements { get; set; }
 
         public static List<ClientsideScriptWrapper> ScriptEngines;
 
         public static List<Action> ThreadJumper;
+
+        public static WaveOutEvent AudioDevice { get; set; }
+        public static Mp3FileReader AudioReader { get; set; }
 
         public static void InvokeServerEvent(string eventName, object[] arguments)
         {
@@ -108,6 +115,7 @@ namespace GTANetwork
                     }
                 }
             }
+
         }
 
         public void OnKeyDown(object sender, KeyEventArgs e)
@@ -219,6 +227,11 @@ namespace GTANetwork
                     }
 
                     ScriptEngines.Clear();
+                    AudioDevice?.Stop();
+                    AudioDevice?.Dispose();
+                    AudioReader?.Dispose();
+                    AudioDevice = null;
+                    AudioReader = null;
                 }
             });
         }
@@ -327,6 +340,11 @@ namespace GTANetwork
         public LocalHandle getLocalPlayer()
         {
             return new LocalHandle(Game.Player.Character.Handle);
+        }
+
+        public bool isPlayerInAnyVehicle(LocalHandle player)
+        {
+            return new Ped(player.Value).IsInVehicle();
         }
 
         public void playSoundFrontEnd(string audioLib, string audioName)
@@ -491,7 +509,7 @@ namespace GTANetwork
             int screenh = Game.ScreenResolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
-            var width = height * ratio;
+            var width = height*ratio;
 
             float w = (float)wSize / width;
             float h = (float)hSize / height;
@@ -504,6 +522,7 @@ namespace GTANetwork
         public void drawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
             int justify, bool shadow, bool outline, int wordWrap)
         {
+            
             int screenw = Game.ScreenResolution.Width;
             int screenh = Game.ScreenResolution.Height;
             const float height = 1080f;
@@ -542,6 +561,30 @@ namespace GTANetwork
             Function.Call(Hash._DRAW_TEXT, x, y);
         }
 
+        public UIResText addTextElement(string caption, double x, double y, double scale, int r, int g, int b, int a, int font, int alignment)
+        {
+            var txt = new UIResText(caption, new Point((int) x, (int) y), (float) scale, Color.FromArgb(a, r, g, b),
+                (GTA.Font) font, (UIResText.Alignment) alignment);
+            JavascriptHook.TextElements.Add(txt);
+            
+            return txt;
+        }
+
+        public int getGameTime()
+        {
+            return Game.GameTime;
+        }
+
+        public int getGlobalTime()
+        {
+            return Environment.TickCount;
+        }
+
+        public double angleBetween(Vector3 from, Vector3 to)
+        {
+            return Math.Abs((Math.Atan2(to.Y, to.X) - Math.Atan2(from.Y, from.X)) * (180.0 / Math.PI));
+        }
+
         public bool isPed(LocalHandle ent)
         {
             return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent.Value);
@@ -565,6 +608,66 @@ namespace GTANetwork
         public void wait(int ms)
         {
             Script.Wait(ms);
+        }
+
+        public void startAudio(string path)
+        {
+            var absPath = getResourceFilePath(path);
+            JavascriptHook.AudioDevice?.Stop();
+            JavascriptHook.AudioDevice?.Dispose();
+            JavascriptHook.AudioReader?.Dispose();
+            
+            JavascriptHook.AudioReader = new Mp3FileReader(absPath);
+            JavascriptHook.AudioDevice = new WaveOutEvent();
+            JavascriptHook.AudioDevice.Init(JavascriptHook.AudioReader);
+            JavascriptHook.AudioDevice.Play();
+        }
+
+        public void pauseAudio()
+        {
+            JavascriptHook.AudioDevice?.Pause();
+        }
+
+        public void resumeAudio()
+        {
+            JavascriptHook.AudioDevice?.Play();
+        }
+
+        public void setAudioTime(double seconds)
+        {
+            if (JavascriptHook.AudioReader != null)
+                JavascriptHook.AudioReader.CurrentTime = TimeSpan.FromSeconds(seconds);
+        }
+
+        public double getAudioTime()
+        {
+            if (JavascriptHook.AudioReader != null) return JavascriptHook.AudioReader.CurrentTime.TotalMilliseconds;
+            return 0;
+        }
+
+        public bool isAudioPlaying()
+        {
+            if (JavascriptHook.AudioDevice != null) return JavascriptHook.AudioDevice.PlaybackState == PlaybackState.Playing;
+            return false;
+        }
+
+        public void setAudioVolume(double vol)
+        {
+            if (JavascriptHook.AudioDevice != null) JavascriptHook.AudioDevice.Volume = (float)vol;
+        }
+
+        public bool isAudioInitialized()
+        {
+            return JavascriptHook.AudioDevice != null;
+        }
+
+        public void stopAudio()
+        {
+            JavascriptHook.AudioDevice?.Stop();
+            JavascriptHook.AudioDevice?.Dispose();
+            JavascriptHook.AudioReader?.Dispose();
+            JavascriptHook.AudioDevice = null;
+            JavascriptHook.AudioReader = null;
         }
 
         public void triggerServerEvent(string eventName, params object[] arguments)
@@ -667,6 +770,18 @@ namespace GTANetwork
             menu.ProcessControl();
             menu.ProcessMouse();
             menu.Draw();
+        }
+
+        public Scaleform requestScaleform(string scaleformName)
+        {
+            var sc = new Scaleform(0);
+            sc.Load(scaleformName);
+            return sc;
+        }
+
+        public void renderScaleform(Scaleform sc, double x, double y, double w, double h)
+        {
+            sc.Render2DScreenSpace(new PointF((float) x, (float) y), new PointF((float) w, (float) h));
         }
 
         internal PointF convertAnchorPos(float x, float y, Anchor anchor, float xOffset, float yOffset)

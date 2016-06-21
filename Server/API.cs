@@ -366,6 +366,15 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public int getVehicleModel(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].ModelHash;
+            }
+            return 0;
+        }
+
         public void setVehicleMod(NetHandle vehicle, int modType, int mod)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))
@@ -530,7 +539,6 @@ namespace GTANetworkServer
         public  void sendChatMessageToAll(string message)
         {
             sendChatMessageToAll("", message);
-            
         }
 
         public  void sendChatMessageToAll(string sender, string message)

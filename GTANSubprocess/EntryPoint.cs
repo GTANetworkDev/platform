@@ -259,7 +259,7 @@ namespace GTANetwork
         {
             if (Directory.Exists("tempstorage"))
             {
-                Directory.Delete("tempstorage", true);
+                DeleteDirectory("tempstorage");
             }
 
             Directory.CreateDirectory("tempstorage");
@@ -311,7 +311,7 @@ namespace GTANetwork
                 {
                     File.Delete(file);
                 }
-                catch (Exception e)
+                catch
                 { }
             }
 
@@ -321,12 +321,17 @@ namespace GTANetwork
             }
 
             if (Directory.Exists("tempstorage\\scripts"))
+            {
+                if (!Directory.Exists(InstallFolder + "\\scripts"))
+                    Directory.CreateDirectory(InstallFolder + "\\scripts");
+
                 foreach (var path in Directory.GetFiles("tempstorage\\scripts"))
                 {
                     File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
                 }
+            }
 
-            Directory.Delete("tempstorage", true);
+            DeleteDirectory("tempstorage");
         }
 
         public static void SaveSettings(string path, PlayerSettings set)
@@ -335,6 +340,45 @@ namespace GTANetwork
 
             if (File.Exists(path)) using (var stream = new FileStream(path, FileMode.Truncate)) ser.Serialize(stream, set);
             else using (var stream = new FileStream(path, FileMode.Create)) ser.Serialize(stream, set);
+        }
+
+        public static void DeleteDirectory(string target_dir)
+        {
+            string[] files = Directory.GetFiles(target_dir);
+            string[] dirs = Directory.GetDirectories(target_dir);
+
+            foreach (string file in files)
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.Delete(file);
+            }
+
+            foreach (string dir in dirs)
+            {
+                DeleteDirectory(dir);
+            }
+
+            Directory.Delete(target_dir, false);
+        }
+
+        public static void CopyFolder(string sourceFolder, string destFolder)
+        {
+            if (!Directory.Exists(destFolder))
+                Directory.CreateDirectory(destFolder);
+            string[] files = Directory.GetFiles(sourceFolder);
+            foreach (string file in files)
+            {
+                string name = Path.GetFileName(file);
+                string dest = Path.Combine(destFolder, name);
+                File.Copy(file, dest);
+            }
+            string[] folders = Directory.GetDirectories(sourceFolder);
+            foreach (string folder in folders)
+            {
+                string name = Path.GetFileName(folder);
+                string dest = Path.Combine(destFolder, name);
+                CopyFolder(folder, dest);
+            }
         }
     }
 

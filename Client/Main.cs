@@ -161,6 +161,11 @@ namespace GTANetwork
         
         public Main()
         {
+            //var scal = new Scaleform(0);
+            //scal.Load("hud");
+            //scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true);
+            
+
             CrossReference.EntryPoint = this;
 
             PlayerSettings = Util.ReadSettings(GTANInstallDir + "\\settings.xml");
@@ -3048,7 +3053,7 @@ namespace GTANetwork
                         var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
                         if (data != null)
                         {
-                            var args = DecodeArgumentListPure(data.Arguments.ToArray()).ToList();
+                            var args = DecodeArgumentListPure(data.Arguments?.ToArray() ?? new NativeArgument[0]).ToList();
                             switch ((ServerEventType)data.EventType)
                             {
                                 case ServerEventType.PlayerSpectatorChange:
@@ -3366,7 +3371,7 @@ namespace GTANetwork
                         {
                             if (data.Arguments != null)
                                 JavascriptHook.InvokeServerEvent(data.EventName,
-                                    DecodeArgumentListPure(data.Arguments.ToArray()).ToArray());
+                                    DecodeArgumentListPure(data.Arguments?.ToArray()).ToArray());
                             else
                                 JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
                         }
@@ -3803,6 +3808,7 @@ namespace GTANetwork
 			NetEntityHandler.ClearAll();
 			DEBUG_STEP = 50;
 			JavascriptHook.StopAllScripts();
+            JavascriptHook.TextElements.Clear();
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
 			DEBUG_STEP = 52;

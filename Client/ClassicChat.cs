@@ -22,6 +22,11 @@ namespace GTANetwork
 			    if (Main.Chat != null && Main.MainMenu != null && (!Main.MainMenu.Visible || Main.MainMenu.TemporarilyHidden))
 				{
 					Main.Chat.Tick();
+
+                    foreach (var text in JavascriptHook.TextElements)
+                    {
+                        text.Draw();
+                    }
                 }
 			};
 		}

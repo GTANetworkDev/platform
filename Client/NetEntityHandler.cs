@@ -194,7 +194,8 @@ namespace GTANetwork
             }
 
 			var veh = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, position.X, position.Y, position.Z, true, true, dynamic));
-            veh.Rotation = rotation;
+            //veh.Rotation = rotation;
+            veh.Quaternion = rotation.ToQuaternion();
             veh.Position = position;
             veh.LodDistance = 3000;
             
