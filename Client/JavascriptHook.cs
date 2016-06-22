@@ -300,7 +300,12 @@ namespace GTANetwork
             Hash ourHash;
             if (!Hash.TryParse(hash, out ourHash))
                 return;
-            Function.Call(ourHash, args.Select(o => new InputArgument(o)).ToArray());
+            Function.Call(ourHash, args.Select(o =>
+            {
+                if (o is LocalHandle)
+                    return new InputArgument(((LocalHandle) o).Value);
+                return new InputArgument(o);
+            }).ToArray());
         }
 
         public object returnNative(string hash, int returnType, params object[] args)
@@ -406,6 +411,11 @@ namespace GTANetwork
         public LocalHandle[] getAllPlayers()
         {
             return Main.Opponents.Select(op => new LocalHandle(op.Value.Character?.Handle ?? 0)).ToArray();
+        }
+
+        public LocalHandle getPlayerVehicle(LocalHandle player)
+        {
+            return new LocalHandle(new Ped(player.Value).CurrentVehicle?.Handle ?? 0);
         }
 
         public LocalHandle getPlayerByName(string name)

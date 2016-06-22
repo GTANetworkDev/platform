@@ -1,5 +1,4 @@
-﻿#define ATTACHSERVER
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -664,7 +663,8 @@ namespace GTANetwork
 
             foreach (var ped in list)
             {
-                _serverPlayers.Dictionary.Add(ped.Name == null ? "<Unknown>" : ped.Name, ((int)(ped.Latency * 1000)) + "ms");
+                if (!_serverPlayers.Dictionary.ContainsKey(ped.Name ?? "<Unknown>"))
+                    _serverPlayers.Dictionary.Add(ped.Name == null ? "<Unknown>" : ped.Name, ((int)(ped.Latency * 1000)) + "ms");
             }
         }
 

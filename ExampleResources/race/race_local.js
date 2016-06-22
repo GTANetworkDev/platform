@@ -6,12 +6,13 @@ var racePosition = null;
 var voteMenu = null;
 var respawnKeyStart = null;
 var racePositionScaleform = null;
+var ghostMode = false;
+var lastCollisionUpdate = 0;
+
 
 voteMenu = API.createMenu("VOTE FOR NEXT MAP", 0, 0, 6);
 voteMenu.ResetKey(menuControl.Back);
 racePositionScaleform = API.requestScaleform("race_position");
-racePositionScaleform.CallFunction("SET_RACE_LABELS", "POSITION","","","CHECKPOINTS","RACE RESULTS");
-racePositionScaleform.CallFunction("SET_RACE_POSITION", 4, 10);
 racePositionScaleform.CallFunction("SET_RACE_LABELS", "POSITION","","","CHECKPOINTS","RACE RESULTS");
 racePositionScaleform.CallFunction("SET_RACE_POSITION", 4, 10);
 racePositionScaleform.CallFunction("SHOW_RACE_MODULE", 1, false);
@@ -20,6 +21,13 @@ racePositionScaleform.CallFunction("SHOW_RACE_MODULE", 4, false);
 racePositionScaleform.CallFunction("SET_SAFE");
 racePositionScaleform.CallFunction("SET_RATIO", 1);
 
+
+function disableControls() {
+    API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
+    API.callNative("DISABLE_CONTROL_ACTION", 0, 25, true);
+    API.callNative("DISABLE_CONTROL_ACTION", 0, 68, true);
+    API.callNative("DISABLE_CONTROL_ACTION", 0, 91, true);
+}
 
 voteMenu.OnItemSelect.connect(function(sender, item, index) {
     API.triggerServerEvent("race_castVote", index+1);
@@ -41,12 +49,10 @@ API.onKeyUp.connect(function (sender, keyEventArgs) {
 
 
 API.onUpdate.connect(function(sender, args) {
-    API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
+    disableControls();
     API.drawMenu(voteMenu);    
     
-    if (racePosition != null) {
-        //API.drawText(racePosition, 50, 600, 0.5, 255, 255, 255, 255, 0, 0, false, true, 0);
-        //racePositionScaleform.Render2D();
+    if (racePosition != null) {        
         API.renderScaleform(racePositionScaleform, 80, 150, 1280, 720);
     }
 
@@ -61,6 +67,19 @@ API.onUpdate.connect(function(sender, args) {
             respawnKeyStart = null;
         }
     }
+
+    if (ghostMode && API.getGlobalTime() - lastCollisionUpdate > 5000 && API.isPlayerInAnyVehicle(API.getLocalPlayer()) ) {
+        lastCollisionUpdate = API.getGlobalTime();
+        var players = API.getAllPlayers();
+        var playerCar = API.getPlayerVehicle(API.getLocalPlayer());
+
+        for (var i = players.length - 1; i >= 0; i--) {
+            if (API.isPlayerInAnyVehicle(players[i])) {
+                var car = API.getPlayerVehicle(players[i]);
+                API.callNative("SET_ENTITY_NO_COLLISION_ENTITY", playerCar.Value, car.Value, false);
+            }
+        };
+    }
 });
 
 API.onServerEventTrigger.connect(function (eventName, args) {
@@ -73,7 +92,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
         var start = API.getGlobalTime();
         while (API.getGlobalTime() - start < 1000) {
-            API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
+            disableControls();
             countdown.Render2D();
             API.wait(0);
         }
@@ -84,7 +103,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         
         start = API.getGlobalTime();
         while (API.getGlobalTime() - start < 1000) {
-            API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
+            disableControls();
             countdown.Render2D();
             API.wait(0);
         }
@@ -96,7 +115,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         
         start = API.getGlobalTime();
         while (API.getGlobalTime() - start < 1000) {
-            API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
+            disableControls();
             countdown.Render2D();
             API.wait(0);
         }
@@ -107,10 +126,14 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
         start = API.getGlobalTime();
         while (API.getGlobalTime() - start < 1000) {
-            API.callNative("DISABLE_CONTROL_ACTION", 0, 75, true);
+            disableControls();
             countdown.Render2D();
             API.wait(0);
         }
+    }
+
+    if (eventName === "race_toggleGhostMode") {
+        ghostMode = args[0];
     }
 
     if (eventName === "updatePosition") {
@@ -118,6 +141,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
         racePositionScaleform.CallFunction("SET_RACE_POSITION", args[0], args[1]);
         racePositionScaleform.CallFunction("SET_GATES_POSITION", args[2], args[3]);
+        racePositionScaleform.CallFunction("SET_RACE_LABELS", "POSITION","","","CHECKPOINTS","RACE RESULTS");
     }
 
     if (eventName === "race_startVotemap") {

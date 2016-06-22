@@ -72,13 +72,13 @@ public class RaceGamemode : Script
         if (IsRaceOngoing)
         {
             Opponent curOp = Opponents.FirstOrDefault(op => op.Client == player);
-            if (curOp == null || curOp.HasFinished)
+            if (curOp == null || curOp.HasFinished || !curOp.HasStarted || curOp.CheckpointsPassed == 0)
             {
                 SetUpPlayerForRace(player, CurrentRace, false, 0);
             }
             else
             {
-                RespawnPlayer(player, CurrentRace, curOp.CheckpointsPassed);
+                RespawnPlayer(player, CurrentRace, curOp.CheckpointsPassed - 1);
             }
         }
     }
@@ -299,6 +299,19 @@ public class RaceGamemode : Script
             API.sendChatMessageToAll("Starting map ~b~" + locatedMap.Name + "!");
             API.sleep(1000);
             StartRace(locatedMap);
+        }
+        else if (message.StartsWith("/ghostmode") && message.Length > 11 && API.isAclEnabled() && API.doesPlayerHaveAccessToCommand(sender, "/ghostmode"))
+        {
+            var boolVal = message.Substring(11);
+            bool newValue;
+            if (!bool.TryParse(boolVal, out newValue))
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /ghostmode [true/false]");
+                return;
+            }
+
+            API.sendChatMessageToAll("Vehicle ghost mode " + (newValue ? "~g~enabled" : "~r~disabled") + "~w~!");
+            API.triggerClientEventForAll("race_toggleGhostMode", newValue);
         }
     }
 

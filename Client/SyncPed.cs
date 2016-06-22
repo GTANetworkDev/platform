@@ -855,8 +855,8 @@ namespace GTANetwork
 
 			DisplayVehiclePosition();
 
-			return DisplayVehicleDriveBy();
-	    }
+		    return false;
+		}
 
 	    void UpdateVehicleMountedWeapon()
 	    {
@@ -990,15 +990,16 @@ namespace GTANetwork
 	    {
 	        if (Main.DebugPanel.UpdateVehiclePosition) return COOP_UpdateVehiclePosition();
 
-
-            if (GetResponsiblePed(MainVehicle).Handle == Character.Handle)
-			{
-				if (UpdateVehicleMainData()) return true;
-			}
-
 			UpdateVehicleMountedWeapon();
 
-		    return false;
+	        if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
+	            DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds < 10000)
+	        {
+	            UpdateVehicleMainData();
+				if (DisplayVehicleDriveBy()) return true;
+			}
+
+            return false;
 	    }
 
 	    void UpdateProps()
@@ -1010,7 +1011,7 @@ namespace GTANetwork
 	        }
 
 
-            if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(_position, 30f))
+            if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(IsInVehicle ? VehiclePosition : _position, 30f))
 			{
 				var id = _clothSwitch / 50;
 
@@ -1415,7 +1416,7 @@ namespace GTANetwork
 	            COOP_DisplayWalkingAnimation();
 	            return;
 	        }
-
+            
 
             var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
 			var animDict = GetAnimDictionary(ourAnim);
@@ -1428,6 +1429,8 @@ namespace GTANetwork
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
 					8f, 1f, -1, 0, -8f, 1, 1, 1);
 			}
+
+            
 
 			// BUG: Animation doesn't clear for 1-2 seconds after aiming.
 
@@ -1577,12 +1580,6 @@ namespace GTANetwork
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
                 DEBUG_STEP = 1;
-
-                if (_lastStart != null && _lastEnd != null)
-                {
-                    //Function.Call(Hash.DRAW_LINE, _lastStart.X, _lastStart.Y, _lastStart.Z, _lastEnd.X, _lastEnd.Y,
-                    //_lastEnd.Z, 255, 255, 255, 255);
-                }
                 
 
                 /*
@@ -1616,6 +1613,10 @@ namespace GTANetwork
                 return;
             }
             */
+
+                // V- no effect?
+                if (COOP_UpdatePlayerPosOutOfRange(gPos, inRange)) return;
+
                 DEBUG_STEP = 2;
 
                 if (CreateCharacter(gPos, hRange)) return;
@@ -1630,7 +1631,7 @@ namespace GTANetwork
                 
 				if (Character != null)
                 {
-                    Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
+                    //Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
                 }
 
                 _switch++;
@@ -1711,7 +1712,7 @@ namespace GTANetwork
                 var posTarget = Util.LinearVectorLerp(Position, Position + dir,
                         (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
                 Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
-                    posTarget.Z, 0, 0, 0, 0);
+                    posTarget.Z, 1, 1, 1);
 
                 /*
 
