@@ -1023,6 +1023,18 @@ namespace GTANetwork
                     internetServers.Items.Add(debugItem);
                 }
 
+                {
+                    var debugItem = new UIMenuListItem("Sync Type", Enum.GetValues(typeof(SynchronizationMode)).Cast<SynchronizationMode>().Cast<dynamic>().ToList(), 0);
+
+                    debugItem.OnListChanged += (sender, index) =>
+                    {
+                        var item = sender.IndexToItem(index).ToString();
+                        GlobalSyncMode = Enum.Parse(typeof (SynchronizationMode), item);
+                    };
+
+                    internetServers.Items.Add(debugItem);
+                }
+
                 var localServs = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
 
                 {
@@ -1491,6 +1503,7 @@ namespace GTANetwork
                         ourVeh.RimColor = (VehicleColor) 0;
                         ourVeh.EngineHealth = pair.Value.Health;
                         ourVeh.SirenActive = pair.Value.Siren;
+                        ourVeh.NumberPlate = pair.Value.NumberPlate;
                         Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, ourVeh, 0, 0);
 
                         for (int i = 0; i < pair.Value.Doors.Length; i++)
@@ -1702,11 +1715,6 @@ namespace GTANetwork
 	    private static bool _sendData = true;
         public static void SendPlayerData()
         {
-	        if (Game.IsKeyPressed(Keys.NumPad9))
-	        {
-		        _sendData = !_sendData;
-				UI.ShowSubtitle("SEND DATA: " + _sendData, 60000);
-	        }
 
             if (IsSpectating || !_sendData) return;
             var player = Game.Player.Character;
@@ -2030,7 +2038,7 @@ namespace GTANetwork
             }
 
             DEBUG_STEP = 0;
-
+            //Game.DisableControl(0, Control.VehicleRadioWheel);
             Game.DisableControl(0, Control.FrontendPauseAlternate);
             Game.DisableControl(0, Control.FrontendSocialClub);
             Game.DisableControl(0, Control.FrontendSocialClubSecondary);
@@ -2726,7 +2734,7 @@ namespace GTANetwork
 
                             Opponents[data.NetHandle].VehicleNetHandle = data.VehicleHandle;
                             Opponents[data.NetHandle].Name = data.Name;
-                            Opponents[data.NetHandle].LastUpdateReceived = DateTime.Now;
+                            Opponents[data.NetHandle].LastUpdateReceived = Environment.TickCount;
                             Opponents[data.NetHandle].VehiclePosition =
                                 data.Position.ToVector();
                             Opponents[data.NetHandle].VehicleVelocity = data.Velocity.ToVector();
@@ -2779,7 +2787,7 @@ namespace GTANetwork
                             Opponents[data.NetHandle].Speed = data.Speed;
                             Opponents[data.NetHandle].Name = data.Name;
                             Opponents[data.NetHandle].PedArmor = data.PedArmor;
-                            Opponents[data.NetHandle].LastUpdateReceived = DateTime.Now;
+                            Opponents[data.NetHandle].LastUpdateReceived = Environment.TickCount;
                             Opponents[data.NetHandle].Position = data.Position.ToVector();
                             Opponents[data.NetHandle].ModelHash = data.PedModelHash;
                             Opponents[data.NetHandle].Rotation = data.Quaternion.ToVector();
@@ -2894,6 +2902,7 @@ namespace GTANetwork
                                     data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
                                 LogManager.DebugLog("Settings vehicle color 1");
                                 veh.Livery = prop.Livery;
+                                veh.NumberPlate = prop.NumberPlate;
                                 veh.PrimaryColor = (VehicleColor)prop.PrimaryColor;
                                 LogManager.DebugLog("Settings vehicle color 2");
                                 veh.SecondaryColor = (VehicleColor)prop.SecondaryColor;
@@ -3876,7 +3885,7 @@ namespace GTANetwork
                     _debugSyncPed.VehicleMods = CheckPlayerVehicleMods();
                     _debugSyncPed.Speed = veh.Speed;
                     _debugSyncPed.IsInVehicle = true;
-                    _debugSyncPed.LastUpdateReceived = DateTime.Now;
+                    _debugSyncPed.LastUpdateReceived = Environment.TickCount;
                     _debugSyncPed.PedArmor = player.Armor;
 
                     if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
@@ -3929,7 +3938,7 @@ namespace GTANetwork
                     _debugSyncPed.IsParachuteOpen = Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 2;
                     _debugSyncPed.IsInVehicle = false;
                     _debugSyncPed.PedProps = CheckPlayerProps();
-                    _debugSyncPed.LastUpdateReceived = DateTime.Now;
+                    _debugSyncPed.LastUpdateReceived = Environment.TickCount;
                 }
             }
 

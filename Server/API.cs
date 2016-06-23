@@ -366,6 +366,24 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public void setVehicleNumberPlate(NetHandle vehicle, string plate)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).NumberPlate = plate;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x95A88F0B409CDA47, new EntityArgument(vehicle.Value), plate);
+            }
+        }
+
+        public string getVehicleNumberPlate(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).NumberPlate;
+            }
+            return null;
+        }
+
         public int getVehicleModel(NetHandle vehicle)
         {
             if (doesEntityExist(vehicle))

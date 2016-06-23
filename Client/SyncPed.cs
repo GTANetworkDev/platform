@@ -16,8 +16,8 @@ namespace GTANetwork
         Dynamic,
         EntityLerping,
         DeadReckoning,
-        Experimental,
-        Teleport
+        Teleport,
+        TeleportRudimentary,
     }
 
     public class Animation
@@ -94,14 +94,14 @@ namespace GTANetwork
             get { return _latencyAverager.Count == 0 ? 0 : _latencyAverager.Average(); }
         }
 
-        public DateTime LastUpdateReceived
+        public int LastUpdateReceived
         {
             get { return _lastUpdateReceived; }
             set
             {
-                if (_lastUpdateReceived != new DateTime())
+                if (_lastUpdateReceived != 0)
                 {
-                    _latencyAverager.Enqueue(value.Subtract(_lastUpdateReceived).TotalMilliseconds);
+                    _latencyAverager.Enqueue(value -_lastUpdateReceived);
                     if (_latencyAverager.Count >= 10)
                         _latencyAverager.Dequeue();
                 }
@@ -291,7 +291,7 @@ namespace GTANetwork
 
         private int _modSwitch = 0;
         private int _clothSwitch = 0;
-        private DateTime _lastUpdateReceived;
+        private int _lastUpdateReceived;
         private float _speed;
         private Vector3 _vehicleVelocity;
         private string lastMeleeAnim;
@@ -422,7 +422,7 @@ namespace GTANetwork
 							DEBUG_STEP = 6;
 							var nameText = Name == null ? "<nameless>" : Name;
 
-							if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
+							if (Environment.TickCount - LastUpdateReceived > 10000)
 								nameText = "~r~AFK~w~~n~" + nameText;
                             var dist = (GameplayCamera.Position - Character.Position).Length();
 							var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
@@ -476,7 +476,7 @@ namespace GTANetwork
 					DEBUG_STEP = 6;
 					var nameText = Name == null ? "<nameless>" : Name;
 
-					if (DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds > 10000)
+					if (Environment.TickCount - LastUpdateReceived > 10000)
 						nameText = "~r~AFK~w~~n~" + nameText;
 
                     var dist = (GameplayCamera.Position - Character.Position).Length();
@@ -703,10 +703,10 @@ namespace GTANetwork
 			{
 				var vdir = VehicleVelocity - _lastVehVel;
 				var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
-					(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+					Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 
 				var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
-					(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                    Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 
 				if (Speed > 0.5f)
 				{
@@ -723,17 +723,16 @@ namespace GTANetwork
 				}
 				else
 				{
-					Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X,
-						VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
+				    MainVehicle.PositionNoOffset = VehiclePosition;
 				}
 			}
 			else if (syncMode == SynchronizationMode.EntityLerping)
 			{
 				var target = Util.LinearVectorLerp(_lastVehVel, VehicleVelocity,
-					(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                    Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 
 				var posTarget = Util.LinearVectorLerp(_lastVehiclePos, VehiclePosition,
-					(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                    Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 
 				if (Speed > 0)
 				{
@@ -745,43 +744,23 @@ namespace GTANetwork
 				{
 					posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
 						(int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-					Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
-						posTarget.Z, 0, 0, 0, 0);
+				    MainVehicle.PositionNoOffset = posTarget;
 				}
 				else
 				{
-					Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X,
-						VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
-				}
-			}
-			else if (syncMode == SynchronizationMode.Experimental)
-			{
-				var vdir = VehicleVelocity - _lastVehVel;
-				var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
-					(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-				var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
-					(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-
-				if (Speed > 0)
-					MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
-				else
-				{
-					Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
-						posTarget.Z, 0, 0, 0, 0);
+                    MainVehicle.PositionNoOffset = VehiclePosition;
 				}
 			}
 			else if (syncMode == SynchronizationMode.Teleport)
 			{
-				Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, VehiclePosition.X,
-					VehiclePosition.Y, VehiclePosition.Z, 0, 0, 0, 0);
-			}
+                MainVehicle.PositionNoOffset = VehiclePosition;
+            }
 
 			DEBUG_STEP = 21;
 			if (Main.LerpRotaion)
 			{
 			    MainVehicle.Quaternion = Quaternion.Slerp(_lastVehicleRotation.ToQuaternion(), _vehicleRotation.ToQuaternion(),
-			        (float) Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds/AverageLatency));
+			        (float) Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
 			}
 			else
 			{
@@ -993,7 +972,7 @@ namespace GTANetwork
 			UpdateVehicleMountedWeapon();
 
 	        if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
-	            DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds < 10000)
+                Environment.TickCount - LastUpdateReceived < 10000)
 	        {
 	            UpdateVehicleMainData();
 				if (DisplayVehicleDriveBy()) return true;
@@ -1065,13 +1044,13 @@ namespace GTANetwork
 
 			var target = Util.LinearVectorLerp(_lastPosition,
 				_position,
-				(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
 				0);
 			DEBUG_STEP = 25;
             Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
+                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
             if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
 					"skydive@base", "free_idle",
@@ -1107,13 +1086,13 @@ namespace GTANetwork
 
 			var target = Util.LinearVectorLerp(_lastPosition,
 				_position,
-				(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
 				0);
 			DEBUG_STEP = 25;
             Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
+                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
 
             _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
 									  Character.ForwardVector * 0.5f;
@@ -1255,7 +1234,7 @@ namespace GTANetwork
 
 			var target = Util.LinearVectorLerp(Position,
 				(Position) + dirVector,
-				(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0,
 				0, 0, 0);
 		}
@@ -1315,7 +1294,7 @@ namespace GTANetwork
 			if (Main.LerpRotaion)
 			{
                 Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
+                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
             }
 			else
 			{
@@ -1403,7 +1382,7 @@ namespace GTANetwork
 
 			var target = Util.LinearVectorLerp(Position,
 				(Position) + dirVector,
-				(int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
+                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0,
 				0, 0, 0);
@@ -1614,8 +1593,6 @@ namespace GTANetwork
             }
             */
 
-                // V- no effect?
-                if (COOP_UpdatePlayerPosOutOfRange(gPos, inRange)) return;
 
                 DEBUG_STEP = 2;
 
@@ -1699,20 +1676,27 @@ namespace GTANetwork
 
             if (syncMode == SynchronizationMode.Dynamic)
             {
-                if (AverageLatency > 70)
-                    syncMode = SynchronizationMode.EntityLerping;
-                else
-                    syncMode = SynchronizationMode.DeadReckoning;
+                syncMode = SynchronizationMode.DeadReckoning;
             }
+
+            if ((_lastPosition.X == 0 && _lastPosition.Y == 0 && _lastPosition.Z == 0) || AverageLatency == 0)
+            {
+                syncMode = SynchronizationMode.Teleport;
+            }
+
+            LogManager.DebugLog("LASTPOS : " + _lastPosition);
 
             if (syncMode == SynchronizationMode.DeadReckoning)
             {
                 var dir = Position - _lastPosition;
 
-                var posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                        (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds, (int)AverageLatency);
-                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
-                    posTarget.Z, 1, 1, 1);
+                float factor = (float)((Environment.TickCount - LastUpdateReceived)/AverageLatency);
+
+                var posTarget = Vector3.Lerp(Position, Position + dir, factor);
+
+                LogManager.DebugLog("DR POS FOR " + Name + ": " + posTarget);
+                Character.PositionNoOffset = posTarget;
+
 
                 /*
 
@@ -1748,24 +1732,32 @@ namespace GTANetwork
             }
             else if (syncMode == SynchronizationMode.EntityLerping)
             {
-                var target = Util.LinearVectorLerp(_lastPosition, Position,
-                    (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
-                    (int)AverageLatency);
+                /*var target = Util.LinearVectorLerp(_lastPosition, Position,
+                    Environment.TickCount - LastUpdateReceived,
+                    (int)AverageLatency);*/
 
+                //var target = Vector3.Lerp(_lastPosition, Position)
+
+                //LogManager.DebugLog("DR POS FOR " + Name + ": " + target);
+                //Character.PositionNoOffset = target;
+                /*
                 Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z,
-                    0, 0, 0, 0);
+                    0, 0, 0, 0);*/
             }
             else if (syncMode == SynchronizationMode.Teleport)
             {
-                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
-                    Position.Z, 0, 0, 0, 0);
+                Character.PositionNoOffset = Position;
+            }
+            else if (syncMode == SynchronizationMode.TeleportRudimentary)
+            {
+                Character.Position = Position;
             }
 
             DEBUG_STEP = 33;
             if (Main.LerpRotaion)
             {
                 Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds / AverageLatency));
+                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
             }
             else
             {
@@ -2101,11 +2093,11 @@ namespace GTANetwork
 
             dir.Normalize();
 
-            var range = Math.Max(20f, Speed * Math.Ceiling(DateTime.Now.Subtract(LastUpdateReceived).TotalSeconds));
+            var range = Math.Max(20f, Speed * Math.Ceiling((Environment.TickCount - LastUpdateReceived)/1000d));
 
             if (MainVehicle.IsInRangeOf(VehiclePosition, (float)range))
             {
-                var timeElapsed = (float)DateTime.Now.Subtract(LastUpdateReceived).TotalSeconds;
+                var timeElapsed = (float)(Environment.TickCount - LastUpdateReceived)/1000f;
                 var acceleration = Speed - _lastSpeed;
                 MainVehicle.Position = _lastVehiclePos + dir * (Speed * timeElapsed) +
                                        dir * (0.5f * acceleration * (float)Math.Pow(timeElapsed, 2));

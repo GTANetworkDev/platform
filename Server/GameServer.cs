@@ -1213,7 +1213,7 @@ namespace GTANetworkServer
                     Clients[i].NetConnection.Disconnect("Server is shutting down");
                 }
 
-                if (UseUPnP) Server.UPnP.DeleteForwardingRule(Port);
+                if (UseUPnP) Server.UPnP?.DeleteForwardingRule(Port);
 
                 ReadyToClose = true;
                 return;

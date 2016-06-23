@@ -80,6 +80,7 @@
     <Compile Include="ClassicChat.cs" />
     <Compile Include="Chat.cs" />
     <Compile Include="ChatData.cs" />
+    <Compile Include="GUI\RadioWheel.cs" />
     <Compile Include="RemotePlayer.cs" />
     <None Include="SyncPedCoop.cs" />
     <Compile Include="DebugWindow.cs" />

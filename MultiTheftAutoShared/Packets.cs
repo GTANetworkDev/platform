@@ -210,6 +210,7 @@ namespace GTANetworkShared
             Doors = new bool[7];
             Tires = new bool[8];
             Livery = 0;
+            NumberPlate = "NETWORK";
         }
 
         [ProtoMember(1)]
@@ -241,6 +242,9 @@ namespace GTANetworkShared
 
         [ProtoMember(10)]
         public int Livery { get; set; }
+
+        [ProtoMember(11)]
+        public string NumberPlate { get; set; }
     }
 
     [ProtoContract]

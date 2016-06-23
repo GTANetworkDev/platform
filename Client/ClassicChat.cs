@@ -256,7 +256,7 @@ namespace GTANetwork
                 CurrentInput = "";
                 return;
             }
-            else if (keyChar[0] == 27)
+            else if (keyChar[0] == 27 || keyChar[0] == '~')
             {
                 return;
             }

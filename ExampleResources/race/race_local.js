@@ -73,7 +73,7 @@ API.onUpdate.connect(function(sender, args) {
         var players = API.getAllPlayers();
         var playerCar = API.getPlayerVehicle(API.getLocalPlayer());
 
-        for (var i = players.length - 1; i >= 0; i--) {
+        for (var i = players.Length - 1; i >= 0; i--) {
             if (API.isPlayerInAnyVehicle(players[i])) {
                 var car = API.getPlayerVehicle(players[i]);
                 API.callNative("SET_ENTITY_NO_COLLISION_ENTITY", playerCar.Value, car.Value, false);
