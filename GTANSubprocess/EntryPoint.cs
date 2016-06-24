@@ -60,7 +60,7 @@ namespace GTANetwork
             {
                 try
                 {
-                    var lastVersion = ParseableVersion.Parse(wc.DownloadString(settings.MasterServerAddress.Trim('/') + "/version"));
+                    var lastVersion = ParseableVersion.Parse(wc.DownloadString(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/version"));
                     if (lastVersion > fileVersion)
                     {
                         var updateResult =
@@ -73,7 +73,7 @@ namespace GTANetwork
                         {
                             // Download latest version.
                             if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
-                            wc.DownloadFile(settings.MasterServerAddress.Trim('/') + "/files", "tempstorage\\files.zip");
+                            wc.DownloadFile(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/files", "tempstorage\\files.zip");
                             using (var zipfile = ZipFile.Read("tempstorage\\files.zip"))
                             {
                                 foreach (var entry in zipfile)

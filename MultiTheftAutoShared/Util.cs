@@ -53,6 +53,7 @@ namespace GTANetworkShared
         public bool ScaleChatWithSafezone { get; set; }
         public bool SteamPowered { get; set; }
         public bool HideNametagsWhenZoomedOutMap { get; set; }
+        public string UpdateChannel { get; set; }
 
         public PlayerSettings()
         {
@@ -62,6 +63,7 @@ namespace GTANetworkShared
             ScaleChatWithSafezone = true;
             SteamPowered = false;
             HideNametagsWhenZoomedOutMap = false;
+            UpdateChannel = "stable";
         }
     }
 

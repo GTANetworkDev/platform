@@ -18,39 +18,69 @@ namespace GTANMasterServer
     {
         public static MasterServerWorker GtanServerWorker;
         public static MasterServerWorker CoopServerWorker;
+        public static Dictionary<string, VersioningUpdaterWorker> UpdateChannels;
 
         public static void Main(string[] args)
         {
-            var url = "http://+:80";
+            int port = 80;
+
+            if (args.Any() && int.TryParse(args.First(), out port))
+            {
+            }
+
+            var url = "http://+:" + port;
 
             GtanServerWorker = new MasterServerWorker();
             CoopServerWorker = new MasterServerWorker();
+            UpdateChannels = new Dictionary<string, VersioningUpdaterWorker>();
+
+            UpdateChannels.Add("stable", new VersioningUpdaterWorker());
 
             using (WebApp.Start<Startup>(url))
             {
                 Console.WriteLine("Running on {0}", url);
-                VersioningUpdaterWorker.GetVersion();
                 WelcomeMessageWorker.UpdateWelcomeMessage();
 
                 while (true)
                 {
                     GtanServerWorker.Work();
                     CoopServerWorker.Work();
-                    VersioningUpdaterWorker.Work();
+                    foreach (var pair in UpdateChannels) pair.Value.Work();
                     WelcomeMessageWorker.Work();
                     Thread.Sleep(100);
                 }
             }
         }
+
+        public static VersioningUpdaterWorker GetChannelWorker(string channelName)
+        {
+            if (UpdateChannels.ContainsKey(channelName)) return UpdateChannels[channelName];
+            if (Directory.Exists("updater" + Path.DirectorySeparatorChar + channelName))
+            {
+                VersioningUpdaterWorker output;
+                UpdateChannels.Add(channelName, output = new VersioningUpdaterWorker(channelName));
+                return output;
+            }
+
+            return null;
+        }
     }
 
-    public static class VersioningUpdaterWorker
+    public class VersioningUpdaterWorker
     {
-        public static ParseableVersion LastClientVersion;
-        public static ParseableVersion LastSubprocessVersion;
-        private static DateTime _lastUpdate = DateTime.Now;
+        public ParseableVersion LastClientVersion;
+        public ParseableVersion LastSubprocessVersion;
+        public string Channel;
+        private DateTime _lastUpdate = DateTime.Now;
 
-        public static void Work()
+        public VersioningUpdaterWorker(string channel = "stable")
+        {
+            Channel = channel;
+            GetVersion();
+        }
+
+
+        public void Work()
         {
             if (DateTime.Now.Subtract(_lastUpdate).TotalMinutes > 30)
             {
@@ -58,26 +88,38 @@ namespace GTANMasterServer
             }
         }
 
-        public static void GetVersion()
+        public void GetVersion()
         {
             _lastUpdate = DateTime.Now;
 
-            if (!File.Exists("updater" + Path.DirectorySeparatorChar + "version.txt") || !File.Exists("updater" + Path.DirectorySeparatorChar + "files.zip") || !File.Exists("updater" + Path.DirectorySeparatorChar + "GTANetwork.dll"))
+            var baseDir = "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar;
+
+            if (!File.Exists(baseDir + "version.txt") ||
+                !File.Exists(baseDir + "files.zip") ||
+                !File.Exists(baseDir + "GTANetwork.dll"))
             {
-                Console.WriteLine("ERROR: version.txt, files.zip or GTANetwork.dll were not found.");
+                Console.WriteLine("ERROR: version.txt, files.zip or GTANetwork.dll were not found for channel " + Channel);
                 return;
             }
             
-
-            var versionText = File.ReadAllText("updater" + Path.DirectorySeparatorChar + "version.txt");
+            var versionText = File.ReadAllText(baseDir + "version.txt");
             LastClientVersion = ParseableVersion.Parse(versionText);
 
             var subprocessVersionText =
-                System.Diagnostics.FileVersionInfo.GetVersionInfo("updater" + Path.DirectorySeparatorChar +
-                                                                  "GTANetwork.dll").FileVersion.ToString();
+                System.Diagnostics.FileVersionInfo.GetVersionInfo(baseDir + "GTANetwork.dll").FileVersion.ToString();
             LastSubprocessVersion = ParseableVersion.Parse(subprocessVersionText);
             
-            Console.WriteLine("[{0}] Updated last version.", DateTime.Now.ToString("HH:mm:ss"));
+            Console.WriteLine("[{0}] Updated last version for channel {1}.", DateTime.Now.ToString("HH:mm:ss"), Channel);
+        }
+
+        public string FilesPath()
+        {
+            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "files.zip";
+        }
+
+        public string SubprocessPath()
+        {
+            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "GTANetwork.dll";
         }
     }
 
@@ -211,13 +253,62 @@ namespace GTANMasterServer
 
             Get["/welcome.json"] = _ => WelcomeMessageWorker.ToJson();
 
-            Get["/version"] = _ => VersioningUpdaterWorker.LastClientVersion.ToString();
 
-            Get["/launcherversion"] = _ => VersioningUpdaterWorker.LastSubprocessVersion.ToString();
+            Get["/update/{channel}/version"] = parameters =>
+            {
+                var chan = (string)parameters.channel;
 
-            Get["/launcher"] = _ => Response.AsFile("updater" + Path.DirectorySeparatorChar + "GTANetwork.dll");
+                var versionWorker = Program.GetChannelWorker(chan);
 
-            Get["/files"] = _ => Response.AsFile("updater" + Path.DirectorySeparatorChar + "files.zip");
+                if (versionWorker != null)
+                {
+                    return versionWorker.LastClientVersion.ToString();
+                }
+
+                return 404;
+            };
+
+            Get["/update/{channel}/version/l"] = parameters =>
+            {
+                var chan = (string)parameters.channel;
+
+                var versionWorker = Program.GetChannelWorker(chan);
+
+                if (versionWorker != null)
+                {
+                    return versionWorker.LastSubprocessVersion.ToString();
+                }
+
+                return 404;
+            };
+
+            Get["/update/{channel}/files"] = parameters =>
+            {
+                var chan = (string)parameters.channel;
+
+                var versionWorker = Program.GetChannelWorker(chan);
+
+                if (versionWorker != null)
+                {
+                    return Response.AsFile(versionWorker.FilesPath());
+                }
+
+                return 404;
+            };
+
+            Get["/update/{channel}/files/l"] = parameters =>
+            {
+                var chan = (string)parameters.channel;
+
+                var versionWorker = Program.GetChannelWorker(chan);
+
+                if (versionWorker != null)
+                {
+                    return Response.AsFile(versionWorker.SubprocessPath());
+                }
+
+                return 404;
+            };
         }
     }
 

@@ -58,12 +58,12 @@ namespace PlayGTANetwork
                 using (var wc = new ImpatientWebClient())
                 {
                     var internetTextVersion =
-                        wc.DownloadString(playerSetings.MasterServerAddress.Trim('/') + "/launcherversion");
+                        wc.DownloadString(playerSetings.MasterServerAddress.Trim('/') + $"/update/{playerSetings.UpdateChannel}/version/l");
                     var internetVersion = ParseableVersion.Parse(internetTextVersion);
 
                     if (internetVersion > subprocessVersion)
                     {
-                        wc.DownloadFile(playerSetings.MasterServerAddress.Trim('/') + "/launcher", "GTANetwork.dll");
+                        wc.DownloadFile(playerSetings.MasterServerAddress.Trim('/') + $"/update/{playerSetings.UpdateChannel}/files/l", "GTANetwork.dll");
                     }
                 }
             }
