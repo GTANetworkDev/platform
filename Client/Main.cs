@@ -1,7 +1,4 @@
-﻿#define ATTACHSERVER
-
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -552,19 +549,20 @@ namespace GTANetwork
                             logOutput += "\nInnerException: " + e.InnerException.Message;
                         logOutput += "\n";
                         File.AppendAllText("scripts\\GTACOOP.log", logOutput);
-                        return;
                     }
-
-                    if (string.IsNullOrWhiteSpace(response))
-                        return;
-
-                    var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
-
-                    if (dejson == null) return;
 
                     var list = new List<string>();
 
-                    list.AddRange(dejson.list);
+                    if (!string.IsNullOrWhiteSpace(response))
+                    {
+                        var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
+
+                        if (dejson != null)
+                        {
+                            list.AddRange(dejson.list);
+                        }
+                    }
+                    
 
                     foreach (var server in PlayerSettings.FavoriteServers)
                     {
@@ -969,43 +967,6 @@ namespace GTANetwork
                     internetServers.Items.Add(debugItem);
                 }
 #endif
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Use Multithreading", false);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        Multithreading = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Slerp Rotation", LerpRotaion);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        LerpRotaion = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Use COOP Synchronization", false);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        GlobalSyncMode = @checked ? SynchronizationMode.Teleport : SynchronizationMode.Dynamic;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Remove Game Entities", RemoveGameEntities);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        RemoveGameEntities = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
                 {
                     var debugItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
                     debugItem.CheckboxEvent += (sender, @checked) =>
@@ -1027,15 +988,20 @@ namespace GTANetwork
                 }
 
                 {
-                    var debugItem = new UIMenuListItem("Sync Type", Enum.GetValues(typeof(SynchronizationMode)).Cast<SynchronizationMode>().Cast<dynamic>().ToList(), 0);
-
-                    debugItem.OnListChanged += (sender, index) =>
+                    var nameItem = new UIMenuItem("Update Channel");
+                    nameItem.SetRightLabel(PlayerSettings.UpdateChannel);
+                    nameItem.Activated += (sender, item) =>
                     {
-                        var item = sender.IndexToItem(index).ToString();
-                        GlobalSyncMode = Enum.Parse(typeof (SynchronizationMode), item);
+                        var newName = InputboxThread.GetUserInput(PlayerSettings.UpdateChannel ?? "stable", 40, TickSpinner);
+                        if (!string.IsNullOrWhiteSpace(newName))
+                        {
+                            PlayerSettings.UpdateChannel = newName;
+                            SaveSettings();
+                            nameItem.SetRightLabel(newName);
+                        }
                     };
 
-                    internetServers.Items.Add(debugItem);
+                    internetServers.Items.Add(nameItem);
                 }
 
                 var localServs = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
@@ -1174,28 +1140,7 @@ namespace GTANetwork
                         GTANetwork.GameSettings.SaveSettings(GameSettings);
                     };
                 }
-
-                // TODO: Fill crash debugger
-
-                var crashDebug = new TabInteractiveListItem("Sync Debug Panel", new List<UIMenuItem>());
-
-                {
-                    var type = typeof (SyncDebugPanel);
-                    foreach (var field in type.GetFields())
-                    {
-                        var debugItem = new UIMenuCheckboxItem(field.Name, false);
-                        debugItem.CheckboxEvent += (sender, @checked) =>
-                        {
-                            field.SetValue(DebugPanel, @checked);
-                        };
-                        crashDebug.Items.Add(debugItem);
-                    }
-                }
-
-
-
-                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers, crashDebug });
-                MainMenu.AddTab(welcomeItem);
+                
             }
 
             #endregion
@@ -1378,7 +1323,6 @@ namespace GTANetwork
                 welcomeItem.Activated += (sender, args) =>
                 {
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
-                    //Application.Exit();
                     Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);

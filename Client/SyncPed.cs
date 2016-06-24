@@ -142,8 +142,6 @@ namespace GTANetwork
 
                 if (MainVehicle != null)
                     _carPosOnUpdate = MainVehicle.Position;
-
-
             }
         }
 
