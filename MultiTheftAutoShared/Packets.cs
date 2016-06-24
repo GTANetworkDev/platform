@@ -97,6 +97,7 @@ namespace GTANetworkShared
         Shooting = 1 << 1,
         SirenActive = 1 << 2,
         VehicleDead = 1 << 3,
+        Aiming = 1 << 4,
     }
     
     [Flags]

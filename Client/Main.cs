@@ -1710,36 +1710,30 @@ namespace GTANetwork
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
-                    if (!DebugPanel.SendPlayerData_MountedGuns)
-                    {
-                        obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
-                        if (Game.IsControlPressed(0, Control.VehicleFlyAttack))
-                            obj.Flag |= (byte) VehicleDataFlags.Shooting;
-                    }
+                    obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
+                    if (Game.IsControlPressed(0, Control.VehicleFlyAttack))
+                        obj.Flag |= (byte) VehicleDataFlags.Shooting;
                 }
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                 {
-                    if (!DebugPanel.SendPlayerData_GunPosition)
-                    {
-                        obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
-                        if (Game.IsControlPressed(0, Control.VehicleAttack))
-                            obj.Flag |= (byte) VehicleDataFlags.Shooting;
-                    }
+                    obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
+                    if (Game.IsControlPressed(0, Control.VehicleAttack))
+                        obj.Flag |= (byte) VehicleDataFlags.Shooting;
                 }
                 else
                 {
-                    if (!DebugPanel.SendPlayerData_DriveBy)
-                    {
-                        if (Game.IsControlPressed(0, Control.Attack) &&
-                            Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
-                            obj.Flag |= (byte) VehicleDataFlags.Shooting;
-                        //obj.IsShooting = Game.Player.Character.IsShooting;
-                        obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
+                    if (Game.IsControlPressed(0, Control.Attack) &&
+                        Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
+                        obj.Flag |= (byte) VehicleDataFlags.Shooting;
+                    if (Game.IsControlPressed(0, Control.Aim) &&
+                        Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
+                        obj.Flag |= (byte)VehicleDataFlags.Aiming;
+                    //obj.IsShooting = Game.Player.Character.IsShooting;
+                    obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
 
-                        var outputArg = new OutputArgument();
-                        Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
-                        obj.WeaponHash = outputArg.GetResult<int>();
-                    }
+                    var outputArg = new OutputArgument();
+                    Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
+                    obj.WeaponHash = outputArg.GetResult<int>();
                 }
 
                 Vehicle trailer;
@@ -2715,6 +2709,7 @@ namespace GTANetwork
                             Opponents[data.NetHandle].Speed = data.Speed;
                             Opponents[data.NetHandle].Siren = (data.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
                             Opponents[data.NetHandle].IsShooting = (data.Flag & (byte)VehicleDataFlags.Shooting) > 0;
+                            Opponents[data.NetHandle].IsAiming = (data.Flag & (byte)VehicleDataFlags.Aiming) > 0;
                             Opponents[data.NetHandle].CurrentWeapon = data.WeaponHash;
                             if (data.AimCoords != null)
                                 Opponents[data.NetHandle].AimCoords = data.AimCoords.ToVector();

@@ -930,25 +930,34 @@ namespace GTANetwork
 					Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
 				}
 
-				if (IsShooting)
+				if (IsShooting || IsAiming)
 				{
-					if (IsShooting && _lastShooting && Game.GameTime - _lastVehicleAimUpdate > 30)
+					if (_lastShooting && Game.GameTime - _lastVehicleAimUpdate > 30)
 					{
-						Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
-						Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z);
+					    if (IsShooting)
+					    {
+					        Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
+					    }
+					    else if (IsAiming)
+					    {
+                            Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
+                            Function.Call(Hash.SET_PED_AMMO, Character, CurrentWeapon, 0);
+                        }
+
+					    Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z);
 					}
 
-					if (IsShooting && !_lastShooting)
+					if (!_lastShooting)
 					{
 						Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
 							0, 0, 0, unchecked((int)FiringPattern.FullAuto));
 					}
 
 					_lastVehicleAimUpdate = Game.GameTime;
-					_lastDrivebyShooting = IsShooting;
+					_lastDrivebyShooting = IsShooting || IsAiming;
 				}
 
-				if (!IsShooting && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
+				if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
 				{
 					Character.Task.ClearAll();
 					Character.Task.ClearSecondary();
