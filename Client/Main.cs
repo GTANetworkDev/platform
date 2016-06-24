@@ -1140,7 +1140,9 @@ namespace GTANetwork
                         GTANetwork.GameSettings.SaveSettings(GameSettings);
                     };
                 }
-                
+
+                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers });
+                MainMenu.AddTab(welcomeItem);
             }
 
             #endregion
