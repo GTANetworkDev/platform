@@ -445,7 +445,6 @@ public class RaceGamemode : Script
         }
         
         var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), randGen.Next(70), randGen.Next(70));
-        Thread.Sleep(500);
         API.setPlayerIntoVehicle(client, playerVehicle, -1);
 
         if (freeze)
@@ -527,7 +526,6 @@ public class RaceGamemode : Script
 
 
         var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), color1, color2);
-        API.sleep(500);
         API.setPlayerIntoVehicle(client, playerVehicle, -1);
 
         lock (Opponents)

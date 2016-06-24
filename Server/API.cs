@@ -662,6 +662,15 @@ namespace GTANetworkServer
             return null;
         }
 
+        public Vector3 getEntityRotation(NetHandle entity)
+        {
+            if (doesEntityExist(entity))
+            {
+                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Rotation;
+            }
+            return null;
+        }
+
         public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), seat);

@@ -16,6 +16,8 @@ public class FreeroamScript : Script
         API.onChatCommand += onPlayerCommand;
     }
 
+    public Dictionary<Client, List<NetHandle>> VehicleHistory = new Dictionary<Client, List<NetHandle>>();
+
     private void onPlayerCommand(Client sender, string cmd, CancelEventArgs cancel)
     {
         var args = cmd.Split();
@@ -93,14 +95,23 @@ public class FreeroamScript : Script
                 }
                 else
                 {
-                    var veh = API.createVehicle(vehModel, sender.Position, new Vector3(), 0, 0);
-                    var c = 0;
-                    while (!API.doesEntityExistForPlayer(sender, veh) && c < 40)
-                    {
-                        c++;
-                    }
-
+                    var rot = API.getEntityRotation(sender.CharacterHandle);
+                    var veh = API.createVehicle(vehModel, sender.Position, new Vector3(0, 0, rot.Z), 0, 0);
                     API.setPlayerIntoVehicle(sender, veh, -1);
+
+                    if (VehicleHistory.ContainsKey(sender))
+                    {
+                        VehicleHistory[sender].Add(veh);
+                        if (VehicleHistory[sender].Count > 3)
+                        {
+                            API.deleteEntity(VehicleHistory[sender][0]);
+                            VehicleHistory[sender].RemoveAt(0);
+                        }
+                    }
+                    else
+                    {
+                        VehicleHistory.Add(sender, new List<NetHandle> { veh });
+                    }
                 }
             }
             else
