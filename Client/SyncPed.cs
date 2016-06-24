@@ -940,7 +940,7 @@ namespace GTANetwork
 					    }
 					    else if (IsAiming)
 					    {
-                            Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
+                            Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, false);
                             Function.Call(Hash.SET_PED_AMMO, Character, CurrentWeapon, 0);
                         }
 
