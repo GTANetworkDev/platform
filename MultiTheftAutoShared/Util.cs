@@ -47,7 +47,6 @@ namespace GTANetworkShared
     public class PlayerSettings
     {
         public string DisplayName { get; set; }
-        public int MaxStreamedNpcs { get; set; }
         public string MasterServerAddress { get; set; }
         public List<string> FavoriteServers { get; set; }
         public List<string> RecentServers { get; set; }
@@ -57,7 +56,6 @@ namespace GTANetworkShared
 
         public PlayerSettings()
         {
-            MaxStreamedNpcs = 10;
             MasterServerAddress = "http://148.251.18.67:8888/";
             FavoriteServers = new List<string>();
             RecentServers = new List<string>();

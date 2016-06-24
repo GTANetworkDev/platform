@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define ATTACHSERVER
+
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -2047,7 +2050,7 @@ namespace GTANetwork
             }
 
             DEBUG_STEP = 0;
-            //Game.DisableControl(0, Control.VehicleRadioWheel);
+            Game.DisableControl(0, Control.EnterCheatCode);
             Game.DisableControl(0, Control.FrontendPauseAlternate);
             Game.DisableControl(0, Control.FrontendSocialClub);
             Game.DisableControl(0, Control.FrontendSocialClubSecondary);

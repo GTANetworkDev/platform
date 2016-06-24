@@ -89,7 +89,8 @@ namespace GTANetwork
                 catch (WebException ex)
                 {
                     MessageBox.Show(splashScreen.SplashScreen,
-                        "The master server is unavailable at this time. Unable to check for latest version.\n\nException:\n" + ex, "Warning");
+                        "The master server is unavailable at this time. Unable to check for latest version.", "Warning");
+                    File.AppendAllText("logs\\launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
                 }
             }
 
@@ -267,24 +268,24 @@ namespace GTANetwork
             var filesRoot = Directory.GetFiles(InstallFolder, "*.asi");
             foreach (var s in filesRoot)
             {
-                File.Move(s, "tempstorage\\" + Path.GetFileName(s));
+                MoveFile(s, "tempstorage\\" + Path.GetFileName(s));
             }
 
             if (File.Exists(InstallFolder + "\\dinput8.dll"))
-                File.Move(InstallFolder + "\\dinput8.dll", "tempstorage\\dinput8.dll");
+                MoveFile(InstallFolder + "\\dinput8.dll", "tempstorage\\dinput8.dll");
 
             if (File.Exists(InstallFolder + "\\dsound.dll"))
-                File.Move(InstallFolder + "\\dsound.dll", "tempstorage\\dsound.dll");
+                MoveFile(InstallFolder + "\\dsound.dll", "tempstorage\\dsound.dll");
 
             if (File.Exists(InstallFolder + "\\scripthookv.dll"))
-                File.Move(InstallFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
+                MoveFile(InstallFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
 
             if (File.Exists(InstallFolder + "\\commandline.txt"))
-                File.Move(InstallFolder + "\\commandline.txt", "tempstorage\\commandline.txt");
+                MoveFile(InstallFolder + "\\commandline.txt", "tempstorage\\commandline.txt");
 
 
             if (Directory.Exists(InstallFolder + "\\scripts"))
-                Directory.Move(InstallFolder + "\\scripts", "tempstorage\\scripts");
+                MoveDirectory(InstallFolder + "\\scripts", "tempstorage\\scripts");
 
             // Moving our stuff
 
@@ -379,6 +380,19 @@ namespace GTANetwork
                 string dest = Path.Combine(destFolder, name);
                 CopyFolder(folder, dest);
             }
+        }
+
+        public static void MoveFile(string sourceFile, string destFile)
+        {
+            File.Copy(sourceFile, destFile);
+            File.SetAttributes(sourceFile, FileAttributes.Normal);
+            File.Delete(sourceFile);
+        }
+
+        public static void MoveDirectory(string sourceDir, string destDir)
+        {
+            CopyFolder(sourceDir, destDir);
+            DeleteDirectory(sourceDir);
         }
     }
 

@@ -16,9 +16,15 @@ namespace GTANMasterServer
 {
     public class Program
     {
+        public static MasterServerWorker GtanServerWorker;
+        public static MasterServerWorker CoopServerWorker;
+
         public static void Main(string[] args)
         {
-            var url = "http://+:8888";
+            var url = "http://+:80";
+
+            GtanServerWorker = new MasterServerWorker();
+            CoopServerWorker = new MasterServerWorker();
 
             using (WebApp.Start<Startup>(url))
             {
@@ -28,7 +34,8 @@ namespace GTANMasterServer
 
                 while (true)
                 {
-                    MasterServerWorker.Work();
+                    GtanServerWorker.Work();
+                    CoopServerWorker.Work();
                     VersioningUpdaterWorker.Work();
                     WelcomeMessageWorker.Work();
                     Thread.Sleep(100);
@@ -127,12 +134,12 @@ namespace GTANMasterServer
         public string Picture { get; set; }
     }
 
-    public static class MasterServerWorker
+    public class MasterServerWorker
     {
-        public static List<Tuple<string, DateTime>> Servers = new List<Tuple<string, DateTime>>();
-        public static int MaxMinutes = 10;
+        public List<Tuple<string, DateTime>> Servers = new List<Tuple<string, DateTime>>();
+        public int MaxMinutes = 10;
 
-        public static void Work()
+        public void Work()
         {
             lock (Servers)
             {
@@ -146,7 +153,7 @@ namespace GTANMasterServer
             }
         }
 
-        public static void AddServer(string ip)
+        public void AddServer(string ip)
         {
             var split = ip.Split(':');
             if (split.Length != 2) return;
@@ -160,7 +167,7 @@ namespace GTANMasterServer
             }
         }
 
-        public static string ToJson()
+        public string ToJson()
         {
             lock (Servers)
             {
@@ -176,7 +183,19 @@ namespace GTANMasterServer
     {
         public MasterModule()
         {
-            Get["/servers"] = _ => MasterServerWorker.ToJson();
+            Get["/servers"] = _ => Program.GtanServerWorker.ToJson();
+
+            Get["/"] = _ => Program.CoopServerWorker.ToJson();
+            Post["/"] = parameters =>
+            {
+                if (Request.IsLocal()) return 403;
+                var port = new StreamReader(Request.Body).ReadToEnd();
+                var serverAddress = Request.UserHostAddress + ":" + port;
+                Console.WriteLine("[{1}] Adding COOP server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:mm:ss"));
+                Program.CoopServerWorker.AddServer(serverAddress);
+                return 200;
+            };
+
 
             Post["/addserver"] = parameters =>
             {
@@ -184,7 +203,7 @@ namespace GTANMasterServer
                 var port = new StreamReader(Request.Body).ReadToEnd();
                 var serverAddress = Request.UserHostAddress + ":" + port;
                 Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:mm:ss"));
-                MasterServerWorker.AddServer(serverAddress);
+                Program.GtanServerWorker.AddServer(serverAddress);
                 return 200;
             };
 
