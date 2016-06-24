@@ -918,6 +918,7 @@ namespace GTANetworkServer
                                         client.IsInVehicle = false;
                                         client.LastUpdate = DateTime.Now;
                                         client.Rotation = data.Quaternion;
+                                        client.CurrentVehicle = new NetHandle(0);
 
                                         client.Rotation = data.Quaternion;
 

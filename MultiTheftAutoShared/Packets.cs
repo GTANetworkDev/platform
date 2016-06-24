@@ -199,13 +199,8 @@ namespace GTANetworkShared
     {
         public VehicleProperties()
         {
-            Mods = new int[50];
-
-            for (int i = 0; i < Mods.Length; i++)
-            {
-                Mods[i] = -1;
-            }
-
+            Mods = new Dictionary<int, int>();
+            
             Health = 1000;
             Doors = new bool[7];
             Tires = new bool[8];
@@ -226,7 +221,7 @@ namespace GTANetworkShared
         public bool IsDead { get; set; }
 
         [ProtoMember(5)]
-        public int[] Mods { get; set; }
+        public Dictionary<int, int> Mods { get; set; }
 
         [ProtoMember(6)]
         public bool Siren { get; set; }

@@ -83,6 +83,63 @@ public class FreeroamScript : Script
             API.unspectatePlayer(sender);
         }
 
+        if (args[0] == "/mod")
+        {
+            if (args.Length < 3)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /mod [modIndex] [modvariation]");
+            }
+            else
+            {
+                int modIndex, modVar;
+                if (!int.TryParse(args[1], out modIndex) || !int.TryParse(args[2], out modVar))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                if (!sender.CurrentVehicle.IsNull)
+                {
+                        API.setVehicleMod(sender.CurrentVehicle, modIndex, modVar);
+                        API.sendChatMessageToPlayer(sender, "Mod applied successfully!");
+                }
+                else
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~You're not in a vehicle!");
+                }
+
+            }
+        }
+
+        if (args[0] == "/colors")
+        {
+            if (args.Length < 3)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /colors [primaryColor] [secondaryColor]");
+            }
+            else
+            {
+                int primaryColor, secondaryColor;
+                if (!int.TryParse(args[1], out primaryColor) || !int.TryParse(args[2], out secondaryColor))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                if (!sender.CurrentVehicle.IsNull)
+                {
+                        API.setVehiclePrimaryColor(sender.CurrentVehicle, primaryColor);
+                        API.setVehicleSecondaryColor(sender.CurrentVehicle, secondaryColor);
+                        API.sendChatMessageToPlayer(sender, "Colors applied successfully!");
+                }
+                else
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~You're not in a vehicle!");
+                }
+
+            }
+        }
+
         if (args[0] == "/car")
         {
             if (args.Length >= 2)

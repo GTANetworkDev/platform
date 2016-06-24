@@ -5,6 +5,45 @@ using System.Reflection;
 
 namespace GTANetworkShared
 {
+    public static class Extensions
+    {
+        public static void Set<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue value)
+        {
+            if (dict.ContainsKey(key))
+            {
+                dict[key] = value;
+            }
+            else
+            {
+                dict.Add(key, value);
+            }
+        }
+
+        public static TValue Get<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key)
+        {
+            if (dict.ContainsKey(key))
+            {
+                return dict[key];
+            }
+            else
+            {
+                return default(TValue);
+            }
+        }
+
+        public static int Get(this IDictionary<int, int> dict, int key)
+        {
+            if (dict.ContainsKey(key))
+            {
+                return dict[key];
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    }
+
     public class PlayerSettings
     {
         public string DisplayName { get; set; }

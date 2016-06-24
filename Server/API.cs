@@ -397,7 +397,7 @@ namespace GTANetworkServer
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))
             {
-                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods[modType] = mod;
+                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods.Set(modType, mod);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x6AF0636DDEDCB6DD, new EntityArgument(vehicle.Value), modType, mod, false);
             }
         }
@@ -406,7 +406,7 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(vehicle))
             {
-                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods[modType] = -1;
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods.Set(modType, -1);
             }
 
             Program.ServerInstance.SendNativeCallToAllPlayers(0x92D619E420858204, vehicle, modType);
@@ -884,6 +884,18 @@ namespace GTANetworkServer
         public  void isNightVisionActive(Client player, Action<object> callback, string salt = "salt")
         {
             Program.ServerInstance.GetNativeCallFromPlayer(player, salt, 0x2202A3F42C8E5F79, new BooleanArgument(), callback, new LocalPlayerArgument());
+        }
+
+        public NetHandle getPlayerVehicle(Client player)
+        {
+            if (player.IsInVehicle)
+            {
+                return player.CurrentVehicle;
+            }
+            else
+            {
+                return new NetHandle(0);
+            }
         }
 
         public NetHandle createVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2)

@@ -1466,6 +1466,9 @@ namespace GTANetwork
 
         public static void AddMap(ServerMap map)
         {
+            //File.WriteAllText("logs\\map.json", JsonConvert.SerializeObject(map));
+
+
             try
             {
                 if (map.LoadedIpl != null)
@@ -1549,10 +1552,16 @@ namespace GTANetwork
 
                         Function.Call(Hash.SET_VEHICLE_MOD_KIT, ourVeh, 0);
 
-                        for (int i = 0; i < pair.Value.Mods.Length; i++)
+                        LogManager.DebugLog("NETWORK ID: " + pair.Key + " MODS LENGTH: " + pair.Value.Mods.Count);
+
+                        if (pair.Value.Mods != null)
+                        foreach (var modPair in pair.Value.Mods)
                         {
-                            if (pair.Value.Mods[i] != -1)
-                                ourVeh.SetMod((VehicleMod) i, pair.Value.Mods[i], false);
+                            if (modPair.Value != -1)
+                            {
+                                LogManager.DebugLog("SETTINGS MOD " + modPair.Key + " TO " + modPair.Value);
+                                ourVeh.SetMod((VehicleMod) modPair.Key, modPair.Value, false);
+                            }
                         }
 
                         if (pair.Value.IsDead)
@@ -2909,7 +2918,8 @@ namespace GTANetwork
                                 LogManager.DebugLog("Settings vehicle extra colors");
                                 Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
 								Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
-								LogManager.DebugLog("CreateEntity done");
+                                Function.Call(Hash.SET_VEHICLE_MOD_KIT, veh, 0);
+                                LogManager.DebugLog("CreateEntity done");
                             }
                             else if (data.EntityType == (byte)EntityType.Prop)
                             {
