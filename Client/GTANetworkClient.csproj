@@ -40,14 +40,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ClearScript">
-      <HintPath>..\..\..\..\..\..\Program Files\Rockstar Games\Grand Theft Auto V\scripts\ClearScript.dll</HintPath>
+      <HintPath>..\libs\ClearScript.dll</HintPath>
     </Reference>
     <Reference Include="Lidgren.Network">
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>
     <Reference Include="NativeUI, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\NativeUI\bin\Release\NativeUI.dll</HintPath>
+      <HintPath>..\libs\NativeUI.dll</HintPath>
     </Reference>
     <Reference Include="NAudio">
       <HintPath>..\libs\NAudio.dll</HintPath>
