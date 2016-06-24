@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Ionic.Zip;
 using Microsoft.Owin.Extensions;
 using Owin;
 using Nancy;
@@ -40,9 +42,11 @@ namespace GTANMasterServer
             {
                 Console.WriteLine("Running on {0}", url);
                 WelcomeMessageWorker.UpdateWelcomeMessage();
+                ContinuousIntegration.GetLastVersion();
 
                 while (true)
                 {
+                    ContinuousIntegration.Work();
                     GtanServerWorker.Work();
                     CoopServerWorker.Work();
                     foreach (var pair in UpdateChannels) pair.Value.Work();
@@ -63,6 +67,188 @@ namespace GTANMasterServer
             }
 
             return null;
+        }
+    }
+
+    public static class ContinuousIntegration
+    {
+        private static DateTime _lastUpdate = DateTime.Now;
+        public static object GitLock = new object();
+
+
+        public static void Work()
+        {
+            if (DateTime.Now.Subtract(_lastUpdate).TotalMinutes > 10)
+            {
+                GetLastVersion();
+                _lastUpdate = DateTime.Now;
+            }
+        }
+
+        public static void GetLastVersion()
+        {
+            Dictionary<string, MemoryStream> zipFile = null;
+
+            Console.WriteLine("{0} Getting last CI build.", DateTime.Now.ToString("HH:mm:ss"));
+            
+            try
+            {
+                Console.WriteLine("{0} Fetching last build...", DateTime.Now.ToString("HH:mm:ss"));
+                
+                string basedir = "updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "temp";
+
+                if (Directory.Exists(basedir + "" + Path.DirectorySeparatorChar + "scripts"))
+                {
+                    DeleteDirectory(basedir + "" + Path.DirectorySeparatorChar + "scripts");
+                }
+
+                Directory.CreateDirectory(basedir + "" + Path.DirectorySeparatorChar + "scripts");
+
+                FetchLastBuild("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
+                
+                zipFile = UnzipFile("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
+
+                foreach (var memoryStream in zipFile)
+                {
+                    if (memoryStream.Key.ToLower() == "scripthookvdotnet.dll")
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        using (var fileStream = File.Create(basedir + "" + Path.DirectorySeparatorChar + "scripts" + Path.DirectorySeparatorChar + "" + memoryStream.Key))
+                        {
+                            memoryStream.Value.CopyTo(fileStream);
+                        }
+                    }
+                }
+
+
+                var subprocessVersionText =
+                System.Diagnostics.FileVersionInfo.GetVersionInfo(basedir + "" + Path.DirectorySeparatorChar + "scripts" + Path.DirectorySeparatorChar + "GTANetwork.dll").FileVersion.ToString();
+                var gtanVersion = ParseableVersion.Parse(subprocessVersionText);
+
+                lock (GitLock)
+                {
+                    using (ZipFile filesZip = new ZipFile())
+                    {
+                        filesZip.AddDirectory(basedir + "" + Path.DirectorySeparatorChar + "scripts", "scripts");
+                        filesZip.AddFiles(Directory.GetFiles(basedir), "" + Path.DirectorySeparatorChar + "");
+                        if (File.Exists("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "files.zip"))
+                            File.Delete("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "files.zip");
+                        filesZip.Save("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "files.zip");
+                    }
+
+                    if (File.Exists("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "version.txt"))
+                        File.Delete("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "version.txt");
+                    File.WriteAllText("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "version.txt", gtanVersion.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("{0} CONTINUOUS INTEGRATION ERROR: " + ex, DateTime.Now.ToString("HH:mm:ss"));
+                return;
+            }
+            finally
+            {
+                if (zipFile != null)
+                foreach (var stream in zipFile)
+                {
+                    stream.Value.Dispose();
+                }
+
+                if (File.Exists("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip")) File.Delete("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
+            }
+            
+            Console.WriteLine("[{0}] Git CI build updated!", DateTime.Now.ToString("HH:mm:ss"));
+        }
+
+
+        public static void FetchLastBuild(string destination)
+        {
+            var formParams = "email={0}&password={1}";
+
+            var creds = File.ReadAllText("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "credentials.txt").Split('=');
+
+            var form = string.Format(formParams, creds[0], creds[1]);
+            var url = @"https://ci.appveyor.com/api/user/login";
+            string cookieHeader;
+
+            WebRequest req = WebRequest.Create(url);
+
+            req.ContentType = "application/x-www-form-urlencoded";
+            req.Method = "POST";
+            byte[] bytes = Encoding.ASCII.GetBytes(form);
+            req.ContentLength = bytes.Length;
+            using (Stream os = req.GetRequestStream())
+            {
+                os.Write(bytes, 0, bytes.Length);
+            }
+
+            WebResponse resp = req.GetResponse();
+            cookieHeader = resp.Headers["Set-cookie"];
+
+
+            string pageSource;
+            string getUrl = @"https://ci.appveyor.com/api/projects/Guad/mtav";
+            WebRequest getRequest = WebRequest.Create(getUrl);
+            getRequest.Headers.Add("Cookie", cookieHeader);
+            WebResponse getResponse = getRequest.GetResponse();
+            using (StreamReader sr = new StreamReader(getResponse.GetResponseStream()))
+            {
+                pageSource = sr.ReadToEnd();
+            }
+
+            var match = Regex.Match(pageSource, "\"jobId\":\"([0-9a-zA-Z]+)");
+            var buildId = match.Groups[1].Captures[0].Value;
+
+
+            var buildFileUri = $"https://ci.appveyor.com/api/buildjobs/{buildId}/artifacts/Client/bin/Client%20Folder.zip";
+
+            
+            WebRequest fileRequest = WebRequest.Create(buildFileUri);
+            fileRequest.Headers.Add("Cookie", cookieHeader);
+            WebResponse fileResponse = fileRequest.GetResponse();
+            if (File.Exists(destination)) File.Delete(destination);
+            using (var fileDest = File.Create(destination))
+            {
+                fileResponse.GetResponseStream().CopyTo(fileDest);
+            }
+        }
+
+        public static Dictionary<string, MemoryStream> UnzipFile(string filename)
+        {
+            var result = new Dictionary<string, MemoryStream>();
+            using (ZipFile zip = ZipFile.Read(filename))
+            {
+                foreach (ZipEntry e in zip)
+                {
+                    MemoryStream data = new MemoryStream();
+                    e.Extract(data);
+                    data.Position = 0;
+                    result.Add(e.FileName, data);
+                }
+            }
+            return result;
+        }
+
+        public static void DeleteDirectory(string target_dir)
+        {
+            string[] files = Directory.GetFiles(target_dir);
+            string[] dirs = Directory.GetDirectories(target_dir);
+
+            foreach (string file in files)
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.Delete(file);
+            }
+
+            foreach (string dir in dirs)
+            {
+                DeleteDirectory(dir);
+            }
+
+            Directory.Delete(target_dir, false);
         }
     }
 
@@ -94,22 +280,27 @@ namespace GTANMasterServer
 
             var baseDir = "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar;
 
-            if (!File.Exists(baseDir + "version.txt") ||
-                !File.Exists(baseDir + "files.zip") ||
-                !File.Exists(baseDir + "GTANetwork.dll"))
+            lock (ContinuousIntegration.GitLock)
             {
-                Console.WriteLine("ERROR: version.txt, files.zip or GTANetwork.dll were not found for channel " + Channel);
-                return;
-            }
-            
-            var versionText = File.ReadAllText(baseDir + "version.txt");
-            LastClientVersion = ParseableVersion.Parse(versionText);
+                if (!File.Exists(baseDir + "version.txt") ||
+                    !File.Exists(baseDir + "files.zip") ||
+                    !File.Exists(baseDir + "GTANetwork.dll"))
+                {
+                    Console.WriteLine("ERROR: version.txt, files.zip or GTANetwork.dll were not found for channel " +
+                                      Channel);
+                    return;
+                }
 
-            var subprocessVersionText =
-                System.Diagnostics.FileVersionInfo.GetVersionInfo(baseDir + "GTANetwork.dll").FileVersion.ToString();
-            LastSubprocessVersion = ParseableVersion.Parse(subprocessVersionText);
-            
-            Console.WriteLine("[{0}] Updated last version for channel {1}.", DateTime.Now.ToString("HH:mm:ss"), Channel);
+                var versionText = File.ReadAllText(baseDir + "version.txt");
+                LastClientVersion = ParseableVersion.Parse(versionText);
+
+                var subprocessVersionText =
+                    System.Diagnostics.FileVersionInfo.GetVersionInfo(baseDir + "GTANetwork.dll").FileVersion.ToString();
+                LastSubprocessVersion = ParseableVersion.Parse(subprocessVersionText);
+
+                Console.WriteLine("[{0}] Updated last version for channel {1}.", DateTime.Now.ToString("HH:mm:ss"),
+                    Channel);
+            }
         }
 
         public string FilesPath()
@@ -150,6 +341,8 @@ namespace GTANMasterServer
 
             var welcomeText = File.ReadAllText("welcome" + Path.DirectorySeparatorChar + "welcome.json");
             var welcomeObj = JsonConvert.DeserializeObject<WelcomeSchema>(welcomeText);
+
+            
 
             Title = welcomeObj.Title;
             Message = welcomeObj.Message;

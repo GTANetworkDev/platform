@@ -135,6 +135,11 @@ namespace GTANetworkShared
             return left.Value != right.Value;
         }
 
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
+
         public bool IsNull { get { return Value == 0; } }
     }
 
@@ -158,6 +163,11 @@ namespace GTANetworkShared
         public static bool operator !=(NetHandle left, NetHandle right)
         {
             return left.Value != right.Value;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
         }
 
         public bool IsNull { get { return Value == 0; } }
