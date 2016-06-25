@@ -17,7 +17,7 @@ public class FreeroamScript : Script
     }
 
     public Dictionary<Client, List<NetHandle>> VehicleHistory = new Dictionary<Client, List<NetHandle>>();
-
+    
     private void onPlayerCommand(Client sender, string cmd, CancelEventArgs cancel)
     {
         var args = cmd.Split();
@@ -35,11 +35,11 @@ public class FreeroamScript : Script
                 var target = API.getPlayerFromName(targetName);
                 if (target != null)
                 {
-                        API.setPlayerToSpectatePlayer(sender, target);
+                    API.setPlayerToSpectatePlayer(sender, target);
                 }
                 else
                 {
-                        API.sendNotificationToPlayer(sender, "No such player found.");
+                    API.sendNotificationToPlayer(sender, "No such player found.");
                 }
             }
             else
@@ -53,7 +53,7 @@ public class FreeroamScript : Script
             if (args.Length >= 2)
             {
                 var ipl = args[1];
-                API.sendNativeToAllPlayers(0x41B4893843BBDB74, ipl);
+                API.requestIpl(ipl);
                 API.consoleOutput("LOADED IPL " + ipl);
                 API.sendChatMessageToPlayer(sender, "Loaded IPL ~b~" + ipl + "~w~.");
             }
@@ -63,18 +63,69 @@ public class FreeroamScript : Script
             }
         }
 
+        if (args[0] == "/blackout")
+        {
+            if (args.Length >= 2)
+            {
+                bool blackout;
+                if (!bool.TryParse(args[1], out blackout))                
+                {
+                    API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ wrong input!");
+                }
+                else
+                {
+                    API.sendNativeToAllPlayers(0x1268615ACE24D504, blackout);
+                }
+            }
+            else
+            {
+                API.sendNotificationToPlayer(sender, "USAGE: /blackout [true/false]");
+            }
+        }
+
         if (args[0] == "/removeipl")
         {
             if (args.Length >= 2)
             {
                 var ipl = args[1];
-                API.sendNativeToAllPlayers(0xEE6C5AD3ECE0A82D , ipl);
+                API.removeIpl(ipl);
                 API.consoleOutput("REMOVED IPL " + ipl);
                 API.sendChatMessageToPlayer(sender, "Removed IPL ~b~" + ipl + "~w~.");
             }
             else
             {
                 API.sendNotificationToPlayer(sender, "USAGE: /removeipl [IPL name]");
+            }
+        }
+
+        if (args[0] == "/settime")
+        {
+            if (args.Length < 3)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /settime [hours] [minutes]");
+            }
+            else
+            {
+                int hours, mins;
+                if (!int.TryParse(args[1], out hours) || !int.TryParse(args[2], out mins))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                API.setTime(hours, mins);
+            }
+        }
+
+        if (args[0] == "/setweather")
+        {
+            if (args.Length < 2)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /setweather [weather]");
+            }
+            else
+            {
+                API.setWeather(args[1]);
             }
         }
 

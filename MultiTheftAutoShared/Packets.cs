@@ -362,6 +362,8 @@ namespace GTANetworkShared
             Markers = new Dictionary<int, MarkerProperties>();
             Pickups = new Dictionary<int, PickupProperties>();
             Players = new Dictionary<int, PedProperties>();
+            LoadedIpl = new List<string>();
+            RemovedIpl = new List<string>();
         }
 
         [ProtoMember(1)]

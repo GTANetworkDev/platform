@@ -2287,7 +2287,10 @@ namespace GTANetwork
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 
                 if (Weather != null) Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Weather);
-                if (Time.HasValue) World.CurrentDayTime = new TimeSpan(Time.Value.Hours, Time.Value.Minutes, 00);
+                if (Time.HasValue)
+                {
+                    World.CurrentDayTime = new TimeSpan(Time.Value.Hours, Time.Value.Minutes, 00);
+                }
 
                 Function.Call(Hash.PAUSE_CLOCK, true);
             }
@@ -4195,6 +4198,19 @@ namespace GTANetwork
                 return;
             }
 
+            if (((int) nativeType & (int) NativeType.TimeSet) > 0)
+            {
+                var newHours = ((IntArgument) obj.Arguments[0]).Data;
+                var newMinutes = ((IntArgument)obj.Arguments[1]).Data;
+                Time = new TimeSpan(newHours, newMinutes, 0);
+            }
+
+            if (((int)nativeType & (int)NativeType.WeatherSet) > 0)
+            {
+                var newWeather = ((StringArgument)obj.Arguments[0]).Data;
+                Weather = newWeather;
+            }
+
             if (obj.ReturnType == null)
             {
                 Function.Call((Hash)obj.Hash, list.ToArray());
@@ -4281,6 +4297,8 @@ namespace GTANetwork
             NeedsModel1 = 1 << 4,
             NeedsModel2 = 1 << 5,
             NeedsModel3 = 1 << 6,
+            TimeSet = 1 << 7,
+            WeatherSet = 1 << 8,
         }
 
         private NativeType CheckNativeHash(ulong hash)
@@ -4309,6 +4327,10 @@ namespace GTANetwork
                 case 0xBE339365C863BD36:
                 case 0x5A039BB0BCA604B6:
                     return NativeType.ReturnsBlip;
+                case 0x47C3B5848C3E45D8:
+                    return NativeType.TimeSet;
+                case 0xED712CA327900C8A:
+                    return NativeType.WeatherSet;
             }
         }
 
