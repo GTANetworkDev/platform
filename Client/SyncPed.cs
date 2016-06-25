@@ -472,6 +472,12 @@ namespace GTANetwork
 				{
 					Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
 					DEBUG_STEP = 6;
+				    int offsetY = 0;
+				    if (GetResponsiblePed(MainVehicle)?.Handle != Character.Handle)
+				    {
+				        offsetY = (VehicleSeat + 1)*20;
+				    }
+
 					var nameText = Name == null ? "<nameless>" : Name;
 
 					if (Environment.TickCount - LastUpdateReceived > 10000)
@@ -480,13 +486,13 @@ namespace GTANetwork
                     var dist = (GameplayCamera.Position - Character.Position).Length();
 					var sizeOffset = Math.Max(1f - (dist / 100f), 0.3f);
 
-					new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
+					new UIResText(nameText, new Point(0, -offsetY), 0.4f * sizeOffset, Color.WhiteSmoke,
 						Font.ChaletLondon, UIResText.Alignment.Centered)
 					{
 						Outline = true,
 					}.Draw();
 					DEBUG_STEP = 7;
-					if (Character != null)
+					if (Character != null && offsetY == 0)
 					{
 						var bgColor = Color.FromArgb(100, 0, 0, 0);
 
