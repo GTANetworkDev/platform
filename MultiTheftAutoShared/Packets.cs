@@ -112,6 +112,17 @@ namespace GTANetworkShared
         InFreefall = 1 << 6,
     }
 
+    public enum ConnectionChannel
+    {
+        Default = 0,
+        FileTransfer = 1,
+        NativeCall = 2,
+        Chat = 3,
+        EntityBackend = 4,
+        PositionData = 5,
+        SyncEvent = 6,
+    }
+
     public struct LocalHandle
     {
         public LocalHandle(int handle)
@@ -344,10 +355,10 @@ namespace GTANetworkShared
     [ProtoContract]
     public class ConnectionResponse
     {
-        [ProtoMember(1)]
-        public byte AssignedChannel { get; set; }
+        //[ProtoMember(1)]
+        //public byte AssignedChannel { get; set; }
 
-        [ProtoMember(2)]
+        [ProtoMember(1)]
         public int CharacterHandle { get; set; }
     }
 

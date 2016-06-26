@@ -542,7 +542,7 @@ namespace GTANetworkServer
             packet.EventName = eventName;
             packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
 
-            Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true);
+            Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
         }
 
         public  void triggerClientEvent(Client player, string eventName, params object[] args)
@@ -551,7 +551,7 @@ namespace GTANetworkServer
             packet.EventName = eventName;
             packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
 
-            Program.ServerInstance.SendToClient(player, packet, PacketType.ScriptEventTrigger, true);
+            Program.ServerInstance.SendToClient(player, packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
         }
 
         public  void sendChatMessageToAll(string message)
@@ -567,7 +567,7 @@ namespace GTANetworkServer
                 Message = message,
             };
 
-            Program.ServerInstance.SendToAll(chatObj, PacketType.ChatData, true);
+            Program.ServerInstance.SendToAll(chatObj, PacketType.ChatData, true, ConnectionChannel.Chat);
         }
 
         public  void sendChatMessageToPlayer(Client player, string message)
