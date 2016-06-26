@@ -162,6 +162,7 @@ namespace GTANetworkServer
         public string Password { get; set; }
         public bool PasswordProtected { get; set; }
         public string GamemodeName { get; set; }
+        public Resource Gamemode { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
         public bool AnnounceToLAN { get; set; }
@@ -221,17 +222,22 @@ namespace GTANetworkServer
         public void AnnounceSelfToMaster()
         {
             Program.Output("Announcing self to master server...");
-            using (var wb = new WebClient())
+            var annThread = new Thread((ThreadStart) delegate
             {
-                try
+                using (var wb = new WebClient())
                 {
-                    wb.UploadData(MasterServer.Trim('/') + "/addserver", Encoding.UTF8.GetBytes(Port.ToString()));
+                    try
+                    {
+                        wb.UploadData(MasterServer.Trim('/') + "/addserver", Encoding.UTF8.GetBytes(Port.ToString()));
+                    }
+                    catch (WebException)
+                    {
+                        Program.Output("Failed to announce self: master server is not available at this time.");
+                    }
                 }
-                catch (WebException)
-                {
-                    Program.Output("Failed to announce self: master server is not available at this time.");
-                }
-            }
+            });
+            annThread.IsBackground = true;
+            annThread.Start();
         }
 
         private bool isIPLocal(string ipaddress)
@@ -288,6 +294,13 @@ namespace GTANetworkServer
                 ourResource.DirectoryName = resourceName;
                 ourResource.Engines = new List<ScriptingEngine>();
                 ourResource.ClientsideScripts = new List<ClientsideScript>();
+
+                if (ourResource.Info.Info.Type == ResourceType.gamemode)
+                {
+                    if (Gamemode != null)
+                        StopResource(Gamemode.DirectoryName);
+                    Gamemode = ourResource;
+                }
                 
                 if (currentResInfo.Includes != null)
                     foreach (var resource in currentResInfo.Includes)
