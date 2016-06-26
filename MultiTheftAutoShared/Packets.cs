@@ -316,17 +316,17 @@ namespace GTANetworkShared
     {
         public PedProperties()
         {
-            Props = new ushort[15];
-            Textures = new ushort[15];
+            Props = new Dictionary<byte, byte>();
+            Textures = new Dictionary<byte, byte>();
             BlipSprite = 1;
             BlipAlpha = 255;
         }
 
         [ProtoMember(1)]
-        public ushort[] Props { get; set; }
+        public Dictionary<byte, byte> Props { get; set; }
 
         [ProtoMember(2)]
-        public ushort[] Textures { get; set; }
+        public Dictionary<byte, byte> Textures { get; set; }
 
         [ProtoMember(3)]
         public int BlipSprite { get; set; }

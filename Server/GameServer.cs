@@ -1643,13 +1643,16 @@ namespace GTANetworkServer
 
             var bin = SerializeBinary(obj);
 
-            var msg = Server.CreateMessage();
+            foreach (var c in Clients)
+            {
+                var msg = Server.CreateMessage();
 
-            msg.Write((int)PacketType.NativeCall);
-            msg.Write(bin.Length);
-            msg.Write(bin);
+                msg.Write((int) PacketType.NativeCall);
+                msg.Write(bin.Length);
+                msg.Write(bin);
 
-            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
+                Server.SendMessage(msg, c.NetConnection, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(c));
+            }
         }
 
         public void SetNativeCallOnTickForPlayer(Client player, string identifier, ulong hash, params object[] arguments)

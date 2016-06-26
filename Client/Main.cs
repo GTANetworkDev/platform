@@ -1535,11 +1535,12 @@ namespace GTANetwork
                         var ourPed = NetEntityHandler.NetToEntity(pair.Key);
                         if (ourPed != null)
                         {
-                            for (int i = 0; i < pair.Value.Props.Length; i++)
+                            for (int i = 0; i < 15; i++)
                             {
-                                Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props[i],
-                                    pair.Value.Textures[i], 2);
+                                Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props.Get((byte)i),
+                                    pair.Value.Textures.Get((byte)i), 2);
                             }
+
                             ourPed.Alpha = pair.Value.Alpha;
 
                             var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle);
@@ -1912,7 +1913,7 @@ namespace GTANetwork
             set
             {
                 _debugStep = value;
-                LogManager.DebugLog(value.ToString());
+                //LogManager.DebugLog(value.ToString());
             }
         }
 
@@ -2421,11 +2422,6 @@ namespace GTANetwork
                     if (action != null) action.Invoke();
                 }
             }
-            DEBUG_STEP = 26;
-            Dictionary<string, NativeData> tickNatives = null;
-            lock (_tickNatives) tickNatives = new Dictionary<string,NativeData>(_tickNatives);
-            DEBUG_STEP = 27;
-            for (int i = 0; i < tickNatives.Count; i++) DecodeNativeCall(tickNatives.ElementAt(i).Value);
             DEBUG_STEP = 28;
         }
 
@@ -3924,7 +3920,7 @@ namespace GTANetwork
                 }
                 else if (arg is EntityArgument)
                 {
-                    list.Add(NetEntityHandler.NetToEntity(((EntityArgument)arg).NetHandle));
+                    list.Add(NetEntityHandler.NetToEntity(((EntityArgument)arg).NetHandle)?.Handle);
                 }
                 else if (arg is EntityPointerArgument)
                 {
@@ -4098,9 +4094,11 @@ namespace GTANetwork
         {
             var list = new List<InputArgument>();
 
-            list.AddRange(DecodeArgumentList(obj.Arguments.ToArray()).Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
+            var objectList = DecodeArgumentList(obj.Arguments.ToArray());
 
-            LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + list.Aggregate((f, s) => f + ", " + s));
+            list.AddRange(objectList.Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
+
+            LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + objectList.Aggregate((f, s) => f + ", " + s));
             LogManager.DebugLog("RETURN TYPE: " + obj.ReturnType);
             var nativeType = CheckNativeHash(obj.Hash);
             LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
