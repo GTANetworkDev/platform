@@ -563,7 +563,7 @@ namespace GTANetworkServer
             var packet = new CreateEntity();
             packet.EntityType = (byte)EntityType.Marker;
             packet.Properties = newInfo;
-            Program.ServerInstance.SendToAll(packet, PacketType.UpdateMarkerProperties, true, ConnectionChannel.EntityBackend);
+            Program.ServerInstance.SendToAll(packet, PacketType.UpdateMarkerProperties, true);
         }
         
         private void LogException(Exception ex, string resourceName)
@@ -684,7 +684,7 @@ namespace GTANetworkServer
 
                             var respObj = new ConnectionResponse();
                             respObj.CharacterHandle = client.CharacterHandle.Value;
-                            //respObj.AssignedChannel = GetChannelIdForConnection(client);
+                            respObj.AssignedChannel = GetChannelIdForConnection(client);
 
                             // TODO: Transfer map.
 
@@ -736,7 +736,7 @@ namespace GTANetworkServer
                                         Id = client.CharacterHandle.Value,
                                     };
 
-                                    SendToAll(dcObj, PacketType.PlayerDisconnect, true, ConnectionChannel.EntityBackend);
+                                    SendToAll(dcObj, PacketType.PlayerDisconnect, true);
 
                                     Program.Output("Player disconnected: " + client.SocialClubName + " (" +
                                                     client.Name + ")");
@@ -834,7 +834,7 @@ namespace GTANetworkServer
                                         {
                                             data.Id = client.NetConnection.RemoteUniqueIdentifier;
                                             data.Sender = client.Name;
-                                            SendToAll(data, PacketType.ChatData, true, ConnectionChannel.Chat);
+                                            SendToAll(data, PacketType.ChatData, true);
                                             Program.Output(data.Sender + ": " + data.Message);
                                         }
                                     }
@@ -892,7 +892,7 @@ namespace GTANetworkServer
                                         }
 
 
-                                        SendToAll(data, PacketType.VehiclePositionData, false, client, ConnectionChannel.PositionData);
+                                        SendToAll(data, PacketType.VehiclePositionData, false, client);
                                     }
                                 }
                                 catch (IndexOutOfRangeException)
@@ -929,7 +929,7 @@ namespace GTANetworkServer
                                             NetEntityHandler.ToDict()[data.NetHandle].ModelHash = data.PedModelHash;
                                         }
 
-                                        SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
+                                        SendToAll(data, PacketType.PedPositionData, false, client);
                                     }
                                 }
                                 catch (IndexOutOfRangeException)
@@ -947,7 +947,7 @@ namespace GTANetworkServer
                                             VehicleData;
                                     if (data != null)
                                     {
-                                        SendToAll(data, PacketType.NpcVehPositionData, false, client, ConnectionChannel.PositionData);
+                                        SendToAll(data, PacketType.NpcVehPositionData, false, client);
                                     }
                                 }
                                 catch (IndexOutOfRangeException)
@@ -964,7 +964,7 @@ namespace GTANetworkServer
                                         DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
                                     if (data != null)
                                     {
-                                        SendToAll(data, PacketType.NpcPedPositionData, false, client, ConnectionChannel.PositionData);
+                                        SendToAll(data, PacketType.NpcPedPositionData, false, client);
                                     }
                                 }
                                 catch (IndexOutOfRangeException)
@@ -978,7 +978,7 @@ namespace GTANetworkServer
                                 var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
                                 if (data != null)
                                 {
-                                    SendToAll(data, PacketType.SyncEvent, true, client, ConnectionChannel.NativeCall);
+                                    SendToAll(data, PacketType.SyncEvent, true, client);
                                     HandleSyncEvent(client, data);
                                 }
 
@@ -1227,7 +1227,7 @@ namespace GTANetworkServer
                     if (Downloads[i].Files.Count > 0)
                     {
                         if (Downloads[i].Parent.NetConnection.CanSendImmediately(NetDeliveryMethod.ReliableOrdered,
-                            (int)ConnectionChannel.FileTransfer))
+                            GetChannelIdForConnection(Downloads[i].Parent)))
                         {
                             if (!Downloads[i].Files[0].HasStarted)
                             {
@@ -1238,7 +1238,7 @@ namespace GTANetworkServer
                                 notifyObj.Id = Downloads[i].Files[0].Id;
                                 notifyObj.Length = Downloads[i].Files[0].Data.Length;
                                 notifyObj.Md5Hash = Downloads[i].Files[0].Hash;
-                                SendToClient(Downloads[i].Parent, notifyObj, PacketType.FileTransferRequest, true, ConnectionChannel.FileTransfer);
+                                SendToClient(Downloads[i].Parent, notifyObj, PacketType.FileTransferRequest, true);
                                 Downloads[i].Files[0].HasStarted = true;
                             }
 
@@ -1257,7 +1257,7 @@ namespace GTANetworkServer
                             Downloads[i].Files[0].BytesSent += sendBytes;
 
                             Server.SendMessage(updateObj, Downloads[i].Parent.NetConnection,
-                                NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
+                                NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(Downloads[i].Parent));
 
                             if (remaining - sendBytes <= 0)
                             {
@@ -1266,7 +1266,7 @@ namespace GTANetworkServer
                                 endObject.Write(Downloads[i].Files[0].Id);
 
                                 Server.SendMessage(endObject, Downloads[i].Parent.NetConnection,
-                                    NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
+                                    NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(Downloads[i].Parent));
                                 Downloads[i].Files.RemoveAt(0);
                             }
                         }
@@ -1436,7 +1436,7 @@ namespace GTANetworkServer
             return list;
         }
 
-        public void SendToClient(Client c, object newData, PacketType packetType, bool important, ConnectionChannel channel)
+        public void SendToClient(Client c, object newData, PacketType packetType, bool important)
         {
             var data = SerializeBinary(newData);
             NetOutgoingMessage msg = Server.CreateMessage();
@@ -1445,10 +1445,10 @@ namespace GTANetworkServer
             msg.Write(data);
             Server.SendMessage(msg, c.NetConnection,
                 important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
-                (int)channel);
+                GetChannelIdForConnection(c));
         }
 
-        public void SendToAll(object newData, PacketType packetType, bool important, ConnectionChannel channel)
+        public void SendToAll(object newData, PacketType packetType, bool important)
         {
             lock (Clients)
             foreach (var client in Clients)
@@ -1460,11 +1460,11 @@ namespace GTANetworkServer
                 msg.Write(data);
                 Server.SendMessage(msg, client.NetConnection,
                     important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
-                    (int)channel);
+                    GetChannelIdForConnection(client));
             }
         }
-        
-        public void SendToAll(object newData, PacketType packetType, bool important, Client exclude, ConnectionChannel channel)
+
+        public void SendToAll(object newData, PacketType packetType, bool important, Client exclude)
         {
             lock (Clients)
             foreach (var client in Clients)
@@ -1477,7 +1477,7 @@ namespace GTANetworkServer
                 msg.Write(data);
                 Server.SendMessage(msg, client.NetConnection,
                     important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
-                    (int)channel);
+                    GetChannelIdForConnection(client));
             }
         }
 
@@ -1506,10 +1506,10 @@ namespace GTANetworkServer
             }
         }
 
-        //public byte GetChannelIdForConnection(Client conn)
-        //{
-            //lock (Clients) return (byte)(((Clients.IndexOf(conn)) % 31) + 1);
-        //}
+        public byte GetChannelIdForConnection(Client conn)
+        {
+            lock (Clients) return (byte)(((Clients.IndexOf(conn)) % 31) + 1);
+        }
 
         public NativeArgument ParseReturnType(Type t)
         {
@@ -1630,7 +1630,7 @@ namespace GTANetworkServer
             msg.Write((int)PacketType.NativeCall);
             msg.Write(bin.Length);
             msg.Write(bin);
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
         public void SendNativeCallToAllPlayers(ulong hash, params object[] arguments)
@@ -1651,7 +1651,7 @@ namespace GTANetworkServer
                 msg.Write(bin.Length);
                 msg.Write(bin);
 
-                Server.SendMessage(msg, c.NetConnection, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+                Server.SendMessage(msg, c.NetConnection, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(c));
             }
         }
 
@@ -1674,7 +1674,7 @@ namespace GTANetworkServer
             msg.Write(bin.Length);
             msg.Write(bin);
 
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
         public void SetNativeCallOnTickForAllPlayers(string identifier, ulong hash, params object[] arguments)
@@ -1711,7 +1711,7 @@ namespace GTANetworkServer
             msg.Write(bin.Length);
             msg.Write(bin);
 
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
         public void RecallNativeCallOnTickForAllPlayers(string identifier)
@@ -1745,7 +1745,7 @@ namespace GTANetworkServer
             msg.Write(bin.Length);
             msg.Write(bin);
 
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
         public void SetNativeCallOnDisconnectForAllPlayers(string identifier, ulong hash, params object[] arguments)
@@ -1778,7 +1778,7 @@ namespace GTANetworkServer
             msg.Write(bin.Length);
             msg.Write(bin);
 
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
         public void RecallNativeCallOnDisconnectForAllPlayers(string identifier)
@@ -1836,7 +1836,7 @@ namespace GTANetworkServer
             msg.Write(bin);
 
             _callbacks.Add(salt, callback);
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, GetChannelIdForConnection(player));
         }
 
         public void ChangePlayerTeam(Client target, int newTeam)
@@ -1850,7 +1850,7 @@ namespace GTANetworkServer
             obj.EventType = (byte) ServerEventType.PlayerTeamChange;
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newTeam);
 
-            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+            SendToAll(obj, PacketType.ServerEvent, true);
         }
 
         public void ChangePlayerBlipColor(Client target, int newColor)
@@ -1864,7 +1864,7 @@ namespace GTANetworkServer
             obj.EventType = (byte)ServerEventType.PlayerBlipColorChange;
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newColor);
 
-            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+            SendToAll(obj, PacketType.ServerEvent, true);
         }
 
         public void ChangePlayerBlipSprite(Client target, int newSprite)
@@ -1878,7 +1878,7 @@ namespace GTANetworkServer
             obj.EventType = (byte)ServerEventType.PlayerBlipSpriteChange;
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newSprite);
 
-            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+            SendToAll(obj, PacketType.ServerEvent, true);
         }
 
         public void ChangePlayerBlipAlpha(Client target, int newAlpha)
@@ -1892,7 +1892,7 @@ namespace GTANetworkServer
             obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newAlpha);
 
-            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+            SendToAll(obj, PacketType.ServerEvent, true);
         }
 
         public void SetPlayerOnSpectate(Client target, bool spectating)
@@ -1901,7 +1901,7 @@ namespace GTANetworkServer
             obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, spectating);
 
-            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+            SendToAll(obj, PacketType.ServerEvent, true);
         }
 
         public void SetPlayerOnSpectatePlayer(Client spectator, Client target)
@@ -1910,7 +1910,7 @@ namespace GTANetworkServer
             obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
             obj.Arguments = ParseNativeArguments(spectator.CharacterHandle.Value, true, target.CharacterHandle.Value);
 
-            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+            SendToAll(obj, PacketType.ServerEvent, true);
         }
     }
 }

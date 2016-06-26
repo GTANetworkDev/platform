@@ -95,6 +95,7 @@ namespace GTANetwork
         public static bool LerpRotaion = true;
         public static bool RemoveGameEntities = true;
 
+        private static int _channel;
         public static int LocalTeam = -1;
         public int SpectatingEntity;
 
@@ -3429,6 +3430,7 @@ namespace GTANetwork
                                 Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
                                 return;
                             }
+                            _channel = respObj.AssignedChannel;
                             NetEntityHandler.AddEntity(respObj.CharacterHandle, -2);
 
                             var confirmObj = Client.CreateMessage();
@@ -3989,14 +3991,15 @@ namespace GTANetwork
             return list;
         }
 
-        public static void SendToServer(object newData, PacketType packetType, bool important, ConnectionChannel channel)
+        public static void SendToServer(object newData, PacketType packetType, bool important, int sequenceChannel = -1)
         {
             var data = SerializeBinary(newData);
             NetOutgoingMessage msg = Client.CreateMessage();
             msg.Write((int)packetType);
             msg.Write(data.Length);
             msg.Write(data);
-            Client.SendMessage(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
+            Client.SendMessage(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
+                sequenceChannel == -1 ? _channel : sequenceChannel);
         }
 
         public static List<NativeArgument> ParseNativeArguments(params object[] args)

@@ -52,7 +52,7 @@ namespace GTANetwork
             obj.EventType = (byte) type;
             obj.Arguments = convertedArgs;
             
-            Main.SendToServer(obj, PacketType.SyncEvent, false, ConnectionChannel.SyncEvent);
+            Main.SendToServer(obj, PacketType.SyncEvent, false, 30);
         }
 
         public void Tick()
