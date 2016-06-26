@@ -288,10 +288,7 @@ namespace GTANetworkServer
                 ourResource.DirectoryName = resourceName;
                 ourResource.Engines = new List<ScriptingEngine>();
                 ourResource.ClientsideScripts = new List<ClientsideScript>();
-
-                if (currentResInfo.Info.Type == ResourceType.gamemode)
-                    GamemodeName = ourResource.DirectoryName;
-
+                
                 if (currentResInfo.Includes != null)
                     foreach (var resource in currentResInfo.Includes)
                     {
@@ -752,7 +749,13 @@ namespace GTANetworkServer
                         obj.ServerName = Name;
                         obj.MaxPlayers = (short) MaxPlayers;
                         obj.PasswordProtected = PasswordProtected;
-                        obj.Gamemode = GamemodeName;
+                        lock (RunningResources)
+                        {
+                            obj.Gamemode = string.IsNullOrEmpty(GamemodeName)
+                                ? RunningResources.FirstOrDefault(r => r.Info.Info.Type == ResourceType.gamemode)?
+                                    .DirectoryName ?? "GTA Network"
+                                : GamemodeName;
+                        }
                         lock (Clients)
                             obj.PlayerCount =
                                 (short)

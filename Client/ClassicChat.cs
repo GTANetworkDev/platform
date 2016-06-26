@@ -74,6 +74,8 @@ namespace GTANetwork
         private Scaleform _mainScaleform;
 
         public string CurrentInput;
+        private List<string> _inputHistory = new List<string>();
+        private int _historyIndex = -1;
 
         private int _switch = 1;
         private Keys _lastKey;
@@ -181,7 +183,11 @@ namespace GTANetwork
             }
             
             if (!IsFocused) return;
-            Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
+            Game.DisableAllControlsThisFrame(0);
+            foreach (var value in Enum.GetValues(typeof(Control)).Cast<Control>())
+            {
+                Game.DisableControlThisFrame(0, value);
+            }
         }
 
         public void AddMessage(string sender, string msg)
@@ -221,6 +227,36 @@ namespace GTANetwork
 
             if (!IsFocused) return;
 
+            if (key == Keys.Up && _inputHistory.Count > _historyIndex + 1)
+            {
+                _historyIndex++;
+                _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "");
+                _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "");
+
+                CurrentInput = _inputHistory[_historyIndex];
+                _mainScaleform.CallFunction("ADD_TEXT", CurrentInput);
+            }
+            else if (key == Keys.Down && _inputHistory.Count > _historyIndex - 1 && _historyIndex != -1)
+            {
+                _historyIndex--;
+                if (_historyIndex == -1)
+                {
+                    _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "");
+                    _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "");
+                    CurrentInput = "";
+                    _mainScaleform.CallFunction("ADD_TEXT", CurrentInput);
+                }
+                else
+                {
+                    _mainScaleform.CallFunction("SET_FOCUS", 1, 2, "");
+                    _mainScaleform.CallFunction("SET_FOCUS", 2, 2, "");
+
+                    CurrentInput = _inputHistory[_historyIndex];
+                    _mainScaleform.CallFunction("ADD_TEXT", CurrentInput);
+                }
+            }
+
+
             if ((key == Keys.ShiftKey && _lastKey == Keys.Menu) || (key == Keys.Menu && _lastKey == Keys.ShiftKey))
                 ActivateKeyboardLayout(1, 0);
 
@@ -228,6 +264,7 @@ namespace GTANetwork
 
             if (key == Keys.Escape)
             {
+                _historyIndex = -1;
                 IsFocused = false;
                 CurrentInput = "";
             }
@@ -253,6 +290,12 @@ namespace GTANetwork
             {
                 _mainScaleform.CallFunction("ADD_TEXT", "ENTER");
                 if (OnComplete != null) OnComplete.Invoke(this, EventArgs.Empty);
+                _historyIndex = -1;
+                if (!string.IsNullOrWhiteSpace(CurrentInput))
+                {
+                    _inputHistory.Insert(0, CurrentInput);
+                    if (_inputHistory.Count > 5) _inputHistory.RemoveAt(5);
+                }
                 CurrentInput = "";
                 return;
             }
