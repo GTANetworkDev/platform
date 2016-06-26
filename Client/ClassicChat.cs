@@ -81,6 +81,9 @@ namespace GTANetwork
         private Keys _lastKey;
         private bool _isFocused;
 
+        private int _pagingIndex;
+        private const int _messagesPerPage = 9;
+
         private DateTime _lastMsg = DateTime.MinValue;
         private DateTime _focusStart = DateTime.MinValue;
         private bool _lastFadedOut;
@@ -90,8 +93,7 @@ namespace GTANetwork
         {
             _messages.Clear();
         }
-
-
+        
         private PointF GetInputboxPos(bool scaleWithSafezone)
         {
             var aspectRatio = (Game.ScreenResolution.Width/(float) Game.ScreenResolution.Height);
@@ -156,8 +158,12 @@ namespace GTANetwork
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;
-            foreach (var msg in _messages)
+
+            if (_messages.Any())
+            for (int indx = Math.Min(_messagesPerPage + _pagingIndex, _messages.Count-1); indx >= (_messages.Count <= _messagesPerPage ? 0 : _pagingIndex); indx--)
             {
+                var msg = _messages[indx];
+
                 string output = msg.Item1;
                 var limit = UIMenu.GetScreenResolutionMantainRatio().Width - UIMenu.GetSafezoneBounds().X;
                 while (StringMeasurer.MeasureString(output) > limit)
@@ -181,6 +187,20 @@ namespace GTANetwork
                 }
                 c++;
             }
+
+            if (_pagingIndex != 0 && _messages.Count > _messagesPerPage)
+            {
+                Point start = UIMenu.GetSafezoneBounds();
+                if (!Main.PlayerSettings.ScaleChatWithSafezone)
+                    start = new Point();
+                start = new Point(start.X - 15, start.Y);
+                var chatHeight = 25*(_messagesPerPage + 1);
+                var availableChoices = _messages.Count - _messagesPerPage;
+                var barHeight = (1f/ availableChoices) *chatHeight;
+
+                new UIResRectangle(start, new Size(10, chatHeight), Color.FromArgb(50, 0, 0, 0)).Draw();
+                new UIResRectangle(start + new Size(0, (int)(chatHeight - chatHeight*((_pagingIndex + 1)/(float)availableChoices))), new Size(10, (int)barHeight), Color.FromArgb(150, 0, 0, 0)).Draw();
+            }
             
             if (!IsFocused) return;
             Game.DisableAllControlsThisFrame(0);
@@ -200,12 +220,12 @@ namespace GTANetwork
             }
 
             if (string.IsNullOrEmpty(sender))
-                _messages.Add(new Tuple<string, Color>(msg, textColor));
+                _messages.Insert(0, new Tuple<string, Color>(msg, textColor));
             else
-                _messages.Add(new Tuple<string, Color>(sender + ": " + msg, textColor));
+                _messages.Insert(0, new Tuple<string, Color>(sender + ": " + msg, textColor));
 
-            if (_messages.Count > 10)
-                _messages.RemoveAt(0);
+            if (_messages.Count > 50)
+                _messages.RemoveAt(50);
 
             _lastFadedOut = DateTime.Now.Subtract(_lastMsg).TotalMilliseconds > 15000;
             _lastMsg = DateTime.Now;
@@ -219,11 +239,11 @@ namespace GTANetwork
         
         public void OnKeyDown(Keys key)
         {
-            /*if (key == Keys.PageUp && Main.IsOnServer())
-                _mainScaleform.CallFunction("PAGE_UP");
+            if (key == Keys.PageUp && Main.IsOnServer() && _pagingIndex + _messagesPerPage + 1 < _messages.Count)
+                _pagingIndex++;
 
-            else if (key == Keys.PageDown && Main.IsOnServer())
-                _mainScaleform.CallFunction("PAGE_DOWN");*/
+            else if (key == Keys.PageDown && Main.IsOnServer() && _pagingIndex != 0)
+                _pagingIndex--;
 
             if (!IsFocused) return;
 
@@ -296,6 +316,8 @@ namespace GTANetwork
                     _inputHistory.Insert(0, CurrentInput);
                     if (_inputHistory.Count > 5) _inputHistory.RemoveAt(5);
                 }
+
+                _pagingIndex = 0;
                 CurrentInput = "";
                 return;
             }
