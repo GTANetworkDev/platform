@@ -305,8 +305,6 @@ namespace GTANetwork
 
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
-            if (Main.DebugPanel.CreateCharacter) return COOP_CreateCharacter(gPos, hRange);
-
 			if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
 				//LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
@@ -395,13 +393,7 @@ namespace GTANetwork
 
 	    void DrawNametag()
 	    {
-	        if (Main.DebugPanel.DrawNametag)
-	        {
-	            COOP_DrawNametag();
-	            return;
-	        }
-
-			if (!IsInVehicle)
+	        if (!IsInVehicle)
 			{
 				bool isAiming = false;
 				if ((!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f))) ||
@@ -516,8 +508,6 @@ namespace GTANetwork
 
 	    bool CreateVehicle()
 	    {
-	        if (Main.DebugPanel.CreateVehicle) return COOP_CreateVehicle();
-
 	        if (IsInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 &&
 	            Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER, Game.Player.Character) == -1 &&
 	            Util.GetPedSeat(Game.Player.Character) == 0)
@@ -578,8 +568,6 @@ namespace GTANetwork
 
 	    bool UpdatePlayerPosOutOfRange(Vector3 gPos, bool inRange)
 	    {
-	        if (Main.DebugPanel.UpdatePlayerPosOutOfRange) return COOP_UpdatePlayerPosOutOfRange(gPos, inRange);
-
 			if (!inRange)
 			{
 				if (Character != null)
@@ -599,12 +587,6 @@ namespace GTANetwork
 
 	    void WorkaroundBlip()
 	    {
-	        if (Main.DebugPanel.WorkaroundBlip)
-	        {
-	            COOP_WorkaroundBlip();
-	            return;
-	        }
-
             if (IsInVehicle && MainVehicle != null && (Character.CurrentBlip == null || (Character.CurrentBlip.Position - MainVehicle.Position).Length() > 70f) && _blip)
 			{
 				LogManager.DebugLog("Blip was too far away -- deleting");
@@ -614,20 +596,11 @@ namespace GTANetwork
 
 	    bool UpdatePosition()
 	    {
-	        if (Main.DebugPanel.UpdatePosition) return COOP_UpdatePosition();
-
             return IsInVehicle ? UpdateVehiclePosition() : UpdateOnFootPosition();
 	    }
 
 	    void UpdateVehicleInternalInfo()
 	    {
-	        if (Main.DebugPanel.UpdateVehicleInternalInfo)
-	        {
-	            COOP_UpdateVehicleInternalInfo();
-	            return;
-	        }
-
-
             MainVehicle.EngineHealth = VehicleHealth;
 			if (IsVehDead && !MainVehicle.IsDead)
 			{
@@ -685,13 +658,6 @@ namespace GTANetwork
 
 	    void DisplayVehiclePosition()
 	    {
-	        if (Main.DebugPanel.DisplayVehiclePosition)
-	        {
-	            COOP_DisplayVehiclePosition();
-	            return;
-	        }
-
-
             var dir = VehiclePosition - _lastVehiclePos;
 
 			var syncMode = Main.GlobalSyncMode;
@@ -779,10 +745,6 @@ namespace GTANetwork
 
 	    bool DisplayVehicleDriveBy()
 	    {
-	        if (Main.DebugPanel.DisplayVehicleDriveBy) return COOP_DisplayVehicleDriveBy();
-
-
-
             if (IsShooting && CurrentWeapon != 0 && VehicleSeat == -1 && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)VehicleHash))
 			{
 				var isRocket = WeaponDataProvider.IsVehicleWeaponRocket(CurrentWeapon);
@@ -830,9 +792,6 @@ namespace GTANetwork
 
 		bool UpdateVehicleMainData()
 		{
-		    if (Main.DebugPanel.UpdateVehicleMainData) return COOP_UpdateVehicleMainData();
-
-
             UpdateVehicleInternalInfo();	
 			DEBUG_STEP = 19;
 
@@ -843,13 +802,6 @@ namespace GTANetwork
 
 	    void UpdateVehicleMountedWeapon()
 	    {
-	        if (Main.DebugPanel.UpdateVehicleMountedWeapon)
-	        {
-	            COOP_UpdateVehicleMountedWeapon();
-	            return;
-	        }
-
-
             if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)VehicleHash, VehicleSeat))
 			{
 				if (Game.GameTime - _lastVehicleAimUpdate > 30)
@@ -936,7 +888,7 @@ namespace GTANetwork
 					Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
 				}
 
-				if (IsShooting || IsAiming)
+				if (IsShooting/* || IsAiming*/)
 				{
 					if (_lastShooting && Game.GameTime - _lastVehicleAimUpdate > 30)
 					{
@@ -980,8 +932,6 @@ namespace GTANetwork
 
 	    bool UpdateVehiclePosition()
 	    {
-	        if (Main.DebugPanel.UpdateVehiclePosition) return COOP_UpdateVehiclePosition();
-
 			UpdateVehicleMountedWeapon();
 
 	        if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
@@ -996,13 +946,6 @@ namespace GTANetwork
 
 	    void UpdateProps()
 	    {
-	        if (Main.DebugPanel.UpdateProps)
-	        {
-	            COOP_UpdateProps();
-	            return;
-	        }
-
-
             if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(IsInVehicle ? VehiclePosition : _position, 30f))
 			{
 				var id = _clothSwitch / 50;
@@ -1021,13 +964,6 @@ namespace GTANetwork
 
 	    void UpdateCurrentWeapon()
 	    {
-	        if (Main.DebugPanel.UpdateCurrentWeapon)
-	        {
-	            COOP_UpdateCurrentWeapon();
-	            return;
-	        }
-
-
             if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
 			{
 				//Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
@@ -1039,13 +975,6 @@ namespace GTANetwork
 
 	    void DisplayParachuteFreefall()
 	    {
-	        if (Main.DebugPanel.DisplayParachuteFreefall)
-	        {
-	            COOP_DisplayParachuteFreefall();
-	            return;
-	        }
-
-
             Character.FreezePosition = true;
 			Character.CanRagdoll = false;
 
@@ -1077,13 +1006,6 @@ namespace GTANetwork
 
 	    void DisplayOpenParachute()
 	    {
-	        if (Main.DebugPanel.DisplayOpenParachute)
-	        {
-	            COOP_DisplayOpenParachute();
-	            return;
-	        }
-
-
             if (_parachuteProp == null)
 			{
 				_parachuteProp = World.CreateProp(new Model(1740193300), Character.Position,
@@ -1124,13 +1046,6 @@ namespace GTANetwork
 
 	    void UpdateCustomAnimation()
 	    {
-	        if (Main.DebugPanel.UpdateCustomAnimation)
-	        {
-	            COOP_UpdateCustomAnimation();
-	            return;
-	        }
-
-
             var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
 						lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
 
@@ -1186,13 +1101,6 @@ namespace GTANetwork
 
 	    void DisplayMeleeCombat()
 	    {
-	        if (Main.DebugPanel.DisplayMeleeCombat)
-	        {
-	            COOP_DisplayMeleeCombat();
-	            return;
-	        }
-
-
             string secondaryAnimDict = null;
 			var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
 			var hands = GetWeaponHandsHeld(CurrentWeapon);
@@ -1229,12 +1137,6 @@ namespace GTANetwork
 
 	    void DisplayAimingAnimation()
 	    {
-	        if (Main.DebugPanel.DisplayAimingAnimation)
-	        {
-	            COOP_DisplayAimingAnimation();
-	            return;
-	        }
-
             var hands = GetWeaponHandsHeld(CurrentWeapon);
 
 			if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
@@ -1254,13 +1156,6 @@ namespace GTANetwork
 
 	    void DisplayMeleeAnimation(int hands)
 	    {
-	        if (Main.DebugPanel.DisplayMeleeAnimation)
-	        {
-	            COOP_DisplayMeleeAnimation(hands);
-	            return;
-	        }
-
-
             Character.Task.ClearSecondary();
 
 			var ourAnim = "";
@@ -1317,13 +1212,6 @@ namespace GTANetwork
 
 	    void DisplayWeaponShootingAnimation()
 	    {
-	        if (Main.DebugPanel.DisplayWeaponShootingAnimation)
-	        {
-	            COOP_DisplayWeaponShootingAnimation();
-	            return;
-	        }
-
-
             var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
@@ -1373,13 +1261,6 @@ namespace GTANetwork
 
 	    void DisplayShootingAnimation()
 	    {
-	        if (Main.DebugPanel.DisplayShootingAnimation)
-	        {
-	            COOP_DisplayShootingAnimation();
-	            return;
-	        }
-
-
             var hands = GetWeaponHandsHeld(CurrentWeapon);
 
 			if (hands == 3 || hands == 4 || hands == 0)
@@ -1403,13 +1284,6 @@ namespace GTANetwork
 
 	    void DisplayWalkingAnimation()
 	    {
-	        if (Main.DebugPanel.DisplayWalkingAnimation)
-	        {
-	            COOP_DisplayWalkingAnimation();
-	            return;
-	        }
-            
-
             var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
@@ -1438,9 +1312,6 @@ namespace GTANetwork
 
 		bool UpdateOnFootPosition()
 		{
-		    if (Main.DebugPanel.UpdateOnFootPosition) return COOP_UpdateOnFootPosition();
-
-
             UpdateProps();
 			
 			DEBUG_STEP = 23;
@@ -1554,14 +1425,6 @@ namespace GTANetwork
         {
             try
             {
-                if (Main.DebugPanel.DisplayLocally)
-                {
-                    COOP_DisplayLocally();
-                    return;
-                }
-
-                
-
                 if (IsSpectating) return;
 
 
@@ -1679,12 +1542,6 @@ namespace GTANetwork
 
         private void UpdatePlayerPedPos()
         {
-            if (Main.DebugPanel.UpdatePlayerPedPos)
-            {
-                COOP_UpdatePlayerPedPos();
-                return;
-            }
-
             var syncMode = Main.GlobalSyncMode;
 
             if (syncMode == SynchronizationMode.Dynamic)

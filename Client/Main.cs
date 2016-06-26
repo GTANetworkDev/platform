@@ -25,40 +25,6 @@ using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
 {
-    public class SyncDebugPanel
-    {
-        public bool DisplayLocally;
-        public bool CreateCharacter;
-        public bool CreateVehicle;
-        public bool DisplayAimingAnimation;
-        public bool DisplayMeleeAnimation;
-        public bool DisplayMeleeCombat;
-        public bool DisplayOpenParachute;
-        public bool DisplayParachuteFreefall;
-        public bool DisplayShootingAnimation;
-        public bool DisplayVehicleDriveBy;
-        public bool DisplayVehiclePosition;
-        public bool DisplayWalkingAnimation;
-        public bool DisplayWeaponShootingAnimation;
-        public bool DrawNametag;
-        public bool UpdateCurrentWeapon;
-        public bool UpdateCustomAnimation;
-        public bool UpdateOnFootPosition;
-        public bool UpdatePlayerPedPos;
-        public bool UpdatePlayerPosOutOfRange;
-        public bool UpdatePosition;
-        public bool UpdateProps;
-        public bool UpdateVehicleInternalInfo;
-        public bool UpdateVehicleMainData;
-        public bool UpdateVehicleMountedWeapon;
-        public bool UpdateVehiclePosition;
-        public bool WorkaroundBlip;
-
-        public bool SendPlayerData_MountedGuns;
-        public bool SendPlayerData_GunPosition;
-        public bool SendPlayerData_DriveBy;
-    }
-
     public class MessagePump : Script
     {
         public MessagePump()
@@ -100,9 +66,6 @@ namespace GTANetwork
 
     public class Main : Script
     {
-        public static SyncDebugPanel DebugPanel = new SyncDebugPanel();
-
-
         public static PlayerSettings PlayerSettings;
         
         public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_0_9;
@@ -1711,21 +1674,21 @@ namespace GTANetwork
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
                     obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
-                    if (Game.IsControlPressed(0, Control.VehicleFlyAttack))
+                    if (Game.IsEnabledControlPressed(0, Control.VehicleFlyAttack))
                         obj.Flag |= (byte) VehicleDataFlags.Shooting;
                 }
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                 {
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
-                    if (Game.IsControlPressed(0, Control.VehicleAttack))
+                    if (Game.IsEnabledControlPressed(0, Control.VehicleAttack))
                         obj.Flag |= (byte) VehicleDataFlags.Shooting;
                 }
                 else
                 {
-                    if (Game.IsControlPressed(0, Control.Attack) &&
+                    if (Game.IsEnabledControlPressed(0, Control.Attack) &&
                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
                         obj.Flag |= (byte) VehicleDataFlags.Shooting;
-                    if (Game.IsControlPressed(0, Control.Aim) &&
+                    if (Game.IsEnabledControlPressed(0, Control.Aim) &&
                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
                         obj.Flag |= (byte)VehicleDataFlags.Aiming;
                     //obj.IsShooting = Game.Player.Character.IsShooting;
