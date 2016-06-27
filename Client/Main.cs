@@ -208,7 +208,7 @@ namespace GTANetwork
             World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
             World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
 
-            Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
+            //Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
 
             GetWelcomeMessage();
 
