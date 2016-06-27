@@ -915,7 +915,7 @@ namespace GTANetwork
 					_lastDrivebyShooting = IsShooting || IsAiming;
 				}
 
-				if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
+				if (!IsShooting && /*!IsAiming &&*/ _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
 				{
 					Character.Task.ClearAll();
 					Character.Task.ClearSecondary();
@@ -1977,14 +1977,6 @@ namespace GTANetwork
                 MainVehicle.Position = VehiclePosition;
                 _lastVehiclePos = VehiclePosition - (dir * 0.5f);
             }
-#if DEBUG
-            MainVehicle.Rotation = VehicleRotation;
-#else
-                    if (MainVehicle.Heading < 270)
-                        MainVehicle.Quaternion = Util.LerpQuaternion(MainVehicle.Quaternion, VehicleRotation, 0.1f);
-                    else if (MainVehicle.Heading >= 270)
-                        MainVehicle.Quaternion = Util.LerpQuaternion(VehicleRotation, MainVehicle.Quaternion, 0.1f);
-#endif
         }
 
         void COOP_DisplayWalkingAnimation()

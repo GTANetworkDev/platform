@@ -125,7 +125,6 @@ namespace GTANetwork
             //var scal = new Scaleform(0);
             //scal.Load("hud");
             //scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true);
-            
 
             CrossReference.EntryPoint = this;
 
@@ -208,11 +207,14 @@ namespace GTANetwork
 
             World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
             World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
-            
+
+            Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
 
             GetWelcomeMessage();
 
             UpdateSocialClubAvatar();
+
+            //CEFManager.Initialize(Game.ScreenResolution);
         }
 
         public static int RelGroup;
@@ -2364,7 +2366,10 @@ namespace GTANetwork
             Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-
+            Function.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, -1);
+            Function.Call(Hash.SET_ALL_LOW_PRIORITY_VEHICLE_GENERATORS_ACTIVE, false);
+            Function.Call(Hash.SET_FAR_DRAW_VEHICLES, false);
+            Function.Call(Hash.DESTROY_MOBILE_PHONE);
             Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
 

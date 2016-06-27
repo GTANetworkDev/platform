@@ -43,9 +43,9 @@ namespace CEFInjector
             }
 
             
-            const int FPS = 15;
+            const int FPS = 1;
             const int waitTime = 1000/FPS;
-
+            /*
             var cirno = new Bitmap(@"A:\Dropbox\stuff\Reaction Images\cirno.png");
             Bitmap testBitmap = new Bitmap(cirno.Width, cirno.Height, PixelFormat.Format32bppArgb);
 
@@ -55,7 +55,7 @@ namespace CEFInjector
             }
 
             bitmapBytes = ScreenshotExtensions.BitmapToByteArray(testBitmap);
-
+            */
             bool continueReading = true;
             
             Thread t = new Thread((ThreadStart) delegate
@@ -64,12 +64,12 @@ namespace CEFInjector
                 {
                     int width = 0, height = 0;
 
-                    width = testBitmap.Width;
-                    height = testBitmap.Height;
+                    //width = testBitmap.Width;
+                    //height = testBitmap.Height;
 
-                    _captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes, width, height);
+                    //_captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes, width, height);
 
-                    /*
+                    
                     if (mutex.WaitOne())
                     {
                         using (var mmf = MemoryMappedFile.OpenExisting("GTANETWORKBITMAPSCREEN",
@@ -93,8 +93,6 @@ namespace CEFInjector
 
                     if (bitmapBytes.Length > 0)
                         _captureProcess.CaptureInterface.UpdateMainBitmap(bitmapBytes, width, height);
-
-                    */
                     Thread.Sleep(waitTime);
                 }
             });

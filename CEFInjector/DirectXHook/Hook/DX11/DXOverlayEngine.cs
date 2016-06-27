@@ -202,22 +202,10 @@ namespace CEFInjector.DirectXHook.Hook.DX11
                 foreach (var dxImage in _imageCache)
                 {
                     var val = dxImage.Value;
-                    //RemoveAndDispose(ref val);
-                    val.Dispose();
 
-                    //dxImage.Value.Update(((ImageElement) dxImage.Key).Bitmap);
-
-                    //((ImageElement)dxImage.Key).Bitmap.Dispose();
-                    //dxImage.Value.Dispose();
-                    //var img = dxImage.Value;
-                    //base.RemoveAndDispose(ref img);
-                    //base.DisposeCollector.RemoveAndDispose(ref dxImage.Value);
+                    val.Initialise(((ImageElement) dxImage.Key).Bitmap);
                 }
-
-                _imageCache.Clear();
             }
-
-            //base.DisposeCollector.DisposeAndClear();
         }
 
         DXImage GetImageForImageElement(ImageElement element)
@@ -228,8 +216,8 @@ namespace CEFInjector.DirectXHook.Hook.DX11
             {
                 if (!_imageCache.TryGetValue(element, out result))
                 {
-                    result = new DXImage(_device, _deviceContext);
-                    //result = ToDispose(new DXImage(_device, _deviceContext));
+                    //result = new DXImage(_device, _deviceContext);
+                    result = ToDispose(new DXImage(_device, _deviceContext));
                     result.Initialise(element.Bitmap);
                     _imageCache[element] = result;
                 }

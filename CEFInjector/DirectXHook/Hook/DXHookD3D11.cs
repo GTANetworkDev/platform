@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 using CEFInjector.DirectXHook.Hook.Common;
 using CEFInjector.DirectXHook.Hook.DX11;
 using CEFInjector.DirectXHook.Interface;
+using SharpDX;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-using Rectangle = SharpDX.Rectangle;
 
 namespace CEFInjector.DirectXHook.Hook
 {
@@ -225,7 +226,7 @@ namespace CEFInjector.DirectXHook.Hook
             return DXGISwapChain_ResizeTargetHook.Original(swapChainPtr, ref newTargetParameters);
         }
 
-        void EnsureResources(SharpDX.Direct3D11.Device device, Texture2DDescription description, Rectangle captureRegion, ScreenshotRequest request)
+        void EnsureResources(SharpDX.Direct3D11.Device device, Texture2DDescription description, SharpDX.Rectangle captureRegion, ScreenshotRequest request)
         {
             if (_device != null && request.Resize != null && (_resizedRT == null || (_resizedRT.Device.NativePointer != _device.NativePointer || _resizedRT.Description.Width != request.Resize.Value.Width || _resizedRT.Description.Height != request.Resize.Value.Height)))
             {
@@ -316,12 +317,16 @@ namespace CEFInjector.DirectXHook.Hook
             _finalRTMapped = false;
         }
 
+        private Texture2D _tex;
         public void SetBitmap(Bitmap bt)
         {
             MainBitmap = bt;
+            //((ImageElement)this.OverlayEngine.Overlays[0].Elements[0]).Bitmap?.Dispose();
             ((ImageElement) this.OverlayEngine.Overlays[0].Elements[0]).Bitmap = bt;
             this.OverlayEngine.FlushCache();
-        }
+
+            //((TextElement) this.OverlayEngine.Overlays[0].Elements[1]).Text = "GC: " + SharpDX.Diagnostics.ObjectTracker.ReportActiveObjects();
+       }
 
         public Bitmap MainBitmap;
         private int counter;
@@ -337,6 +342,7 @@ namespace CEFInjector.DirectXHook.Hook
         {
             this.Frame();
             SwapChain swapChain = (SharpDX.DXGI.SwapChain)swapChainPtr;
+
             try
             {
                 #region Draw overlay (after screenshot so we don't capture overlay as well)
