@@ -54,7 +54,7 @@ namespace GTANetworkShared
         public bool SteamPowered { get; set; }
         public bool HideNametagsWhenZoomedOutMap { get; set; }
         public string UpdateChannel { get; set; }
-
+        
         public PlayerSettings()
         {
             MasterServerAddress = "http://148.251.18.67:8888/";

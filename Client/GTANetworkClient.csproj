@@ -83,9 +83,6 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Xilium.CefGlue">
-      <HintPath>..\libs\Xilium.CefGlue.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BiDictionarity.cs" />

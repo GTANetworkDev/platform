@@ -15,11 +15,12 @@ namespace GTANetwork
 {
 	public class ChatThread : Script
 	{
+        
 		public ChatThread()
 		{
 			base.Tick += (sender, args) =>
 			{
-			    if (Main.Chat != null && Main.MainMenu != null && (!Main.MainMenu.Visible || Main.MainMenu.TemporarilyHidden))
+			    if (Main.Chat != null && Main.ChatVisible && Main.MainMenu != null && (!Main.MainMenu.Visible || Main.MainMenu.TemporarilyHidden))
 				{
 					Main.Chat.Tick();
 
@@ -245,7 +246,7 @@ namespace GTANetwork
             else if (key == Keys.PageDown && Main.IsOnServer() && _pagingIndex != 0)
                 _pagingIndex--;
 
-            if (!IsFocused) return;
+            if (!IsFocused || !Main.ChatVisible) return;
 
             if (key == Keys.Up && _inputHistory.Count > _historyIndex + 1)
             {

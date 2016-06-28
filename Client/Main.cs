@@ -94,6 +94,7 @@ namespace GTANetwork
         public static SynchronizationMode GlobalSyncMode;
         public static bool LerpRotaion = true;
         public static bool RemoveGameEntities = true;
+        public static bool ChatVisible = true;
 
         public static int LocalTeam = -1;
         public int SpectatingEntity;
@@ -2455,6 +2456,11 @@ namespace GTANetwork
 
                 MainMenu.RefreshIndex();
             }
+
+            if (e.KeyCode == Keys.F7)
+            {
+                ChatVisible = !ChatVisible;
+            }
             
 
             if (e.KeyCode == Keys.G && !Game.Player.Character.IsInVehicle() && IsOnServer() && !Chat.IsFocused)
@@ -2518,7 +2524,7 @@ namespace GTANetwork
                 }
             }
 
-            if (e.KeyCode == Keys.T && IsOnServer())
+            if (e.KeyCode == Keys.T && IsOnServer() && ChatVisible)
             {
                 if (!_oldChat)
                 {
