@@ -12,7 +12,7 @@ namespace GTANetwork
         {
             var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
                 Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\settings.xml";
-            if (!File.Exists(filePath)) return null;
+            if (!File.Exists(filePath)) return new Settings();
 
             using (var stream = File.OpenRead(filePath))
             {
