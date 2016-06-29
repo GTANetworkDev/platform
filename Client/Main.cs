@@ -1760,27 +1760,27 @@ namespace GTANetwork
                 obj.Flag = 0;
 
                 if (player.IsRagdoll)
-                    obj.Flag |= (short)PedDataFlags.Ragdoll;
+                    obj.Flag |= (int)PedDataFlags.Ragdoll;
                 if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 0 &&
                     Game.Player.Character.IsInAir)
-                    obj.Flag |= (short) PedDataFlags.InFreefall;
+                    obj.Flag |= (int) PedDataFlags.InFreefall;
                 if (player.IsInMeleeCombat)
-                    obj.Flag |= (short)PedDataFlags.InMeleeCombat;
+                    obj.Flag |= (int)PedDataFlags.InMeleeCombat;
                 if (aiming)
-                    obj.Flag |= (short)PedDataFlags.Aiming;
+                    obj.Flag |= (int)PedDataFlags.Aiming;
                 if (shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
-                    obj.Flag |= (short)PedDataFlags.Shooting;
+                    obj.Flag |= (int)PedDataFlags.Shooting;
                 if (Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle))
-                    obj.Flag |= (short)PedDataFlags.Jumping;
+                    obj.Flag |= (int)PedDataFlags.Jumping;
                 if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 2)
-                    obj.Flag |= (short)PedDataFlags.ParachuteOpen;
+                    obj.Flag |= (int)PedDataFlags.ParachuteOpen;
                 if (player.IsInCover())
-                    obj.Flag |= (short) PedDataFlags.IsInCover;
+                    obj.Flag |= (int) PedDataFlags.IsInCover;
                 if (!Function.Call<bool>((Hash) 0x6A03BF943D767C93, player))
-                    obj.Flag |= (short) PedDataFlags.IsInLowerCover;
+                    obj.Flag |= (int) PedDataFlags.IsInLowerCover;
                 if (player.IsInCoverFacingLeft)
-                    obj.Flag |= (short) PedDataFlags.IsInCoverFacingLeft;
-
+                    obj.Flag |= (int) PedDataFlags.IsInCoverFacingLeft;
+                
                 obj.Speed = player.Velocity.Length();
 
                 var bin = SerializeBinary(obj);
@@ -1805,79 +1805,7 @@ namespace GTANetwork
                 _messagesSent++;
             }
         }
-        /*
-        public static void SendPedData(Ped ped)
-        {
-            if (ped.IsInVehicle())
-            {
-                var veh = ped.CurrentVehicle;
 
-                var obj = new VehicleData();
-                obj.Position = veh.Position.ToLVector();
-                //obj.Quaternion = veh.Quaternion.ToLQuaternion();
-                obj.Quaternion = veh.Rotation.ToLVector();
-                obj.PedModelHash = ped.Model.Hash;
-                obj.VehicleModelHash = veh.Model.Hash;
-                obj.PrimaryColor = (int)veh.PrimaryColor;
-                obj.SecondaryColor = (int)veh.SecondaryColor;
-                obj.PlayerHealth = ped.Health;
-                obj.VehicleHealth = veh.Health;
-                obj.VehicleSeat = Util.GetPedSeat(ped);
-                obj.Name = ped.Handle.ToString();
-                obj.Speed = veh.Speed;
-                obj.IsSirenActive = veh.SirenActive;
-
-                var bin = SerializeBinary(obj);
-
-                var msg = _client.CreateMessage();
-                msg.Write((int)PacketType.NpcVehPositionData);
-                msg.Write(bin.Length);
-                msg.Write(bin);
-
-                _client.SendMessage(msg, NetDeliveryMethod.Unreliable, _channel);
-
-                _bytesSent += bin.Length;
-                _messagesSent++;
-            }
-            else
-            {
-                bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, ped.Handle);
-
-                Vector3 aimCoord = new Vector3();
-                if (shooting)
-                    aimCoord = Util.GetLastWeaponImpact(ped);
-
-                var obj = new PedData();
-                obj.AimCoords = aimCoord.ToLVector();
-                obj.Position = ped.Position.ToLVector();
-                //obj.Quaternion = ped.Quaternion.ToLQuaternion();
-                obj.Quaternion = ped.Rotation.ToLVector();
-
-                obj.PedModelHash = ped.Model.Hash;
-                obj.WeaponHash = (int)ped.Weapons.Current.Hash;
-                obj.PlayerHealth = ped.Health;
-                obj.Name = ped.Handle.ToString();
-                obj.IsAiming = false;
-                obj.IsShooting = shooting;
-                obj.IsJumping = Function.Call<bool>(Hash.IS_PED_JUMPING, ped.Handle);
-                obj.IsParachuteOpen = Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, ped.Handle) == 2;
-
-                var bin = SerializeBinary(obj);
-
-                var msg = _client.CreateMessage();
-
-                msg.Write((int)PacketType.NpcPedPositionData);
-                msg.Write(bin.Length);
-                msg.Write(bin);
-
-                _client.SendMessage(msg, NetDeliveryMethod.Unreliable, _channel);
-
-                _bytesSent += bin.Length;
-                _messagesSent++;
-            }
-        }
-        */
-        
         public static void InvokeFinishedDownload()
         {
             var confirmObj = Client.CreateMessage();
@@ -2683,12 +2611,12 @@ namespace GTANetwork
                             Opponents[data.NetHandle].Latency = data.Latency;
 	                        Opponents[data.NetHandle].SteeringScale = data.Steering;
 
-							Opponents[data.NetHandle].IsVehDead = (data.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
-                            Opponents[data.NetHandle].IsHornPressed = (data.Flag & (byte)VehicleDataFlags.PressingHorn) > 0;
+							Opponents[data.NetHandle].IsVehDead = (data.Flag & (short)VehicleDataFlags.VehicleDead) > 0;
+                            Opponents[data.NetHandle].IsHornPressed = (data.Flag & (short)VehicleDataFlags.PressingHorn) > 0;
                             Opponents[data.NetHandle].Speed = data.Speed;
-                            Opponents[data.NetHandle].Siren = (data.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
-                            Opponents[data.NetHandle].IsShooting = (data.Flag & (byte)VehicleDataFlags.Shooting) > 0;
-                            Opponents[data.NetHandle].IsAiming = (data.Flag & (byte)VehicleDataFlags.Aiming) > 0;
+                            Opponents[data.NetHandle].Siren = (data.Flag & (short)VehicleDataFlags.SirenActive) > 0;
+                            Opponents[data.NetHandle].IsShooting = (data.Flag & (short)VehicleDataFlags.Shooting) > 0;
+                            Opponents[data.NetHandle].IsAiming = (data.Flag & (short)VehicleDataFlags.Aiming) > 0;
                             Opponents[data.NetHandle].CurrentWeapon = data.WeaponHash;
                             if (data.AimCoords != null)
                                 Opponents[data.NetHandle].AimCoords = data.AimCoords.ToVector();
@@ -2729,16 +2657,16 @@ namespace GTANetwork
                             Opponents[data.NetHandle].CurrentWeapon = data.WeaponHash;
                             Opponents[data.NetHandle].Latency = data.Latency;
 
-                            Opponents[data.NetHandle].IsFreefallingWithParachute = (data.Flag & (short)PedDataFlags.InFreefall) > 0;
-                            Opponents[data.NetHandle].IsInMeleeCombat = (data.Flag & (short)PedDataFlags.InMeleeCombat) > 0;
-                            Opponents[data.NetHandle].IsRagdoll = (data.Flag & (short)PedDataFlags.Ragdoll) > 0;
-                            Opponents[data.NetHandle].IsAiming = (data.Flag & (short)PedDataFlags.Aiming) > 0;
-                            Opponents[data.NetHandle].IsJumping = (data.Flag & (short)PedDataFlags.Jumping) > 0;
-                            Opponents[data.NetHandle].IsShooting = (data.Flag & (short)PedDataFlags.Shooting) > 0;
-                            Opponents[data.NetHandle].IsParachuteOpen = (data.Flag & (short)PedDataFlags.ParachuteOpen) > 0;
-                            Opponents[data.NetHandle].IsInCover = (data.Flag & (short)PedDataFlags.IsInCover) > 0;
-                            Opponents[data.NetHandle].IsInLowCover = (data.Flag & (short)PedDataFlags.IsInLowerCover) > 0;
-                            Opponents[data.NetHandle].IsCoveringToLeft = (data.Flag & (short)PedDataFlags.IsInCoverFacingLeft) > 0;
+                            Opponents[data.NetHandle].IsFreefallingWithParachute = (data.Flag & (int)PedDataFlags.InFreefall) > 0;
+                            Opponents[data.NetHandle].IsInMeleeCombat = (data.Flag & (int)PedDataFlags.InMeleeCombat) > 0;
+                            Opponents[data.NetHandle].IsRagdoll = (data.Flag & (int)PedDataFlags.Ragdoll) > 0;
+                            Opponents[data.NetHandle].IsAiming = (data.Flag & (int)PedDataFlags.Aiming) > 0;
+                            Opponents[data.NetHandle].IsJumping = (data.Flag & (int)PedDataFlags.Jumping) > 0;
+                            Opponents[data.NetHandle].IsShooting = (data.Flag & (int)PedDataFlags.Shooting) > 0;
+                            Opponents[data.NetHandle].IsParachuteOpen = (data.Flag & (int)PedDataFlags.ParachuteOpen) > 0;
+                            Opponents[data.NetHandle].IsInCover = (data.Flag & (int)PedDataFlags.IsInCover) > 0;
+                            Opponents[data.NetHandle].IsInLowCover = (data.Flag & (int)PedDataFlags.IsInLowerCover) > 0;
+                            Opponents[data.NetHandle].IsCoveringToLeft = (data.Flag & (int)PedDataFlags.IsInCoverFacingLeft) > 0;
                         }
                     }
                     break;

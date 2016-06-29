@@ -111,8 +111,8 @@ namespace GTANetworkShared
         InMeleeCombat = 1 << 5,
         InFreefall = 1 << 6,
         IsInCover = 1 << 7,
-        IsInLowerCover = 1 << 7,
-        IsInCoverFacingLeft = 1 << 8,
+        IsInLowerCover = 1 << 8,
+        IsInCoverFacingLeft = 1 << 9,
     }
 
     public enum ConnectionChannel
@@ -596,7 +596,7 @@ namespace GTANetworkShared
         [ProtoMember(11)]
         public byte PedArmor { get; set; }
         [ProtoMember(12)]
-        public short Flag { get; set; }
+        public int Flag { get; set; }
     }
 
     [ProtoContract]
