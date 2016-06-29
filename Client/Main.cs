@@ -2013,6 +2013,8 @@ namespace GTANetwork
             if (display)
             {
                 Debug();
+
+                //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
             DEBUG_STEP = 4;
             if (_debugWindow)
@@ -2020,6 +2022,8 @@ namespace GTANetwork
                 _debug.Visible = true;
                 _debug.Draw();
             }
+
+
 
 
             /*

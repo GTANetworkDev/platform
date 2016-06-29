@@ -1299,7 +1299,7 @@ namespace GTANetwork
 					3))
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-					8f, 10f, -1, 1, -8f, 1, 1, 1);
+					8f, 10f, -1, 1 | 2147483648, -8f, 1, 1, 1);
 			}
 
             
@@ -1560,35 +1560,20 @@ namespace GTANetwork
             {
                 syncMode = SynchronizationMode.DeadReckoning;
             }
-
-            if ((_lastPosition.X == 0 && _lastPosition.Y == 0 && _lastPosition.Z == 0) || AverageLatency == 0)
-            {
-                syncMode = SynchronizationMode.Teleport;
-            }
-
+            
             LogManager.DebugLog("LASTPOS : " + _lastPosition);
 
             if (syncMode == SynchronizationMode.DeadReckoning)
             {
                 var dir = Position - _lastPosition;
-
-                float factor = (float)((Environment.TickCount - LastUpdateReceived)/AverageLatency);
-
-                var posTarget = Vector3.Lerp(Position, Position + dir, factor);
-
-                LogManager.DebugLog("DR POS FOR " + Name + ": " + posTarget);
-                Character.PositionNoOffset = posTarget;
-
-
-                /*
-
+                
                 var vdir = PedVelocity - _lastPedVel;
                 var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                    (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                    Environment.TickCount - LastUpdateReceived,
                     (int)AverageLatency);
 
                 var posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                    (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                    Environment.TickCount - LastUpdateReceived,
                     (int)AverageLatency);
 
                 if (GetPedSpeed(PedVelocity.Length()) > 0)
@@ -1602,29 +1587,13 @@ namespace GTANetwork
                     posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
                         (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
                     Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
-                        posTarget.Z, 0, 0, 0, 0);
+                        posTarget.Z, 0, 0, 0);
                 }
                 else
                 {
                     Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
-                        Position.Z, 0, 0, 0, 0);
+                        Position.Z, 0, 0, 0);
                 }
-
-                */
-            }
-            else if (syncMode == SynchronizationMode.EntityLerping)
-            {
-                /*var target = Util.LinearVectorLerp(_lastPosition, Position,
-                    Environment.TickCount - LastUpdateReceived,
-                    (int)AverageLatency);*/
-
-                //var target = Vector3.Lerp(_lastPosition, Position)
-
-                //LogManager.DebugLog("DR POS FOR " + Name + ": " + target);
-                //Character.PositionNoOffset = target;
-                /*
-                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z,
-                    0, 0, 0, 0);*/
             }
             else if (syncMode == SynchronizationMode.Teleport)
             {
