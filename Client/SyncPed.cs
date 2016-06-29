@@ -48,6 +48,8 @@ namespace GTANetwork
         public Vehicle MainVehicle { get; set; }
         public bool IsInActionMode;
         public bool IsInCover;
+        public bool IsInLowCover;
+        public bool IsCoveringToLeft;
         public bool IsInMeleeCombat;
         public bool IsFreefallingWithParachute;
         public bool IsShooting;
@@ -1000,7 +1002,7 @@ namespace GTANetwork
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character,
 					Util.LoadDict("skydive@base"), "free_idle",
-					8f, 1f, -1, 0, -8f, 1, 1, 1);
+					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 		}
 
@@ -1039,7 +1041,7 @@ namespace GTANetwork
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character,
 					Util.LoadDict("skydive@parachute@first_person"), "chute_idle_right",
-					8f, 1f, -1, 0, -8f, 1, 1, 1);
+					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 			DEBUG_STEP = 26;
 		}
@@ -1102,7 +1104,7 @@ namespace GTANetwork
 	    void DisplayMeleeCombat()
 	    {
             string secondaryAnimDict = null;
-			var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+			var ourAnim = GetMovementAnim(GetPedSpeed(Speed), false ,false);
 			var hands = GetWeaponHandsHeld(CurrentWeapon);
 			var secAnim = ourAnim;
 			if (hands == 3) secondaryAnimDict = "move_strafe@melee_small_weapon";
@@ -1116,20 +1118,22 @@ namespace GTANetwork
 			var animDict = GetAnimDictionary();
 
 
+
 			if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-					8f, 1f, -1, 0, -8f, 1, 1, 1);
+					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 
 			if (secondaryAnimDict != null &&
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, secAnim,
 					3))
 			{
+                Character.Task.ClearSecondary();
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), secAnim,
-					8f, 1f, -1, 32 | 16, -8f, 1, 1, 1);
+					8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
 			}
 
 			UpdatePlayerPedPos();
@@ -1139,9 +1143,10 @@ namespace GTANetwork
 	    {
             var hands = GetWeaponHandsHeld(CurrentWeapon);
 
-			if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
-			{
+            Character.Task.ClearSecondary();
 
+            if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
+			{
 				Character.Task.AimAt(AimCoords, -1);
 			}
 
@@ -1196,7 +1201,7 @@ namespace GTANetwork
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(ourAnim.Split()[0]),
 					ourAnim.Split()[1],
-					8f, 1f, -1, 0, -8f, 1, 1, 1);
+					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 
 			if (Main.LerpRotaion)
@@ -1212,16 +1217,12 @@ namespace GTANetwork
 
 	    void DisplayWeaponShootingAnimation()
 	    {
-            var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+            var ourAnim = GetMovementAnim(GetPedSpeed(Speed), IsInCover, IsCoveringToLeft);
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
 
-			if (secondaryAnimDict != null &&
-				Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
-					3))
-			{
-				Character.Task.ClearAnimation(animDict, ourAnim);
-			}
+            Character.Task.ClearSecondary();
+            
 			if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
 			{
 				Character.Task.ClearAnimation(animDict, ourAnim);
@@ -1284,30 +1285,35 @@ namespace GTANetwork
 
 	    void DisplayWalkingAnimation()
 	    {
-            var ourAnim = GetMovementAnim(GetPedSpeed(Speed));
+            var ourAnim = GetMovementAnim(GetPedSpeed(Speed), IsInCover, IsCoveringToLeft);
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
+
 			DEBUG_STEP = 34;
 			if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-					8f, 1f, -1, 0, -8f, 1, 1, 1);
+					8f, 10f, -1, 1, -8f, 1, 1, 1);
 			}
 
             
 
 			// BUG: Animation doesn't clear for 1-2 seconds after aiming.
 
-			/*
+			
 			if (secondaryAnimDict != null &&
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
 					3))
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
-					8f, 1f, -1, 32 | 16, -8f, 1, 1, 1);
-			}*/
+					8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
+			}
+            else if (secondaryAnimDict == null)
+            {
+                Character.Task.ClearSecondary();
+            }
 		}
 
 		bool UpdateOnFootPosition()
@@ -1530,6 +1536,8 @@ namespace GTANetwork
 
         public string GetAnimDictionary(string ourAnim = "")
         {
+            if (IsInCover) return GetCoverIdleAnimDict();
+
             string dict = "move_m@generic";
 
             if (Character.Gender == Gender.Female)
@@ -1635,6 +1643,18 @@ namespace GTANetwork
             }
         }
 
+        public string GetCoverIdleAnimDict()
+        {
+            if (!IsInCover) return "";
+            var altitude = IsInLowCover ? "low" : "high";
+
+            var hands = GetWeaponHandsHeld(CurrentWeapon);
+            if (hands == 1) return "cover@idles@1h@" + altitude +"@_a";
+            if (hands == 2 || hands == 5) return "cover@idles@2h@" + altitude +"@_a";
+            if (hands == 3 || hands == 4 || hands == 0) return "cover@idles@unarmed@" + altitude + "@_a";
+            return "";
+        }
+
         public string GetSecondaryAnimDict()
         {
 	        if (CurrentWeapon == unchecked((int) WeaponHash.Unarmed)) return null;
@@ -1724,8 +1744,13 @@ namespace GTANetwork
             return 0;
         }
 
-        public static string GetMovementAnim(int speed)
+        public static string GetMovementAnim(int speed, bool inCover, bool coverFacingLeft)
         {
+            if (inCover)
+            {
+                return coverFacingLeft ? "idle_l_corner" : "idle_r_corner";
+            }
+
             if (speed == 0) return "idle";
             if (speed == 1) return "walk";
             if (speed == 2) return "run";
