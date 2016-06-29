@@ -531,6 +531,7 @@ namespace GTANetwork
 				{
 					if (MainVehicle != null) MainVehicle.Delete();
 					MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
+				    MainVehicle.HasCollision = false;
 				}
 				else
 					MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
@@ -805,16 +806,19 @@ namespace GTANetwork
 	    void UpdateVehicleMountedWeapon()
 	    {
             if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)VehicleHash, VehicleSeat))
-			{
-				if (Game.GameTime - _lastVehicleAimUpdate > 30)
+            {
+                var delay = 30;
+                //if ((VehicleHash) VehicleHash == GTA.Native.VehicleHash.Rhino) delay = 300;
+
+				if (Game.GameTime - _lastVehicleAimUpdate > delay)
 				{
 					Function.Call(Hash.TASK_VEHICLE_AIM_AT_COORD, Character, AimCoords.X, AimCoords.Y,
 						AimCoords.Z);
 					_lastVehicleAimUpdate = Game.GameTime;
 				}
 
-				if (IsShooting)
-				{
+                if (IsShooting)
+                {
 					if (((VehicleHash)VehicleHash == GTA.Native.VehicleHash.Rhino &&
 						 DateTime.Now.Subtract(_lastRocketshot).TotalMilliseconds > 1000) ||
 						((VehicleHash)VehicleHash != GTA.Native.VehicleHash.Rhino))
@@ -833,7 +837,7 @@ namespace GTANetwork
 						var hash = WeaponHash.CombatPDW;
 						if ((VehicleHash)VehicleHash == GTA.Native.VehicleHash.Rhino)
 						{
-							hash = WeaponHash.RPG;
+						    hash = (WeaponHash) 1945616459;
 						}
 
 						Vector3 tPos = baseTurretPos;

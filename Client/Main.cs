@@ -3779,6 +3779,7 @@ namespace GTANetwork
         private SyncPed _debugSyncPed;
         private int _debugPing = 30;
         private int _debugFluctuation = 0;
+        private Camera _debugCamera;
         private Random _r = new Random();
         private void Debug()
         {
@@ -3825,23 +3826,36 @@ namespace GTANetwork
                     _debugSyncPed.SteeringScale = veh.SteeringScale;
                     _debugSyncPed.VehicleRPM = veh.CurrentRPM;
 
+
                     if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                     {
                         _debugSyncPed.CurrentWeapon = GetCurrentVehicleWeaponHash(Game.Player.Character);
-                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleFlyAttack);
+                        _debugSyncPed.IsShooting = Game.IsEnabledControlPressed(0, Control.VehicleFlyAttack);
                     }
                     else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                     {
-                        _debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.VehicleAttack);
                         _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
+                        _debugSyncPed.IsShooting = Game.IsEnabledControlPressed(0, Control.VehicleAttack);
                     }
                     else
                     {
-                        //_debugSyncPed.IsShooting = Game.IsControlPressed(0, Control.Attack);
-                        _debugSyncPed.IsShooting = Game.Player.Character.IsShooting;
-                        _debugSyncPed.CurrentWeapon = (int)Game.Player.Character.Weapons.Current.Hash;
+                        _debugSyncPed.IsShooting = (Game.IsEnabledControlPressed(0, Control.Attack) &&
+                                                    Game.Player.Character.Weapons.Current?.AmmoInClip != 0);
+                            
+                        _debugSyncPed.IsAiming = Game.IsEnabledControlPressed(0, Control.Aim) && Game.Player.Character.Weapons.Current?.AmmoInClip != 0;
+                        
                         _debugSyncPed.AimCoords = RaycastEverything(new Vector2(0, 0));
+
+                        var outputArg = new OutputArgument();
+                        Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
+                        _debugSyncPed.CurrentWeapon = outputArg.GetResult<int>();
                     }
+
+                    //if (_debugCamera == null)
+                        //_debugCamera = World.CreateCamera(player.Position + new Vector3(0, 0, 10f), new Vector3(), 60f);
+                    //_debugCamera.PointAt(player);
+                    //_debugCamera.Position = player.GetOffsetInWorldCoords(new Vector3(0, -10f, 20f));
+                    //World.RenderingCamera = _debugCamera;
                 }
                 else
                 {
