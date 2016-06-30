@@ -448,7 +448,7 @@ namespace GTANetworkServer
                     {
                         if (ourResource.Info.Info.Gamemodes?.Split(',').Length != 1 && Gamemode == null)
                         {}
-                        else if (ourResource.Info.Info.Gamemodes?.Split(',').Length == 1 && Gamemode == null)
+                        else if (ourResource.Info.Info.Gamemodes?.Split(',').Length == 1 && (Gamemode == null || !ourResource.Info.Info.Gamemodes.Split(',').Contains(Gamemode.DirectoryName)))
                         {
                             if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
                             StartResource(ourResource.Info.Info.Gamemodes?.Split(',')[0]);
