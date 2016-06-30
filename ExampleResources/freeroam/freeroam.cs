@@ -98,37 +98,6 @@ public class FreeroamScript : Script
             }
         }
 
-        if (args[0] == "/settime")
-        {
-            if (args.Length < 3)
-            {
-                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /settime [hours] [minutes]");
-            }
-            else
-            {
-                int hours, mins;
-                if (!int.TryParse(args[1], out hours) || !int.TryParse(args[2], out mins))
-                {
-                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
-                        return;
-                }
-
-                API.setTime(hours, mins);
-            }
-        }
-
-        if (args[0] == "/setweather")
-        {
-            if (args.Length < 2)
-            {
-                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /setweather [weather]");
-            }
-            else
-            {
-                API.setWeather(args[1]);
-            }
-        }
-
         if (cmd == "/unspec")
         {
             API.unspectatePlayer(sender);

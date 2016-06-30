@@ -58,6 +58,37 @@ public class AdminScript : Script
 			}
 		}
 
+		if (arguments[0] == "/settime")
+        {
+            if (arguments.Length < 3)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /settime [hours] [minutes]");
+            }
+            else
+            {
+                int hours, mins;
+                if (!int.TryParse(arguments[1], out hours) || !int.TryParse(arguments[2], out mins))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                API.setTime(hours, mins);
+            }
+        }
+
+        if (arguments[0] == "/setweather")
+        {
+            if (arguments.Length < 2)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /setweather [weather]");
+            }
+            else
+            {
+                API.setWeather(arguments[1]);
+            }
+        }
+
 		if (cmd == "/logout")
 		{
 			API.logoutPlayer(sender);
