@@ -95,10 +95,12 @@ namespace GTANetworkServer
                 };
             }
 
+            const int tickRate = 60;
+
             while (!CloseProgram)
             {
                 ServerInstance.Tick();
-                Thread.Sleep(10); // Reducing CPU Usage (Win7 from average 15 % to 0-1 %, Linux from 100 % to 0-2 %)
+                Thread.Sleep(1000/tickRate);
             }
 
         }

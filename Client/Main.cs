@@ -1636,11 +1636,13 @@ namespace GTANetwork
             return _pedClothes;
         }
 
-
+        private static int _lastDataSend;
+        private static int _tickRate = 60;
 	    private static bool _sendData = true;
         public static void SendPlayerData()
         {
-
+            if (Environment.TickCount - _lastDataSend < 1000 / _tickRate) return;
+            _lastDataSend = Environment.TickCount;
             if (IsSpectating || !_sendData) return;
             var player = Game.Player.Character;
             
