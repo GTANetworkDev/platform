@@ -14,7 +14,6 @@ namespace GTANetwork
     public enum SynchronizationMode
     {
         Dynamic,
-        EntityLerping,
         DeadReckoning,
         Teleport,
         TeleportRudimentary,
@@ -668,10 +667,7 @@ namespace GTANetwork
 			var syncMode = Main.GlobalSyncMode;
 			if (syncMode == SynchronizationMode.Dynamic)
 			{
-				if (AverageLatency > 70)
-					syncMode = SynchronizationMode.EntityLerping;
-				else
-					syncMode = SynchronizationMode.DeadReckoning;
+				syncMode = SynchronizationMode.DeadReckoning;
 			}
 			DEBUG_STEP = 20;
 			if (syncMode == SynchronizationMode.DeadReckoning)
@@ -699,31 +695,6 @@ namespace GTANetwork
 				else
 				{
 				    MainVehicle.PositionNoOffset = VehiclePosition;
-				}
-			}
-			else if (syncMode == SynchronizationMode.EntityLerping)
-			{
-				var target = Util.LinearVectorLerp(_lastVehVel, VehicleVelocity,
-                    Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
-
-				var posTarget = Util.LinearVectorLerp(_lastVehiclePos, VehiclePosition,
-                    Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
-
-				if (Speed > 0)
-				{
-					MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
-					_stopTime = DateTime.Now;
-					_carPosOnUpdate = MainVehicle.Position;
-				}
-				else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
-				{
-					posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
-						(int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-				    MainVehicle.PositionNoOffset = posTarget;
-				}
-				else
-				{
-                    MainVehicle.PositionNoOffset = VehiclePosition;
 				}
 			}
 			else if (syncMode == SynchronizationMode.Teleport)
