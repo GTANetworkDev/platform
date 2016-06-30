@@ -19,6 +19,8 @@
         PetrolCan = 883325847,
         StunGun = 911657153,
         HeavyShotgun = 984333226,
+        DoubleBarrelShotgun = -275439685,
+        CompactRifle = 1649403952,
         Minigun = 1119849093,
         GolfClub = 1141786504,
         FlareGun = 1198879012,

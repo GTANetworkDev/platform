@@ -1,0 +1,83 @@
+<map>
+	<spawnpoint posX="3258.21" posY="-4565.21" posZ="118.2" />
+	<spawnpoint posX="3270.34" posY="-4564.53" posZ="118.11" />
+	<spawnpoint posX="3282.05" posY="-4587.48" posZ="118.09" />
+	<spawnpoint posX="3263.51" posY="-4589.05" posZ="183.49" />
+	<spawnpoint posX="3247.07" posY="-4586.16" posZ="118.10" />
+	<spawnpoint posX="3253.03" posY="-4604.68" posZ="116.25" />
+	<spawnpoint posX="3281.38" posY="-4605.26" posZ="116.51" />
+	<spawnpoint posX="3282.79" posY="-4630.44" posZ="115.81" />
+	<spawnpoint posX="3252.84" posY="-4626.95" posZ="115.91" />
+	<spawnpoint posX="3258.15" posY="-4634.85" posZ="115.31" />
+	<spawnpoint posX="3272" posY="-4660.3" posZ="113.86" />
+
+	<weapon model="Revolver" />
+	<weapon model="Molotov" />
+	<weapon model="DoubleBarrelShotgun" />
+	<weapon model="Gusenberg" />
+
+	<ipl name="plg_01" />
+	<ipl name="prologue01" />
+	<ipl name="prologue01_lod" />
+	<ipl name="prologue01c" />
+	<ipl name="prologue01c_lod" />
+	<ipl name="prologue01d" />
+	<ipl name="prologue01d_lod" />
+	<ipl name="prologue01e" />
+	<ipl name="prologue01e_lod" />
+	<ipl name="prologue01f" />
+	<ipl name="prologue01f_lod" />
+	<ipl name="prologue01g" />
+	<ipl name="prologue01h" />
+	<ipl name="prologue01h_lod" />
+	<ipl name="prologue01i" />
+	<ipl name="prologue01i_lod" />
+	<ipl name="prologue01j" />
+	<ipl name="prologue01j_lod" />
+	<ipl name="prologue01k" />
+	<ipl name="prologue01k_lod" />
+	<ipl name="prologue01z" />
+	<ipl name="prologue01z_lod" />
+	<ipl name="plg_02" />
+	<ipl name="prologue02" />
+	<ipl name="prologue02_lod" />
+	<ipl name="plg_03" />
+	<ipl name="prologue03" />
+	<ipl name="prologue03_lod" />
+	<ipl name="prologue03b" />
+	<ipl name="prologue03b_lod" />
+	<ipl name="prologue03_grv_dug" />
+	<ipl name="prologue03_grv_dug_lod" />
+	<ipl name="prologue_grv_torch" />
+	<ipl name="plg_04" />
+	<ipl name="prologue04" />
+	<ipl name="prologue04_lod" />
+	<ipl name="prologue04b" />
+	<ipl name="prologue04b_lod" />
+	<ipl name="prologue04_cover" />
+	<ipl name="des_protree_end" />
+	<ipl name="des_protree_start" />
+	<ipl name="des_protree_start_lod" />
+	<ipl name="plg_05" />
+	<ipl name="prologue05" />
+	<ipl name="prologue05_lod" />
+	<ipl name="prologue05b" />
+	<ipl name="prologue05b_lod" />
+	<ipl name="plg_06" />
+	<ipl name="prologue06" />
+	<ipl name="prologue06_lod" />
+	<ipl name="prologue06b" />
+	<ipl name="prologue06b_lod" />
+	<ipl name="prologue06_int" />
+	<ipl name="prologue06_int_lod" />
+	<ipl name="prologue06_pannel" />
+	<ipl name="prologue06_pannel_lod" />
+	<ipl name="prologue_m2_door" />
+	<ipl name="prologue_m2_door_lod" />
+	<ipl name="plg_occl_00" />
+	<ipl name="prologue_occl" />
+	<ipl name="plg_rd" />
+	<ipl name="prologuerd" />
+	<ipl name="prologuerdb" />
+	<ipl name="prologuerd_lod" />
+</map>
