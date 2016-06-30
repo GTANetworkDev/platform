@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using GTA;
@@ -1688,10 +1689,11 @@ namespace GTANetwork
                 }
                 else
                 {
-                    if (Game.IsEnabledControlPressed(0, Control.Attack) &&
+                    if (player.IsSubtaskActive(200) && 
+                        Game.IsEnabledControlPressed(0, Control.Attack) &&
                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
                         obj.Flag |= (byte) VehicleDataFlags.Shooting;
-                    if (Game.IsEnabledControlPressed(0, Control.Aim) &&
+                    if (player.IsSubtaskActive(200) && // or 290
                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
                         obj.Flag |= (byte)VehicleDataFlags.Aiming;
                     //obj.IsShooting = Game.Player.Character.IsShooting;
@@ -1739,7 +1741,7 @@ namespace GTANetwork
             }
             else
             {
-                bool aiming = Game.IsControlPressed(0, GTA.Control.Aim);
+                bool aiming = player.IsSubtaskActive(ESubtask.AIMED_SHOOTING_ON_FOOT); // Game.IsControlPressed(0, GTA.Control.Aim);
                 bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, player.Handle);
 
                 Vector3 aimCoord = new Vector3();
@@ -1768,7 +1770,7 @@ namespace GTANetwork
                     obj.Flag |= (int)PedDataFlags.InMeleeCombat;
                 if (aiming)
                     obj.Flag |= (int)PedDataFlags.Aiming;
-                if (shooting || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
+                if ((shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) && !player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
                     obj.Flag |= (int)PedDataFlags.Shooting;
                 if (Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle))
                     obj.Flag |= (int)PedDataFlags.Jumping;
@@ -2010,10 +2012,24 @@ namespace GTANetwork
 			
             DEBUG_STEP = 3;
 #if DEBUG
+
+            /*
+            var sb = new StringBuilder();
+            for (int i = 0; i < 1000; i++)
+            {
+                if (Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, Game.Player.Character, i))
+                    sb.Append(i + ", ");
+            }
+
+            new UIResText(sb.ToString(), new Point(), 0.35f).Draw();
+            */
             if (display)
             {
                 Debug();
-
+                //unsafe
+                //{
+                    //UI.ShowSubtitle(new IntPtr(Game.Player.Character.MemoryAddress).ToInt64().ToString("X"));
+                //}
                 //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
             DEBUG_STEP = 4;
