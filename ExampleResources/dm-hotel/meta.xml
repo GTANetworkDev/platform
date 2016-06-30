@@ -1,0 +1,4 @@
+<meta>
+    <info name="Hotel Deathmatch" author="Guadmaz" type="map" gamemodes="deathmatch" />        
+    <map src="hotel.map" />
+</meta>
