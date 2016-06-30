@@ -228,6 +228,27 @@ public class FreeroamScript : Script
             }
        }
 
+       if (args[0] == "/skin")
+        {
+            if (args.Length >= 2)
+            {
+                var vehName = args[1];
+                var vehModel = API.pedNameToModel(vehName);
+                if (vehModel == 0)
+                {
+                    API.sendNotificationToPlayer(sender, "No such model found!");
+                }
+                else
+                {
+                    API.setPlayerSkin(sender, vehModel);
+                }
+            }
+            else
+            {
+                API.sendNotificationToPlayer(sender, "USAGE: /skin [model name]");
+            }
+       }
+
        if (args[0] == "/pic")
        {
             if (args.Length >= 2)

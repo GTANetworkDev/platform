@@ -82,21 +82,7 @@ namespace GTANetworkServer
         public string Resource { get; set; }
         public string Hash { get; set; }
     }
-    /*
-    public struct ServerConfig
-    {
-        public int Port;
-        public string Name;
-        public bool PasswordProtected;
-        public string Password;
-        public string MasterServer;
-        public bool AnnounceSelf;
-        public bool AnnounceToLan;
-        public int MaxPlayers;
-        public bool ACLEnabled;
-
-    }*/
-
+    
     public class GameServer
     {
         public GameServer(ServerSettings conf)
@@ -186,6 +172,9 @@ namespace GTANetworkServer
 
         public bool AllowDisplayNames { get; set; }
 
+        public List<Resource> AvailableMaps;
+        public Resource CurrentMap;
+
         public readonly ScriptVersion ServerVersion = ScriptVersion.VERSION_0_9;
 
         //private List<ClientsideScript> _clientScripts;
@@ -201,6 +190,28 @@ namespace GTANetworkServer
                 AnnounceSelfToMaster();
             }
             
+            Program.Output("Preloading maps...");
+
+            AvailableMaps = new List<Resource>();
+
+            foreach (var dir in Directory.GetDirectories("resources").Select(f => Path.GetFileName(f)))
+            {
+                var baseDir = "resource\\" + dir + "\\";
+
+                if (!File.Exists(baseDir + "meta.xml"))
+                    continue;
+
+                var xmlSer = new XmlSerializer(typeof(ResourceInfo));
+                ResourceInfo currentResInfo;
+                using (var str = File.OpenRead(baseDir + "meta.xml"))
+                    currentResInfo = (ResourceInfo)xmlSer.Deserialize(str);
+
+                if (currentResInfo.Info.Type != ResourceType.map) continue;
+                var res = new Resource();
+                res.DirectoryName = dir;
+                res.Info = currentResInfo;
+                AvailableMaps.Add(res);
+             }
 
             Program.Output("Loading resources...");
             var list = new List<JScriptEngine>();
@@ -274,6 +285,8 @@ namespace GTANetworkServer
         {
             try
             {
+                if (RunningResources.Any(res => res.DirectoryName == resourceName)) return;
+
                 Program.Output("Starting " + resourceName);
 
                 if (!Directory.Exists("resources" + Path.DirectorySeparatorChar + resourceName))
@@ -383,7 +396,8 @@ namespace GTANetworkServer
                 
 
                 var randGen = new Random();
-                // TODO: Send new files to everyone
+                
+                if (ourResource.ClientsideScripts.Count > 0 || currentResInfo.Files.Count > 0)
                 foreach (var client in Clients)
                 {
                     var clientScripts = new ScriptCollection();
@@ -419,6 +433,39 @@ namespace GTANetworkServer
                     Downloads.Add(downloader);
                 }
 
+                if (ourResource.Info.Map != null && !string.IsNullOrWhiteSpace(ourResource.Info.Map.Path))
+                {
+                    ourResource.Map = new Map();
+                    ourResource.Map.Load("resources\\" + ourResource.DirectoryName +"\\" + ourResource.Info.Map.Path);
+
+                    if (ourResource.Info.Info.Type == ResourceType.gamemode)
+                    {
+                        if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
+                        //CurrentMap = ourResource;
+                        ourResource.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
+                    }
+                    else if (ourResource.Info.Info.Type == ResourceType.map)
+                    {
+                        if (ourResource.Info.Info.Gamemodes?.Split(',').Length != 1 && Gamemode == null)
+                        {}
+                        else if (ourResource.Info.Info.Gamemodes?.Split(',').Length == 1 && Gamemode == null)
+                        {
+                            if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
+                            StartResource(ourResource.Info.Info.Gamemodes?.Split(',')[0]);
+
+                            CurrentMap = ourResource;
+                            Gamemode.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
+                        }
+                        else if (Gamemode != null && ourResource.Info.Info.Gamemodes.Split(',').Contains(Gamemode.DirectoryName))
+                        {
+                            Program.Output("Starting map " + ourResource.DirectoryName + "!");
+                            if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
+                            CurrentMap = ourResource;
+                            Gamemode.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
+                        }
+                    }
+                }
+
                 lock (RunningResources) RunningResources.Add(ourResource);
             }
             catch (Exception ex)
@@ -443,6 +490,19 @@ namespace GTANetworkServer
                 msg.Write((int) PacketType.StopResource);
                 msg.Write(resourceName);
                 Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
+
+                if (Gamemode == ourRes)
+                {
+                    if (CurrentMap != null && CurrentMap != ourRes)
+                    {
+                        StopResource(CurrentMap.DirectoryName);
+                        CurrentMap = null;
+                    }
+                    
+                    Gamemode = null;
+                }
+
+                if (CurrentMap == ourRes) CurrentMap = null;
 
                 RunningResources.Remove(ourRes);
 

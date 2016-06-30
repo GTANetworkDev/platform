@@ -230,6 +230,18 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokeMapChange(string mapName, Map map)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.javascript)
+                    _jsEngine.Script.API.invokeMapChange(mapName, map);
+                else if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeMapChange(mapName, map);
+            }));
+        }
+
         public void InvokePlayerDisconnected(Client client, string reason)
         {
             lock (_mainQueue.SyncRoot)
@@ -370,6 +382,7 @@ namespace GTANetworkServer
         public ResourceInfo Info { get; set; }
         public List<ScriptingEngine> Engines { get; set; }
         public List<ClientsideScript> ClientsideScripts { get; set; }
+        public Map Map { get; set; }
     }
 
     public enum ScriptType
@@ -402,6 +415,16 @@ namespace GTANetworkServer
 
         [XmlElement("include")]
         public List<RequiredResource> Includes { get; set; }
+
+        [XmlElement("map")]
+        public MapSource Map { get; set; }
+    }
+
+    [XmlRoot("map")]
+    public class MapSource
+    {
+        [XmlAttribute("src")]
+        public string Path { get; set; }
     }
 
     [XmlRoot("assembly")]

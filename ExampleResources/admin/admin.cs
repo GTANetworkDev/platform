@@ -142,7 +142,7 @@ public class AdminScript : Script
 				}
 				else
 				{
-					API.kickPlayer(player, split[2]);
+					API.kickPlayer(player, string.Join(" ", split.Skip(2)));
 				}
 			}	
 			else

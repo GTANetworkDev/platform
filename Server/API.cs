@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Xml;
 using GTANetworkShared;
 using Lidgren.Network;
 
@@ -37,6 +38,7 @@ namespace GTANetworkServer
         public delegate void PlayerKilledEvent(Client player, NetHandle entityKiller, int weapon);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
         public delegate void PickupEvent(Client pickupee, NetHandle pickupHandle);
+        public delegate void MapChangeEvent(string mapName, Map map);
         #endregion
 
         #region Events
@@ -53,6 +55,12 @@ namespace GTANetworkServer
         public event PlayerEvent onPlayerRespawn;
         public event ServerEventTrigger onClientEventTrigger;
         public event PickupEvent onPlayerPickup;
+        public event MapChangeEvent onMapChange;
+
+        internal void invokeMapChange(string mapName, Map map)
+        {
+            onMapChange?.Invoke(mapName, map);
+        }
 
         internal void invokeClientEvent(Client sender, string eventName, params object[] arsg)
         {
@@ -137,6 +145,19 @@ namespace GTANetworkServer
             return Path.GetFullPath("resources\\" + ResourceParent.ResourceParent.DirectoryName);
         }
 
+        public string getCurrentGamemode()
+        {
+            return Program.ServerInstance.RunningResources.FirstOrDefault(res => res.Info.Info.Type == ResourceType.gamemode)?.DirectoryName;
+        }
+
+        public IEnumerable<string> getMapsForGamemode(string gamemode)
+        {
+            foreach (var map in Program.ServerInstance.AvailableMaps)
+            {
+                if (map.Info.Info.Gamemodes.Split(',').Contains(gamemode)) yield return map.DirectoryName;
+            }
+        }
+
         public object call(string resourceName, string scriptName, string methodName, params object[] arguments)
         {
             var ourResource = Program.ServerInstance.RunningResources.FirstOrDefault(k => k.DirectoryName == resourceName);
@@ -205,6 +226,12 @@ namespace GTANetworkServer
             if (Program.ServerInstance.LoadedIPL.Contains(iplName))
                 Program.ServerInstance.LoadedIPL.Remove(iplName);
             sendNativeToAllPlayers(0xEE6C5AD3ECE0A82D, iplName);
+        }
+
+        public void resetIplList()
+        {
+            Program.ServerInstance.RemovedIPL.Clear();
+            Program.ServerInstance.LoadedIPL.Clear();
         }
 
         public void sleep(int ms)
