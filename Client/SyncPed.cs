@@ -265,6 +265,17 @@ namespace GTANetwork
         private Vector3 _lastStart;
         private Vector3 _lastEnd;
 
+        private bool _lastReloading;
+        public bool IsReloading
+        {
+            get { return _isReloading; }
+            set
+            {
+                _lastReloading = _isReloading;
+                _isReloading = value;
+            }
+        }
+
         private int _playerSeat;
         private bool _lastDrivebyShooting;
         private bool _isStreamedIn;
@@ -340,15 +351,22 @@ namespace GTANetwork
 				Character.CanRagdoll = false;
 
 			    if (Team == -1 || Team != Main.LocalTeam)
+			    {
 			        Character.RelationshipGroup = Main.RelGroup;
+                    Function.Call(Hash.SET_PED_AS_ENEMY, Character, true);
+			    }
 			    else
+			    {
 			        Character.RelationshipGroup = Main.FriendRelGroup;
+			    }
 
 				LogManager.DebugLog("SETTINGS FIRING PATTERN " + Name);
 
 				Character.FiringPattern = FiringPattern.FullAuto;
 
 				Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character); //BUG: <- Maybe causes crash?
+
+                Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, Character, false);
 
 				LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
 
@@ -950,6 +968,12 @@ namespace GTANetwork
 
 				Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
 			}
+
+	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
+	        {
+                Character.Task.ClearAll();
+	            Character.Task.ReloadWeapon();
+	        }
 		}
 
 	    void DisplayParachuteFreefall()
@@ -1119,12 +1143,20 @@ namespace GTANetwork
 	    void DisplayAimingAnimation()
 	    {
             var hands = GetWeaponHandsHeld(CurrentWeapon);
-
+	        if (IsReloading)
+	        {
+                UpdatePlayerPedPos();
+                return;
+	        }
             Character.Task.ClearSecondary();
 
             if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
 			{
-				Character.Task.AimAt(AimCoords, -1);
+                if (Game.GameTime - _lastVehicleAimUpdate > 30)
+                {
+                    Character.Task.AimAt(AimCoords, -1);
+                    _lastVehicleAimUpdate = Game.GameTime;
+                }
 			}
 
 			var dirVector = Position - _lastPosition;
@@ -1205,42 +1237,50 @@ namespace GTANetwork
 				Character.Task.ClearAnimation(animDict, ourAnim);
 			}
 
-			Character.Task.AimAt(AimCoords, -1);
+            Function.Call(Hash.SET_AI_WEAPON_DAMAGE_MODIFIER, 1f);
+	        Function.Call(Hash.SET_PED_SHOOT_RATE, Character, 100);
 
-			var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
-			if (gunEnt != null)
-			{
-				var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
-				var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash)CurrentWeapon);
-				var speed = 0xbf800000;
-				var weaponH = (WeaponHash)CurrentWeapon;
-				/*if (weaponH == WeaponHash.RPG || weaponH == WeaponHash.HomingLauncher ||
-					weaponH == WeaponHash.GrenadeLauncher || weaponH == WeaponHash.Firework)
-					speed = 0xbf800000;*/
+	        if (!WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
+	        {
+	            Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, Character, AimCoords.X, AimCoords.Y, AimCoords.Z, true);
+	        }
+	        else
+	        {
+	            Character.Task.AimAt(AimCoords, -1);
 
-				if (weaponH == WeaponHash.Minigun)
-					weaponH = WeaponHash.CombatPDW;
+	            var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
+	            if (gunEnt != null)
+	            {
+	                var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+	                var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
+	                var speed = 0xbf800000;
+	                var weaponH = (WeaponHash) CurrentWeapon;
 
-				var dir = (AimCoords - start);
-				dir.Normalize();
-				var end = start + dir * 100f;
 
-			    if (IsFriend())
-			        damage = 0;
+	                if (weaponH == WeaponHash.Minigun)
+	                    weaponH = WeaponHash.CombatPDW;
 
-				Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z,
-					end.X,
-					end.Y, end.Z, damage, true, (int)weaponH, Character, true, false, speed);
+	                var dir = (AimCoords - start);
+	                dir.Normalize();
+	                var end = start + dir*100f;
 
-				_lastStart = start;
-				_lastEnd = end;
-			}
-		}
+	                if (IsFriend())
+	                    damage = 0;
+
+	                Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z,
+	                    end.X,
+	                    end.Y, end.Z, damage, true, (int) weaponH, Character, false, true, speed);
+
+	                _lastStart = start;
+	                _lastEnd = end;
+	            }
+	        }
+	    }
 
 	    void DisplayShootingAnimation()
 	    {
             var hands = GetWeaponHandsHeld(CurrentWeapon);
-
+            if (IsReloading) return;
 			if (hands == 3 || hands == 4 || hands == 0)
 			{
 				DisplayMeleeAnimation(hands);
@@ -1262,6 +1302,8 @@ namespace GTANetwork
 
 	    void DisplayWalkingAnimation()
 	    {
+	        if (IsReloading) return;
+
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
@@ -1404,6 +1446,8 @@ namespace GTANetwork
 
 		private int DEBUG_STEP_backend;
         private bool _initialized;
+        private bool _isReloading;
+
         public void DisplayLocally()
         {
             try

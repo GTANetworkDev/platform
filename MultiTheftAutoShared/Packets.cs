@@ -113,6 +113,7 @@ namespace GTANetworkShared
         IsInCover = 1 << 7,
         IsInLowerCover = 1 << 8,
         IsInCoverFacingLeft = 1 << 9,
+        IsReloading = 1 << 10,
     }
 
     public enum ConnectionChannel
