@@ -1253,14 +1253,20 @@ namespace GTANetwork
 
             Function.Call(Hash.SET_AI_WEAPON_DAMAGE_MODIFIER, 1f);
 	        Function.Call(Hash.SET_PED_SHOOT_RATE, Character, 100);
+            Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
 
-	        if (!WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
+            if (Game.GameTime - _lastVehicleAimUpdate > 30)
+            {
+                Character.Task.AimAt(AimCoords, -1);
+                _lastVehicleAimUpdate = Game.GameTime;
+            }
+
+            if (!WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
 	        {
 	            Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, Character, AimCoords.X, AimCoords.Y, AimCoords.Z, true);
 	        }
 	        else
 	        {
-	            Character.Task.AimAt(AimCoords, -1);
 
 	            var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
 	            if (gunEnt != null)
@@ -1445,6 +1451,7 @@ namespace GTANetwork
 				}
 
 				DEBUG_STEP = 30;
+                
 
 				if (IsShooting)
 				{

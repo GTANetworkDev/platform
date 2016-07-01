@@ -67,10 +67,10 @@ namespace GTANetwork
             {
                 default:
                     return false;
-                case WeaponHash.RPG:
+                /*case WeaponHash.RPG:
                 case WeaponHash.HomingLauncher:
                 case WeaponHash.GrenadeLauncher:
-                case WeaponHash.Firework:
+                case WeaponHash.Firework:*/
                 case WeaponHash.Molotov:
                 case WeaponHash.BZGas:
                 case WeaponHash.SmokeGrenade:

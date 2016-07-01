@@ -1636,13 +1636,9 @@ namespace GTANetwork
             return _pedClothes;
         }
 
-        private static int _lastDataSend;
-        private static int _tickRate = 60;
 	    private static bool _sendData = true;
         public static void SendPlayerData()
         {
-            if (Environment.TickCount - _lastDataSend < 1000 / _tickRate) return;
-            _lastDataSend = Environment.TickCount;
             if (IsSpectating || !_sendData) return;
             var player = Game.Player.Character;
             
@@ -2039,8 +2035,9 @@ namespace GTANetwork
         private int _currentSpectatingPlayerIndex;
         private SyncPed _currentSpectatingPlayer;
         public static DateTime LastCarEnter;
+        private int _debugPed;
 
-        
+
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
@@ -2199,6 +2196,7 @@ namespace GTANetwork
 
             new UIResText(sb.ToString(), new Point(), 0.35f).Draw();
             */
+            
 
             if (display)
             {
@@ -3922,7 +3920,7 @@ namespace GTANetwork
                 _debugSyncPed.Debug = true;
             }
 
-            if (DateTime.Now.Subtract(_artificialLagCounter).TotalMilliseconds >= (_debugInterval))
+            //if (DateTime.Now.Subtract(_artificialLagCounter).TotalMilliseconds >= (_debugInterval))
             {
                 _artificialLagCounter = DateTime.Now;
                 _debugFluctuation = _r.Next(10) - 5;
@@ -3984,7 +3982,8 @@ namespace GTANetwork
                 }
                 else
                 {
-                    bool aiming = Game.IsControlPressed(0, GTA.Control.Aim);
+                    bool aiming = player.IsSubtaskActive(ESubtask.AIMED_SHOOTING_ON_FOOT) ||
+                                  player.IsSubtaskActive(ESubtask.AIMING_THROWABLE);
                     bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, player.Handle);
 
                     Vector3 aimCoord = new Vector3();
