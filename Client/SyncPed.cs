@@ -1149,7 +1149,7 @@ namespace GTANetwork
                 return;
 	        }
 
-
+#if !CRASHTEST
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
                 Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
@@ -1161,8 +1161,10 @@ namespace GTANetwork
                         8f, 10f, -1, 0, -8f, 1, 1, 1);
                 }
             }
-            else if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
-			{
+            else
+#endif 
+            if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
+            {
                 Character.Task.ClearSecondary();
 
                 if (Game.GameTime - _lastVehicleAimUpdate > 30)
