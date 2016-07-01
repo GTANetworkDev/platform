@@ -84,6 +84,28 @@ namespace GTANetwork
             }
         }
 
+        public static bool NeedsManualRotation(int wephash)
+        {
+            var uW = unchecked((uint)wephash);
+
+            switch ((WeaponHash)uW)
+            {
+                default:
+                    return false;
+                case WeaponHash.Firework:
+                case WeaponHash.Molotov:
+                case WeaponHash.BZGas:
+                case WeaponHash.SmokeGrenade:
+                case WeaponHash.ProximityMine:
+                case WeaponHash.StickyBomb:
+                case WeaponHash.Grenade:
+                case WeaponHash.Flare:
+                case WeaponHash.Snowball:
+                case WeaponHash.Ball:
+                    return true;
+            }
+        }
+
         public static Vector3 GetVehicleWeaponMuzzle(VehicleHash model, bool rockets)
         {
             if (model == VehicleHash.Savage)

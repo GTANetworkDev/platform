@@ -1742,9 +1742,9 @@ namespace GTANetwork
             }
             else
             {
-                bool aiming = player.IsSubtaskActive(ESubtask.AIMED_SHOOTING_ON_FOOT); // Game.IsControlPressed(0, GTA.Control.Aim);
+                bool aiming = player.IsSubtaskActive(ESubtask.AIMED_SHOOTING_ON_FOOT) || player.IsSubtaskActive(ESubtask.AIMING_THROWABLE); // Game.IsControlPressed(0, GTA.Control.Aim);
                 bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, player.Handle);
-
+                
                 Vector3 aimCoord = new Vector3();
                 if (aiming || shooting)
                 {
