@@ -1148,10 +1148,23 @@ namespace GTANetwork
                 UpdatePlayerPedPos();
                 return;
 	        }
-            Character.Task.ClearSecondary();
 
-            if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
+
+            if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
+            {
+                Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+
+                if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, "weapons@projectile@", "aimlive_m", 3))
+                {
+                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict("weapons@projectile@"), "aimlive_m",
+                        8f, 10f, -1, 0, -8f, 1, 1, 1);
+                }
+            }
+            else if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
 			{
+                Character.Task.ClearSecondary();
+
                 if (Game.GameTime - _lastVehicleAimUpdate > 30)
                 {
                     Character.Task.AimAt(AimCoords, -1);
@@ -1166,20 +1179,6 @@ namespace GTANetwork
                 Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0,
 				0, 0, 0);
-
-            if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
-            {
-                Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-
-                if (
-                    !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, "weapons@projectile@", "aimlive_m",
-                        3))
-                {
-                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict("weapons@projectile@"), "aimlive_m",
-                        8f, 10f, -1, 1 | 2147483648, -8f, 1, 1, 1);
-                }
-            }
 
         }
 
