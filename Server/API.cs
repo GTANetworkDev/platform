@@ -444,6 +444,11 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), modelHash);
         }
 
+        public void setPlayerDefaultClothes(Client player)
+        {
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x45EEE61580806D63, player.CharacterHandle);
+        }
+
         public void setWeather(string weather)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0xED712CA327900C8A, weather);

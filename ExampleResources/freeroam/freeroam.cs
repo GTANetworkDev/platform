@@ -256,6 +256,7 @@ public class FreeroamScript : Script
                 else
                 {
                     API.setPlayerSkin(sender, vehModel);
+                    API.sendNativeToPlayer(sender, 0x45EEE61580806D63, sender.CharacterHandle);
                 }
             }
             else

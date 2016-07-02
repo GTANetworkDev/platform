@@ -1030,12 +1030,12 @@ namespace GTANetwork
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
 				0);
 			DEBUG_STEP = 25;
-            #if !DISABLE_SLERP
+#if !DISABLE_SLERP
             Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-            #else
-	        Character.Rotation = Rotation;
-            #endif
+#else
+            Character.Quaternion = Rotation.ToQuaternion();
+#endif
 
             if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
@@ -1075,7 +1075,7 @@ namespace GTANetwork
             Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
             #else
-	        Character.Rotation = Rotation;
+	        Character.Quaternion = Rotation.ToQuaternion();
             #endif
 
             _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
@@ -1198,12 +1198,12 @@ namespace GTANetwork
 #if !CRASHTEST
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
-                #if !DISABLE_SLERP
+#if !DISABLE_SLERP
                 Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-                #else
-                Character.Rotation = Rotation;    
-                #endif
+#else
+                Character.Quaternion = Rotation.ToQuaternion();
+#endif
                 if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, "weapons@projectile@", "aimlive_m", 3))
                 {
                     Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict("weapons@projectile@"), "aimlive_m",
@@ -1277,12 +1277,12 @@ namespace GTANetwork
 					ourAnim.Split()[1],
 					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
-            #if !DISABLE_SLERP
+#if !DISABLE_SLERP
             Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-            #else
-            Character.Rotation = Rotation;
-            #endif
+#else
+            Character.Quaternion = Rotation.ToQuaternion();
+#endif
         }
 
 	    void DisplayWeaponShootingAnimation()
@@ -1368,12 +1368,12 @@ namespace GTANetwork
 
 	        if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
 	        {
-                #if !DISABLE_SLERP
+#if !DISABLE_SLERP
                 Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-                #else
-	            Character.Rotation = Rotation;
-                #endif
+#else
+                Character.Quaternion = Rotation.ToQuaternion();
+#endif
             }
 		}
 
@@ -1704,7 +1704,7 @@ namespace GTANetwork
             Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
 #else
-                Character.Rotation = Rotation;
+            Character.Quaternion = Rotation.ToQuaternion();
 #endif
         }
 
