@@ -442,11 +442,23 @@ namespace GTANetworkServer
         public void setPlayerSkin(Client player, int modelHash)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), modelHash);
+            if (doesEntityExist(player.CharacterHandle))
+            {
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Clear();
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Clear();
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Clear();
+            }
         }
 
         public void setPlayerDefaultClothes(Client player)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0x45EEE61580806D63, player.CharacterHandle);
+            if (doesEntityExist(player.CharacterHandle))
+            {
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Clear();
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Clear();
+                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Clear();
+            }
         }
 
         public void setWeather(string weather)
