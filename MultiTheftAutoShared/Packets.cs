@@ -333,6 +333,7 @@ namespace GTANetworkShared
         {
             Props = new Dictionary<byte, byte>();
             Textures = new Dictionary<byte, byte>();
+            Accessories = new Dictionary<byte, Tuple<byte, byte>>();
             BlipSprite = 1;
             BlipAlpha = 255;
         }
@@ -354,6 +355,9 @@ namespace GTANetworkShared
 
         [ProtoMember(6)]
         public byte BlipAlpha { get; set; }
+
+        [ProtoMember(7)]
+        public Dictionary<byte, Tuple<byte, byte>> Accessories { get; set; }
     }
 
     [ProtoContract]

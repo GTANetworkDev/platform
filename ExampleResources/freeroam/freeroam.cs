@@ -140,7 +140,7 @@ public class FreeroamScript : Script
             else
             {
                 int slot, drawable, texture;
-                if (!int.TryParse(args[1], out slot) || !int.TryParse(args[2], out drawable) || !int.TryParse(args[2], out texture))
+                if (!int.TryParse(args[1], out slot) || !int.TryParse(args[2], out drawable) || !int.TryParse(args[3], out texture))
                 {
                         API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
                         return;
@@ -148,6 +148,32 @@ public class FreeroamScript : Script
 
                 API.setPlayerProp(sender, slot, drawable, texture);
                 API.sendChatMessageToPlayer(sender, "Clothes applied successfully!");                
+            }
+        }
+
+        if (args[0] == "/props")
+        {
+            if (args.Length < 4)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /props [slot] [drawable] [texture]");
+            }
+            else
+            {
+                int slot, drawable, texture;
+                if (!int.TryParse(args[1], out slot) || !int.TryParse(args[2], out drawable) || !int.TryParse(args[3], out texture))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                if (drawable == -1)
+                {
+                    API.clearPlayerAccessory(sender, slot);
+                    return;
+                }
+
+                API.setPlayerAccessory(sender, slot, drawable, texture);
+                API.sendChatMessageToPlayer(sender, "Props applied successfully!");                
             }
         }
 

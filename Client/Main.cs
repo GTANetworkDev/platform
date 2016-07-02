@@ -1570,6 +1570,8 @@ namespace GTANetwork
                                 ourSyncPed.BlipAlpha = pair.Value.BlipAlpha;
                                 ourSyncPed.PedProps = pair.Value.Props.ToDictionary(item => (int)item.Key, item => (int)item.Value);
                                 ourSyncPed.PedTextures = pair.Value.Textures.ToDictionary(item => (int)item.Key, item => (int)item.Value);
+                                ourSyncPed.PedAccessories = pair.Value.Accessories.ToDictionary(item => (int) item.Key,
+                                    item => new Tuple<int, int>((int) item.Value.Item1, (int) item.Value.Item2));
                                 if (ourSyncPed.Character != null)
                                 {
                                     ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&

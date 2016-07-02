@@ -146,6 +146,17 @@ namespace GTANetwork
             }
         }
 
+        private Dictionary<int, Tuple<int, int>> _pedAccessories;
+        public Dictionary<int, Tuple<int, int>> PedAccessories
+        {
+            get { return _pedAccessories; }
+            set
+            {
+                if (value == null) return;
+                _pedAccessories = value;
+            }
+        }
+
         private Vector3 _lastVehiclePos;
         private Vector3 _carPosOnUpdate;
         public Vector3 VehiclePosition
@@ -394,6 +405,14 @@ namespace GTANetwork
 					{
 						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, PedTextures[pair.Key], 2);
 					}
+
+			    if (PedAccessories != null)
+			    {
+			        foreach (var pair in PedAccessories)
+			        {
+                        Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value.Item1, pair.Value.Item2, 2);
+                    }
+			    }
 
 				LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
 
