@@ -204,7 +204,36 @@ public class Deathmatch : Script
                 {
                     API.sendChatMessageToAll("~b~" + killer.Name + "~w~ is on a killstreak! ~r~" + Killstreaks[killer] + "~w~ kills and counting!");
                     API.setPlayerBlipSprite(killer, 303);
-                    API.setPlayerBlipColor(killer, 1);                    
+                    API.setPlayerBlipColor(killer, 1);
+
+                    if (Killstreaks[killer] == 4)
+                    {
+                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 25));
+                        API.sendChatMessageToPlayer(killer, "~g~Health bonus!");
+                    }
+                    else if (Killstreaks[killer] == 6)
+                    {
+                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 50));
+                        API.sendChatMessageToPlayer(killer, "~g~Health bonus!");
+                    }
+                    else if (Killstreaks[killer] == 8)
+                    {
+                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 75));
+                        API.setPlayerArmor(killer, Math.Min(100, API.getPlayerArmor(killer) + 25));
+                        API.sendChatMessageToPlayer(killer, "~g~Health and armor bonus!");
+                    }
+                    else if (Killstreaks[killer] == 12)
+                    {
+                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 75));
+                        API.setPlayerArmor(killer, Math.Min(100, API.getPlayerArmor(killer) + 50));
+                        API.sendChatMessageToPlayer(killer, "~g~Health and armor bonus!");
+                    }
+                    else if (Killstreaks[killer] >= 16 && Killstreaks[killer] % 4 == 0)
+                    {
+                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 75));
+                        API.setPlayerArmor(killer, Math.Min(100, API.getPlayerArmor(killer) + 75));
+                        API.sendChatMessageToPlayer(killer, "~g~Health and armor bonus!");
+                    }
                 }
             }
             else

@@ -131,6 +131,26 @@ public class FreeroamScript : Script
             }
         }
 
+        if (args[0] == "/clothes")
+        {
+            if (args.Length < 4)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /clothes [slot] [drawable] [texture]");
+            }
+            else
+            {
+                int slot, drawable, texture;
+                if (!int.TryParse(args[1], out slot) || !int.TryParse(args[2], out drawable) || !int.TryParse(args[2], out texture))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                API.setPlayerProp(sender, slot, drawable, texture);
+                API.sendChatMessageToPlayer(sender, "Clothes applied successfully!");                
+            }
+        }
+
         if (args[0] == "/colors")
         {
             if (args.Length < 3)

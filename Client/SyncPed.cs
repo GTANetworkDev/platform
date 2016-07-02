@@ -135,6 +135,17 @@ namespace GTANetwork
             }
         }
 
+        private Dictionary<int, int> _pedTextures;
+        public Dictionary<int, int> PedTextures
+        {
+            get { return _pedTextures; }
+            set
+            {
+                if (value == null) return;
+                _pedTextures = value;
+            }
+        }
+
         private Vector3 _lastVehiclePos;
         private Vector3 _carPosOnUpdate;
         public Vector3 VehiclePosition
@@ -295,6 +306,12 @@ namespace GTANetwork
             
             _latencyAverager = new Queue<double>();
         }
+
+        public SyncPed()
+        {
+            _blip = true;
+            _latencyAverager = new Queue<double>();
+        }
             
         public void SetBlipNameFromTextFile(Blip blip, string text)
         {
@@ -375,7 +392,7 @@ namespace GTANetwork
 				if (PedProps != null)
 					foreach (var pair in PedProps)
 					{
-						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, 0, 2);
+						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, PedTextures[pair.Key], 2);
 					}
 
 				LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
@@ -942,6 +959,7 @@ namespace GTANetwork
 
 	    void UpdateProps()
 	    {
+            /*
             if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(IsInVehicle ? VehiclePosition : _position, 30f))
 			{
 				var id = _clothSwitch / 50;
@@ -952,7 +970,7 @@ namespace GTANetwork
 					Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character.Handle, id, PedProps[id], 0, 0);
 				}
 			}
-
+            */
 			_clothSwitch++;
 			if (_clothSwitch >= 750)
 				_clothSwitch = 0;
@@ -1493,7 +1511,7 @@ namespace GTANetwork
         {
             try
             {
-                if (IsSpectating) return;
+                if (IsSpectating || ModelHash == 0) return;
 
 
                 DEBUG_STEP = 0;

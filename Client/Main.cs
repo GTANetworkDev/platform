@@ -267,6 +267,21 @@ namespace GTANetwork
 
         public static Camera MainMenuCamera;
 
+        public static SyncPed GetOpponent(int netHandle)
+        {
+            if (netHandle == 0) return null;
+            if (Opponents.ContainsKey(netHandle))
+            {
+                return Opponents[netHandle];
+            }
+            else
+            {
+                var newPed = new SyncPed();
+                Opponents.Add(netHandle, newPed);
+                return newPed;
+            }
+        }
+
         public static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
         
         public void GetWelcomeMessage()
@@ -1546,24 +1561,26 @@ namespace GTANetwork
 
                             ourPed.Alpha = pair.Value.Alpha;
 
-                            var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle);
-                            if (ourSyncPed.Value != null)
+                            var ourSyncPed = GetOpponent(pair.Key);
+                            if (ourSyncPed != null)
                             {
-                                ourSyncPed.Value.Team = pair.Value.Team;
-                                ourSyncPed.Value.BlipSprite = pair.Value.BlipSprite;
-                                ourSyncPed.Value.BlipColor = pair.Value.BlipColor;
-                                ourSyncPed.Value.BlipAlpha = pair.Value.BlipAlpha;
-                                if (ourSyncPed.Value.Character != null)
+                                ourSyncPed.Team = pair.Value.Team;
+                                ourSyncPed.BlipSprite = pair.Value.BlipSprite;
+                                ourSyncPed.BlipColor = pair.Value.BlipColor;
+                                ourSyncPed.BlipAlpha = pair.Value.BlipAlpha;
+                                ourSyncPed.PedProps = pair.Value.Props.ToDictionary(item => (int)item.Key, item => (int)item.Value);
+                                ourSyncPed.PedTextures = pair.Value.Textures.ToDictionary(item => (int)item.Key, item => (int)item.Value);
+                                if (ourSyncPed.Character != null)
                                 {
-                                    ourSyncPed.Value.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
+                                    ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
                                                                                     pair.Value.Team != -1)
                                         ? Main.FriendRelGroup
                                         : Main.RelGroup;
-                                    if (ourSyncPed.Value.Character.CurrentBlip != null)
+                                    if (ourSyncPed.Character.CurrentBlip != null)
                                     {
-                                        ourSyncPed.Value.Character.CurrentBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
-                                        ourSyncPed.Value.Character.CurrentBlip.Color = (BlipColor)pair.Value.BlipColor;
-                                        ourSyncPed.Value.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
+                                        ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
+                                        ourSyncPed.Character.CurrentBlip.Color = (BlipColor)pair.Value.BlipColor;
+                                        ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
                                     }
                                 }
                             }
@@ -2785,18 +2802,15 @@ namespace GTANetwork
                         if (data == null) return;
                         lock (Opponents)
                         {
-                            bool newPlayer = false;
-
                             if (!Opponents.ContainsKey(data.NetHandle))
                             {
                                 var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
                                     data.Quaternion.ToVector());
                                 Opponents.Add(data.NetHandle, repr);
-                                newPlayer = true;
                             }
 
                             // Not thread safe
-                            if (!newPlayer && Opponents[data.NetHandle].Character != null)
+                            if (Opponents[data.NetHandle].Character != null)
                                 NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
 
                             Opponents[data.NetHandle].VehicleNetHandle = data.VehicleHandle;
@@ -2839,17 +2853,14 @@ namespace GTANetwork
                         if (data == null) return;
                         lock (Opponents)
                         {
-                            bool newPlayer = false;
-
                             if (!Opponents.ContainsKey(data.NetHandle))
                             {
                                 var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
                                     data.Quaternion.ToVector());
                                 Opponents.Add(data.NetHandle, repr);
-                                newPlayer = true;
                             }
 
-                            if (!newPlayer && Opponents[data.NetHandle].Character != null)
+                            if (Opponents[data.NetHandle].Character != null)
                                 NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
 
                             Opponents[data.NetHandle].OnFootSpeed = data.Speed;
