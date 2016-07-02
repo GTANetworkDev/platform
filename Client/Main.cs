@@ -1551,10 +1551,21 @@ namespace GTANetwork
                             {
                                 ourSyncPed.Value.Team = pair.Value.Team;
                                 ourSyncPed.Value.BlipSprite = pair.Value.BlipSprite;
-                                ourSyncPed.Value.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
-                                                                                pair.Value.Team != -1)
-                                    ? Main.FriendRelGroup
-                                    : Main.RelGroup;
+                                ourSyncPed.Value.BlipColor = pair.Value.BlipColor;
+                                ourSyncPed.Value.BlipAlpha = pair.Value.BlipAlpha;
+                                if (ourSyncPed.Value.Character != null)
+                                {
+                                    ourSyncPed.Value.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
+                                                                                    pair.Value.Team != -1)
+                                        ? Main.FriendRelGroup
+                                        : Main.RelGroup;
+                                    if (ourSyncPed.Value.Character.CurrentBlip != null)
+                                    {
+                                        ourSyncPed.Value.Character.CurrentBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
+                                        ourSyncPed.Value.Character.CurrentBlip.Color = (BlipColor)pair.Value.BlipColor;
+                                        ourSyncPed.Value.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
+                                    }
+                                }
                             }
                         }
                     }
@@ -3176,8 +3187,11 @@ namespace GTANetwork
                                                 if (pair.Value != null)
                                                 {
                                                     pair.Value.BlipColor = newColor;
-                                                    if (pair.Value.Character != null && pair.Value.Character.CurrentBlip != null)
+                                                    if (pair.Value.Character != null &&
+                                                        pair.Value.Character.CurrentBlip != null)
+                                                    {
                                                         pair.Value.Character.CurrentBlip.Color = (BlipColor)newColor;
+                                                    }
                                                 }
                                             }
                                     }

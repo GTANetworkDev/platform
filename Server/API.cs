@@ -411,11 +411,11 @@ namespace GTANetworkServer
             return null;
         }
 
-        public int getVehicleModel(NetHandle vehicle)
+        public int getEntityModel(NetHandle ent)
         {
-            if (doesEntityExist(vehicle))
+            if (doesEntityExist(ent))
             {
-                return Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].ModelHash;
+                return Program.ServerInstance.NetEntityHandler.ToDict()[ent.Value].ModelHash;
             }
             return 0;
         }
@@ -730,6 +730,15 @@ namespace GTANetworkServer
                 return ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Health;
             }
             return 0f;
+        }
+
+        public int getPickupAmount(NetHandle pickup)
+        {
+            if (doesEntityExist(pickup))
+            {
+                return ((PickupProperties)Program.ServerInstance.NetEntityHandler.ToDict()[pickup.Value]).Amount;
+            }
+            return 0;
         }
 
         public void repairVehicle(NetHandle vehicle)

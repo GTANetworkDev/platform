@@ -3,10 +3,22 @@ using System.Collections.Generic;
 using GTANetworkServer;
 using GTANetworkShared;
 
+public struct RespawnablePickup
+{
+    public int Hash;
+    public int Amount;
+    public int PickupTime;
+    public int RespawnTime;
+    public Vector3 Position;
+}
+
 public class Deathmatch : Script
 {
     private List<Vector3> spawns;
     private List<int> weapons;
+    private List<NetHandle> pickups;
+    private Dictionary<Client, int> Killstreaks;
+    private List<RespawnablePickup> RespawnCount;
     private Random rInst;
     
     public Deathmatch()
@@ -24,17 +36,34 @@ public class Deathmatch : Script
         weapons.Add(-2084633992);
         
         rInst = new Random();
+
+        RespawnCount = new List<RespawnablePickup>();
+        pickups = new List<NetHandle>();
         
+        Killstreaks = new Dictionary<Client, int>();
+
         API.onPlayerConnected += OnPlayerConnected;
         API.onPlayerRespawn += OnPlayerRespawn;
+        API.onResourceStop += onResourceStop;
         API.onResourceStart += onResourceStart;
         API.onMapChange += onMapChange;
+        API.onPlayerDeath += PlayerKilled;
+        API.onUpdate += onUpdate;
     }
 
     private void onMapChange(string mapName, Map map)
     {     
         spawns.Clear();
         weapons.Clear();
+        Killstreaks.Clear();
+
+        RespawnCount.Clear();
+
+        foreach(var pc in pickups)
+        {
+            API.deleteEntity(pc);            
+        }
+        pickups.Clear();
 
         var spawnpoints = map.getElementsByType("spawnpoint");
         foreach(var point in spawnpoints)
@@ -58,6 +87,15 @@ public class Deathmatch : Script
             API.requestIpl(point.getElementData<string>("name"));
         }
 
+        var pickupSpawnpoints = map.getElementsByType("pickup");
+        foreach(var pc in pickupSpawnpoints)
+        {
+            pickups.Add(API.createPickup(API.pickupNameToModel(pc.getElementData<string>("model")),
+                new Vector3(pc.getElementData<float>("posX"), pc.getElementData<float>("posY"), pc.getElementData<float>("posZ")),
+                new Vector3(),
+                pc.getElementData<int>("amount")));
+        }
+
         var players = API.getAllPlayers();
 
         foreach (var player in players)
@@ -75,7 +113,49 @@ public class Deathmatch : Script
             Respawn(player);
         }
     }
+
+    private void onResourceStop(object sender, EventArgs e)
+    {
+        var players = API.getAllPlayers();
+
+        foreach (var player in players)
+        {
+            API.setPlayerBlipSprite(player, 1);
+            API.setPlayerBlipColor(player, 0);
+        }
+    }
+
+    private void onPlayerPickup(Client pickupee, NetHandle pickupHandle)
+    {
+        var pos = API.getEntityPosition(pickupHandle);
+        var model = API.getVehicleModel(pickupHandle);
+        var amount = ((PickupProperties)Program.ServerInstance.NetEntityHandler.ToDict()[pickupHandle.Value]).Amount;
+        var timePickedUp = Environment.TickCount;
+        var timeOut = 60000;
+
+        var pcObj = new RespawnablePickup();
+        pcObj.PickupTime = timePickedUp;
+        pcObj.RespawnTime = timeOut;
+        pcObj.Hash = model;
+        pcObj.Position = pos;
+        pcObj.Amount = amount;
+
+        RespawnCount.Add(pcObj);
+    }
     
+    private void onUpdate(object sender, EventArgs e)
+    {
+        if (RespawnCount.Count > 0)
+        {
+            if (Environment.TickCount - RespawnCount[0].PickupTime > RespawnCount[0].RespawnTime)
+            {
+                var newPickup = API.createPickup(RespawnCount[0].Hash, RespawnCount[0].Position, new Vector3(), RespawnCount[0].Amount);
+                pickups.Add(newPickup);
+                RespawnCount.RemoveAt(0);
+            }
+        }
+    }
+
     private void Respawn(Client player)
     {
         API.sendNativeToPlayer(player, 17464388802800305651, new EntityArgument(player.CharacterHandle.Value), true);
@@ -98,4 +178,54 @@ public class Deathmatch : Script
     {
         Respawn(player);
     }    
+
+    public void PlayerKilled(Client player, NetHandle reason, int weapon)
+    {
+        Client killer = null; 
+
+        if (!reason.IsNull)     
+        {
+            var players = API.getAllPlayers();
+            for (var i = 0; i < players.Count; i++)
+            {
+                if (players[i].CharacterHandle == reason) {
+                    killer = players[i];
+                    break;
+                }            
+            }        
+        }
+
+        if (killer != null)
+        {
+            if (Killstreaks.ContainsKey(killer))
+            {
+                Killstreaks[killer]++;
+                if (Killstreaks[killer] >= 3)
+                {
+                    API.sendChatMessageToAll("~b~" + killer.Name + "~w~ is on a killstreak! ~r~" + Killstreaks[killer] + "~w~ kills and counting!");
+                    API.setPlayerBlipSprite(killer, 303);
+                    API.setPlayerBlipColor(killer, 1);                    
+                }
+            }
+            else
+            {
+                Killstreaks.Add(killer, 1);
+            }
+        }
+
+        if (Killstreaks.ContainsKey(player))
+        {
+            if (Killstreaks[player] >= 3 && killer != null)
+            {
+                API.sendChatMessageToAll("~b~" + killer.Name + "~w~ ruined ~r~" + player.Name + "~w~'s killstreak!");                
+                API.setPlayerBlipSprite(player, 1);
+                API.setPlayerBlipColor(player, 0);
+            }
+            Killstreaks[player] = 0;
+        }
+        else
+        {
+            Killstreaks.Add(player, 0);
+        }
+    }
 }
