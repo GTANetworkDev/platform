@@ -472,6 +472,16 @@ namespace GTANetworkServer
             Program.ServerInstance.ChangePlayerTeam(player, team);
         }
 
+        public void playPlayerAnimation(Client player, int flag, string animDict, string animName)
+        {
+            Program.ServerInstance.PlayCustomPlayerAnimation(player, flag, animDict, animName);
+        }
+
+        public void stopPlayerAnimation(Client player)
+        {
+            Program.ServerInstance.PlayCustomPlayerAnimationStop(player);
+        }
+
         public void setTime(int hours, int minutes)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0x47C3B5848C3E45D8, hours, minutes, 0);
@@ -567,6 +577,8 @@ namespace GTANetworkServer
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x0943E5B8E078E76E, new EntityArgument(player.CharacterHandle.Value), slot);
             }
         }
+
+        
 
         public int vehicleNameToModel(string modelName)
 		{

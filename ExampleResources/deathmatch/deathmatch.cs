@@ -100,6 +100,8 @@ public class Deathmatch : Script
 
         foreach (var player in players)
         {
+            API.setPlayerBlipSprite(player, 1);
+            API.setPlayerBlipColor(player, 0);
             Respawn(player);
         }
     }
@@ -128,7 +130,7 @@ public class Deathmatch : Script
     private void onPlayerPickup(Client pickupee, NetHandle pickupHandle)
     {
         var pos = API.getEntityPosition(pickupHandle);
-        var model = API.getVehicleModel(pickupHandle);
+        var model = API.getEntityModel(pickupHandle);
         var amount = ((PickupProperties)Program.ServerInstance.NetEntityHandler.ToDict()[pickupHandle.Value]).Amount;
         var timePickedUp = Environment.TickCount;
         var timeOut = 60000;

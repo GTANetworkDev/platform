@@ -478,7 +478,7 @@ public class RaceGamemode : Script
 
         if (inOp != null)
         {
-            selectedModel = API.getVehicleModel(inOp.Vehicle);
+            selectedModel = API.getEntityModel(inOp.Vehicle);
             color1 = API.getVehiclePrimaryColor(inOp.Vehicle);
             color2 = API.getVehicleSecondaryColor(inOp.Vehicle);
         }

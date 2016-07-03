@@ -206,6 +206,53 @@ public class FreeroamScript : Script
             }
         }
 
+        if (args[0] == "/anim")
+        {
+            if (args.Length < 2)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/anim [animation]~n~~y~USAGE: ~w~/anim help for animation list.");
+            }
+            else
+            {
+                if (args[1] == "help")
+                {
+
+                }
+                else if (!AnimationList.ContainsKey(args[1]))
+                {
+                    API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~Animation not found!");                    
+                }
+                else
+                {
+                    API.playPlayerAnimation(sender, 0, AnimationList[args[1]].Split()[0], AnimationList[args[1]].Split()[1]);
+                }
+            }
+        }
+
+        if (args[0] == "/rawanim")
+        {
+            if (args.Length < 4)
+            {
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /rawanim [flag] [animDict] [animName]");
+            }
+            else
+            {
+                int flag;
+                if (!int.TryParse(args[1], out flag))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                API.playPlayerAnimation(sender, flag, args[2], args[3]);
+            }
+        }
+
+        if (args[0] == "/stopanim")
+        {
+            API.stopPlayerAnimation(sender);
+        }
+
         if (args[0] == "/car")
         {
             if (args.Length >= 2)

@@ -82,6 +82,8 @@ namespace GTANetworkShared
         PlayerBlipAlphaChange = 2,
         PlayerBlipSpriteChange = 3,
         PlayerSpectatorChange = 4,
+        PlayerAnimationStart = 5,
+        PlayerAnimationStop = 6,
     }
 
     public enum Lights
@@ -363,9 +365,6 @@ namespace GTANetworkShared
     [ProtoContract]
     public class ConnectionResponse
     {
-        //[ProtoMember(1)]
-        //public byte AssignedChannel { get; set; }
-
         [ProtoMember(1)]
         public int CharacterHandle { get; set; }
     }

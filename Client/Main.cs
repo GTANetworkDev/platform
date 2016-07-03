@@ -267,6 +267,7 @@ namespace GTANetwork
 
         public static Camera MainMenuCamera;
 
+        /*
         public static SyncPed GetOpponent(int netHandle)
         {
             if (netHandle == 0) return null;
@@ -280,7 +281,7 @@ namespace GTANetwork
                 Opponents.Add(netHandle, newPed);
                 return newPed;
             }
-        }
+        }*/
 
         public static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
         
@@ -1561,7 +1562,8 @@ namespace GTANetwork
 
                             ourPed.Alpha = pair.Value.Alpha;
 
-                            var ourSyncPed = GetOpponent(pair.Key);
+                            //var ourSyncPed = GetOpponent(pair.Key);
+                            var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle).Value;
                             if (ourSyncPed != null)
                             {
                                 ourSyncPed.Team = pair.Value.Team;
@@ -3286,6 +3288,59 @@ namespace GTANetwork
                                                             Main.RelGroup;
                                                     }
                                                 }
+                                            }
+                                    }
+                                    break;
+                                case ServerEventType.PlayerAnimationStart:
+                                    {
+                                        var netHandle = (int)args[0];
+                                        var animFlag = (int)args[1];
+                                        var animDict = (string)args[2];
+                                        var animName = (string)args[3];
+
+                                        var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                        lock (Opponents)
+                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                            {
+                                                var pair = Opponents.FirstOrDefault(
+                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                if (pair.Value != null)
+                                                {
+                                                    pair.Value.IsCustomAnimationPlaying = true;
+                                                    pair.Value.CustomAnimationName = animName;
+                                                    pair.Value.CustomAnimationDictionary = animDict;
+                                                    pair.Value.CustomAnimationFlag = animFlag;
+                                                }
+                                            }
+                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                            {
+                                                Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
+                                                    Util.LoadDict(animDict), animName,
+                                                    8f, 10f, -1, animFlag, -8f, 1, 1, 1);
+                                            }
+                                    }
+                                    break;
+                                case ServerEventType.PlayerAnimationStop:
+                                    {
+                                        var netHandle = (int)args[0];
+                                        var lclHndl = NetEntityHandler.NetToEntity(netHandle);
+                                        lock (Opponents)
+                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                            {
+                                                var pair = Opponents.FirstOrDefault(
+                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
+                                                if (pair.Value != null)
+                                                {
+                                                    pair.Value.IsCustomAnimationPlaying = false;
+                                                    pair.Value.CustomAnimationName = null;
+                                                    pair.Value.CustomAnimationDictionary = null;
+                                                    pair.Value.CustomAnimationFlag = 0;
+                                                    pair.Value.Character.Task.ClearAll();
+                                                }
+                                            }
+                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                            {
+                                                Game.Player.Character.Task.ClearAll();
                                             }
                                     }
                                     break;

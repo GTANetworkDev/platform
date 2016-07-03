@@ -1990,5 +1990,23 @@ namespace GTANetworkServer
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
+
+        public void PlayCustomPlayerAnimation(Client target, int flag, string animDict, string animName)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerAnimationStart;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, flag, animDict, animName);
+
+            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
+
+        public void PlayCustomPlayerAnimationStop(Client target)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerAnimationStop;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value);
+
+            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
     }
 }

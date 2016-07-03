@@ -345,6 +345,11 @@ namespace GTANetwork
         private DateTime _lastRocketshot;
         private int _lastVehicleAimUpdate;
 
+        public bool IsCustomAnimationPlaying;
+        public string CustomAnimationDictionary;
+        public string CustomAnimationName;
+        public int CustomAnimationFlag;
+
         #region NeoSyncPed
 
         bool CreateCharacter(Vector3 gPos, float hRange)
@@ -966,6 +971,11 @@ namespace GTANetwork
 	    {
 			UpdateVehicleMountedWeapon();
 
+	        if (IsCustomAnimationPlaying)
+	        {
+	            DisplayCustomAnimation();
+	        }
+
 	        if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
                 Environment.TickCount - LastUpdateReceived < 10000)
 	        {
@@ -1093,7 +1103,29 @@ namespace GTANetwork
 			DEBUG_STEP = 26;
 		}
 
-	    void UpdateCustomAnimation()
+        void DisplayCustomAnimation()
+        {
+            if (
+                !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
+                    CustomAnimationDictionary, CustomAnimationName,
+                    3))
+            {
+                Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                    Util.LoadDict(CustomAnimationDictionary), CustomAnimationName,
+                    8f, 10f, -1, CustomAnimationFlag, -8f, 1, 1, 1);
+            }
+
+            var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, CustomAnimationDictionary, CustomAnimationName);
+
+            if (currentTime >= .95f)
+            {
+                IsCustomAnimationPlaying = false;
+                Character.Task.ClearAnimation(CustomAnimationDictionary, CustomAnimationName);
+            }
+        }
+
+
+        void DisplayMeleeAnimation()
 	    {
             var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
 						lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
@@ -1489,7 +1521,7 @@ namespace GTANetwork
 
 				if (lastMeleeAnim != null)
 				{
-					UpdateCustomAnimation();
+					DisplayMeleeAnimation();
 				}
 				else if (IsInMeleeCombat)
 				{
@@ -1509,8 +1541,15 @@ namespace GTANetwork
 					DisplayShootingAnimation();
 				}
 
+			    if (IsCustomAnimationPlaying)
+			    {
+                    UpdatePlayerPedPos();
+
+			        DisplayCustomAnimation();
+			    }
+
 				DEBUG_STEP = 32;
-				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat)
+				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
 				{
 					UpdatePlayerPedPos();
 
