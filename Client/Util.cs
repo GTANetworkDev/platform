@@ -192,13 +192,24 @@ namespace GTANetwork
 
         public static string LoadDict(string dict)
         {
-            var counter = 0;
-            while (counter < 20 && !Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict))
+            LogManager.DebugLog("REQUESTING DICTIONARY " + dict);
+            Function.Call(Hash.REQUEST_ANIM_DICT, dict);
+
+            DateTime endtime = DateTime.UtcNow + new TimeSpan(0, 0, 0, 0, 1000);
+
+            while (!Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict))
             {
-                Function.Call(Hash.REQUEST_ANIM_DICT, dict);
+                LogManager.DebugLog("DICTIONARY HAS NOT BEEN LOADED. YIELDING...");
                 Script.Yield();
-                counter++;
+                Function.Call(Hash.REQUEST_ANIM_DICT, dict);
+                if (DateTime.UtcNow >= endtime)
+                {
+                    break;
+                }
             }
+
+            LogManager.DebugLog("DICTIONARY LOAD COMPLETE.");
+
             return dict;
         }
 

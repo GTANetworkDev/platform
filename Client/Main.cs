@@ -3299,8 +3299,9 @@ namespace GTANetwork
                                         var animName = (string)args[3];
 
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        lock (Opponents)
-                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        {
+                                            lock (Opponents)
                                             {
                                                 var pair = Opponents.FirstOrDefault(
                                                     op => op.Value.Character?.Handle == lclHndl.Handle);
@@ -3312,12 +3313,12 @@ namespace GTANetwork
                                                     pair.Value.CustomAnimationFlag = animFlag;
                                                 }
                                             }
-                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
-                                            {
-                                                Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
-                                                    Util.LoadDict(animDict), animName,
-                                                    8f, 10f, -1, animFlag, -8f, 1, 1, 1);
-                                            }
+                                        }
+                                        else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                        {
+                                            Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
+                                                Util.LoadDict(animDict), animName, 8f, 10f, -1, animFlag, -8f, 1, 1, 1);
+                                        }
                                     }
                                     break;
                                 case ServerEventType.PlayerAnimationStop:

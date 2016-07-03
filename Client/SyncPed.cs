@@ -975,7 +975,7 @@ namespace GTANetwork
 	        {
 	            DisplayCustomAnimation();
 	        }
-
+            
 	        if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
                 Environment.TickCount - LastUpdateReceived < 10000)
 	        {
@@ -1105,6 +1105,8 @@ namespace GTANetwork
 
         void DisplayCustomAnimation()
         {
+            if (!IsCustomAnimationPlaying) return;
+
             if (
                 !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
                     CustomAnimationDictionary, CustomAnimationName,
