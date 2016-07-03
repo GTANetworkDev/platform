@@ -1119,7 +1119,7 @@ namespace GTANetwork
 
             var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, CustomAnimationDictionary, CustomAnimationName);
 
-            if (currentTime >= .95f)
+            if (currentTime >= .95f && (CustomAnimationFlag & 1) == 0)
             {
                 IsCustomAnimationPlaying = false;
                 Character.Task.ClearAnimation(CustomAnimationDictionary, CustomAnimationName);

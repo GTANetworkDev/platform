@@ -48,7 +48,8 @@ public class FreeroamScript : Script
         {"vsign", "anim@mp_player_intcelebrationmale@v_sign v_sign"},
         {"wank", "anim@mp_player_intcelebrationmale@wank wank"},
         {"wave", "anim@mp_player_intcelebrationmale@wave wave"},
-        {"loco", "anim@mp_player_intcelebrationmale@you_loco you_loco"},        
+        {"loco", "anim@mp_player_intcelebrationmale@you_loco you_loco"},
+        {"handsup", "missminuteman_1ig_2 handsup_base"},
     };
 
     private void onPlayerCommand(Client sender, string cmd, CancelEventArgs cancel)
@@ -245,6 +246,7 @@ public class FreeroamScript : Script
             {
                 API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/anim [animation]");
                 API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/anim help for animation list.");                
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/stopanim to stop current animation.");                
             }
             else
             {
@@ -276,8 +278,11 @@ public class FreeroamScript : Script
                     API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~Animation not found!");                    
                 }
                 else
-                {
-                    API.playPlayerAnimation(sender, 0, AnimationList[args[1]].Split()[0], AnimationList[args[1]].Split()[1]);
+                {   
+                    var flag = 0;
+                    if (args[1] == "handsup") flag = 1;
+
+                    API.playPlayerAnimation(sender, flag, AnimationList[args[1]].Split()[0], AnimationList[args[1]].Split()[1]);
                 }
             }
         }
