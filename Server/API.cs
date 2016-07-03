@@ -448,6 +448,8 @@ namespace GTANetworkServer
                 ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Clear();
                 ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Clear();
             }
+
+            setPlayerDefaultClothes(player);
         }
 
         public void setPlayerDefaultClothes(Client player)

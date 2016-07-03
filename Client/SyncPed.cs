@@ -6,10 +6,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using GTA;
-using GTA.Math;
 using GTA.Native;
+using GTANetworkShared;
 using NativeUI;
 using Font = GTA.Font;
+using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
 {
@@ -74,6 +75,27 @@ namespace GTANetwork
         public bool Siren;
         public int PedArmor;
         public bool IsVehDead;
+
+
+        private object _secondSnapshot;
+        private object _firstSnapshot;
+
+        private int _secondSnapshotTime;
+        private int _firstSnapshotTime;
+
+        public object Snapshot
+        {
+            get { return _firstSnapshot; }
+            set
+            {
+                _secondSnapshot = _firstSnapshot;
+                _firstSnapshot = value;
+
+                _secondSnapshotTime = _firstSnapshotTime;
+                _firstSnapshotTime = Environment.TickCount;
+            }
+        }
+
 
         public bool IsSpectating;
 
@@ -593,7 +615,7 @@ namespace GTANetwork
 				{
 					if (MainVehicle != null) MainVehicle.Delete();
 					MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
-				    MainVehicle.HasCollision = false;
+				    //MainVehicle.HasCollision = false;
 				}
 				else
 					MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
@@ -721,8 +743,65 @@ namespace GTANetwork
 		    MainVehicle.SteeringAngle = Util.ToRadians(SteeringScale);
 	    }
 
-	    void DisplayVehiclePosition()
+        void DisplayVehiclePosition_Experimental()
+        {
+            var fs = (VehicleData) Snapshot;
+            var ss = (VehicleData) _secondSnapshot;
+
+            var ft = _firstSnapshotTime;
+            var st = _secondSnapshotTime;
+            var ct = Environment.TickCount;
+
+            var dir = fs.Position.ToVector() - ss.Position.ToVector();
+            var vdir = fs.Velocity.ToVector() - ss.Velocity.ToVector();
+
+            
+            var target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
+                ct - ft + (int)(fs.Latency * 1000), (int)(fs.Latency * 1000));
+
+            var posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
+                ct - ft + (int)(fs.Latency * 1000), (int)(fs.Latency * 1000));
+
+            UI.ShowSubtitle("LATENCY " + (int)(fs.Latency * 1000));
+
+
+            MainVehicle.PositionNoOffset = posTarget;
+            /*
+            if (Speed > 0.5f)
+            {
+                MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
+                _stopTime = DateTime.Now;
+                _carPosOnUpdate = MainVehicle.Position;
+            }
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+            {
+                posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
+                    (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
+                    posTarget.Z, 0, 0, 0, 0);
+            }
+            else
+            {
+                MainVehicle.PositionNoOffset = VehiclePosition;
+            }*/
+
+            DEBUG_STEP = 21;
+#if !DISABLE_SLERP
+            MainVehicle.Quaternion = Quaternion.Slerp(_lastVehicleRotation.ToQuaternion(), _vehicleRotation.ToQuaternion(),
+			        (float) Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+#else
+            MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
+#endif
+        }
+
+        void DisplayVehiclePosition()
 	    {
+            if (Snapshot != null && _secondSnapshot != null && _secondSnapshot is VehicleData)
+            {
+                DisplayVehiclePosition_Experimental();
+                return;
+            }
+
             var dir = VehiclePosition - _lastVehiclePos;
 
 			var syncMode = Main.GlobalSyncMode;
