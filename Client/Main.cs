@@ -94,6 +94,7 @@ namespace GTANetwork
         
         public static SynchronizationMode GlobalSyncMode;
         public static bool LerpRotaion = true;
+        public static bool LagCompensation = true;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
 
@@ -959,6 +960,15 @@ namespace GTANetwork
                     internetServers.Items.Add(debugItem);
                 }
 
+                {
+                    var debugItem = new UIMenuCheckboxItem("Use Experimental Lag Compensation", LagCompensation);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        LagCompensation = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+                
                 {
                     var debugItem = new UIMenuCheckboxItem("Hide Map Nametags When Zoomed Out", PlayerSettings.HideNametagsWhenZoomedOutMap);
                     debugItem.CheckboxEvent += (sender, @checked) =>
