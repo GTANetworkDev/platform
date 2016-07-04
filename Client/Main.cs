@@ -120,6 +120,8 @@ namespace GTANetwork
 
         private static int _messagesSent = 0;
         private static int _messagesReceived = 0;
+
+        private TabTextItem _statsItem;
         //
 
         
@@ -1387,7 +1389,10 @@ namespace GTANetwork
                 if (Client != null) Client.Disconnect("Quit");
             };
 
-            _serverItem = new TabSubmenuItem("server", new List<TabItem>() { _serverPlayers, favTab, dcItem });
+            _statsItem = new TabTextItem("Statistics", "Network Statistics", "");
+            _statsItem.CanBeFocused = false;
+
+            _serverItem = new TabSubmenuItem("server", new List<TabItem>() { _serverPlayers, favTab, _statsItem, dcItem });
             _serverItem.Parent = MainMenu;
             #endregion
             
@@ -2380,6 +2385,7 @@ namespace GTANetwork
             DEBUG_STEP = 9;
             Watcher.Tick();
             DEBUG_STEP = 10;
+
             if (playerCar != _lastPlayerCar)
             {
                 if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = true;
@@ -2394,6 +2400,19 @@ namespace GTANetwork
                     }
                 }
             }
+
+            if (playerCar != null)
+            {
+                if (Util.GetResponsiblePed(playerCar).Handle == player.Handle)
+                {
+                    playerCar.IsInvincible = false;
+                }
+                else
+                {
+                    playerCar.IsInvincible = true;
+                }
+            }
+
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;
 
@@ -2402,6 +2421,12 @@ namespace GTANetwork
             Game.DisableControl(0, Control.SpecialAbilitySecondary);
             Game.DisableControl(0, Control.CharacterWheel);
             Game.DisableControl(0, Control.Phone);
+
+
+            _statsItem.Text =
+                string.Format(
+                    "~h~Bytes Sent~h~: {0}~n~~h~Bytes Received~h~: {1}~n~~n~~h~Messages Sent~h~: {2}~n~~h~Messages Received~h~: {3}",
+                    _bytesSent, _bytesReceived, _messagesSent, _messagesReceived);
 
 
             DEBUG_STEP = 12;
@@ -3995,6 +4020,8 @@ namespace GTANetwork
 			DownloadManager.Cancel();
 			DEBUG_STEP = 52;
 
+            ClearStats();
+
 			RestoreMainMenu();
 
 			DEBUG_STEP = 56;
@@ -4009,6 +4036,14 @@ namespace GTANetwork
 		        _serverProcess = null;
 		    }
 		}
+
+        void ClearStats()
+        {
+            _bytesReceived = 0;
+            _bytesSent = 0;
+            _messagesReceived = 0;
+            _messagesSent = 0;
+        }
 
         #region debug stuff
 
