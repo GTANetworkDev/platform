@@ -988,6 +988,16 @@ namespace GTANetwork
                 }
 
                 {
+                    var debugItem = new UIMenuCheckboxItem("Disable Rockstar Editor", PlayerSettings.DisableRockstarEditor);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.DisableRockstarEditor = @checked;
+                        SaveSettings();
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
                     var nameItem = new UIMenuItem("Update Channel");
                     nameItem.SetRightLabel(PlayerSettings.UpdateChannel);
                     nameItem.Activated += (sender, item) =>
@@ -4787,6 +4797,9 @@ namespace GTANetwork
 
         public void TerminateGameScripts()
         {
+            if (PlayerSettings.DisableRockstarEditor)
+                Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "replay_controller");
+
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "abigail1");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "abigail2");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "achievement_controller");
@@ -5372,7 +5385,6 @@ namespace GTANetwork
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "randomchar_controller");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "range_modern");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "range_modern_mp");
-            Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "replay_controller");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "rerecord_recording");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "respawn_controller");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "restrictedareas");

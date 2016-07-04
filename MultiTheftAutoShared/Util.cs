@@ -54,6 +54,7 @@ namespace GTANetworkShared
         public bool SteamPowered { get; set; }
         public bool HideNametagsWhenZoomedOutMap { get; set; }
         public string UpdateChannel { get; set; }
+        public bool DisableRockstarEditor { get; set; }
         
         public PlayerSettings()
         {
@@ -64,6 +65,7 @@ namespace GTANetworkShared
             SteamPowered = false;
             HideNametagsWhenZoomedOutMap = false;
             UpdateChannel = "stable";
+            DisableRockstarEditor = true;
         }
     }
 
