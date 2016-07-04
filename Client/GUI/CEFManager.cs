@@ -1,6 +1,4 @@
-﻿#define DEBUG
-
-#if !DEBUG
+﻿#if !DEBUG
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,17 +8,63 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Xilium.CefGlue;
+using CefSharp;
+using CefSharp.OffScreen;
+using GTA;
+using GTA.Native;
+using NativeUI;
+
 
 namespace GTANetwork.GUI
 {
-    public class DemoCefApp : CefApp
+    public class CefController : Script
     {
-        public DemoCefApp()
+        public CefController()
         {
-            
+            Tick += (sender, args) =>
+            {
+                var res = Game.ScreenResolution;
+                var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
+                var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
+
+                var MouseClick = Game.IsControlJustPressed(0, GTA.Control.CursorAccept);
+                var mouseUp = Game.IsControlJustReleased(0, GTA.Control.CursorAccept);
+
+                foreach (var browser in CEFManager.Browsers)
+                {
+                    if (!browser.IsInitialized()) continue;
+
+                    if (mouseX > browser.Position.X && mouseY > browser.Position.Y &&
+                        mouseX < browser.Position.X + browser.Size.Width &&
+                        mouseY < browser.Position.Y + browser.Size.Height)
+                    {
+                        browser._browser.GetBrowser().GetHost().SetFocus(false);
+                        browser._browser.GetBrowser()
+                            .GetHost()
+                            .SendMouseMoveEvent((int)(mouseX - browser.Position.X), (int)(mouseY - browser.Position.Y),
+                                false, CefEventFlags.None);
+
+                        if (MouseClick)
+                            browser._browser.GetBrowser()
+                                .GetHost()
+                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, false, 1, CefEventFlags.None);
+
+                        if (MouseClick)
+                            browser._browser.GetBrowser()
+                                .GetHost()
+                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, true, 1, CefEventFlags.None);
+                    }
+                    else
+                    {
+                        browser._browser.GetBrowser().GetHost().SetFocus(false);
+                    }
+                }
+            };
         }
     }
+
 
     public static class CEFManager
     {
@@ -28,7 +72,7 @@ namespace GTANetwork.GUI
         {
             ScreenSize = screenSize;
 
-            _bitmapRegion = MemoryMappedFile.CreateNew("GTANETWORKBITMAPSCREEN", 1048576);
+            _bitmapRegion = MemoryMappedFile.CreateNew("GTANETWORKBITMAPSCREEN", 10485760);
 
             try
             {
@@ -56,59 +100,62 @@ namespace GTANetwork.GUI
         private static MemoryMappedFile _bitmapRegion;
 
 
+
         public static void RenderLoop()
         {
-            CefRuntime.Load();
+            var settings = new CefSharp.CefSettings();
+            settings.SetOffScreenRenderingBestPerformanceArgs();
+            if (!Cef.IsInitialized)
+                Cef.Initialize(settings);
+
+            //Browsers.Add(new Browser("https://www.reddit.com/", new Size(300, 300)));
+
+            Console.WriteLine("WAITING FOR INITIALIZATION...");
             
-            var cefMainArgs = new CefMainArgs(new string[0]);
-            var cefApp = new DemoCefApp();
-
-            if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp) != -1)
-            {
-                LogManager.DebugLog("Error!");
-            }
-
-            var cefSettings = new CefSettings()
-            {
-                SingleProcess = false,
-                MultiThreadedMessageLoop = true,
-            };
-
-            CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp);
-            
-
             DirectXHook = Process.Start(Main.GTANInstallDir + "\\cef\\CEFInjector.exe");
             
             while (!StopRender)
             {
-                Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
-                    PixelFormat.Format32bppArgb);
-
-                using (var graphics = Graphics.FromImage(doubleBuffer))
+                try
                 {
-                    foreach (var browser in Browsers)
-                    {
-                        graphics.DrawImage(browser.GetRawBitmap(), browser.Position);
-                    }
-                }
+                    Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
+                        PixelFormat.Format32bppArgb);
 
-                var rawBytes = BitmapToByteArray(doubleBuffer);
-
-                if (_memorySharedMutex.WaitOne())
-                {
-                    using (var accessor = _bitmapRegion.CreateViewStream())
-                    using (var binReader = new BinaryWriter(accessor))
+                    using (var graphics = Graphics.FromImage(doubleBuffer))
                     {
-                        binReader.Write(rawBytes.Length);
-                        binReader.Write(doubleBuffer.Width);
-                        binReader.Write(doubleBuffer.Height);
-                        binReader.Write(rawBytes, 0, rawBytes.Length);
+                        lock (Browsers)
+                        foreach (var browser in Browsers)
+                        {
+                            if (browser.Headless) continue;
+                            var bitmap = browser.GetRawBitmap();
+
+                            if (bitmap == null) continue;
+
+                            graphics.DrawImage(bitmap, browser.Position);
+                        }
                     }
 
-                    _memorySharedMutex.ReleaseMutex();
-                }
+                    var rawBytes = BitmapToByteArray(doubleBuffer);
 
-                Thread.Sleep(1000/FPS);
+                    if (_memorySharedMutex.WaitOne())
+                    {
+                        using (var accessor = _bitmapRegion.CreateViewStream())
+                        using (var binReader = new BinaryWriter(accessor))
+                        {
+                            binReader.Write(rawBytes.Length);
+                            binReader.Write(doubleBuffer.Width);
+                            binReader.Write(doubleBuffer.Height);
+                            binReader.Write(rawBytes, 0, rawBytes.Length);
+                        }
+
+                        _memorySharedMutex.ReleaseMutex();
+                    }
+                }
+                catch {}
+                finally
+                {
+                    Thread.Sleep(1000 / FPS);
+                }
             }
         }
 
@@ -136,9 +183,11 @@ namespace GTANetwork.GUI
     }
 
 
-    public class Browser
+    public class Browser : IDisposable
     {
-        //private ChromiumWebBrowser _browser;
+        internal ChromiumWebBrowser _browser;
+
+        public bool Headless = false;
 
         public Point Position { get; set; }
 
@@ -153,144 +202,75 @@ namespace GTANetwork.GUI
             }
         }
 
-
-        private CefWindowInfo _cefWindowInfo;
-        private DemoCefClient _cefClient;
-        public Browser(Size ScreenSize)
+        internal Browser(Size browserSize)
         {
-            _cefWindowInfo = CefWindowInfo.Create();
-            _cefWindowInfo.SetAsOffScreen(IntPtr.Zero);
-
-            var browserSettings = new CefBrowserSettings();
-            _cefClient = new DemoCefClient(ScreenSize.Width, ScreenSize.Height);
-            CefBrowserHost.CreateBrowser(_cefWindowInfo, _cefClient, browserSettings, "http://www.reddit.com/");
+            _browser = new ChromiumWebBrowser();
+            Size = browserSize;
         }
 
-        public void GoToPage(string page)
+        internal Browser(string uri, Size browserSize)
         {
-            //_browser.Load(page);
-            
+            _browser = new ChromiumWebBrowser(uri);
+            Size = browserSize;
         }
 
-        public Bitmap GetRawBitmap()
+        internal void GoToPage(string page)
         {
-            Bitmap output = _browser.Bitmap;
+            //if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
+            _browser.Load(page);
+        }
+
+        internal string GetAddress()
+        {
+            if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
+            return _browser.Address;
+        }
+
+        internal bool IsLoading()
+        {
+            if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
+            return _browser.IsLoading;
+        }
+
+        internal bool IsInitialized()
+        {
+            return _browser.IsBrowserInitialized;
+        }
+
+        internal Bitmap GetRawBitmap()
+        {
+            if (!_browser.IsBrowserInitialized) return null;
+
+            if (_browser.Size.Width != Size.Width && _browser.Size.Height != Size.Height)
+                _browser.Size = Size;
+
+            Bitmap output = _browser.ScreenshotOrNull();
             _browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
             return output;
         }
 
-        public Bitmap GetBitmap()
+        internal Bitmap GetBitmap()
         {
-            Bitmap doubleBuffer = new Bitmap(_browser.Bitmap.Width, _browser.Bitmap.Height, PixelFormat.Format32bppArgb);
+            var bmp = GetRawBitmap();
+
+            if (bmp == null) return null;
+            
+            Bitmap doubleBuffer = new Bitmap(bmp.Width, bmp.Height, PixelFormat.Format32bppArgb);
 
             using (var graphics = Graphics.FromImage(doubleBuffer))
             {
-                graphics.DrawImage(_browser.Bitmap, new Point(0, 0));
+                graphics.DrawImage(bmp, new Point(0, 0));
             }
 
             _browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
 
             return doubleBuffer;
         }
-    }
 
-    internal class DemoCefClient : CefClient
-    {
-        private readonly DemoCefLoadHandler _loadHandler;
-        private readonly DemoCefRenderHandler _renderHandler;
-
-        public DemoCefClient(int windowWidth, int windowHeight)
+        public void Dispose()
         {
-            _renderHandler = new DemoCefRenderHandler(windowWidth, windowHeight);
-            _loadHandler = new DemoCefLoadHandler();
-        }
-
-        protected override CefRenderHandler GetRenderHandler()
-        {
-            return _renderHandler;
-        }
-
-        protected override CefLoadHandler GetLoadHandler()
-        {
-            return _loadHandler;
-        }
-    }
-
-    internal class DemoCefLoadHandler : CefLoadHandler
-    {
-        protected override void OnLoadStart(CefBrowser browser, CefFrame frame)
-        {
-            // A single CefBrowser instance can handle multiple requests
-            //   for a single URL if there are frames (i.e. <FRAME>, <IFRAME>).
-            if (frame.IsMain)
-            {
-                Console.WriteLine("START: {0}", browser.GetMainFrame().Url);
-            }
-        }
-
-        protected override void OnLoadEnd(CefBrowser browser, CefFrame frame, int httpStatusCode)
-        {
-            if (frame.IsMain)
-            {
-                Console.WriteLine("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode);
-            }
-        }
-    }
-
-    internal class DemoCefRenderHandler : CefRenderHandler
-    {
-        private readonly int _windowHeight;
-        private readonly int _windowWidth;
-
-        public DemoCefRenderHandler(int windowWidth, int windowHeight)
-        {
-            _windowWidth = windowWidth;
-            _windowHeight = windowHeight;
-        }
-
-        protected override bool GetRootScreenRect(CefBrowser browser, ref CefRectangle rect)
-        {
-            return GetViewRect(browser, ref rect);
-        }
-
-        protected override bool GetScreenPoint(CefBrowser browser, int viewX, int viewY, ref int screenX, ref int screenY)
-        {
-            screenX = viewX;
-            screenY = viewY;
-            return true;
-        }
-
-        protected override bool GetViewRect(CefBrowser browser, ref CefRectangle rect)
-        {
-            rect.X = 0;
-            rect.Y = 0;
-            rect.Width = _windowWidth;
-            rect.Height = _windowHeight;
-            return true;
-        }
-
-        protected override bool GetScreenInfo(CefBrowser browser, CefScreenInfo screenInfo)
-        {
-            return false;
-        }
-
-        protected override void OnPopupSize(CefBrowser browser, CefRectangle rect)
-        {
-        }
-
-        protected override void OnPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr buffer, int width, int height)
-        {
-            // Save the provided buffer (a bitmap image) as a PNG.
-            var bitmap = new Bitmap(width, height, width * 4, PixelFormat.Format32bppRgb, buffer);
-            bitmap.Save("LastOnPaint.png", ImageFormat.Png);
-        }
-
-        protected override void OnCursorChange(CefBrowser browser, IntPtr cursorHandle)
-        {
-        }
-
-        protected override void OnScrollOffsetChanged(CefBrowser browser)
-        {
+            _browser?.Dispose();
+            _browser = null;
         }
     }
 }

@@ -6,9 +6,11 @@ using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using CefSharp;
 using GTA;
 using GTA.Math;
 using GTA.Native;
+using GTANetwork.GUI;
 using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
@@ -44,6 +46,9 @@ namespace GTANetwork
             TextElements = new List<UIResText>();
             AudioDevice = new WindowsMediaPlayerClass();
         }
+
+        public static PointF MousePosition { get; set; }
+        public static bool MouseClick { get; set; }
 
         public static List<UIResText> TextElements { get; set; }
 
@@ -291,6 +296,74 @@ namespace GTANetwork
             return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
         }
 
+        public Browser createCefBrowser(double width, double height)
+        {
+            var newBrowser = new Browser(new Size((int)width, (int)height));
+            CEFManager.Browsers.Add(newBrowser);
+            return newBrowser;
+        }
+
+        public void destroyCefBrowser(Browser browser)
+        {
+            CEFManager.Browsers.Remove(browser);
+            browser.Dispose();
+        }
+
+        public bool isCefBrowserInitialized(Browser browser)
+        {
+            return browser.IsInitialized();
+        }
+
+        public void waitUntilCefBrowserInitalization(Browser browser)
+        {
+            while (!browser.IsInitialized())
+            {
+                wait(0);
+            }
+        }
+
+        public void setCefBrowserSize(Browser browser, double width, double height)
+        {
+            browser.Size = new Size((int) width, (int) height);
+        }
+
+        public Size getCefBrowserSize(Browser browser)
+        {
+            return browser.Size;
+        }
+
+        public void setCefBrowserHeadless(Browser browser, bool headless)
+        {
+            browser.Headless = headless;
+        }
+
+        public bool getCefBrowserHeadless(Browser browser)
+        {
+            return browser.Headless;
+        }
+
+        public void setCefBrowserPosition(Browser browser, double xPos, double yPos)
+        {
+            browser.Position = new Point((int) xPos, (int) yPos);
+        }
+
+        public Point getCefBrowserPosition(Browser browser)
+        {
+            return browser.Position;
+        }
+
+        public void loadPageCefBrowser(Browser browser, string uri)
+        {
+            // TODO: Allow only local pages.
+
+            browser.GoToPage(uri);
+        }
+
+        public bool isCefBrowserLoading(Browser browser)
+        {
+            return browser.IsLoading();
+        }
+
         public void callNative(string hash, params object[] args)
         {
             Hash ourHash;
@@ -367,6 +440,11 @@ namespace GTANetwork
         public SizeF getScreenResolutionMantainRatio()
         {
             return UIMenu.GetScreenResolutionMantainRatio();
+        }
+
+        public Size getScreenResolution()
+        {
+            return Game.ScreenResolution;
         }
 
         public void sendNotification(string text)

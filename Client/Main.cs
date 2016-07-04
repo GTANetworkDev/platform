@@ -220,7 +220,7 @@ namespace GTANetwork
 
             UpdateSocialClubAvatar();
 
-            //CEFManager.Initialize(Game.ScreenResolution);
+            CEFManager.Initialize(Game.ScreenResolution);
         }
 
         public static int RelGroup;
@@ -4040,6 +4040,9 @@ namespace GTANetwork
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
 			DEBUG_STEP = 52;
+
+            lock (CEFManager.Browsers)
+                CEFManager.Browsers.Clear();
 
             ClearStats();
 

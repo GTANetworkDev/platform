@@ -48,6 +48,15 @@
     <OutputPath>bin\x64\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CefSharp">
+      <HintPath>..\libs\cef\CefSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="CefSharp.Core">
+      <HintPath>..\libs\cef\CefSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="CefSharp.OffScreen">
+      <HintPath>..\libs\cef\CefSharp.OffScreen.dll</HintPath>
+    </Reference>
     <Reference Include="ClearScript">
       <HintPath>..\libs\ClearScript.dll</HintPath>
     </Reference>
