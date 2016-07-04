@@ -1515,37 +1515,39 @@ namespace GTANetwork
 
 			    if (IsRagdoll)
 			    {
-                    /*
+			        if (!Character.IsRagdoll)
+			        {
+			            Character.CanRagdoll = true;
+                        Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 10000, 20000, 0, 1, 1, 1);
+                        //Function.Call(Hash.SET_PED_RAGDOLL_ON_COLLISION, Character, true);
+			        }
+
+                    
+
                     var dir = Position - _lastPosition;
                     var vdir = PedVelocity - _lastPedVel;
                     var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                        (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                        Environment.TickCount - LastUpdateReceived,
                         (int)AverageLatency);
 
                     var posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                        (int)DateTime.Now.Subtract(LastUpdateReceived).TotalMilliseconds,
+                        Environment.TickCount - LastUpdateReceived,
                         (int)AverageLatency);
-                    if (GetPedSpeed(PedVelocity.Length()) > 0)
-                    {
-                        Character.Velocity = target + 2 * (posTarget - Character.Position);
-                        _stopTime = DateTime.Now;
-                        _carPosOnUpdate = Character.Position;
-                    }
-                    else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
-                    {
-                        posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
-                            (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
-                            posTarget.Z, 0, 0, 0, 0);
-                    }
-                    else
-                    {
-                        Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
-                            Position.Z, 0, 0, 0, 0);
-                    }*/
-
-                    //return false;
+                    
+                    Character.Velocity = target + 2 * (posTarget - Character.Position);
+                    _stopTime = DateTime.Now;
+                    _carPosOnUpdate = Character.Position;
+                    
+                    return true;
 			    }
+                else if (!IsRagdoll && Character.IsRagdoll)
+                {
+                    Character.CanRagdoll = false;
+                    Character.Task.ClearAllImmediately();
+                    Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                    Util.LoadDict("get_up@standard"), "back",
+                    8f, 10f, -1, 0, -8f, 1, 1, 1);
+                }
 
 				if (lastMeleeAnim != null)
 				{

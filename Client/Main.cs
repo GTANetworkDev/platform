@@ -2226,7 +2226,7 @@ namespace GTANetwork
                 UI.Notify("new bit pos: " + _debugmask);
             }
 
-                        UI.ShowSubtitle(Game.Player.Character.Weapons.Current.Hash.ToString());
+            UI.ShowSubtitle(Game.Player.Character.Weapons.Current.Hash.ToString());
             */
 			
             DEBUG_STEP = 3;
@@ -4084,6 +4084,10 @@ namespace GTANetwork
                 else
                 {
                     var data = (PedData) ourData;
+
+                    _debugSyncPed.IsRagdoll = player.IsRagdoll;
+
+
                     _debugSyncPed.OnFootSpeed = data.Speed;
                     _debugSyncPed.Name = data.Name;
                     _debugSyncPed.PedArmor = data.PedArmor;
