@@ -140,6 +140,7 @@ namespace GTANetwork
             Watcher = new SyncEventWatcher(this);
 
             Opponents = new Dictionary<int, SyncPed>();
+            Names = new Dictionary<int, string>();
             Npcs = new Dictionary<string, SyncPed>();
             _tickNatives = new Dictionary<string, NativeData>();
             _dcNatives = new Dictionary<string, NativeData>();
@@ -260,6 +261,7 @@ namespace GTANetwork
         private bool _debugWindow;
 
         public static Dictionary<int, SyncPed> Opponents;
+        public static Dictionary<int, string> Names;
         public static Dictionary<string, SyncPed> Npcs;
         public static float Latency;
         private int Port = 4499;
@@ -377,6 +379,7 @@ namespace GTANetwork
                         {
                             Opponents.ToList().ForEach(pair => pair.Value.Clear());
                             Opponents.Clear();
+                            Names.Clear();
                         }
 
                         if (Npcs != null)
@@ -431,6 +434,7 @@ namespace GTANetwork
                         {
                             Opponents.ToList().ForEach(pair => pair.Value.Clear());
                             Opponents.Clear();
+                            Names.Clear();
                         }
 
                         if (Npcs != null)
@@ -789,6 +793,7 @@ namespace GTANetwork
                                         {
                                             Opponents.ToList().ForEach(pair => pair.Value.Clear());
                                             Opponents.Clear();
+                                            Names.Clear();
                                         }
 
                                         if (Npcs != null)
@@ -849,6 +854,7 @@ namespace GTANetwork
                                         {
                                             Opponents.ToList().ForEach(pair => pair.Value.Clear());
                                             Opponents.Clear();
+                                            Names.Clear();
                                         }
 
                                         if (Npcs != null)
@@ -1348,6 +1354,7 @@ namespace GTANetwork
                         {
                             Opponents.ToList().ForEach(pair => pair.Value.Clear());
                             Opponents.Clear();
+                            Names.Clear();
                         }
 
                         if (Npcs != null)
@@ -1570,6 +1577,9 @@ namespace GTANetwork
                                     pair.Value.Textures.Get((byte)i), 2);
                             }
 
+                            if (!Names.ContainsKey(pair.Key)) Names.Add(pair.Key, pair.Value.Name);
+                            else Names[pair.Key] = pair.Value.Name;
+
                             ourPed.Alpha = pair.Value.Alpha;
 
                             //var ourSyncPed = GetOpponent(pair.Key);
@@ -1580,6 +1590,7 @@ namespace GTANetwork
                                 ourSyncPed.BlipSprite = pair.Value.BlipSprite;
                                 ourSyncPed.BlipColor = pair.Value.BlipColor;
                                 ourSyncPed.BlipAlpha = pair.Value.BlipAlpha;
+                                ourSyncPed.Name = pair.Value.Name;
                                 ourSyncPed.PedProps = pair.Value.Props.ToDictionary(item => (int)item.Key, item => (int)item.Value);
                                 ourSyncPed.PedTextures = pair.Value.Textures.ToDictionary(item => (int)item.Key, item => (int)item.Value);
                                 ourSyncPed.PedAccessories = pair.Value.Accessories.ToDictionary(item => (int) item.Key,
@@ -3747,6 +3758,7 @@ namespace GTANetwork
                                 {
                                     Opponents.ToList().ForEach(pair => pair.Value.Clear());
                                     Opponents.Clear();
+                                    Names.Clear();
                                 }
 
                                 if (Npcs != null)
@@ -3801,6 +3813,7 @@ namespace GTANetwork
                                 {
                                     Opponents.ToList().ForEach(pair => pair.Value.Clear());
                                     Opponents.Clear();
+                                    Names.Clear();
                                 }
 
                                 if (Npcs != null)
@@ -3890,7 +3903,8 @@ namespace GTANetwork
 					DEBUG_STEP = 42;
 					Opponents.ToList().ForEach(pair => pair.Value.Clear());
 					Opponents.Clear();
-				}
+                    Names.Clear();
+                }
 			}
 		}
 

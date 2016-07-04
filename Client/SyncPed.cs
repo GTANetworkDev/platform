@@ -1254,9 +1254,22 @@ namespace GTANetwork
             {
                 Character.Task.ClearSecondary();
 
-                if (Game.GameTime - _lastVehicleAimUpdate > 30)
+                if (Game.GameTime - _lastVehicleAimUpdate > 40)
                 {
-                    Character.Task.AimAt(AimCoords, -1);
+                    //Character.Task.AimAt(AimCoords, -1);
+                    var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                    var dir = Position - _lastPosition;
+                    var posTarget = Vector3.Lerp(Position, Position + dir,
+                        latency / ((float)AverageLatency));
+
+                    var ndir = posTarget - Character.Position;
+                    ndir.Normalize();
+
+                    var target = Character.Position + ndir * 20f;
+
+                    Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character, target.X, target.Y,
+                        target.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 3f, false, 2f, 2f, true, 512, false,
+                        unchecked ((int) FiringPattern.FullAuto));
                     _lastVehicleAimUpdate = Game.GameTime;
                 }
 			}
@@ -1344,7 +1357,20 @@ namespace GTANetwork
 
             if (Game.GameTime - _lastVehicleAimUpdate > 30)
             {
-                Character.Task.AimAt(AimCoords, -1);
+                //Character.Task.AimAt(AimCoords, -1);
+                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                var dir = Position - _lastPosition;
+                var posTarget = Vector3.Lerp(Position, Position + dir,
+                    latency / ((float)AverageLatency));
+
+                var ndir = posTarget - Character.Position;
+                ndir.Normalize();
+
+                var target = Character.Position + ndir * 20f;
+
+                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character, target.X, target.Y,
+                    target.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 3f, false, 2f, 2f, true, 512, false,
+                    unchecked((int)FiringPattern.FullAuto));
                 _lastVehicleAimUpdate = Game.GameTime;
             }
 
@@ -1396,15 +1422,8 @@ namespace GTANetwork
 			{
 				DisplayWeaponShootingAnimation();
 			}
-
-			var dirVector = Position - _lastPosition;
-
-			var target = Util.LinearVectorLerp(Position,
-				(Position) + dirVector,
-                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
-
-			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0,
-				0, 0, 0);
+            
+            UpdatePlayerPedPos();
 
 	        if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
 	        {
@@ -1498,8 +1517,7 @@ namespace GTANetwork
 			        if (!Character.IsRagdoll)
 			        {
 			            Character.CanRagdoll = true;
-                        Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 10000, 20000, 0, 1, 1, 1);
-                        //Function.Call(Hash.SET_PED_RAGDOLL_ON_COLLISION, Character, true);
+                        Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 50000, 60000, 0, 1, 1, 1);
 			        }
 
                     
@@ -1738,7 +1756,7 @@ namespace GTANetwork
 
                     target = Vector3.Lerp(PedVelocity, PedVelocity + vdir,
                         latency/((float) AverageLatency));
-                        posTarget = Vector3.Lerp(Position, Position + dir,
+                    posTarget = Vector3.Lerp(Position, Position + dir,
                         latency/((float) AverageLatency));
                 }
                 else

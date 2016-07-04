@@ -360,6 +360,9 @@ namespace GTANetworkShared
 
         [ProtoMember(7)]
         public Dictionary<byte, Tuple<byte, byte>> Accessories { get; set; }
+
+        [ProtoMember(8)]
+        public string Name { get; set; }
     }
 
     [ProtoContract]
