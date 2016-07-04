@@ -13,7 +13,7 @@ using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using NativeUI;
-using NAudio.Wave;
+using WMPLib;
 using Vector3 = GTANetworkShared.Vector3;
 
 namespace GTANetwork
@@ -42,6 +42,7 @@ namespace GTANetwork
             ScriptEngines = new List<ClientsideScriptWrapper>();
             ThreadJumper = new List<Action>();
             TextElements = new List<UIResText>();
+            AudioDevice = new WindowsMediaPlayerClass();
         }
 
         public static List<UIResText> TextElements { get; set; }
@@ -50,8 +51,7 @@ namespace GTANetwork
 
         public static List<Action> ThreadJumper;
 
-        public static WaveOutEvent AudioDevice { get; set; }
-        public static Mp3FileReader AudioReader { get; set; }
+        public static WindowsMediaPlayer AudioDevice { get; set; }
 
         public static void InvokeServerEvent(string eventName, object[] arguments)
         {
@@ -227,11 +227,7 @@ namespace GTANetwork
                     }
 
                     ScriptEngines.Clear();
-                    AudioDevice?.Stop();
-                    AudioDevice?.Dispose();
-                    AudioReader?.Dispose();
-                    AudioDevice = null;
-                    AudioReader = null;
+                    AudioDevice.controls.stop();
                 }
             });
         }
@@ -622,48 +618,44 @@ namespace GTANetwork
 
         public void startAudio(string path)
         {
+            if (path.StartsWith("http")) return;
+
             var absPath = getResourceFilePath(path);
-            JavascriptHook.AudioDevice?.Stop();
-            JavascriptHook.AudioDevice?.Dispose();
-            JavascriptHook.AudioReader?.Dispose();
-            
-            JavascriptHook.AudioReader = new Mp3FileReader(absPath);
-            JavascriptHook.AudioDevice = new WaveOutEvent();
-            JavascriptHook.AudioDevice.Init(JavascriptHook.AudioReader);
-            JavascriptHook.AudioDevice.Play();
+            JavascriptHook.AudioDevice.controls.stop();
+            JavascriptHook.AudioDevice.URL = absPath;
+            JavascriptHook.AudioDevice.controls.play();
         }
 
         public void pauseAudio()
         {
-            JavascriptHook.AudioDevice?.Pause();
+            JavascriptHook.AudioDevice.controls.pause();
         }
 
         public void resumeAudio()
         {
-            JavascriptHook.AudioDevice?.Play();
+            JavascriptHook.AudioDevice.controls.play();
         }
 
         public void setAudioTime(double seconds)
         {
-            if (JavascriptHook.AudioReader != null)
-                JavascriptHook.AudioReader.CurrentTime = TimeSpan.FromSeconds(seconds);
+            JavascriptHook.AudioDevice.controls.currentPosition = seconds;
         }
 
         public double getAudioTime()
         {
-            if (JavascriptHook.AudioReader != null) return JavascriptHook.AudioReader.CurrentTime.TotalMilliseconds;
+            if (JavascriptHook.AudioDevice != null) return JavascriptHook.AudioDevice.controls.currentPosition;
             return 0;
         }
 
         public bool isAudioPlaying()
         {
-            if (JavascriptHook.AudioDevice != null) return JavascriptHook.AudioDevice.PlaybackState == PlaybackState.Playing;
+            if (JavascriptHook.AudioDevice != null) return JavascriptHook.AudioDevice.playState == WMPPlayState.wmppsPlaying;
             return false;
         }
 
-        public void setAudioVolume(double vol)
+        public void setGameVolume(int vol)
         {
-            if (JavascriptHook.AudioDevice != null) JavascriptHook.AudioDevice.Volume = (float)vol;
+            if (JavascriptHook.AudioDevice != null) JavascriptHook.AudioDevice.settings.volume = vol;
         }
 
         public bool isAudioInitialized()
@@ -673,11 +665,7 @@ namespace GTANetwork
 
         public void stopAudio()
         {
-            JavascriptHook.AudioDevice?.Stop();
-            JavascriptHook.AudioDevice?.Dispose();
-            JavascriptHook.AudioReader?.Dispose();
-            JavascriptHook.AudioDevice = null;
-            JavascriptHook.AudioReader = null;
+            JavascriptHook.AudioDevice.controls.stop();
         }
 
         public void triggerServerEvent(string eventName, params object[] arguments)
