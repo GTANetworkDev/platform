@@ -177,6 +177,11 @@ namespace GTANetworkServer
             return ourScriptName.InvokeMethod(methodName, arguments);
         }
 
+        public dynamic exported
+        {
+            get { return Program.ServerInstance.ExportedFunctions; }
+        }
+        
         public void startResource(string resourceName)
         {
             Program.ServerInstance.StartResource(resourceName);
@@ -261,7 +266,7 @@ namespace GTANetworkServer
             ResourceParent.AddTrackedThread(t);
             return t;
         }
-
+        
         /// <summary>
         /// Notice: not available in the Script constructor. Use onResourceStart even instead.
         /// </summary>

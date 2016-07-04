@@ -162,12 +162,18 @@ namespace GTANetworkServer
                     if (Language == ScriptingEngineLanguage.compiled)
                     {
                         var mi = _compiledScript.GetType().GetMethod(method);
-                        objectToReturn =  mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
+                        if (mi == null)
+                        {
+                            Program.Output("METHOD NOT ACCESSIBLE OR NOT FOUND: " + method);
+                            return;
+                        }
+
+                        objectToReturn = mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
                     }
                     else if (Language == ScriptingEngineLanguage.javascript)
                     {
                         var mi = ((object) _jsEngine.Script).GetType().GetMethod(method);
-                        objectToReturn = mi.Invoke(_compiledScript, args.Length == 0 ? null : args);
+                        objectToReturn = mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
                     }
                 }));
 
@@ -418,6 +424,19 @@ namespace GTANetworkServer
 
         [XmlElement("map")]
         public MapSource Map { get; set; }
+
+        [XmlElement("export")]
+        public List<MethodExport> ExportedFunctions { get; set; }
+    }
+
+    [XmlRoot("export")]
+    public class MethodExport
+    {
+        [XmlAttribute("src")]
+        public string Path { get; set; }
+
+        [XmlAttribute("function")]
+        public string Name { get; set; }
     }
 
     [XmlRoot("map")]

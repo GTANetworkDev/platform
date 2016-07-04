@@ -91,6 +91,7 @@ namespace GTANetworkServer
             Downloads = new List<StreamingClient>();
             RunningResources = new List<Resource>();
             FileHashes = new Dictionary<string, string>();
+            ExportedFunctions = new System.Dynamic.ExpandoObject();
 
             MaxPlayers = 32;
             Port = conf.Port;
@@ -157,6 +158,9 @@ namespace GTANetworkServer
         public bool ReadyToClose { get; set; }
         public bool ACLEnabled { get; set; }
         public bool UseUPnP { get; set; }
+
+        public dynamic ExportedFunctions;
+        public delegate object ExportedFunctionDelegate(params object[] parameters);
 
         public List<string> LoadedIPL = new List<string>();
         public List<string> RemovedIPL = new List<string>();
@@ -393,7 +397,29 @@ namespace GTANetworkServer
                 {
                     engine.InvokeResourceStart();
                 }
-                
+
+
+                if (ourResource.Info.ExportedFunctions != null)
+                {
+                    var gPool = ExportedFunctions as IDictionary<string, object>;
+                    dynamic resPool = new System.Dynamic.ExpandoObject();
+                    var resPoolDict = resPool as IDictionary<string, object>;
+
+                    foreach (var func in ourResource.Info.ExportedFunctions)
+                    {
+                        ScriptingEngine engine;
+                        if (string.IsNullOrEmpty(func.Path))
+                            engine = ourResource.Engines.SingleOrDefault();
+                        else
+                            engine = ourResource.Engines.FirstOrDefault(en => en.Filename == func.Path);
+
+                        if (engine == null) continue;
+                        ExportedFunctionDelegate punchthrough = parameters => engine.InvokeMethod(func.Name, parameters);
+                        resPoolDict.Add(func.Name, punchthrough);
+                    }
+
+                    gPool.Add(ourResource.DirectoryName, resPool);
+                }
 
                 var randGen = new Random();
                 
@@ -504,6 +530,9 @@ namespace GTANetworkServer
 
                 if (CurrentMap == ourRes) CurrentMap = null;
 
+                var gPool = ExportedFunctions as IDictionary<string, object>;
+                if (gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
+
                 RunningResources.Remove(ourRes);
 
                 Program.Output("Stopped " + resourceName + "!");
@@ -580,6 +609,7 @@ namespace GTANetworkServer
             compParams.ReferencedAssemblies.Add("System.IO.dll");
             compParams.ReferencedAssemblies.Add("System.Linq.dll");
             compParams.ReferencedAssemblies.Add("System.Core.dll");
+            compParams.ReferencedAssemblies.Add("Microsoft.CSharp.dll");
             compParams.ReferencedAssemblies.Add("GTANetworkServer.exe");
             compParams.ReferencedAssemblies.Add("GTANetworkShared.dll");
 

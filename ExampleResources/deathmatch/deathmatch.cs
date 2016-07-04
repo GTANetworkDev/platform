@@ -158,7 +158,8 @@ public class Deathmatch : Script
         }
     }
 
-    private void Respawn(Client player)
+    // Exported
+    public void Respawn(Client player)
     {
         API.sendNativeToPlayer(player, 17464388802800305651, new EntityArgument(player.CharacterHandle.Value), true);
         var rand = spawns[rInst.Next(spawns.Count)];
