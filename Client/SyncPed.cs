@@ -253,27 +253,7 @@ namespace GTANetwork
         public bool IsRagdoll
         {
             get { return _isRagdoll; }
-            set
-            {
-                if (!_isRagdoll && value)
-                {
-                    if (Character != null)
-                    {
-                        //Character.CanRagdoll = true;
-                        //Function.Call(Hash.SET_PED_TO_RAGDOLL, -1, -1, 0, true, true, true);
-                    }
-                }
-                else if (_isRagdoll && !value)
-                {
-                    if (Character != null)
-                    {
-                        //Character.CanRagdoll = false;
-                        //Character.Task.ClearAllImmediately();
-                    }
-                }
-                
-                _isRagdoll = value;
-            }
+            set { _isRagdoll = value; }
         }
 
         public int DEBUG_STEP
@@ -1544,9 +1524,27 @@ namespace GTANetwork
                 {
                     Character.CanRagdoll = false;
                     Character.Task.ClearAllImmediately();
+                    
                     Function.Call(Hash.TASK_PLAY_ANIM, Character,
                     Util.LoadDict("get_up@standard"), "back",
-                    8f, 10f, -1, 0, -8f, 1, 1, 1);
+                    12f, 12f, -1, 0, -10f, 1, 1, 1);
+
+                    return true;
+                }
+
+                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, "get_up@standard", "back", 3))
+                {
+                    UpdatePlayerPedPos();
+                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, "get_up@standard", "back");
+
+                    if (currentTime >= 0.7f)
+                    {
+                        Character.Task.ClearAnimation("get_up@standard", "back");
+                    }
+                    else
+                    {
+                        return true;
+                    }
                 }
 
 				if (lastMeleeAnim != null)

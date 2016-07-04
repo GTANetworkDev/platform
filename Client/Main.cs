@@ -1698,7 +1698,7 @@ namespace GTANetwork
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
                 obj.VehicleModelHash = veh.Model.Hash;
-                obj.PlayerHealth = (byte)(100 * (player.Health / (float)player.MaxHealth));
+                obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = (byte)player.Armor;
@@ -1796,7 +1796,7 @@ namespace GTANetwork
                 obj.PedArmor = (byte)player.Armor;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
-                obj.PlayerHealth = (byte)(100 * (player.Health / (float)player.MaxHealth));
+                obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
                 obj.Velocity = player.Velocity.ToLVector();
 
                 obj.Flag = 0;
@@ -1882,7 +1882,7 @@ namespace GTANetwork
                 obj.PedArmor = (byte)player.Armor;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
-                obj.PlayerHealth = (byte)(100 * (player.Health / (float)player.MaxHealth));
+                obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
                 obj.Velocity = player.Velocity.ToLVector();
                 obj.Flag = 0;
                 obj.Speed = (byte) GetPedWalkingSpeed(player);
@@ -2241,8 +2241,9 @@ namespace GTANetwork
             }
 
             new UIResText(sb.ToString(), new Point(), 0.35f).Draw();
+            new UIResText(Game.Player.Character.Health + "/" + Game.Player.Character.MaxHealth, new Point(), 0.5f).Draw();
             */
-            
+
 
             if (display)
             {
