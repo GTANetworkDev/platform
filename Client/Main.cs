@@ -2108,7 +2108,7 @@ namespace GTANetwork
         private SyncPed _currentSpectatingPlayer;
         public static DateTime LastCarEnter;
         private int _debugPed;
-
+        private Dictionary<int, int> _debugSettings = new Dictionary<int, int>(); 
 
         public void OnTick(object sender, EventArgs e)
         {
@@ -2189,7 +2189,7 @@ namespace GTANetwork
                 UI.ShowSubtitle(offset.ToString());
                 World.DrawMarker(MarkerType.DebugSphere, pos, new Vector3(), new Vector3(), new Vector3(0.2f, 0.2f, 0.2f), Color.Red);
             }*/
-			/*
+            /*
             if (Game.IsKeyPressed(Keys.NumPad7))
             {
                 offset = new Vector3(offset.X, offset.Y, offset.Z + 0.005f);
@@ -2220,7 +2220,7 @@ namespace GTANetwork
                 offset = new Vector3(offset.X + 0.005f, offset.Y, offset.Z);
             }
 			*/
-			/*
+            /*
             if (Game.IsControlJustPressed(0, Control.Context))
             {
                 var p = Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 10f, 0f));
@@ -2253,23 +2253,33 @@ namespace GTANetwork
             }
 
             UI.ShowSubtitle(Game.Player.Character.Weapons.Current.Hash.ToString());
+            new UIResText(Game.Player.Character.Health + "/" + Game.Player.Character.MaxHealth, new Point(), 0.5f).Draw();
+
+            
+            for (int i = 0; i < 2000; i++)
+            {
+                var val = Function.Call<int>(Hash.GET_PROFILE_SETTING, i);
+                if (_debugSettings.ContainsKey(i))
+                {
+                    if (_debugSettings[i] != val)
+                    {
+                        UI.Notify("SETTINGS ID " + i + " CHANGED TO " + val);
+                    }
+                    _debugSettings[i] = val;
+                }
+                else
+                {
+                    _debugSettings.Add(i, val);
+                }
+            }
+
+
             */
-			
+
             DEBUG_STEP = 3;
 #if DEBUG
 
-            /*
-            var sb = new StringBuilder();
-            for (int i = 0; i < 1000; i++)
-            {
-                if (Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, Game.Player.Character, i))
-                    sb.Append(i + ", ");
-            }
-
-            new UIResText(sb.ToString(), new Point(), 0.35f).Draw();
-            new UIResText(Game.Player.Character.Health + "/" + Game.Player.Character.MaxHealth, new Point(), 0.5f).Draw();
-            */
-
+            
 
             if (display)
             {
@@ -2425,6 +2435,68 @@ namespace GTANetwork
 
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;
+
+
+            if (Game.IsControlJustPressed(0, Control.ThrowGrenade) && !Game.Player.Character.IsInVehicle() && IsOnServer() && !Chat.IsFocused)
+            {
+                var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.Player.Character.Position).Length()).Take(1).ToList();
+                if (vehs.Any() && Game.Player.Character.IsInRangeOf(vehs[0].Position, 6f))
+                {
+                    var relPos = vehs[0].GetOffsetFromWorldCoords(Game.Player.Character.Position);
+                    VehicleSeat seat = VehicleSeat.Any;
+
+                    if (relPos.X < 0 && relPos.Y > 0)
+                    {
+                        seat = VehicleSeat.RightFront;
+                    }
+                    else if (relPos.X >= 0 && relPos.Y > 0)
+                    {
+                        seat = VehicleSeat.RightFront;
+                    }
+                    else if (relPos.X < 0 && relPos.Y <= 0)
+                    {
+                        seat = VehicleSeat.LeftRear;
+                    }
+                    else if (relPos.X >= 0 && relPos.Y <= 0)
+                    {
+                        seat = VehicleSeat.RightRear;
+                    }
+
+                    if (vehs[0].PassengerSeats == 1) seat = VehicleSeat.Passenger;
+
+                    if (vehs[0].PassengerSeats > 3 && vehs[0].GetPedOnSeat(seat).Handle != 0)
+                    {
+                        if (seat == VehicleSeat.LeftRear)
+                        {
+                            for (int i = 3; i < vehs[0].PassengerSeats; i += 2)
+                            {
+                                if (vehs[0].GetPedOnSeat((VehicleSeat)i).Handle == 0)
+                                {
+                                    seat = (VehicleSeat)i;
+                                    break;
+                                }
+                            }
+                        }
+                        else if (seat == VehicleSeat.RightRear)
+                        {
+                            for (int i = 4; i < vehs[0].PassengerSeats; i += 2)
+                            {
+                                if (vehs[0].GetPedOnSeat((VehicleSeat)i).Handle == 0)
+                                {
+                                    seat = (VehicleSeat)i;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)vehs[0].Model.Hash, 0, true) && Game.Player.Character.IsIdle && !Game.Player.IsAiming)
+                        Game.Player.Character.SetIntoVehicle(vehs[0], seat);
+                    else
+                        Game.Player.Character.Task.EnterVehicle(vehs[0], seat, -1, 2f);
+                    _isGoingToCar = true;
+                }
+            }
 
             Game.DisableControl(0, Control.SpecialAbility);
             Game.DisableControl(0, Control.SpecialAbilityPC);
@@ -2687,67 +2759,6 @@ namespace GTANetwork
                 ChatVisible = !ChatVisible;
             }
             
-
-            if (e.KeyCode == Keys.G && !Game.Player.Character.IsInVehicle() && IsOnServer() && !Chat.IsFocused)
-            {
-                var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.Player.Character.Position).Length()).Take(1).ToList();
-                if (vehs.Any() && Game.Player.Character.IsInRangeOf(vehs[0].Position, 6f))
-                {
-                    var relPos = vehs[0].GetOffsetFromWorldCoords(Game.Player.Character.Position);
-                    VehicleSeat seat = VehicleSeat.Any;
-
-                    if (relPos.X < 0 && relPos.Y > 0)
-                    {
-                        seat = VehicleSeat.RightFront;
-                    }
-                    else if (relPos.X >= 0 && relPos.Y > 0)
-                    {
-                        seat = VehicleSeat.RightFront;
-                    }
-                    else if (relPos.X < 0 && relPos.Y <= 0)
-                    {
-                        seat = VehicleSeat.LeftRear;
-                    }
-                    else if (relPos.X >= 0 && relPos.Y <= 0)
-                    {
-                        seat = VehicleSeat.RightRear;
-                    }
-
-                    if (vehs[0].PassengerSeats == 1) seat = VehicleSeat.Passenger;
-
-                    if (vehs[0].PassengerSeats > 3 && vehs[0].GetPedOnSeat(seat).Handle != 0)
-                    {
-                        if (seat == VehicleSeat.LeftRear)
-                        {
-                            for (int i = 3; i < vehs[0].PassengerSeats; i += 2)
-                            {
-                                if (vehs[0].GetPedOnSeat((VehicleSeat) i).Handle == 0)
-                                {
-                                    seat = (VehicleSeat) i;
-                                    break;
-                                }
-                            }
-                        }
-                        else if (seat == VehicleSeat.RightRear)
-                        {
-                            for (int i = 4; i < vehs[0].PassengerSeats; i += 2)
-                            {
-                                if (vehs[0].GetPedOnSeat((VehicleSeat)i).Handle == 0)
-                                {
-                                    seat = (VehicleSeat)i;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash) vehs[0].Model.Hash, 0, true) && Game.Player.Character.IsIdle && !Game.Player.IsAiming)
-                        Game.Player.Character.SetIntoVehicle(vehs[0], seat);
-                    else
-                        Game.Player.Character.Task.EnterVehicle(vehs[0], seat, -1, 2f);
-                    _isGoingToCar = true;
-                }
-            }
 
             if (e.KeyCode == Keys.T && IsOnServer() && ChatVisible)
             {
