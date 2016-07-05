@@ -356,7 +356,7 @@ namespace GTANetwork
 
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
-			if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
+			if (Character == null || !Character.Exists() || (!Character.IsInRangeOf(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
 				//LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
                 
@@ -619,7 +619,6 @@ namespace GTANetwork
 					if (VehicleSeat == -1)
 						MainVehicle.Position = VehiclePosition;
 					MainVehicle.EngineRunning = true;
-					MainVehicle.Rotation = _vehicleRotation;
 					MainVehicle.IsInvincible = true;
 					Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
 					DEBUG_STEP = 12;
