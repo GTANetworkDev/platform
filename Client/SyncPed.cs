@@ -638,13 +638,15 @@ namespace GTANetwork
 			{
 				if (Character != null && Environment.TickCount - LastUpdateReceived < 10000)
 				{
-					if (!IsInVehicle) Character.Position = gPos;
+				    if (!IsInVehicle)
+				    {
+				        Character.Position = gPos;
+				    }
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
 						MainVehicle.Position = VehiclePosition;
 						MainVehicle.Rotation = VehicleRotation;
-						Character.Position = gPos;
-					}
+                    }
 				}
 				return true;
 			}
