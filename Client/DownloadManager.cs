@@ -32,14 +32,16 @@ namespace GTANetwork
                     myData = md5.ComputeHash(stream);
                 }
 
-                if (myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right) == md5hash)
+                string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                
+                if (hash == md5hash)
                 {
                     if (type == FileType.Script)
                     {
-                        PendingScripts.ClientsideScripts.Add(
-                            LoadScript(path, resource, File.ReadAllText(FileTransferId._DOWNLOADFOLDER_ + path)));
+                        PendingScripts.ClientsideScripts.Add(LoadScript(path, resource, File.ReadAllText(FileTransferId._DOWNLOADFOLDER_ + path)));
                     }
 
+                    LogManager.DebugLog("HASH MATCHES, RETURNING FALSE");
                     return false;
                 }
             }
@@ -86,43 +88,48 @@ namespace GTANetwork
                 Util.SafeNotify($"END Channel mismatch! We have {CurrentFile?.Id} and supplied was {id}");
                 return;
             }
-            
-            if (CurrentFile.Type == FileType.Map)
+
+            try
             {
-                var obj = Main.DeserializeBinary<ServerMap>(CurrentFile.Data.ToArray()) as ServerMap;
-                if (obj == null)
+                if (CurrentFile.Type == FileType.Map)
                 {
-                    Util.SafeNotify("ERROR DOWNLOADING MAP: NULL");
+                    var obj = Main.DeserializeBinary<ServerMap>(CurrentFile.Data.ToArray()) as ServerMap;
+                    if (obj == null)
+                    {
+                        Util.SafeNotify("ERROR DOWNLOADING MAP: NULL");
+                    }
+                    else
+                    {
+                        Main.AddMap(obj);
+                    }
                 }
-                else
+                else if (CurrentFile.Type == FileType.Script)
                 {
-                    Main.AddMap(obj);
+                    var scriptText = Encoding.UTF8.GetString(CurrentFile.Data.ToArray());
+                    var newScript = LoadScript(CurrentFile.Filename, CurrentFile.Resource, scriptText);
+                    PendingScripts.ClientsideScripts.Add(newScript);
+                }
+                else if (CurrentFile.Type == FileType.EndOfTransfer)
+                {
+                    Main.StartClientsideScripts(PendingScripts);
+                    PendingScripts.ClientsideScripts.Clear();
+
+                    if (Main.JustJoinedServer)
+                    {
+                        World.RenderingCamera = null;
+                        Main.MainMenu.TemporarilyHidden = false;
+                        Main.MainMenu.Visible = false;
+                        Main.JustJoinedServer = false;
+                    }
+
+                    Main.InvokeFinishedDownload();
                 }
             }
-            else if (CurrentFile.Type == FileType.Script)
+            finally
             {
-                var scriptText = Encoding.UTF8.GetString(CurrentFile.Data.ToArray());
-                var newScript = LoadScript(CurrentFile.Filename, CurrentFile.Resource, scriptText);
-                PendingScripts.ClientsideScripts.Add(newScript);
+                CurrentFile.Dispose();
+                CurrentFile = null;
             }
-            else if (CurrentFile.Type == FileType.EndOfTransfer)
-            {
-                Main.StartClientsideScripts(PendingScripts);
-                PendingScripts.ClientsideScripts.Clear();
-
-                if (Main.JustJoinedServer)
-                {
-                    World.RenderingCamera = null;
-                    Main.MainMenu.TemporarilyHidden = false;
-                    Main.MainMenu.Visible = false;
-                    Main.JustJoinedServer = false;
-                }
-
-                Main.InvokeFinishedDownload();
-            }
-
-            CurrentFile.Dispose();
-            CurrentFile = null;
         }
     }
 

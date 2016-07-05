@@ -3181,6 +3181,8 @@ namespace GTANetwork
                             var acceptDownload = DownloadManager.StartDownload(data.Id,
                                 data.ResourceParent + Path.DirectorySeparatorChar + data.FileName,
                                 (FileType)data.FileType, data.Length, data.Md5Hash, data.ResourceParent);
+                            LogManager.DebugLog("FILE TYPE: " + (FileType) data.FileType);
+                            LogManager.DebugLog("DOWNLOAD ACCEPTED: " + acceptDownload);
                             var newMsg = Client.CreateMessage();
                             newMsg.Write((int)PacketType.FileAcceptDeny);
                             newMsg.Write(data.Id);

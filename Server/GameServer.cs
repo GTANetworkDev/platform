@@ -475,11 +475,12 @@ namespace GTANetworkServer
                         downloader.Files.Add(scriptData);
                     }
 
-                        var endStream = new StreamedData();
+                    var endStream = new StreamedData();
                     endStream.Id = randGen.Next(int.MaxValue);
                     endStream.Data = new byte[] { 0xDE, 0xAD, 0xF0, 0x0D };
                     endStream.Type = FileType.EndOfTransfer;
                     downloader.Files.Add(endStream);
+
                     Downloads.Add(downloader);
                 }
 
@@ -1240,10 +1241,6 @@ namespace GTANetworkServer
                                         mapData.Data = SerializeBinary(mapObj);
                                         mapData.Type = FileType.Map;
 
-                                        var clientScripts = new ScriptCollection();
-                                        clientScripts.ClientsideScripts = new List<ClientsideScript>(GetAllClientsideScripts());
-
-
                                         var downloader = new StreamingClient(client);
                                         downloader.Files.Add(mapData);
 
@@ -1261,8 +1258,8 @@ namespace GTANetworkServer
                                                                         file.Path);
                                                 fileData.Name = file.Path;
                                                 fileData.Resource = resource.DirectoryName;
-                                                fileData.Hash = FileHashes.ContainsKey(file.Path)
-                                                    ? FileHashes[file.Path]
+                                                fileData.Hash = FileHashes.ContainsKey(resource.DirectoryName + "_" + file.Path)
+                                                    ? FileHashes[resource.DirectoryName + "_" + file.Path]
                                                     : null;
                                                 downloader.Files.Add(fileData);
                                             }
