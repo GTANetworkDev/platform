@@ -640,7 +640,7 @@ namespace GTANetwork
 				{
 				    if (!IsInVehicle)
 				    {
-				        Character.Position = gPos;
+				        Character.PositionNoOffset = gPos;
 				    }
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
@@ -1621,7 +1621,7 @@ namespace GTANetwork
 
                 DEBUG_STEP = 0;
                 
-                const float hRange = 50f;
+                float hRange = IsInVehicle ? 50f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
