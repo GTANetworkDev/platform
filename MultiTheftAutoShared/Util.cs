@@ -7,6 +7,11 @@ namespace GTANetworkShared
 {
     public static class Extensions
     {
+        public static int FromArgb(byte a, byte r, byte g, byte b)
+        {
+            return b | g << 8 | r << 16 | a << 24;
+        }
+
         public static void Set<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue value)
         {
             if (dict.ContainsKey(key))

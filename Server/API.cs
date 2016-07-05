@@ -504,9 +504,18 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(vehicle))
             {
-                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor =
-                    color;
+                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor = color;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x55E1D2758F34E437, vehicle);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x4F1D4BE3A7F24601, vehicle, color, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor);
+            }
+        }
+
+        public void setVehicleCustomPrimaryColor(NetHandle vehicle, int red, int green, int blue)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x7141766F91D15BEA, vehicle, red, green, blue);
             }
         }
 
@@ -514,9 +523,18 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(vehicle))
             {
-                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor =
-                    color;
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor = color;
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x5FFBDEEC3E8E2009, vehicle);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x4F1D4BE3A7F24601, vehicle, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor, color);
+            }
+        }
+
+        public void setVehicleCustomSecondaryColor(NetHandle vehicle, int red, int green, int blue)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x36CED73BFED89754, vehicle, red, green, blue);
             }
         }
 

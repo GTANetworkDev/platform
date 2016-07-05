@@ -1464,8 +1464,19 @@ namespace GTANetwork
                             pair.Value.Rotation.ToVector(), pair.Key);
                         if (ourVeh == null) continue;
                         ourVeh.Livery = pair.Value.Livery;
-                        ourVeh.PrimaryColor = (VehicleColor) pair.Value.PrimaryColor;
-                        ourVeh.SecondaryColor = (VehicleColor) pair.Value.SecondaryColor;
+
+                        if ((pair.Value.PrimaryColor & 0xFF000000) > 0)
+                            ourVeh.CustomPrimaryColor = Color.FromArgb(pair.Value.PrimaryColor);
+                        else
+                            ourVeh.PrimaryColor = (VehicleColor) pair.Value.PrimaryColor;
+
+                        if ((pair.Value.SecondaryColor & 0xFF000000) > 0)
+                            ourVeh.CustomSecondaryColor = Color.FromArgb(pair.Value.SecondaryColor);
+                        else
+                            ourVeh.SecondaryColor = (VehicleColor) pair.Value.SecondaryColor;
+                       
+
+
                         ourVeh.PearlescentColor = (VehicleColor) 0;
                         ourVeh.RimColor = (VehicleColor) 0;
                         ourVeh.EngineHealth = pair.Value.Health;
@@ -3063,10 +3074,18 @@ namespace GTANetwork
                                 LogManager.DebugLog("Settings vehicle color 1");
                                 veh.Livery = prop.Livery;
                                 veh.NumberPlate = prop.NumberPlate;
-                                veh.PrimaryColor = (VehicleColor)prop.PrimaryColor;
-                                LogManager.DebugLog("Settings vehicle color 2");
-                                veh.SecondaryColor = (VehicleColor)prop.SecondaryColor;
-                                LogManager.DebugLog("Settings vehicle extra colors");
+
+                                if ((prop.PrimaryColor & 0xFF000000) > 0)
+                                    veh.CustomPrimaryColor = Color.FromArgb(prop.PrimaryColor);
+                                else
+                                    veh.PrimaryColor = (VehicleColor)prop.PrimaryColor;
+
+                                if ((prop.SecondaryColor & 0xFF000000) > 0)
+                                    veh.CustomSecondaryColor = Color.FromArgb(prop.SecondaryColor);
+                                else
+                                    veh.SecondaryColor = (VehicleColor)prop.SecondaryColor;
+
+                                
                                 Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
 								Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
                                 Function.Call(Hash.SET_VEHICLE_MOD_KIT, veh, 0);

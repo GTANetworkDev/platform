@@ -869,6 +869,8 @@ namespace GTANetworkServer
                                                         client.Name + ")");
 
                                         Clients.Remove(client);
+
+                                        Downloads.RemoveAll(d => d.Parent == client);
                                     }
                                 }
                             }
