@@ -377,9 +377,11 @@ namespace GTANetwork
 				Character = World.CreatePed(charModel, gPos, _rotation.Z);
 				charModel.MarkAsNoLongerNeeded();
 
+				if (Character == null) return true;
+
+
 			    Character.CanBeTargetted = true;
 
-				if (Character == null) return true;
 
 				DEBUG_STEP = 4;
 
