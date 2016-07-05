@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using GTA;
 using GTANetworkShared;
 
@@ -10,30 +11,52 @@ namespace GTANetwork
 {
     public static class DownloadManager
     {
+        private static ScriptCollection PendingScripts = new ScriptCollection() { ClientsideScripts = new List<ClientsideScript>()};
+
         private static FileTransferId CurrentFile;
-        public static bool StartDownload(int id, string path, FileType type, int len, string md5hash)
+        public static bool StartDownload(int id, string path, FileType type, int len, string md5hash, string resource)
         {
             if (CurrentFile != null)
             {
                 return false;
             }
 
-            if (type == FileType.Normal && Directory.Exists(FileTransferId._DOWNLOADFOLDER_ + path.Replace(Path.GetFileName(path), "")) &&
+            if ((type == FileType.Normal || type == FileType.Script) && Directory.Exists(FileTransferId._DOWNLOADFOLDER_ + path.Replace(Path.GetFileName(path), "")) &&
                 File.Exists(FileTransferId._DOWNLOADFOLDER_ + path))
             {
+                byte[] myData;
+
                 using (var md5 = MD5.Create())
                 using (var stream = File.OpenRead(FileTransferId._DOWNLOADFOLDER_ + path))
                 {
-                    var myData = md5.ComputeHash(stream);
-                    if (myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right) == md5hash)
+                    myData = md5.ComputeHash(stream);
+                }
+
+                if (myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right) == md5hash)
+                {
+                    if (type == FileType.Script)
                     {
-                        return false;
+                        PendingScripts.ClientsideScripts.Add(
+                            LoadScript(path, resource, File.ReadAllText(FileTransferId._DOWNLOADFOLDER_ + path)));
                     }
+
+                    return false;
                 }
             }
 
-            CurrentFile = new FileTransferId(id, path, type, len);
+            CurrentFile = new FileTransferId(id, path, type, len, resource);
             return true;
+        }
+
+        public static ClientsideScript LoadScript(string file, string resource, string script)
+        {
+            var csScript = new ClientsideScript();
+
+            csScript.Filename = Path.GetFileNameWithoutExtension(file)?.Replace('.', '_');
+            csScript.ResourceParent = resource;
+            csScript.Script = script;
+
+            return csScript;
         }
 
         public static void Cancel()
@@ -50,7 +73,7 @@ namespace GTANetwork
             
             CurrentFile.Write(bytes);
             UI.ShowSubtitle("Downloading " +
-                            (CurrentFile.Type == FileType.Normal
+                            ((CurrentFile.Type == FileType.Normal || CurrentFile.Type == FileType.Script)
                                 ? CurrentFile.Filename
                                 : CurrentFile.Type.ToString()) + ": " +
                             (CurrentFile.DataWritten/(float) CurrentFile.Length).ToString("P"));
@@ -78,25 +101,24 @@ namespace GTANetwork
             }
             else if (CurrentFile.Type == FileType.Script)
             {
-                var obj = Main.DeserializeBinary<ScriptCollection>(CurrentFile.Data.ToArray()) as ScriptCollection;
-                if (obj == null)
-                {
-                    Util.SafeNotify("ERROR DOWNLOADING SCRIPTS: NULL");
-                }
-                else
-                {
-                    Main.StartClientsideScripts(obj);
+                var scriptText = Encoding.UTF8.GetString(CurrentFile.Data.ToArray());
+                var newScript = LoadScript(CurrentFile.Filename, CurrentFile.Resource, scriptText);
+                PendingScripts.ClientsideScripts.Add(newScript);
+            }
+            else if (CurrentFile.Type == FileType.EndOfTransfer)
+            {
+                Main.StartClientsideScripts(PendingScripts);
+                PendingScripts.ClientsideScripts.Clear();
 
-                    if (Main.JustJoinedServer)
-                    {
-                        World.RenderingCamera = null;
-                        Main.MainMenu.TemporarilyHidden = false;
-                        Main.MainMenu.Visible = false;
-                        Main.JustJoinedServer = false;
-                    }
-
-                    Main.InvokeFinishedDownload();
+                if (Main.JustJoinedServer)
+                {
+                    World.RenderingCamera = null;
+                    Main.MainMenu.TemporarilyHidden = false;
+                    Main.MainMenu.Visible = false;
+                    Main.JustJoinedServer = false;
                 }
+
+                Main.InvokeFinishedDownload();
             }
 
             CurrentFile.Dispose();
@@ -115,22 +137,28 @@ namespace GTANetwork
         public int Length { get; set; }
         public int DataWritten { get; set; }
         public List<byte> Data { get; set; }
+        public string Resource { get; set; }
 
-        public FileTransferId(int id, string name, FileType type, int len)
+        public FileTransferId(int id, string name, FileType type, int len, string resource)
         {
             Id = id;
             Filename = name;
             Type = type;
             Length = len;
+            Resource = resource;
 
-            Data = new List<byte>();
-
-            if (type == FileType.Normal && name != null)
+            
+            if ((type == FileType.Normal || type == FileType.Script) && name != null)
             {
                 if (!Directory.Exists(_DOWNLOADFOLDER_ + name.Replace(Path.GetFileName(name), "")))
                     Directory.CreateDirectory(_DOWNLOADFOLDER_ + name.Replace(Path.GetFileName(name), ""));
                 Stream = new FileStream(_DOWNLOADFOLDER_ + name,
                     File.Exists(_DOWNLOADFOLDER_ + name) ? FileMode.Truncate : FileMode.CreateNew);
+            }
+
+            if (type != FileType.Normal)
+            {
+                Data = new List<byte>();
             }
         }
 
@@ -140,7 +168,8 @@ namespace GTANetwork
             {
                 Stream.Write(data, 0, data.Length);
             }
-            else
+
+            if (Data != null)
             {
                 Data.AddRange(data);
             }

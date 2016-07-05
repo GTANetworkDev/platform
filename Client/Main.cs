@@ -1431,6 +1431,7 @@ namespace GTANetwork
         {
             //File.WriteAllText("logs\\map.json", JsonConvert.SerializeObject(map));
 
+            UI.ShowSubtitle("Downloading Map...", 60000);
 
             try
             {
@@ -3179,7 +3180,7 @@ namespace GTANetwork
                         {
                             var acceptDownload = DownloadManager.StartDownload(data.Id,
                                 data.ResourceParent + Path.DirectorySeparatorChar + data.FileName,
-                                (FileType)data.FileType, data.Length, data.Md5Hash);
+                                (FileType)data.FileType, data.Length, data.Md5Hash, data.ResourceParent);
                             var newMsg = Client.CreateMessage();
                             newMsg.Write((int)PacketType.FileAcceptDeny);
                             newMsg.Write(data.Id);

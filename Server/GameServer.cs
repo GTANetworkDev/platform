@@ -333,10 +333,12 @@ namespace GTANetworkServer
                     {
                         var myData = md5.ComputeHash(stream);
 
-                        if (FileHashes.ContainsKey(filePath.Path))
-                            FileHashes[filePath.Path] = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                        var keyName = ourResource.DirectoryName + "_" + filePath.Path;
+
+                        if (FileHashes.ContainsKey(keyName))
+                            FileHashes[keyName] = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
                         else
-                            FileHashes.Add(filePath.Path, myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right));
+                            FileHashes.Add(keyName, myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right));
                     }
                 }
 
@@ -353,8 +355,22 @@ namespace GTANetworkServer
                             {
                                 ResourceParent = resourceName,
                                 Script = scrTxt,
-                                Filename = Path.GetFileNameWithoutExtension(script.Path)?.Replace('.', '_'),
+                                //Filename = Path.GetFileNameWithoutExtension(script.Path)?.Replace('.', '_'),
+                                Filename = script.Path,
                             };
+
+
+                            using (var md5 = MD5.Create())
+                            { 
+                                var myData = md5.ComputeHash(Encoding.UTF8.GetBytes(scrTxt));
+                                var scriptHash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                                csScript.MD5Hash = scriptHash;
+
+                                if (FileHashes.ContainsKey(ourResource.DirectoryName + "_" + script.Path))
+                                    FileHashes[ourResource.DirectoryName + "_" + script.Path] = scriptHash;
+                                else
+                                    FileHashes.Add(ourResource.DirectoryName + "_" + script.Path, scriptHash);
+                            }
 
                             ourResource.ClientsideScripts.Add(csScript);
                             csScripts.Add(csScript);
@@ -426,14 +442,6 @@ namespace GTANetworkServer
                 if (ourResource.ClientsideScripts.Count > 0 || currentResInfo.Files.Count > 0)
                 foreach (var client in Clients)
                 {
-                    var clientScripts = new ScriptCollection();
-                    clientScripts.ClientsideScripts = new List<ClientsideScript>(ourResource.ClientsideScripts);
-
-                    var scriptData = new StreamedData();
-                    scriptData.Id = randGen.Next(int.MaxValue);
-                    scriptData.Data = SerializeBinary(clientScripts);
-                    scriptData.Type = FileType.Script;
-
                     var downloader = new StreamingClient(client);
 
                     foreach (var file in currentResInfo.Files)
@@ -448,14 +456,30 @@ namespace GTANetworkServer
                                                 file.Path);
                         fileData.Name = file.Path;
                         fileData.Resource = ourResource.DirectoryName;
-                        fileData.Hash = FileHashes.ContainsKey(file.Path)
-                            ? FileHashes[file.Path]
+                        fileData.Hash = FileHashes.ContainsKey(ourResource.DirectoryName + "_" + file.Path)
+                            ? FileHashes[ourResource.DirectoryName + "_" + file.Path]
                             : null;
 
                         downloader.Files.Add(fileData);
                     }
 
-                    downloader.Files.Add(scriptData);
+                    foreach (var script in ourResource.ClientsideScripts)
+                    {
+                        var scriptData = new StreamedData();
+                        scriptData.Id = randGen.Next(int.MaxValue);
+                        scriptData.Data = Encoding.UTF8.GetBytes(script.Script);
+                        scriptData.Type = FileType.Script;
+                        scriptData.Resource = script.ResourceParent;
+                        scriptData.Hash = script.MD5Hash;
+                        scriptData.Name = script.Filename;
+                        downloader.Files.Add(scriptData);
+                    }
+
+                        var endStream = new StreamedData();
+                    endStream.Id = randGen.Next(int.MaxValue);
+                    endStream.Data = new byte[] { 0xDE, 0xAD, 0xF0, 0x0D };
+                    endStream.Type = FileType.EndOfTransfer;
+                    downloader.Files.Add(endStream);
                     Downloads.Add(downloader);
                 }
 
@@ -1219,10 +1243,6 @@ namespace GTANetworkServer
                                         var clientScripts = new ScriptCollection();
                                         clientScripts.ClientsideScripts = new List<ClientsideScript>(GetAllClientsideScripts());
 
-                                        var scriptData = new StreamedData();
-                                        scriptData.Id = r.Next(int.MaxValue);
-                                        scriptData.Data = SerializeBinary(clientScripts);
-                                        scriptData.Type = FileType.Script;
 
                                         var downloader = new StreamingClient(client);
                                         downloader.Files.Add(mapData);
@@ -1248,7 +1268,24 @@ namespace GTANetworkServer
                                             }
                                         }
 
-                                        downloader.Files.Add(scriptData);
+                                        foreach (var script in GetAllClientsideScripts())
+                                        {
+                                            var scriptData = new StreamedData();
+                                            scriptData.Id = r.Next(int.MaxValue);
+                                            scriptData.Data = Encoding.UTF8.GetBytes(script.Script);
+                                            scriptData.Type = FileType.Script;
+                                            scriptData.Resource = script.ResourceParent;
+                                            scriptData.Hash = script.MD5Hash;
+                                            scriptData.Name = script.Filename;
+                                            downloader.Files.Add(scriptData);
+                                        }
+
+
+                                        var endStream = new StreamedData();
+                                        endStream.Id = r.Next(int.MaxValue);
+                                        endStream.Data = new byte[] {0xDE, 0xAD, 0xF0, 0x0D};
+                                        endStream.Type = FileType.EndOfTransfer;
+                                        downloader.Files.Add(endStream);
                                         Downloads.Add(downloader);
 
 

@@ -637,7 +637,7 @@ namespace GTANetwork
 	    {
 			if (!inRange)
 			{
-				if (Character != null)
+				if (Character != null && Environment.TickCount - LastUpdateReceived < 10000)
 				{
 					if (!IsInVehicle) Character.Position = gPos;
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
@@ -1620,7 +1620,7 @@ namespace GTANetwork
 
                 DEBUG_STEP = 0;
                 
-                const float hRange = 300f;
+                const float hRange = 50f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
@@ -1674,7 +1674,7 @@ namespace GTANetwork
                 
 				if (Character != null)
                 {
-                    //Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
+                    Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
                 }
 
                 _switch++;
