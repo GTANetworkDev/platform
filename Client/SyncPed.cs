@@ -1623,7 +1623,7 @@ namespace GTANetwork
 
                 DEBUG_STEP = 0;
                 
-                float hRange = IsInVehicle ? 50f : 200f;
+                float hRange = IsInVehicle ? 100f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
