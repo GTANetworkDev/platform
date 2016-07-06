@@ -2,9 +2,10 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace GTANetwork
 {
@@ -12,26 +13,39 @@ namespace GTANetwork
     {
         public static void TakeScreenshot()
         {
-            string destinationFolder = Main.GTANInstallDir + Path.DirectorySeparatorChar + "screenshots";
-            if (!Directory.Exists(destinationFolder)) Directory.CreateDirectory(destinationFolder);
+            var t = new Thread((ThreadStart) delegate
+            {
+                var destinationFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
+                    Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\GTA Network\\Screenshots";
+                if (!Directory.Exists(destinationFolder)) Directory.CreateDirectory(destinationFolder);
 
-            var gta5Proc = Process.GetProcessesByName("GTA5")[0];
-            var rect = new User32.Rect();
-            User32.GetWindowRect(gta5Proc.MainWindowHandle, ref rect);
+                var gta5Proc = Process.GetProcessesByName("GTA5")[0];
+                var rect = new User32.Rect();
+                User32.GetWindowRect(gta5Proc.MainWindowHandle, ref rect);
 
-            int width = rect.right - rect.left;
-            int height = rect.bottom - rect.top;
+                int width = rect.right - rect.left;
+                int height = rect.bottom - rect.top;
 
-            var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-            Graphics graphics = Graphics.FromImage(bmp);
-            graphics.CopyFromScreen(rect.left, rect.top, 0, 0, new Size(width, height), CopyPixelOperation.SourceCopy);
+                var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                Graphics graphics = Graphics.FromImage(bmp);
+                try
+                {
+                    graphics.CopyFromScreen(rect.left, rect.top, 0, 0, new Size(width, height), CopyPixelOperation.SourceCopy);
+                }
+                finally
+                {
+                   graphics.Dispose();
+                }
 
-            var filename = "GTANetworkScreenshot-" +
-                           DateTime.Now.ToString("yyyy-MM-dd-HH-MM-ss.fff", CultureInfo.InvariantCulture) + ".png";
+                var filename = "gtanetwork-" + Directory.GetFiles(destinationFolder, "*.png").Count().ToString("000") + ".png";
 
-            bmp.Save(destinationFolder + Path.DirectorySeparatorChar + filename);
+                bmp.Save(destinationFolder + Path.DirectorySeparatorChar + filename);
 
-            Main.Chat.AddMessage(null, "~b~Screenshot saved as " + filename);
+                Main.Chat.AddMessage(null, "~b~Screenshot saved as " + filename);
+            });
+
+            t.IsBackground = true;
+            t.Start();
         }
     }
 
@@ -48,5 +62,9 @@ namespace GTANetwork
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetWindowRect(IntPtr hWnd, ref Rect rect);
+
+        [DllImport("User32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint nFlags);
     }
 }
