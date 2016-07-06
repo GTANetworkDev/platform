@@ -1,4 +1,4 @@
-﻿#if !DEBUG
+﻿#if true
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,6 +12,7 @@ using CefSharp;
 using CefSharp.OffScreen;
 using GTA;
 using GTA.Native;
+using GTANetwork.GUI.DirectXHook.Hook;
 using NativeUI;
 
 
@@ -27,7 +28,7 @@ namespace GTANetwork.GUI
                 var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
                 var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
 
-                var MouseClick = Game.IsControlJustPressed(0, GTA.Control.CursorAccept);
+                var mouseDown = Game.IsControlJustPressed(0, GTA.Control.CursorAccept);
                 var mouseUp = Game.IsControlJustReleased(0, GTA.Control.CursorAccept);
 
                 foreach (var browser in CEFManager.Browsers)
@@ -38,19 +39,19 @@ namespace GTANetwork.GUI
                         mouseX < browser.Position.X + browser.Size.Width &&
                         mouseY < browser.Position.Y + browser.Size.Height)
                     {
-                        browser._browser.GetBrowser().GetHost().SetFocus(false);
+                        browser._browser.GetBrowser().GetHost().SetFocus(true);
                         browser._browser.GetBrowser()
                             .GetHost()
                             .SendMouseMoveEvent((int)(mouseX - browser.Position.X), (int)(mouseY - browser.Position.Y),
                                 false, CefEventFlags.None);
 
-                        if (MouseClick)
+                        if (mouseDown)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseClickEvent((int)(mouseX - browser.Position.X),
                                     (int)(mouseY - browser.Position.Y), MouseButtonType.Left, false, 1, CefEventFlags.None);
 
-                        if (MouseClick)
+                        if (mouseUp)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseClickEvent((int)(mouseX - browser.Position.X),
@@ -71,17 +72,9 @@ namespace GTANetwork.GUI
         public static void Initialize(Size screenSize)
         {
             ScreenSize = screenSize;
-
-            _bitmapRegion = MemoryMappedFile.CreateNew("GTANETWORKBITMAPSCREEN", 10485760);
-
-            try
-            {
-                _memorySharedMutex = Mutex.OpenExisting("GTANETWORKCEFMUTEX");
-            }
-            catch
-            {
-                _memorySharedMutex = new Mutex(false, "GTANETWORKCEFMUTEX");
-            }
+            
+            DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
+            DirectXHook.Hook();
 
             RenderThread = new Thread(RenderLoop);
             RenderThread.IsBackground = true;
@@ -94,11 +87,10 @@ namespace GTANetwork.GUI
         public static bool StopRender;
         public static Size ScreenSize;
 
-        public static Process DirectXHook;
+        private static DXHookD3D11 DirectXHook;
 
         private static Mutex _memorySharedMutex;
         private static MemoryMappedFile _bitmapRegion;
-
 
 
         public static void RenderLoop()
@@ -108,11 +100,8 @@ namespace GTANetwork.GUI
             if (!Cef.IsInitialized)
                 Cef.Initialize(settings);
 
-            //Browsers.Add(new Browser("https://www.reddit.com/", new Size(300, 300)));
-
-            Console.WriteLine("WAITING FOR INITIALIZATION...");
+            LogManager.DebugLog("WAITING FOR INITIALIZATION...");
             
-            DirectXHook = Process.Start(Main.GTANInstallDir + "\\cef\\CEFInjector.exe");
             
             while (!StopRender)
             {
@@ -134,22 +123,8 @@ namespace GTANetwork.GUI
                             graphics.DrawImage(bitmap, browser.Position);
                         }
                     }
-
-                    var rawBytes = BitmapToByteArray(doubleBuffer);
-
-                    if (_memorySharedMutex.WaitOne())
-                    {
-                        using (var accessor = _bitmapRegion.CreateViewStream())
-                        using (var binReader = new BinaryWriter(accessor))
-                        {
-                            binReader.Write(rawBytes.Length);
-                            binReader.Write(doubleBuffer.Width);
-                            binReader.Write(doubleBuffer.Height);
-                            binReader.Write(rawBytes, 0, rawBytes.Length);
-                        }
-
-                        _memorySharedMutex.ReleaseMutex();
-                    }
+                    
+                    DirectXHook.SetBitmap(doubleBuffer);
                 }
                 catch {}
                 finally
