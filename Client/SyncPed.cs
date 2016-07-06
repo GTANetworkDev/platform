@@ -435,7 +435,10 @@ namespace GTANetwork
 
 					LogManager.DebugLog("SETTING BLIP COLOR FOR" + Name);
 
-					if (BlipColor != -1)
+                    if (BlipSprite != -1)
+                        Character.CurrentBlip.Sprite = (BlipSprite)BlipSprite;
+
+                    if (BlipColor != -1)
 						Character.CurrentBlip.Color = (BlipColor)BlipColor;
 					else
 						Character.CurrentBlip.Color = GTA.BlipColor.White;
@@ -448,8 +451,7 @@ namespace GTANetwork
 
 					SetBlipNameFromTextFile(Character.CurrentBlip, Name);
 
-					if (BlipSprite != -1)
-						Character.CurrentBlip.Sprite = (BlipSprite)BlipSprite;
+					
 					if (BlipAlpha != -1)
 						Character.CurrentBlip.Alpha = BlipAlpha;
 
@@ -1556,10 +1558,13 @@ namespace GTANetwork
                 {
                     Character.CanRagdoll = false;
                     Character.Task.ClearAllImmediately();
-                    
-                    Function.Call(Hash.TASK_PLAY_ANIM, Character,
-                    Util.LoadDict("get_up@standard"), "back",
-                    12f, 12f, -1, 0, -10f, 1, 1, 1);
+
+                    if (PedHealth > 0)
+                    {
+                        Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                            Util.LoadDict("get_up@standard"), "back",
+                            12f, 12f, -1, 0, -10f, 1, 1, 1);
+                    }
 
                     return true;
                 }
