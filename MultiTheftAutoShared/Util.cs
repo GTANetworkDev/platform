@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
+using System.Windows.Forms;
 
 namespace GTANetworkShared
 {
@@ -60,6 +61,7 @@ namespace GTANetworkShared
         public bool HideNametagsWhenZoomedOutMap { get; set; }
         public string UpdateChannel { get; set; }
         public bool DisableRockstarEditor { get; set; }
+        public Keys ScreenshotKey { get; set; }
         
         public PlayerSettings()
         {
@@ -71,6 +73,7 @@ namespace GTANetworkShared
             HideNametagsWhenZoomedOutMap = false;
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
+            ScreenshotKey = Keys.F8;
         }
     }
 

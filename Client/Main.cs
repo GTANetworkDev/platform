@@ -2771,6 +2771,10 @@ namespace GTANetwork
                 ChatVisible = !ChatVisible;
             }
             
+            if (e.KeyCode == PlayerSettings.ScreenshotKey && IsOnServer())
+            {
+                Screenshot.TakeScreenshot();
+            }
 
             if (e.KeyCode == Keys.T && IsOnServer() && ChatVisible)
             {

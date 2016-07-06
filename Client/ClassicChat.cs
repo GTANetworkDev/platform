@@ -214,7 +214,7 @@ namespace GTANetwork
         public void AddMessage(string sender, string msg)
         {
             Color textColor = Color.White;
-            if (Regex.IsMatch(sender, "^~#[a-fA-F0-9]{6}~"))
+            if (sender != null && Regex.IsMatch(sender, "^~#[a-fA-F0-9]{6}~"))
             {
                 textColor = ColorTranslator.FromHtml(sender.Substring(1, 7));
                 if (sender.Length == 9) sender = null;

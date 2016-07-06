@@ -112,6 +112,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
     </Compile>
+    <Compile Include="Screenshot.cs" />
     <Compile Include="Subtask.cs" />
     <Compile Include="SyncEventWatcher.cs" />
     <Compile Include="WeaponDataProvider.cs" />
