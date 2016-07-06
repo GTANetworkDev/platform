@@ -2,11 +2,17 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
+using System.Windows.Forms;
 
 namespace GTANetworkShared
 {
     public static class Extensions
     {
+        public static int FromArgb(byte a, byte r, byte g, byte b)
+        {
+            return b | g << 8 | r << 16 | a << 24;
+        }
+
         public static void Set<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue value)
         {
             if (dict.ContainsKey(key))
@@ -55,6 +61,7 @@ namespace GTANetworkShared
         public bool HideNametagsWhenZoomedOutMap { get; set; }
         public string UpdateChannel { get; set; }
         public bool DisableRockstarEditor { get; set; }
+        public Keys ScreenshotKey { get; set; }
         
         public PlayerSettings()
         {
@@ -66,6 +73,7 @@ namespace GTANetworkShared
             HideNametagsWhenZoomedOutMap = false;
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
+            ScreenshotKey = Keys.F8;
         }
     }
 

@@ -62,6 +62,7 @@ namespace GTANetworkShared
         Normal = 0,
         Map = 1,
         Script = 2,
+        EndOfTransfer = 3,
     }
 
     public enum SyncEventType
@@ -439,6 +440,9 @@ namespace GTANetworkShared
 
         [ProtoMember(3)]
         public string Filename { get; set; }
+
+        [ProtoMember(4)]
+        public string MD5Hash { get; set; }
     }
 
 

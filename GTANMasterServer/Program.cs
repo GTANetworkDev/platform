@@ -42,7 +42,7 @@ namespace GTANMasterServer
             {
                 Console.WriteLine("Running on {0}", url);
                 WelcomeMessageWorker.UpdateWelcomeMessage();
-                ContinuousIntegration.GetLastVersion();
+                ContinuousIntegration.Work();
 
                 while (true)
                 {
@@ -80,7 +80,14 @@ namespace GTANMasterServer
         {
             if (DateTime.Now.Subtract(_lastUpdate).TotalMinutes > 10)
             {
-                GetLastVersion();
+                try
+                {
+                    GetLastVersion();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("[{0}] CI ERROR: " + ex.ToString(), DateTime.Now.ToString("HH:mm:ss"));
+                }
                 _lastUpdate = DateTime.Now;
             }
         }
@@ -89,11 +96,11 @@ namespace GTANMasterServer
         {
             Dictionary<string, MemoryStream> zipFile = null;
 
-            Console.WriteLine("{0} Getting last CI build.", DateTime.Now.ToString("HH:mm:ss"));
+            Console.WriteLine("[{0}] Getting last CI build.", DateTime.Now.ToString("HH:mm:ss"));
             
             try
             {
-                Console.WriteLine("{0} Fetching last build...", DateTime.Now.ToString("HH:mm:ss"));
+                Console.WriteLine("[{0}] Fetching last build...", DateTime.Now.ToString("HH:mm:ss"));
                 
                 string basedir = "updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "temp";
 

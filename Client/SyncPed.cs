@@ -356,7 +356,7 @@ namespace GTANetwork
 
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
-			if (Character == null || !Character.Exists() || !Character.IsInRangeOf(gPos, hRange) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
+			if (Character == null || !Character.Exists() || (!Character.IsInRangeOf(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
 				//LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
                 
@@ -377,9 +377,11 @@ namespace GTANetwork
 				Character = World.CreatePed(charModel, gPos, _rotation.Z);
 				charModel.MarkAsNoLongerNeeded();
 
+				if (Character == null) return true;
+
+
 			    Character.CanBeTargetted = true;
 
-				if (Character == null) return true;
 
 				DEBUG_STEP = 4;
 
@@ -619,7 +621,6 @@ namespace GTANetwork
 					if (VehicleSeat == -1)
 						MainVehicle.Position = VehiclePosition;
 					MainVehicle.EngineRunning = true;
-					MainVehicle.Rotation = _vehicleRotation;
 					MainVehicle.IsInvincible = true;
 					Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
 					DEBUG_STEP = 12;
@@ -637,15 +638,17 @@ namespace GTANetwork
 	    {
 			if (!inRange)
 			{
-				if (Character != null)
+				if (Character != null && Environment.TickCount - LastUpdateReceived < 10000)
 				{
-					if (!IsInVehicle) Character.Position = gPos;
+				    if (!IsInVehicle)
+				    {
+				        Character.PositionNoOffset = gPos;
+				    }
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
 						MainVehicle.Position = VehiclePosition;
 						MainVehicle.Rotation = VehicleRotation;
-						Character.Position = gPos;
-					}
+                    }
 				}
 				return true;
 			}
@@ -1620,7 +1623,7 @@ namespace GTANetwork
 
                 DEBUG_STEP = 0;
                 
-                const float hRange = 300f;
+                float hRange = IsInVehicle ? 50f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
@@ -1674,7 +1677,7 @@ namespace GTANetwork
                 
 				if (Character != null)
                 {
-                    //Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
+                    Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
                 }
 
                 _switch++;

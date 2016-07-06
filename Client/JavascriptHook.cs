@@ -161,9 +161,11 @@ namespace GTANetwork
 
         public static void StartScripts(ScriptCollection sc)
         {
+            var localSc = new List<ClientsideScript>(sc.ClientsideScripts);
+
             ThreadJumper.Add(() =>
             {
-                List<ClientsideScriptWrapper> scripts = sc.ClientsideScripts.Select(StartScript).ToList();
+                List<ClientsideScriptWrapper> scripts = localSc.Select(StartScript).ToList();
 
                 foreach (var compiledResources in scripts)
                 {

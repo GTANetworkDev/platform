@@ -216,6 +216,28 @@ public class FreeroamScript : Script
             if (args.Length < 3)
             {
                 API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /colors [primaryColor] [secondaryColor]");
+                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /colors [pR] [pG] [pB] [sR] [sG] [sB]");
+            }
+            else if (args.Length == 7)
+            {
+                int pR, pG, pB, sR, sG, sB;
+                if (!int.TryParse(args[1], out pR) || !int.TryParse(args[2], out pG)|| !int.TryParse(args[3], out pB) ||
+                    !int.TryParse(args[4], out sR) || !int.TryParse(args[5], out sG) || !int.TryParse(args[6], out sB))
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
+                        return;
+                }
+
+                if (!sender.CurrentVehicle.IsNull)
+                {
+                        API.setVehicleCustomPrimaryColor(sender.CurrentVehicle, pR, pG, pB);
+                        API.setVehicleCustomSecondaryColor(sender.CurrentVehicle, sR, sG, sB);
+                        API.sendChatMessageToPlayer(sender, "Colors applied successfully!");
+                }
+                else
+                {
+                        API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~You're not in a vehicle!");
+                }
             }
             else
             {
@@ -236,7 +258,6 @@ public class FreeroamScript : Script
                 {
                         API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~You're not in a vehicle!");
                 }
-
             }
         }
 
