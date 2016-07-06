@@ -2290,9 +2290,15 @@ namespace GTANetwork
 
             DEBUG_STEP = 3;
 #if DEBUG
-
-            
-
+            /*
+            var outArg = new OutputArgument();
+            if (Game.IsControlJustPressed(0, Control.Context))
+            {
+                var ped = Game.Player.GetTargetedEntity();
+                UI.Notify("ped: " + ped.Handle);
+                Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, ped, "WORLD_HUMAN_DRINKING", 0, 0);
+            }
+            */
             if (display)
             {
                 Debug();
@@ -3409,13 +3415,27 @@ namespace GTANetwork
                                                     pair.Value.CustomAnimationName = animName;
                                                     pair.Value.CustomAnimationDictionary = animDict;
                                                     pair.Value.CustomAnimationFlag = animFlag;
+
+                                                    if (!string.IsNullOrEmpty(animName) &&
+                                                        string.IsNullOrEmpty(animDict))
+                                                    {
+                                                        pair.Value.IsCustomScenarioPlaying = true;
+                                                        pair.Value.HasCustomScenarioStarted = false;
+                                                    }
                                                 }
                                             }
                                         }
                                         else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
                                         {
-                                            Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
-                                                Util.LoadDict(animDict), animName, 8f, 10f, -1, animFlag, -8f, 1, 1, 1);
+                                            if (string.IsNullOrEmpty(animDict))
+                                            {
+                                                Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, Game.Player.Character, animName, 0, 0);
+                                            }
+                                            else
+                                            {
+                                                Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
+                                                    Util.LoadDict(animDict), animName, 8f, 10f, -1, animFlag, -8f, 1, 1, 1);
+                                            }
                                         }
                                     }
                                     break;
@@ -3434,6 +3454,8 @@ namespace GTANetwork
                                                     pair.Value.CustomAnimationName = null;
                                                     pair.Value.CustomAnimationDictionary = null;
                                                     pair.Value.CustomAnimationFlag = 0;
+                                                    pair.Value.IsCustomScenarioPlaying = false;
+                                                    pair.Value.HasCustomScenarioStarted = false;
                                                     pair.Value.Character.Task.ClearAll();
                                                 }
                                             }

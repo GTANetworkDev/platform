@@ -347,6 +347,8 @@ namespace GTANetwork
         private DateTime _lastRocketshot;
         private int _lastVehicleAimUpdate;
 
+        public bool IsCustomScenarioPlaying;
+        public bool HasCustomScenarioStarted;
         public bool IsCustomAnimationPlaying;
         public string CustomAnimationDictionary;
         public string CustomAnimationName;
@@ -1114,22 +1116,31 @@ namespace GTANetwork
         {
             if (!IsCustomAnimationPlaying) return;
 
-            if (
-                !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
-                    CustomAnimationDictionary, CustomAnimationName,
-                    3))
+            if (!IsCustomScenarioPlaying)
             {
-                Function.Call(Hash.TASK_PLAY_ANIM, Character,
-                    Util.LoadDict(CustomAnimationDictionary), CustomAnimationName,
-                    8f, 10f, -1, CustomAnimationFlag, -8f, 1, 1, 1);
+                if (
+                    !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
+                        CustomAnimationDictionary, CustomAnimationName,
+                        3))
+                {
+                    Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                        Util.LoadDict(CustomAnimationDictionary), CustomAnimationName,
+                        8f, 10f, -1, CustomAnimationFlag, -8f, 1, 1, 1);
+                }
+
+                var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
+                    CustomAnimationDictionary, CustomAnimationName);
+
+                if (currentTime >= .95f && (CustomAnimationFlag & 1) == 0)
+                {
+                    IsCustomAnimationPlaying = false;
+                    Character.Task.ClearAnimation(CustomAnimationDictionary, CustomAnimationName);
+                }
             }
-
-            var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, CustomAnimationDictionary, CustomAnimationName);
-
-            if (currentTime >= .95f && (CustomAnimationFlag & 1) == 0)
+            else if (!HasCustomScenarioStarted)
             {
-                IsCustomAnimationPlaying = false;
-                Character.Task.ClearAnimation(CustomAnimationDictionary, CustomAnimationName);
+                Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, Character, CustomAnimationName, 0, 0);
+                HasCustomScenarioStarted = true;
             }
         }
 

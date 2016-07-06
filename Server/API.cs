@@ -484,6 +484,11 @@ namespace GTANetworkServer
             Program.ServerInstance.PlayCustomPlayerAnimation(player, flag, animDict, animName);
         }
 
+        public void playPlayerScenario(Client player, string scenarioName)
+        {
+            Program.ServerInstance.PlayCustomPlayerAnimation(player, 0, null, scenarioName);
+        }
+
         public void stopPlayerAnimation(Client player)
         {
             Program.ServerInstance.PlayCustomPlayerAnimationStop(player);

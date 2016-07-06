@@ -171,9 +171,9 @@ namespace GTANetwork
 
         public Prop CreateObject(Model model, Vector3 position, Vector3 rotation, bool dynamic, int netHash)
         {
-            if (model == null)
+            if (model == null || !model.IsValid)
             {
-                LogManager.DebugLog("Model was null?");
+                LogManager.DebugLog("Model was invalid!");
                 return null;
             }
 
