@@ -235,6 +235,8 @@ namespace GTANetworkShared
             Tires = new bool[8];
             Livery = 0;
             NumberPlate = "NETWORK";
+
+            EntityType = (byte)GTANetworkShared.EntityType.Vehicle;
         }
 
         [ProtoMember(1)]
@@ -278,6 +280,7 @@ namespace GTANetworkShared
         {
             Sprite = 0;
             Scale = 1f;
+            EntityType = (byte) GTANetworkShared.EntityType.Blip;
             AttachedNetEntity = 0;
         }
 
@@ -300,6 +303,11 @@ namespace GTANetworkShared
     [ProtoContract]
     public class MarkerProperties : EntityProperties
     {
+        public MarkerProperties()
+        {
+            EntityType = (byte)GTANetworkShared.EntityType.Marker;
+        }
+
         [ProtoMember(1)]
         public Vector3 Direction { get; set; }
 
@@ -322,6 +330,11 @@ namespace GTANetworkShared
     [ProtoContract]
     public class PickupProperties : EntityProperties
     {
+        public PickupProperties()
+        {
+            EntityType = (byte)GTANetworkShared.EntityType.Pickup;
+        }
+
         [ProtoMember(1)]
         public int Amount { get; set; }
 
@@ -339,6 +352,7 @@ namespace GTANetworkShared
             Accessories = new Dictionary<byte, Tuple<byte, byte>>();
             BlipSprite = 1;
             BlipAlpha = 255;
+            EntityType = (byte)GTANetworkShared.EntityType.Ped;
         }
 
         [ProtoMember(1)]
@@ -645,6 +659,8 @@ namespace GTANetworkShared
         {
             
         }
+
+        
     }
     
     [ProtoContract]

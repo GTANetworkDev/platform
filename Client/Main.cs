@@ -79,7 +79,7 @@ namespace GTANetwork
 
         public static bool IsSpectating;
 
-        public static NetEntityHandler NetEntityHandler;
+        public static Streamer NetEntityHandler;
 
         private readonly MenuPool _menuPool;
 
@@ -137,7 +137,7 @@ namespace GTANetwork
             GameSettings = GTANetwork.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
 
-            NetEntityHandler = new NetEntityHandler();
+            NetEntityHandler = new Streamer();
 
             Watcher = new SyncEventWatcher(this);
 
@@ -3078,33 +3078,23 @@ namespace GTANetwork
                             if (data.EntityType == (byte)EntityType.Vehicle)
                             {
                                 var prop = (VehicleProperties)data.Properties;
-                                var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash),
+                                var veh = NetEntityHandler.CreateVehicle(data.Properties.ModelHash,
                                     data.Properties.Position?.ToVector() ?? new Vector3(),
                                     data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
                                 LogManager.DebugLog("Settings vehicle color 1");
                                 veh.Livery = prop.Livery;
                                 veh.NumberPlate = prop.NumberPlate;
-
-                                if ((prop.PrimaryColor & 0xFF000000) > 0)
-                                    veh.CustomPrimaryColor = Color.FromArgb(prop.PrimaryColor);
-                                else
-                                    veh.PrimaryColor = (VehicleColor)prop.PrimaryColor;
-
-                                if ((prop.SecondaryColor & 0xFF000000) > 0)
-                                    veh.CustomSecondaryColor = Color.FromArgb(prop.SecondaryColor);
-                                else
-                                    veh.SecondaryColor = (VehicleColor)prop.SecondaryColor;
-
-                                
-                                Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
-								Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
-                                Function.Call(Hash.SET_VEHICLE_MOD_KIT, veh, 0);
+                                veh.PrimaryColor = prop.PrimaryColor;
+                                veh.SecondaryColor = prop.SecondaryColor;
+                                veh.Alpha = prop.Alpha;
+                                veh.LocalOnly = false;
+                                veh.StreamedIn = false;
                                 LogManager.DebugLog("CreateEntity done");
                             }
                             else if (data.EntityType == (byte)EntityType.Prop)
                             {
                                 LogManager.DebugLog("It was a prop. Spawning...");
-                                NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash),
+                                NetEntityHandler.CreateObject(data.Properties.ModelHash,
                                     data.Properties.Position?.ToVector() ?? new Vector3(),
                                     data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
                             }
