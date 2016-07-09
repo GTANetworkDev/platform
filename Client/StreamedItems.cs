@@ -22,11 +22,11 @@ namespace GTANetwork
 
     public class RemotePlayer : PedProperties, ILocalHandleable, IStreamedItem
     {
-        public SyncPed Representaion { get; set; }
+        public SyncPed Representation { get; set; }
 
         public int LocalHandle
         {
-            get { return Representaion?.Character?.Handle ?? 0; }
+            get { return Representation?.Character?.Handle ?? 0; }
             set { }
         }
 

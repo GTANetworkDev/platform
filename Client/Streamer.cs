@@ -142,6 +142,39 @@ namespace GTANetwork
             return rem;
         }
 
+        public RemoteVehicle CreateVehicle(int netHandle, VehicleProperties prop)
+        {
+            RemoteVehicle rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemoteVehicle()
+                {
+                    RemoteHandle = netHandle,
+
+                    PrimaryColor = prop.PrimaryColor,
+                    SecondaryColor = prop.SecondaryColor,
+                    Health = prop.Health,
+                    IsDead = prop.IsDead,
+                    Mods = prop.Mods,
+                    Siren = prop.Siren,
+                    Doors = prop.Doors,
+                    Trailer = prop.Trailer,
+                    Tires = prop.Tires,
+                    Livery = prop.Livery,
+                    NumberPlate = prop.NumberPlate,
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Alpha = prop.Alpha,
+
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
         public RemoteProp CreateObject(int model, Vector3 position, Vector3 rotation, bool dynamic, int netHash)
         {
             RemoteProp rem;
@@ -161,6 +194,28 @@ namespace GTANetwork
             return rem;
         }
 
+        public RemoteProp CreateObject(int netHandle, EntityProperties prop)
+        {
+            RemoteProp rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemoteProp()
+                {
+                    RemoteHandle = netHandle,
+
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Alpha = prop.Alpha,
+
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
         public RemoteBlip CreateBlip(Vector3 pos, int netHandle)
         {
             RemoteBlip rem;
@@ -170,6 +225,33 @@ namespace GTANetwork
                 {
                     RemoteHandle = netHandle,
                     Position = pos.ToLVector(),
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
+        public RemoteBlip CreateBlip(int netHandle, BlipProperties prop)
+        {
+            RemoteBlip rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemoteBlip()
+                {
+                    RemoteHandle = netHandle,
+
+                    Sprite = prop.Sprite,
+                    Scale = prop.Scale,
+                    Color = prop.Color,
+                    IsShortRange = prop.IsShortRange,
+                    AttachedNetEntity = prop.AttachedNetEntity,
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Alpha = prop.Alpha,
+
                     StreamedIn = false,
                     LocalOnly = false,
                 });
@@ -214,6 +296,82 @@ namespace GTANetwork
             }
         }
 
+        public RemoteMarker CreateMarker(int netHandle, MarkerProperties prop)
+        {
+            RemoteMarker rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemoteMarker()
+                {
+                    RemoteHandle = netHandle,
+
+                    Direction = prop.Direction,
+                    MarkerType = prop.MarkerType,
+                    Red = prop.Red,
+                    Green = prop.Green,
+                    Blue = prop.Blue,
+                    Scale = prop.Scale,
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Alpha = prop.Alpha,
+
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
+        public RemotePlayer CreatePlayer(int netHandle, PedProperties prop)
+        {
+            RemotePlayer rem = NetToStreamedItem(netHandle) as RemotePlayer;
+            if (rem == null)
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemotePlayer()
+                {
+                    RemoteHandle = netHandle,
+
+                    Props = prop.Props,
+                    Textures = prop.Textures,
+                    BlipSprite = prop.BlipSprite,
+                    Team = prop.Team,
+                    BlipColor = prop.BlipColor,
+                    BlipAlpha = prop.BlipAlpha,
+                    Accessories = prop.Accessories,
+                    Name = prop.Name,
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Alpha = prop.Alpha,
+
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            else
+            {
+                rem.Props = prop.Props;
+                rem.Textures = prop.Textures;
+                rem.BlipSprite = prop.BlipSprite;
+                rem.Team = prop.Team;
+                rem.BlipColor = prop.BlipColor;
+                rem.BlipAlpha = prop.BlipAlpha;
+                rem.Accessories = prop.Accessories;
+                rem.Name = prop.Name;
+                rem.Position = prop.Position;
+                rem.Rotation = prop.Rotation;
+                rem.ModelHash = prop.ModelHash;
+                rem.EntityType = prop.EntityType;
+                rem.Alpha = prop.Alpha;
+                rem.RemoteHandle = netHandle;
+            }
+            return rem;
+        }
+
         public RemotePickup CreatePickup(Vector3 pos, Vector3 rot, int pickupHash, int amount, int netHandle)
         {
             RemotePickup rem;
@@ -226,6 +384,30 @@ namespace GTANetwork
                     Rotation = rot.ToLVector(),
                     ModelHash = pickupHash,
                     Amount = amount,
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
+        public RemotePickup CreatePickup(int netHandle, PickupProperties prop)
+        {
+            RemotePickup rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemotePickup()
+                {
+                    RemoteHandle = netHandle,
+
+                    Amount = prop.Amount,
+                    PickedUp = prop.PickedUp,
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Alpha = prop.Alpha,
+
                     StreamedIn = false,
                     LocalOnly = false,
                 });
@@ -248,7 +430,30 @@ namespace GTANetwork
                 case EntityType.Pickup:
                     StreamInPickup((RemotePickup)item);
                     break;
+                case EntityType.Blip:
+                    StreamInBlip((RemoteBlip)item);
+                    break;
             }
+        }
+
+        private void StreamInBlip(RemoteBlip item)
+        {
+            Blip ourBlip;
+            if (item.AttachedNetEntity == 0)
+                ourBlip = World.CreateBlip(item.Position.ToVector());
+            else
+            {
+                var entAtt = NetToStreamedItem(item.AttachedNetEntity, item.LocalOnly);
+                StreamIn(entAtt);
+                ourBlip = NetToEntity(item.AttachedNetEntity).AddBlip();
+            }
+                
+            if (item.Sprite != 0)
+                ourBlip.Sprite = (BlipSprite)item.Sprite;
+            ourBlip.Color = (BlipColor)item.Color;
+            ourBlip.Alpha = item.Alpha;
+            ourBlip.IsShortRange = item.IsShortRange;
+            ourBlip.Scale = item.Scale;
         }
 
         public void StreamOut(IStreamedItem item)

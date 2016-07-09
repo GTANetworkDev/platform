@@ -1450,124 +1450,20 @@ namespace GTANetwork
                 if (map.Objects != null)
                     foreach (var pair in map.Objects)
                     {
-                        var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash),
-                            pair.Value.Position.ToVector(),
-                            pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
-                        ourVeh.Alpha = (int) pair.Value.Alpha;
+                        NetEntityHandler.CreateObject(pair.Key, pair.Value);
                     }
 
                 if (map.Vehicles != null)
                     foreach (var pair in map.Vehicles)
                     {
-                        var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash),
-                            pair.Value.Position.ToVector(),
-                            pair.Value.Rotation.ToVector(), pair.Key);
-                        if (ourVeh == null) continue;
-                        ourVeh.Livery = pair.Value.Livery;
-
-                        if ((pair.Value.PrimaryColor & 0xFF000000) > 0)
-                            ourVeh.CustomPrimaryColor = Color.FromArgb(pair.Value.PrimaryColor);
-                        else
-                            ourVeh.PrimaryColor = (VehicleColor) pair.Value.PrimaryColor;
-
-                        if ((pair.Value.SecondaryColor & 0xFF000000) > 0)
-                            ourVeh.CustomSecondaryColor = Color.FromArgb(pair.Value.SecondaryColor);
-                        else
-                            ourVeh.SecondaryColor = (VehicleColor) pair.Value.SecondaryColor;
-                       
-
-
-                        ourVeh.PearlescentColor = (VehicleColor) 0;
-                        ourVeh.RimColor = (VehicleColor) 0;
-                        ourVeh.EngineHealth = pair.Value.Health;
-                        ourVeh.SirenActive = pair.Value.Siren;
-                        ourVeh.NumberPlate = pair.Value.NumberPlate;
-                        Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, ourVeh, 0, 0);
-
-                        for (int i = 0; i < pair.Value.Doors.Length; i++)
-                        {
-                            if (pair.Value.Doors[i])
-                                ourVeh.OpenDoor((VehicleDoor) i, false, true);
-                            else ourVeh.CloseDoor((VehicleDoor) i, true);
-                        }
-
-                        for (int i = 0; i < pair.Value.Tires.Length; i++)
-                        {
-                            if (pair.Value.Tires[i])
-                            {
-                                ourVeh.IsInvincible = false;
-                                ourVeh.BurstTire(i);
-                            }
-                        }
-
-                        if (pair.Value.Trailer != 0)
-                        {
-                            var trailerId = NetEntityHandler.NetToEntity(pair.Value.Trailer);
-                            if (trailerId != null)
-                            {
-                                if ((VehicleHash)ourVeh.Model.Hash == VehicleHash.TowTruck ||
-                                                    (VehicleHash)ourVeh.Model.Hash == VehicleHash.TowTruck2)
-                                {
-                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TOW_TRUCK, ourVeh, trailerId, true, 0, 0, 0);
-                                }
-                                else if ((VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob ||
-                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob2 ||
-                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob3 ||
-                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob4)
-                                {
-                                    ourVeh.DropCargobobHook(CargobobHook.Hook);
-                                    Function.Call(Hash.ATTACH_VEHICLE_TO_CARGOBOB, trailerId, ourVeh, 0, 0, 0, 0);
-                                }
-                                else
-                                {
-                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, ourVeh, trailerId, 4f);
-                                }
-                            }
-                        }
-
-                        Function.Call(Hash.SET_VEHICLE_MOD_KIT, ourVeh, 0);
-
-                        LogManager.DebugLog("NETWORK ID: " + pair.Key + " MODS LENGTH: " + pair.Value.Mods.Count);
-
-                        if (pair.Value.Mods != null)
-                        foreach (var modPair in pair.Value.Mods)
-                        {
-                            if (modPair.Value != -1)
-                            {
-                                LogManager.DebugLog("SETTINGS MOD " + modPair.Key + " TO " + modPair.Value);
-                                ourVeh.SetMod((VehicleMod) modPair.Key, modPair.Value, false);
-                            }
-                        }
-
-                        if (pair.Value.IsDead)
-                        {
-                            ourVeh.IsInvincible = false;
-                            Function.Call(Hash.EXPLODE_VEHICLE, ourVeh, false, true);
-                        }
-                        else
-                            ourVeh.IsInvincible = true;
-
-                        ourVeh.Alpha = (int) pair.Value.Alpha;
-                        Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, ourVeh, false);
+                        NetEntityHandler.CreateVehicle(pair.Key, pair.Value);
                     }
 
                 if (map.Blips != null)
                 {
                     foreach (var blip in map.Blips)
                     {
-                        Blip ourBlip;
-                        if (blip.Value.AttachedNetEntity == 0)
-                            ourBlip = NetEntityHandler.CreateBlip(blip.Value.Position.ToVector(), blip.Key);
-                        else
-                            ourBlip = NetEntityHandler.CreateBlip(
-                                NetEntityHandler.NetToEntity(blip.Value.AttachedNetEntity), blip.Key);
-
-                        if (blip.Value.Sprite != 0)
-                            ourBlip.Sprite = (BlipSprite) blip.Value.Sprite;
-                        ourBlip.Color = (BlipColor) blip.Value.Color;
-                        ourBlip.Alpha = blip.Value.Alpha;
-                        ourBlip.IsShortRange = blip.Value.IsShortRange;
-                        ourBlip.Scale = blip.Value.Scale;
+                        NetEntityHandler.CreateBlip(blip.Key, blip.Value);
                     }
                 }
 
@@ -1575,10 +1471,7 @@ namespace GTANetwork
                 {
                     foreach (var marker in map.Markers)
                     {
-                        NetEntityHandler.CreateMarker(marker.Value.MarkerType, marker.Value.Position,
-                            marker.Value.Rotation,
-                            marker.Value.Direction, marker.Value.Scale, marker.Value.Red, marker.Value.Green,
-                            marker.Value.Blue, marker.Value.Alpha, marker.Key);
+                        NetEntityHandler.CreateMarker(marker.Key, marker.Value);
                     }
                 }
 
@@ -1586,8 +1479,7 @@ namespace GTANetwork
                 {
                     foreach (var pickup in map.Pickups)
                     {
-                        NetEntityHandler.CreatePickup(pickup.Value.Position.ToVector(), pickup.Value.Rotation.ToVector(),
-                            pickup.Value.ModelHash, pickup.Value.Amount, pickup.Key);
+                        NetEntityHandler.CreatePickup(pickup.Key, pickup.Value);
                     }
                 }
 
@@ -1613,6 +1505,9 @@ namespace GTANetwork
                             var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle).Value;
                             if (ourSyncPed != null)
                             {
+                                NetEntityHandler.CreatePlayer(pair.Key, pair.Value);
+
+
                                 ourSyncPed.Team = pair.Value.Team;
                                 ourSyncPed.BlipSprite = pair.Value.BlipSprite;
                                 ourSyncPed.BlipColor = pair.Value.BlipColor;
@@ -3078,48 +2973,28 @@ namespace GTANetwork
                             if (data.EntityType == (byte)EntityType.Vehicle)
                             {
                                 var prop = (VehicleProperties)data.Properties;
-                                var veh = NetEntityHandler.CreateVehicle(data.Properties.ModelHash,
-                                    data.Properties.Position?.ToVector() ?? new Vector3(),
-                                    data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
-                                LogManager.DebugLog("Settings vehicle color 1");
-                                veh.Livery = prop.Livery;
-                                veh.NumberPlate = prop.NumberPlate;
-                                veh.PrimaryColor = prop.PrimaryColor;
-                                veh.SecondaryColor = prop.SecondaryColor;
-                                veh.Alpha = prop.Alpha;
-                                veh.LocalOnly = false;
-                                veh.StreamedIn = false;
+                                NetEntityHandler.StreamIn(NetEntityHandler.CreateVehicle(data.NetHandle, prop));                                
                                 LogManager.DebugLog("CreateEntity done");
                             }
                             else if (data.EntityType == (byte)EntityType.Prop)
                             {
                                 LogManager.DebugLog("It was a prop. Spawning...");
-                                NetEntityHandler.CreateObject(data.Properties.ModelHash,
-                                    data.Properties.Position?.ToVector() ?? new Vector3(),
-                                    data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
+                                NetEntityHandler.StreamIn(NetEntityHandler.CreateObject(data.NetHandle, data.Properties));
                             }
                             else if (data.EntityType == (byte)EntityType.Blip)
                             {
-                                var hasBlip = ((BlipProperties)data.Properties).AttachedNetEntity != 0;
-                                if (hasBlip)
-                                    NetEntityHandler.CreateBlip(NetEntityHandler.NetToEntity(((BlipProperties)data.Properties).AttachedNetEntity), data.NetHandle);
-                                else
-                                    NetEntityHandler.CreateBlip(data.Properties.Position.ToVector(),
-                                        data.NetHandle);
+                                var prop = (BlipProperties)data.Properties;
+                                NetEntityHandler.StreamIn(NetEntityHandler.CreateBlip(data.NetHandle, prop));
                             }
                             else if (data.EntityType == (byte)EntityType.Marker)
                             {
                                 var prop = (MarkerProperties)data.Properties;
-                                NetEntityHandler.CreateMarker(prop.MarkerType, prop.Position, prop.Rotation,
-                                    prop.Direction, prop.Scale, prop.Red, prop.Green, prop.Blue, prop.Alpha,
-                                    data.NetHandle);
+                                NetEntityHandler.StreamIn(NetEntityHandler.CreateMarker(data.NetHandle, prop));
                             }
                             else if (data.EntityType == (byte)EntityType.Pickup)
                             {
-                                var amount = ((PickupProperties)data.Properties).Amount;
-                                NetEntityHandler.CreatePickup(data.Properties.Position.ToVector(),
-                                    data.Properties.Rotation.ToVector(), data.Properties.ModelHash, amount,
-                                    data.NetHandle);
+                                var prop = (PickupProperties)data.Properties;
+                                NetEntityHandler.StreamIn(NetEntityHandler.CreatePickup(data.NetHandle, prop));
                             }
                         }
                     }
@@ -3130,22 +3005,21 @@ namespace GTANetwork
                         var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
                         if (data != null && data.Properties != null)
                         {
-                            if (data.EntityType == (byte)EntityType.Marker &&
-                                NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                            if (data.EntityType == (byte)EntityType.Marker)
                             {
                                 var prop = (MarkerProperties)data.Properties;
-                                NetEntityHandler.Markers[data.NetHandle] = new MarkerProperties()
-                                {
-                                    MarkerType = prop.MarkerType,
-                                    Alpha = prop.Alpha,
-                                    Blue = prop.Blue,
-                                    Direction = prop.Direction,
-                                    Green = prop.Green,
-                                    Position = prop.Position,
-                                    Red = prop.Red,
-                                    Rotation = prop.Rotation,
-                                    Scale = prop.Scale,
-                                };
+                                var mark = NetEntityHandler.NetToStreamedItem(data.NetHandle) as RemoteMarker;
+                                mark.Direction = prop.Direction;
+                                mark.MarkerType = prop.MarkerType;
+                                mark.Red = prop.Red;
+                                mark.Green = prop.Green;
+                                mark.Blue = prop.Blue;
+                                mark.Scale = prop.Scale;
+                                mark.Position = prop.Position;
+                                mark.Rotation = prop.Rotation;
+                                mark.ModelHash = prop.ModelHash;
+                                mark.EntityType = prop.EntityType;
+                                mark.Alpha = prop.Alpha;
                             }
                         }
                     }
