@@ -2853,9 +2853,7 @@ namespace GTANetwork
                                 Opponents.Add(data.NetHandle, repr);
                             }
 
-                            if (Opponents[data.NetHandle].Character != null)
-                                NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
-
+                            
                             Opponents[data.NetHandle].OnFootSpeed = data.Speed;
                             Opponents[data.NetHandle].Name = data.Name;
                             Opponents[data.NetHandle].PedArmor = data.PedArmor;
@@ -2999,27 +2997,32 @@ namespace GTANetwork
                         }
                     }
                     break;
-                case PacketType.UpdateMarkerProperties:
+                case PacketType.UpdateEntityProperties:
                     {
                         var len = msg.ReadInt32();
-                        var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
+                        var data = DeserializeBinary<UpdateEntity>(msg.ReadBytes(len)) as UpdateEntity;
                         if (data != null && data.Properties != null)
                         {
-                            if (data.EntityType == (byte)EntityType.Marker)
+                            switch ((EntityType) data.EntityType)
                             {
-                                var prop = (MarkerProperties)data.Properties;
-                                var mark = NetEntityHandler.NetToStreamedItem(data.NetHandle) as RemoteMarker;
-                                mark.Direction = prop.Direction;
-                                mark.MarkerType = prop.MarkerType;
-                                mark.Red = prop.Red;
-                                mark.Green = prop.Green;
-                                mark.Blue = prop.Blue;
-                                mark.Scale = prop.Scale;
-                                mark.Position = prop.Position;
-                                mark.Rotation = prop.Rotation;
-                                mark.ModelHash = prop.ModelHash;
-                                mark.EntityType = prop.EntityType;
-                                mark.Alpha = prop.Alpha;
+                                case EntityType.Blip:
+                                    NetEntityHandler.UpdateBlip(data.NetHandle, data.Properties as Delta_BlipProperties);
+                                    break;
+                                case EntityType.Marker:
+                                    NetEntityHandler.UpdateMarker(data.NetHandle, data.Properties as Delta_MarkerProperties);
+                                    break;
+                                case EntityType.Ped:
+                                    NetEntityHandler.UpdatePlayer(data.NetHandle, data.Properties as Delta_PedProperties);
+                                    break;
+                                case EntityType.Pickup:
+                                    NetEntityHandler.UpdatePickup(data.NetHandle, data.Properties as Delta_PickupProperties);
+                                    break;
+                                case EntityType.Prop:
+                                    NetEntityHandler.UpdateProp(data.NetHandle, data.Properties as Delta_EntityProperties);
+                                    break;
+                                case EntityType.Vehicle:
+                                    NetEntityHandler.UpdateVehicle(data.NetHandle, data.Properties as Delta_VehicleProperties);
+                                    break;
                             }
                         }
                     }
@@ -3031,30 +3034,11 @@ namespace GTANetwork
                         if (data != null)
                         {
                             LogManager.DebugLog("RECEIVED DELETE ENTITY " + data.NetHandle);
-                            if (NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                            var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
+                            if (streamItem != null)
                             {
-                                NetEntityHandler.Markers.Remove(data.NetHandle);
-                            }
-                            else
-                            {
-                                var entity = NetEntityHandler.NetToEntity(data.NetHandle);
-                                if (entity != null)
-                                {
-                                    if (NetEntityHandler.IsBlip(entity.Handle))
-                                    {
-                                        if (new Blip(entity.Handle).Exists())
-                                            new Blip(entity.Handle).Remove();
-                                    }
-                                    else if (NetEntityHandler.IsPickup(entity.Handle))
-                                    {
-                                        Function.Call(Hash.REMOVE_PICKUP, entity.Handle);
-                                    }
-                                    else
-                                    {
-                                        entity.Delete();
-                                    }
-                                    NetEntityHandler.RemoveByNetHandle(data.NetHandle);
-                                }
+                                NetEntityHandler.StreamOut(streamItem);
+                                NetEntityHandler.RemoveByNetHandle(data.NetHandle);
                             }
                         }
                     }
@@ -3643,7 +3627,7 @@ namespace GTANetwork
                                 Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
                                 return;
                             }
-                            NetEntityHandler.AddEntity(respObj.CharacterHandle, -2);
+                            NetEntityHandler.AddLocalCharacter(respObj.CharacterHandle);
 
                             var confirmObj = Client.CreateMessage();
                             confirmObj.Write((int) PacketType.ConnectionConfirmed);

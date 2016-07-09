@@ -92,7 +92,6 @@
     <Compile Include="ChatData.cs" />
     <Compile Include="GUI\CEFManager.cs" />
     <Compile Include="GUI\RadioWheel.cs" />
-    <Compile Include="RemotePlayer.cs" />
     <None Include="SyncPedCoop.cs" />
     <Compile Include="DebugWindow.cs" />
     <Compile Include="DownloadManager.cs" />
@@ -104,7 +103,7 @@
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="Main.cs" />
-    <Compile Include="NetEntityHandler.cs" />
+    <Compile Include="Streamer.cs" />
     <Compile Include="PedThread.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -113,6 +112,7 @@
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
     </Compile>
     <Compile Include="Screenshot.cs" />
+    <Compile Include="StreamedItems.cs" />
     <Compile Include="Subtask.cs" />
     <Compile Include="SyncEventWatcher.cs" />
     <Compile Include="WeaponDataProvider.cs" />

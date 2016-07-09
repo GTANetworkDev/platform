@@ -70,6 +70,14 @@ namespace GTANetwork
             }
         }
 
+        public void AddLocalCharacter(int nethandle)
+        {
+            lock (ClientMap)
+            {
+                ClientMap.Add(new RemotePlayer() { LocalOnly = true, LocalHandle = -2 });
+            }
+        }
+
         public Entity NetToEntity(int netId)
         {
             lock (ClientMap)
@@ -123,6 +131,109 @@ namespace GTANetwork
             lock (ClientMap) ClientMap.Remove(NetToStreamedItem(localHandle));
         }
         
+        public void UpdateVehicle(int netHandle, Delta_VehicleProperties prop)
+        {
+            IStreamedItem item = null;
+            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
+            var veh = item as RemoteVehicle;
+            if (prop.PrimaryColor != null) veh.PrimaryColor = prop.PrimaryColor.Value;
+            if (prop.SecondaryColor != null) veh.SecondaryColor = prop.SecondaryColor.Value;
+            if (prop.Health != null) veh.Health = prop.Health.Value;
+            if (prop.IsDead != null) veh.IsDead = prop.IsDead.Value;
+            if (prop.Mods != null) veh.Mods = prop.Mods;
+            if (prop.Siren != null) veh.Siren = prop.Siren.Value;
+            if (prop.Doors != null) veh.Doors = prop.Doors;
+            if (prop.Trailer != null) veh.Trailer = prop.Trailer.Value;
+            if (prop.Tires != null) veh.Tires = prop.Tires;
+            if (prop.Livery != null) veh.Livery = prop.Livery.Value;
+            if (prop.NumberPlate != null) veh.NumberPlate = prop.NumberPlate;
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+        }
+
+        public void UpdateProp(int netHandle, Delta_EntityProperties prop)
+        {
+            IStreamedItem item = null;
+            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
+            var veh = item as RemoteProp;
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+        }
+
+        public void UpdateBlip(int netHandle, Delta_BlipProperties prop)
+        {
+            IStreamedItem item = null;
+            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
+            var veh = item as RemoteBlip;
+            if (prop.Sprite != null) veh.Sprite = prop.Sprite.Value;
+            if (prop.Scale != null) veh.Scale = prop.Scale.Value;
+            if (prop.Color != null) veh.Color = prop.Color.Value;
+            if (prop.IsShortRange != null) veh.IsShortRange = prop.IsShortRange.Value;
+            if (prop.AttachedNetEntity != null) veh.AttachedNetEntity = prop.AttachedNetEntity.Value;
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+        }
+
+        public void UpdateMarker(int netHandle, Delta_MarkerProperties prop)
+        {
+            IStreamedItem item = null;
+            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
+            var veh = item as RemoteMarker;
+            if (prop.Direction != null) veh.Direction = prop.Direction;
+            if (prop.MarkerType != null) veh.MarkerType = prop.MarkerType.Value;
+            if (prop.Red != null) veh.Red = prop.Red.Value;
+            if (prop.Green != null) veh.Green = prop.Green.Value;
+            if (prop.Blue != null) veh.Blue = prop.Blue.Value;
+            if (prop.Scale != null) veh.Scale = prop.Scale;
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+        }
+
+        public void UpdatePlayer(int netHandle, Delta_PedProperties prop)
+        {
+            IStreamedItem item = null;
+            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
+            var veh = item as RemotePlayer;
+            if (prop.Props != null) veh.Props = prop.Props;
+            if (prop.Textures != null) veh.Textures = prop.Textures;
+            if (prop.BlipSprite != null) veh.BlipSprite = prop.BlipSprite.Value;
+            if (prop.Team != null) veh.Team = prop.Team.Value;
+            if (prop.BlipColor != null) veh.BlipColor = prop.BlipColor.Value;
+            if (prop.BlipAlpha != null) veh.BlipAlpha = prop.BlipAlpha.Value;
+            if (prop.Accessories != null) veh.Accessories = prop.Accessories;
+            if (prop.Name != null) veh.Name = prop.Name;
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+        }
+
+        public void UpdatePickup(int netHandle, Delta_PickupProperties prop)
+        {
+            IStreamedItem item = null;
+            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
+            var veh = item as RemotePickup;
+            if (prop.Amount != null) veh.Amount = prop.Amount.Value;
+            if (prop.PickedUp != null) veh.PickedUp = prop.PickedUp.Value;
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+        }
 
         public RemoteVehicle CreateVehicle(int model, Vector3 position, Vector3 rotation, int netHash)
         {

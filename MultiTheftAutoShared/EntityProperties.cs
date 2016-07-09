@@ -199,4 +199,151 @@ namespace GTANetworkShared
         [ProtoMember(8)]
         public string Name { get; set; }
     }
+
+    /*
+     * DELTA COMPRESSION
+     * */
+
+    #region DeltaCompressed
+    [ProtoContract]
+    [ProtoInclude(6, typeof(Delta_VehicleProperties))]
+    [ProtoInclude(7, typeof(Delta_BlipProperties))]
+    [ProtoInclude(8, typeof(Delta_MarkerProperties))]
+    [ProtoInclude(9, typeof(Delta_PickupProperties))]
+    [ProtoInclude(10, typeof(Delta_PedProperties))]
+    public class Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public Vector3 Position { get; set; }
+
+        [ProtoMember(2)]
+        public Vector3 Rotation { get; set; }
+
+        [ProtoMember(3)]
+        public int? ModelHash { get; set; }
+
+        [ProtoMember(4)]
+        public byte? EntityType { get; set; }
+
+        [ProtoMember(5)]
+        public byte? Alpha { get; set; }
+    }
+
+    [ProtoContract]
+    public class Delta_VehicleProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public int? PrimaryColor { get; set; }
+
+        [ProtoMember(2)]
+        public int? SecondaryColor { get; set; }
+
+        [ProtoMember(3)]
+        public float? Health { get; set; }
+
+        [ProtoMember(4)]
+        public bool? IsDead { get; set; }
+
+        [ProtoMember(5)]
+        public Dictionary<int, int> Mods { get; set; }
+
+        [ProtoMember(6)]
+        public bool? Siren { get; set; }
+
+        [ProtoMember(7)]
+        public bool[] Doors { get; set; }
+
+        [ProtoMember(8)]
+        public int? Trailer { get; set; }
+
+        [ProtoMember(9)]
+        public bool[] Tires { get; set; }
+
+        [ProtoMember(10)]
+        public int? Livery { get; set; }
+
+        [ProtoMember(11)]
+        public string NumberPlate { get; set; }
+    }
+
+    [ProtoContract]
+    public class Delta_BlipProperties : Delta_EntityProperties
+    {
+
+        [ProtoMember(1)]
+        public int? Sprite { get; set; }
+
+        [ProtoMember(2)]
+        public float? Scale { get; set; }
+
+        [ProtoMember(3)]
+        public int? Color { get; set; }
+
+        [ProtoMember(4)]
+        public bool? IsShortRange { get; set; }
+
+        [ProtoMember(5)]
+        public int? AttachedNetEntity { get; set; }
+    }
+
+    [ProtoContract]
+    public class Delta_MarkerProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public Vector3 Direction { get; set; }
+
+        [ProtoMember(2)]
+        public int? MarkerType { get; set; }
+
+        [ProtoMember(3)]
+        public int? Red { get; set; }
+
+        [ProtoMember(4)]
+        public int? Green { get; set; }
+
+        [ProtoMember(5)]
+        public int? Blue { get; set; }
+
+        [ProtoMember(7)]
+        public Vector3 Scale { get; set; }
+    }
+
+    [ProtoContract]
+    public class Delta_PickupProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public int? Amount { get; set; }
+
+        [ProtoMember(2)]
+        public bool? PickedUp { get; set; }
+    }
+
+    [ProtoContract]
+    public class Delta_PedProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public Dictionary<byte, byte> Props { get; set; }
+
+        [ProtoMember(2)]
+        public Dictionary<byte, byte> Textures { get; set; }
+
+        [ProtoMember(3)]
+        public int? BlipSprite { get; set; }
+
+        [ProtoMember(4)]
+        public int? Team { get; set; }
+
+        [ProtoMember(5)]
+        public int? BlipColor { get; set; }
+
+        [ProtoMember(6)]
+        public byte? BlipAlpha { get; set; }
+
+        [ProtoMember(7)]
+        public Dictionary<byte, Tuple<byte, byte>> Accessories { get; set; }
+
+        [ProtoMember(8)]
+        public string Name { get; set; }
+    }
+    #endregion
 }

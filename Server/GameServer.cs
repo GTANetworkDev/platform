@@ -683,12 +683,12 @@ namespace GTANetworkServer
             }
         }
 
-        public void UpdateMarkerInfo(int netId, MarkerProperties newInfo)
+        public void UpdateEntityInfoInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
         {
-            var packet = new CreateEntity();
-            packet.EntityType = (byte)EntityType.Marker;
+            var packet = new UpdateEntity();
+            packet.EntityType = (byte)entity;
             packet.Properties = newInfo;
-            Program.ServerInstance.SendToAll(packet, PacketType.UpdateMarkerProperties, true, ConnectionChannel.EntityBackend);
+            Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.EntityBackend);
         }
         
         private void LogException(Exception ex, string resourceName)
