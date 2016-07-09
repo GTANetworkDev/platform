@@ -211,18 +211,18 @@ namespace GTANetwork.GUI
                 }
                 
                 if (!Main.PlayerSettings.HideNametagsWhenZoomedOutMap || Zoom > 1f)
-                foreach (var opp in Main.Opponents)
+                foreach (var opp in Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>())
                 {
-                    if (opp.Value.Character?.CurrentBlip == null || string.IsNullOrWhiteSpace(opp.Value.Name)) continue;
+                    if (opp.Character?.CurrentBlip == null || string.IsNullOrWhiteSpace(opp.Name)) continue;
 
-                    var blip = opp.Value.Character.CurrentBlip;
+                    var blip = opp.Character.CurrentBlip;
                     
                     var pos = newPos + World3DToMap2D(blip.Position) - new Size(-32, 14);
 
                     new Sprite("mplobby", "mp_arrowsmall", new Point((int) pos.X - 19, (int) pos.Y - 15) + offsetP,
                         new Size(20, 60) + offsetS, 180f, Color.Black).Draw();
-                    new UIResRectangle(new Point((int)pos.X, (int)pos.Y), new Size(15 + StringMeasurer.MeasureString(opp.Value.Name), 30), Color.Black).Draw();
-                    new UIResText(opp.Value.Name, new Point((int)pos.X + 5, (int)pos.Y), 0.35f).Draw();
+                    new UIResRectangle(new Point((int)pos.X, (int)pos.Y), new Size(15 + StringMeasurer.MeasureString(opp.Name), 30), Color.Black).Draw();
+                    new UIResText(opp.Name, new Point((int)pos.X + 5, (int)pos.Y), 0.35f).Draw();
                 }
                 /*
 

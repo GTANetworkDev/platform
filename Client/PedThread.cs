@@ -22,8 +22,7 @@ namespace GTANetwork
             const int npcThreshold = 5000; // 5 second timeout
             const int playerThreshold = 60000 * 5; // 60 second timeout
 
-            Dictionary<int, SyncPed> localOpps = null;
-            lock (Main.Opponents) localOpps = new Dictionary<int, SyncPed>(Main.Opponents);
+            var localOpps = new List<SyncPed>(Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>());
             /*
             for (int i = localOpps.Count - 1; i >= 0; i--)
             {
@@ -46,11 +45,9 @@ namespace GTANetwork
                 }
             }
             */
-            lock (Main.Opponents) foreach (KeyValuePair<int, SyncPed> opp in new Dictionary<int, SyncPed>(Main.Opponents)) if (!localOpps.ContainsKey(opp.Key)) Main.Opponents.Remove(opp.Key);
-
             //lock (Main.Npcs) foreach (KeyValuePair<string, SyncPed> npc in new Dictionary<string, SyncPed>(Main.Npcs)) if (!localNpcs.ContainsKey(npc.Key)) Main.Npcs.Remove(npc.Key);
 
-            for (int i = 0; i < localOpps.Count; i++) localOpps.ElementAt(i).Value.DisplayLocally();
+            for (int i = 0; i < localOpps.Count; i++) localOpps[i].DisplayLocally();
 
             //for (int i = 0; i < localNpcs.Count; i++) localNpcs.ElementAt(i).Value.DisplayLocally();
             LogManager.DebugLog("SENDING PLAYER DATA");

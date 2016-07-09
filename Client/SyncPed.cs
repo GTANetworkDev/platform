@@ -29,7 +29,7 @@ namespace GTANetwork
         public bool Loop { get; set; }
     }
 
-    public class SyncPed
+    public class SyncPed : RemotePlayer
     {
         public SynchronizationMode SyncMode;
         public long Host;
@@ -218,7 +218,7 @@ namespace GTANetwork
         }
 
         private Vector3 _lastPosition;
-        public Vector3 Position
+        public new Vector3 Position
         {
             get { return _position; }
             set
@@ -325,7 +325,13 @@ namespace GTANetwork
             _blip = true;
             _latencyAverager = new Queue<double>();
         }
-            
+
+        public new int LocalHandle
+        {
+            get { return Character?.Handle ?? 0; }
+            set { }
+        }
+
         public void SetBlipNameFromTextFile(Blip blip, string text)
         {
             Function.Call(Hash._0xF9113A30DE5C6670, "STRING");

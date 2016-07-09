@@ -1,6 +1,7 @@
 ﻿using GTA;
 using GTA.Native;
 using GTANetworkShared;
+using System.Linq;
 
 namespace GTANetwork
 {
@@ -60,14 +61,14 @@ namespace GTANetwork
             var player = Game.Player.Character;
             var car = Game.Player.Character.CurrentVehicle;
 
-            foreach (var pickup in Main.NetEntityHandler.Pickups)
+            foreach (var pickup in Main.NetEntityHandler.ClientMap.Where(item => item is RemotePickup).Cast<RemotePickup>())
             {
-                if (!Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup)) continue;
-                if (!player.IsInRangeOf(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup), 20f)) continue;
-                if (Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup) == -1)
+                if (!pickup.StreamedIn || !Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup.LocalHandle)) continue;
+                if (!player.IsInRangeOf(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup.LocalHandle), 20f)) continue;
+                if (Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup.LocalHandle) == -1)
                 {
-                    Function.Call(Hash.REMOVE_PICKUP, pickup);
-                    SendSyncEvent(SyncEventType.PickupPickedUp, Main.NetEntityHandler.EntityToNet(pickup));
+                    Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
+                    SendSyncEvent(SyncEventType.PickupPickedUp, pickup.RemoteHandle);
                 }
             }
 

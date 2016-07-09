@@ -31,7 +31,7 @@ namespace GTANetwork
             }
         }
 
-        private List<IStreamedItem> ClientMap;
+        public List<IStreamedItem> ClientMap;
 
         public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b)
         {
@@ -435,13 +435,30 @@ namespace GTANetwork
             return rem;
         }
 
-        public RemotePlayer CreatePlayer(int netHandle, PedProperties prop)
+        public SyncPed GetPlayer(int netHandle)
         {
-            RemotePlayer rem = NetToStreamedItem(netHandle) as RemotePlayer;
+            SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
+            if (rem == null)
+                lock (ClientMap)
+                {
+                    ClientMap.Add(rem = new SyncPed()
+                    {
+                        RemoteHandle = netHandle,
+
+                        StreamedIn = false,
+                        LocalOnly = false,
+                    });
+                }
+            return rem;
+        }
+
+        public SyncPed CreatePlayer(int netHandle, PedProperties prop)
+        {
+            SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
             if (rem == null)
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemotePlayer()
+                ClientMap.Add(rem = new SyncPed()
                 {
                     RemoteHandle = netHandle,
 
@@ -453,13 +470,13 @@ namespace GTANetwork
                     BlipAlpha = prop.BlipAlpha,
                     Accessories = prop.Accessories,
                     Name = prop.Name,
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
+                    Position = prop.Position.ToVector(),
+                    Rotation = prop.Rotation.ToVector(),
                     ModelHash = prop.ModelHash,
                     EntityType = prop.EntityType,
                     Alpha = prop.Alpha,
 
-                    StreamedIn = false,
+                    StreamedIn = true,
                     LocalOnly = false,
                 });
             }
@@ -473,8 +490,8 @@ namespace GTANetwork
                 rem.BlipAlpha = prop.BlipAlpha;
                 rem.Accessories = prop.Accessories;
                 rem.Name = prop.Name;
-                rem.Position = prop.Position;
-                rem.Rotation = prop.Rotation;
+                rem.Position = prop.Position.ToVector();
+                rem.Rotation = prop.Rotation.ToVector();
                 rem.ModelHash = prop.ModelHash;
                 rem.EntityType = prop.EntityType;
                 rem.Alpha = prop.Alpha;
@@ -583,6 +600,9 @@ namespace GTANetwork
                 case EntityType.Pickup:
                     StreamOutPickup((ILocalHandleable) item);
                     break;
+                case EntityType.Ped:
+                    ((SyncPed)item).Clear();
+                    break;
             }
 
             item.StreamedIn = false;
@@ -680,6 +700,32 @@ namespace GTANetwork
                     }
                 }
             }
+
+            Function.Call(Hash.SET_VEHICLE_MOD_KIT, veh, 0);
+
+            if (data.Mods != null)
+                for (int i = 0; i < 50; i++)
+                {
+                    if (data.Mods.ContainsKey(i))
+                    {
+                        veh.SetMod((VehicleMod)i, data.Mods[i], false);
+                    }
+                    else
+                    {
+                        Function.Call(Hash.REMOVE_VEHICLE_MOD, veh, i);
+                    }
+                }
+
+            if (data.IsDead)
+            {
+                veh.IsInvincible = false;
+                Function.Call(Hash.EXPLODE_VEHICLE, veh, false, true);
+            }
+            else
+                veh.IsInvincible = true;
+
+            veh.Alpha = (int)data.Alpha;
+            Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
 
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;

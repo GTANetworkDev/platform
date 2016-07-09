@@ -20,21 +20,15 @@ namespace GTANetwork
         byte EntityType { get; set; }
     }
 
-    public class RemotePlayer : PedProperties, ILocalHandleable, IStreamedItem
+    public class RemotePlayer : PedProperties, IStreamedItem, ILocalHandleable
     {
-        public SyncPed Representation { get; set; }
-
-        public int LocalHandle
-        {
-            get { return Representation?.Character?.Handle ?? 0; }
-            set { }
-        }
-
         public int RemoteHandle { get; set; }
 
         public bool LocalOnly { get; set; }
 
         public bool StreamedIn { get; set; }
+
+        public int LocalHandle { get; set; }
     }
 
     public class RemoteVehicle : VehicleProperties, ILocalHandleable, IStreamedItem
