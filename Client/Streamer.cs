@@ -8,6 +8,90 @@ using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
 {
+    public class StreamerThread : Script
+    {
+        private List<IStreamedItem> _itemsToStreamIn;
+        private List<IStreamedItem> _itemsToStreamOut;
+        private Vector3 _playerPosition;
+
+        public StreamerThread()
+        {
+            _itemsToStreamIn = new List<IStreamedItem>();
+            _itemsToStreamOut = new List<IStreamedItem>();
+
+            Tick += StreamerTick;
+        }
+
+        void StreamerCalculationsThread()
+        {
+            while (true)
+            {
+                if (!Main.IsOnServer()) goto endTick;
+
+                var streamedItems = Main.NetEntityHandler.ClientMap.Where(item => !(item is RemotePlayer));
+
+                const int MAX_OBJECTS = 1000;
+                const int MAX_VEHICLES = 200;
+                const int MAX_PICKUPS = 30;
+                const int MAX_BLIPS = 200;
+
+                var position = _playerPosition.ToLVector();
+
+                var streamedObjects = streamedItems.Where(item => item is RemoteProp).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedVehicles = streamedItems.Where(item => item is RemoteVehicle).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedPickups = streamedItems.Where(item => item is RemotePickup).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedBlips = streamedItems.Where(item => item is RemoteBlip).OrderBy(item => item.Position.Sub(position).LengthSquared());
+
+
+                lock (_itemsToStreamOut)
+                {
+                    _itemsToStreamOut.AddRange(streamedObjects.Skip(MAX_OBJECTS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedBlips.Skip(MAX_BLIPS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedPickups.Skip(MAX_PICKUPS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedVehicles.Skip(MAX_VEHICLES).Where(item => item.StreamedIn));
+                }
+
+                lock (_itemsToStreamIn)
+                {
+                    _itemsToStreamIn.AddRange(streamedPickups.Take(MAX_PICKUPS).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedVehicles.Take(MAX_VEHICLES).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedBlips.Take(MAX_BLIPS).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedObjects.Take(MAX_OBJECTS).Where(item => !item.StreamedIn));
+                }
+
+                endTick:
+                System.Threading.Thread.Sleep(1000);
+            }
+        }
+
+        void StreamerTick(object sender, System.EventArgs e)
+        {
+            _playerPosition = Game.Player.Character.Position;
+
+            lock (_itemsToStreamOut)
+            {
+                foreach (var item in _itemsToStreamOut)
+                {
+                    Main.NetEntityHandler.StreamOut(item);
+                }
+
+                _itemsToStreamOut.Clear();
+            }
+
+            lock (_itemsToStreamIn)
+            {
+                foreach (var item in _itemsToStreamIn)
+                {
+                    Main.NetEntityHandler.StreamIn(item);
+                }
+
+                _itemsToStreamIn.Clear();
+            }
+        }
+    }
+
+
+
     public class Streamer
     {
         public Streamer()

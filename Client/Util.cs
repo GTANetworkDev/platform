@@ -406,6 +406,24 @@ namespace GTANetwork
             };
         }
 
-        
+        public static float LengthSquared(this GTANetworkShared.Vector3 left)
+        {
+            return left.X * left.X + left.Y * left.Y + left.Z + left.Z;
+        }
+
+        public static float Length(this GTANetworkShared.Vector3 left)
+        {
+            return (float)Math.Sqrt(left.LengthSquared());
+        }
+
+        public static GTANetworkShared.Vector3 Sub(this GTANetworkShared.Vector3 left, GTANetworkShared.Vector3 right)
+        {
+            return new GTANetworkShared.Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+        }
+
+        public static GTANetworkShared.Vector3 Add(this GTANetworkShared.Vector3 left, GTANetworkShared.Vector3 right)
+        {
+            return new GTANetworkShared.Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+        }
     }
 }
