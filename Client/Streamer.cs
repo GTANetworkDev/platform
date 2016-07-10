@@ -20,6 +20,10 @@ namespace GTANetwork
             _itemsToStreamOut = new List<IStreamedItem>();
 
             Tick += StreamerTick;
+
+            System.Threading.Thread calcucationThread = new System.Threading.Thread(StreamerCalculationsThread);
+            calcucationThread.IsBackground = true;
+            calcucationThread.Start();
         }
 
         void StreamerCalculationsThread()
