@@ -31,6 +31,8 @@ namespace GTANetwork
 
     public class SyncPed : RemotePlayer
     {
+
+        public DeltaCompressor DeltaCompressor = new DeltaCompressor();
         public SynchronizationMode SyncMode;
         public long Host;
         public Ped Character;

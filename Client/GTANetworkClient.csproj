@@ -90,6 +90,7 @@
     <Compile Include="ClassicChat.cs" />
     <Compile Include="Chat.cs" />
     <Compile Include="ChatData.cs" />
+    <Compile Include="DeltaCompressor.cs" />
     <Compile Include="GUI\CEFManager.cs" />
     <Compile Include="GUI\RadioWheel.cs" />
     <None Include="SyncPedCoop.cs" />

@@ -24,6 +24,7 @@ namespace GTANetworkServer
     public class Client
     {
         public NetConnection NetConnection { get; private set; }
+        public DeltaCompressor DeltaCompressor { get; set; }
         public string SocialClubName { get; set; }
         public string Name { get; set; }
         public float Latency { get; set; }
@@ -44,6 +45,7 @@ namespace GTANetworkServer
         public Client(NetConnection nc)
         {
             NetConnection = nc;
+            DeltaCompressor = new DeltaCompressor();
             CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle());
         }
     }
@@ -690,7 +692,30 @@ namespace GTANetworkServer
             packet.Properties = newInfo;
             Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.EntityBackend);
         }
-        
+
+        private void ResendPacket(PedData fullPacket, Client exception)
+        {
+            foreach (var client in Clients)
+            {
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+
+                var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
+
+                SendToClient(client, compData, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
+            }
+        }
+
+        private void ResendPacket(VehicleData fullPacket, Client exception)
+        {
+            foreach (var client in Clients)
+            {
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+
+                var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
+
+                SendToClient(client, compData, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
+            }
+        }
         private void LogException(Exception ex, string resourceName)
         {
             Program.Output("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
@@ -989,29 +1014,31 @@ namespace GTANetworkServer
                                                 VehicleData;
                                         if (data != null)
                                         {
-                                            data.Name = client.Name;
-                                            data.Latency = client.Latency;
-                                            data.NetHandle = client.CharacterHandle.Value;
+                                            var fullPacket = client.DeltaCompressor.DecompressData(data) as VehicleData;
 
-                                            client.Health = data.PlayerHealth;
-                                            client.Armor = data.PedArmor;
-                                            client.Position = data.Position;
+                                            fullPacket.Name = client.Name;
+                                            fullPacket.Latency = client.Latency;
+                                            fullPacket.NetHandle = client.CharacterHandle.Value;
+
+                                            client.Health = fullPacket.PlayerHealth.Value;
+                                            client.Armor = fullPacket.PedArmor.Value;
+                                            client.Position = fullPacket.Position;
                                             client.IsInVehicle = true;
-                                            client.CurrentVehicle = new NetHandle(data.VehicleHandle);
-                                            client.Rotation = data.Quaternion;
+                                            client.CurrentVehicle = new NetHandle(fullPacket.VehicleHandle.Value);
+                                            client.Rotation = fullPacket.Quaternion;
                                             client.LastUpdate = DateTime.Now;
 
-                                            if (NetEntityHandler.ToDict().ContainsKey(data.VehicleHandle))
+                                            if (NetEntityHandler.ToDict().ContainsKey(fullPacket.VehicleHandle.Value))
                                             {
-                                                NetEntityHandler.ToDict()[data.VehicleHandle].Position = data.Position;
-                                                NetEntityHandler.ToDict()[data.VehicleHandle].Rotation = data.Quaternion;
-                                                ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).IsDead = (data.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
-                                                ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Health = data.VehicleHealth;
-                                                ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Siren = (data.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
+                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position = fullPacket.Position;
+                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation = fullPacket.Quaternion;
+                                                ((VehicleProperties) NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
+                                                ((VehicleProperties) NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Health = fullPacket.VehicleHealth.Value;
+                                                ((VehicleProperties) NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
 
                                                 if (data.Trailer != null)
                                                 {
-                                                    var trailer = ((VehicleProperties) NetEntityHandler.ToDict()[data.VehicleHandle]).Trailer;
+                                                    var trailer = ((VehicleProperties) NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Trailer;
                                                     if (NetEntityHandler.ToDict().ContainsKey(trailer))
                                                     {
                                                         NetEntityHandler.ToDict()[trailer].Position = data.Trailer;
@@ -1019,15 +1046,15 @@ namespace GTANetworkServer
                                                 }
                                             }
 
-                                            if (NetEntityHandler.ToDict().ContainsKey(data.NetHandle))
+                                            if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                             {
-                                                NetEntityHandler.ToDict()[data.NetHandle].Position = data.Position;
-                                                NetEntityHandler.ToDict()[data.NetHandle].Rotation = data.Quaternion;
-                                                NetEntityHandler.ToDict()[data.NetHandle].ModelHash = data.PedModelHash;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.Value;
                                             }
 
-
-                                            SendToAll(data, PacketType.VehiclePositionData, false, client, ConnectionChannel.PositionData);
+                                            ResendPacket(fullPacket, client);
+                                            //SendToAll(data, PacketType.VehiclePositionData, false, client, ConnectionChannel.PositionData);
                                         }
                                     }
                                     catch (IndexOutOfRangeException)
@@ -1043,28 +1070,31 @@ namespace GTANetworkServer
                                         var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
                                         if (data != null)
                                         {
-                                            data.Name = client.Name;
-                                            data.Latency = client.Latency;
-                                            data.NetHandle = client.CharacterHandle.Value;
+                                            var fullPacket = client.DeltaCompressor.DecompressData(data) as PedData;
 
-                                            client.Health = data.PlayerHealth;
-                                            client.Armor = data.PedArmor;
-                                            client.Position = data.Position;
+                                                fullPacket.Name = client.Name;
+                                                fullPacket.Latency = client.Latency;
+                                                fullPacket.NetHandle = client.CharacterHandle.Value;
+
+                                            client.Health = fullPacket.PlayerHealth.Value;
+                                            client.Armor = fullPacket.PedArmor.Value;
+                                            client.Position = fullPacket.Position;
                                             client.IsInVehicle = false;
                                             client.LastUpdate = DateTime.Now;
-                                            client.Rotation = data.Quaternion;
+                                            client.Rotation = fullPacket.Quaternion;
                                             client.CurrentVehicle = new NetHandle(0);
 
-                                            client.Rotation = data.Quaternion;
+                                            client.Rotation = fullPacket.Quaternion;
 
-                                            if (NetEntityHandler.ToDict().ContainsKey(data.NetHandle))
+                                            if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                             {
-                                                NetEntityHandler.ToDict()[data.NetHandle].Position = data.Position;
-                                                NetEntityHandler.ToDict()[data.NetHandle].Rotation = data.Quaternion;
-                                                NetEntityHandler.ToDict()[data.NetHandle].ModelHash = data.PedModelHash;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.Value;
                                             }
 
-                                            SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
+                                            ResendPacket(fullPacket, client);
+                                            //SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
                                         }
                                     }
                                     catch (IndexOutOfRangeException)

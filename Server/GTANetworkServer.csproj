@@ -83,6 +83,7 @@
     <Compile Include="AccessControlList.cs" />
     <Compile Include="API.cs" />
     <Compile Include="ChatData.cs" />
+    <Compile Include="DeltaCompressor.cs" />
     <Compile Include="GameServer.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MemberwiseClone.cs" />
