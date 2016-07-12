@@ -438,7 +438,7 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(vehicle))
             {
-                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods.Set(modType, -1);
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods.Remove(modType);
             }
 
             Program.ServerInstance.SendNativeCallToAllPlayers(0x92D619E420858204, vehicle, modType);
