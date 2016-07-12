@@ -404,11 +404,13 @@ namespace GTANetworkShared
 
         public static bool operator ==(Vector3 left, Vector3 right)
         {
+            if (left == null || right == null) return false;
             return left.X == right.X && left.Y == right.Y && left.Z == right.Z;
         }
 
         public static bool operator !=(Vector3 left, Vector3 right)
         {
+            if (left == null || right == null) return true;
             return left.X != right.X || left.Y != right.Y || left.Z != right.Z;
         }
 
