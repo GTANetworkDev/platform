@@ -45,7 +45,7 @@ namespace GTANetworkServer
         public Client(NetConnection nc)
         {
             NetConnection = nc;
-            DeltaCompressor = new DeltaCompressor();
+            DeltaCompressor = new DeltaCompressor(this);
             CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle());
         }
     }

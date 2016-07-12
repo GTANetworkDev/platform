@@ -414,6 +414,28 @@ namespace GTANetworkShared
             return left.X != right.X || left.Y != right.Y || left.Z != right.Z;
         }
 
+        public static Vector3 operator -(Vector3 left, Vector3 right)
+        {
+            if (left == null || right == null) return new Vector3();
+            return new Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+        }
+
+        public static Vector3 operator +(Vector3 left, Vector3 right)
+        {
+            if (left == null || right == null) return new Vector3();
+            return new Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+        }
+
+        public float LengthSquared()
+        {
+            return X * X + Y * Y + Z * Z;
+        }
+
+        public float Length()
+        {
+            return (float)Math.Sqrt(LengthSquared());
+        }
+
         public Vector3()
         { }
     }

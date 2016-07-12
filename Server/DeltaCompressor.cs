@@ -6,10 +6,12 @@ namespace GTANetworkServer
 {
     public class DeltaCompressor
     {
-        public DeltaCompressor()
+        public DeltaCompressor(Client client)
         {
-
+            _parent = client;
         }
+
+        private Client _parent;
 
         public Dictionary<int, object> DataReceived = new Dictionary<int, object>();
         public object LastPacketReceived;
@@ -93,20 +95,27 @@ namespace GTANetworkServer
                 var compressed = new PedData();
                 compressed.NetHandle = netHandle;
 
-                if (full.Name != comparable.Name) compressed.Name = full.Name;
-                if (full.PedModelHash != comparable.PedModelHash) compressed.PedModelHash = full.PedModelHash;
-                if (full.Position != comparable.Position) compressed.Position = full.Position;
-                if (full.Quaternion != comparable.Quaternion) compressed.Quaternion = full.Quaternion;
-                if (full.AimCoords != comparable.AimCoords) compressed.AimCoords = full.AimCoords;
-                if (full.WeaponHash != comparable.WeaponHash) compressed.WeaponHash = full.WeaponHash;
-                if (full.PlayerHealth != comparable.PlayerHealth) compressed.PlayerHealth = full.PlayerHealth;
-                if (full.Latency != comparable.Latency) compressed.Latency = full.Latency;
-                if (full.NetHandle != comparable.NetHandle) compressed.NetHandle = full.NetHandle;
-                if (full.Speed != comparable.Speed) compressed.Speed = full.Speed;
-                if (full.PedArmor != comparable.PedArmor) compressed.PedArmor = full.PedArmor;
-                if (full.Flag != comparable.Flag) compressed.Flag = full.Flag;
-                if (full.Velocity != comparable.Velocity) compressed.Velocity = full.Velocity;
-
+                if ((_parent.Position - full.Position).LengthSquared() < 4000f) // 200 * 200
+                {
+                    compressed.Position = full.Position;
+                    if (full.Name != comparable.Name) compressed.Name = full.Name;
+                }
+                else
+                {
+                    if (full.Name != comparable.Name) compressed.Name = full.Name;
+                    if (full.PedModelHash != comparable.PedModelHash) compressed.PedModelHash = full.PedModelHash;
+                    if (full.Position != comparable.Position) compressed.Position = full.Position;
+                    if (full.Quaternion != comparable.Quaternion) compressed.Quaternion = full.Quaternion;
+                    if (full.AimCoords != comparable.AimCoords) compressed.AimCoords = full.AimCoords;
+                    if (full.WeaponHash != comparable.WeaponHash) compressed.WeaponHash = full.WeaponHash;
+                    if (full.PlayerHealth != comparable.PlayerHealth) compressed.PlayerHealth = full.PlayerHealth;
+                    if (full.Latency != comparable.Latency) compressed.Latency = full.Latency;
+                    if (full.NetHandle != comparable.NetHandle) compressed.NetHandle = full.NetHandle;
+                    if (full.Speed != comparable.Speed) compressed.Speed = full.Speed;
+                    if (full.PedArmor != comparable.PedArmor) compressed.PedArmor = full.PedArmor;
+                    if (full.Flag != comparable.Flag) compressed.Flag = full.Flag;
+                    if (full.Velocity != comparable.Velocity) compressed.Velocity = full.Velocity;
+                }
                 DataReceived[netHandle] = full;
 
                 return compressed;
@@ -118,25 +127,33 @@ namespace GTANetworkServer
                 var compressed = new VehicleData();
                 compressed.NetHandle = netHandle;
 
-                if (full.Name != comparable.Name) compressed.Name = full.Name;
-                if (full.VehicleModelHash != comparable.VehicleModelHash) compressed.VehicleModelHash = full.VehicleModelHash;
-                if (full.PedModelHash != comparable.PedModelHash) compressed.PedModelHash = full.PedModelHash;
-                if (full.WeaponHash != comparable.WeaponHash) compressed.WeaponHash = full.WeaponHash;
-                if (full.Position != comparable.Position) compressed.Position = full.Position;
-                if (full.Quaternion != comparable.Quaternion) compressed.Quaternion = full.Quaternion;
-                if (full.VehicleSeat != comparable.VehicleSeat) compressed.VehicleSeat = full.VehicleSeat;
-                if (full.VehicleHealth != comparable.VehicleHealth) compressed.VehicleHealth = full.VehicleHealth;
-                if (full.PlayerHealth != comparable.PlayerHealth) compressed.PlayerHealth = full.PlayerHealth;
-                if (full.Latency != comparable.Latency) compressed.Latency = full.Latency;
-                if (full.VehicleHandle != comparable.VehicleHandle) compressed.VehicleHandle = full.VehicleHandle;
-                if (full.NetHandle != comparable.NetHandle) compressed.NetHandle = full.NetHandle;
-                if (full.Velocity != comparable.Velocity) compressed.Velocity = full.Velocity;
-                if (full.PedArmor != comparable.PedArmor) compressed.PedArmor = full.PedArmor;
-                if (full.AimCoords != comparable.AimCoords) compressed.AimCoords = full.AimCoords;
-                if (full.RPM != comparable.RPM) compressed.RPM = full.RPM;
-                if (full.Flag != comparable.Flag) compressed.Flag = full.Flag;
-                if (full.Steering != comparable.Steering) compressed.Steering = full.Steering;
-                if (full.Trailer != comparable.Trailer) compressed.Trailer = full.Trailer;
+                if ((_parent.Position - full.Position).LengthSquared() < 4000f) // 200 * 200
+                {
+                    compressed.Position = full.Position;
+                    if (full.VehicleHandle != full.VehicleHandle) compressed.VehicleHandle = full.VehicleHandle;
+                }
+                else
+                {
+                    if (full.Name != comparable.Name) compressed.Name = full.Name;
+                    if (full.VehicleModelHash != comparable.VehicleModelHash) compressed.VehicleModelHash = full.VehicleModelHash;
+                    if (full.PedModelHash != comparable.PedModelHash) compressed.PedModelHash = full.PedModelHash;
+                    if (full.WeaponHash != comparable.WeaponHash) compressed.WeaponHash = full.WeaponHash;
+                    if (full.Position != comparable.Position) compressed.Position = full.Position;
+                    if (full.Quaternion != comparable.Quaternion) compressed.Quaternion = full.Quaternion;
+                    if (full.VehicleSeat != comparable.VehicleSeat) compressed.VehicleSeat = full.VehicleSeat;
+                    if (full.VehicleHealth != comparable.VehicleHealth) compressed.VehicleHealth = full.VehicleHealth;
+                    if (full.PlayerHealth != comparable.PlayerHealth) compressed.PlayerHealth = full.PlayerHealth;
+                    if (full.Latency != comparable.Latency) compressed.Latency = full.Latency;
+                    if (full.VehicleHandle != comparable.VehicleHandle) compressed.VehicleHandle = full.VehicleHandle;
+                    if (full.NetHandle != comparable.NetHandle) compressed.NetHandle = full.NetHandle;
+                    if (full.Velocity != comparable.Velocity) compressed.Velocity = full.Velocity;
+                    if (full.PedArmor != comparable.PedArmor) compressed.PedArmor = full.PedArmor;
+                    if (full.AimCoords != comparable.AimCoords) compressed.AimCoords = full.AimCoords;
+                    if (full.RPM != comparable.RPM) compressed.RPM = full.RPM;
+                    if (full.Flag != comparable.Flag) compressed.Flag = full.Flag;
+                    if (full.Steering != comparable.Steering) compressed.Steering = full.Steering;
+                    if (full.Trailer != comparable.Trailer) compressed.Trailer = full.Trailer;
+                }
 
                 return compressed;
             }
