@@ -6,7 +6,7 @@ using System.Xml.Serialization;
 
 namespace GTANetworkServer
 {
-    public class Map
+    public class XmlGroup
     {
         internal XmlDocument _mapDocument;
 
@@ -14,6 +14,33 @@ namespace GTANetworkServer
         {
             _mapDocument = new XmlDocument();
             _mapDocument.Load(path);
+        }
+
+        internal void Load(XmlNode node)
+        {
+            _mapDocument = new XmlDocument();
+            _mapDocument.ImportNode(node, false);
+        }
+
+        public XmlGroup getSubgroup(string groupName)
+        {
+            var node = _mapDocument.SelectSingleNode(groupName);
+            if (node == null) return null;
+
+            var XmlGroup = new XmlGroup();
+            XmlGroup.Load(node);
+
+            return XmlGroup;
+        }
+
+        public bool hasAnyElementOfType(string typeName)
+        {
+            return _mapDocument.GetElementsByTagName(typeName).Count > 0;
+        }
+
+        public int getNumberOfElementsOfType(string typeName)
+        {
+            return _mapDocument.GetElementsByTagName(typeName).Count;
         }
 
         public IEnumerable<xmlElement> getElementsByType(string typeName)
@@ -28,6 +55,21 @@ namespace GTANetworkServer
 
                 yield return xml;
             }
+        }
+
+        public xmlElement getElementByType(string typeName)
+        {
+            var nodes = _mapDocument.GetElementsByTagName(typeName);
+
+            foreach (var node in nodes)
+            {
+                var xml = new xmlElement();
+                xml._XmlElement = (XmlElement)node;
+                xml.name = xml._XmlElement.Name;
+                return xml;
+            }
+
+            return null;
         }
     }
 

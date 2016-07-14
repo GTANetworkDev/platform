@@ -76,7 +76,6 @@ namespace GTANetworkServer
             scriptEngine.AddHostObject("API", new API() { ResourceParent = this});
             scriptEngine.AddHostObject("host", new HostFunctions());
             scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
-            scriptEngine.AddHostType("xmlParser", typeof(RetardedXMLParser));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
             scriptEngine.AddHostType("NetHandle", typeof(NetHandle));
             scriptEngine.AddHostType("String", typeof(string));
@@ -236,7 +235,7 @@ namespace GTANetworkServer
             }));
         }
 
-        public void InvokeMapChange(string mapName, Map map)
+        public void InvokeMapChange(string mapName, XmlGroup map)
         {
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
@@ -388,7 +387,7 @@ namespace GTANetworkServer
         public ResourceInfo Info { get; set; }
         public List<ScriptingEngine> Engines { get; set; }
         public List<ClientsideScript> ClientsideScripts { get; set; }
-        public Map Map { get; set; }
+        public XmlGroup Map { get; set; }
     }
 
     public enum ScriptType

@@ -276,6 +276,16 @@ namespace GTANetwork
     {
         internal string ParentResourceName;
 
+        internal bool isPathSafe(string path)
+        {
+            if (ParentResourceName == null) throw new NullReferenceException("Illegal call to isPathSafe inside constructor!");
+
+            var absPath = System.IO.Path.GetFullPath(path);
+            var resourcePath = System.IO.Path.GetFullPath(FileTransferId._DOWNLOADFOLDER_ + ParentResourceName);
+
+            return absPath.StartsWith(resourcePath);
+        }
+
         public enum ReturnType
         {
             Int = 0,
@@ -486,6 +496,7 @@ namespace GTANetwork
         
         public void dxDrawTexture(string path, Point pos, Size size, int id = 60)
         {
+            if (!isPathSafe(path)) throw new Exception("Illegal path for texture!");
             path = getResourceFilePath(path);
             Util.DxDrawTexture(id, path, pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
         }

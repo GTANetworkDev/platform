@@ -29,6 +29,16 @@ namespace GTANetworkServer
     {
         #region META
         internal ScriptingEngine ResourceParent { get; set; }
+
+        internal bool isPathSafe(string path)
+        {
+            if (ResourceParent == null) throw new NullReferenceException("Illegal call to isPathSafe inside constructor!");
+
+            var absPath = Path.GetFullPath(path);
+            var resourcePath = Path.GetFullPath("resources" + Path.DirectorySeparatorChar + ResourceParent.ResourceParent.DirectoryName);
+
+            return absPath.StartsWith(resourcePath);
+        }
         #endregion
 
         #region Delegates
@@ -38,7 +48,7 @@ namespace GTANetworkServer
         public delegate void PlayerKilledEvent(Client player, NetHandle entityKiller, int weapon);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
         public delegate void PickupEvent(Client pickupee, NetHandle pickupHandle);
-        public delegate void MapChangeEvent(string mapName, Map map);
+        public delegate void MapChangeEvent(string mapName, XmlGroup map);
         #endregion
 
         #region Events
@@ -57,7 +67,7 @@ namespace GTANetworkServer
         public event PickupEvent onPlayerPickup;
         public event MapChangeEvent onMapChange;
 
-        internal void invokeMapChange(string mapName, Map map)
+        internal void invokeMapChange(string mapName, XmlGroup map)
         {
             onMapChange?.Invoke(mapName, map);
         }
@@ -156,6 +166,15 @@ namespace GTANetworkServer
             {
                 if (map.Info.Info.Gamemodes.Split(',').Contains(gamemode)) yield return map.DirectoryName;
             }
+        }
+
+        public XmlGroup loadXml(string path)
+        {
+            if (!isPathSafe(path)) throw new AccessViolationException("Illegal path for XML!");
+            if (!File.Exists(path)) throw new FileNotFoundException("File not found!");
+            var xml = new XmlGroup();
+            xml.Load(path);
+            return xml;
         }
 
         public object call(string resourceName, string scriptName, string methodName, params object[] arguments)

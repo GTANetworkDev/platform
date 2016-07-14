@@ -486,7 +486,7 @@ namespace GTANetworkServer
 
                 if (ourResource.Info.Map != null && !string.IsNullOrWhiteSpace(ourResource.Info.Map.Path))
                 {
-                    ourResource.Map = new Map();
+                    ourResource.Map = new XmlGroup();
                     ourResource.Map.Load("resources\\" + ourResource.DirectoryName +"\\" + ourResource.Info.Map.Path);
 
                     if (ourResource.Info.Info.Type == ResourceType.gamemode)
@@ -574,7 +574,6 @@ namespace GTANetworkServer
             scriptEngine.AddHostObject("API", new API());
             scriptEngine.AddHostObject("host", new HostFunctions());
             scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
-            scriptEngine.AddHostType("xmlParser", typeof(RetardedXMLParser));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
             scriptEngine.AddHostType("String", typeof(string));
             scriptEngine.AddHostType("List", typeof (List<>));
