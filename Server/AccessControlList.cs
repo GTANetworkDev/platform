@@ -41,11 +41,70 @@ namespace GTANetworkServer
             LoadACL();
         }
 
-        public void LoadACL()
+        public static ACLRoot ParseXml(string path)
         {
             var ser = new XmlSerializer(typeof(ACLRoot));
 
-            using (var stream = File.OpenRead(_filepath)) _mainAcl = ((ACLRoot)ser.Deserialize(stream));
+            using (var stream = File.OpenRead(path)) return ((ACLRoot)ser.Deserialize(stream));
+        }
+
+        public static void SaveXml(string path, ACLRoot root)
+        {
+            var ser = new XmlSerializer(typeof(ACLRoot));
+
+            using (var stream = new FileStream(path, FileMode.Truncate)) ser.Serialize(stream, root);
+        }
+
+        public void MergeACL(ACLRoot resourceAcl)
+        {
+            foreach (var group in resourceAcl.Groups)
+            {
+                if (_mainAcl.Groups.Any(grp => grp.Name == group.Name))
+                {
+                    var ourGrp = _mainAcl.Groups.First(grp => grp.Name == group.Name);
+                    
+                    foreach (var right in group.ACLRights)
+                    {
+                        if (!ourGrp.ACLRights.Any(r => r.Name == right.Name))
+                        {
+                            ourGrp.ACLRights.Add(right);
+                        }
+                    }
+
+                    /* // Disabled for security measures
+                    foreach ( var obj in group.Objects)
+                    {
+                        if (!ourGrp.Objects.Any(o => o.Name == obj.Name))
+                            ourGrp.Objects.Add(obj);
+                    }*/
+                }
+                else
+                {
+                    _mainAcl.Groups.Add(group);
+                }
+            }
+
+
+            foreach (var rights in resourceAcl.RightLists)
+            {
+                if (_mainAcl.RightLists.Any(r => r.Name == rights.Name))
+                {
+                    var ourList = _mainAcl.RightLists.First(r => r.Name == rights.Name);
+                    foreach (var right in rights.Rights)
+                    {
+                        if (!ourList.Rights.Any(r => r.Name == right.Name)) ourList.Rights.Add(right);
+                    }
+                }
+                else
+                {
+                    _mainAcl.RightLists.Add(rights);
+                }
+            }
+        }
+
+        public void LoadACL()
+        {
+            _mainAcl = ParseXml(_filepath);
 
             foreach (var aclGroup in _mainAcl.Groups)
                 foreach (var obj in aclGroup.Objects)
@@ -56,7 +115,7 @@ namespace GTANetworkServer
                     }
                 }
 
-            using (var stream = new FileStream(_filepath, FileMode.Truncate)) ser.Serialize(stream, _mainAcl);
+            SaveXml(_filepath, _mainAcl);
         }
 
         private ACLGroup FindObjectGroup(string objName, ObjectType objType)

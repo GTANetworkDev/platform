@@ -438,6 +438,16 @@ namespace GTANetworkServer
 
         [XmlElement("export")]
         public List<MethodExport> ExportedFunctions { get; set; }
+
+        [XmlElement("acl")]
+        public ResourceAcl ResourceACL { get; set; }
+    }
+
+    [XmlRoot("acl")]
+    public class ResourceAcl
+    {
+        [XmlAttribute("src")]
+        public string Path { get; set; }
     }
 
     [XmlRoot("export")]

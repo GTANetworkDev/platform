@@ -321,6 +321,12 @@ namespace GTANetworkServer
                         StopResource(Gamemode.DirectoryName);
                     Gamemode = ourResource;
                 }
+
+                if (currentResInfo.ResourceACL != null && ACLEnabled)
+                {
+                    var aclHead = AccessControlList.ParseXml(currentResInfo.ResourceACL.Path);
+                    ACL.MergeACL(aclHead);
+                }
                 
                 if (currentResInfo.Includes != null)
                     foreach (var resource in currentResInfo.Includes)
@@ -900,6 +906,7 @@ public class Constructor : Script
                                                         client.Name + ")");
 
                                         Clients.Remove(client);
+                                        if (ACLEnabled) ACL.LogOutClient(client);
 
                                         Downloads.RemoveAll(d => d.Parent == client);
                                     }
