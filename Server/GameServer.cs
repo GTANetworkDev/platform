@@ -418,11 +418,17 @@ namespace GTANetworkServer
                     }
                 }
 
-                var csharpAss = CompileScript(cSharp.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
-                ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+                if (cSharp.Count > 0)
+                {
+                    var csharpAss = CompileScript(cSharp.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
+                    ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+                }
 
-                var vbasicAss = CompileScript(vBasic.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
-                ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+                if (vBasic.Count > 0)
+                {
+                    var vbasicAss = CompileScript(vBasic.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
+                    ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+                }
 
                 CommandHandler.Register(ourResource);
 
@@ -665,7 +671,7 @@ namespace GTANetworkServer
             for (int s = 0; s < script.Length; s++)
             if (!vbBasic && script[s].TrimStart().StartsWith("public Constructor"))
             {
-                script[s] = string.Format(@"
+                    script[s] = string.Format(@"
 using System;
 using System.Threading;
 using System.Linq;
@@ -675,10 +681,13 @@ using System.Text;
 using GTANetworkServer;
 using GTANetworkShared;
 
-public class Constructor : Script
+namespace GTANResource
 {{
-    {0}
-}}", script[s]);
+    public class Constructor{1} : Script
+    {{
+        {0}
+    }}
+}}", script[s].Replace("Constructor(", "Constructor" + s + "("), s);
             }
             
             try
