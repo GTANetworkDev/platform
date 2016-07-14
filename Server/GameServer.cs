@@ -143,6 +143,7 @@ namespace GTANetworkServer
         public NetServer Server;
         public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
+        internal API PublicAPI = new API();
         public int MaxPlayers { get; set; }
         public int Port { get; set; }
         public List<Client> Clients { get; set; }
@@ -971,7 +972,7 @@ public class Constructor : Script
 
                                                     if (callCmd)
                                                     {
-                                                        CommandHandler.Parse(data.Message);
+                                                        CommandHandler.Parse(client, data.Message);
                                                     }
                                                 }
                                                 else

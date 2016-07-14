@@ -12,6 +12,7 @@ namespace GTANetworkServer
     {
         public readonly string CommandString;
         public bool GreedyArg { get; set; }
+        public bool SensitiveInfo { get; set; }
 
         public CommandAttribute(string command)
         {
@@ -26,31 +27,33 @@ namespace GTANetworkServer
         public ScriptingEngine Engine;
         public MethodInfo Method;
         public ParameterInfo[] Parameters;
+        public bool Sensitive;
 
-        public bool Parse(string cmdRaw)
+        public bool Parse(Client sender, string cmdRaw)
         {
             if (string.IsNullOrWhiteSpace(cmdRaw)) return false;
             var args = cmdRaw.Split();
 
             if (args[0].TrimStart('/') != Command) return false;
 
-            if (args.Length - 1 < Parameters.Length || (args.Length - 1 > Parameters.Length && !Greedy))
+            if (args.Length < Parameters.Length || (args.Length > Parameters.Length && !Greedy))
             {
-                Program.Output("~y~USAGE: ~w~/" + Command + " " + Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]"));
+                Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/" + Command + " " + Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]"));
                 return true;
             }
 
             object[] arguments = new object[Parameters.Length];
+            arguments[0] = sender;
 
-            for (int i = 0; i < Parameters.Length; i++)
+            for (int i = 1; i < Parameters.Length; i++)
             {
-                if (Parameters[i].GetType() == typeof(Client))
+                if (Parameters[i].ParameterType == typeof(Client))
                 {
                     var cTarget = Program.ServerInstance.GetClientFromName(args[i]);
 
                     if (cTarget == null)
                     {
-                        Program.Output("~r~ERROR: ~w~ No player named \"" + args[i] + "\" has been found for " + Parameters[i].Name + ".");
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No player named \"" + args[i] + "\" has been found for " + Parameters[i].Name + ".");
                         return true;
                     }
 
@@ -64,7 +67,19 @@ namespace GTANetworkServer
                     continue;
                 }
 
-                arguments[i] = Convert.ChangeType(args[i], Parameters[i].GetType(), CultureInfo.InvariantCulture);
+                try
+                {
+                    arguments[i] = Convert.ChangeType(args[i], Parameters[i].ParameterType, CultureInfo.InvariantCulture);
+                }
+                catch (Exception ex)
+                {
+                    // TODO: Check if logging is extremely verbose
+                    Program.Output("UNHANDLED EXCEPTION WHEN PARSING COMMAND " + (Sensitive ? "[SENSITIVE INFO]" : cmdRaw) + " FROM PLAYER " + sender.SocialClubName);
+                    Program.Output(ex.ToString());
+
+                    Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/" + Command + " " + Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]"));
+                    return true;
+                }
             }
 
             try
@@ -106,22 +121,25 @@ namespace GTANetworkServer
                     parser.Engine = engine;
                     parser.Parameters = args;
                     parser.Method = method;
+                    parser.Sensitive = cmd.SensitiveInfo;
 
                     lock (ResourceCommands) ResourceCommands.Add(parser);
                 }
             }
         }
 
-        public bool Parse(string rawCommand)
+        public bool Parse(Client sender, string rawCommand)
         {
+            var result = false;
             lock (ResourceCommands)
             {
                 foreach (var cmd in ResourceCommands)
                 {
-                    if (cmd.Parse(rawCommand)) return true;
+                    result = result || cmd.Parse(sender, rawCommand);
                 }
             }
-            return false;
+
+            return result;
         }
     }
 
@@ -148,17 +166,17 @@ namespace GTANetworkServer
             lock (Commands) Commands.Remove(resource);
         }
 
-        public bool Parse(string rawCommand)
+        public bool Parse(Client sender, string rawCommand)
         {
+            var result = false;
             lock (Commands)
             {
                 foreach (var resCmd in Commands)
                 {
-                    if (resCmd.Value.Parse(rawCommand))
-                        return true;
+                    result = result || resCmd.Value.Parse(sender, rawCommand);
                 }
             }
-            return false;
+            return result;
         }
     }
 }
