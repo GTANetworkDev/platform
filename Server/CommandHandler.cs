@@ -13,10 +13,16 @@ namespace GTANetworkServer
         public readonly string CommandString;
         public bool GreedyArg { get; set; }
         public bool SensitiveInfo { get; set; }
+        public bool ACLRequired { get; set; }
 
         public CommandAttribute(string command)
         {
             CommandString = command.TrimStart('/');
+        }
+
+        public CommandAttribute()
+        {
+            CommandString = null;
         }
     }
 
@@ -28,17 +34,24 @@ namespace GTANetworkServer
         public MethodInfo Method;
         public ParameterInfo[] Parameters;
         public bool Sensitive;
+        public bool ACLRequired;
 
         public bool Parse(Client sender, string cmdRaw)
         {
             if (string.IsNullOrWhiteSpace(cmdRaw)) return false;
             var args = cmdRaw.Split();
 
-            if (args[0].TrimStart('/') != Command) return false;
+            if (args[0].TrimStart('/').ToLower() != Command.ToLower()) return false;
 
             if (args.Length < Parameters.Length || (args.Length > Parameters.Length && !Greedy))
             {
                 Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/" + Command + " " + Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]"));
+                return true;
+            }
+
+            if (ACLRequired && !Program.ServerInstance.ACLEnabled)
+            {
+                Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ACL must be running!");
                 return true;
             }
 
@@ -116,12 +129,13 @@ namespace GTANetworkServer
                     var cmd = method.GetCustomAttribute<CommandAttribute>();
                     var args = method.GetParameters();
                     var parser = new CommandParser();
-                    parser.Command = cmd.CommandString;
+                    parser.Command = (string.IsNullOrWhiteSpace(cmd.CommandString) && method.Name.StartsWith("Command_")) ? method.Name.Substring(8).ToLower() : cmd.CommandString;
                     parser.Greedy = cmd.GreedyArg;
                     parser.Engine = engine;
                     parser.Parameters = args;
                     parser.Method = method;
                     parser.Sensitive = cmd.SensitiveInfo;
+                    parser.ACLRequired = cmd.ACLRequired;
 
                     lock (ResourceCommands) ResourceCommands.Add(parser);
                 }
