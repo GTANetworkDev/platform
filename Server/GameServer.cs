@@ -90,6 +90,7 @@ namespace GTANetworkServer
             Clients = new List<Client>();
             Downloads = new List<StreamingClient>();
             RunningResources = new List<Resource>();
+            CommandHandler = new CommandHandler();
             FileHashes = new Dictionary<string, string>();
             ExportedFunctions = new System.Dynamic.ExpandoObject();
 
@@ -98,9 +99,9 @@ namespace GTANetworkServer
             
             NetEntityHandler = new NetEntityHandler();
 
-            ACLEnabled = conf.UseACL;
+            ACLEnabled = conf.UseACL && File.Exists("acl.xml");
 
-            if (conf.UseACL)
+            if (ACLEnabled)
             {
                 ACL = new AccessControlList("acl.xml");
             }
@@ -159,6 +160,7 @@ namespace GTANetworkServer
         public bool ACLEnabled { get; set; }
         public bool UseUPnP { get; set; }
 
+        public CommandHandler CommandHandler;
         public dynamic ExportedFunctions;
         public delegate object ExportedFunctionDelegate(params object[] parameters);
 
@@ -409,6 +411,8 @@ namespace GTANetworkServer
                     }
                 }
 
+                CommandHandler.Register(ourResource);
+
                 foreach (var engine in ourResource.Engines)
                 {
                     engine.InvokeResourceStart();
@@ -557,7 +561,7 @@ namespace GTANetworkServer
 
                 var gPool = ExportedFunctions as IDictionary<string, object>;
                 if (gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
-
+                CommandHandler.Unregister(ourRes.DirectoryName);
                 RunningResources.Remove(ourRes);
 
                 Program.Output("Stopped " + resourceName + "!");
@@ -644,6 +648,24 @@ namespace GTANetworkServer
 
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
+
+            if (!vbBasic && script.TrimStart().StartsWith("public Constructor"));
+            {
+                script = string.Format(@"
+using System;
+using System.Threading;
+using System.Linq;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using GTANetworkServer;
+using GTANetworkShared;
+
+public class Constructor : Script
+{{
+    {0}
+}}", script);
+            }
 
             try
             {
@@ -939,11 +961,18 @@ namespace GTANetworkServer
 
                                                 if (pass)
                                                 {
+                                                    var callCmd = true;
+
                                                     lock (RunningResources)
                                                         RunningResources.ForEach(
                                                             fs =>
                                                                 fs.Engines.ForEach(
-                                                                    en => en.InvokeChatCommand(client, data.Message)));
+                                                                    en => callCmd = callCmd && en.InvokeChatCommand(client, data.Message)));
+
+                                                    if (callCmd)
+                                                    {
+                                                        CommandHandler.Parse(data.Message);
+                                                    }
                                                 }
                                                 else
                                                 {
@@ -1350,6 +1379,11 @@ namespace GTANetworkServer
                     }
                     Server.Recycle(msg);
                 }
+        }
+
+        public Client GetClientFromName(string name)
+        {
+            return Clients.FirstOrDefault(c => c.Name.ToLower() == name.ToLower());
         }
 
         public void Tick()

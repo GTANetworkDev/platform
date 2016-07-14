@@ -34,7 +34,13 @@ namespace GTANetworkServer
         private Queue _mainQueue;
         public bool HasTerminated = false;
         
-
+        public Script GetAssembly
+        {
+            get
+            {
+                return _compiledScript;
+            }
+        }
         public ScriptingEngine(string javascript, string name, Resource parent, string[] references)
         {
             ResourceParent = parent;
@@ -283,20 +289,26 @@ namespace GTANetworkServer
             }));
         }
 
-        public void InvokeChatCommand(Client sender, string command)
+        public bool InvokeChatCommand(Client sender, string command)
         {
+            bool? passThroughCommand = null;
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
                 if (Language == ScriptingEngineLanguage.javascript)
                 {
-                    _jsEngine.Script.API.invokeChatCommand(sender, command);
+                    passThroughCommand = _jsEngine.Script.API.invokeChatCommand(sender, command);
                 }
                 else if (Language == ScriptingEngineLanguage.compiled)
                 {
-                    _compiledScript.API.invokeChatCommand(sender, command);
+                    passThroughCommand = _compiledScript.API.invokeChatCommand(sender, command);
                 }
             }));
+
+            int counter = 0;
+            while (counter < 50 && !passThroughCommand.HasValue) { }
+
+            return passThroughCommand ?? true;
         }
 
         public bool InvokeChatMessage(Client sender, string cmd)
