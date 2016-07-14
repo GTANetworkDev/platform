@@ -17,194 +17,120 @@ public class AdminScript : Script
 		API.onUpdate += onUpdate;
 		API.onResourceStart += onResStart;
 		API.onPlayerDisconnected += onPlayerDisconnected;
-		API.onChatCommand += onPlayerCommand;
 	}
 
-	private void onPlayerCommand(Client sender, string cmd, CancelEventArgs cancel)
-	{
-		if (!API.isAclEnabled()) return;
+    #region Commands
 
-		var arguments = cmd.Split();
-
-		if (arguments[0] == "/login")
-		{
-			if (cmd.Length < 7)
-			{
-				API.sendChatMessageToPlayer(sender, "~r~USAGE:~w~ /login [password]");
-			}
-			else
-			{
-				var password = cmd.Substring(7);
-				var logResult = API.loginPlayer(sender, password);
-				switch (logResult)
-				{
-					case 0:
-						API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ No account found with your name.");
-						break;
-					case 3:
-					case 1:
-						API.sendChatMessageToPlayer(sender, "~g~Login successful!~w~ Logged in as ~b~" + API.getPlayerAclGroup(sender) + "~w~.");
-						break;
-					case 2:
-						API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ Wrong password!");
-						break;
-					case 4:
-						API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ You're already logged in!");
-						break;
-					case 5:
-						API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ ACL has been disabled on this server.");
-						break;
-				}
-			}
-		}
-
-		if (arguments[0] == "/settime")
+    [Command(SensitiveInfo = true, ACLRequired = true)]
+    public void Command_Login(Client sender, string password)
+    {
+        var logResult = API.loginPlayer(sender, password);
+        switch (logResult)
         {
-            if (arguments.Length < 3)
-            {
-                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /settime [hours] [minutes]");
-            }
-            else
-            {
-                int hours, mins;
-                if (!int.TryParse(arguments[1], out hours) || !int.TryParse(arguments[2], out mins))
-                {
-                        API.sendChatMessageToPlayer(sender, "~r~ERROR: Wrong input!");
-                        return;
-                }
-
-                API.setTime(hours, mins);
-            }
+            case 0:
+                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ No account found with your name.");
+                break;
+            case 3:
+            case 1:
+                API.sendChatMessageToPlayer(sender, "~g~Login successful!~w~ Logged in as ~b~" + API.getPlayerAclGroup(sender) + "~w~.");
+                break;
+            case 2:
+                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ Wrong password!");
+                break;
+            case 4:
+                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ You're already logged in!");
+                break;
+            case 5:
+                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ ACL has been disabled on this server.");
+                break;
         }
+    }
 
-        if (arguments[0] == "/setweather")
+    [Command(ACLRequired = true)]
+    public void Command_SetTime(Client sender, int hours, int minutes)
+    {
+        API.setTime(hours, minutes);
+    }
+
+    [Command(ACLRequired = true)]
+    public void Command_SetWeather(Client sender, string newWeather)
+    {
+        API.setWeather(newWeather);
+    }
+
+    [Command(ACLRequired = true)]
+    public void Command_Logout(Client sender)
+    {
+        API.logoutPlayer(sender);
+    }
+
+   [Command(ACLRequired = true)]
+    public void Command_Start(Client sender, string resource)
+    {
+        if (!API.doesResourceExist(resource))
         {
-            if (arguments.Length < 2)
-            {
-                API.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~ /setweather [weather]");
-            }
-            else
-            {
-                API.setWeather(arguments[1]);
-            }
+            API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
         }
+        else if (API.isResourceRunning(resource))
+        {
+            API.sendChatMessageToPlayer(sender, "~r~Resource \"" + resource + "\" is already running!");
+        }
+        else
+        {
+            API.startResource(resource);
+            API.sendChatMessageToPlayer(sender, "~g~Started resource \"" + resource + "\"");
+        }
+    }
 
-		if (cmd == "/logout")
-		{
-			API.logoutPlayer(sender);
-		}
+    [Command(ACLRequired = true)]
+    public void Command_Stop(Client sender, string resource)
+    {
+        if (!API.doesResourceExist(resource))
+        {
+            API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
+        }
+        else if (!API.isResourceRunning(resource))
+        {
+            API.sendChatMessageToPlayer(sender, "~r~Resource \"" + resource + "\" is not running!");
+        }
+        else
+        {
+            API.stopResource(resource);
+            API.sendChatMessageToPlayer(sender, "~g~Stopped resource \"" + resource + "\"");
+        }
+    }
 
-		if (arguments[0] == "/start")
-		{
-			if (cmd.Length > 7)
-			{
-				var resource = cmd.Substring(7);
-				if (API.doesResourceExist(resource))
-				{
-					API.startResource(resource);
-					API.sendChatMessageToPlayer(sender, "~g~Started resource \"" + resource + "\"");
-				}
-				else
-				{
-					API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
-				}
-			}	
-			else
-			{
-				API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /start [resource]");
-			}
-		}
 
-		if (arguments[0] == "/stop")
-		{
-			if (cmd.Length > 6)
-			{
-				var resource = cmd.Substring(6);
-				if (API.doesResourceExist(resource))
-				{
-					API.stopResource(resource);
-					API.sendChatMessageToPlayer(sender, "~g~Stopped resource \"" + resource + "\"");
-				}
-				else
-				{
-					API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
-				}
-			}	
-			else
-			{
-				API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /stop [resource]");
-			}
-		}
+    [Command(ACLRequired = true)]
+    public void Command_Restart(Client sender, string resource)
+    {
+        if (API.doesResourceExist(resource))
+        {
+            API.stopResource(resource);
+            API.startResource(resource);
 
-		if (arguments[0] == "/restart")
-		{
-			if (cmd.Length > 9)
-			{				
-				var resource = cmd.Substring(9);
-				if (API.doesResourceExist(resource))
-				{
-					API.stopResource(resource);
-					API.startResource(resource);
+            API.sendChatMessageToPlayer(sender, "~g~Restarted resource \"" + resource + "\"");
+        }
+        else
+        {
+            API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
+        }
+    }
 
-					API.sendChatMessageToPlayer(sender, "~g~Restarted resource \"" + resource + "\"");
-				}
-				else
-				{
-					API.sendChatMessageToPlayer(sender, "~r~No such resource found: \"" + resource + "\"");
-				}
-			}	
-			else
-			{
-				API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /restart [resource]");
-			}
-		}
+    [Command(GreedyArg = true, ACLRequired = true)]
+    public void Command_Kick(Client sender, Client target, string reason)
+    {
+        API.kickPlayer(target, reason);
+    }
 
-		if (arguments[0] == "/kick")
-		{
-			var split = cmd.Split();
+    [Command(ACLRequired = true)]
+    public void Command_Kill(Client sender, Client target)
+    {
+        API.setPlayerHealth(target, -1);
+    }
 
-			if (split.Length >= 3)
-			{
-				var player = API.getPlayerFromName(split[1]);
-
-				if (player == null)
-				{
-					API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /kick [player] [reason]");
-				}
-				else
-				{
-					API.kickPlayer(player, string.Join(" ", split.Skip(2)));
-				}
-			}	
-			else
-			{
-				API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /kick [player] [reason]");
-			}
-		}
-
-		if (arguments[0] == "/kill")
-		{
-			var split = cmd.Split();
-
-			if (split.Length >= 2)
-			{
-				var player = API.getPlayerFromName(split[1]);
-
-				if (player == null)
-				{
-					API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /kill [player]");
-				}
-				else
-				{
-					API.setPlayerHealth(player, -1);
-				}
-			}	
-			else
-			{
-				API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /kill [player]");
-			}
-		}
-	}
+    #endregion
+    
 
 	private void onResStart(object e, EventArgs ob)
 	{
