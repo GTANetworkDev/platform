@@ -236,6 +236,17 @@ namespace GTANetworkServer
             Program.ServerInstance.GamemodeName = newName;
         }
 
+        public EntityType getEntityType(NetHandle handle)
+        {
+            if (!doesEntityExist(handle)) return (EntityType)0;
+            return (EntityType)Program.ServerInstance.NetEntityHandler.ToDict()[handle.Value].EntityType;
+        }
+
+        public Client getPlayerFromHandle(NetHandle handle)
+        {
+            return Program.ServerInstance.Clients.FirstOrDefault(c => c.CharacterHandle == handle);
+        }
+
         public void requestIpl(string iplName)
         {
             if (!Program.ServerInstance.LoadedIPL.Contains(iplName))
