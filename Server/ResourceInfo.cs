@@ -453,7 +453,7 @@ namespace GTANetworkServer
     [XmlRoot("export")]
     public class MethodExport
     {
-        [XmlAttribute("src")]
+        [XmlAttribute("class")]
         public string Path { get; set; }
 
         [XmlAttribute("function")]

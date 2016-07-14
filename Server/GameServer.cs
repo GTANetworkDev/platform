@@ -353,6 +353,9 @@ namespace GTANetworkServer
 
                 var csScripts = new List<ClientsideScript>();
 
+                var cSharp = new List<string>();
+                var vBasic = new List<string>();
+
                 foreach (var script in currentResInfo.Scripts)
                 {
                     if (script.Language == ScriptingEngineLanguage.javascript)
@@ -401,22 +404,25 @@ namespace GTANetworkServer
 
                         var ass = Assembly.LoadFrom(baseDir + script.Path);
                         var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, script.Path, ourResource)));
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.csharp)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
-
-                        var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
-                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path, ourResource)));
+                        cSharp.Add(scrTxt);                        
                     }
                     else if (script.Language == ScriptingEngineLanguage.vbasic)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
-                        var ass = CompileScript(scrTxt, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
-                        ourResource.Engines.AddRange(ass.Select(sss => new ScriptingEngine(sss, script.Path, ourResource)));
+                        vBasic.Add(scrTxt);                        
                     }
                 }
+
+                var csharpAss = CompileScript(cSharp.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
+                ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+
+                var vbasicAss = CompileScript(vBasic.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
+                ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
 
                 CommandHandler.Register(ourResource);
 
@@ -632,7 +638,7 @@ namespace GTANetworkServer
             }
         }
 
-        private IEnumerable<Script> CompileScript(string script, string[] references, bool vbBasic = false)
+        private IEnumerable<Script> CompileScript(string[] script, string[] references, bool vbBasic = false)
         {
             var provide = new CSharpCodeProvider();
             var vBasicProvider = new VBCodeProvider();
@@ -656,9 +662,10 @@ namespace GTANetworkServer
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
             
-            if (!vbBasic && script.TrimStart().StartsWith("public Constructor"))
+            for (int s = 0; s < script.Length; s++)
+            if (!vbBasic && script[s].TrimStart().StartsWith("public Constructor"))
             {
-                script = string.Format(@"
+                script[s] = string.Format(@"
 using System;
 using System.Threading;
 using System.Linq;
@@ -671,7 +678,7 @@ using GTANetworkShared;
 public class Constructor : Script
 {{
     {0}
-}}", script);
+}}", script[s]);
             }
             
             try
