@@ -324,7 +324,7 @@ namespace GTANetworkServer
 
                 if (currentResInfo.ResourceACL != null && ACLEnabled)
                 {
-                    var aclHead = AccessControlList.ParseXml(currentResInfo.ResourceACL.Path);
+                    var aclHead = AccessControlList.ParseXml("resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar + currentResInfo.ResourceACL.Path);
                     ACL.MergeACL(aclHead);
                 }
                 

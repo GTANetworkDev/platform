@@ -57,6 +57,7 @@ namespace GTANetworkServer
 
         public void MergeACL(ACLRoot resourceAcl)
         {
+            if (resourceAcl.Groups != null)
             foreach (var group in resourceAcl.Groups)
             {
                 if (_mainAcl.Groups.Any(grp => grp.Name == group.Name))
@@ -84,7 +85,7 @@ namespace GTANetworkServer
                 }
             }
 
-
+            if (resourceAcl.RightLists != null)
             foreach (var rights in resourceAcl.RightLists)
             {
                 if (_mainAcl.RightLists.Any(r => r.Name == rights.Name))
