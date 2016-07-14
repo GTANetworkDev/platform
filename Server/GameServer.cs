@@ -822,18 +822,27 @@ namespace GTANetworkServer
                                 channelHail.Write(respBin.Length);
                                 channelHail.Write(respBin);
 
-                                client.NetConnection.Approve(channelHail);
+                                var cancelArgs = new CancelEventArgs();
 
                                 lock (RunningResources)
                                     RunningResources.ForEach(
-                                        fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client)));
+                                        fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client, cancelArgs)));
 
-                                Program.Output("New incoming connection: " + client.SocialClubName + " (" + client.Name +
-                                                ")");
+                                if (cancelArgs.Cancel)
+                                {
+                                    client.NetConnection.Deny(cancelArgs.Reason ?? "");
+                                    Program.Output("Incoming connection denied: " + client.SocialClubName + " (" + client.Name + ")");
+                                }
+                                else
+                                {
+                                    client.NetConnection.Approve(channelHail);
+                                    Program.Output("New incoming connection: " + client.SocialClubName + " (" + client.Name + ")");
+                                }
+
                             }
                             else
                             {
-                                client.NetConnection.Deny("No available player slots.");
+                                client.NetConnection.Deny("Server is full");
                                 Program.Output("Player connection refused: server full.");
                             }
                             break;

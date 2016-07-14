@@ -223,7 +223,7 @@ namespace GTANetworkServer
             HasTerminated = true;
         }
 
-        public void InvokePlayerBeginConnect(Client client)
+        public void InvokePlayerBeginConnect(Client client, CancelEventArgs e)
         {
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
@@ -231,7 +231,7 @@ namespace GTANetworkServer
                 if (Language == ScriptingEngineLanguage.javascript)
                     _jsEngine.Script.API.invokePlayerBeginConnect(client);
                 else if (Language == ScriptingEngineLanguage.compiled)
-                    _compiledScript.API.invokePlayerBeginConnect(client);
+                    _compiledScript.API.invokePlayerBeginConnect(client, e);
             }));
         }
 

@@ -12,6 +12,7 @@ namespace GTANetworkServer
     public class CancelEventArgs
     {
         public bool Cancel { get; set; }
+        public string Reason { get; set; }
 
         public CancelEventArgs() { }
         public CancelEventArgs(bool cancel)
@@ -44,6 +45,7 @@ namespace GTANetworkServer
         #region Delegates
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
+        public delegate void PlayerConnectingEvent(Client player, CancelEventArgs cancelConnection);
         public delegate void PlayerDisconnectedEvent(Client player, string reason);
         public delegate void PlayerKilledEvent(Client player, NetHandle entityKiller, int weapon);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
@@ -57,7 +59,7 @@ namespace GTANetworkServer
         public event EventHandler onUpdate;
         public event ChatEvent onChatMessage;
         public event ChatEvent onChatCommand;
-        public event PlayerEvent OnPlayerBeginConnect;
+        public event PlayerConnectingEvent OnPlayerBeginConnect;
         public event PlayerEvent onPlayerConnected;
         public event PlayerEvent onPlayerFinishedDownload;
         public event PlayerDisconnectedEvent onPlayerDisconnected;
@@ -116,9 +118,9 @@ namespace GTANetworkServer
             return !args.Cancel;
         }
 
-        internal void invokePlayerBeginConnect(Client player)
-        {
-            OnPlayerBeginConnect?.Invoke(player);
+        internal void invokePlayerBeginConnect(Client player, CancelEventArgs e)
+        {            
+            OnPlayerBeginConnect?.Invoke(player, e);
         }
 
         internal void invokePlayerConnected(Client player)
