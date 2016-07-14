@@ -648,8 +648,8 @@ namespace GTANetworkServer
 
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
-
-            if (!vbBasic && script.TrimStart().StartsWith("public Constructor"));
+            
+            if (!vbBasic && script.TrimStart().StartsWith("public Constructor"))
             {
                 script = string.Format(@"
 using System;
@@ -666,7 +666,7 @@ public class Constructor : Script
     {0}
 }}", script);
             }
-
+            
             try
             {
                 CompilerResults results;
