@@ -438,5 +438,20 @@
 		Bison = -16948145,
 		Regina = -14495224,
 		Exemplar = -5153954,
-	}
+        Bf400 = 86520421,
+        Trophytruck = 101905590,
+        Cliffhanger = 390201602,
+        Lynx = 482197771,
+        Contender = 683047626,
+        Gargoyle = 741090084,
+        Sheava = 819197656,
+        Brioso = 1549126457,
+        Tropos = 1887331236,
+        Tyrus = 2067820283,
+        Rallytruck = -2103821244,
+        le7b = -1232836011,
+        Tampa2 = -1071380347,
+        Omnis = -777172681,
+        Trophytruck2 = -663299102,
+    }
 }
