@@ -1,6 +1,0 @@
-<meta>
-    <info name="dmhelper" author="Guadmaz" type="script" />
-    <include resource="deathmatch" />
-    <assembly ref="Microsoft.CSharp.dll" />
-    <script src="dmhelper.cs" type="server" lang="csharp" />
-</meta>

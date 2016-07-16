@@ -276,42 +276,34 @@ public class RaceGamemode : Script
         lock (Opponents) Opponents.Remove(curOp);
     }
 
-    public void onChatCommand(Client sender, string message, CancelEventArgs e)
+    [Command("votemap")]
+    public void StartVotemapCommand(Client sender)
     {
-        if (message == "/votemap" && !IsVoteActive() && (!IsRaceOngoing || DateTime.UtcNow.Subtract(RaceStart).TotalSeconds > 60))
+        if (!IsVoteActive() && (!IsRaceOngoing || DateTime.UtcNow.Subtract(RaceStart).TotalSeconds > 60))
         {
             StartVote();
+        }
+        else
+        {
+            API.sendChatMessageToPlayer(sender, "A vote is already in progress, or the race has just started!");
+        }
+    }
+
+    [Command("forcemap", ACLRequired = true)]
+    public void ForceMapCommand(Client sender, string mapFilename)
+    {
+        var locatedMap = AvailableRaces.FirstOrDefault(m => m.Filename == mapFilename);
+        if (locatedMap == null)
+        {
+            API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ No map found: " + mapFilename + "!");
             return;
         }
-        else if (message.StartsWith("/forcemap") && message.Length > 10 && API.isAclEnabled() && API.doesPlayerHaveAccessToCommand(sender, "/forcemap"))
-        {
-            var mapName = message.Substring(10);
-            var locatedMap = AvailableRaces.FirstOrDefault(m => m.Filename == mapName);
-            if (locatedMap == null)
-            {
-                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ No map found: " + mapName + "!");
-                return;
-            }
 
-            VoteEnd = 0;
-            EndRace();
-            API.sendChatMessageToAll("Starting map ~b~" + locatedMap.Name + "!");
-            API.sleep(1000);
-            StartRace(locatedMap);
-        }
-        else if (message.StartsWith("/ghostmode") && message.Length > 11 && API.isAclEnabled() && API.doesPlayerHaveAccessToCommand(sender, "/ghostmode"))
-        {
-            var boolVal = message.Substring(11);
-            bool newValue;
-            if (!bool.TryParse(boolVal, out newValue))
-            {
-                API.sendChatMessageToPlayer(sender, "~y~USAGE:~w~ /ghostmode [true/false]");
-                return;
-            }
-
-            API.sendChatMessageToAll("Vehicle ghost mode " + (newValue ? "~g~enabled" : "~r~disabled") + "~w~!");
-            API.triggerClientEventForAll("race_toggleGhostMode", newValue);
-        }
+        VoteEnd = 0;
+        EndRace();
+        API.sendChatMessageToAll("Starting map ~b~" + locatedMap.Name + "!");
+        API.sleep(1000);
+        StartRace(locatedMap);
     }
 
     public void onPlayerConnect(Client player)
@@ -444,7 +436,7 @@ public class RaceGamemode : Script
             API.triggerClientEvent(client, "setNextCheckpoint", nextPos, false, false, newDir, race.Checkpoints[1]);
         }
         
-        var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), randGen.Next(70), randGen.Next(70));
+        var playerVehicle = API.createVehicle((VehicleHash)selectedModel, position, new Vector3(0, 0, heading), randGen.Next(70), randGen.Next(70));
         API.setPlayerIntoVehicle(client, playerVehicle, -1);
 
         if (freeze)
@@ -525,7 +517,7 @@ public class RaceGamemode : Script
         }
 
 
-        var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), color1, color2);
+        var playerVehicle = API.createVehicle((VehicleHash)selectedModel, position, new Vector3(0, 0, heading), color1, color2);
         API.setPlayerIntoVehicle(client, playerVehicle, -1);
 
         lock (Opponents)
