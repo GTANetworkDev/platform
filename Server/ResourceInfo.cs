@@ -419,6 +419,8 @@ namespace GTANetworkServer
         public List<ScriptingEngine> Engines { get; set; }
         public List<ClientsideScript> ClientsideScripts { get; set; }
         public XmlGroup Map { get; set; }
+
+        internal List<NetHandle> MapEntities { get; set; }
     }
 
     public enum ScriptType

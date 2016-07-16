@@ -514,10 +514,11 @@ namespace GTANetworkServer
                     ourResource.Map = new XmlGroup();
                     ourResource.Map.Load("resources\\" + ourResource.DirectoryName +"\\" + ourResource.Info.Map.Path);
 
+                    LoadMap(ourResource, ourResource.Map);
+
                     if (ourResource.Info.Info.Type == ResourceType.gamemode)
                     {
                         if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
-                        //CurrentMap = ourResource;
                         ourResource.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
                     }
                     else if (ourResource.Info.Info.Type == ResourceType.map)
@@ -580,6 +581,11 @@ namespace GTANetworkServer
                     Gamemode = null;
                 }
 
+                foreach (var entity in ourRes.MapEntities)
+                {
+                    PublicAPI.deleteEntity(entity);
+                }
+
                 if (CurrentMap == ourRes) CurrentMap = null;
 
                 var gPool = ExportedFunctions as IDictionary<string, object>;
@@ -588,6 +594,95 @@ namespace GTANetworkServer
                 RunningResources.Remove(ourRes);
 
                 Program.Output("Stopped " + resourceName + "!");
+            }
+        }
+
+        public void LoadMap(Resource res, XmlGroup map)
+        {
+            res.MapEntities = new List<NetHandle>();
+
+            var world = map.getElementByType("world");
+            if (world != null)
+            {
+                if (world.hasElementData("time"))
+                {
+                    var time = world.getElementData<TimeSpan>("time");
+                    PublicAPI.setTime(time.Hours, time.Minutes);
+                }
+
+                if (world.hasElementData("weather")) // TODO: Change to integer w/ an array of possible weathers
+                {
+                    PublicAPI.setWeather(world.getElementData<string>("weather"));
+                }
+            }
+
+            var props = map.getElementsByType("prop");
+            foreach (var prop in props)
+            {
+                var ent = PublicAPI.createObject(prop.getElementData<int>("model"),
+                    new Vector3(prop.getElementData<float>("posX"), prop.getElementData<float>("posY"),
+                        prop.getElementData<float>("posZ")),
+                    new Vector3(prop.getElementData<float>("rotX"), prop.getElementData<float>("rotY"),
+                        prop.getElementData<float>("rotZ")));
+                res.MapEntities.Add(ent);
+            }
+
+            var vehicles = map.getElementsByType("vehicle");
+            foreach (var vehicle in vehicles)
+            {
+                var ent = PublicAPI.createVehicle((VehicleHash)vehicle.getElementData<int>("model"),
+                    new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
+                        vehicle.getElementData<float>("posZ")),
+                    new Vector3(vehicle.getElementData<float>("rotX"), vehicle.getElementData<float>("rotY"),
+                        vehicle.getElementData<float>("rotZ")), vehicle.getElementData<int>("color1"),
+                    vehicle.getElementData<int>("color2"));
+                res.MapEntities.Add(ent);
+            }
+
+            var pickups = map.getElementsByType("pickup");
+            foreach (var vehicle in pickups)
+            {
+                var ent = PublicAPI.createPickup((PickupHash)vehicle.getElementData<int>("model"),
+                    new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
+                        vehicle.getElementData<float>("posZ")),
+                    new Vector3(vehicle.getElementData<float>("rotX"), vehicle.getElementData<float>("rotY"),
+                        vehicle.getElementData<float>("rotZ")), vehicle.getElementData<int>("amount"));
+                res.MapEntities.Add(ent);
+            }
+
+            var markers = map.getElementsByType("marker");
+            foreach (var vehicle in markers)
+            {
+                var ent = PublicAPI.createMarker(vehicle.getElementData<int>("model"),
+                    new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
+                        vehicle.getElementData<float>("posZ")),
+                    new Vector3(vehicle.getElementData<float>("dirX"), vehicle.getElementData<float>("dirY"),
+                        vehicle.getElementData<float>("dirZ")),
+                    new Vector3(vehicle.getElementData<float>("rotX"), vehicle.getElementData<float>("rotY"),
+                        vehicle.getElementData<float>("rotZ")),
+                    new Vector3(vehicle.getElementData<float>("scaleX"), vehicle.getElementData<float>("scaleY"),
+                        vehicle.getElementData<float>("scaleZ")), vehicle.getElementData<int>("alpha"),
+                    vehicle.getElementData<int>("red"), vehicle.getElementData<int>("green"), vehicle.getElementData<int>("blue"));
+                res.MapEntities.Add(ent);
+            }
+
+            var blips = map.getElementsByType("blip");
+            foreach (var vehicle in blips)
+            {
+                var ent = PublicAPI.createBlip(
+                    new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
+                        vehicle.getElementData<float>("posZ")));
+
+                if (vehicle.hasElementData("sprite"))
+                    PublicAPI.setBlipSprite(ent, vehicle.getElementData<int>("sprite"));
+                if (vehicle.hasElementData("color"))
+                    PublicAPI.setBlipColor(ent, vehicle.getElementData<int>("color"));
+                if (vehicle.hasElementData("scale"))
+                    PublicAPI.setBlipScale(ent, vehicle.getElementData<float>("scale"));
+                if (vehicle.hasElementData("shortRange"))
+                    PublicAPI.setBlipShortRange(ent, vehicle.getElementData<bool>("shortRange"));
+
+                res.MapEntities.Add(ent);
             }
         }
 
