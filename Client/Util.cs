@@ -382,6 +382,7 @@ namespace GTANetwork
 
         public static GTA.Math.Vector3 ToVector(this GTANetworkShared.Vector3 v)
         {
+            if ((object)v == null) return new Vector3();
             return new GTA.Math.Vector3(v.X, v.Y, v.Z);
         }
 

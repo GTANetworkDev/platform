@@ -30,12 +30,12 @@ namespace GTANetwork
         {
             while (true)
             {
-                if (!Main.IsOnServer()) goto endTick;
+                if (!Main.IsOnServer() || !Main.HasFinishedDownloading) goto endTick;
 
                 var streamedItems = Main.NetEntityHandler.ClientMap.Where(item => !(item is RemotePlayer));
 
                 const int MAX_OBJECTS = 1000;
-                const int MAX_VEHICLES = 200;
+                const int MAX_VEHICLES = 50;
                 const int MAX_PICKUPS = 30;
                 const int MAX_BLIPS = 200;
 
@@ -74,6 +74,8 @@ namespace GTANetwork
 
             lock (_itemsToStreamOut)
             {
+                LogManager.DebugLog("STREAMING OUT " + _itemsToStreamOut.Count + " ITEMS");
+
                 foreach (var item in _itemsToStreamOut)
                 {
                     Main.NetEntityHandler.StreamOut(item);
@@ -84,6 +86,8 @@ namespace GTANetwork
 
             lock (_itemsToStreamIn)
             {
+                LogManager.DebugLog("STREAMING IN " + _itemsToStreamIn.Count + " ITEMS");
+
                 foreach (var item in _itemsToStreamIn)
                 {
                     Main.NetEntityHandler.StreamIn(item);
@@ -107,16 +111,16 @@ namespace GTANetwork
 
         public void DrawMarkers()
         {
-            lock (ClientMap)
+            var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker).Cast<RemoteMarker>());
+
+            foreach (var marker in markers)
             {
-                foreach (var marker in ClientMap.Where(item => item is RemoteMarker).Cast<RemoteMarker>())
-                {
-                    World.DrawMarker((MarkerType)marker.MarkerType, marker.Position.ToVector(),
-                        marker.Direction.ToVector(), marker.Rotation.ToVector(),
-                        marker.Scale.ToVector(),
-                        Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
-                }
+                World.DrawMarker((MarkerType)marker.MarkerType, marker.Position.ToVector(),
+                    marker.Direction.ToVector(), marker.Rotation.ToVector(),
+                    marker.Scale.ToVector(),
+                    Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
             }
+            
         }
 
         public List<IStreamedItem> ClientMap;
@@ -150,11 +154,21 @@ namespace GTANetwork
                                 ((RemoteMarker)item).RemoteHandle == handle);
         }
 
-        public IStreamedItem NetToStreamedItem(int netId, bool local = false)
+        public IStreamedItem NetToStreamedItem(int netId, bool local = false, bool useGameHandle = false)
         {
-            lock (ClientMap)
+            if (!useGameHandle)
             {
-                return ClientMap.FirstOrDefault(item => item.RemoteHandle == netId && item.LocalOnly == local);
+                lock (ClientMap)
+                {
+                    return ClientMap.FirstOrDefault(item => item.RemoteHandle == netId && item.LocalOnly == local);
+                }
+            }
+            else
+            {
+                lock (ClientMap)
+                {
+                    return ClientMap.OfType<ILocalHandleable>().FirstOrDefault(item => item.LocalHandle == netId) as IStreamedItem;
+                }
             }
         }
 
@@ -162,7 +176,7 @@ namespace GTANetwork
         {
             lock (ClientMap)
             {
-                ClientMap.Add(new RemotePlayer() { LocalOnly = true, LocalHandle = -2 });
+                ClientMap.Add(new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true});
             }
         }
 
@@ -193,19 +207,24 @@ namespace GTANetwork
             return NetToStreamedItem(netHandle) != null;
         }
 
-        public bool ContainsLocalHandle(int localHandle)
+        public bool ContainsLocalOnlyNetHandle(int localHandle)
         {
             return NetToStreamedItem(localHandle, true) != null;
+        }
+
+        public bool ContainsLocalHandle(int localHandle)
+        {
+            return NetToStreamedItem(localHandle, useGameHandle: true) != null;
         }
 
         public int EntityToNet(int entityHandle)
         {
             lock (ClientMap)
             {
-                return (ClientMap.FirstOrDefault(item => 
-                        !item.LocalOnly && item.StreamedIn && item as ILocalHandleable != null && 
-                        ((ILocalHandleable)item).LocalHandle == entityHandle) as ILocalHandleable)
-                        ?.LocalHandle ?? 0;
+                var ourItem = ClientMap.FirstOrDefault(item =>
+                    !item.LocalOnly && item.StreamedIn && item is ILocalHandleable &&
+                    ((ILocalHandleable) item).LocalHandle == entityHandle);
+                return ourItem?.RemoteHandle ?? 0;
             }
         }
 
@@ -532,8 +551,8 @@ namespace GTANetwork
                     ClientMap.Add(rem = new SyncPed()
                     {
                         RemoteHandle = netHandle,
-
-                        StreamedIn = false,
+                        EntityType = (byte) EntityType.Ped,
+                        StreamedIn = true,
                         LocalOnly = false,
                     });
                 }
@@ -675,7 +694,7 @@ namespace GTANetwork
         public void StreamOut(IStreamedItem item)
         {
             if (!item.StreamedIn) return;
-
+            
             switch ((EntityType) item.EntityType)
             {
                 case EntityType.Prop:
@@ -689,7 +708,7 @@ namespace GTANetwork
                     StreamOutPickup((ILocalHandleable) item);
                     break;
                 case EntityType.Ped:
-                    ((SyncPed)item).Clear();
+                    if (item is SyncPed) ((SyncPed)item).Clear();
                     break;
             }
 
@@ -698,6 +717,13 @@ namespace GTANetwork
 
         private void StreamOutEntity(ILocalHandleable data)
         {
+            /* // Fun debug stuff
+            var pos = new Prop(data.LocalHandle).Position;
+            Function.Call(Hash.REQUEST_NAMED_PTFX_ASSET, "scr_rcbarry2");
+            Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, "scr_rcbarry2");
+            Function.Call(Hash.START_PARTICLE_FX_NON_LOOPED_AT_COORD, "scr_clown_appears", pos.X, pos.Y, pos.Z, 0, 0, 0, 2f, 0, 0, 0);
+            */
+
             new Prop(data.LocalHandle).Delete();
         }
 
@@ -719,12 +745,17 @@ namespace GTANetwork
             if (!model.IsLoaded) model.Request(10000);
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
 
+            LogManager.DebugLog("POSITION: " + data.Position?.ToVector());
+
             var veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
             LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null));
             veh.Rotation = data.Rotation.ToVector();
             veh.IsInvincible = true;
             data.LocalHandle = veh.Handle;
             veh.Livery = data.Livery;
+
+            LogManager.DebugLog("LOCAL HANDLE: " + veh.Handle);
+            LogManager.DebugLog("POS: " + veh.Position);
 
             if ((data.PrimaryColor & 0xFF000000) > 0)
                 veh.CustomPrimaryColor = Color.FromArgb(data.PrimaryColor);
@@ -813,6 +844,9 @@ namespace GTANetwork
                 veh.IsInvincible = true;
 
             veh.Alpha = (int)data.Alpha;
+            LogManager.DebugLog("ALPHA: " + veh.Alpha);
+
+
             Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
 
             LogManager.DebugLog("PROPERTIES SET");

@@ -328,7 +328,7 @@ namespace GTANetwork
             _latencyAverager = new Queue<double>();
         }
 
-        public new int LocalHandle
+        public override int LocalHandle
         {
             get { return Character?.Handle ?? 0; }
             set { }
@@ -363,12 +363,12 @@ namespace GTANetwork
         public int CustomAnimationFlag;
 
         #region NeoSyncPed
-
+        
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
 			if (Character == null || !Character.Exists() || (!Character.IsInRangeOf(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
-				//LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
+				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
                 
 				if (Character != null && Character.Exists()) Character.Delete();
                 

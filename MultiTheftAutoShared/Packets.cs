@@ -35,6 +35,7 @@ namespace GTANetworkShared
         UpdateEntityProperties = 26,
         FileAcceptDeny = 27,
         ServerEvent = 28,
+        Ack = 29,
     }
 
     public enum ScriptVersion
@@ -404,25 +405,25 @@ namespace GTANetworkShared
 
         public static bool operator ==(Vector3 left, Vector3 right)
         {
-            if (left == null || right == null) return false;
+            if ((object)left == null || (object)right == null) return false;
             return left.X == right.X && left.Y == right.Y && left.Z == right.Z;
         }
 
         public static bool operator !=(Vector3 left, Vector3 right)
         {
-            if (left == null || right == null) return true;
+            if ((object)left == null || (object)right == null) return true;
             return left.X != right.X || left.Y != right.Y || left.Z != right.Z;
         }
 
         public static Vector3 operator -(Vector3 left, Vector3 right)
         {
-            if (left == null || right == null) return new Vector3();
+            if ((object)left == null || (object)right == null) return new Vector3(); ;
             return new Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
         }
 
         public static Vector3 operator +(Vector3 left, Vector3 right)
         {
-            if (left == null || right == null) return new Vector3();
+            if ((object)left == null || (object)right == null) return new Vector3(); ;
             return new Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
         }
 

@@ -770,7 +770,7 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(entity))
             {
-                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Rotation;
+                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Rotation ?? new Vector3(0, 0, 0);
             }
             return null;
         }

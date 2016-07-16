@@ -699,9 +699,12 @@ namespace GTANetworkServer
             {
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
+                //var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
 
-                SendToClient(client, compData, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
+                //SendToClient(client, compData, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
+
+
+                SendToClient(client, fullPacket, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
             }
         }
 
@@ -711,9 +714,11 @@ namespace GTANetworkServer
             {
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
+                //var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
 
-                SendToClient(client, compData, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
+                //SendToClient(client, compData, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
+
+                SendToClient(client, fullPacket, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
             }
         }
         private void LogException(Exception ex, string resourceName)
@@ -1015,14 +1020,15 @@ namespace GTANetworkServer
                                                         VehicleData;
                                                 if (data != null)
                                                 {
-                                                    var fullPacket = client.DeltaCompressor.DecompressData(data) as VehicleData;
+                                                    //var fullPacket = client.DeltaCompressor.DecompressData(data) as VehicleData;
+                                                    var fullPacket = data;
 
                                                     fullPacket.Name = client.Name;
                                                     fullPacket.Latency = client.Latency;
                                                     fullPacket.NetHandle = client.CharacterHandle.Value;
 
-                                                    client.Health = fullPacket.PlayerHealth.Value;
-                                                    client.Armor = fullPacket.PedArmor.Value;
+                                                    client.Health = fullPacket.PlayerHealth.HasValue ? fullPacket.PlayerHealth.Value : 0;
+                                                    client.Armor = fullPacket.PedArmor.HasValue ? fullPacket.PedArmor.Value : 0;
                                                     client.Position = fullPacket.Position;
                                                     client.IsInVehicle = true;
                                                     client.CurrentVehicle = new NetHandle(fullPacket.VehicleHandle.Value);
@@ -1033,9 +1039,12 @@ namespace GTANetworkServer
                                                     {
                                                         NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position = fullPacket.Position;
                                                         NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation = fullPacket.Quaternion;
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Health = fullPacket.VehicleHealth.Value;
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
+                                                        if (fullPacket.Flag.HasValue)
+                                                            ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
+                                                        if (fullPacket.VehicleHealth.HasValue)
+                                                            ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Health = fullPacket.VehicleHealth.Value;
+                                                        if (fullPacket.Flag.HasValue)
+                                                            ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
 
                                                         if (data.Trailer != null)
                                                         {
@@ -1051,7 +1060,7 @@ namespace GTANetworkServer
                                                     {
                                                         NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
                                                         NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.Value;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
                                                     }
 
                                                     ResendPacket(fullPacket, client);
@@ -1071,14 +1080,15 @@ namespace GTANetworkServer
                                                 var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
                                                 if (data != null)
                                                 {
-                                                    var fullPacket = client.DeltaCompressor.DecompressData(data) as PedData;
+                                                    //var fullPacket = client.DeltaCompressor.DecompressData(data) as PedData;
+                                                    var fullPacket = data;
 
                                                     fullPacket.Name = client.Name;
                                                     fullPacket.Latency = client.Latency;
                                                     fullPacket.NetHandle = client.CharacterHandle.Value;
 
-                                                    client.Health = fullPacket.PlayerHealth.Value;
-                                                    client.Armor = fullPacket.PedArmor.Value;
+                                                    client.Health = fullPacket.PlayerHealth.HasValue ? fullPacket.PlayerHealth.Value : 0;
+                                                    client.Armor = fullPacket.PedArmor.HasValue ? fullPacket.PedArmor.Value : 0;
                                                     client.Position = fullPacket.Position;
                                                     client.IsInVehicle = false;
                                                     client.LastUpdate = DateTime.Now;
@@ -1091,7 +1101,7 @@ namespace GTANetworkServer
                                                     {
                                                         NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
                                                         NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.Value;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
                                                     }
 
                                                     ResendPacket(fullPacket, client);
@@ -1628,7 +1638,7 @@ namespace GTANetworkServer
             msg.Write(data.Length);
             msg.Write(data);
             Server.SendMessage(msg, c.NetConnection,
-                important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
+                important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.UnreliableSequenced,
                 (int)channel);
         }
 

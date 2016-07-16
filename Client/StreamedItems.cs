@@ -28,7 +28,7 @@ namespace GTANetwork
 
         public bool StreamedIn { get; set; }
 
-        public int LocalHandle { get; set; }
+        public virtual int LocalHandle { get; set; }
     }
 
     public class RemoteVehicle : VehicleProperties, ILocalHandleable, IStreamedItem
