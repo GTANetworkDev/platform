@@ -28,7 +28,7 @@ namespace GTANetworkServer
         public string SocialClubName { get; set; }
         public string Name { get; set; }
         public float Latency { get; set; }
-        public ScriptVersion RemoteScriptVersion { get; set; }
+        public ParseableVersion RemoteScriptVersion { get; set; }
         public int GameVersion { get; set; }
 
         public NetHandle CurrentVehicle { get; set; }
@@ -839,10 +839,8 @@ namespace GTANetworkServer
 
                                     client.SocialClubName = connReq.SocialClubName;
                                     client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
-
-                                    if (client.RemoteScriptVersion != (ScriptVersion)connReq.ScriptVersion)
-                                        client.RemoteScriptVersion = (ScriptVersion)connReq.ScriptVersion;
-                                    if (client.GameVersion != connReq.GameVersion) client.GameVersion = connReq.GameVersion;
+                                    client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
+                                    client.GameVersion = connReq.GameVersion;
 
                                     var respObj = new ConnectionResponse();
                                     respObj.CharacterHandle = client.CharacterHandle.Value;

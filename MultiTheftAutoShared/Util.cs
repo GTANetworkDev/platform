@@ -150,6 +150,28 @@ namespace GTANetworkShared
             return left.CreateComparableInteger() < right.CreateComparableInteger();
         }
 
+        public ulong ToLong()
+        {
+            ulong output = 0;
+
+            output |= (ushort) Revision;
+            output |= (ushort)(Build << 16); // 2 bytes
+            output |= (ushort)(Minor << 32);
+            output |= (ushort)(Major << 48);
+
+            return output;
+        }
+
+        public static ParseableVersion FromLong(ulong version)
+        {
+            ushort rev = (ushort)(version & 0xFFFF);
+            ushort build = (ushort)((version & 0xFFFF0000) >> 16);
+            ushort minor = (ushort)((version & 0xFFFF00000000) >> 32);
+            ushort major = (ushort)((version & 0xFFFF000000000000) >> 48);
+            
+            return new ParseableVersion(major, minor, rev, build);
+        }
+
         public static ParseableVersion Parse(string version)
         {
             var split = version.Split('.');

@@ -443,14 +443,29 @@ namespace GTANetwork
         private bool isIPLocal(string ipaddress)
         {
             String[] straryIPAddress = ipaddress.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-            int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[1], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[2], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[3], CultureInfo.InvariantCulture) };
-            if (iaryIPAddress[0] == 10 || iaryIPAddress[0] == 127 || (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) || (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
+            try
             {
-                return true;
+                int[] iaryIPAddress = new int[]
+                {
+                    int.Parse(straryIPAddress[0], CultureInfo.InvariantCulture),
+                    int.Parse(straryIPAddress[1], CultureInfo.InvariantCulture),
+                    int.Parse(straryIPAddress[2], CultureInfo.InvariantCulture),
+                    int.Parse(straryIPAddress[3], CultureInfo.InvariantCulture)
+                };
+                if (iaryIPAddress[0] == 10 || iaryIPAddress[0] == 127 ||
+                    (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) ||
+                    (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
+                {
+                    return true;
+                }
+                else
+                {
+                    // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
+                    return false;
+                }
             }
-            else
+            catch
             {
-                // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
                 return false;
             }
         }
@@ -2216,9 +2231,6 @@ namespace GTANetwork
                 _debug.Draw();
             }
 
-
-
-
             /*
             UI.ShowSubtitle(Game.Player.Character.RelationshipGroup.ToString());
             if (Game.Player.Character.LastVehicle != null)
@@ -2351,6 +2363,8 @@ namespace GTANetwork
                     playerCar.IsInvincible = true;
                 }
             }
+
+            Game.Player.Character.MaxHealth = 200;
 
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;
@@ -2755,7 +2769,7 @@ namespace GTANetwork
             obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Unknown" : Game.Player.Name; // To be used as identifiers in server files
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrEmpty(_password)) obj.Password = _password;
-            obj.ScriptVersion = (byte)LocalScriptVersion;
+            obj.ScriptVersion = CurrentVersion.ToLong();
             obj.GameVersion = (byte)Game.Version;
 
             var bin = SerializeBinary(obj);
@@ -3473,8 +3487,7 @@ namespace GTANetwork
                         if (data != null && (target = NetEntityHandler.NetToStreamedItem(data.Id) as SyncPed) != null)
                         {
                             target.Clear();
-                            NetEntityHandler.RemoveByNetHandle(data.Id);
-
+                            NetEntityHandler.StreamOut(target);
                             lock (Npcs)
                             {
                                 foreach (
@@ -3487,6 +3500,7 @@ namespace GTANetwork
                                 }
                             }
                         }
+                        NetEntityHandler.RemoveByNetHandle(data.Id);
                     }
                     break;
                 case PacketType.ScriptEventTrigger:

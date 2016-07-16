@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define DISABLE_SLERP
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing;
@@ -494,14 +495,15 @@ namespace GTANetwork
 					}
 				}
 			}
-			else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) && !Character.IsOccluded && MainVehicle.IsOnScreen)
+			else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) && !Character.IsOccluded && MainVehicle.IsOnScreen && !MainVehicle.IsOccluded)
 			{
+                /*
                 var ray = World.Raycast(GameplayCamera.Position, MainVehicle.Position,
                         IntersectOptions.Everything,
-                        Game.Player.Character);
+                        Game.Player.Character);*/
                 var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 2f));
 				var targetPos = Character.Position + new Vector3(0, 0, 2f);
-				if ((oldPos.X != 0 && oldPos.Y != 0) && (ray.HitEntity == Character || ray.HitEntity == MainVehicle))
+				if ((oldPos.X != 0 && oldPos.Y != 0)/* && (ray.HitEntity == Character || ray.HitEntity == MainVehicle)*/)
 				{
 					Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
 					DEBUG_STEP = 6;

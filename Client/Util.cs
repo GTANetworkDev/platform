@@ -419,11 +419,17 @@ namespace GTANetwork
 
         public static GTANetworkShared.Vector3 Sub(this GTANetworkShared.Vector3 left, GTANetworkShared.Vector3 right)
         {
+            if ((object) left == null && (object) right == null) return new GTANetworkShared.Vector3();
+            if ((object) left == null) return right;
+            if ((object) right == null) return left;
             return new GTANetworkShared.Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
         }
 
         public static GTANetworkShared.Vector3 Add(this GTANetworkShared.Vector3 left, GTANetworkShared.Vector3 right)
         {
+            if ((object)left == null && (object)right == null) return new GTANetworkShared.Vector3();
+            if ((object)left == null) return right;
+            if ((object)right == null) return left;
             return new GTANetworkShared.Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
         }
     }

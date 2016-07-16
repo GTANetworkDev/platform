@@ -900,6 +900,7 @@ namespace GTANetwork
             ourVeh.Rotation = data.Rotation.ToVector();
             ourVeh.Alpha = (int)data.Alpha;
             ourVeh.FreezePosition = true;
+            ourVeh.LodDistance = 3000;
 
             data.StreamedIn = true;
             data.LocalHandle = ourVeh.Handle;

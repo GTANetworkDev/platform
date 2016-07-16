@@ -41,6 +41,9 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public byte Alpha { get; set; }
+
+        [ProtoMember(6)]
+        public int Dimension { get; set; }
     }
 
     [ProtoContract]
