@@ -305,8 +305,8 @@ namespace GTANetworkServer
                 }
             }));
 
-            int counter = 0;
-            while (counter < 50 && !passThroughCommand.HasValue) { }
+            int counter = Environment.TickCount;
+            while (Environment.TickCount - counter < 5000 && !passThroughCommand.HasValue) { }
 
             return passThroughCommand ?? true;
         }
@@ -322,8 +322,8 @@ namespace GTANetworkServer
                 else if (Language == ScriptingEngineLanguage.compiled)
                     passThroughMessage = _compiledScript.API.invokeChatMessage(sender, cmd);
             }));
-            var counter = 0;
-            while (counter < 50 && !passThroughMessage.HasValue) { }
+            int counter = Environment.TickCount;
+            while (Environment.TickCount - counter < 5000 && !passThroughMessage.HasValue) { }
 
             return passThroughMessage ?? true;
         }

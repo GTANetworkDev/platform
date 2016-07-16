@@ -541,6 +541,8 @@ namespace GTANetworkServer
                 }
 
                 lock (RunningResources) RunningResources.Add(ourResource);
+
+                Program.Output("Resource " + ourResource.DirectoryName + " started!");
             }
             catch (Exception ex)
             {
