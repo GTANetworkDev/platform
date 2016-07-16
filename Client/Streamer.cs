@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using GTA;
@@ -26,6 +27,12 @@ namespace GTANetwork
             calcucationThread.Start();
         }
 
+        public static int MAX_OBJECTS = 1000;
+        public static int MAX_VEHICLES = 50;
+        public static int MAX_PICKUPS = 30;
+        public static int MAX_BLIPS = 200;
+        public static int MAX_PLAYERS = 50;
+
         void StreamerCalculationsThread()
         {
             while (true)
@@ -33,12 +40,6 @@ namespace GTANetwork
                 if (!Main.IsOnServer() || !Main.HasFinishedDownloading) goto endTick;
 
                 var streamedItems = Main.NetEntityHandler.ClientMap.Where(item => !(item is RemotePlayer));
-
-                const int MAX_OBJECTS = 1000;
-                const int MAX_VEHICLES = 50;
-                const int MAX_PICKUPS = 30;
-                const int MAX_BLIPS = 200;
-                const int MAX_PLAYERS = 50;
 
                 var position = _playerPosition.ToLVector();
 
@@ -112,6 +113,11 @@ namespace GTANetwork
         }
 
         private int _localHandleCounter = 0;
+
+        public int Count(Type type)
+        {
+            return ClientMap.Count(item => item.GetType() == type);
+        }
 
         public void DrawMarkers()
         {
@@ -244,9 +250,9 @@ namespace GTANetwork
         
         public void UpdateVehicle(int netHandle, Delta_VehicleProperties prop)
         {
-            IStreamedItem item = null;
-            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
-            var veh = item as RemoteVehicle;
+            RemoteVehicle veh = null;
+            if (prop == null || (veh = (NetToStreamedItem(netHandle) as RemoteVehicle)) == null) return;
+            
             if (prop.PrimaryColor != null) veh.PrimaryColor = prop.PrimaryColor.Value;
             if (prop.SecondaryColor != null) veh.SecondaryColor = prop.SecondaryColor.Value;
             if (prop.Health != null) veh.Health = prop.Health.Value;
@@ -314,9 +320,9 @@ namespace GTANetwork
 
         public void UpdatePlayer(int netHandle, Delta_PedProperties prop)
         {
-            IStreamedItem item = null;
-            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
-            var veh = item as RemotePlayer;
+            LogManager.DebugLog("UPDATING PLAYER " + netHandle + " PROP NULL? " + (prop == null));
+            if (prop == null) return;
+            var veh = GetPlayer(netHandle);
             if (prop.Props != null) veh.Props = prop.Props;
             if (prop.Textures != null) veh.Textures = prop.Textures;
             if (prop.BlipSprite != null) veh.BlipSprite = prop.BlipSprite.Value;
@@ -324,9 +330,13 @@ namespace GTANetwork
             if (prop.BlipColor != null) veh.BlipColor = prop.BlipColor.Value;
             if (prop.BlipAlpha != null) veh.BlipAlpha = prop.BlipAlpha.Value;
             if (prop.Accessories != null) veh.Accessories = prop.Accessories;
-            if (prop.Name != null) veh.Name = prop.Name;
-            if (prop.Position != null) veh.Position = prop.Position;
-            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.Name != null)
+            {
+                veh.Name = prop.Name;
+                LogManager.DebugLog("New name: " + prop.Name);
+            }
+            if (prop.Position != null) veh.Position = prop.Position.ToVector();
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation.ToVector();
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
@@ -428,7 +438,7 @@ namespace GTANetwork
                     Position = prop.Position,
                     Rotation = prop.Rotation,
                     ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
+                    EntityType = 2,
                     Alpha = prop.Alpha,
 
                     StreamedIn = false,
@@ -449,6 +459,7 @@ namespace GTANetwork
                     Position = pos.ToLVector(),
                     StreamedIn = false,
                     LocalOnly = false,
+                    EntityType = (byte) EntityType.Blip,
                 });
             }
             return rem;
@@ -471,7 +482,7 @@ namespace GTANetwork
                     Position = prop.Position,
                     Rotation = prop.Rotation,
                     ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
+                    EntityType = (byte)EntityType.Blip,
                     Alpha = prop.Alpha,
 
                     StreamedIn = false,
@@ -490,6 +501,7 @@ namespace GTANetwork
                 {
                     RemoteHandle = netHandle,
                     AttachedNetEntity = entity.RemoteHandle,
+                    EntityType = (byte)EntityType.Blip,
                     StreamedIn = false,
                     LocalOnly = false,
                 });
@@ -514,6 +526,7 @@ namespace GTANetwork
                     Blue = b,
                     Alpha = (byte)a,
                     RemoteHandle = netHandle,
+                    EntityType = (byte)EntityType.Marker,
                 });
             }
         }
@@ -536,7 +549,7 @@ namespace GTANetwork
                     Position = prop.Position,
                     Rotation = prop.Rotation,
                     ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
+                    EntityType = (byte)EntityType.Marker,
                     Alpha = prop.Alpha,
 
                     StreamedIn = false,
@@ -662,6 +675,8 @@ namespace GTANetwork
         public void StreamIn(IStreamedItem item)
         {
             if (item.StreamedIn) return;
+
+            LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
 
             switch ((EntityType)item.EntityType)
             {
@@ -876,13 +891,15 @@ namespace GTANetwork
         private void StreamInProp(RemoteProp data)
         {
             var model = new Model(data.ModelHash);
+            LogManager.DebugLog("PROP MODEL VALID: " + model.IsValid);
             if (model == null || !model.IsValid || !model.IsInCdImage) return;
-            LogManager.DebugLog("CREATING VEHICLE FOR NETHANDLE " + data.RemoteHandle);
+            LogManager.DebugLog("CREATING OBJECT FOR NETHANDLE " + data.RemoteHandle);
             if (!model.IsLoaded) model.Request(10000);
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
             var ourVeh = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, data.Position.X, data.Position.Y, data.Position.Z, false, true, false));
             ourVeh.Rotation = data.Rotation.ToVector();
             ourVeh.Alpha = (int)data.Alpha;
+            ourVeh.FreezePosition = true;
 
             data.StreamedIn = true;
             data.LocalHandle = ourVeh.Handle;

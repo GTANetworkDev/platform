@@ -685,12 +685,16 @@ namespace GTANetworkServer
             }
         }
 
-        public void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
+        public void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo, Client exclude = null)
         {
             var packet = new UpdateEntity();
             packet.EntityType = (byte)entity;
             packet.Properties = newInfo;
-            Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.EntityBackend);
+            packet.NetHandle = netId;
+            if (exclude == null)
+                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.EntityBackend);
+            else
+                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, exclude, ConnectionChannel.EntityBackend);
         }
 
         private void ResendPacket(PedData fullPacket, Client exception)
@@ -699,12 +703,12 @@ namespace GTANetworkServer
             {
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                //var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
+                var compData = client.DeltaCompressor.PositionalCompressData(exception.CharacterHandle.Value, fullPacket);
 
-                //SendToClient(client, compData, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
+                SendToClient(client, compData, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
 
 
-                SendToClient(client, fullPacket, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
+                //SendToClient(client, fullPacket, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
             }
         }
 
@@ -714,11 +718,11 @@ namespace GTANetworkServer
             {
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                //var compData = client.DeltaCompressor.CompressData(exception.CharacterHandle.Value, fullPacket);
+                var compData = client.DeltaCompressor.PositionalCompressData(exception.CharacterHandle.Value, fullPacket);
 
-                //SendToClient(client, compData, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
+                SendToClient(client, compData, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
 
-                SendToClient(client, fullPacket, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
+                //SendToClient(client, fullPacket, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
             }
         }
         private void LogException(Exception ex, string resourceName)
@@ -855,6 +859,8 @@ namespace GTANetworkServer
                                     channelHail.Write(respBin);
 
                                     client.NetConnection.Approve(channelHail);
+
+                                    ((PedProperties) NetEntityHandler.ToDict()[client.CharacterHandle.Value]).Name = client.Name;
 
                                     lock (RunningResources)
                                         RunningResources.ForEach(
@@ -1023,7 +1029,6 @@ namespace GTANetworkServer
                                                     //var fullPacket = client.DeltaCompressor.DecompressData(data) as VehicleData;
                                                     var fullPacket = data;
 
-                                                    fullPacket.Name = client.Name;
                                                     fullPacket.Latency = client.Latency;
                                                     fullPacket.NetHandle = client.CharacterHandle.Value;
 
@@ -1083,7 +1088,6 @@ namespace GTANetworkServer
                                                     //var fullPacket = client.DeltaCompressor.DecompressData(data) as PedData;
                                                     var fullPacket = data;
 
-                                                    fullPacket.Name = client.Name;
                                                     fullPacket.Latency = client.Latency;
                                                     fullPacket.NetHandle = client.CharacterHandle.Value;
 
@@ -1241,6 +1245,10 @@ namespace GTANetworkServer
                                             var state = msg.ReadBoolean();
                                             if (!state)
                                             {
+                                                var delta = new Delta_PedProperties();
+                                                delta.Name = client.Name;
+                                                UpdateEntityInfo(client.CharacterHandle.Value, EntityType.Ped, delta, client);
+
                                                 var mapObj = new ServerMap();
                                                 mapObj.Hours = (byte)TimeOfDay.Hour;
                                                 mapObj.Minutes = (byte)TimeOfDay.Minute;
@@ -1327,8 +1335,7 @@ namespace GTANetworkServer
                                                 endStream.Type = FileType.EndOfTransfer;
                                                 downloader.Files.Add(endStream);
                                                 Downloads.Add(downloader);
-
-
+                                                
                                                 lock (RunningResources)
                                                     RunningResources.ForEach(
                                                         fs => fs.Engines.ForEach(en =>

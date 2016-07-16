@@ -26,7 +26,6 @@ namespace GTANetwork
                 var fullPacket = (PedData) LastPacketReceived;
                 var compPacket = (PedData) compressedPacket;
 
-                if (compPacket.Name != null) fullPacket.Name = compPacket.Name;
                 if (compPacket.PedModelHash != null) fullPacket.PedModelHash = compPacket.PedModelHash;
                 if (compPacket.Position != null) fullPacket.Position = compPacket.Position;
                 if (compPacket.Quaternion != null) fullPacket.Quaternion = compPacket.Quaternion;
@@ -47,7 +46,6 @@ namespace GTANetwork
                 var fullPacket = (VehicleData)LastPacketReceived;
                 var compPacket = (VehicleData)compressedPacket;
 
-                if (compPacket.Name != null) fullPacket.Name = compPacket.Name;
                 if (compPacket.VehicleModelHash != null) fullPacket.VehicleModelHash = compPacket.VehicleModelHash;
                 if (compPacket.PedModelHash != null) fullPacket.PedModelHash = compPacket.PedModelHash;
                 if (compPacket.WeaponHash != null) fullPacket.WeaponHash = compPacket.WeaponHash;
@@ -93,7 +91,6 @@ namespace GTANetwork
                 var comparable = (PedData)LastSentObject;
                 var compressed = new PedData();
 
-                if (full.Name != comparable.Name) compressed.Name = full.Name;
                 if (full.PedModelHash != comparable.PedModelHash) compressed.PedModelHash = full.PedModelHash;
                 if (full.Position != comparable.Position) compressed.Position = full.Position;
                 if (full.Quaternion != comparable.Quaternion) compressed.Quaternion = full.Quaternion;
@@ -117,7 +114,6 @@ namespace GTANetwork
                 var comparable = (VehicleData)LastSentObject;
                 var compressed = new VehicleData();
 
-                if (full.Name != comparable.Name) compressed.Name = full.Name;
                 if (full.VehicleModelHash != comparable.VehicleModelHash) compressed.VehicleModelHash = full.VehicleModelHash;
                 if (full.PedModelHash != comparable.PedModelHash) compressed.PedModelHash = full.PedModelHash;
                 if (full.WeaponHash != comparable.WeaponHash) compressed.WeaponHash = full.WeaponHash;

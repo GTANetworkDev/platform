@@ -121,6 +121,8 @@ namespace GTANetwork
         private static int _messagesSent = 0;
         private static int _messagesReceived = 0;
 
+        private static List<int> _averagePacketSize = new List<int>();
+
         private TabTextItem _statsItem;
         //
 
@@ -1677,6 +1679,11 @@ namespace GTANetwork
                     Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
                     LogManager.LogException(ex, "SENDPLAYERDATA");
                 }
+
+                _averagePacketSize.Add(bin.Length);
+                if (_averagePacketSize.Count > 10)
+                    _averagePacketSize.RemoveAt(0);
+
                 _bytesSent += bin.Length;
                 _messagesSent++;
             }
@@ -1748,6 +1755,9 @@ namespace GTANetwork
                     LogManager.LogException(ex, "SENDPLAYERDATAPED");
                 }
 
+                _averagePacketSize.Add(bin.Length);
+                if (_averagePacketSize.Count > 10)
+                    _averagePacketSize.RemoveAt(0);
                 _bytesSent += bin.Length;
                 _messagesSent++;
             }
@@ -1985,14 +1995,37 @@ namespace GTANetwork
         private bool _lastSpectating;
         private int _currentSpectatingPlayerIndex;
         private SyncPed _currentSpectatingPlayer;
+        private Vector3 _lastWaveReset;
         public static DateTime LastCarEnter;
         private int _debugPed;
         private Dictionary<int, int> _debugSettings = new Dictionary<int, int>(); 
+
+        // netstats
+        private int _lastBytesSent;
+        private int _lastBytesReceived;
+        private int _lastCheck;
+
+        private int _bytesSentPerSecond;
+        private int _bytesReceivedPerSecond;
+        //
 
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
             var res = UIMenu.GetScreenResolutionMantainRatio();
+
+            if (Environment.TickCount - _lastCheck > 1000)
+            {
+                _bytesSentPerSecond = _bytesSent - _lastBytesSent;
+                _bytesReceivedPerSecond = _bytesReceived - _lastBytesReceived;
+
+                _lastBytesReceived = _bytesReceived;
+                _lastBytesSent = _bytesSent;
+
+
+                _lastCheck = Environment.TickCount;
+            }
+
 
             if (!_hasInitialized)
             {
@@ -2393,8 +2426,10 @@ namespace GTANetwork
 
             _statsItem.Text =
                 string.Format(
-                    "~h~Bytes Sent~h~: {0}~n~~h~Bytes Received~h~: {1}~n~~n~~h~Messages Sent~h~: {2}~n~~h~Messages Received~h~: {3}",
-                    _bytesSent, _bytesReceived, _messagesSent, _messagesReceived);
+                    "~h~Bytes Sent~h~: {0}~n~~h~Bytes Received~h~: {1}~n~~h~Bytes Sent / Second~h~: {5}~n~~h~Bytes Received / Second~h~: {6}~n~~h~Average Packet Size~h~: {4}~n~~n~~h~Messages Sent~h~: {2}~n~~h~Messages Received~h~: {3}",
+                    _bytesSent, _bytesReceived, _messagesSent, _messagesReceived,
+                    _averagePacketSize.Count > 0 ? _averagePacketSize.Average() : 0, _bytesSentPerSecond,
+                    _bytesReceivedPerSecond);
 
 
             DEBUG_STEP = 12;
@@ -2554,8 +2589,15 @@ namespace GTANetwork
             Function.Call(Hash.DESTROY_MOBILE_PHONE);
             Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
-
             Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Game.Player.Character, true, true);
+
+            if ((Game.Player.Character.Position - _lastWaveReset).LengthSquared() > 100000f) // 100f * 100f
+            {
+                Function.Call((Hash)0x5E5E99285AE812DB);
+                Function.Call((Hash)0xB96B00E976BE977F, 0f);
+
+                _lastWaveReset = Game.Player.Character.Position;
+            }
 
             Function.Call((Hash) 0x2F9A292AD0A3BD89);
             Function.Call((Hash) 0x5F3B7749C112D552);
@@ -2776,21 +2818,16 @@ namespace GTANetwork
 
                         //var fullData = syncPed.DeltaCompressor.DecompressData(data) as VehicleData;
                         var fullData = data;
-                        
                         syncPed.VehicleNetHandle = fullData.VehicleHandle.HasValue ? fullData.VehicleHandle.Value : 0;
-                        syncPed.Name = fullData.Name;
                         syncPed.LastUpdateReceived = Environment.TickCount;
-                        syncPed.VehiclePosition =
-                            fullData.Position.ToVector();
-                        syncPed.VehicleVelocity = fullData.Velocity.ToVector();
+                        syncPed.VehiclePosition = fullData.Position.ToVector();
+                        
+                        if (fullData.Velocity != null) syncPed.VehicleVelocity = fullData.Velocity.ToVector();
                         if (fullData.PedModelHash != null) syncPed.ModelHash = fullData.PedModelHash.Value;
-                        if (fullData.VehicleModelHash != null)
-                            syncPed.VehicleHash =
-                                fullData.VehicleModelHash.Value;
+                        if (fullData.VehicleModelHash != null) syncPed.VehicleHash = fullData.VehicleModelHash.Value;
                         if (fullData.PedArmor != null) syncPed.PedArmor = fullData.PedArmor.Value;
                         if (fullData.RPM != null) syncPed.VehicleRPM = fullData.RPM.Value;
-                        syncPed.VehicleRotation =
-                            fullData.Quaternion.ToVector();
+                        if (fullData.Quaternion != null) syncPed.VehicleRotation = fullData.Quaternion.ToVector();
                         if (fullData.PlayerHealth != null) syncPed.PedHealth = fullData.PlayerHealth.Value;
                         if (fullData.VehicleHealth != null) syncPed.VehicleHealth = fullData.VehicleHealth.Value;
                         if (fullData.VehicleSeat != null) syncPed.VehicleSeat = fullData.VehicleSeat.Value;
@@ -2828,31 +2865,36 @@ namespace GTANetwork
                         //var fullPacket = syncPed.DeltaCompressor.DecompressData(data) as PedData;
                         var fullPacket = data;
 
-                        syncPed.OnFootSpeed = fullPacket.Speed.Value;
-                        syncPed.Name = fullPacket.Name;
-                        syncPed.PedArmor = fullPacket.PedArmor.Value;
-                        syncPed.LastUpdateReceived = Environment.TickCount;
                         syncPed.Position = fullPacket.Position.ToVector();
-                        syncPed.ModelHash = fullPacket.PedModelHash.Value;
-                        syncPed.Rotation = fullPacket.Quaternion.ToVector();
-                        syncPed.PedHealth = fullPacket.PlayerHealth.Value;
+                        syncPed.LastUpdateReceived = Environment.TickCount;
                         syncPed.IsInVehicle = false;
-                        syncPed.AimCoords = fullPacket.AimCoords.ToVector();
-                        syncPed.CurrentWeapon = fullPacket.WeaponHash.Value;
-                        syncPed.Latency = fullPacket.Latency.Value;
-                        syncPed.PedVelocity = fullPacket.Velocity.ToVector();
-                        syncPed.IsFreefallingWithParachute = (fullPacket.Flag.Value & (int)PedDataFlags.InFreefall) > 0;
-                        syncPed.IsInMeleeCombat = (fullPacket.Flag.Value & (int)PedDataFlags.InMeleeCombat) > 0;
-                        syncPed.IsRagdoll = (fullPacket.Flag.Value & (int)PedDataFlags.Ragdoll) > 0;
-                        syncPed.IsAiming = (fullPacket.Flag.Value & (int)PedDataFlags.Aiming) > 0;
-                        syncPed.IsJumping = (fullPacket.Flag.Value & (int)PedDataFlags.Jumping) > 0;
-                        syncPed.IsShooting = (fullPacket.Flag.Value & (int)PedDataFlags.Shooting) > 0;
-                        syncPed.IsParachuteOpen = (fullPacket.Flag.Value & (int)PedDataFlags.ParachuteOpen) > 0;
-                        syncPed.IsInCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCover) > 0;
-                        syncPed.IsInLowCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInLowerCover) > 0;
-                        syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCoverFacingLeft) > 0;
-                        syncPed.IsReloading = (fullPacket.Flag.Value & (int)PedDataFlags.IsReloading) > 0;
-                        
+
+                        if (fullPacket.Speed != null) syncPed.OnFootSpeed = fullPacket.Speed.Value;
+                        if (fullPacket.PedArmor != null) syncPed.PedArmor = fullPacket.PedArmor.Value;
+                        if (fullPacket.PedModelHash != null) syncPed.ModelHash = fullPacket.PedModelHash.Value;
+                        if (fullPacket.Quaternion != null) syncPed.Rotation = fullPacket.Quaternion.ToVector();
+                        if (fullPacket.PlayerHealth != null) syncPed.PedHealth = fullPacket.PlayerHealth.Value;
+                        if (fullPacket.AimCoords != null) syncPed.AimCoords = fullPacket.AimCoords.ToVector();
+                        if (fullPacket.WeaponHash != null) syncPed.CurrentWeapon = fullPacket.WeaponHash.Value;
+                        if (fullPacket.Latency != null) syncPed.Latency = fullPacket.Latency.Value;
+                        if (fullPacket.Velocity != null) syncPed.PedVelocity = fullPacket.Velocity.ToVector();
+
+                        if (fullPacket.Flag != null)
+                        {
+                            syncPed.IsFreefallingWithParachute = (fullPacket.Flag.Value & (int) PedDataFlags.InFreefall) >
+                                                                 0;
+                            syncPed.IsInMeleeCombat = (fullPacket.Flag.Value & (int) PedDataFlags.InMeleeCombat) > 0;
+                            syncPed.IsRagdoll = (fullPacket.Flag.Value & (int) PedDataFlags.Ragdoll) > 0;
+                            syncPed.IsAiming = (fullPacket.Flag.Value & (int) PedDataFlags.Aiming) > 0;
+                            syncPed.IsJumping = (fullPacket.Flag.Value & (int) PedDataFlags.Jumping) > 0;
+                            syncPed.IsShooting = (fullPacket.Flag.Value & (int) PedDataFlags.Shooting) > 0;
+                            syncPed.IsParachuteOpen = (fullPacket.Flag.Value & (int) PedDataFlags.ParachuteOpen) > 0;
+                            syncPed.IsInCover = (fullPacket.Flag.Value & (int) PedDataFlags.IsInCover) > 0;
+                            syncPed.IsInLowCover = (fullPacket.Flag.Value & (int) PedDataFlags.IsInLowerCover) > 0;
+                            syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int) PedDataFlags.IsInCoverFacingLeft) >
+                                                       0;
+                            syncPed.IsReloading = (fullPacket.Flag.Value & (int) PedDataFlags.IsReloading) > 0;
+                        }
                     }
                     break;
                 case PacketType.NpcVehPositionData:
@@ -2945,29 +2987,37 @@ namespace GTANetwork
                             if (data.EntityType == (byte) EntityType.Vehicle)
                             {
                                 var prop = (VehicleProperties) data.Properties;
-                                NetEntityHandler.StreamIn(NetEntityHandler.CreateVehicle(data.NetHandle, prop));
+                                var veh = NetEntityHandler.CreateVehicle(data.NetHandle, prop);
+                                if (NetEntityHandler.Count(typeof(RemoteVehicle)) < StreamerThread.MAX_VEHICLES)
+                                    NetEntityHandler.StreamIn(veh);
                                 LogManager.DebugLog("CreateEntity done");
                             }
                             else if (data.EntityType == (byte) EntityType.Prop)
                             {
                                 LogManager.DebugLog("It was a prop. Spawning...");
-                                NetEntityHandler.StreamIn(NetEntityHandler.CreateObject(data.NetHandle,
-                                    data.Properties));
+                                var prop = NetEntityHandler.CreateObject(data.NetHandle, data.Properties);
+                                if (NetEntityHandler.Count(typeof(RemoteProp)) < StreamerThread.MAX_OBJECTS)
+                                    NetEntityHandler.StreamIn(prop);
                             }
                             else if (data.EntityType == (byte) EntityType.Blip)
                             {
                                 var prop = (BlipProperties) data.Properties;
-                                NetEntityHandler.StreamIn(NetEntityHandler.CreateBlip(data.NetHandle, prop));
+                                var blip = NetEntityHandler.CreateBlip(data.NetHandle, prop);
+                                if (NetEntityHandler.Count(typeof(RemoteBlip)) < StreamerThread.MAX_BLIPS)
+                                    NetEntityHandler.StreamIn(blip);
                             }
                             else if (data.EntityType == (byte) EntityType.Marker)
                             {
                                 var prop = (MarkerProperties) data.Properties;
-                                NetEntityHandler.StreamIn(NetEntityHandler.CreateMarker(data.NetHandle, prop));
+                                var mark = NetEntityHandler.CreateMarker(data.NetHandle, prop);
+                                NetEntityHandler.StreamIn(mark);
                             }
                             else if (data.EntityType == (byte) EntityType.Pickup)
                             {
                                 var prop = (PickupProperties) data.Properties;
-                                NetEntityHandler.StreamIn(NetEntityHandler.CreatePickup(data.NetHandle, prop));
+                                var pickup = NetEntityHandler.CreatePickup(data.NetHandle, prop);
+                                if (NetEntityHandler.Count(typeof(RemotePickup)) < StreamerThread.MAX_PICKUPS)
+                                    NetEntityHandler.StreamIn(pickup);
                             }
                         }
                     }
@@ -3929,7 +3979,6 @@ namespace GTANetwork
                     var data = (VehicleData) ourData;
 
                     _debugSyncPed.VehicleNetHandle = data.VehicleHandle.Value;
-                    _debugSyncPed.Name = data.Name;
                     _debugSyncPed.LastUpdateReceived = Environment.TickCount;
                     _debugSyncPed.VehiclePosition = data.Position.ToVector();
                     _debugSyncPed.VehicleVelocity = data.Velocity.ToVector();
@@ -3969,7 +4018,6 @@ namespace GTANetwork
 
 
                     _debugSyncPed.OnFootSpeed = data.Speed.Value;
-                    _debugSyncPed.Name = data.Name;
                     _debugSyncPed.PedArmor = data.PedArmor.Value;
                     _debugSyncPed.LastUpdateReceived = Environment.TickCount;
                     _debugSyncPed.Position = data.Position.ToVector();
