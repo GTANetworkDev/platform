@@ -685,7 +685,7 @@ namespace GTANetworkServer
             }
         }
 
-        public void UpdateEntityInfoInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
+        public void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
         {
             var packet = new UpdateEntity();
             packet.EntityType = (byte)entity;

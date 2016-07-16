@@ -60,11 +60,6 @@ namespace GTANetwork
         public float VehicleRPM;
 	    public float SteeringScale;
 
-        public int Team = -1;
-        public int BlipSprite = -1;
-        public int BlipColor = -1;
-        public int BlipAlpha = -1;
-
         public int VehicleSeat;
         public int PedHealth;
 
@@ -73,7 +68,6 @@ namespace GTANetwork
         public Vector3 _vehicleRotation;
         public int VehiclePrimaryColor;
         public int VehicleSecondaryColor;
-        public string Name;
         public bool Siren;
         public int PedArmor;
         public bool IsVehDead;
@@ -148,39 +142,7 @@ namespace GTANetwork
                 _vehicleMods = value;
             }
         }
-
-        public Dictionary<int, int> PedProps
-        {
-            get { return _pedProps; }
-            set
-            {
-                if (value == null) return;
-                _pedProps = value;
-            }
-        }
-
-        private Dictionary<int, int> _pedTextures;
-        public Dictionary<int, int> PedTextures
-        {
-            get { return _pedTextures; }
-            set
-            {
-                if (value == null) return;
-                _pedTextures = value;
-            }
-        }
-
-        private Dictionary<int, Tuple<int, int>> _pedAccessories;
-        public Dictionary<int, Tuple<int, int>> PedAccessories
-        {
-            get { return _pedAccessories; }
-            set
-            {
-                if (value == null) return;
-                _pedAccessories = value;
-            }
-        }
-
+        
         private Vector3 _lastVehiclePos;
         private Vector3 _carPosOnUpdate;
         public Vector3 VehiclePosition
@@ -222,7 +184,7 @@ namespace GTANetwork
         private Vector3 _lastPosition;
         public new Vector3 Position
         {
-            get { return _position; }
+            get { return IsInVehicle ? _vehiclePosition : _position; }
             set
             {
                 _lastPosition = _position;
@@ -419,15 +381,15 @@ namespace GTANetwork
 
 				LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
 
-				if (PedProps != null)
-					foreach (var pair in PedProps)
+				if (Props != null)
+					foreach (var pair in Props)
 					{
-						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, PedTextures[pair.Key], 2);
+						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, Textures[pair.Key], 2);
 					}
 
-			    if (PedAccessories != null)
+			    if (Accessories != null)
 			    {
-			        foreach (var pair in PedAccessories)
+			        foreach (var pair in Accessories)
 			        {
                         Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value.Item1, pair.Value.Item2, 2);
                     }
@@ -460,8 +422,7 @@ namespace GTANetwork
 					SetBlipNameFromTextFile(Character.CurrentBlip, Name);
 
 					
-					if (BlipAlpha != -1)
-						Character.CurrentBlip.Alpha = BlipAlpha;
+					Character.CurrentBlip.Alpha = BlipAlpha;
 
 					LogManager.DebugLog("BLIP DONE FOR" + Name);
 				}
@@ -605,14 +566,21 @@ namespace GTANetwork
 					  Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
 					  (VehicleSeat != Util.GetPedSeat(Character) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle))))
 			{
-				if (Debug)
-				{
-					if (MainVehicle != null) MainVehicle.Delete();
-					MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
-				    //MainVehicle.HasCollision = false;
-				}
-				else
-					MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
+			    if (Debug)
+			    {
+			        if (MainVehicle != null) MainVehicle.Delete();
+			        MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
+			        //MainVehicle.HasCollision = false;
+			    }
+			    else
+			    {
+			        MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
+			        if (MainVehicle.Handle == 0)
+			        {
+			            Character.Position = VehiclePosition;
+			            return true;
+			        }
+			    }
 				DEBUG_STEP = 10;
 
                 if (Game.Player.Character.IsInVehicle(MainVehicle) &&
@@ -1642,7 +1610,7 @@ namespace GTANetwork
         {
             try
             {
-                if (IsSpectating || ModelHash == 0) return;
+                if (IsSpectating || ModelHash == 0 || !StreamedIn) return;
 
 
                 DEBUG_STEP = 0;

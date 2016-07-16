@@ -1481,13 +1481,9 @@ namespace GTANetwork
                                 ourSyncPed.BlipColor = pair.Value.BlipColor;
                                 ourSyncPed.BlipAlpha = pair.Value.BlipAlpha;
                                 ourSyncPed.Name = pair.Value.Name;
-                                ourSyncPed.PedProps = pair.Value.Props.ToDictionary(item => (int) item.Key,
-                                    item => (int) item.Value);
-                                ourSyncPed.PedTextures = pair.Value.Textures.ToDictionary(item => (int) item.Key,
-                                    item => (int) item.Value);
-                                ourSyncPed.PedAccessories =
-                                    pair.Value.Accessories.ToDictionary(item => (int) item.Key,
-                                        item => new Tuple<int, int>((int) item.Value.Item1, (int) item.Value.Item2));
+                                ourSyncPed.Props = pair.Value.Props;
+                                ourSyncPed.Textures = pair.Value.Textures;
+                                ourSyncPed.Accessories = pair.Value.Accessories;
                                 if (ourSyncPed.Character != null)
                                 {
                                     ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
@@ -3164,7 +3160,7 @@ namespace GTANetwork
                                             var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
                                             if (pair != null)
                                             {
-                                                pair.BlipAlpha = newAlpha;
+                                                pair.BlipAlpha = (byte)newAlpha;
                                                 if (pair.Character != null &&
                                                     pair.Character.CurrentBlip != null)
                                                     pair.Character.CurrentBlip.Alpha = newAlpha;

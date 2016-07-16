@@ -426,7 +426,10 @@ public class FreeroamScript : Script
 
                 if (target != null)
                 {
-                    API.consoleOutput("Name: " + target.Name + " ID: " + target.CharacterHandle.Value + " pos: " + (API.getEntityPosition(target.CharacterHandle) == null));
+                    var pos = API.getEntityPosition(sender.CharacterHandle);                    
+                    API.sendNativeToAllPlayers(0xB80D8756B4668AB6, "scr_rcbarry1");
+                    API.sendNativeToAllPlayers(0x6C38AF3693A69A91, "scr_rcbarry1");
+                    API.sendNativeToAllPlayers(0x25129531F77B9ED3, "scr_alien_teleport", pos.X, pos.Y, pos.Z, 0, 0, 0, 1f, 0, 0, 0);
                     API.setEntityPosition(sender.CharacterHandle, API.getEntityPosition(target.CharacterHandle));
                 }
                 else

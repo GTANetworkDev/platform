@@ -13,6 +13,14 @@ namespace GTANetworkShared
             return b | g << 8 | r << 16 | a << 24;
         }
 
+        public static void ToArgb(int argb, out byte a, out byte r, out byte g, out byte b)
+        {
+            b = (byte)(argb & 0xFF);
+            g = (byte)((argb & 0xFF00) >> 8);
+            r = (byte)((argb & 0xFF0000) >> 16);
+            a = (byte)((argb & 0xFF000000) >> 24);
+        }
+
         public static void Set<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue value)
         {
             if (dict.ContainsKey(key))

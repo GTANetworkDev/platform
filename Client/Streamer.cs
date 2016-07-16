@@ -38,13 +38,15 @@ namespace GTANetwork
                 const int MAX_VEHICLES = 50;
                 const int MAX_PICKUPS = 30;
                 const int MAX_BLIPS = 200;
+                const int MAX_PLAYERS = 50;
 
                 var position = _playerPosition.ToLVector();
 
-                var streamedObjects = streamedItems.Where(item => item is RemoteProp).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedVehicles = streamedItems.Where(item => item is RemoteVehicle).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedPickups = streamedItems.Where(item => item is RemotePickup).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedBlips = streamedItems.Where(item => item is RemoteBlip).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedObjects = streamedItems.OfType<RemoteProp>().OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedPickups = streamedItems.OfType<RemotePickup>().OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedBlips = streamedItems.OfType<RemoteBlip>().OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedPlayers = streamedItems.OfType<SyncPed>().OrderBy(item => (item.Position - _playerPosition).LengthSquared());
 
 
                 lock (_itemsToStreamOut)
@@ -53,6 +55,7 @@ namespace GTANetwork
                     _itemsToStreamOut.AddRange(streamedBlips.Skip(MAX_BLIPS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedPickups.Skip(MAX_PICKUPS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedVehicles.Skip(MAX_VEHICLES).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedPlayers.Skip(MAX_PLAYERS).Where(item => item.StreamedIn));
                 }
 
                 lock (_itemsToStreamIn)
@@ -61,6 +64,7 @@ namespace GTANetwork
                     _itemsToStreamIn.AddRange(streamedVehicles.Take(MAX_VEHICLES).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedBlips.Take(MAX_BLIPS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedObjects.Take(MAX_OBJECTS).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedPlayers.Take(MAX_PLAYERS).Where(item => !item.StreamedIn));
                 }
 
                 endTick:
@@ -265,7 +269,7 @@ namespace GTANetwork
         {
             IStreamedItem item = null;
             if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
-            var veh = item as RemoteProp;
+            var veh = item as EntityProperties;
             if (prop.Position != null) veh.Position = prop.Position;
             if (prop.Rotation != null) veh.Rotation = prop.Rotation;
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
@@ -554,6 +558,11 @@ namespace GTANetwork
                         EntityType = (byte) EntityType.Ped,
                         StreamedIn = true,
                         LocalOnly = false,
+
+                        BlipSprite = -1,
+                        BlipColor = -1,
+                        BlipAlpha = 255,
+                        Team = -1,
                     });
                 }
             return rem;
@@ -668,6 +677,9 @@ namespace GTANetwork
                 case EntityType.Blip:
                     StreamInBlip((RemoteBlip)item);
                     break;
+                case EntityType.Ped:
+                    if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
+                    break;
             }
         }
 
@@ -708,7 +720,11 @@ namespace GTANetwork
                     StreamOutPickup((ILocalHandleable) item);
                     break;
                 case EntityType.Ped:
-                    if (item is SyncPed) ((SyncPed)item).Clear();
+                    if (item is SyncPed)
+                    {
+                        ((SyncPed)item).Clear();
+                        ((SyncPed) item).StreamedIn = false;
+                    }
                     break;
             }
 
