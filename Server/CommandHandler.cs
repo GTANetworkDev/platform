@@ -11,6 +11,7 @@ namespace GTANetworkServer
     public class CommandAttribute : System.Attribute
     {
         public readonly string CommandString;
+        public readonly string CommandHelpText;
         public bool GreedyArg { get; set; }
         public bool SensitiveInfo { get; set; }
         public bool ACLRequired { get; set; }
@@ -18,17 +19,26 @@ namespace GTANetworkServer
         public CommandAttribute(string command)
         {
             CommandString = command.TrimStart('/');
+            CommandHelpText = null;
+        }
+
+        public CommandAttribute(string command, string helpText)
+        {
+            CommandString = command.TrimStart('/');
+            CommandHelpText = helpText;
         }
 
         public CommandAttribute()
         {
             CommandString = null;
+            CommandHelpText = null;
         }
     }
 
     public class CommandParser
     {
         public string Command;
+        public string Helptext;
         public bool Greedy;
         public ScriptingEngine Engine;
         public MethodInfo Method;
@@ -43,9 +53,15 @@ namespace GTANetworkServer
 
             if (args[0].TrimStart('/').ToLower() != Command.ToLower()) return false;
 
+            var helpText = "~y~USAGE: ~w~/" + Command + " " +
+                           Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]");
+
+            if (!string.IsNullOrEmpty(Helptext))
+                helpText = Helptext;
+
             if (args.Length < Parameters.Length || (args.Length > Parameters.Length && !Greedy))
             {
-                Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/" + Command + " " + Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]"));
+                Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, helpText);
                 return true;
             }
 
@@ -73,6 +89,58 @@ namespace GTANetworkServer
                     arguments[i] = cTarget;
                     continue;
                 }
+                else if (Parameters[i].ParameterType == typeof (VehicleHash))
+                {
+                    var model = Program.ServerInstance.PublicAPI.vehicleNameToModel(args[i]);
+
+                    if (model == 0)
+                    {
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No vehicle model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        return true;
+                    }
+
+                    arguments[i] = (VehicleHash) model;
+                    continue;
+                }
+                else if (Parameters[i].ParameterType == typeof(PedHash))
+                {
+                    var model = Program.ServerInstance.PublicAPI.pedNameToModel(args[i]);
+
+                    if (model == 0)
+                    {
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No player model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        return true;
+                    }
+
+                    arguments[i] = (PedHash)model;
+                    continue;
+                }
+                else if (Parameters[i].ParameterType == typeof(PickupHash))
+                {
+                    var model = Program.ServerInstance.PublicAPI.pickupNameToModel(args[i]);
+
+                    if (model == 0)
+                    {
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No pickup model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        return true;
+                    }
+
+                    arguments[i] = (PickupHash)model;
+                    continue;
+                }
+                else if (Parameters[i].ParameterType == typeof(WeaponHash))
+                {
+                    var model = Program.ServerInstance.PublicAPI.weaponNameToModel(args[i]);
+
+                    if (model == 0)
+                    {
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No weapon model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        return true;
+                    }
+
+                    arguments[i] = (WeaponHash)model;
+                    continue;
+                }
 
                 if (i == Parameters.Length - 1 && Greedy)
                 {
@@ -90,7 +158,7 @@ namespace GTANetworkServer
                     Program.Output("UNHANDLED EXCEPTION WHEN PARSING COMMAND " + (Sensitive ? "[SENSITIVE INFO]" : cmdRaw) + " FROM PLAYER " + sender.SocialClubName);
                     Program.Output(ex.ToString());
 
-                    Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~y~USAGE: ~w~/" + Command + " " + Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]"));
+                    Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, helpText);
                     return true;
                 }
             }
@@ -136,6 +204,7 @@ namespace GTANetworkServer
                     parser.Method = method;
                     parser.Sensitive = cmd.SensitiveInfo;
                     parser.ACLRequired = cmd.ACLRequired;
+                    parser.Helptext = cmd.CommandHelpText;
 
                     lock (ResourceCommands) ResourceCommands.Add(parser);
                 }
