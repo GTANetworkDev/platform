@@ -18,6 +18,8 @@ namespace GTANetwork
         Vector3 Position { get; }
 
         byte EntityType { get; set; }
+
+        int Dimension { get; set; }
     }
 
     public class RemotePlayer : PedProperties, IStreamedItem, ILocalHandleable

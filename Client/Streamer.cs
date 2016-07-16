@@ -39,16 +39,17 @@ namespace GTANetwork
             {
                 if (!Main.IsOnServer() || !Main.HasFinishedDownloading) goto endTick;
 
-                var streamedItems = Main.NetEntityHandler.ClientMap.Where(item => !(item is RemotePlayer));
+                var streamedItems = Main.NetEntityHandler.ClientMap.Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2);
 
                 var position = _playerPosition.ToLVector();
 
-                var streamedObjects = streamedItems.OfType<RemoteProp>().OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedPickups = streamedItems.OfType<RemotePickup>().OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedBlips = streamedItems.OfType<RemoteBlip>().OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedPlayers = streamedItems.OfType<SyncPed>().OrderBy(item => (item.Position - _playerPosition).LengthSquared());
+                var streamedObjects = streamedItems.OfType<RemoteProp>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedPickups = streamedItems.OfType<RemotePickup>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedBlips = streamedItems.OfType<RemoteBlip>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => (item.Position - _playerPosition).LengthSquared());
 
+                var dimensionLeftovers = streamedPlayers.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension);
 
                 lock (_itemsToStreamOut)
                 {
@@ -57,6 +58,8 @@ namespace GTANetwork
                     _itemsToStreamOut.AddRange(streamedPickups.Skip(MAX_PICKUPS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedVehicles.Skip(MAX_VEHICLES).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedPlayers.Skip(MAX_PLAYERS).Where(item => item.StreamedIn));
+
+                    _itemsToStreamOut.AddRange(dimensionLeftovers);
                 }
 
                 lock (_itemsToStreamIn)
@@ -269,6 +272,12 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn) StreamOut(veh);
+            }
         }
 
         public void UpdateProp(int netHandle, Delta_EntityProperties prop)
@@ -281,6 +290,18 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+
+                RemotePlayer localPl = item as RemotePlayer;
+                if (localPl != null && localPl.LocalHandle == -2)
+                {
+                    Main.LocalDimension = prop.Dimension.Value;
+                }
+                else if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+            }
         }
 
         public void UpdateBlip(int netHandle, Delta_BlipProperties prop)
@@ -298,6 +319,12 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+            }
         }
 
         public void UpdateMarker(int netHandle, Delta_MarkerProperties prop)
@@ -316,6 +343,12 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+            }
         }
 
         public void UpdatePlayer(int netHandle, Delta_PedProperties prop)
@@ -340,6 +373,12 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn) StreamOut(veh);
+            }
         }
 
         public void UpdatePickup(int netHandle, Delta_PickupProperties prop)
@@ -354,6 +393,12 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+            }
         }
 
         public RemoteVehicle CreateVehicle(int model, Vector3 position, Vector3 rotation, int netHash)
@@ -675,6 +720,8 @@ namespace GTANetwork
         public void StreamIn(IStreamedItem item)
         {
             if (item.StreamedIn) return;
+
+            if (item.Dimension != Main.LocalDimension) return;
 
             LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
 

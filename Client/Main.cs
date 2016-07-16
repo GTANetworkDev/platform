@@ -99,6 +99,7 @@ namespace GTANetwork
         public static bool ChatVisible = true;
 
         public static int LocalTeam = -1;
+        public static int LocalDimension = 0;
         public int SpectatingEntity;
 
         private readonly Queue<Action> _threadJumping;
@@ -3613,6 +3614,7 @@ namespace GTANetwork
                         case NetConnectionStatus.InitiatedConnect:
                             Util.SafeNotify("Connecting...");
                             LocalTeam = -1;
+                            LocalDimension = 0;
                             Game.Player.Character.Weapons.RemoveAll();
                             Game.Player.Character.Health = Game.Player.Character.MaxHealth;
                             Game.Player.Character.Armor = 0;
@@ -3881,6 +3883,7 @@ namespace GTANetwork
 			Weather = null;
 			Time = null;
 			LocalTeam = -1;
+	        LocalDimension = 0;
 			DEBUG_STEP = 57;
 
 			Game.Player.Character.Position = _vinewoodSign;

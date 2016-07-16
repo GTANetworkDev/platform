@@ -346,6 +346,28 @@ namespace GTANetworkServer
             }
         }
 
+        public void setEntityDimension(NetHandle entity, int dimension)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            {
+                Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Dimension = dimension;
+
+                var delta = new Delta_EntityProperties();
+                delta.Dimension = dimension;
+                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+            }
+        }
+
+        public int getEntityDimension(NetHandle entity)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            {
+                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Dimension;
+            }
+
+            return 0;
+        }
+
         /// <summary>
         /// WARN: Resets on reconnect.
         /// </summary>
