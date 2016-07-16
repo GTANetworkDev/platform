@@ -382,6 +382,7 @@ namespace GTANetwork
 
         public static GTA.Math.Vector3 ToVector(this GTANetworkShared.Vector3 v)
         {
+            if ((object)v == null) return new Vector3();
             return new GTA.Math.Vector3(v.X, v.Y, v.Z);
         }
 
@@ -404,6 +405,32 @@ namespace GTANetwork
                 Z = vec.Z,
                 W = vec.W,
             };
+        }
+
+        public static float LengthSquared(this GTANetworkShared.Vector3 left)
+        {
+            return left.X * left.X + left.Y * left.Y + left.Z + left.Z;
+        }
+
+        public static float Length(this GTANetworkShared.Vector3 left)
+        {
+            return (float)Math.Sqrt(left.LengthSquared());
+        }
+
+        public static GTANetworkShared.Vector3 Sub(this GTANetworkShared.Vector3 left, GTANetworkShared.Vector3 right)
+        {
+            if ((object) left == null && (object) right == null) return new GTANetworkShared.Vector3();
+            if ((object) left == null) return right;
+            if ((object) right == null) return left;
+            return new GTANetworkShared.Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+        }
+
+        public static GTANetworkShared.Vector3 Add(this GTANetworkShared.Vector3 left, GTANetworkShared.Vector3 right)
+        {
+            if ((object)left == null && (object)right == null) return new GTANetworkShared.Vector3();
+            if ((object)left == null) return right;
+            if ((object)right == null) return left;
+            return new GTANetworkShared.Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
         }
     }
 }

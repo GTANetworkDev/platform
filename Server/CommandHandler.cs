@@ -97,7 +97,7 @@ namespace GTANetworkServer
 
             try
             {
-                Engine.InvokeMethod(Method.Name, arguments);
+                Engine.InvokeVoidMethod(Method.Name, arguments);
             }
             catch (Exception ex)
             {

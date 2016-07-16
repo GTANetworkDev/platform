@@ -156,6 +156,31 @@ namespace GTANetworkServer
 
         #region Interface
 
+        public void InvokeVoidMethod(string method, object[] args)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                {
+                    var mi = _compiledScript.GetType().GetMethod(method);
+                    if (mi == null)
+                    {
+                        Program.Output("METHOD NOT ACCESSIBLE OR NOT FOUND: " + method);
+                        return;
+                    }
+
+                    mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
+                }
+                else if (Language == ScriptingEngineLanguage.javascript)
+                {
+                    var mi = ((object)_jsEngine.Script).GetType().GetMethod(method);
+                    mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
+                }
+            }));
+            
+        }
+
         public object InvokeMethod(string method, object[] args)
         {
             try
@@ -289,26 +314,20 @@ namespace GTANetworkServer
             }));
         }
 
-        public bool InvokeChatCommand(Client sender, string command)
+        public void InvokeChatCommand(Client sender, string command)
         {
-            bool? passThroughCommand = null;
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
                 if (Language == ScriptingEngineLanguage.javascript)
                 {
-                    passThroughCommand = _jsEngine.Script.API.invokeChatCommand(sender, command);
+                    _jsEngine.Script.API.invokeChatCommand(sender, command);
                 }
                 else if (Language == ScriptingEngineLanguage.compiled)
                 {
-                    passThroughCommand = _compiledScript.API.invokeChatCommand(sender, command);
+                    _compiledScript.API.invokeChatCommand(sender, command);
                 }
             }));
-
-            int counter = Environment.TickCount;
-            while (Environment.TickCount - counter < 5000 && !passThroughCommand.HasValue) { }
-
-            return passThroughCommand ?? true;
         }
 
         public bool InvokeChatMessage(Client sender, string cmd)

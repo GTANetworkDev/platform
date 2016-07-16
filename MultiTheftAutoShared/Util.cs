@@ -13,6 +13,14 @@ namespace GTANetworkShared
             return b | g << 8 | r << 16 | a << 24;
         }
 
+        public static void ToArgb(int argb, out byte a, out byte r, out byte g, out byte b)
+        {
+            b = (byte)(argb & 0xFF);
+            g = (byte)((argb & 0xFF00) >> 8);
+            r = (byte)((argb & 0xFF0000) >> 16);
+            a = (byte)((argb & 0xFF000000) >> 24);
+        }
+
         public static void Set<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue value)
         {
             if (dict.ContainsKey(key))
@@ -140,6 +148,28 @@ namespace GTANetworkShared
         public static bool operator <(ParseableVersion left, ParseableVersion right)
         {
             return left.CreateComparableInteger() < right.CreateComparableInteger();
+        }
+
+        public ulong ToLong()
+        {
+            ulong output = 0;
+
+            output |= (ushort) Revision;
+            output |= (ushort)(Build << 16); // 2 bytes
+            output |= (ushort)(Minor << 32);
+            output |= (ushort)(Major << 48);
+
+            return output;
+        }
+
+        public static ParseableVersion FromLong(ulong version)
+        {
+            ushort rev = (ushort)(version & 0xFFFF);
+            ushort build = (ushort)((version & 0xFFFF0000) >> 16);
+            ushort minor = (ushort)((version & 0xFFFF00000000) >> 32);
+            ushort major = (ushort)((version & 0xFFFF000000000000) >> 48);
+            
+            return new ParseableVersion(major, minor, rev, build);
         }
 
         public static ParseableVersion Parse(string version)

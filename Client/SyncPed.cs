@@ -1,5 +1,4 @@
 ﻿#define DISABLE_SLERP
-
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
@@ -29,8 +28,10 @@ namespace GTANetwork
         public bool Loop { get; set; }
     }
 
-    public class SyncPed
+    public class SyncPed : RemotePlayer
     {
+
+        public DeltaCompressor DeltaCompressor = new DeltaCompressor();
         public SynchronizationMode SyncMode;
         public long Host;
         public Ped Character;
@@ -58,11 +59,6 @@ namespace GTANetwork
         public float VehicleRPM;
 	    public float SteeringScale;
 
-        public int Team = -1;
-        public int BlipSprite = -1;
-        public int BlipColor = -1;
-        public int BlipAlpha = -1;
-
         public int VehicleSeat;
         public int PedHealth;
 
@@ -71,7 +67,6 @@ namespace GTANetwork
         public Vector3 _vehicleRotation;
         public int VehiclePrimaryColor;
         public int VehicleSecondaryColor;
-        public string Name;
         public bool Siren;
         public int PedArmor;
         public bool IsVehDead;
@@ -146,39 +141,7 @@ namespace GTANetwork
                 _vehicleMods = value;
             }
         }
-
-        public Dictionary<int, int> PedProps
-        {
-            get { return _pedProps; }
-            set
-            {
-                if (value == null) return;
-                _pedProps = value;
-            }
-        }
-
-        private Dictionary<int, int> _pedTextures;
-        public Dictionary<int, int> PedTextures
-        {
-            get { return _pedTextures; }
-            set
-            {
-                if (value == null) return;
-                _pedTextures = value;
-            }
-        }
-
-        private Dictionary<int, Tuple<int, int>> _pedAccessories;
-        public Dictionary<int, Tuple<int, int>> PedAccessories
-        {
-            get { return _pedAccessories; }
-            set
-            {
-                if (value == null) return;
-                _pedAccessories = value;
-            }
-        }
-
+        
         private Vector3 _lastVehiclePos;
         private Vector3 _carPosOnUpdate;
         public Vector3 VehiclePosition
@@ -218,9 +181,9 @@ namespace GTANetwork
         }
 
         private Vector3 _lastPosition;
-        public Vector3 Position
+        public new Vector3 Position
         {
-            get { return _position; }
+            get { return IsInVehicle ? _vehiclePosition : _position; }
             set
             {
                 _lastPosition = _position;
@@ -228,7 +191,7 @@ namespace GTANetwork
             }
         }
 
-        private Vector3 _lastVehicleRotation;
+        private Vector3? _lastVehicleRotation;
         public Vector3 VehicleRotation
         {
             get { return _vehicleRotation; }
@@ -239,7 +202,7 @@ namespace GTANetwork
             }
         }
 
-        private Vector3 _lastRotation;
+        private Vector3? _lastRotation;
         public Vector3 Rotation
         {
             get { return _rotation; }
@@ -325,7 +288,13 @@ namespace GTANetwork
             _blip = true;
             _latencyAverager = new Queue<double>();
         }
-            
+
+        public override int LocalHandle
+        {
+            get { return Character?.Handle ?? 0; }
+            set { }
+        }
+
         public void SetBlipNameFromTextFile(Blip blip, string text)
         {
             Function.Call(Hash._0xF9113A30DE5C6670, "STRING");
@@ -355,12 +324,12 @@ namespace GTANetwork
         public int CustomAnimationFlag;
 
         #region NeoSyncPed
-
+        
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
 			if (Character == null || !Character.Exists() || (!Character.IsInRangeOf(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
-				//LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
+				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
                 
 				if (Character != null && Character.Exists()) Character.Delete();
                 
@@ -411,15 +380,15 @@ namespace GTANetwork
 
 				LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
 
-				if (PedProps != null)
-					foreach (var pair in PedProps)
+				if (Props != null)
+					foreach (var pair in Props)
 					{
-						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, PedTextures[pair.Key], 2);
+						Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value, Textures[pair.Key], 2);
 					}
 
-			    if (PedAccessories != null)
+			    if (Accessories != null)
 			    {
-			        foreach (var pair in PedAccessories)
+			        foreach (var pair in Accessories)
 			        {
                         Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value.Item1, pair.Value.Item2, 2);
                     }
@@ -452,8 +421,7 @@ namespace GTANetwork
 					SetBlipNameFromTextFile(Character.CurrentBlip, Name);
 
 					
-					if (BlipAlpha != -1)
-						Character.CurrentBlip.Alpha = BlipAlpha;
+					Character.CurrentBlip.Alpha = BlipAlpha;
 
 					LogManager.DebugLog("BLIP DONE FOR" + Name);
 				}
@@ -527,12 +495,15 @@ namespace GTANetwork
 					}
 				}
 			}
-			else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) && !Character.IsOccluded && MainVehicle.IsOnScreen)
+			else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) && !Character.IsOccluded && MainVehicle.IsOnScreen && !MainVehicle.IsOccluded)
 			{
-
-				var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 2f));
+                /*
+                var ray = World.Raycast(GameplayCamera.Position, MainVehicle.Position,
+                        IntersectOptions.Everything,
+                        Game.Player.Character);*/
+                var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 2f));
 				var targetPos = Character.Position + new Vector3(0, 0, 2f);
-				if (oldPos.X != 0 && oldPos.Y != 0)
+				if ((oldPos.X != 0 && oldPos.Y != 0)/* && (ray.HitEntity == Character || ray.HitEntity == MainVehicle)*/)
 				{
 					Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
 					DEBUG_STEP = 6;
@@ -597,14 +568,21 @@ namespace GTANetwork
 					  Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
 					  (VehicleSeat != Util.GetPedSeat(Character) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle))))
 			{
-				if (Debug)
-				{
-					if (MainVehicle != null) MainVehicle.Delete();
-					MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
-				    //MainVehicle.HasCollision = false;
-				}
-				else
-					MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
+			    if (Debug)
+			    {
+			        if (MainVehicle != null) MainVehicle.Delete();
+			        MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
+			        //MainVehicle.HasCollision = false;
+			    }
+			    else
+			    {
+			        MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
+			        if (MainVehicle.Handle == 0)
+			        {
+			            Character.Position = VehiclePosition;
+			            return true;
+			        }
+			    }
 				DEBUG_STEP = 10;
 
                 if (Game.Player.Character.IsInVehicle(MainVehicle) &&
@@ -650,8 +628,8 @@ namespace GTANetwork
 				    }
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
-						MainVehicle.Position = VehiclePosition;
-						MainVehicle.Rotation = VehicleRotation;
+						MainVehicle.PositionNoOffset = gPos;
+                        MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
                     }
 				}
 				return true;
@@ -707,6 +685,8 @@ namespace GTANetwork
 
 			if (_modSwitch >= 2500)
 				_modSwitch = 0;
+
+	        Function.Call(Hash.USE_SIREN_AS_HORN, MainVehicle, Siren); // No difference?
 
 			if (IsHornPressed && !_lastHorn)
 			{
@@ -776,8 +756,16 @@ namespace GTANetwork
 
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
-            MainVehicle.Quaternion = Quaternion.Slerp(_lastVehicleRotation.ToQuaternion(), _vehicleRotation.ToQuaternion(),
-			        (float) Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+            if (_lastVehicleRotation.HasValue)
+            {
+                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
+                    _vehicleRotation.ToQuaternion(),
+                    (float) Math.Min(1f, (Environment.TickCount - LastUpdateReceived)/AverageLatency));
+            }
+            else
+            {
+                MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
+            }
 #else
             MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
 #endif
@@ -1052,8 +1040,16 @@ namespace GTANetwork
 				0);
 			DEBUG_STEP = 25;
 #if !DISABLE_SLERP
-            Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+            if (_lastRotation.HasValue)
+            {
+                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
+                    _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+            }
+            else
+            {
+                Character.Quaternion = _rotation.ToQuaternion();
+            }
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1092,12 +1088,20 @@ namespace GTANetwork
 				0);
 			DEBUG_STEP = 25;
 
-            #if !DISABLE_SLERP
-            Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+#if !DISABLE_SLERP
+            if (_lastRotation.HasValue)
+            {
+                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
+                    _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-            #else
+            }
+            else
+            {
+                Character.Quaternion = _rotation.ToQuaternion();
+            }
+#else
 	        Character.Quaternion = Rotation.ToQuaternion();
-            #endif
+#endif
 
             _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
 									  Character.ForwardVector * 0.5f;
@@ -1253,8 +1257,16 @@ namespace GTANetwork
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
 #if !DISABLE_SLERP
-                Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+                if (_lastRotation.HasValue)
+                {
+                    Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
+                        _rotation.ToQuaternion(),
+                        (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+                }
+                else
+                {
+                    Character.Quaternion = _rotation.ToQuaternion();
+                }
 #else
                 Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1347,8 +1359,16 @@ namespace GTANetwork
 					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 #if !DISABLE_SLERP
-            Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+            if (_lastRotation.HasValue)
+            {
+                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
+                    _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+            }
+            else
+            {
+                Character.Quaternion = _rotation.ToQuaternion();
+            }
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1444,8 +1464,16 @@ namespace GTANetwork
 	        if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
 	        {
 #if !DISABLE_SLERP
-                Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+                if (_lastRotation.HasValue)
+                {
+                    Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
+                        _rotation.ToQuaternion(),
+                        (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+                }
+                else
+                {
+                    Character.Quaternion = _rotation.ToQuaternion();
+                }
 #else
                 Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1634,7 +1662,7 @@ namespace GTANetwork
         {
             try
             {
-                if (IsSpectating || ModelHash == 0) return;
+                if (IsSpectating || ModelHash == 0 || !StreamedIn) return;
 
 
                 DEBUG_STEP = 0;
@@ -1820,8 +1848,16 @@ namespace GTANetwork
 
             DEBUG_STEP = 33;
 #if !DISABLE_SLERP
-            Character.Quaternion = Quaternion.Slerp(_lastRotation.ToQuaternion(), _rotation.ToQuaternion(),
+            if (_lastRotation.HasValue)
+            {
+                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
+                    _rotation.ToQuaternion(),
                     (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
+            }
+            else
+            {
+                Character.Quaternion = _rotation.ToQuaternion();
+            }
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif

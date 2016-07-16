@@ -418,7 +418,7 @@ namespace GTANetwork
 
         public LocalHandle[] getAllPlayers()
         {
-            return Main.Opponents.Select(op => new LocalHandle(op.Value.Character?.Handle ?? 0)).ToArray();
+            return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>().Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
         }
 
         public LocalHandle getPlayerVehicle(LocalHandle player)
@@ -428,17 +428,17 @@ namespace GTANetwork
 
         public LocalHandle getPlayerByName(string name)
         {
-            var opp = Main.Opponents.FirstOrDefault(op => op.Value.Name == name);
-            if (opp.Value != null && opp.Value.Character != null)
-                return new LocalHandle(opp.Value.Character.Handle);
+            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed) op).Name == name) as SyncPed;
+            if (opp != null && opp.Character != null)
+                return new LocalHandle(opp.Character.Handle);
             return new LocalHandle(0);
         }
 
         public string getPlayerName(LocalHandle player)
         {
-            var opp = Main.Opponents.FirstOrDefault(op => op.Value.Character != null && op.Value.Character.Handle == player.Value);
-            if (opp.Value != null)
-                return opp.Value.Name;
+            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            if (opp != null)
+                return opp.Name;
             return null;
         }
 

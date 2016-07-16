@@ -47,10 +47,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EntityProperties.cs" />
     <Compile Include="NativeData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Packets.cs" />
     <Compile Include="ServerSettings.cs" />
+    <Compile Include="SyncPackets.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

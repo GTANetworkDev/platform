@@ -79,7 +79,7 @@ namespace GTANetwork
 
         public static bool IsSpectating;
 
-        public static NetEntityHandler NetEntityHandler;
+        public static Streamer NetEntityHandler;
 
         private readonly MenuPool _menuPool;
 
@@ -99,6 +99,7 @@ namespace GTANetwork
         public static bool ChatVisible = true;
 
         public static int LocalTeam = -1;
+        public static int LocalDimension = 0;
         public int SpectatingEntity;
 
         private readonly Queue<Action> _threadJumping;
@@ -121,6 +122,8 @@ namespace GTANetwork
         private static int _messagesSent = 0;
         private static int _messagesReceived = 0;
 
+        private static List<int> _averagePacketSize = new List<int>();
+
         private TabTextItem _statsItem;
         //
 
@@ -137,11 +140,10 @@ namespace GTANetwork
             GameSettings = GTANetwork.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
 
-            NetEntityHandler = new NetEntityHandler();
+            NetEntityHandler = new Streamer();
 
             Watcher = new SyncEventWatcher(this);
 
-            Opponents = new Dictionary<int, SyncPed>();
             Names = new Dictionary<int, string>();
             Npcs = new Dictionary<string, SyncPed>();
             _tickNatives = new Dictionary<string, NativeData>();
@@ -225,6 +227,7 @@ namespace GTANetwork
 
         public static int RelGroup;
         public static int FriendRelGroup;
+        public static bool HasFinishedDownloading;
 
         // Debug stuff
         private bool display;
@@ -262,7 +265,6 @@ namespace GTANetwork
         private string _currentServerIp;
         private bool _debugWindow;
 
-        public static Dictionary<int, SyncPed> Opponents;
         public static Dictionary<int, string> Names;
         public static Dictionary<string, SyncPed> Npcs;
         public static float Latency;
@@ -271,22 +273,7 @@ namespace GTANetwork
         private GameSettings.Settings GameSettings;
 
         public static Camera MainMenuCamera;
-
-        /*
-        public static SyncPed GetOpponent(int netHandle)
-        {
-            if (netHandle == 0) return null;
-            if (Opponents.ContainsKey(netHandle))
-            {
-                return Opponents[netHandle];
-            }
-            else
-            {
-                var newPed = new SyncPed();
-                Opponents.Add(netHandle, newPed);
-                return newPed;
-            }
-        }*/
+        
 
         public static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
         
@@ -377,13 +364,6 @@ namespace GTANetwork
                     {
                         Client.Disconnect("Switching servers.");
 
-                        if (Opponents != null)
-                        {
-                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                            Opponents.Clear();
-                            Names.Clear();
-                        }
-
                         if (Npcs != null)
                         {
                             Npcs.ToList().ForEach(pair => pair.Value.Clear());
@@ -432,12 +412,8 @@ namespace GTANetwork
                     {
                         Client.Disconnect("Switching servers.");
 
-                        if (Opponents != null)
-                        {
-                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                            Opponents.Clear();
-                            Names.Clear();
-                        }
+                        NetEntityHandler.ClearAll();
+
 
                         if (Npcs != null)
                         {
@@ -468,14 +444,29 @@ namespace GTANetwork
         private bool isIPLocal(string ipaddress)
         {
             String[] straryIPAddress = ipaddress.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-            int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[1], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[2], CultureInfo.InvariantCulture), int.Parse(straryIPAddress[3], CultureInfo.InvariantCulture) };
-            if (iaryIPAddress[0] == 10 || iaryIPAddress[0] == 127 || (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) || (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
+            try
             {
-                return true;
+                int[] iaryIPAddress = new int[]
+                {
+                    int.Parse(straryIPAddress[0], CultureInfo.InvariantCulture),
+                    int.Parse(straryIPAddress[1], CultureInfo.InvariantCulture),
+                    int.Parse(straryIPAddress[2], CultureInfo.InvariantCulture),
+                    int.Parse(straryIPAddress[3], CultureInfo.InvariantCulture)
+                };
+                if (iaryIPAddress[0] == 10 || iaryIPAddress[0] == 127 ||
+                    (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) ||
+                    (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
+                {
+                    return true;
+                }
+                else
+                {
+                    // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
+                    return false;
+                }
             }
-            else
+            catch
             {
-                // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
                 return false;
             }
         }
@@ -640,11 +631,9 @@ namespace GTANetwork
             _serverPlayers.Dictionary.Clear();
 
             List<SyncPed> list = null;
-            lock (Opponents)
+            lock (NetEntityHandler)
             {
-                if (Opponents == null) return;
-
-                list = new List<SyncPed>(Opponents.Select(pair => pair.Value));
+                list = new List<SyncPed>(NetEntityHandler.ClientMap.Where(pair => pair is SyncPed).Cast<SyncPed>());
             }
             
             _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
@@ -791,12 +780,7 @@ namespace GTANetwork
                                     {
                                         Client.Disconnect("Switching servers.");
 
-                                        if (Opponents != null)
-                                        {
-                                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                            Opponents.Clear();
-                                            Names.Clear();
-                                        }
+                                        NetEntityHandler.ClearAll();
 
                                         if (Npcs != null)
                                         {
@@ -852,12 +836,7 @@ namespace GTANetwork
                                     {
                                         Client.Disconnect("Switching servers.");
 
-                                        if (Opponents != null)
-                                        {
-                                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                            Opponents.Clear();
-                                            Names.Clear();
-                                        }
+                                        NetEntityHandler.ClearAll();
 
                                         if (Npcs != null)
                                         {
@@ -936,6 +915,15 @@ namespace GTANetwork
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
                         _debugWindow = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Despawn Entities", RemoveGameEntities);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        RemoveGameEntities = @checked;
                     };
                     internetServers.Items.Add(debugItem);
                 }
@@ -1362,12 +1350,7 @@ namespace GTANetwork
                     {
                         Client.Disconnect("Switching servers.");
 
-                        if (Opponents != null)
-                        {
-                            Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                            Opponents.Clear();
-                            Names.Clear();
-                        }
+                        NetEntityHandler.ClearAll();
 
                         if (Npcs != null)
                         {
@@ -1431,7 +1414,7 @@ namespace GTANetwork
         {
             //File.WriteAllText("logs\\map.json", JsonConvert.SerializeObject(map));
 
-            UI.ShowSubtitle("Downloading Map...", 60000);
+            UI.ShowSubtitle("Downloading Map...", 500000);
 
             try
             {
@@ -1450,124 +1433,22 @@ namespace GTANetwork
                 if (map.Objects != null)
                     foreach (var pair in map.Objects)
                     {
-                        var ourVeh = NetEntityHandler.CreateObject(new Model(pair.Value.ModelHash),
-                            pair.Value.Position.ToVector(),
-                            pair.Value.Rotation.ToVector(), false, pair.Key); // TODO: Make dynamic props work
-                        ourVeh.Alpha = (int) pair.Value.Alpha;
+                        NetEntityHandler.CreateObject(pair.Key, pair.Value);
+                        UI.ShowSubtitle("Creating object...", 500000);
                     }
 
                 if (map.Vehicles != null)
                     foreach (var pair in map.Vehicles)
                     {
-                        var ourVeh = NetEntityHandler.CreateVehicle(new Model(pair.Value.ModelHash),
-                            pair.Value.Position.ToVector(),
-                            pair.Value.Rotation.ToVector(), pair.Key);
-                        if (ourVeh == null) continue;
-                        ourVeh.Livery = pair.Value.Livery;
-
-                        if ((pair.Value.PrimaryColor & 0xFF000000) > 0)
-                            ourVeh.CustomPrimaryColor = Color.FromArgb(pair.Value.PrimaryColor);
-                        else
-                            ourVeh.PrimaryColor = (VehicleColor) pair.Value.PrimaryColor;
-
-                        if ((pair.Value.SecondaryColor & 0xFF000000) > 0)
-                            ourVeh.CustomSecondaryColor = Color.FromArgb(pair.Value.SecondaryColor);
-                        else
-                            ourVeh.SecondaryColor = (VehicleColor) pair.Value.SecondaryColor;
-                       
-
-
-                        ourVeh.PearlescentColor = (VehicleColor) 0;
-                        ourVeh.RimColor = (VehicleColor) 0;
-                        ourVeh.EngineHealth = pair.Value.Health;
-                        ourVeh.SirenActive = pair.Value.Siren;
-                        ourVeh.NumberPlate = pair.Value.NumberPlate;
-                        Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, ourVeh, 0, 0);
-
-                        for (int i = 0; i < pair.Value.Doors.Length; i++)
-                        {
-                            if (pair.Value.Doors[i])
-                                ourVeh.OpenDoor((VehicleDoor) i, false, true);
-                            else ourVeh.CloseDoor((VehicleDoor) i, true);
-                        }
-
-                        for (int i = 0; i < pair.Value.Tires.Length; i++)
-                        {
-                            if (pair.Value.Tires[i])
-                            {
-                                ourVeh.IsInvincible = false;
-                                ourVeh.BurstTire(i);
-                            }
-                        }
-
-                        if (pair.Value.Trailer != 0)
-                        {
-                            var trailerId = NetEntityHandler.NetToEntity(pair.Value.Trailer);
-                            if (trailerId != null)
-                            {
-                                if ((VehicleHash)ourVeh.Model.Hash == VehicleHash.TowTruck ||
-                                                    (VehicleHash)ourVeh.Model.Hash == VehicleHash.TowTruck2)
-                                {
-                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TOW_TRUCK, ourVeh, trailerId, true, 0, 0, 0);
-                                }
-                                else if ((VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob ||
-                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob2 ||
-                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob3 ||
-                                         (VehicleHash)ourVeh.Model.Hash == VehicleHash.Cargobob4)
-                                {
-                                    ourVeh.DropCargobobHook(CargobobHook.Hook);
-                                    Function.Call(Hash.ATTACH_VEHICLE_TO_CARGOBOB, trailerId, ourVeh, 0, 0, 0, 0);
-                                }
-                                else
-                                {
-                                    Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, ourVeh, trailerId, 4f);
-                                }
-                            }
-                        }
-
-                        Function.Call(Hash.SET_VEHICLE_MOD_KIT, ourVeh, 0);
-
-                        LogManager.DebugLog("NETWORK ID: " + pair.Key + " MODS LENGTH: " + pair.Value.Mods.Count);
-
-                        if (pair.Value.Mods != null)
-                        foreach (var modPair in pair.Value.Mods)
-                        {
-                            if (modPair.Value != -1)
-                            {
-                                LogManager.DebugLog("SETTINGS MOD " + modPair.Key + " TO " + modPair.Value);
-                                ourVeh.SetMod((VehicleMod) modPair.Key, modPair.Value, false);
-                            }
-                        }
-
-                        if (pair.Value.IsDead)
-                        {
-                            ourVeh.IsInvincible = false;
-                            Function.Call(Hash.EXPLODE_VEHICLE, ourVeh, false, true);
-                        }
-                        else
-                            ourVeh.IsInvincible = true;
-
-                        ourVeh.Alpha = (int) pair.Value.Alpha;
-                        Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, ourVeh, false);
+                        NetEntityHandler.CreateVehicle(pair.Key, pair.Value);
+                        UI.ShowSubtitle("Creating vehicle...", 500000);
                     }
 
                 if (map.Blips != null)
                 {
                     foreach (var blip in map.Blips)
                     {
-                        Blip ourBlip;
-                        if (blip.Value.AttachedNetEntity == 0)
-                            ourBlip = NetEntityHandler.CreateBlip(blip.Value.Position.ToVector(), blip.Key);
-                        else
-                            ourBlip = NetEntityHandler.CreateBlip(
-                                NetEntityHandler.NetToEntity(blip.Value.AttachedNetEntity), blip.Key);
-
-                        if (blip.Value.Sprite != 0)
-                            ourBlip.Sprite = (BlipSprite) blip.Value.Sprite;
-                        ourBlip.Color = (BlipColor) blip.Value.Color;
-                        ourBlip.Alpha = blip.Value.Alpha;
-                        ourBlip.IsShortRange = blip.Value.IsShortRange;
-                        ourBlip.Scale = blip.Value.Scale;
+                        NetEntityHandler.CreateBlip(blip.Key, blip.Value);
                     }
                 }
 
@@ -1575,10 +1456,7 @@ namespace GTANetwork
                 {
                     foreach (var marker in map.Markers)
                     {
-                        NetEntityHandler.CreateMarker(marker.Value.MarkerType, marker.Value.Position,
-                            marker.Value.Rotation,
-                            marker.Value.Direction, marker.Value.Scale, marker.Value.Red, marker.Value.Green,
-                            marker.Value.Blue, marker.Value.Alpha, marker.Key);
+                        NetEntityHandler.CreateMarker(marker.Key, marker.Value);
                     }
                 }
 
@@ -1586,8 +1464,7 @@ namespace GTANetwork
                 {
                     foreach (var pickup in map.Pickups)
                     {
-                        NetEntityHandler.CreatePickup(pickup.Value.Position.ToVector(), pickup.Value.Rotation.ToVector(),
-                            pickup.Value.ModelHash, pickup.Value.Amount, pickup.Key);
+                        NetEntityHandler.CreatePickup(pickup.Key, pickup.Value);
                     }
                 }
 
@@ -1600,8 +1477,9 @@ namespace GTANetwork
                         {
                             for (int i = 0; i < 15; i++)
                             {
-                                Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i, pair.Value.Props.Get((byte)i),
-                                    pair.Value.Textures.Get((byte)i), 2);
+                                Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i,
+                                    pair.Value.Props.Get((byte) i),
+                                    pair.Value.Textures.Get((byte) i), 2);
                             }
 
                             if (!Names.ContainsKey(pair.Key)) Names.Add(pair.Key, pair.Value.Name);
@@ -1610,28 +1488,30 @@ namespace GTANetwork
                             ourPed.Alpha = pair.Value.Alpha;
 
                             //var ourSyncPed = GetOpponent(pair.Key);
-                            var ourSyncPed = Opponents.FirstOrDefault(op => op.Value.Character?.Handle == ourPed.Handle).Value;
+                            var ourSyncPed = NetEntityHandler.NetToStreamedItem(pair.Key) as SyncPed;
                             if (ourSyncPed != null)
                             {
+                                NetEntityHandler.CreatePlayer(pair.Key, pair.Value);
+
+
                                 ourSyncPed.Team = pair.Value.Team;
                                 ourSyncPed.BlipSprite = pair.Value.BlipSprite;
                                 ourSyncPed.BlipColor = pair.Value.BlipColor;
                                 ourSyncPed.BlipAlpha = pair.Value.BlipAlpha;
                                 ourSyncPed.Name = pair.Value.Name;
-                                ourSyncPed.PedProps = pair.Value.Props.ToDictionary(item => (int)item.Key, item => (int)item.Value);
-                                ourSyncPed.PedTextures = pair.Value.Textures.ToDictionary(item => (int)item.Key, item => (int)item.Value);
-                                ourSyncPed.PedAccessories = pair.Value.Accessories.ToDictionary(item => (int) item.Key,
-                                    item => new Tuple<int, int>((int) item.Value.Item1, (int) item.Value.Item2));
+                                ourSyncPed.Props = pair.Value.Props;
+                                ourSyncPed.Textures = pair.Value.Textures;
+                                ourSyncPed.Accessories = pair.Value.Accessories;
                                 if (ourSyncPed.Character != null)
                                 {
                                     ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
-                                                                                    pair.Value.Team != -1)
+                                                                                pair.Value.Team != -1)
                                         ? Main.FriendRelGroup
                                         : Main.RelGroup;
                                     if (ourSyncPed.Character.CurrentBlip != null)
                                     {
-                                        ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
-                                        ourSyncPed.Character.CurrentBlip.Color = (BlipColor)pair.Value.BlipColor;
+                                        ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite) pair.Value.BlipSprite;
+                                        ourSyncPed.Character.CurrentBlip.Color = (BlipColor) pair.Value.BlipColor;
                                         ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
                                     }
                                 }
@@ -1716,10 +1596,11 @@ namespace GTANetwork
             return _pedClothes;
         }
 
+        public const NetDeliveryMethod SYNC_MESSAGE_TYPE = NetDeliveryMethod.UnreliableSequenced; // unreliable_sequenced
 	    private static bool _sendData = true;
         public static void SendPlayerData()
         {
-            if (IsSpectating || !_sendData) return;
+            if (IsSpectating || !_sendData ) return; //|| !HasFinishedDownloading
             var player = Game.Player.Character;
             
             if (player.IsInVehicle())
@@ -1798,6 +1679,7 @@ namespace GTANetwork
                     obj.Trailer = trailer.Position.ToLVector();
                 }
 
+                //var bin = SerializeBinary(DeltaCompressor.CompressData(obj));
                 var bin = SerializeBinary(obj);
 
                 var msg = Client.CreateMessage();
@@ -1806,13 +1688,18 @@ namespace GTANetwork
                 msg.Write(bin);
                 try
                 {
-                    Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
+                    Client.SendMessage(msg, SYNC_MESSAGE_TYPE, 1);
                 }
                 catch (Exception ex)
                 {
                     Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
                     LogManager.LogException(ex, "SENDPLAYERDATA");
                 }
+
+                _averagePacketSize.Add(bin.Length);
+                if (_averagePacketSize.Count > 10)
+                    _averagePacketSize.RemoveAt(0);
+
                 _bytesSent += bin.Length;
                 _messagesSent++;
             }
@@ -1865,6 +1752,7 @@ namespace GTANetwork
 
                 obj.Speed = GetPedWalkingSpeed(player);
 
+                //var bin = SerializeBinary(DeltaCompressor.CompressData(obj));
                 var bin = SerializeBinary(obj);
 
                 var msg = Client.CreateMessage();
@@ -1875,7 +1763,7 @@ namespace GTANetwork
 
                 try
                 {
-                    Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, 1);
+                    Client.SendMessage(msg, SYNC_MESSAGE_TYPE, 1);
                 }
                 catch (Exception ex)
                 {
@@ -1883,6 +1771,9 @@ namespace GTANetwork
                     LogManager.LogException(ex, "SENDPLAYERDATAPED");
                 }
 
+                _averagePacketSize.Add(bin.Length);
+                if (_averagePacketSize.Count > 10)
+                    _averagePacketSize.RemoveAt(0);
                 _bytesSent += bin.Length;
                 _messagesSent++;
             }
@@ -2070,6 +1961,8 @@ namespace GTANetwork
             confirmObj.Write((int)PacketType.ConnectionConfirmed);
             confirmObj.Write(true);
             Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+
+            HasFinishedDownloading = true;
         }
 
         public static int GetCurrentVehicleWeaponHash(Ped ped)
@@ -2118,14 +2011,37 @@ namespace GTANetwork
         private bool _lastSpectating;
         private int _currentSpectatingPlayerIndex;
         private SyncPed _currentSpectatingPlayer;
+        private Vector3 _lastWaveReset;
         public static DateTime LastCarEnter;
         private int _debugPed;
         private Dictionary<int, int> _debugSettings = new Dictionary<int, int>(); 
+
+        // netstats
+        private int _lastBytesSent;
+        private int _lastBytesReceived;
+        private int _lastCheck;
+
+        private int _bytesSentPerSecond;
+        private int _bytesReceivedPerSecond;
+        //
 
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
             var res = UIMenu.GetScreenResolutionMantainRatio();
+
+            if (Environment.TickCount - _lastCheck > 1000)
+            {
+                _bytesSentPerSecond = _bytesSent - _lastBytesSent;
+                _bytesReceivedPerSecond = _bytesReceived - _lastBytesReceived;
+
+                _lastBytesReceived = _bytesReceived;
+                _lastBytesSent = _bytesSent;
+
+
+                _lastCheck = Environment.TickCount;
+            }
+
 
             if (!_hasInitialized)
             {
@@ -2294,9 +2210,10 @@ namespace GTANetwork
             var outArg = new OutputArgument();
             if (Game.IsControlJustPressed(0, Control.Context))
             {
-                var ped = Game.Player.GetTargetedEntity();
-                UI.Notify("ped: " + ped.Handle);
-                Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, ped, "WORLD_HUMAN_DRINKING", 0, 0);
+                var pos = Game.Player.Character.Position;
+                Function.Call(Hash.REQUEST_NAMED_PTFX_ASSET, "scr_rcbarry2");
+                Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, "scr_rcbarry2");
+                Function.Call(Hash.START_PARTICLE_FX_NON_LOOPED_AT_COORD, "scr_clown_appears", pos.X, pos.Y, pos.Z, 0, 0, 0, 2f, 0, 0, 0);
             }
             */
             if (display)
@@ -2314,9 +2231,6 @@ namespace GTANetwork
                 _debug.Visible = true;
                 _debug.Draw();
             }
-
-
-
 
             /*
             UI.ShowSubtitle(Game.Player.Character.RelationshipGroup.ToString());
@@ -2451,6 +2365,8 @@ namespace GTANetwork
                 }
             }
 
+            Game.Player.Character.MaxHealth = 200;
+
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;
 
@@ -2525,8 +2441,10 @@ namespace GTANetwork
 
             _statsItem.Text =
                 string.Format(
-                    "~h~Bytes Sent~h~: {0}~n~~h~Bytes Received~h~: {1}~n~~n~~h~Messages Sent~h~: {2}~n~~h~Messages Received~h~: {3}",
-                    _bytesSent, _bytesReceived, _messagesSent, _messagesReceived);
+                    "~h~Bytes Sent~h~: {0}~n~~h~Bytes Received~h~: {1}~n~~h~Bytes Sent / Second~h~: {5}~n~~h~Bytes Received / Second~h~: {6}~n~~h~Average Packet Size~h~: {4}~n~~n~~h~Messages Sent~h~: {2}~n~~h~Messages Received~h~: {3}",
+                    _bytesSent, _bytesReceived, _messagesSent, _messagesReceived,
+                    _averagePacketSize.Count > 0 ? _averagePacketSize.Average() : 0, _bytesSentPerSecond,
+                    _bytesReceivedPerSecond);
 
 
             DEBUG_STEP = 12;
@@ -2651,9 +2569,9 @@ namespace GTANetwork
             {
                 Game.Player.Character.PositionNoOffset = new Prop(SpectatingEntity).Position;
             }
-            else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer == null && Opponents.Count(op => op.Value.Character != null) > 0)
+            else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed) op).Character != null) > 0)
             {
-                _currentSpectatingPlayer = Opponents.Where(op => op.Value.Character != null).ElementAt(_currentSpectatingPlayerIndex % Opponents.Count(op => op.Value.Character != null)).Value;
+                _currentSpectatingPlayer = NetEntityHandler.ClientMap.Where(op => op is SyncPed && ((SyncPed)op).Character != null).ElementAt(_currentSpectatingPlayerIndex % NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed)op).Character != null)) as SyncPed;
             }
             else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer != null)
             {
@@ -2686,8 +2604,15 @@ namespace GTANetwork
             Function.Call(Hash.DESTROY_MOBILE_PHONE);
             Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
-
             Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Game.Player.Character, true, true);
+
+            if ((Game.Player.Character.Position - _lastWaveReset).LengthSquared() > 100000f) // 100f * 100f
+            {
+                Function.Call((Hash)0x5E5E99285AE812DB);
+                Function.Call((Hash)0xB96B00E976BE977F, 0f);
+
+                _lastWaveReset = Game.Player.Character.Position;
+            }
 
             Function.Call((Hash) 0x2F9A292AD0A3BD89);
             Function.Call((Hash) 0x5F3B7749C112D552);
@@ -2707,7 +2632,7 @@ namespace GTANetwork
             if (RemoveGameEntities)
             {
                 if (_whoseturnisitanyways)
-                {
+                { 
                     foreach (var entity in World.GetAllPeds())
                     {
                         if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
@@ -2718,8 +2643,15 @@ namespace GTANetwork
                 {
                     foreach (var entity in World.GetAllVehicles())
                     {
-                        if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                        if (entity == null) continue;
+                        var veh = NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteVehicle;
+                        if (veh == null)
+                        {
                             entity.Delete();
+                            continue;
+                        }
+                        veh.Position = entity.Position.ToLVector();
+                        veh.Rotation = entity.Rotation.ToLVector();
                     }
                 }
             }
@@ -2829,7 +2761,6 @@ namespace GTANetwork
                 Client.Start();
             }
 
-            lock (Opponents) Opponents = new Dictionary<int, SyncPed>();
             lock (Npcs) Npcs = new Dictionary<string, SyncPed>();
             lock (_tickNatives) _tickNatives = new Dictionary<string, NativeData>();
 
@@ -2839,7 +2770,7 @@ namespace GTANetwork
             obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Unknown" : Game.Player.Name; // To be used as identifiers in server files
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrEmpty(_password)) obj.Password = _password;
-            obj.ScriptVersion = (byte)LocalScriptVersion;
+            obj.ScriptVersion = CurrentVersion.ToLong();
             obj.GameVersion = (byte)Game.Version;
 
             var bin = SerializeBinary(obj);
@@ -2898,49 +2829,44 @@ namespace GTANetwork
                         var len = msg.ReadInt32();
                         var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
                         if (data == null) return;
-                        lock (Opponents)
+                        var syncPed = NetEntityHandler.GetPlayer(data.NetHandle.Value);
+
+                        //var fullData = syncPed.DeltaCompressor.DecompressData(data) as VehicleData;
+                        var fullData = data;
+                        syncPed.VehicleNetHandle = fullData.VehicleHandle.HasValue ? fullData.VehicleHandle.Value : 0;
+                        syncPed.LastUpdateReceived = Environment.TickCount;
+                        syncPed.VehiclePosition = fullData.Position.ToVector();
+                        
+                        if (fullData.Velocity != null) syncPed.VehicleVelocity = fullData.Velocity.ToVector();
+                        if (fullData.PedModelHash != null) syncPed.ModelHash = fullData.PedModelHash.Value;
+                        if (fullData.VehicleModelHash != null) syncPed.VehicleHash = fullData.VehicleModelHash.Value;
+                        if (fullData.PedArmor != null) syncPed.PedArmor = fullData.PedArmor.Value;
+                        if (fullData.RPM != null) syncPed.VehicleRPM = fullData.RPM.Value;
+                        if (fullData.Quaternion != null) syncPed.VehicleRotation = fullData.Quaternion.ToVector();
+                        if (fullData.PlayerHealth != null) syncPed.PedHealth = fullData.PlayerHealth.Value;
+                        if (fullData.VehicleHealth != null) syncPed.VehicleHealth = fullData.VehicleHealth.Value;
+                        if (fullData.VehicleSeat != null) syncPed.VehicleSeat = fullData.VehicleSeat.Value;
+                        syncPed.IsInVehicle = true;
+                        if (fullData.Latency != null) syncPed.Latency = fullData.Latency.Value;
+	                    if (fullData.Steering != null) syncPed.SteeringScale = fullData.Steering.Value;
+                        syncPed.Speed = fullData.Velocity.ToVector().Length();
+
+                        if (fullData.Flag != null)
                         {
-                            if (!Opponents.ContainsKey(data.NetHandle))
-                            {
-                                var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                    data.Quaternion.ToVector());
-                                Opponents.Add(data.NetHandle, repr);
-                            }
-
-                            // Not thread safe
-                            if (Opponents[data.NetHandle].Character != null)
-                                NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
-
-                            Opponents[data.NetHandle].VehicleNetHandle = data.VehicleHandle;
-                            Opponents[data.NetHandle].Name = data.Name;
-                            Opponents[data.NetHandle].LastUpdateReceived = Environment.TickCount;
-                            Opponents[data.NetHandle].VehiclePosition =
-                                data.Position.ToVector();
-                            Opponents[data.NetHandle].VehicleVelocity = data.Velocity.ToVector();
-                            Opponents[data.NetHandle].ModelHash = data.PedModelHash;
-                            Opponents[data.NetHandle].VehicleHash =
-                                data.VehicleModelHash;
-                            Opponents[data.NetHandle].PedArmor = data.PedArmor;
-                            Opponents[data.NetHandle].VehicleRPM = data.RPM;
-                            Opponents[data.NetHandle].VehicleRotation =
-                                data.Quaternion.ToVector();
-                            Opponents[data.NetHandle].PedHealth = data.PlayerHealth;
-                            Opponents[data.NetHandle].VehicleHealth = data.VehicleHealth;
-                            Opponents[data.NetHandle].VehicleSeat = data.VehicleSeat;
-                            Opponents[data.NetHandle].IsInVehicle = true;
-                            Opponents[data.NetHandle].Latency = data.Latency;
-	                        Opponents[data.NetHandle].SteeringScale = data.Steering;
-
-							Opponents[data.NetHandle].IsVehDead = (data.Flag & (short)VehicleDataFlags.VehicleDead) > 0;
-                            Opponents[data.NetHandle].IsHornPressed = (data.Flag & (short)VehicleDataFlags.PressingHorn) > 0;
-                            Opponents[data.NetHandle].Speed = data.Velocity.ToVector().Length();
-                            Opponents[data.NetHandle].Siren = (data.Flag & (short)VehicleDataFlags.SirenActive) > 0;
-                            Opponents[data.NetHandle].IsShooting = (data.Flag & (short)VehicleDataFlags.Shooting) > 0;
-                            Opponents[data.NetHandle].IsAiming = (data.Flag & (short)VehicleDataFlags.Aiming) > 0;
-                            Opponents[data.NetHandle].CurrentWeapon = data.WeaponHash;
-                            if (data.AimCoords != null)
-                                Opponents[data.NetHandle].AimCoords = data.AimCoords.ToVector();
+                            syncPed.IsVehDead = (fullData.Flag.Value & (short) VehicleDataFlags.VehicleDead) > 0;
+                            syncPed.IsHornPressed = (fullData.Flag.Value & (short) VehicleDataFlags.PressingHorn) > 0;
+                            syncPed.Siren = (fullData.Flag.Value & (short) VehicleDataFlags.SirenActive) > 0;
+                            syncPed.IsShooting = (fullData.Flag.Value & (short) VehicleDataFlags.Shooting) > 0;
+                            syncPed.IsAiming = (fullData.Flag.Value & (short) VehicleDataFlags.Aiming) > 0;
                         }
+
+                        if (fullData.WeaponHash != null)
+                        {
+                            syncPed.CurrentWeapon = fullData.WeaponHash.Value;
+                        }
+                        if (data.AimCoords != null)
+                            syncPed.AimCoords = fullData.AimCoords.ToVector();
+                        
                     }
                     break;
                 case PacketType.PedPositionData:
@@ -2949,42 +2875,40 @@ namespace GTANetwork
                         var len = msg.ReadInt32();
                         var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
                         if (data == null) return;
-                        lock (Opponents)
+                        var syncPed = NetEntityHandler.GetPlayer(data.NetHandle.Value);
+
+                        //var fullPacket = syncPed.DeltaCompressor.DecompressData(data) as PedData;
+                        var fullPacket = data;
+
+                        syncPed.Position = fullPacket.Position.ToVector();
+                        syncPed.LastUpdateReceived = Environment.TickCount;
+                        syncPed.IsInVehicle = false;
+
+                        if (fullPacket.Speed != null) syncPed.OnFootSpeed = fullPacket.Speed.Value;
+                        if (fullPacket.PedArmor != null) syncPed.PedArmor = fullPacket.PedArmor.Value;
+                        if (fullPacket.PedModelHash != null) syncPed.ModelHash = fullPacket.PedModelHash.Value;
+                        if (fullPacket.Quaternion != null) syncPed.Rotation = fullPacket.Quaternion.ToVector();
+                        if (fullPacket.PlayerHealth != null) syncPed.PedHealth = fullPacket.PlayerHealth.Value;
+                        if (fullPacket.AimCoords != null) syncPed.AimCoords = fullPacket.AimCoords.ToVector();
+                        if (fullPacket.WeaponHash != null) syncPed.CurrentWeapon = fullPacket.WeaponHash.Value;
+                        if (fullPacket.Latency != null) syncPed.Latency = fullPacket.Latency.Value;
+                        if (fullPacket.Velocity != null) syncPed.PedVelocity = fullPacket.Velocity.ToVector();
+
+                        if (fullPacket.Flag != null)
                         {
-                            if (!Opponents.ContainsKey(data.NetHandle))
-                            {
-                                var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                                    data.Quaternion.ToVector());
-                                Opponents.Add(data.NetHandle, repr);
-                            }
-
-                            if (Opponents[data.NetHandle].Character != null)
-                                NetEntityHandler.SetEntity(data.NetHandle, Opponents[data.NetHandle].Character.Handle);
-
-                            Opponents[data.NetHandle].OnFootSpeed = data.Speed;
-                            Opponents[data.NetHandle].Name = data.Name;
-                            Opponents[data.NetHandle].PedArmor = data.PedArmor;
-                            Opponents[data.NetHandle].LastUpdateReceived = Environment.TickCount;
-                            Opponents[data.NetHandle].Position = data.Position.ToVector();
-                            Opponents[data.NetHandle].ModelHash = data.PedModelHash;
-                            Opponents[data.NetHandle].Rotation = data.Quaternion.ToVector();
-                            Opponents[data.NetHandle].PedHealth = data.PlayerHealth;
-                            Opponents[data.NetHandle].IsInVehicle = false;
-                            Opponents[data.NetHandle].AimCoords = data.AimCoords.ToVector();
-                            Opponents[data.NetHandle].CurrentWeapon = data.WeaponHash;
-                            Opponents[data.NetHandle].Latency = data.Latency;
-                            Opponents[data.NetHandle].PedVelocity = data.Velocity.ToVector();
-                            Opponents[data.NetHandle].IsFreefallingWithParachute = (data.Flag & (int)PedDataFlags.InFreefall) > 0;
-                            Opponents[data.NetHandle].IsInMeleeCombat = (data.Flag & (int)PedDataFlags.InMeleeCombat) > 0;
-                            Opponents[data.NetHandle].IsRagdoll = (data.Flag & (int)PedDataFlags.Ragdoll) > 0;
-                            Opponents[data.NetHandle].IsAiming = (data.Flag & (int)PedDataFlags.Aiming) > 0;
-                            Opponents[data.NetHandle].IsJumping = (data.Flag & (int)PedDataFlags.Jumping) > 0;
-                            Opponents[data.NetHandle].IsShooting = (data.Flag & (int)PedDataFlags.Shooting) > 0;
-                            Opponents[data.NetHandle].IsParachuteOpen = (data.Flag & (int)PedDataFlags.ParachuteOpen) > 0;
-                            Opponents[data.NetHandle].IsInCover = (data.Flag & (int)PedDataFlags.IsInCover) > 0;
-                            Opponents[data.NetHandle].IsInLowCover = (data.Flag & (int)PedDataFlags.IsInLowerCover) > 0;
-                            Opponents[data.NetHandle].IsCoveringToLeft = (data.Flag & (int)PedDataFlags.IsInCoverFacingLeft) > 0;
-                            Opponents[data.NetHandle].IsReloading = (data.Flag & (int)PedDataFlags.IsReloading) > 0;
+                            syncPed.IsFreefallingWithParachute = (fullPacket.Flag.Value & (int) PedDataFlags.InFreefall) >
+                                                                 0;
+                            syncPed.IsInMeleeCombat = (fullPacket.Flag.Value & (int) PedDataFlags.InMeleeCombat) > 0;
+                            syncPed.IsRagdoll = (fullPacket.Flag.Value & (int) PedDataFlags.Ragdoll) > 0;
+                            syncPed.IsAiming = (fullPacket.Flag.Value & (int) PedDataFlags.Aiming) > 0;
+                            syncPed.IsJumping = (fullPacket.Flag.Value & (int) PedDataFlags.Jumping) > 0;
+                            syncPed.IsShooting = (fullPacket.Flag.Value & (int) PedDataFlags.Shooting) > 0;
+                            syncPed.IsParachuteOpen = (fullPacket.Flag.Value & (int) PedDataFlags.ParachuteOpen) > 0;
+                            syncPed.IsInCover = (fullPacket.Flag.Value & (int) PedDataFlags.IsInCover) > 0;
+                            syncPed.IsInLowCover = (fullPacket.Flag.Value & (int) PedDataFlags.IsInLowerCover) > 0;
+                            syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int) PedDataFlags.IsInCoverFacingLeft) >
+                                                       0;
+                            syncPed.IsReloading = (fullPacket.Flag.Value & (int) PedDataFlags.IsReloading) > 0;
                         }
                     }
                     break;
@@ -3075,87 +2999,70 @@ namespace GTANetwork
                         {
                             LogManager.DebugLog("CreateEntity was not null. Type: " + data.EntityType);
                             LogManager.DebugLog("Model: " + data.Properties.ModelHash);
-                            if (data.EntityType == (byte)EntityType.Vehicle)
+                            if (data.EntityType == (byte) EntityType.Vehicle)
                             {
-                                var prop = (VehicleProperties)data.Properties;
-                                var veh = NetEntityHandler.CreateVehicle(new Model(data.Properties.ModelHash),
-                                    data.Properties.Position?.ToVector() ?? new Vector3(),
-                                    data.Properties.Rotation?.ToVector() ?? new Vector3(), data.NetHandle);
-                                LogManager.DebugLog("Settings vehicle color 1");
-                                veh.Livery = prop.Livery;
-                                veh.NumberPlate = prop.NumberPlate;
-
-                                if ((prop.PrimaryColor & 0xFF000000) > 0)
-                                    veh.CustomPrimaryColor = Color.FromArgb(prop.PrimaryColor);
-                                else
-                                    veh.PrimaryColor = (VehicleColor)prop.PrimaryColor;
-
-                                if ((prop.SecondaryColor & 0xFF000000) > 0)
-                                    veh.CustomSecondaryColor = Color.FromArgb(prop.SecondaryColor);
-                                else
-                                    veh.SecondaryColor = (VehicleColor)prop.SecondaryColor;
-
-                                
-                                Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
-								Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
-                                Function.Call(Hash.SET_VEHICLE_MOD_KIT, veh, 0);
+                                var prop = (VehicleProperties) data.Properties;
+                                var veh = NetEntityHandler.CreateVehicle(data.NetHandle, prop);
+                                if (NetEntityHandler.Count(typeof(RemoteVehicle)) < StreamerThread.MAX_VEHICLES)
+                                    NetEntityHandler.StreamIn(veh);
                                 LogManager.DebugLog("CreateEntity done");
                             }
-                            else if (data.EntityType == (byte)EntityType.Prop)
+                            else if (data.EntityType == (byte) EntityType.Prop)
                             {
                                 LogManager.DebugLog("It was a prop. Spawning...");
-                                NetEntityHandler.CreateObject(new Model(data.Properties.ModelHash),
-                                    data.Properties.Position?.ToVector() ?? new Vector3(),
-                                    data.Properties.Rotation?.ToVector() ?? new Vector3(), false, data.NetHandle);
+                                var prop = NetEntityHandler.CreateObject(data.NetHandle, data.Properties);
+                                if (NetEntityHandler.Count(typeof(RemoteProp)) < StreamerThread.MAX_OBJECTS)
+                                    NetEntityHandler.StreamIn(prop);
                             }
-                            else if (data.EntityType == (byte)EntityType.Blip)
+                            else if (data.EntityType == (byte) EntityType.Blip)
                             {
-                                var hasBlip = ((BlipProperties)data.Properties).AttachedNetEntity != 0;
-                                if (hasBlip)
-                                    NetEntityHandler.CreateBlip(NetEntityHandler.NetToEntity(((BlipProperties)data.Properties).AttachedNetEntity), data.NetHandle);
-                                else
-                                    NetEntityHandler.CreateBlip(data.Properties.Position.ToVector(),
-                                        data.NetHandle);
+                                var prop = (BlipProperties) data.Properties;
+                                var blip = NetEntityHandler.CreateBlip(data.NetHandle, prop);
+                                if (NetEntityHandler.Count(typeof(RemoteBlip)) < StreamerThread.MAX_BLIPS)
+                                    NetEntityHandler.StreamIn(blip);
                             }
-                            else if (data.EntityType == (byte)EntityType.Marker)
+                            else if (data.EntityType == (byte) EntityType.Marker)
                             {
-                                var prop = (MarkerProperties)data.Properties;
-                                NetEntityHandler.CreateMarker(prop.MarkerType, prop.Position, prop.Rotation,
-                                    prop.Direction, prop.Scale, prop.Red, prop.Green, prop.Blue, prop.Alpha,
-                                    data.NetHandle);
+                                var prop = (MarkerProperties) data.Properties;
+                                var mark = NetEntityHandler.CreateMarker(data.NetHandle, prop);
+                                NetEntityHandler.StreamIn(mark);
                             }
-                            else if (data.EntityType == (byte)EntityType.Pickup)
+                            else if (data.EntityType == (byte) EntityType.Pickup)
                             {
-                                var amount = ((PickupProperties)data.Properties).Amount;
-                                NetEntityHandler.CreatePickup(data.Properties.Position.ToVector(),
-                                    data.Properties.Rotation.ToVector(), data.Properties.ModelHash, amount,
-                                    data.NetHandle);
+                                var prop = (PickupProperties) data.Properties;
+                                var pickup = NetEntityHandler.CreatePickup(data.NetHandle, prop);
+                                if (NetEntityHandler.Count(typeof(RemotePickup)) < StreamerThread.MAX_PICKUPS)
+                                    NetEntityHandler.StreamIn(pickup);
                             }
                         }
                     }
                     break;
-                case PacketType.UpdateMarkerProperties:
+                case PacketType.UpdateEntityProperties:
                     {
                         var len = msg.ReadInt32();
-                        var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
+                        var data = DeserializeBinary<UpdateEntity>(msg.ReadBytes(len)) as UpdateEntity;
                         if (data != null && data.Properties != null)
                         {
-                            if (data.EntityType == (byte)EntityType.Marker &&
-                                NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                            switch ((EntityType) data.EntityType)
                             {
-                                var prop = (MarkerProperties)data.Properties;
-                                NetEntityHandler.Markers[data.NetHandle] = new MarkerProperties()
-                                {
-                                    MarkerType = prop.MarkerType,
-                                    Alpha = prop.Alpha,
-                                    Blue = prop.Blue,
-                                    Direction = prop.Direction,
-                                    Green = prop.Green,
-                                    Position = prop.Position,
-                                    Red = prop.Red,
-                                    Rotation = prop.Rotation,
-                                    Scale = prop.Scale,
-                                };
+                                case EntityType.Blip:
+                                    NetEntityHandler.UpdateBlip(data.NetHandle, data.Properties as Delta_BlipProperties);
+                                    break;
+                                case EntityType.Marker:
+                                    NetEntityHandler.UpdateMarker(data.NetHandle, data.Properties as Delta_MarkerProperties);
+                                    break;
+                                case EntityType.Ped:
+                                    NetEntityHandler.UpdatePlayer(data.NetHandle, data.Properties as Delta_PedProperties);
+                                    break;
+                                case EntityType.Pickup:
+                                    NetEntityHandler.UpdatePickup(data.NetHandle, data.Properties as Delta_PickupProperties);
+                                    break;
+                                case EntityType.Prop:
+                                    NetEntityHandler.UpdateProp(data.NetHandle, data.Properties as Delta_EntityProperties);
+                                    break;
+                                case EntityType.Vehicle:
+                                    NetEntityHandler.UpdateVehicle(data.NetHandle, data.Properties as Delta_VehicleProperties);
+                                    break;
                             }
                         }
                     }
@@ -3167,30 +3074,11 @@ namespace GTANetwork
                         if (data != null)
                         {
                             LogManager.DebugLog("RECEIVED DELETE ENTITY " + data.NetHandle);
-                            if (NetEntityHandler.Markers.ContainsKey(data.NetHandle))
+                            var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
+                            if (streamItem != null)
                             {
-                                NetEntityHandler.Markers.Remove(data.NetHandle);
-                            }
-                            else
-                            {
-                                var entity = NetEntityHandler.NetToEntity(data.NetHandle);
-                                if (entity != null)
-                                {
-                                    if (NetEntityHandler.IsBlip(entity.Handle))
-                                    {
-                                        if (new Blip(entity.Handle).Exists())
-                                            new Blip(entity.Handle).Remove();
-                                    }
-                                    else if (NetEntityHandler.IsPickup(entity.Handle))
-                                    {
-                                        Function.Call(Hash.REMOVE_PICKUP, entity.Handle);
-                                    }
-                                    else
-                                    {
-                                        entity.Delete();
-                                    }
-                                    NetEntityHandler.RemoveByNetHandle(data.NetHandle);
-                                }
+                                NetEntityHandler.StreamOut(streamItem);
+                                NetEntityHandler.RemoveByNetHandle(data.NetHandle);
                             }
                         }
                     }
@@ -3262,35 +3150,31 @@ namespace GTANetwork
                                         var netHandle = (int)args[0];
                                         var spectating = (bool)args[1];
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        lock (Opponents)
                                         if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        {
+                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                            if (pair != null)
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
-                                                {
-                                                    pair.Value.IsSpectating = spectating;
-                                                    if (spectating)
-                                                        pair.Value.Clear();
-                                                }
+                                                pair.IsSpectating = spectating;
+                                                if (spectating)
+                                                    pair.Clear();
                                             }
-                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                        }
+                                        else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                        {
+                                            IsSpectating = spectating;
+                                            if (spectating && args.Count >= 3)
                                             {
-                                                IsSpectating = spectating;
-                                                if (spectating && args.Count >= 3)
-                                                {
-                                                    var target = (int)args[2];
-                                                    var targetHandle = NetEntityHandler.NetToEntity(target);
+                                                var target = (int)args[2];
+                                                var targetHandle = NetEntityHandler.NetToEntity(target);
 
-                                                    var pair =
-                                                        Opponents.FirstOrDefault(
-                                                            op => op.Value.Character?.Handle == targetHandle.Handle);
-                                                    if (pair.Value != null)
-                                                    {
-                                                        pair.Value.Clear();
-                                                    }
+                                                var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                                if (pair != null)
+                                                {
+                                                    pair.Clear();
                                                 }
                                             }
+                                        }
                                     }
                                     break;
                                 case ServerEventType.PlayerBlipColorChange:
@@ -3298,21 +3182,19 @@ namespace GTANetwork
                                         var netHandle = (int)args[0];
                                         var newColor = (int)args[1];
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        lock (Opponents)
                                         if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        {
+                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                            if (pair != null)
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
+                                                pair.BlipColor = newColor;
+                                                if (pair.Character != null &&
+                                                    pair.Character.CurrentBlip != null)
                                                 {
-                                                    pair.Value.BlipColor = newColor;
-                                                    if (pair.Value.Character != null &&
-                                                        pair.Value.Character.CurrentBlip != null)
-                                                    {
-                                                        pair.Value.Character.CurrentBlip.Color = (BlipColor)newColor;
-                                                    }
+                                                    pair.Character.CurrentBlip.Color = (BlipColor)newColor;
                                                 }
                                             }
+                                        }
                                     }
                                     break;
                                 case ServerEventType.PlayerBlipSpriteChange:
@@ -3320,19 +3202,17 @@ namespace GTANetwork
                                         var netHandle = (int)args[0];
                                         var newSprite = (int)args[1];
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        lock (Opponents)
                                         if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        {
+                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                            if (pair != null)
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
-                                                {
-                                                    pair.Value.BlipSprite = newSprite;
-                                                    if (pair.Value.Character != null && pair.Value.Character.CurrentBlip != null)
-                                                        pair.Value.Character.CurrentBlip.Sprite =
-                                                            (BlipSprite)newSprite;
-                                                }
+                                                pair.BlipSprite = newSprite;
+                                                if (pair.Character != null && pair.Character.CurrentBlip != null)
+                                                    pair.Character.CurrentBlip.Sprite =
+                                                        (BlipSprite)newSprite;
                                             }
+                                        }
                                     }
                                     break;
                                 case ServerEventType.PlayerBlipAlphaChange:
@@ -3340,19 +3220,17 @@ namespace GTANetwork
                                         var netHandle = (int)args[0];
                                         var newAlpha = (int)args[1];
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        lock (Opponents)
                                         if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        {
+                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                            if (pair != null)
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
-                                                {
-                                                    pair.Value.BlipAlpha = newAlpha;
-                                                    if (pair.Value.Character != null &&
-                                                        pair.Value.Character.CurrentBlip != null)
-                                                        pair.Value.Character.CurrentBlip.Alpha = newAlpha;
-                                                }
+                                                pair.BlipAlpha = (byte)newAlpha;
+                                                if (pair.Character != null &&
+                                                    pair.Character.CurrentBlip != null)
+                                                    pair.Character.CurrentBlip.Alpha = newAlpha;
                                             }
+                                        }
                                     }
                                     break;
                                 case ServerEventType.PlayerTeamChange:
@@ -3360,39 +3238,37 @@ namespace GTANetwork
                                         var netHandle = (int)args[0];
                                         var newTeam = (int)args[1];
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        lock (Opponents)
                                         if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        {
+                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                            if (pair != null)
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
+                                                pair.Team = newTeam;
+                                                if (pair.Character != null)
+                                                    pair.Character.RelationshipGroup = (newTeam == LocalTeam &&
+                                                                                                newTeam != -1)
+                                                        ? Main.FriendRelGroup
+                                                        : Main.RelGroup;
+                                            }
+                                        }
+                                        else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                        {
+                                            LocalTeam = newTeam;
+                                            foreach (var opponent in NetEntityHandler.ClientMap.Where(item => item is SyncPed && ((SyncPed)item).LocalHandle != -2).Cast<SyncPed>())
+                                            {
+                                                if (opponent.Character != null &&
+                                                    (opponent.Team == newTeam && newTeam != -1))
                                                 {
-                                                    pair.Value.Team = newTeam;
-                                                    if (pair.Value.Character != null)
-                                                        pair.Value.Character.RelationshipGroup = (newTeam == LocalTeam &&
-                                                                                                    newTeam != -1)
-                                                            ? Main.FriendRelGroup
-                                                            : Main.RelGroup;
+                                                    opponent.Character.RelationshipGroup =
+                                                        Main.FriendRelGroup;
+                                                }
+                                                else
+                                                {
+                                                    opponent.Character.RelationshipGroup =
+                                                        Main.RelGroup;
                                                 }
                                             }
-                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
-                                            {
-                                                LocalTeam = newTeam;
-                                                foreach (var opponent in Opponents)
-                                                {
-                                                    if (opponent.Value.Character != null &&
-                                                        (opponent.Value.Team == newTeam && newTeam != -1))
-                                                    {
-                                                        opponent.Value.Character.RelationshipGroup =
-                                                            Main.FriendRelGroup;
-                                                    }
-                                                    else
-                                                    {
-                                                        opponent.Value.Character.RelationshipGroup =
-                                                            Main.RelGroup;
-                                                    }
-                                                }
-                                            }
+                                        }
                                     }
                                     break;
                                 case ServerEventType.PlayerAnimationStart:
@@ -3405,23 +3281,19 @@ namespace GTANetwork
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
                                         if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
                                         {
-                                            lock (Opponents)
+                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                            if (pair != null && pair.Character != null && pair.Character.Exists())
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
-                                                {
-                                                    pair.Value.IsCustomAnimationPlaying = true;
-                                                    pair.Value.CustomAnimationName = animName;
-                                                    pair.Value.CustomAnimationDictionary = animDict;
-                                                    pair.Value.CustomAnimationFlag = animFlag;
+                                                pair.IsCustomAnimationPlaying = true;
+                                                pair.CustomAnimationName = animName;
+                                                pair.CustomAnimationDictionary = animDict;
+                                                pair.CustomAnimationFlag = animFlag;
 
-                                                    if (!string.IsNullOrEmpty(animName) &&
-                                                        string.IsNullOrEmpty(animDict))
-                                                    {
-                                                        pair.Value.IsCustomScenarioPlaying = true;
-                                                        pair.Value.HasCustomScenarioStarted = false;
-                                                    }
+                                                if (!string.IsNullOrEmpty(animName) &&
+                                                    string.IsNullOrEmpty(animDict))
+                                                {
+                                                    pair.IsCustomScenarioPlaying = true;
+                                                    pair.HasCustomScenarioStarted = false;
                                                 }
                                             }
                                         }
@@ -3443,26 +3315,24 @@ namespace GTANetwork
                                     {
                                         var netHandle = (int)args[0];
                                         var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        lock (Opponents)
-                                            if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        {
+                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                            if (pair != null)
                                             {
-                                                var pair = Opponents.FirstOrDefault(
-                                                    op => op.Value.Character?.Handle == lclHndl.Handle);
-                                                if (pair.Value != null)
-                                                {
-                                                    pair.Value.IsCustomAnimationPlaying = false;
-                                                    pair.Value.CustomAnimationName = null;
-                                                    pair.Value.CustomAnimationDictionary = null;
-                                                    pair.Value.CustomAnimationFlag = 0;
-                                                    pair.Value.IsCustomScenarioPlaying = false;
-                                                    pair.Value.HasCustomScenarioStarted = false;
-                                                    pair.Value.Character.Task.ClearAll();
-                                                }
+                                                pair.IsCustomAnimationPlaying = false;
+                                                pair.CustomAnimationName = null;
+                                                pair.CustomAnimationDictionary = null;
+                                                pair.CustomAnimationFlag = 0;
+                                                pair.IsCustomScenarioPlaying = false;
+                                                pair.HasCustomScenarioStarted = false;
+                                                pair.Character.Task.ClearAll();
                                             }
-                                            else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
-                                            {
-                                                Game.Player.Character.Task.ClearAll();
-                                            }
+                                        }
+                                        else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
+                                        {
+                                            Game.Player.Character.Task.ClearAll();
+                                        }
                                     }
                                     break;
                             }
@@ -3614,26 +3484,24 @@ namespace GTANetwork
                     {
                         var len = msg.ReadInt32();
                         var data = DeserializeBinary<PlayerDisconnect>(msg.ReadBytes(len)) as PlayerDisconnect;
-                        lock (Opponents)
+                        SyncPed target = null;
+                        if (data != null && (target = NetEntityHandler.NetToStreamedItem(data.Id) as SyncPed) != null)
                         {
-                            if (data != null && Opponents.ContainsKey(data.Id))
+                            target.Clear();
+                            NetEntityHandler.StreamOut(target);
+                            lock (Npcs)
                             {
-                                Opponents[data.Id].Clear();
-                                Opponents.Remove(data.Id);
-
-                                lock (Npcs)
+                                foreach (
+                                    var pair in
+                                        new Dictionary<string, SyncPed>(Npcs).Where(
+                                            p => p.Value.Host == data.Id))
                                 {
-                                    foreach (
-                                        var pair in
-                                            new Dictionary<string, SyncPed>(Npcs).Where(
-                                                p => p.Value.Host == data.Id))
-                                    {
-                                        pair.Value.Clear();
-                                        Npcs.Remove(pair.Key);
-                                    }
+                                    pair.Value.Clear();
+                                    Npcs.Remove(pair.Key);
                                 }
                             }
                         }
+                        NetEntityHandler.RemoveByNetHandle(data.Id);
                     }
                     break;
                 case PacketType.ScriptEventTrigger:
@@ -3648,24 +3516,6 @@ namespace GTANetwork
                                     DecodeArgumentListPure(data.Arguments?.ToArray()).ToArray());
                             else
                                 JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
-                        }
-                    }
-                    break;
-                case PacketType.WorldSharingStop:
-                    {
-                        var len = msg.ReadInt32();
-                        var data = DeserializeBinary<PlayerDisconnect>(msg.ReadBytes(len)) as PlayerDisconnect;
-                        if (data == null) return;
-                        lock (Npcs)
-                        {
-                            foreach (
-                                var pair in
-                                    new Dictionary<string, SyncPed>(Npcs).Where(p => p.Value.Host == data.Id)
-                                        .ToList())
-                            {
-                                pair.Value.Clear();
-                                Npcs.Remove(pair.Key);
-                            }
                         }
                     }
                     break;
@@ -3764,6 +3614,7 @@ namespace GTANetwork
                         case NetConnectionStatus.InitiatedConnect:
                             Util.SafeNotify("Connecting...");
                             LocalTeam = -1;
+                            LocalDimension = 0;
                             Game.Player.Character.Weapons.RemoveAll();
                             Game.Player.Character.Health = Game.Player.Character.MaxHealth;
                             Game.Player.Character.Armor = 0;
@@ -3779,7 +3630,7 @@ namespace GTANetwork
                                 Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
                                 return;
                             }
-                            NetEntityHandler.AddEntity(respObj.CharacterHandle, -2);
+                            NetEntityHandler.AddLocalCharacter(respObj.CharacterHandle);
 
                             var confirmObj = Client.CreateMessage();
                             confirmObj.Write((int) PacketType.ConnectionConfirmed);
@@ -3847,13 +3698,7 @@ namespace GTANetwork
                             if (IsOnServer())
                             {
                                 Client.Disconnect("Switching servers.");
-
-                                if (Opponents != null)
-                                {
-                                    Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                    Opponents.Clear();
-                                    Names.Clear();
-                                }
+                                NetEntityHandler.ClearAll();
 
                                 if (Npcs != null)
                                 {
@@ -3903,12 +3748,8 @@ namespace GTANetwork
                             {
                                 Client.Disconnect("Switching servers.");
 
-                                if (Opponents != null)
-                                {
-                                    Opponents.ToList().ForEach(pair => pair.Value.Clear());
-                                    Opponents.Clear();
-                                    Names.Clear();
-                                }
+
+                                NetEntityHandler.ClearAll();
 
                                 if (Npcs != null)
                                 {
@@ -3986,21 +3827,7 @@ namespace GTANetwork
 
             //Client.Recycle(msg);
         }
-
-	    private void ClearOpponents()
-	    {
-			lock (Opponents)
-			{
-				DEBUG_STEP = 41;
-				if (Opponents != null)
-				{
-					DEBUG_STEP = 42;
-					Opponents.ToList().ForEach(pair => pair.Value.Clear());
-					Opponents.Clear();
-                    Names.Clear();
-                }
-			}
-		}
+        
 
 	    private void ClearLocalEntities()
 	    {
@@ -4056,6 +3883,7 @@ namespace GTANetwork
 			Weather = null;
 			Time = null;
 			LocalTeam = -1;
+	        LocalDimension = 0;
 			DEBUG_STEP = 57;
 
 			Game.Player.Character.Position = _vinewoodSign;
@@ -4067,7 +3895,6 @@ namespace GTANetwork
 
 		private void OnLocalDisconnect()
 	    {
-			ClearOpponents();
 			DEBUG_STEP = 43;
 			
 			ClearLocalEntities();
@@ -4087,6 +3914,7 @@ namespace GTANetwork
             JavascriptHook.TextElements.Clear();
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
+		    HasFinishedDownloading = false;
 			DEBUG_STEP = 52;
 
             ClearStats();
@@ -4167,30 +3995,29 @@ namespace GTANetwork
 
                     var data = (VehicleData) ourData;
 
-                    _debugSyncPed.VehicleNetHandle = data.VehicleHandle;
-                    _debugSyncPed.Name = data.Name;
+                    _debugSyncPed.VehicleNetHandle = data.VehicleHandle.Value;
                     _debugSyncPed.LastUpdateReceived = Environment.TickCount;
                     _debugSyncPed.VehiclePosition = data.Position.ToVector();
                     _debugSyncPed.VehicleVelocity = data.Velocity.ToVector();
-                    _debugSyncPed.ModelHash = data.PedModelHash;
-                    _debugSyncPed.VehicleHash = data.VehicleModelHash;
-                    _debugSyncPed.PedArmor = data.PedArmor;
-                    _debugSyncPed.VehicleRPM = data.RPM;
+                    _debugSyncPed.ModelHash = data.PedModelHash.Value;
+                    _debugSyncPed.VehicleHash = data.VehicleModelHash.Value;
+                    _debugSyncPed.PedArmor = data.PedArmor.Value;
+                    _debugSyncPed.VehicleRPM = data.RPM.Value;
                     _debugSyncPed.VehicleRotation =
                         data.Quaternion.ToVector();
-                    _debugSyncPed.PedHealth = data.PlayerHealth;
-                    _debugSyncPed.VehicleHealth = data.VehicleHealth;
-                    _debugSyncPed.VehicleSeat = data.VehicleSeat;
+                    _debugSyncPed.PedHealth = data.PlayerHealth.Value;
+                    _debugSyncPed.VehicleHealth = data.VehicleHealth.Value;
+                    _debugSyncPed.VehicleSeat = data.VehicleSeat.Value;
                     _debugSyncPed.IsInVehicle = true;
-                    _debugSyncPed.Latency = data.Latency;
-                    _debugSyncPed.SteeringScale = data.Steering;
+                    _debugSyncPed.Latency = data.Latency.Value;
+                    _debugSyncPed.SteeringScale = data.Steering.Value;
                     _debugSyncPed.IsVehDead = (data.Flag & (short)VehicleDataFlags.VehicleDead) > 0;
                     _debugSyncPed.IsHornPressed = (data.Flag & (short)VehicleDataFlags.PressingHorn) > 0;
                     _debugSyncPed.Speed = data.Velocity.ToVector().Length();
                     _debugSyncPed.Siren = (data.Flag & (short)VehicleDataFlags.SirenActive) > 0;
                     _debugSyncPed.IsShooting = (data.Flag & (short)VehicleDataFlags.Shooting) > 0;
                     _debugSyncPed.IsAiming = (data.Flag & (short)VehicleDataFlags.Aiming) > 0;
-                    _debugSyncPed.CurrentWeapon = data.WeaponHash;
+                    _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
                     if (data.AimCoords != null)
                         _debugSyncPed.AimCoords = data.AimCoords.ToVector();
 
@@ -4207,18 +4034,17 @@ namespace GTANetwork
                     _debugSyncPed.IsRagdoll = player.IsRagdoll;
 
 
-                    _debugSyncPed.OnFootSpeed = data.Speed;
-                    _debugSyncPed.Name = data.Name;
-                    _debugSyncPed.PedArmor = data.PedArmor;
+                    _debugSyncPed.OnFootSpeed = data.Speed.Value;
+                    _debugSyncPed.PedArmor = data.PedArmor.Value;
                     _debugSyncPed.LastUpdateReceived = Environment.TickCount;
                     _debugSyncPed.Position = data.Position.ToVector();
-                    _debugSyncPed.ModelHash = data.PedModelHash;
+                    _debugSyncPed.ModelHash = data.PedModelHash.Value;
                     _debugSyncPed.Rotation = data.Quaternion.ToVector();
-                    _debugSyncPed.PedHealth = data.PlayerHealth;
+                    _debugSyncPed.PedHealth = data.PlayerHealth.Value;
                     _debugSyncPed.IsInVehicle = false;
                     _debugSyncPed.AimCoords = data.AimCoords.ToVector();
-                    _debugSyncPed.CurrentWeapon = data.WeaponHash;
-                    _debugSyncPed.Latency = data.Latency;
+                    _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
+                    _debugSyncPed.Latency = data.Latency.Value;
                     _debugSyncPed.PedVelocity = data.Velocity.ToVector();
                     _debugSyncPed.IsFreefallingWithParachute = (data.Flag & (int)PedDataFlags.InFreefall) > 0;
                     _debugSyncPed.IsInMeleeCombat = (data.Flag & (int)PedDataFlags.InMeleeCombat) > 0;
