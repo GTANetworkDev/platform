@@ -43,13 +43,13 @@ namespace GTANetwork
 
                 var position = _playerPosition.ToLVector();
 
-                var streamedObjects = streamedItems.OfType<RemoteProp>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedPickups = streamedItems.OfType<RemotePickup>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedBlips = streamedItems.OfType<RemoteBlip>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension).OrderBy(item => (item.Position - _playerPosition).LengthSquared());
+                var streamedObjects = streamedItems.OfType<RemoteProp>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedPickups = streamedItems.OfType<RemotePickup>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedBlips = streamedItems.OfType<RemoteBlip>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
+                var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => (item.Position - _playerPosition).LengthSquared());
 
-                var dimensionLeftovers = streamedPlayers.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension);
+                var dimensionLeftovers = streamedPlayers.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
 
                 lock (_itemsToStreamOut)
                 {
@@ -276,7 +276,7 @@ namespace GTANetwork
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn) StreamOut(veh);
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
         }
 
@@ -300,7 +300,7 @@ namespace GTANetwork
                 {
                     Main.LocalDimension = prop.Dimension.Value;
                 }
-                else if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+                else if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
         }
 
@@ -323,7 +323,7 @@ namespace GTANetwork
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+                if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
         }
 
@@ -347,7 +347,7 @@ namespace GTANetwork
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+                if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
         }
 
@@ -377,7 +377,7 @@ namespace GTANetwork
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn) StreamOut(veh);
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
         }
 
@@ -397,7 +397,7 @@ namespace GTANetwork
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && item.StreamedIn) StreamOut(item);
+                if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
         }
 

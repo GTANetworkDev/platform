@@ -853,7 +853,7 @@ namespace GTANetworkServer
 
         public void setEntityPosition(NetHandle netHandle, Vector3 newPosition)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x06843DA7060A026B, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0, 1);
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x239A3351AC1DA385, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0);
 	        if (doesEntityExist(netHandle))
 	        {
 		        Program.ServerInstance.NetEntityHandler.ToDict()[netHandle.Value].Position = newPosition;
