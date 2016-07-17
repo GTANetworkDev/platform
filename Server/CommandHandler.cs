@@ -108,7 +108,7 @@ namespace GTANetworkServer
 
                     if (model == 0)
                     {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No vehicle model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No vehicle model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + "!");
                         return true;
                     }
 
@@ -121,7 +121,7 @@ namespace GTANetworkServer
 
                     if (model == 0)
                     {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No player model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No player model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + "!");
                         return true;
                     }
 
@@ -134,7 +134,7 @@ namespace GTANetworkServer
 
                     if (model == 0)
                     {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No pickup model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No pickup model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + "!");
                         return true;
                     }
 
@@ -147,7 +147,7 @@ namespace GTANetworkServer
 
                     if (model == 0)
                     {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No weapon model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + " was found!");
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No weapon model named \"" + args[i] + "\" has been found for " + Parameters[i].Name + "!");
                         return true;
                     }
 
