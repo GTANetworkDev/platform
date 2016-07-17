@@ -50,7 +50,7 @@ using System.Threading;
                     }
                     else if (prop.Type == ObjectTypes.Vehicle)
                     {
-                        CreatedEntities.Add(API.createVehicle(prop.Hash, prop.Position, prop.Rotation, 0, 0));
+                        CreatedEntities.Add(API.createVehicle((VehicleHash)prop.Hash, prop.Position, prop.Rotation, 0, 0));
                     }
                 }
             }
