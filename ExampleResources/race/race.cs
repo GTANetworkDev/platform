@@ -15,8 +15,7 @@ public class RaceGamemode : Script
     public RaceGamemode()
     {
         API.onUpdate += onUpdate;
-        API.onPlayerDisconnected += onDisconnect;
-        API.onChatCommand += onChatCommand;
+        API.onPlayerDisconnected += onDisconnect;        
         API.onPlayerFinishedDownload += onPlayerConnect;
         API.onPlayerRespawn += onPlayerRespawn;
         API.onClientEventTrigger += onClientEvent;

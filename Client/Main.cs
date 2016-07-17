@@ -2061,6 +2061,8 @@ namespace GTANetwork
                 MainMenu.Visible = true;
                 World.RenderingCamera = MainMenuCamera;
                 MainMenu.RefreshIndex();
+                Game.Player.Character.MaxHealth = 200;
+                Game.Player.Character.Health = 200;
                 _hasPlayerSpawned = true;
                 Game.FadeScreenIn(1000);
             }
@@ -3889,9 +3891,13 @@ namespace GTANetwork
 			Game.Player.Character.Position = _vinewoodSign;
 
 			Util.SetPlayerSkin(PedHash.Clown01SMY);
-            //Script.Wait(500);
-			//Game.Player.Character.SetDefaultClothes();
-		}
+
+	        Game.Player.Character.MaxHealth = 200;
+	        Game.Player.Character.Health = 200;
+
+	        //Script.Wait(500);
+	        //Game.Player.Character.SetDefaultClothes();
+	    }
 
 		private void OnLocalDisconnect()
 	    {
@@ -3962,6 +3968,7 @@ namespace GTANetwork
             {
                 _debugSyncPed = new SyncPed(player.Model.Hash, player.Position, player.Rotation, false);
                 _debugSyncPed.Debug = true;
+                _debugSyncPed.StreamedIn = true;
             }
 
             if (Game.IsKeyPressed(Keys.NumPad1) && _debugInterval > 0)
@@ -3985,7 +3992,7 @@ namespace GTANetwork
 
                 var ourData = _lastData[0].Item2;
                 _lastData.RemoveAt(0);
-
+                
                 _debugSyncPed.Snapshot = ourData;
 
                 if (ourData is VehicleData)
@@ -4032,8 +4039,6 @@ namespace GTANetwork
                     var data = (PedData) ourData;
 
                     _debugSyncPed.IsRagdoll = player.IsRagdoll;
-
-
                     _debugSyncPed.OnFootSpeed = data.Speed.Value;
                     _debugSyncPed.PedArmor = data.PedArmor.Value;
                     _debugSyncPed.LastUpdateReceived = Environment.TickCount;

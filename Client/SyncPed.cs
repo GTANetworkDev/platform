@@ -1,5 +1,4 @@
-﻿#define DISABLE_SLERP
-using System;
+﻿using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing;
@@ -756,16 +755,8 @@ namespace GTANetwork
 
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
-            if (_lastVehicleRotation.HasValue)
-            {
-                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
-                    _vehicleRotation.ToQuaternion(),
-                    (float) Math.Min(1f, (Environment.TickCount - LastUpdateReceived)/AverageLatency));
-            }
-            else
-            {
-                MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
-            }
+            MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(MainVehicle.Quaternion, _vehicleRotation.ToQuaternion(),
+                Math.Min(1f, latency/(float) AverageLatency));
 #else
             MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
 #endif
@@ -1040,16 +1031,9 @@ namespace GTANetwork
 				0);
 			DEBUG_STEP = 25;
 #if !DISABLE_SLERP
-            if (_lastRotation.HasValue)
-            {
-                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
-                    _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-            }
-            else
-            {
-                Character.Quaternion = _rotation.ToQuaternion();
-            }
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                Math.Min(1f, latency / (float)AverageLatency));
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1089,16 +1073,9 @@ namespace GTANetwork
 			DEBUG_STEP = 25;
 
 #if !DISABLE_SLERP
-            if (_lastRotation.HasValue)
-            {
-                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
-                    _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-            }
-            else
-            {
-                Character.Quaternion = _rotation.ToQuaternion();
-            }
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                Math.Min(1f, latency / (float)AverageLatency));
 #else
 	        Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1257,16 +1234,9 @@ namespace GTANetwork
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
 #if !DISABLE_SLERP
-                if (_lastRotation.HasValue)
-                {
-                    Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
-                        _rotation.ToQuaternion(),
-                        (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-                }
-                else
-                {
-                    Character.Quaternion = _rotation.ToQuaternion();
-                }
+                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                Math.Min(1f, latency / (float)AverageLatency));
 #else
                 Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1359,16 +1329,9 @@ namespace GTANetwork
 					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 #if !DISABLE_SLERP
-            if (_lastRotation.HasValue)
-            {
-                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
-                    _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-            }
-            else
-            {
-                Character.Quaternion = _rotation.ToQuaternion();
-            }
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                Math.Min(1f, latency / (float)AverageLatency));
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1464,16 +1427,9 @@ namespace GTANetwork
 	        if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
 	        {
 #if !DISABLE_SLERP
-                if (_lastRotation.HasValue)
-                {
-                    Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
-                        _rotation.ToQuaternion(),
-                        (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-                }
-                else
-                {
-                    Character.Quaternion = _rotation.ToQuaternion();
-                }
+                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                Math.Min(1f, latency / (float)AverageLatency));
 #else
                 Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1789,6 +1745,7 @@ namespace GTANetwork
             }
             
             LogManager.DebugLog("LASTPOS : " + _lastPosition);
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
 
             if (syncMode == SynchronizationMode.DeadReckoning)
             {
@@ -1799,7 +1756,6 @@ namespace GTANetwork
 
                 if (Main.LagCompensation)
                 {
-                    var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
 
                     target = Vector3.Lerp(PedVelocity, PedVelocity + vdir,
                         latency/((float) AverageLatency));
@@ -1848,16 +1804,8 @@ namespace GTANetwork
 
             DEBUG_STEP = 33;
 #if !DISABLE_SLERP
-            if (_lastRotation.HasValue)
-            {
-                Character.Quaternion = GTA.Math.Quaternion.Slerp(_lastRotation.Value.ToQuaternion(),
-                    _rotation.ToQuaternion(),
-                    (float)Math.Min(1f, (Environment.TickCount - LastUpdateReceived) / AverageLatency));
-            }
-            else
-            {
-                Character.Quaternion = _rotation.ToQuaternion();
-            }
+            Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                Math.Min(1f, latency / (float)AverageLatency));
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
