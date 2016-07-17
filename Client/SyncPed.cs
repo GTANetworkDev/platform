@@ -456,7 +456,7 @@ namespace GTANetwork
                             var dist = (GameplayCamera.Position - Character.Position).Length();
 							var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
 
-							new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
+                            new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
 								Font.ChaletLondon, UIResText.Alignment.Centered)
 							{
 								Outline = true,

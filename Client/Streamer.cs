@@ -49,7 +49,7 @@ namespace GTANetwork
                 var streamedBlips = streamedItems.OfType<RemoteBlip>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
                 var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => (item.Position - _playerPosition).LengthSquared());
 
-                var dimensionLeftovers = streamedPlayers.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
+                var dimensionLeftovers = streamedItems.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
 
                 lock (_itemsToStreamOut)
                 {
@@ -124,7 +124,7 @@ namespace GTANetwork
 
         public void DrawMarkers()
         {
-            var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker).Cast<RemoteMarker>());
+            var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).Cast<RemoteMarker>());
 
             foreach (var marker in markers)
             {
@@ -443,6 +443,7 @@ namespace GTANetwork
                     Rotation = prop.Rotation,
                     ModelHash = prop.ModelHash,
                     EntityType = prop.EntityType,
+                    Dimension = prop.Dimension,
                     Alpha = prop.Alpha,
 
                     StreamedIn = false,
@@ -482,6 +483,7 @@ namespace GTANetwork
 
                     Position = prop.Position,
                     Rotation = prop.Rotation,
+                    Dimension = prop.Dimension,
                     ModelHash = prop.ModelHash,
                     EntityType = 2,
                     Alpha = prop.Alpha,
@@ -522,6 +524,7 @@ namespace GTANetwork
                     Sprite = prop.Sprite,
                     Scale = prop.Scale,
                     Color = prop.Color,
+                    Dimension = prop.Dimension,
                     IsShortRange = prop.IsShortRange,
                     AttachedNetEntity = prop.AttachedNetEntity,
                     Position = prop.Position,
@@ -593,6 +596,7 @@ namespace GTANetwork
                     Scale = prop.Scale,
                     Position = prop.Position,
                     Rotation = prop.Rotation,
+                    Dimension = prop.Dimension,
                     ModelHash = prop.ModelHash,
                     EntityType = (byte)EntityType.Marker,
                     Alpha = prop.Alpha,
@@ -649,6 +653,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = prop.EntityType,
                     Alpha = prop.Alpha,
+                    Dimension = prop.Dimension,
 
                     StreamedIn = true,
                     LocalOnly = false,
@@ -669,6 +674,7 @@ namespace GTANetwork
                 rem.ModelHash = prop.ModelHash;
                 rem.EntityType = prop.EntityType;
                 rem.Alpha = prop.Alpha;
+                rem.Dimension = prop.Dimension;
                 rem.RemoteHandle = netHandle;
             }
             return rem;
@@ -709,6 +715,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = prop.EntityType,
                     Alpha = prop.Alpha,
+                    Dimension = prop.Dimension,
 
                     StreamedIn = false,
                     LocalOnly = false,

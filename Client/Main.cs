@@ -1488,12 +1488,11 @@ namespace GTANetwork
                             ourPed.Alpha = pair.Value.Alpha;
 
                             //var ourSyncPed = GetOpponent(pair.Key);
-                            var ourSyncPed = NetEntityHandler.NetToStreamedItem(pair.Key) as SyncPed;
+                            var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
                             if (ourSyncPed != null)
                             {
                                 NetEntityHandler.CreatePlayer(pair.Key, pair.Value);
-
-
+                                
                                 ourSyncPed.Team = pair.Value.Team;
                                 ourSyncPed.BlipSprite = pair.Value.BlipSprite;
                                 ourSyncPed.BlipColor = pair.Value.BlipColor;
@@ -1502,6 +1501,7 @@ namespace GTANetwork
                                 ourSyncPed.Props = pair.Value.Props;
                                 ourSyncPed.Textures = pair.Value.Textures;
                                 ourSyncPed.Accessories = pair.Value.Accessories;
+                                ourSyncPed.Dimension = pair.Value.Dimension;
                                 if (ourSyncPed.Character != null)
                                 {
                                     ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
