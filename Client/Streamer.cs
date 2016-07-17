@@ -944,7 +944,17 @@ namespace GTANetwork
             if (!model.IsLoaded) model.Request(10000);
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
             var ourVeh = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, data.Position.X, data.Position.Y, data.Position.Z, false, true, false));
-            ourVeh.Rotation = data.Rotation.ToVector();
+
+            LogManager.DebugLog("ROTATION: " + data.Rotation.GetType());
+            if (data.Rotation is Quaternion)
+            {
+                ourVeh.Quaternion = ((Quaternion) data.Rotation).ToQuaternion();
+            }
+            else
+            {
+                ourVeh.Quaternion = data.Rotation.ToVector().ToQuaternion();
+            }
+
             ourVeh.Alpha = (int)data.Alpha;
             ourVeh.FreezePosition = true;
             ourVeh.LodDistance = 3000;

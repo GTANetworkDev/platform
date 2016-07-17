@@ -1220,6 +1220,13 @@ namespace GTANetworkServer
             return ent;
         }
 
+        public NetHandle createObject(int model, Vector3 pos, Quaternion rot)
+        {
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot));
+            ResourceEntities.Remove(ent);
+            return ent;
+        }
+
         public NetHandle createBlip(Vector3 pos)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos));

@@ -70,6 +70,29 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
+        public int CreateProp(int model, Vector3 pos, Quaternion rot)
+        {
+            int localEntityHash = ++EntityCounter;
+            var obj = new EntityProperties();
+            obj.Position = pos;
+            obj.Rotation = rot;
+            obj.ModelHash = model;
+            obj.EntityType = (byte)EntityType.Prop;
+            ServerEntities.Add(localEntityHash, obj);
+
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.Prop;
+            packet.Properties = new EntityProperties();
+            packet.Properties.ModelHash = model;
+            packet.Properties.Rotation = rot;
+            packet.Properties.Position = pos;
+            packet.NetHandle = localEntityHash;
+
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+
+            return localEntityHash;
+        }
+
         public int CreatePickup(int model, Vector3 pos, Vector3 rot, int amount)
         {
             int localEntityHash = ++EntityCounter;

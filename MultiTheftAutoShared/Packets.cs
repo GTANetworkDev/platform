@@ -380,6 +380,7 @@ namespace GTANetworkShared
     }
     
     [ProtoContract]
+    [ProtoInclude(4, typeof(Quaternion))]
     public class Vector3
     {
         [ProtoMember(1)]
@@ -442,16 +443,29 @@ namespace GTANetworkShared
     }
     
     [ProtoContract]
-    public class Quaternion
+    public class Quaternion : Vector3
     {
         [ProtoMember(1)]
-        public float X { get; set; }
-        [ProtoMember(2)]
-        public float Y { get; set; }
-        [ProtoMember(3)]
-        public float Z { get; set; }
-        [ProtoMember(4)]
         public float W { get; set; }
+
+        public Quaternion()
+        { }
+
+        public Quaternion(float x, float y, float z, float w)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+            W = w;
+        }
+
+        public Quaternion(double x, double y, double z, double w)
+        {
+            X = (float)x;
+            Y = (float)y;
+            Z = (float)z;
+            W = (float)w;
+        }
     }
 
     
