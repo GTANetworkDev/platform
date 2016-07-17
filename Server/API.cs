@@ -807,7 +807,7 @@ namespace GTANetworkServer
             Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
         }
 
-        public  void triggerClientEvent(Client player, string eventName, params object[] args)
+        public void triggerClientEvent(Client player, string eventName, params object[] args)
         {
             var packet = new ScriptEventTrigger();
             packet.EventName = eventName;
@@ -822,7 +822,7 @@ namespace GTANetworkServer
                 sendChatMessageToAll("", msg);
         }
 
-        private void sendChatMessageToAll(string sender, string message)
+        public void sendChatMessageToAll(string sender, string message)
         {
             var chatObj = new ChatData()
             {
@@ -839,7 +839,7 @@ namespace GTANetworkServer
                 sendChatMessageToPlayer(player, "", msg);
         }
 
-        private void sendChatMessageToPlayer(Client player, string sender, string message)
+        public void sendChatMessageToPlayer(Client player, string sender, string message)
         {
             var chatObj = new ChatData()
             {

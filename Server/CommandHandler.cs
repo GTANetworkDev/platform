@@ -53,8 +53,21 @@ namespace GTANetworkServer
 
             if (args[0].TrimStart('/').ToLower() != Command.ToLower()) return false;
 
-            var helpText = "~y~USAGE: ~w~/" + Command + " " +
-                           Parameters.Select(param => param.Name).Aggregate((prev, next) => prev + " [" + next + "]");
+            string helpText;
+
+            if (Parameters.Length > 1)
+            {
+                int paramCounter = 0;
+                helpText = "~y~USAGE: ~w~/" + Command + " [" +
+                           Parameters.Skip(1)
+                               .Select(param => param.Name)
+                               .Aggregate((prev, next) => prev + (paramCounter++ == 0 ? "]" : "") + " [" + next + "]") +
+                           (Parameters.Length == 2 ? "]" : "");
+            }
+            else
+            {
+                helpText = "~y~USAGE: ~w~/" + Command;
+            }
 
             if (!string.IsNullOrEmpty(Helptext))
                 helpText = Helptext;

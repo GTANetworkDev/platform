@@ -109,7 +109,7 @@ public class FreeroamScript : Script
     }
 
     [Command("props")]
-    public void SetPedClothesCommand(Client sender, int slot, int drawable, int texture)
+    public void SetPedAccessoriesCommand(Client sender, int slot, int drawable, int texture)
     {
         API.setPlayerAccessory(sender, slot, drawable, texture);
         API.sendChatMessageToPlayer(sender, "Props applied successfully!");
@@ -146,7 +146,7 @@ public class FreeroamScript : Script
     }
 
     [Command("anim", "~y~USAGE: ~w~/anim [animation]\n" +
-                     "~y~USAGE: ~w~/anim help for animation list.\n"
+                     "~y~USAGE: ~w~/anim help for animation list.\n" +
                      "~y~USAGE: ~w~/anim stop to stop current animation.")]
     public void SetPlayerAnim(Client sender, string animation)
     {
@@ -193,49 +193,33 @@ public class FreeroamScript : Script
     [Command("car")]
     public void SpawnCarCommand(Client sender, VehicleHash model)
     {
-        var vehModel = API.vehicleNameToModel(model);
-        if (vehModel == 0)
+        var rot = API.getEntityRotation(sender.CharacterHandle);
+        var veh = API.createVehicle(model, sender.Position, new Vector3(0, 0, rot.Z), 0, 0);
+
+        if (VehicleHistory.ContainsKey(sender))
         {
-            API.sendChatMessageToPlayer(sender, "No such model found!");
+            VehicleHistory[sender].Add(veh);
+            if (VehicleHistory[sender].Count > 3)
+            {
+                API.deleteEntity(VehicleHistory[sender][0]);
+                VehicleHistory[sender].RemoveAt(0);
+            }
         }
         else
         {
-            var rot = API.getEntityRotation(sender.CharacterHandle);
-            var veh = API.createVehicle(vehModel, sender.Position, new Vector3(0, 0, rot.Z), 0, 0);
-
-            if (VehicleHistory.ContainsKey(sender))
-            {
-                VehicleHistory[sender].Add(veh);
-                if (VehicleHistory[sender].Count > 3)
-                {
-                    API.deleteEntity(VehicleHistory[sender][0]);
-                    VehicleHistory[sender].RemoveAt(0);
-                }
-            }
-            else
-            {
-                VehicleHistory.Add(sender, new List<NetHandle> { veh });
-            }
-
-            var start = Environment.TickCount;
-            while (!API.doesEntityExistForPlayer(sender, veh) && Environment.TickCount - start < 1000) {}
-            API.setPlayerIntoVehicle(sender, veh, -1);
+            VehicleHistory.Add(sender, new List<NetHandle> { veh });
         }
+
+        var start = Environment.TickCount;
+        while (!API.doesEntityExistForPlayer(sender, veh) && Environment.TickCount - start < 1000) {}
+        API.setPlayerIntoVehicle(sender, veh, -1);        
     }
 
     [Command("skin")]
     public void ChangeSkinCommand(Client sender, PedHash model)
     {
-        var vehModel = API.pedNameToModel(model);
-        if (vehModel == 0)
-        {
-            API.sendChatMessageToPlayer(sender, "No such model found!");
-        }
-        else
-        {
-            API.setPlayerSkin(sender, vehModel);
-            API.sendNativeToPlayer(sender, 0x45EEE61580806D63, sender.CharacterHandle);
-        }
+        API.setPlayerSkin(sender, model);
+        API.sendNativeToPlayer(sender, 0x45EEE61580806D63, sender.CharacterHandle);        
     }
 
     [Command("pic")]

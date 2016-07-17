@@ -581,6 +581,7 @@ namespace GTANetworkServer
                     Gamemode = null;
                 }
 
+                if (ourRes.MapEntities != null)
                 foreach (var entity in ourRes.MapEntities)
                 {
                     PublicAPI.deleteEntity(entity);
