@@ -55,8 +55,6 @@ namespace GTANetwork
 
         public static void InvokeServerEvent(string eventName, object[] arguments)
         {
-            LogManager.DebugLog("SERVER EVENT TRIGGERED: " + eventName + " WITH ARGUMENTS " + arguments.Aggregate((prev, next) => prev + ", " + next));
-            
             ThreadJumper.Add(() =>
             {
                 lock (ScriptEngines) ScriptEngines.ForEach(en => en.Engine.Script.API.invokeServerEvent(eventName, arguments));
