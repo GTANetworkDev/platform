@@ -232,6 +232,7 @@ namespace GTANetwork
 
         public int EntityToNet(int entityHandle)
         {
+            if (entityHandle == 0) return 0;
             lock (ClientMap)
             {
                 var ourItem = ClientMap.FirstOrDefault(item =>
@@ -834,6 +835,9 @@ namespace GTANetwork
 
             var veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
             LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null));
+
+            if (veh == null || !veh.Exists()) return;
+
             veh.Rotation = data.Rotation.ToVector();
             veh.IsInvincible = true;
             data.LocalHandle = veh.Handle;
