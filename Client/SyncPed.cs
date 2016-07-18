@@ -1711,6 +1711,8 @@ namespace GTANetwork
 
         public static Ped GetResponsiblePed(Vehicle veh)
         {
+            if (veh == null || veh.Handle == 0 || !veh.Exists()) return new Ped(0);
+
             if (veh.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle != 0) return veh.GetPedOnSeat(GTA.VehicleSeat.Driver);
 
             for (int i = 0; i < veh.PassengerSeats; i++)

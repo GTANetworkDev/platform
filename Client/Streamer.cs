@@ -825,6 +825,7 @@ namespace GTANetwork
 
         private void StreamInVehicle(RemoteVehicle data)
         {
+            if (data == null || (object) data.Position == null || (object) data.Rotation == null) return;
             var model = new Model(data.ModelHash);
             if (model == null || !model.IsValid || !model.IsInCdImage) return;
             LogManager.DebugLog("CREATING VEHICLE FOR NETHANDLE " + data.RemoteHandle);

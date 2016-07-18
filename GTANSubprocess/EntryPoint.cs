@@ -76,6 +76,7 @@ namespace GTANetwork
                             wc.DownloadFile(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/files", "tempstorage\\files.zip");
                             using (var zipfile = ZipFile.Read("tempstorage\\files.zip"))
                             {
+                                zipfile.ParallelDeflateThreshold = -1; // http://stackoverflow.com/questions/15337186/dotnetzip-badreadexception-on-extract
                                 foreach (var entry in zipfile)
                                 {
                                     entry.Extract("bin", ExtractExistingFileAction.OverwriteSilently);
