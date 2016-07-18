@@ -3897,9 +3897,6 @@ namespace GTANetwork
 	        Game.Player.Character.MaxHealth = 200;
 	        Game.Player.Character.Health = 200;
 
-	        //Script.Wait(500);
-	        //Game.Player.Character.SetDefaultClothes();
-	    }
             Game.Player.Character.FreezePosition = false;
             Game.Player.IsInvincible = false;
             Game.Player.Character.HasCollision = true;
