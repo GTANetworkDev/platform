@@ -14,8 +14,14 @@ public class PennedInMaster : Script
 		API.onPlayerDeath += onPlayerDeath;
 		API.onPlayerConnected += playerJoined;
 		API.onResourceStart += resourceStart;
+		API.onPlayerRespawn += respawn;
 
 		API.onUpdate += update;
+	}
+
+	public void respawn(Client player)
+	{
+		API.setPlayerToSpectator(player);
 	}
 
 	public void resourceStart(object sender, EventArgs e)
@@ -66,11 +72,15 @@ public class PennedInMaster : Script
 
 			var availableCars = Enum.GetValues(typeof(VehicleHash)).Cast<VehicleHash>().ToList();
 
-			var ourCar = availableCars[randgen.Next(availableCars.Count)];
+			//var ourCar = availableCars[randgen.Next(availableCars.Count)];
+			var ourCar = VehicleHash.Tampa;
 
 			API.setEntityPosition(player.CharacterHandle, pos);
+
 			var veh = API.createVehicle(ourCar, pos, new Vector3(), randgen.Next(160), randgen.Next(160));
+
 			var start = Environment.TickCount;
+
 			while (!API.doesEntityExistForPlayer(player, veh) && Environment.TickCount - start < 1000) {}
 
 			API.triggerClientEvent(player, "pennedin_roundstart", CurrentSpherePosition, CurrentSphereScale);
@@ -167,8 +177,14 @@ public class PennedInMaster : Script
 	public void onPlayerDeath(Client player, NetHandle killer, int weapon)
 	{
 		API.sendNotificationToAll("~b~~h~" + player.Name + "~h~~w~ has died!");
-		Survivors.Remove(player);
-		API.setPlayerToSpectator(player);
+		Survivors.Remove(player);		
+
+		if (Survivors.Count == 1)
+		{
+			API.sendChatMessageToAll(Survivors[0].Name + " has won! Restarting round in 15 seconds...");			
+			API.sleep(15000);
+			StartRound();
+		}
 
 		if (Survivors.Count == 0)
 		{

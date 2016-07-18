@@ -630,7 +630,7 @@ namespace GTANetwork
 						MainVehicle.PositionNoOffset = gPos;
                         MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
                     }
-				}
+                }
 				return true;
 			}
 		    return false;
@@ -1626,6 +1626,10 @@ namespace GTANetwork
                 float hRange = IsInVehicle ? 100f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
+
+                if (CrossReference.EntryPoint.CurrentSpectatingPlayer == this ||
+                    (Character != null && CrossReference.EntryPoint.SpectatingEntity == Character.Handle))
+                    inRange = true;
 
                 DEBUG_STEP = 1;
                 

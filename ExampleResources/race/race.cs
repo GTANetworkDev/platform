@@ -8,8 +8,6 @@ using GTANetworkServer;
 using GTANetworkShared;
 using System.Threading;
 
-
-
 public class RaceGamemode : Script
 {
     public RaceGamemode()

@@ -2011,10 +2011,10 @@ namespace GTANetwork
         private Vehicle _debugVehicle;
         private bool _lastSpectating;
         private int _currentSpectatingPlayerIndex;
-        private SyncPed _currentSpectatingPlayer;
+        public SyncPed CurrentSpectatingPlayer;
         private Vector3 _lastWaveReset;
         public static DateTime LastCarEnter;
-        private int _debugPed;
+        private float _debugPed;
         private Dictionary<int, int> _debugSettings = new Dictionary<int, int>(); 
 
         // netstats
@@ -2564,7 +2564,7 @@ namespace GTANetwork
                 Game.Player.IsInvincible = false;
                 Game.Player.Character.HasCollision = true;
                 SpectatingEntity = 0;
-                _currentSpectatingPlayer = null;
+                CurrentSpectatingPlayer = null;
                 _currentSpectatingPlayerIndex = 0;
             }
 
@@ -2572,23 +2572,23 @@ namespace GTANetwork
             {
                 Game.Player.Character.PositionNoOffset = new Prop(SpectatingEntity).Position;
             }
-            else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed) op).Character != null) > 0)
+            else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed) op).Character != null) > 0)
             {
-                _currentSpectatingPlayer = NetEntityHandler.ClientMap.Where(op => op is SyncPed && ((SyncPed)op).Character != null).ElementAt(_currentSpectatingPlayerIndex % NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed)op).Character != null)) as SyncPed;
+                CurrentSpectatingPlayer = NetEntityHandler.ClientMap.Where(op => op is SyncPed && ((SyncPed)op).Character != null).ElementAt(_currentSpectatingPlayerIndex % NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed)op).Character != null)) as SyncPed;
             }
-            else if (IsSpectating && SpectatingEntity == 0 && _currentSpectatingPlayer != null)
+            else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer != null)
             {
-                Game.Player.Character.PositionNoOffset = _currentSpectatingPlayer.Character.Position;
+                Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position;
 
                 if (Game.IsControlJustPressed(0, Control.PhoneLeft))
                 {
                     _currentSpectatingPlayerIndex--;
-                    _currentSpectatingPlayer = null;
+                    CurrentSpectatingPlayer = null;
                 }
                 else if (Game.IsControlJustPressed(0, Control.PhoneRight))
                 {
                     _currentSpectatingPlayerIndex++;
-                    _currentSpectatingPlayer = null;
+                    CurrentSpectatingPlayer = null;
                 }
             }
 
@@ -3900,6 +3900,13 @@ namespace GTANetwork
 	        //Script.Wait(500);
 	        //Game.Player.Character.SetDefaultClothes();
 	    }
+            Game.Player.Character.FreezePosition = false;
+            Game.Player.IsInvincible = false;
+            Game.Player.Character.HasCollision = true;
+
+            //Script.Wait(500);
+            //Game.Player.Character.SetDefaultClothes();
+        }
 
 		private void OnLocalDisconnect()
 	    {

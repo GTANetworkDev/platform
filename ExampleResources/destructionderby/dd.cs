@@ -19,7 +19,7 @@ public class DDGamemode : Script
         Objects = new List<NetHandle>();
         LoadRaces();
 
-        API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
+        API.consoleOutput("Destruction Derby gamemode started! Loaded " + AvailableRaces.Count + " races.");
 
         StartVote();
 
@@ -30,15 +30,22 @@ public class DDGamemode : Script
         API.onPlayerRespawn += onPlayerRespawn;
     }
 
-    public bool IsRaceStarting { get; set; }
     public bool IsRaceOngoing { get; set; }
     public List<Opponent> Opponents { get; set; }
     public Race CurrentRace { get; set; }
     public List<Race> AvailableRaces { get; set; }
+    public List<Vector3> CurrentRaceCheckpoints { get; set; }
+    public Dictionary<long, int> RememberedBlips { get; set; }
     public DateTime RaceStart { get; set; }
     public List<NetHandle> Objects { get; set; }
+    public List<Thread> ActiveThreads { get; set; }    
+    public int RaceStartCountdown { get; set; }
+    public DateTime RaceTimer { get; set; }
 
     // Voting
+    public int TimeLeft { get; set; }
+    public int VoteEnd { get; set; }
+    public DateTime LastSecond { get; set; }
     public DateTime VoteStart { get; set; }
     public List<Client> Voters { get; set; }
     public Dictionary<int, int> Votes { get; set; }
@@ -66,6 +73,66 @@ public class DDGamemode : Script
 
     public void onUpdate(object sender, EventArgs e)
     {
+        if (DateTime.Now.Subtract(LastSecond).TotalMilliseconds > 1000)
+        {
+            LastSecond = DateTime.Now;
+            if (TimeLeft > 0)
+            {
+                TimeLeft--;
+
+                if (TimeLeft == 0)
+                {
+                    if (!IsVoteActive())
+                        StartVote();
+                }
+                else if (TimeLeft == 30)
+                {
+                    API.sendChatMessageToAll("Vote for next map will start in 30 seconds!");
+                }
+                else if (TimeLeft == 59)
+                {
+                    API.sendChatMessageToAll("Vote for next map will start in 60 seconds!");
+                }
+            }
+
+            if (RaceStartCountdown > 0)
+            {
+                RaceStartCountdown--;
+
+                if (RaceStartCountdown == 3)
+                {
+                    API.triggerClientEventForAll("startRaceCountdown");
+                }
+                else if (RaceStartCountdown == 0)
+                {
+                    IsRaceOngoing = true;
+
+                    lock (Opponents)
+                    foreach (var opponent in Opponents)
+                        {
+                            API.setEntityPositionFrozen(opponent.Client, opponent.Vehicle, false);
+                            opponent.HasStarted = true;
+                        }
+
+                    RaceTimer = DateTime.Now;
+                }
+            }
+
+            if (VoteEnd > 0)
+            {
+                VoteEnd--;
+                if (VoteEnd == 0)
+                {
+                    EndRace();
+                    var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
+                    API.sendChatMessageToAll("Race ~b~" + raceWon.Name + "~w~ has won the vote!");
+
+                    API.sleep(1000);
+                    StartRace(raceWon);
+                }
+            }
+        }
+
         if (!IsRaceOngoing) return;
 
         lock (Opponents)
@@ -106,7 +173,7 @@ public class DDGamemode : Script
         lock (Opponents) Opponents.Remove(curOp);
     }
 
-    public void onChatCommand(Client sender, string message, CancelEventArgs e)
+    public void onChatCommand(Client sender, string message)
     {
         if (message == "/votemap" && !IsVoteActive() && (!IsRaceStarting || DateTime.UtcNow.Subtract(RaceStart).TotalSeconds > 60))
         {
@@ -162,7 +229,15 @@ public class DDGamemode : Script
 
         if (DateTime.Now.Subtract(VoteStart).TotalSeconds < 60)
         {
-            API.sendNotificationToPlayer(player, GetVoteHelpString());
+            object[] argumentList = new object[11];
+
+            argumentList[0] = AvailableChoices.Count;
+            for (var i = 0; i < AvailableChoices.Count; i++)
+            {
+                argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
+            }
+
+            API.triggerClientEvent(player, "race_startVotemap", argumentList);
         }
     }
 
@@ -191,12 +266,12 @@ public class DDGamemode : Script
 
         Opponents.ForEach(op =>
         {
+            op.HasFinished = false;
+            op.CheckpointsPassed = 0;
             if (!op.Vehicle.IsNull)
             {
                 API.deleteEntity(op.Vehicle);
             }
-
-            API.unspectatePlayer(op.Client);
         });
 
         foreach (var ent in Objects)
@@ -218,29 +293,12 @@ public class DDGamemode : Script
             SetUpPlayerForRace(clients[i], CurrentRace, true, i);
         }
 
+        CurrentRaceCheckpoints = race.Checkpoints.ToList();
         RaceStart = DateTime.UtcNow;
 
         API.consoleOutput("RACE: Starting race " + race.Name);
-        IsRaceStarting = true;
 
-        var t = new Thread((ThreadStart)delegate
-        {
-            Thread.Sleep(10000);
-            IsRaceStarting = false;
-            API.triggerClientEventForAll("startRaceCountdown");
-            Thread.Sleep(3000);
-            IsRaceOngoing = true;
-
-            var nat = 0x428CA6DBD1094446;
-
-            lock (Opponents)
-            foreach (var opponent in Opponents)
-                {
-                    API.setEntityPositionFrozen(opponent.Client, opponent.Vehicle, false);
-                }
-        });
-        t.IsBackground = true;
-        t.Start();
+        RaceStartCountdown = 13;
     }
 
     private void EndRace()
@@ -308,52 +366,27 @@ public class DDGamemode : Script
         Voters = new List<Client>();
         AvailableChoices = new Dictionary<int, Race>();
 
-        var build = new StringBuilder();
-        build.Append("Type /vote [id] to vote for the next race! The options are:");
-
         var counter = 1;
         foreach (var race in pickedRaces)
         {
-            build.Append("\n" + counter + ": " + race.Name);
             Votes.Add(counter, 0);
             AvailableChoices.Add(counter, race);
             counter++;
         }
 
-        VoteStart = DateTime.Now;
-        API.sendNotificationToAll(build.ToString());
+        object[] argumentList = new object[11];
 
-        var t = new Thread((ThreadStart)delegate
+        argumentList[0] = AvailableChoices.Count;
+        for (var i = 0; i < AvailableChoices.Count; i++)
         {
-            Thread.Sleep(60 * 1000);
-            EndRace();
-            var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
-            API.sendNotificationToAll(raceWon.Name + " has won the vote!");
-
-            Thread.Sleep(1000);
-            StartRace(raceWon);
-        });
-        t.IsBackground = true;
-        t.Start();
-    }
-
-    private string GetVoteHelpString()
-    {
-        if (DateTime.Now.Subtract(VoteStart).TotalSeconds > 60)
-            return null;
-
-        var build = new StringBuilder();
-        build.Append("Type /vote [id] to vote for the next race! The options are:");
-
-        foreach (var race in AvailableChoices)
-        {
-            build.Append("\n" + race.Key + ": " + race.Value.Name);
+            argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
         }
 
-        return build.ToString();
+        API.triggerClientEventForAll("race_startVotemap", argumentList);
+
+        VoteStart = DateTime.Now;
+        VoteEnd = 60;
     }
-
-
 }
 
 
