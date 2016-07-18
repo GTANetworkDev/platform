@@ -428,6 +428,11 @@ namespace GTANetworkShared
             return new Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
         }
 
+        public override string ToString()
+        {
+            return string.Format("X: {0} Y: {1} Z: {2}", X, Y, Z);
+        }
+
         public float LengthSquared()
         {
             return X * X + Y * Y + Z * Z;
@@ -450,6 +455,11 @@ namespace GTANetworkShared
 
         public Quaternion()
         { }
+
+        public override string ToString()
+        {
+            return string.Format("X: {0} Y: {1} Z: {2} W: {3}", X, Y, Z, W);
+        }
 
         public Quaternion(float x, float y, float z, float w)
         {
