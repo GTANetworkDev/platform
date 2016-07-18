@@ -642,8 +642,9 @@ namespace GTANetwork
 
             foreach (var ped in list)
             {
-                if (!_serverPlayers.Dictionary.ContainsKey(ped.Name ?? "<Unknown>"))
-                    _serverPlayers.Dictionary.Add(ped.Name == null ? "<Unknown>" : ped.Name, ((int)(ped.Latency * 1000)) + "ms");
+                if (string.IsNullOrEmpty(ped.Name)) continue;
+                if (!_serverPlayers.Dictionary.ContainsKey(ped.Name))
+                    _serverPlayers.Dictionary.Add(ped.Name, ((int)(ped.Latency * 1000)) + "ms");
             }
         }
 
@@ -4688,7 +4689,10 @@ namespace GTANetwork
         public void TerminateGameScripts()
         {
             if (PlayerSettings.DisableRockstarEditor)
+            {
                 Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "replay_controller");
+                Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "selector");
+            }
 
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "abigail1");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "abigail2");
@@ -5337,7 +5341,6 @@ namespace GTANetwork
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "script_metrics");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "sctv");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "sc_lb_global_block");
-            Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "selector");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "selector_example");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "selling_short_1");
             Function.Call(Hash.TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME, "selling_short_2");
