@@ -102,9 +102,12 @@ namespace GTANetworkServer
         {
             onResourceStop?.Invoke(this, EventArgs.Empty);
 
-            foreach (var entity in ResourceEntities)
+            lock (ResourceEntities)
             {
-                deleteEntity(entity);
+                for (int i = ResourceEntities.Count - 1; i >= 0; i--)
+                {
+                    deleteEntityInternal(ResourceEntities[i]);
+                }
             }
         }
 
@@ -912,6 +915,18 @@ namespace GTANetworkServer
             }
         }
 
+        public void freezePlayer(Client player, bool freeze)
+        {
+            if (player.IsInVehicle)
+            {
+                Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CurrentVehicle.Value), freeze);
+            }
+            else
+            {
+                Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CharacterHandle.Value), freeze);
+            }
+        }
+
 	    public void setEntityRotation(NetHandle netHandle, Vector3 newRotation)
 	    {
 			Program.ServerInstance.SendNativeCallToAllPlayers(0x8524A8B0171D5E07, new EntityArgument(netHandle.Value), newRotation.X, newRotation.Y, newRotation.Z, 2, 1);
@@ -946,6 +961,9 @@ namespace GTANetworkServer
         public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), seat);
+
+            player.IsInVehicle = true;
+            player.CurrentVehicle = vehicle;
         }
 
         public void warpPlayerOutOfVehicle(Client player, NetHandle vehicle)
@@ -1194,6 +1212,72 @@ namespace GTANetworkServer
             Program.ServerInstance.GetNativeCallFromPlayer(player, salt, 0x2202A3F42C8E5F79, new BooleanArgument(), callback, new LocalPlayerArgument());
         }
 
+        public void setMarkerType(NetHandle marker, int type)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).MarkerType = type;
+
+                var delta = new Delta_MarkerProperties();
+                delta.MarkerType = type;
+                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
+        public void setMarkerPosition(NetHandle marker, Vector3 position)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Position = position;
+
+                var delta = new Delta_MarkerProperties();
+                delta.Position = position;
+                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
+        public void setMarkerRotation(NetHandle marker, Vector3 rotation)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Rotation = rotation;
+
+                var delta = new Delta_MarkerProperties();
+                delta.Rotation = rotation;
+                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
+        public void setMarkerScale(NetHandle marker, Vector3 scale)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Scale = scale;
+
+                var delta = new Delta_MarkerProperties();
+                delta.Scale = scale;
+                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
+        public void setMarkerColor(NetHandle marker, int alpha, int red, int green, int blue)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Alpha = (byte) alpha;
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Red = (byte) red;
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Green = (byte) green;
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Blue = (byte) blue;
+
+                var delta = new Delta_MarkerProperties();
+                delta.Alpha = (byte) alpha;
+                delta.Red = (byte)red;
+                delta.Green = (byte)green;
+                delta.Blue = (byte)blue;
+                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
         public NetHandle getPlayerVehicle(Client player)
         {
             if (player.IsInVehicle)
@@ -1209,28 +1293,28 @@ namespace GTANetworkServer
         public NetHandle createVehicle(VehicleHash model, Vector3 pos, Vector3 rot, int color1, int color2)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateVehicle((int)model, pos, rot, color1, color2));
-            ResourceEntities.Remove(ent);
+            lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
         public NetHandle createObject(int model, Vector3 pos, Vector3 rot)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot));
-            ResourceEntities.Remove(ent);
+            lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
         public NetHandle createObject(int model, Vector3 pos, Quaternion rot)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot));
-            ResourceEntities.Remove(ent);
+            lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
         public NetHandle createBlip(Vector3 pos)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos));
-            ResourceEntities.Remove(ent);
+            lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
@@ -1238,14 +1322,14 @@ namespace GTANetworkServer
         {
             if (entity.IsNull || !entity.Exists()) throw new ArgumentNullException(nameof(entity));
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(entity));
-            ResourceEntities.Remove(ent);
+            lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
         public NetHandle createPickup(PickupHash pickupHash, Vector3 pos, Vector3 rot, int amount)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreatePickup((int)pickupHash, pos, rot, amount));
-            ResourceEntities.Remove(ent);
+            lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
@@ -1253,14 +1337,19 @@ namespace GTANetworkServer
             int r, int g, int b)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b));
-            ResourceEntities.Remove(ent);
+            lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
+        }
+
+        private void deleteEntityInternal(NetHandle netHandle)
+        {
+            Program.ServerInstance.NetEntityHandler.DeleteEntity(netHandle.Value);
         }
 
         public void deleteEntity(NetHandle netHandle)
         {
-            Program.ServerInstance.NetEntityHandler.DeleteEntity(netHandle.Value);
-            ResourceEntities.Remove(netHandle);
+            deleteEntityInternal(netHandle);
+            lock (ResourceEntities) ResourceEntities.Remove(netHandle);
         }
 
 #endregion

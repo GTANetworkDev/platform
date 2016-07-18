@@ -328,10 +328,10 @@ namespace GTANetwork
             }
         }
 
-        public void UpdateMarker(int netHandle, Delta_MarkerProperties prop)
+        public void UpdateMarker(int netHandle, Delta_MarkerProperties prop, bool localOnly = false)
         {
             IStreamedItem item = null;
-            if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
+            if (prop == null || (item = NetToStreamedItem(netHandle, local: localOnly)) == null) return;
             var veh = item as RemoteMarker;
             if (prop.Direction != null) veh.Direction = prop.Direction;
             if (prop.MarkerType != null) veh.MarkerType = prop.MarkerType.Value;

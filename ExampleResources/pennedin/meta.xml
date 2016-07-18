@@ -1,0 +1,7 @@
+<meta>
+    <info name="Penned In" author="Guadmaz" type="gamemode" />
+    
+    <script src="pennedin.cs" type="server" lang="csharp" />
+    <script src="movement.cs" type="server" lang="csharp" />
+    <script src="marker_controller.js" type="client" lang="javascript" />    
+</meta>

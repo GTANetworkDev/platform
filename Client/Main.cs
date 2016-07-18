@@ -3514,7 +3514,7 @@ namespace GTANetwork
                             DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
                         if (data != null)
                         {
-                            if (data.Arguments != null)
+                            if (data.Arguments != null && data.Arguments.Count > 0)
                                 JavascriptHook.InvokeServerEvent(data.EventName,
                                     DecodeArgumentListPure(data.Arguments?.ToArray()).ToArray());
                             else
@@ -3890,6 +3890,7 @@ namespace GTANetwork
 			DEBUG_STEP = 57;
 
 			Game.Player.Character.Position = _vinewoodSign;
+	        Game.Player.Character.FreezePosition = false;
 
 			Util.SetPlayerSkin(PedHash.Clown01SMY);
 

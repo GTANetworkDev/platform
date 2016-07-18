@@ -55,6 +55,8 @@ namespace GTANetwork
 
         public static void InvokeServerEvent(string eventName, object[] arguments)
         {
+            LogManager.DebugLog("SERVER EVENT TRIGGERED: " + eventName + " WITH ARGUMENTS " + arguments.Aggregate((prev, next) => prev + ", " + next));
+            
             ThreadJumper.Add(() =>
             {
                 lock (ScriptEngines) ScriptEngines.ForEach(en => en.Engine.Script.API.invokeServerEvent(eventName, arguments));
@@ -355,6 +357,11 @@ namespace GTANetwork
             return new LocalHandle(Game.Player.Character.Handle);
         }
 
+        public Vector3 getEntityPosition(LocalHandle entity)
+        {
+            return new Prop(entity.Value).Position.ToLVector();
+        }
+
         public bool isPlayerInAnyVehicle(LocalHandle player)
         {
             return new Ped(player.Value).IsInVehicle();
@@ -384,6 +391,21 @@ namespace GTANetwork
         public void sendNotification(string text)
         {
             Util.SafeNotify(text);
+        }
+
+        public void displaySubtitle(string text)
+        {
+            UI.ShowSubtitle(text);
+        }
+
+        public void displaySubtitle(string text, double duration)
+        {
+            UI.ShowSubtitle(text, (int) duration);
+        }
+
+        public string formatTime(double ms, string format)
+        {
+            return TimeSpan.FromMilliseconds(ms).ToString(format);
         }
 
         public void setPlayerInvincible(bool invinc)
@@ -424,6 +446,11 @@ namespace GTANetwork
         public LocalHandle getPlayerVehicle(LocalHandle player)
         {
             return new LocalHandle(new Ped(player.Value).CurrentVehicle?.Handle ?? 0);
+        }
+
+        public void explodeVehicle(LocalHandle vehicle)
+        {
+            new Vehicle(vehicle.Value).Explode();
         }
 
         public LocalHandle getPlayerByName(string name)
@@ -484,6 +511,22 @@ namespace GTANetwork
             return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b));
         }
 
+        public void setMarkerPosition(LocalHandle marker, Vector3 pos)
+        {
+            var delta = new Delta_MarkerProperties();
+            delta.Position = pos;
+            
+            Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
+        }
+
+        public void setMarkerScale(LocalHandle marker, Vector3 scale)
+        {
+            var delta = new Delta_MarkerProperties();
+            delta.Scale = scale;
+
+            Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
+        }
+
         public void deleteMarker(LocalHandle handle)
         {
             Main.NetEntityHandler.DeleteLocalMarker(handle.Value);
@@ -492,6 +535,21 @@ namespace GTANetwork
         public string getResourceFilePath(string fileName)
         {
             return FileTransferId._DOWNLOADFOLDER_ + ParentResourceName + "\\" + fileName;
+        }
+
+        public Vector3 lerpVector(Vector3 start, Vector3 end, double currentTime, double duration)
+        {
+            return GTA.Math.Vector3.Lerp(start.ToVector(), end.ToVector(), (float) (currentTime/duration)).ToLVector();
+        }
+
+        public double lerpFloat(double start, double end, double currentTime, double duration)
+        {
+            return Util.LinearFloatLerp((float) start, (float) end, (int) currentTime, (int) duration);
+        }
+
+        public bool isInRangeOf(Vector3 entity, Vector3 destination, double range)
+        {
+            return (entity - destination).LengthSquared() < (range*range);
         }
         
         public void dxDrawTexture(string path, Point pos, Size size, int id = 60)

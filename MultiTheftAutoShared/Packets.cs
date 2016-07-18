@@ -390,6 +390,8 @@ namespace GTANetworkShared
         [ProtoMember(3)]
         public float Z { get; set; }
 
+        private static Random randInstance = new Random();
+
         public Vector3(float x, float y, float z)
         {
             X = x;
@@ -406,26 +408,40 @@ namespace GTANetworkShared
 
         public static bool operator ==(Vector3 left, Vector3 right)
         {
+            if ((object) left == null && (object) right == null) return true;
             if ((object)left == null || (object)right == null) return false;
             return left.X == right.X && left.Y == right.Y && left.Z == right.Z;
         }
 
         public static bool operator !=(Vector3 left, Vector3 right)
         {
+            if ((object)left == null && (object)right == null) return false;
             if ((object)left == null || (object)right == null) return true;
             return left.X != right.X || left.Y != right.Y || left.Z != right.Z;
         }
 
         public static Vector3 operator -(Vector3 left, Vector3 right)
         {
-            if ((object)left == null || (object)right == null) return new Vector3(); ;
+            if ((object)left == null || (object)right == null) return new Vector3();
             return new Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
         }
 
         public static Vector3 operator +(Vector3 left, Vector3 right)
         {
-            if ((object)left == null || (object)right == null) return new Vector3(); ;
+            if ((object)left == null || (object)right == null) return new Vector3();
             return new Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+        }
+
+        public static Vector3 operator *(Vector3 left, float right)
+        {
+            if ((object)left == null) return new Vector3();
+            return new Vector3(left.X * right, left.Y * right, left.Z * right);
+        }
+
+        public static Vector3 operator /(Vector3 left, float right)
+        {
+            if ((object)left == null) return new Vector3();
+            return new Vector3(left.X / right, left.Y / right, left.Z / right);
         }
 
         public override string ToString()
@@ -441,6 +457,32 @@ namespace GTANetworkShared
         public float Length()
         {
             return (float)Math.Sqrt(LengthSquared());
+        }
+
+        public void Normalize()
+        {
+            var len = Length();
+
+            X = X/len;
+            Y = Y/len;
+            Z = Z/len;
+        }
+
+        public static Vector3 RandomXY()
+        {
+            Vector3 v = new Vector3();
+            double radian = randInstance.NextDouble()*2*Math.PI;
+
+            v.X = (float) Math.Cos(radian);
+            v.Y = (float) Math.Sin(radian);
+            v.Normalize();
+
+            return v;
+        }
+
+        public Vector3 Around(float distance)
+        {
+            return this + RandomXY()*distance;
         }
 
         public Vector3()
