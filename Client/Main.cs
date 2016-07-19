@@ -921,6 +921,15 @@ namespace GTANetwork
                 }
 
                 {
+                    var debugItem = new UIMenuCheckboxItem("Entity Debug Info", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        StreamerThread.DebugDisplay = @checked;
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
                     var debugItem = new UIMenuCheckboxItem("Despawn Entities", RemoveGameEntities);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
@@ -4679,7 +4688,7 @@ namespace GTANetwork
 
         public int GetOpenUdpPort()
         {
-            var startingAtPort = 5000;
+            var startingAtPort = 6000;
             var maxNumberOfPortsToCheck = 500;
             var range = Enumerable.Range(startingAtPort, maxNumberOfPortsToCheck);
             var portsInUse =
