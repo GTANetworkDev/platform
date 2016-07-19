@@ -919,16 +919,7 @@ namespace GTANetwork
                     };
                     internetServers.Items.Add(debugItem);
                 }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Entity Debug Info", false);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        StreamerThread.DebugDisplay = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
+                
                 {
                     var debugItem = new UIMenuCheckboxItem("Despawn Entities", RemoveGameEntities);
                     debugItem.CheckboxEvent += (sender, @checked) =>
