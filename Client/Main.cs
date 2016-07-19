@@ -126,8 +126,7 @@ namespace GTANetwork
 
         private TabTextItem _statsItem;
         //
-
-        
+      
         public Main()
         {
             //var scal = new Scaleform(0);
@@ -173,7 +172,7 @@ namespace GTANetwork
                     msg.Write((int)PacketType.ChatData);
                     msg.Write(data.Length);
                     msg.Write(data);
-                    Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 1);
+                    Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int) ConnectionChannel.Chat);
                 }
                 Chat.IsFocused = false;
             };
@@ -1599,6 +1598,11 @@ namespace GTANetwork
 
         public const NetDeliveryMethod SYNC_MESSAGE_TYPE = NetDeliveryMethod.UnreliableSequenced; // unreliable_sequenced
 	    private static bool _sendData = true;
+
+        private static bool _lastPedData;
+        private static int _lastLightSync;
+        private static int LIGHT_SYNC_RATE = 1500;
+
         public static void SendPlayerData()
         {
             if (IsSpectating || !_sendData ) return; //|| !HasFinishedDownloading
@@ -1617,7 +1621,6 @@ namespace GTANetwork
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
-                obj.VehicleModelHash = veh.Model.Hash;
                 obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.Velocity = veh.Velocity.ToLVector();
@@ -1681,21 +1684,49 @@ namespace GTANetwork
                 }
 
                 //var bin = SerializeBinary(DeltaCompressor.CompressData(obj));
-                var bin = SerializeBinary(obj);
+                var bin = PacketOptimization.WritePureSync(obj);
 
                 var msg = Client.CreateMessage();
-                msg.Write((int)PacketType.VehiclePositionData);
+                msg.Write((int)PacketType.VehiclePureSync);
                 msg.Write(bin.Length);
                 msg.Write(bin);
                 try
                 {
-                    Client.SendMessage(msg, SYNC_MESSAGE_TYPE, 1);
+                    Client.SendMessage(msg, SYNC_MESSAGE_TYPE, (int) ConnectionChannel.PureSync);
                 }
                 catch (Exception ex)
                 {
                     Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
                     LogManager.LogException(ex, "SENDPLAYERDATA");
                 }
+
+                if (_lastPedData || Environment.TickCount - _lastLightSync > LIGHT_SYNC_RATE)
+                {
+                    _lastLightSync = Environment.TickCount;
+
+                    LogManager.DebugLog("SENDING LIGHT VEHICLE SYNC");
+
+                    var lightBin = PacketOptimization.WriteLightSync(obj);
+
+                    var lightMsg = Client.CreateMessage();
+                    lightMsg.Write((int)PacketType.VehicleLightSync);
+                    lightMsg.Write(lightBin.Length);
+                    lightMsg.Write(lightBin);
+                    try
+                    {
+                        Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
+                    }
+                    catch (Exception ex)
+                    {
+                        Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
+                        LogManager.LogException(ex, "SENDPLAYERDATA");
+                    }
+
+                    _bytesSent += lightBin.Length;
+                    _messagesSent++;
+                }
+
+                _lastPedData = false;
 
                 _averagePacketSize.Add(bin.Length);
                 if (_averagePacketSize.Count > 10)
@@ -1754,23 +1785,53 @@ namespace GTANetwork
                 obj.Speed = GetPedWalkingSpeed(player);
 
                 //var bin = SerializeBinary(DeltaCompressor.CompressData(obj));
-                var bin = SerializeBinary(obj);
+                var bin = PacketOptimization.WritePureSync(obj);
 
                 var msg = Client.CreateMessage();
 
-                msg.Write((int)PacketType.PedPositionData);
+                msg.Write((int)PacketType.PedPureSync);
                 msg.Write(bin.Length);
                 msg.Write(bin);
 
                 try
                 {
-                    Client.SendMessage(msg, SYNC_MESSAGE_TYPE, 1);
+                    Client.SendMessage(msg, SYNC_MESSAGE_TYPE, (int)ConnectionChannel.PureSync);
                 }
                 catch (Exception ex)
                 {
                     Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
                     LogManager.LogException(ex, "SENDPLAYERDATAPED");
                 }
+
+                LogManager.DebugLog("TIME SINCE LAST LIGHTSYNC: " + (Environment.TickCount - _lastLightSync));
+                if (!_lastPedData || Environment.TickCount - _lastLightSync > LIGHT_SYNC_RATE)
+                {
+                    _lastLightSync = Environment.TickCount;
+
+                    LogManager.DebugLog("SENDING LIGHT PED SYNC");
+
+                    var lightBin = PacketOptimization.WriteLightSync(obj);
+
+                    var lightMsg = Client.CreateMessage();
+                    lightMsg.Write((int)PacketType.PedLightSync);
+                    lightMsg.Write(lightBin.Length);
+                    lightMsg.Write(lightBin);
+                    try
+                    {
+                        var result = Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
+                        LogManager.DebugLog("LIGHT PED SYNC RESULT :" + result);
+                    }
+                    catch (Exception ex)
+                    {
+                        Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
+                        LogManager.LogException(ex, "SENDPLAYERDATA");
+                    }
+
+                    _bytesSent += lightBin.Length;
+                    _messagesSent++;
+                }
+
+                _lastPedData = true;
 
                 _averagePacketSize.Add(bin.Length);
                 if (_averagePacketSize.Count > 10)
@@ -1867,7 +1928,6 @@ namespace GTANetwork
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
-                obj.VehicleModelHash = veh.Model.Hash;
                 obj.PlayerHealth = (byte)(100 * (player.Health / (float)player.MaxHealth));
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.Velocity = veh.Velocity.ToLVector();
@@ -1961,7 +2021,7 @@ namespace GTANetwork
             var confirmObj = Client.CreateMessage();
             confirmObj.Write((int)PacketType.ConnectionConfirmed);
             confirmObj.Write(true);
-            Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+            Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
 
             HasFinishedDownloading = true;
         }
@@ -2219,6 +2279,8 @@ namespace GTANetwork
                 Function.Call(Hash.START_PARTICLE_FX_NON_LOOPED_AT_COORD, "scr_clown_appears", pos.X, pos.Y, pos.Z, 0, 0, 0, 2f, 0, 0, 0);
             }
             */
+            
+
             if (display)
             {
                 Debug();
@@ -2484,7 +2546,7 @@ namespace GTANetwork
                 _lastDead = true;
                 var msg = Client.CreateMessage();
                 msg.Write((int)PacketType.PlayerRespawned);
-                Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+                Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
 
                 if (Weather != null) Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Weather);
                 if (Time.HasValue)
@@ -2526,7 +2588,7 @@ namespace GTANetwork
                     _lastModel = 0;
                 }
                 */
-                Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+                Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
 
                 NativeUI.BigMessageThread.MessageInstance.ShowColoredShard("WASTED", "", HudColor.HUD_COLOUR_BLACK, HudColor.HUD_COLOUR_RED, 7000);
                 Function.Call(Hash.REQUEST_SCRIPT_AUDIO_BANK, "HUD_MINI_GAME_SOUNDSET", true);
@@ -2739,7 +2801,7 @@ namespace GTANetwork
                         msg.Write((int)PacketType.ChatData);
                         msg.Write(data.Length);
                         msg.Write(data);
-                        Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+                        Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
                     }
                 }
             }
@@ -2827,92 +2889,49 @@ namespace GTANetwork
             LogManager.DebugLog("RECEIVED DATATYPE " + type);
             switch (type)
             {
-                case PacketType.VehiclePositionData:
+                case PacketType.VehiclePureSync:
                     {
                         var len = msg.ReadInt32();
-                        var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
-                        if (data == null) return;
-                        var syncPed = NetEntityHandler.GetPlayer(data.NetHandle.Value);
-
-                        //var fullData = syncPed.DeltaCompressor.DecompressData(data) as VehicleData;
-                        var fullData = data;
-                        syncPed.VehicleNetHandle = fullData.VehicleHandle.HasValue ? fullData.VehicleHandle.Value : 0;
-                        syncPed.LastUpdateReceived = Environment.TickCount;
-                        syncPed.VehiclePosition = fullData.Position.ToVector();
-                        
-                        if (fullData.Velocity != null) syncPed.VehicleVelocity = fullData.Velocity.ToVector();
-                        if (fullData.PedModelHash != null) syncPed.ModelHash = fullData.PedModelHash.Value;
-                        if (fullData.VehicleModelHash != null) syncPed.VehicleHash = fullData.VehicleModelHash.Value;
-                        if (fullData.PedArmor != null) syncPed.PedArmor = fullData.PedArmor.Value;
-                        if (fullData.RPM != null) syncPed.VehicleRPM = fullData.RPM.Value;
-                        if (fullData.Quaternion != null) syncPed.VehicleRotation = fullData.Quaternion.ToVector();
-                        if (fullData.PlayerHealth != null) syncPed.PedHealth = fullData.PlayerHealth.Value;
-                        if (fullData.VehicleHealth != null) syncPed.VehicleHealth = fullData.VehicleHealth.Value;
-                        if (fullData.VehicleSeat != null) syncPed.VehicleSeat = fullData.VehicleSeat.Value;
-                        syncPed.IsInVehicle = true;
-                        if (fullData.Latency != null) syncPed.Latency = fullData.Latency.Value;
-	                    if (fullData.Steering != null) syncPed.SteeringScale = fullData.Steering.Value;
-                        syncPed.Speed = fullData.Velocity.ToVector().Length();
-
-                        if (fullData.Flag != null)
-                        {
-                            syncPed.IsVehDead = (fullData.Flag.Value & (short) VehicleDataFlags.VehicleDead) > 0;
-                            syncPed.IsHornPressed = (fullData.Flag.Value & (short) VehicleDataFlags.PressingHorn) > 0;
-                            syncPed.Siren = (fullData.Flag.Value & (short) VehicleDataFlags.SirenActive) > 0;
-                            syncPed.IsShooting = (fullData.Flag.Value & (short) VehicleDataFlags.Shooting) > 0;
-                            syncPed.IsAiming = (fullData.Flag.Value & (short) VehicleDataFlags.Aiming) > 0;
-                        }
-
-                        if (fullData.WeaponHash != null)
-                        {
-                            syncPed.CurrentWeapon = fullData.WeaponHash.Value;
-                        }
-                        if (data.AimCoords != null)
-                            syncPed.AimCoords = fullData.AimCoords.ToVector();
-                        
+                        var data = msg.ReadBytes(len);
+                        var packet = PacketOptimization.ReadPureVehicleSync(data);
+                        HandleVehiclePacket(packet);
                     }
                     break;
-                case PacketType.PedPositionData:
+                case PacketType.VehicleLightSync:
                     {
-
                         var len = msg.ReadInt32();
-                        var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
-                        if (data == null) return;
-                        var syncPed = NetEntityHandler.GetPlayer(data.NetHandle.Value);
+                        var data = msg.ReadBytes(len);
+                        var packet = PacketOptimization.ReadLightVehicleSync(data);
+                        LogManager.DebugLog("-----RECEIVED LIGHT VEHICLE PACKET");
+                        HandleVehiclePacket(packet);
+                    }
+                    break;
+                case PacketType.PedPureSync:
+                    {
+                        var len = msg.ReadInt32();
+                        var data = msg.ReadBytes(len);
+                        var packet = PacketOptimization.ReadPurePedSync(data);
+                        HandlePedPacket(packet);
+                    }
+                    break;
+                case PacketType.PedLightSync:
+                    {
+                        var len = msg.ReadInt32();
+                        var data = msg.ReadBytes(len);
+                        var packet = PacketOptimization.ReadLightPedSync(data);
+                        HandlePedPacket(packet);
+                    }
+                    break;
+                case PacketType.BasicSync:
+                    {
+                        var len = msg.ReadInt32();
+                        var data = msg.ReadBytes(len);
 
-                        //var fullPacket = syncPed.DeltaCompressor.DecompressData(data) as PedData;
-                        var fullPacket = data;
-
-                        syncPed.Position = fullPacket.Position.ToVector();
-                        syncPed.LastUpdateReceived = Environment.TickCount;
-                        syncPed.IsInVehicle = false;
-
-                        if (fullPacket.Speed != null) syncPed.OnFootSpeed = fullPacket.Speed.Value;
-                        if (fullPacket.PedArmor != null) syncPed.PedArmor = fullPacket.PedArmor.Value;
-                        if (fullPacket.PedModelHash != null) syncPed.ModelHash = fullPacket.PedModelHash.Value;
-                        if (fullPacket.Quaternion != null) syncPed.Rotation = fullPacket.Quaternion.ToVector();
-                        if (fullPacket.PlayerHealth != null) syncPed.PedHealth = fullPacket.PlayerHealth.Value;
-                        if (fullPacket.AimCoords != null) syncPed.AimCoords = fullPacket.AimCoords.ToVector();
-                        if (fullPacket.WeaponHash != null) syncPed.CurrentWeapon = fullPacket.WeaponHash.Value;
-                        if (fullPacket.Latency != null) syncPed.Latency = fullPacket.Latency.Value;
-                        if (fullPacket.Velocity != null) syncPed.PedVelocity = fullPacket.Velocity.ToVector();
-
-                        if (fullPacket.Flag != null)
-                        {
-                            syncPed.IsFreefallingWithParachute = (fullPacket.Flag.Value & (int) PedDataFlags.InFreefall) >
-                                                                 0;
-                            syncPed.IsInMeleeCombat = (fullPacket.Flag.Value & (int) PedDataFlags.InMeleeCombat) > 0;
-                            syncPed.IsRagdoll = (fullPacket.Flag.Value & (int) PedDataFlags.Ragdoll) > 0;
-                            syncPed.IsAiming = (fullPacket.Flag.Value & (int) PedDataFlags.Aiming) > 0;
-                            syncPed.IsJumping = (fullPacket.Flag.Value & (int) PedDataFlags.Jumping) > 0;
-                            syncPed.IsShooting = (fullPacket.Flag.Value & (int) PedDataFlags.Shooting) > 0;
-                            syncPed.IsParachuteOpen = (fullPacket.Flag.Value & (int) PedDataFlags.ParachuteOpen) > 0;
-                            syncPed.IsInCover = (fullPacket.Flag.Value & (int) PedDataFlags.IsInCover) > 0;
-                            syncPed.IsInLowCover = (fullPacket.Flag.Value & (int) PedDataFlags.IsInLowerCover) > 0;
-                            syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int) PedDataFlags.IsInCoverFacingLeft) >
-                                                       0;
-                            syncPed.IsReloading = (fullPacket.Flag.Value & (int) PedDataFlags.IsReloading) > 0;
-                        }
+                        int nethandle;
+                        GTANetworkShared.Vector3 position;
+                        PacketOptimization.ReadBasicSync(data, out nethandle, out position);
+                        
+                        HandleBasicPacket(nethandle, position.ToVector());
                     }
                     break;
                 case PacketType.NpcVehPositionData:
@@ -3107,7 +3126,7 @@ namespace GTANetwork
                             newMsg.Write((int)PacketType.FileAcceptDeny);
                             newMsg.Write(data.Id);
                             newMsg.Write(acceptDownload);
-                            Client.SendMessage(newMsg, NetDeliveryMethod.ReliableOrdered, 29);
+                            Client.SendMessage(newMsg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
                         }
                         else
                         {
@@ -3638,7 +3657,7 @@ namespace GTANetwork
                             var confirmObj = Client.CreateMessage();
                             confirmObj.Write((int) PacketType.ConnectionConfirmed);
                             confirmObj.Write(false);
-                            Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered);
+                            Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
                             JustJoinedServer = true;
                             MainMenu.Tabs.RemoveAt(0);
                             MainMenu.Tabs.Insert(0, _serverItem);
@@ -3830,7 +3849,97 @@ namespace GTANetwork
 
             //Client.Recycle(msg);
         }
-        
+
+        private void HandleBasicPacket(int nethandle, Vector3 position)
+        {
+            var syncPed = NetEntityHandler.GetPlayer(nethandle);
+
+            syncPed.Position = position;
+            syncPed.VehiclePosition = position;
+        }
+
+        private void HandleVehiclePacket(VehicleData fullData)
+        {
+            var syncPed = NetEntityHandler.GetPlayer(fullData.NetHandle.Value);
+
+            syncPed.LastUpdateReceived = Environment.TickCount;
+            syncPed.IsInVehicle = true;
+
+            if (fullData.VehicleHandle != null) LogManager.DebugLog("=====RECEIVED LIGHT VEHICLE PACKET " + fullData.VehicleHandle);
+
+            if (fullData.Position != null) syncPed.VehiclePosition = fullData.Position.ToVector();
+            if (fullData.VehicleHandle != null) syncPed.VehicleNetHandle = fullData.VehicleHandle.Value;
+            if (fullData.Velocity != null) syncPed.VehicleVelocity = fullData.Velocity.ToVector();
+            if (fullData.PedModelHash != null) syncPed.ModelHash = fullData.PedModelHash.Value;
+            if (fullData.PedArmor != null) syncPed.PedArmor = fullData.PedArmor.Value;
+            if (fullData.RPM != null) syncPed.VehicleRPM = fullData.RPM.Value;
+            if (fullData.Quaternion != null) syncPed.VehicleRotation = fullData.Quaternion.ToVector();
+            if (fullData.PlayerHealth != null) syncPed.PedHealth = fullData.PlayerHealth.Value;
+            if (fullData.VehicleHealth != null) syncPed.VehicleHealth = fullData.VehicleHealth.Value;
+            if (fullData.VehicleSeat != null) syncPed.VehicleSeat = fullData.VehicleSeat.Value;
+            if (fullData.Latency != null) syncPed.Latency = fullData.Latency.Value;
+            if (fullData.Steering != null) syncPed.SteeringScale = fullData.Steering.Value;
+            if (fullData.Velocity != null) syncPed.Speed = fullData.Velocity.ToVector().Length();
+
+            if (fullData.Flag != null)
+            {
+                syncPed.IsVehDead = (fullData.Flag.Value & (short)VehicleDataFlags.VehicleDead) > 0;
+                syncPed.IsHornPressed = (fullData.Flag.Value & (short)VehicleDataFlags.PressingHorn) > 0;
+                syncPed.Siren = (fullData.Flag.Value & (short)VehicleDataFlags.SirenActive) > 0;
+                syncPed.IsShooting = (fullData.Flag.Value & (short)VehicleDataFlags.Shooting) > 0;
+                syncPed.IsAiming = (fullData.Flag.Value & (short)VehicleDataFlags.Aiming) > 0;
+            }
+
+            if (fullData.WeaponHash != null)
+            {
+                syncPed.CurrentWeapon = fullData.WeaponHash.Value;
+            }
+
+            if (fullData.AimCoords != null) syncPed.AimCoords = fullData.AimCoords.ToVector();
+
+            if (syncPed.VehicleNetHandle != 0 && fullData.Position != null)
+            {
+                var car = NetEntityHandler.NetToStreamedItem(syncPed.VehicleNetHandle) as RemoteVehicle;
+                if (car != null) car.Position = fullData.Position;
+            }
+        }
+
+        private void HandlePedPacket(PedData fullPacket)
+        {
+            var syncPed = NetEntityHandler.GetPlayer(fullPacket.NetHandle.Value);
+
+            syncPed.LastUpdateReceived = Environment.TickCount;
+            syncPed.IsInVehicle = false;
+            syncPed.VehicleNetHandle = 0;
+
+            if (fullPacket.Position != null) syncPed.Position = fullPacket.Position.ToVector();
+            if (fullPacket.Speed != null) syncPed.OnFootSpeed = fullPacket.Speed.Value;
+            if (fullPacket.PedArmor != null) syncPed.PedArmor = fullPacket.PedArmor.Value;
+            if (fullPacket.PedModelHash != null) syncPed.ModelHash = fullPacket.PedModelHash.Value;
+            if (fullPacket.Quaternion != null) syncPed.Rotation = fullPacket.Quaternion.ToVector();
+            if (fullPacket.PlayerHealth != null) syncPed.PedHealth = fullPacket.PlayerHealth.Value;
+            if (fullPacket.AimCoords != null) syncPed.AimCoords = fullPacket.AimCoords.ToVector();
+            if (fullPacket.WeaponHash != null) syncPed.CurrentWeapon = fullPacket.WeaponHash.Value;
+            if (fullPacket.Latency != null) syncPed.Latency = fullPacket.Latency.Value;
+            if (fullPacket.Velocity != null) syncPed.PedVelocity = fullPacket.Velocity.ToVector();
+
+            if (fullPacket.Flag != null)
+            {
+                syncPed.IsFreefallingWithParachute = (fullPacket.Flag.Value & (int)PedDataFlags.InFreefall) >
+                                                     0;
+                syncPed.IsInMeleeCombat = (fullPacket.Flag.Value & (int)PedDataFlags.InMeleeCombat) > 0;
+                syncPed.IsRagdoll = (fullPacket.Flag.Value & (int)PedDataFlags.Ragdoll) > 0;
+                syncPed.IsAiming = (fullPacket.Flag.Value & (int)PedDataFlags.Aiming) > 0;
+                syncPed.IsJumping = (fullPacket.Flag.Value & (int)PedDataFlags.Jumping) > 0;
+                syncPed.IsShooting = (fullPacket.Flag.Value & (int)PedDataFlags.Shooting) > 0;
+                syncPed.IsParachuteOpen = (fullPacket.Flag.Value & (int)PedDataFlags.ParachuteOpen) > 0;
+                syncPed.IsInCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCover) > 0;
+                syncPed.IsInLowCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInLowerCover) > 0;
+                syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCoverFacingLeft) >
+                                           0;
+                syncPed.IsReloading = (fullPacket.Flag.Value & (int)PedDataFlags.IsReloading) > 0;
+            }
+        }
 
 	    private void ClearLocalEntities()
 	    {
@@ -4013,7 +4122,7 @@ namespace GTANetwork
                     _debugSyncPed.VehiclePosition = data.Position.ToVector();
                     _debugSyncPed.VehicleVelocity = data.Velocity.ToVector();
                     _debugSyncPed.ModelHash = data.PedModelHash.Value;
-                    _debugSyncPed.VehicleHash = data.VehicleModelHash.Value;
+                    //_debugSyncPed.VehicleHash = data.VehicleModelHash.Value;
                     _debugSyncPed.PedArmor = data.PedArmor.Value;
                     _debugSyncPed.VehicleRPM = data.RPM.Value;
                     _debugSyncPed.VehicleRotation =

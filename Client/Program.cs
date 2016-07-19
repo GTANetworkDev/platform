@@ -54,13 +54,6 @@ namespace GTANetwork
                         if (data != null) Console.WriteLine("Chat: " + data.Message);
                     }
                     break;
-                case PacketType.VehiclePositionData:
-                    {
-                        var len = msg.ReadInt32();
-                        var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
-                        Console.WriteLine("Updated Vehicle Data");
-                    }
-                    break;
             }
         }
 
