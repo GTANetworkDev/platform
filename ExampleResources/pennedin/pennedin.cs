@@ -170,8 +170,8 @@ public class PennedInMaster : Script
 	{
 		API.setPlayerToSpectator(player);
 		API.triggerClientEvent(player, "pennedin_roundstart", CurrentSpherePosition, CurrentSphereScale);
-		API.triggerClientEventForAll("pennedin_setposdestination", CurrentSpherePosition, MovementMap.Map[CurrentStep].Vector, MovementMap.Map[CurrentStep].Interval - (Environment.TickCount - LastInterpolationUpdate));
-		API.triggerClientEventForAll("pennedin_setscaledestination", CurrentSphereScale, MovementMap.Map[CurrentStep].Range, MovementMap.Map[CurrentStep].Interval - (Environment.TickCount - LastInterpolationUpdate));
+		API.triggerClientEventForAll("pennedin_setposdestination", CurrentSpherePosition, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Vector, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Interval - (Environment.TickCount - LastInterpolationUpdate));
+		API.triggerClientEventForAll("pennedin_setscaledestination", CurrentSphereScale, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Range, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Interval - (Environment.TickCount - LastInterpolationUpdate));
 	}
 
 	public void onPlayerDeath(Client player, NetHandle killer, int weapon)

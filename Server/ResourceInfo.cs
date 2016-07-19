@@ -121,13 +121,19 @@ namespace GTANetworkServer
         {
             while (!HasTerminated)
             {
-                while (_mainQueue.Count > 0)
+                Queue localCopy;
+                lock (_mainQueue.SyncRoot)
+                {
+                    localCopy = new Queue(_mainQueue);
+                    _mainQueue.Clear();
+                }
+
+
+                while (localCopy.Count > 0)
                 {
                     Action mainAction;
-                    lock (_mainQueue.SyncRoot)
-                    {
-                       mainAction = (_mainQueue.Dequeue() as Action);
-                    }
+
+                    mainAction = (localCopy.Dequeue() as Action);
 
                     /*
                     if (mainAction != null) // TODO: Fix me -> NullReferenceException when calling API object on JS Engine.

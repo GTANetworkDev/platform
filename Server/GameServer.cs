@@ -1263,14 +1263,14 @@ namespace GTANResource
 
                                                 if (!client.CurrentVehicle.IsNull && NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
                                                 {
-                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position = fullPacket.Position;
-                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation = fullPacket.Quaternion;
+                                                    NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position = fullPacket.Position;
+                                                    NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation = fullPacket.Quaternion;
                                                     if (fullPacket.Flag.HasValue)
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
+                                                        ((VehicleProperties)NetEntityHandler.ToDict()[client.CurrentVehicle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
                                                     if (fullPacket.VehicleHealth.HasValue)
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Health = fullPacket.VehicleHealth.Value;
+                                                        ((VehicleProperties)NetEntityHandler.ToDict()[client.CurrentVehicle.Value]).Health = fullPacket.VehicleHealth.Value;
                                                     if (fullPacket.Flag.HasValue)
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
+                                                        ((VehicleProperties)NetEntityHandler.ToDict()[client.CurrentVehicle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
                                                 }
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
@@ -1299,6 +1299,9 @@ namespace GTANResource
 
                                                 fullPacket.NetHandle = client.CharacterHandle.Value;
                                                 fullPacket.Latency = client.Latency;
+
+                                                client.IsInVehicle = true;
+                                                client.CurrentVehicle = new NetHandle(fullPacket.VehicleHandle.Value);
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                                 {
