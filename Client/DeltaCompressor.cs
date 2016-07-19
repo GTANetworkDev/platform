@@ -46,7 +46,6 @@ namespace GTANetwork
                 var fullPacket = (VehicleData)LastPacketReceived;
                 var compPacket = (VehicleData)compressedPacket;
 
-                if (compPacket.VehicleModelHash != null) fullPacket.VehicleModelHash = compPacket.VehicleModelHash;
                 if (compPacket.PedModelHash != null) fullPacket.PedModelHash = compPacket.PedModelHash;
                 if (compPacket.WeaponHash != null) fullPacket.WeaponHash = compPacket.WeaponHash;
                 if (compPacket.Position != null) fullPacket.Position = compPacket.Position;
@@ -114,7 +113,6 @@ namespace GTANetwork
                 var comparable = (VehicleData)LastSentObject;
                 var compressed = new VehicleData();
 
-                if (full.VehicleModelHash != comparable.VehicleModelHash) compressed.VehicleModelHash = full.VehicleModelHash;
                 if (full.PedModelHash != comparable.PedModelHash) compressed.PedModelHash = full.PedModelHash;
                 if (full.WeaponHash != comparable.WeaponHash) compressed.WeaponHash = full.WeaponHash;
                 if (full.Position != comparable.Position) compressed.Position = full.Position;

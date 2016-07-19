@@ -8,6 +8,13 @@ namespace GTANetworkShared
 {
     public static class Extensions
     {
+        public static float Clamp(float value, float min, float max)
+        {
+            if (value > max) return max;
+            if (value < min) return min;
+            return value;
+        }
+
         public static int FromArgb(byte a, byte r, byte g, byte b)
         {
             return b | g << 8 | r << 16 | a << 24;

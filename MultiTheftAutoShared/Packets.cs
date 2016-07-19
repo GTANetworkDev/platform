@@ -6,10 +6,10 @@ namespace GTANetworkShared
 {
     public enum PacketType
     {
-        VehiclePositionData = 0,
+        //VehiclePositionData = 0,
         ChatData = 1,
         PlayerDisconnect = 2,
-        PedPositionData = 3,
+        //PedPositionData = 3,
         NpcVehPositionData = 4,
         NpcPedPositionData = 5,
         WorldSharingStop = 6,
@@ -36,6 +36,12 @@ namespace GTANetworkShared
         FileAcceptDeny = 27,
         ServerEvent = 28,
         Ack = 29,
+
+        PedPureSync = 30,
+        PedLightSync = 31,
+        VehiclePureSync = 32,
+        VehicleLightSync = 33,
+        BasicSync = 34,
     }
 
     public enum ScriptVersion
@@ -119,6 +125,9 @@ namespace GTANetworkShared
         EntityBackend = 4,
         PositionData = 5,
         SyncEvent = 6,
+        PureSync = 7,
+        LightSync = 8,
+        BasicSync = 9,
     }
 
     public struct LocalHandle
@@ -442,6 +451,17 @@ namespace GTANetworkShared
         {
             if ((object)left == null) return new Vector3();
             return new Vector3(left.X / right, left.Y / right, left.Z / right);
+        }
+
+        public float DistanceToSquared(Vector3 right)
+        {
+            if ((object) right == null) return 0f;
+
+            var nX = X - right.X;
+            var nY = Y - right.Y;
+            var nZ = Z - right.Z;
+
+            return nX*nX + nY*nY + nZ*nZ;
         }
 
         public override string ToString()

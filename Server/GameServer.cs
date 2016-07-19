@@ -839,32 +839,109 @@ namespace GTANResource
                 Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, exclude, ConnectionChannel.EntityBackend);
         }
 
-        private void ResendPacket(PedData fullPacket, Client exception)
+        private void ResendPacket(PedData fullPacket, Client exception, bool pure)
         {
+            byte[] full = new byte[0];
+            byte[] basic = new byte[0];
+
+            if (pure)
+            {
+                full = PacketOptimization.WritePureSync(fullPacket);
+                basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
+            }
+            else
+            {
+                full = PacketOptimization.WriteLightSync(fullPacket);
+            }
+
             foreach (var client in Clients)
             {
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                var compData = client.DeltaCompressor.PositionalCompressData(exception.CharacterHandle.Value, fullPacket);
-
-                SendToClient(client, compData, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
-
-
-                //SendToClient(client, fullPacket, PacketType.PedPositionData, false, ConnectionChannel.PositionData);
+                NetOutgoingMessage msg = Server.CreateMessage();
+                if (pure)
+                {
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f)
+                    {
+                        msg.Write((int)PacketType.BasicSync);
+                        msg.Write(basic.Length);
+                        msg.Write(basic);
+                        Server.SendMessage(msg, client.NetConnection,
+                            NetDeliveryMethod.UnreliableSequenced,
+                            (int)ConnectionChannel.BasicSync);
+                    }
+                    else
+                    {
+                        msg.Write((int)PacketType.PedPureSync);
+                        msg.Write(full.Length);
+                        msg.Write(full);
+                        Server.SendMessage(msg, client.NetConnection,
+                            NetDeliveryMethod.UnreliableSequenced,
+                            (int)ConnectionChannel.PureSync);
+                    }
+                }
+                else
+                {
+                    msg.Write((int)PacketType.PedLightSync);
+                    msg.Write(full.Length);
+                    msg.Write(full);
+                    Server.SendMessage(msg, client.NetConnection,
+                        NetDeliveryMethod.UnreliableSequenced,
+                        (int)ConnectionChannel.LightSync);
+                }
             }
         }
 
-        private void ResendPacket(VehicleData fullPacket, Client exception)
+        private void ResendPacket(VehicleData fullPacket, Client exception, bool pure)
         {
+            byte[] full = new byte[0];
+            byte[] basic = new byte[0];
+
+            if (pure)
+            {
+                full = PacketOptimization.WritePureSync(fullPacket);
+                basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
+            }
+            else
+            {
+                full = PacketOptimization.WriteLightSync(fullPacket);
+            }
+
             foreach (var client in Clients)
             {
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                var compData = client.DeltaCompressor.PositionalCompressData(exception.CharacterHandle.Value, fullPacket);
-
-                SendToClient(client, compData, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
-
-                //SendToClient(client, fullPacket, PacketType.VehiclePositionData, false, ConnectionChannel.PositionData);
+                NetOutgoingMessage msg = Server.CreateMessage();
+                if (pure)
+                {
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f)
+                    {
+                        msg.Write((int)PacketType.BasicSync);
+                        msg.Write(basic.Length);
+                        msg.Write(basic);
+                        Server.SendMessage(msg, client.NetConnection,
+                            NetDeliveryMethod.UnreliableSequenced,
+                            (int)ConnectionChannel.BasicSync);
+                    }
+                    else
+                    {
+                        msg.Write((int)PacketType.VehiclePureSync);
+                        msg.Write(full.Length);
+                        msg.Write(full);
+                        Server.SendMessage(msg, client.NetConnection,
+                            NetDeliveryMethod.UnreliableSequenced,
+                            (int)ConnectionChannel.PureSync);
+                    }
+                }
+                else
+                {
+                    msg.Write((int)PacketType.VehicleLightSync);
+                    msg.Write(full.Length);
+                    msg.Write(full);
+                    Server.SendMessage(msg, client.NetConnection,
+                        NetDeliveryMethod.UnreliableSequenced,
+                        (int)ConnectionChannel.LightSync);
+                }
             }
         }
         private void LogException(Exception ex, string resourceName)
@@ -1162,105 +1239,143 @@ namespace GTANResource
                                             }
                                         }
                                         break;
-                                    case PacketType.VehiclePositionData:
+                                    case PacketType.VehiclePureSync:
                                         {
                                             try
                                             {
                                                 var len = msg.ReadInt32();
-                                                var data =
-                                                    DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as
-                                                        VehicleData;
-                                                if (data != null)
+                                                var bin = msg.ReadBytes(len);
+
+                                                var fullPacket = PacketOptimization.ReadPureVehicleSync(bin);
+                                                
+                                                fullPacket.NetHandle = client.CharacterHandle.Value;
+
+                                                client.Health = fullPacket.PlayerHealth.Value;
+                                                client.Armor = fullPacket.PedArmor.Value;
+                                                client.Position = fullPacket.Position;
+                                                client.Rotation = fullPacket.Quaternion;
+                                                client.IsInVehicle = true;
+                                                client.LastUpdate = DateTime.Now;
+
+                                                if (!client.CurrentVehicle.IsNull && NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
                                                 {
-                                                    //var fullPacket = client.DeltaCompressor.DecompressData(data) as VehicleData;
-                                                    var fullPacket = data;
-
-                                                    fullPacket.Latency = client.Latency;
-                                                    fullPacket.NetHandle = client.CharacterHandle.Value;
-
-                                                    client.Health = fullPacket.PlayerHealth.HasValue ? fullPacket.PlayerHealth.Value : 0;
-                                                    client.Armor = fullPacket.PedArmor.HasValue ? fullPacket.PedArmor.Value : 0;
-                                                    client.Position = fullPacket.Position;
-                                                    client.IsInVehicle = true;
-                                                    client.CurrentVehicle = new NetHandle(fullPacket.VehicleHandle.Value);
-                                                    client.Rotation = fullPacket.Quaternion;
-                                                    client.LastUpdate = DateTime.Now;
-
-                                                    if (NetEntityHandler.ToDict().ContainsKey(fullPacket.VehicleHandle.Value))
-                                                    {
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position = fullPacket.Position;
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation = fullPacket.Quaternion;
-                                                        if (fullPacket.Flag.HasValue)
-                                                            ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
-                                                        if (fullPacket.VehicleHealth.HasValue)
-                                                            ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Health = fullPacket.VehicleHealth.Value;
-                                                        if (fullPacket.Flag.HasValue)
-                                                            ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
-
-                                                        if (data.Trailer != null)
-                                                        {
-                                                            var trailer = ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Trailer;
-                                                            if (NetEntityHandler.ToDict().ContainsKey(trailer))
-                                                            {
-                                                                NetEntityHandler.ToDict()[trailer].Position = data.Trailer;
-                                                            }
-                                                        }
-                                                    }
-
-                                                    if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
-                                                    {
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
-                                                    }
-
-                                                    ResendPacket(fullPacket, client);
-                                                    //SendToAll(data, PacketType.VehiclePositionData, false, client, ConnectionChannel.PositionData);
+                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position = fullPacket.Position;
+                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation = fullPacket.Quaternion;
+                                                    if (fullPacket.Flag.HasValue)
+                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
+                                                    if (fullPacket.VehicleHealth.HasValue)
+                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Health = fullPacket.VehicleHealth.Value;
+                                                    if (fullPacket.Flag.HasValue)
+                                                        ((VehicleProperties)NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
                                                 }
+
+                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
+                                                {
+                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
+                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
+                                                }
+
+                                                ResendPacket(fullPacket, client, true);
+                                                //SendToAll(data, PacketType.VehiclePositionData, false, client, ConnectionChannel.PositionData);
+                                                
                                             }
                                             catch (IndexOutOfRangeException)
                                             {
                                             }
                                         }
                                         break;
-                                    case PacketType.PedPositionData:
+                                    case PacketType.VehicleLightSync:
+                                    {
+                                            try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var bin = msg.ReadBytes(len);
+
+                                                var fullPacket = PacketOptimization.ReadLightVehicleSync(bin);
+
+                                                fullPacket.NetHandle = client.CharacterHandle.Value;
+                                                fullPacket.Latency = client.Latency;
+
+                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
+                                                {
+                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
+                                                        fullPacket.PedModelHash.Value;
+                                                }
+
+                                                if (fullPacket.Trailer != null)
+                                                {
+                                                    var trailer =
+                                                        ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .Trailer;
+                                                    if (NetEntityHandler.ToDict().ContainsKey(trailer))
+                                                    {
+                                                        NetEntityHandler.ToDict()[trailer].Position = fullPacket.Trailer;
+                                                    }
+                                                }
+
+                                                ResendPacket(fullPacket, client, false);
+                                            }
+                                            catch(IndexOutOfRangeException)
+                                            { }
+                                    }
+                                        break;
+                                    case PacketType.PedPureSync:
                                         {
                                             try
                                             {
                                                 var len = msg.ReadInt32();
-                                                var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
-                                                if (data != null)
+                                                var bin = msg.ReadBytes(len);
+
+                                                var fullPacket = PacketOptimization.ReadPurePedSync(bin);
+
+                                                fullPacket.NetHandle = client.CharacterHandle.Value;
+
+                                                client.Health = fullPacket.PlayerHealth.Value;
+                                                client.Armor = fullPacket.PedArmor.Value;
+                                                client.Position = fullPacket.Position;
+                                                client.IsInVehicle = false;
+                                                client.LastUpdate = DateTime.Now;
+                                                client.Rotation = fullPacket.Quaternion;
+                                                client.CurrentVehicle = new NetHandle(0);
+
+                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                                 {
-                                                    //var fullPacket = client.DeltaCompressor.DecompressData(data) as PedData;
-                                                    var fullPacket = data;
-
-                                                    fullPacket.Latency = client.Latency;
-                                                    fullPacket.NetHandle = client.CharacterHandle.Value;
-
-                                                    client.Health = fullPacket.PlayerHealth.HasValue ? fullPacket.PlayerHealth.Value : 0;
-                                                    client.Armor = fullPacket.PedArmor.HasValue ? fullPacket.PedArmor.Value : 0;
-                                                    client.Position = fullPacket.Position;
-                                                    client.IsInVehicle = false;
-                                                    client.LastUpdate = DateTime.Now;
-                                                    client.Rotation = fullPacket.Quaternion;
-                                                    client.CurrentVehicle = new NetHandle(0);
-
-                                                    client.Rotation = fullPacket.Quaternion;
-
-                                                    if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
-                                                    {
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
-                                                    }
-
-                                                    ResendPacket(fullPacket, client);
-                                                    //SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
+                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
+                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
+                                                    //NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
                                                 }
+
+                                                ResendPacket(fullPacket, client, true);
+                                                //SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
                                             }
                                             catch (IndexOutOfRangeException)
                                             {
                                             }
+                                        }
+                                        break;
+                                    case PacketType.PedLightSync:
+                                        {
+                                            try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var bin = msg.ReadBytes(len);
+
+                                                var fullPacket = PacketOptimization.ReadLightPedSync(bin);
+
+                                                fullPacket.NetHandle = client.CharacterHandle.Value;
+                                                fullPacket.Latency = client.Latency;
+
+                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
+                                                {
+                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
+                                                        fullPacket.PedModelHash.Value;
+                                                }
+
+                                                ResendPacket(fullPacket, client, false);
+                                            }
+                                            catch(IndexOutOfRangeException)
+                                            { }
                                         }
                                         break;
                                     case PacketType.NpcVehPositionData:
