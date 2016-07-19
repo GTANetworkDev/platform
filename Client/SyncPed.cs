@@ -62,7 +62,17 @@ namespace GTANetwork
         public int PedHealth;
 
         public float VehicleHealth;
-        public int VehicleHash;
+
+        public int VehicleHash
+        {
+            get
+            {
+                if (VehicleNetHandle == 0) return 0;
+                var car = Main.NetEntityHandler.NetToStreamedItem(VehicleNetHandle) as RemoteVehicle;
+                return car.ModelHash;
+            }
+        }
+
         public Vector3 _vehicleRotation;
         public int VehiclePrimaryColor;
         public int VehicleSecondaryColor;
@@ -561,7 +571,7 @@ namespace GTANetwork
 	            return true;
 	        }
 
-			if ((!_lastVehicle && IsInVehicle && VehicleHash != 0) ||
+			if ((!_lastVehicle && IsInVehicle) ||
 					(_lastVehicle && IsInVehicle &&
 					 (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
 					  Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||

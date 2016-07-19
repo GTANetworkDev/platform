@@ -384,7 +384,7 @@ namespace GTANetworkShared
             data.VehicleHandle = r.ReadInt32();
 
             // read vehicle seat
-            data.VehicleSeat = r.ReadByte();
+            data.VehicleSeat = (sbyte)r.ReadByte();
 
             // Does he have a traielr?
             if (r.ReadBoolean())

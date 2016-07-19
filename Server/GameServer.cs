@@ -856,11 +856,13 @@ namespace GTANResource
 
             foreach (var client in Clients)
             {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (pure)
                 {
+                    if (client.Position == null) continue;
                     if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f)
                     {
                         msg.Write((int)PacketType.BasicSync);
@@ -886,7 +888,7 @@ namespace GTANResource
                     msg.Write(full.Length);
                     msg.Write(full);
                     Server.SendMessage(msg, client.NetConnection,
-                        NetDeliveryMethod.UnreliableSequenced,
+                        NetDeliveryMethod.ReliableSequenced,
                         (int)ConnectionChannel.LightSync);
                 }
             }
@@ -909,11 +911,13 @@ namespace GTANResource
 
             foreach (var client in Clients)
             {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (pure)
                 {
+                    if (client.Position == null) continue;
                     if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f)
                     {
                         msg.Write((int)PacketType.BasicSync);
@@ -939,7 +943,7 @@ namespace GTANResource
                     msg.Write(full.Length);
                     msg.Write(full);
                     Server.SendMessage(msg, client.NetConnection,
-                        NetDeliveryMethod.UnreliableSequenced,
+                        NetDeliveryMethod.ReliableSequenced,
                         (int)ConnectionChannel.LightSync);
                 }
             }

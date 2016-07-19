@@ -1704,6 +1704,8 @@ namespace GTANetwork
                 {
                     _lastLightSync = Environment.TickCount;
 
+                    LogManager.DebugLog("SENDING LIGHT VEHICLE SYNC");
+
                     var lightBin = PacketOptimization.WriteLightSync(obj);
 
                     var lightMsg = Client.CreateMessage();
@@ -1712,7 +1714,7 @@ namespace GTANetwork
                     lightMsg.Write(lightBin);
                     try
                     {
-                        Client.SendMessage(lightMsg, SYNC_MESSAGE_TYPE, (int)ConnectionChannel.LightSync);
+                        Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
                     }
                     catch (Exception ex)
                     {
@@ -1801,9 +1803,12 @@ namespace GTANetwork
                     LogManager.LogException(ex, "SENDPLAYERDATAPED");
                 }
 
+                LogManager.DebugLog("TIME SINCE LAST LIGHTSYNC: " + (Environment.TickCount - _lastLightSync));
                 if (!_lastPedData || Environment.TickCount - _lastLightSync > LIGHT_SYNC_RATE)
                 {
                     _lastLightSync = Environment.TickCount;
+
+                    LogManager.DebugLog("SENDING LIGHT PED SYNC");
 
                     var lightBin = PacketOptimization.WriteLightSync(obj);
 
@@ -1813,7 +1818,8 @@ namespace GTANetwork
                     lightMsg.Write(lightBin);
                     try
                     {
-                        Client.SendMessage(lightMsg, SYNC_MESSAGE_TYPE, (int)ConnectionChannel.LightSync);
+                        var result = Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
+                        LogManager.DebugLog("LIGHT PED SYNC RESULT :" + result);
                     }
                     catch (Exception ex)
                     {
@@ -2896,6 +2902,7 @@ namespace GTANetwork
                         var len = msg.ReadInt32();
                         var data = msg.ReadBytes(len);
                         var packet = PacketOptimization.ReadLightVehicleSync(data);
+                        LogManager.DebugLog("-----RECEIVED LIGHT VEHICLE PACKET");
                         HandleVehiclePacket(packet);
                     }
                     break;
@@ -3857,6 +3864,8 @@ namespace GTANetwork
 
             syncPed.LastUpdateReceived = Environment.TickCount;
             syncPed.IsInVehicle = true;
+
+            if (fullData.VehicleHandle != null) LogManager.DebugLog("=====RECEIVED LIGHT VEHICLE PACKET " + fullData.VehicleHandle);
 
             if (fullData.Position != null) syncPed.VehiclePosition = fullData.Position.ToVector();
             if (fullData.VehicleHandle != null) syncPed.VehicleNetHandle = fullData.VehicleHandle.Value;
