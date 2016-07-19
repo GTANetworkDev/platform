@@ -2632,6 +2632,11 @@ namespace GTANetwork
 
             if (IsSpectating && SpectatingEntity != 0)
             {
+                Game.Player.Character.Alpha = 0;
+                Game.Player.Character.FreezePosition = true;
+                Game.Player.IsInvincible = true;
+                Game.Player.Character.HasCollision = false;
+
                 Game.Player.Character.PositionNoOffset = new Prop(SpectatingEntity).Position;
             }
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed) op).Character != null) > 0)
@@ -2641,6 +2646,10 @@ namespace GTANetwork
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer != null)
             {
                 Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position;
+                Game.Player.Character.Alpha = 0;
+                Game.Player.Character.FreezePosition = true;
+                Game.Player.IsInvincible = true;
+                Game.Player.Character.HasCollision = false;
 
                 if (Game.IsControlJustPressed(0, Control.PhoneLeft))
                 {

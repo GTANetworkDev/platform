@@ -21,6 +21,7 @@ public class PennedInMaster : Script
 
 	public void respawn(Client player)
 	{
+		if (roundrestart > 0 ) return;
 		API.setPlayerToSpectator(player);
 	}
 
@@ -39,6 +40,8 @@ public class PennedInMaster : Script
 	private Random randgen = new Random();
 	private int Countdown = -1;
 	private int _lastsecondupdate;
+
+	private int roundrestart = -1;
 
 	private Vector3 CurrentSpherePosition;
 	private float CurrentSphereScale;
@@ -73,7 +76,7 @@ public class PennedInMaster : Script
 			var availableCars = Enum.GetValues(typeof(VehicleHash)).Cast<VehicleHash>().ToList();
 
 			//var ourCar = availableCars[randgen.Next(availableCars.Count)];
-			var ourCar = VehicleHash.Tampa;
+			var ourCar = VehicleHash.Blista2;
 
 			API.setEntityPosition(player.CharacterHandle, pos);
 
@@ -118,7 +121,19 @@ public class PennedInMaster : Script
 					LastInterpolationUpdate = Environment.TickCount;					
 				}
 			}
+
+			if (roundrestart > 0)
+			{
+				roundrestart--;
+
+				if (roundrestart == 0)
+				{
+					StartRound();
+				}
+			}
 		}
+
+		if (roundrestart > 0) return;
 
 		if (LastInterpolationUpdate > 0)
 		{
@@ -133,9 +148,8 @@ public class PennedInMaster : Script
 						API.sendChatMessageToAll("Round has ended! The winners are: " + Survivors.Select(c => c.Name).Aggregate((prev, next) => prev + ", " + next));
 					}
 					API.triggerClientEventForAll("pennedin_roundend");
-					API.sendChatMessageToAll("Next round starts in 15 seconds...");
-					API.sleep(15000);
-					StartRound();
+					API.sendChatMessageToAll("Next round starts in 30 seconds...");
+					roundrestart = 30;					
 					return;
 				}
 				else
@@ -168,6 +182,7 @@ public class PennedInMaster : Script
 
 	public void playerJoined(Client player)
 	{
+		if (roundrestart>0) return;
 		API.setPlayerToSpectator(player);
 		API.triggerClientEvent(player, "pennedin_roundstart", CurrentSpherePosition, CurrentSphereScale);
 		API.triggerClientEventForAll("pennedin_setposdestination", CurrentSpherePosition, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Vector, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Interval - (Environment.TickCount - LastInterpolationUpdate));
@@ -176,21 +191,36 @@ public class PennedInMaster : Script
 
 	public void onPlayerDeath(Client player, NetHandle killer, int weapon)
 	{
+		if (roundrestart > 0) return;
 		API.sendNotificationToAll("~b~~h~" + player.Name + "~h~~w~ has died!");
 		Survivors.Remove(player);		
 
 		if (Survivors.Count == 1)
 		{
-			API.sendChatMessageToAll(Survivors[0].Name + " has won! Restarting round in 15 seconds...");			
-			API.sleep(15000);
-			StartRound();
+			API.sendChatMessageToAll(Survivors[0].Name + " has won! Restarting round in 30 seconds...");			
+
+			var players = API.getAllPlayers();
+
+			foreach (var c in players)
+			{
+				API.unspectatePlayer(c);
+			}
+
+			roundrestart = 30;
 		}
 
 		if (Survivors.Count == 0)
 		{
-			API.sendChatMessageToAll("Nobody won! Restarting round in 15 seconds...");			
-			API.sleep(15000);
-			StartRound();
+			API.sendChatMessageToAll("Nobody won! Restarting round in 30 seconds...");			
+
+			var players = API.getAllPlayers();
+
+			foreach (var c in players)
+			{
+				API.unspectatePlayer(c);
+			}
+
+			roundrestart = 30;
 		}
 	}
 }

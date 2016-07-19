@@ -13,17 +13,23 @@ var interpolationEnd = 0;
 var isInsideSphere = true;
 var lastSphereLeave = 0;
 
+var roundEnd = false;
+
 API.onServerEventTrigger.connect(function (eventName, args) {
 	if (eventName == "pennedin_roundend") {
 		if (marker != null)	{
 			API.deleteMarker(marker);
 		}
+
+		roundEnd = true;
 	}
 
 	if (eventName == "pennedin_roundstart") {
 
 		currentSpherePos = args[0];
 		currentSphereScale = args[1];
+
+		roundEnd = false;
 
 		destinationPos = null;
 		destinationScale = null;
@@ -94,6 +100,8 @@ API.onUpdate.connect(function(sender, e) {
     API.callNative("DISABLE_CONTROL_ACTION", 0, 68, true);
     API.callNative("DISABLE_CONTROL_ACTION", 0, 91, true);
 
+    if (roundEnd) return;
+
     if (interpolationStart != 0 && marker != null) {
     	var cTime = API.getGlobalTime() - interpolationStart;
     	var dur = interpolationEnd;
@@ -129,6 +137,8 @@ API.onUpdate.connect(function(sender, e) {
 	    		API.explodeVehicle(API.getPlayerVehicle(player));
 	    		API.setPlayerHealth(player, -1);
 	    		API.deleteMarker(marker);
+	    		marker = null;
+	    		roundEnd = true;
 	    	}
 	    }
     }
