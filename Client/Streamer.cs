@@ -633,7 +633,7 @@ namespace GTANetwork
 
         public void UpdatePlayer(int netHandle, PedProperties prop)
         {
-            SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
+            RemotePlayer rem = NetToStreamedItem(netHandle) as RemotePlayer;
             if (rem == null) return;
             
             rem.Props = prop.Props;
@@ -644,13 +644,17 @@ namespace GTANetwork
             rem.BlipAlpha = prop.BlipAlpha;
             rem.Accessories = prop.Accessories;
             rem.Name = prop.Name;
-            rem.Position = prop.Position.ToVector();
-            rem.Rotation = prop.Rotation.ToVector();
             rem.ModelHash = prop.ModelHash;
             rem.EntityType = prop.EntityType;
             rem.Alpha = prop.Alpha;
             rem.Dimension = prop.Dimension;
             rem.RemoteHandle = netHandle;
+
+            if (rem is SyncPed)
+            {
+                ((SyncPed)rem).Position = prop.Position.ToVector();
+                ((SyncPed)rem).Rotation = prop.Rotation.ToVector();
+            }
         }
 
         public RemotePickup CreatePickup(Vector3 pos, Vector3 rot, int pickupHash, int amount, int netHandle)

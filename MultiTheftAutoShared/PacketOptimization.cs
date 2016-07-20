@@ -42,10 +42,9 @@ namespace GTANetworkShared
 
             byteArray.AddRange(GetBytes(data.Quaternion.Z));
 
-            // optimize velocity to save 6 bytes
-            byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.X)));
-            byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Y)));
-            byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Z)));
+            byteArray.AddRange(GetBytes(data.Velocity.X));
+            byteArray.AddRange(GetBytes(data.Velocity.Y));
+            byteArray.AddRange(GetBytes(data.Velocity.Z));
             
             // Write player health, armor and walking speed
             byteArray.Add(data.PlayerHealth.Value);
@@ -152,10 +151,9 @@ namespace GTANetworkShared
                 byteArray.AddRange(GetBytes(data.Quaternion.Z));
 
 
-                // Compress velocity to save 6 bytes
-                byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.X)));
-                byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Y)));
-                byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Z)));
+                byteArray.AddRange(GetBytes(data.Velocity.X));
+                byteArray.AddRange(GetBytes(data.Velocity.Y));
+                byteArray.AddRange(GetBytes(data.Velocity.Z));
 
                 // Write vehicle health
                 byteArray.AddRange(GetBytes((short) ((int) data.VehicleHealth.Value)));
@@ -275,9 +273,9 @@ namespace GTANetworkShared
 
             rotation.Z = r.ReadSingle();
 
-            velocity.X = DecompressSingle(r.ReadUInt16());
-            velocity.Y = DecompressSingle(r.ReadUInt16());
-            velocity.Z = DecompressSingle(r.ReadUInt16());
+            velocity.X = r.ReadSingle();
+            velocity.Y = r.ReadSingle();
+            velocity.Z = r.ReadSingle();
 
             data.Position = position;
             data.Quaternion = rotation;
@@ -382,9 +380,9 @@ namespace GTANetworkShared
                 rotation.Y = r.ReadSingle();
                 rotation.Z = r.ReadSingle();
 
-                velocity.X = DecompressSingle(r.ReadUInt16());
-                velocity.Y = DecompressSingle(r.ReadUInt16());
-                velocity.Z = DecompressSingle(r.ReadUInt16());
+                velocity.X = r.ReadSingle();
+                velocity.Y = r.ReadSingle();
+                velocity.Z = r.ReadSingle();
 
                 data.Position = position;
                 data.Quaternion = rotation;
@@ -464,6 +462,7 @@ namespace GTANetworkShared
 
         #endregion
 
+        
         public static ushort CompressSingle(float value)
         {
             return (ushort) (value*256);

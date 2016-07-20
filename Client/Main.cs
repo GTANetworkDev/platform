@@ -635,19 +635,12 @@ namespace GTANetwork
                 list = new List<SyncPed>(NetEntityHandler.ClientMap.Where(pair => pair is SyncPed).Cast<SyncPed>());
             }
             
-            _serverPlayers.Dictionary.Add("Total Players", (list.Count).ToString());
+            _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
 
-            //_serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
+            _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
 
             foreach (var ped in list)
             {
-                /*if (string.IsNullOrEmpty(ped.Name))
-                {
-                    _serverPlayers.Dictionary.Add("<unk" + ped.LocalHandle + "> (" + ped.RemoteHandle + ")", "ms");
-                    continue;
-                }*/
-
-                //if (!_serverPlayers.Dictionary.ContainsKey(ped.Name))
                 _serverPlayers.Dictionary.Add(ped.Name + " (" + ped.RemoteHandle + ")", ((int)(ped.Latency * 1000)) + "ms");
             }
         }
@@ -1492,23 +1485,31 @@ namespace GTANetwork
 
                             ourPed.Alpha = pair.Value.Alpha;
 
-                            //var ourSyncPed = GetOpponent(pair.Key);
-                            var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
-                            if (ourSyncPed != null)
+                            if (NetEntityHandler.NetToEntity(pair.Key).Handle == Game.Player.Character.Handle)
                             {
-                                NetEntityHandler.UpdatePlayer(pair.Key, pair.Value);
-                                
-                                if (ourSyncPed.Character != null)
+                                // It's us!
+                                var remPl = NetEntityHandler.NetToStreamedItem(pair.Key) as RemotePlayer;
+                                remPl.Name = pair.Value.Name;
+                            }
+                            else
+                            { 
+                                var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
+                                if (ourSyncPed != null)
                                 {
-                                    ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
-                                                                                pair.Value.Team != -1)
-                                        ? Main.FriendRelGroup
-                                        : Main.RelGroup;
-                                    if (ourSyncPed.Character.CurrentBlip != null)
+                                    NetEntityHandler.UpdatePlayer(pair.Key, pair.Value);
+
+                                    if (ourSyncPed.Character != null)
                                     {
-                                        ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite) pair.Value.BlipSprite;
-                                        ourSyncPed.Character.CurrentBlip.Color = (BlipColor) pair.Value.BlipColor;
-                                        ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
+                                        ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
+                                                                                  pair.Value.Team != -1)
+                                            ? Main.FriendRelGroup
+                                            : Main.RelGroup;
+                                        if (ourSyncPed.Character.CurrentBlip != null)
+                                        {
+                                            ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite) pair.Value.BlipSprite;
+                                            ourSyncPed.Character.CurrentBlip.Color = (BlipColor) pair.Value.BlipColor;
+                                            ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
+                                        }
                                     }
                                 }
                             }
