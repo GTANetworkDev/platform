@@ -45,14 +45,14 @@ namespace GTANetworkShared
             return value;
         }
 
-        public int ReadInt16()
+        public short ReadInt16()
         {
             var value = BitConverter.ToInt16(_array, CurrentIndex);
             CurrentIndex += 2;
             return value;
         }
 
-        public uint ReadUInt16()
+        public ushort ReadUInt16()
         {
             var value = BitConverter.ToUInt16(_array, CurrentIndex);
             CurrentIndex += 2;

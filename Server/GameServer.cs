@@ -21,35 +21,6 @@ using ProtoBuf;
 
 namespace GTANetworkServer
 {
-    public class Client
-    {
-        public NetConnection NetConnection { get; private set; }
-        public DeltaCompressor DeltaCompressor { get; set; }
-        public string SocialClubName { get; set; }
-        public string Name { get; set; }
-        public float Latency { get; set; }
-        public ParseableVersion RemoteScriptVersion { get; set; }
-        public int GameVersion { get; set; }
-
-        public NetHandle CurrentVehicle { get; set; }
-        public Vector3 Position { get; internal set; }
-        public Vector3 Rotation { get; internal set; }
-        public int Health { get; internal set; }
-        public int Armor { get; internal set; }
-        public bool IsInVehicle { get; internal set; }
-
-        public DateTime LastUpdate { get; internal set; }
-
-        public NetHandle CharacterHandle { get; set; }
-
-        public Client(NetConnection nc)
-        {
-            NetConnection = nc;
-            DeltaCompressor = new DeltaCompressor(this);
-            CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle());
-        }
-    }
-
     public class StreamingClient
     {
         public StreamingClient(Client c)
@@ -902,7 +873,15 @@ namespace GTANResource
             if (pure)
             {
                 full = PacketOptimization.WritePureSync(fullPacket);
-                basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
+                if (PacketOptimization.CheckBit(fullPacket.Flag.Value, VehicleDataFlags.Driver))
+                {
+                    basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
+                }
+                else if (!exception.CurrentVehicle.IsNull)
+                {
+                    var carPos = NetEntityHandler.ToDict()[exception.CurrentVehicle.Value].Position;
+                    basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, carPos);
+                }
             }
             else
             {
@@ -1256,27 +1235,66 @@ namespace GTANResource
 
                                                 client.Health = fullPacket.PlayerHealth.Value;
                                                 client.Armor = fullPacket.PedArmor.Value;
-                                                client.Position = fullPacket.Position;
-                                                client.Rotation = fullPacket.Quaternion;
                                                 client.IsInVehicle = true;
                                                 client.LastUpdate = DateTime.Now;
 
-                                                if (!client.CurrentVehicle.IsNull && NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
+                                                if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
+                                                    VehicleDataFlags.Driver))
                                                 {
-                                                    NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position = fullPacket.Position;
-                                                    NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation = fullPacket.Quaternion;
-                                                    if (fullPacket.Flag.HasValue)
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[client.CurrentVehicle.Value]).IsDead = (fullPacket.Flag & (byte)VehicleDataFlags.VehicleDead) > 0;
-                                                    if (fullPacket.VehicleHealth.HasValue)
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[client.CurrentVehicle.Value]).Health = fullPacket.VehicleHealth.Value;
-                                                    if (fullPacket.Flag.HasValue)
-                                                        ((VehicleProperties)NetEntityHandler.ToDict()[client.CurrentVehicle.Value]).Siren = (fullPacket.Flag & (byte)VehicleDataFlags.SirenActive) > 0;
-                                                }
+                                                    client.Position = fullPacket.Position;
+                                                    client.Rotation = fullPacket.Quaternion;
 
-                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
+                                                    if (!client.CurrentVehicle.IsNull &&
+                                                        NetEntityHandler.ToDict()
+                                                            .ContainsKey(client.CurrentVehicle.Value))
+                                                    {
+                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position
+                                                            = fullPacket.Position;
+                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation
+                                                            = fullPacket.Quaternion;
+                                                        if (fullPacket.Flag.HasValue)
+                                                            ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                .IsDead = (fullPacket.Flag &
+                                                                           (byte) VehicleDataFlags.VehicleDead) > 0;
+                                                        if (fullPacket.VehicleHealth.HasValue)
+                                                            ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                .Health = fullPacket.VehicleHealth.Value;
+                                                        if (fullPacket.Flag.HasValue)
+                                                            ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                .Siren = (fullPacket.Flag &
+                                                                          (byte) VehicleDataFlags.SirenActive) > 0;
+                                                    }
+
+                                                    if (NetEntityHandler.ToDict()
+                                                        .ContainsKey(fullPacket.NetHandle.Value))
+                                                    {
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
+                                                            fullPacket.Position;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
+                                                            fullPacket.Quaternion;
+                                                    }
+                                                }
+                                                else if (!client.CurrentVehicle.IsNull && NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
                                                 {
-                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
-                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
+                                                    var carPos =
+                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position;
+                                                    var carRot =
+                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation;
+
+                                                    client.Position = carPos;
+                                                    client.Rotation = carRot;
+
+                                                    if (NetEntityHandler.ToDict()
+                                                        .ContainsKey(fullPacket.NetHandle.Value))
+                                                    {
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
+                                                            carPos;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
+                                                            carRot;
+                                                    }
                                                 }
 
                                                 ResendPacket(fullPacket, client, true);

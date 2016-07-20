@@ -1637,14 +1637,22 @@ namespace GTANetwork
                 if (vehdead)
                     obj.Flag |= (byte)VehicleDataFlags.VehicleDead;
 
+                if (Util.GetResponsiblePed(veh).Handle == player.Handle)
+                    obj.Flag |= (byte) VehicleDataFlags.Driver;
+
+
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
+                    obj.Flag |= (byte) VehicleDataFlags.MountedWeapon;
+
                     obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
                     if (Game.IsEnabledControlPressed(0, Control.VehicleFlyAttack))
                         obj.Flag |= (byte) VehicleDataFlags.Shooting;
                 }
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                 {
+                    obj.Flag |= (byte)VehicleDataFlags.MountedWeapon;
+
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
                     if (Game.IsEnabledControlPressed(0, Control.VehicleAttack))
                         obj.Flag |= (byte) VehicleDataFlags.Shooting;
@@ -2278,9 +2286,11 @@ namespace GTANetwork
                 Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, "scr_rcbarry2");
                 Function.Call(Hash.START_PARTICLE_FX_NON_LOOPED_AT_COORD, "scr_clown_appears", pos.X, pos.Y, pos.Z, 0, 0, 0, 2f, 0, 0, 0);
             }
-            */
             
+            if (player.IsInVehicle()) UI.ShowSubtitle(""+ player.CurrentVehicle.Velocity);
+            else UI.ShowSubtitle(""+ player.Velocity);
 
+            */
             if (display)
             {
                 Debug();

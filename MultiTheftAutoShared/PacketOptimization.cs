@@ -25,31 +25,37 @@ namespace GTANetworkShared
                 byteArray.Add(0x00);
             }
 
+            // Write the flag
+            byteArray.AddRange(GetBytes((short)data.Flag.Value));
+
             // Write player's position, rotation, and velocity
             byteArray.AddRange(GetBytes(data.Position.X));
             byteArray.AddRange(GetBytes(data.Position.Y));
             byteArray.AddRange(GetBytes(data.Position.Z));
 
-            byteArray.AddRange(GetBytes(data.Quaternion.X));
-            byteArray.AddRange(GetBytes(data.Quaternion.Y));
+            // Only send roll & pitch if we're ragdolling.
+            if (CheckBit(data.Flag.Value, PedDataFlags.Ragdoll))
+            {
+                byteArray.AddRange(GetBytes(data.Quaternion.X));
+                byteArray.AddRange(GetBytes(data.Quaternion.Y));
+            }
+
             byteArray.AddRange(GetBytes(data.Quaternion.Z));
 
-            byteArray.AddRange(GetBytes(data.Velocity.X));
-            byteArray.AddRange(GetBytes(data.Velocity.Y));
-            byteArray.AddRange(GetBytes(data.Velocity.Z));
+            // optimize velocity to save 6 bytes
+            byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.X)));
+            byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Y)));
+            byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Z)));
             
             // Write player health, armor and walking speed
             byteArray.Add(data.PlayerHealth.Value);
             byteArray.Add(data.PedArmor.Value);
             byteArray.Add(data.Speed.Value);
 
-            // Write the flag
-            byteArray.AddRange(GetBytes((short)data.Flag.Value));
-
             // TODO: Move shooting into it's own packet.
             // Are we shooting?
-            if (CheckBit(data.Flag.Value, (int) PedDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, (int) PedDataFlags.Shooting))
+            if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
+                CheckBit(data.Flag.Value, PedDataFlags.Shooting))
             {
                 // Write current weapon hash.
                 byteArray.AddRange(GetBytes(data.WeaponHash.Value));
@@ -83,6 +89,9 @@ namespace GTANetworkShared
             // Write player model
             byteArray.AddRange(GetBytes(data.PedModelHash.Value));
 
+            // Write current weapon hash.
+            byteArray.AddRange(GetBytes(data.WeaponHash.Value));
+
             // Write player's latency
             if (data.Latency.HasValue)
             {
@@ -110,39 +119,16 @@ namespace GTANetworkShared
                 byteArray.Add(0x00);
             }
 
-            // Write vehicle position, rotation and velocity
-            byteArray.AddRange(GetBytes(data.Position.X));
-            byteArray.AddRange(GetBytes(data.Position.Y));
-            byteArray.AddRange(GetBytes(data.Position.Z));
-
-            byteArray.AddRange(GetBytes(data.Quaternion.X));
-            byteArray.AddRange(GetBytes(data.Quaternion.Y));
-            byteArray.AddRange(GetBytes(data.Quaternion.Z));
-
-            byteArray.AddRange(GetBytes(data.Velocity.X));
-            byteArray.AddRange(GetBytes(data.Velocity.Y));
-            byteArray.AddRange(GetBytes(data.Velocity.Z));
-
-            // Write health values
+            // Write player health and armor
             byteArray.Add(data.PlayerHealth.Value);
             byteArray.Add(data.PedArmor.Value);
-            byteArray.AddRange(GetBytes((short)((int)data.VehicleHealth.Value)));
-
-            // Write engine stuff
-            byte rpm = (byte)(data.RPM.Value*byte.MaxValue);
-
-            float angle = Extensions.Clamp(data.Steering.Value, -45f, 45f);
-            angle += 45f;
-            byte angleCrammed = (byte) ((angle/90f)*byte.MaxValue);
-
-            byteArray.Add(rpm);
-            byteArray.Add(angleCrammed);
 
             // Write the flag
             byteArray.Add(data.Flag.Value);
 
-            if (CheckBit(data.Flag.Value, (int) VehicleDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, (int) VehicleDataFlags.Shooting))
+            if (CheckBit(data.Flag.Value, VehicleDataFlags.Aiming) ||
+                CheckBit(data.Flag.Value, VehicleDataFlags.MountedWeapon) ||
+                CheckBit(data.Flag.Value, VehicleDataFlags.Shooting))
             {
                 // Write the gun model
                 byteArray.AddRange(GetBytes(data.WeaponHash.Value));
@@ -151,6 +137,38 @@ namespace GTANetworkShared
                 byteArray.AddRange(GetBytes(data.AimCoords.X));
                 byteArray.AddRange(GetBytes(data.AimCoords.Y));
                 byteArray.AddRange(GetBytes(data.AimCoords.Z));
+            }
+            
+            // Are we the driver?
+            if (CheckBit(data.Flag.Value, VehicleDataFlags.Driver))
+            {
+                // Write vehicle position, rotation and velocity
+                byteArray.AddRange(GetBytes(data.Position.X));
+                byteArray.AddRange(GetBytes(data.Position.Y));
+                byteArray.AddRange(GetBytes(data.Position.Z));
+
+                byteArray.AddRange(GetBytes(data.Quaternion.X));
+                byteArray.AddRange(GetBytes(data.Quaternion.Y));
+                byteArray.AddRange(GetBytes(data.Quaternion.Z));
+
+
+                // Compress velocity to save 6 bytes
+                byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.X)));
+                byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Y)));
+                byteArray.AddRange(GetBytes(CompressSingle(data.Velocity.Z)));
+
+                // Write vehicle health
+                byteArray.AddRange(GetBytes((short) ((int) data.VehicleHealth.Value)));
+
+                // Write engine stuff
+                byte rpm = (byte) (data.RPM.Value*byte.MaxValue);
+
+                float angle = Extensions.Clamp(data.Steering.Value, -45f, 45f);
+                angle += 45f;
+                byte angleCrammed = (byte) ((angle/90f)*byte.MaxValue);
+
+                byteArray.Add(rpm);
+                byteArray.Add(angleCrammed);
             }
 
             return byteArray.ToArray();
@@ -181,6 +199,9 @@ namespace GTANetworkShared
 
             // Write his seat
             byteArray.Add((byte) data.VehicleSeat.Value);
+
+            // Write the gun model
+            byteArray.AddRange(GetBytes(data.WeaponHash.Value));
 
 
             // If he has a trailer attached, write it's position. (Maybe we can use his pos & rot to calculate it serverside?)
@@ -233,6 +254,9 @@ namespace GTANetworkShared
             // Read player nethandle
             data.NetHandle = r.ReadInt32();
 
+            // Read the flag
+            data.Flag = r.ReadInt16();
+
             // Read player position, rotation and velocity
             Vector3 position = new Vector3();
             Vector3 rotation = new Vector3();
@@ -242,13 +266,18 @@ namespace GTANetworkShared
             position.Y = r.ReadSingle();
             position.Z = r.ReadSingle();
 
-            rotation.X = r.ReadSingle();
-            rotation.Y = r.ReadSingle();
+            // Only read pitchand roll if he's ragdolling
+            if (CheckBit(data.Flag.Value, PedDataFlags.Ragdoll))
+            {
+                rotation.X = r.ReadSingle();
+                rotation.Y = r.ReadSingle();
+            }
+
             rotation.Z = r.ReadSingle();
 
-            velocity.X = r.ReadSingle();
-            velocity.Y = r.ReadSingle();
-            velocity.Z = r.ReadSingle();
+            velocity.X = DecompressSingle(r.ReadUInt16());
+            velocity.Y = DecompressSingle(r.ReadUInt16());
+            velocity.Z = DecompressSingle(r.ReadUInt16());
 
             data.Position = position;
             data.Quaternion = rotation;
@@ -259,12 +288,9 @@ namespace GTANetworkShared
             data.PedArmor = r.ReadByte();
             data.Speed = r.ReadByte();
 
-            // Read the flag
-            data.Flag = r.ReadInt16();
-
             // Is the player shooting?
-            if (CheckBit(data.Flag.Value, (int) PedDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, (int) PedDataFlags.Shooting))
+            if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
+                CheckBit(data.Flag.Value, PedDataFlags.Shooting))
             {
                 // read gun model
                 data.WeaponHash = r.ReadInt32();
@@ -293,6 +319,9 @@ namespace GTANetworkShared
             // Read player model
             data.PedModelHash = r.ReadInt32();
 
+            // Read weapon model
+            data.WeaponHash = r.ReadInt32();
+
             // If we can, read latency
 
             if (r.CanRead(2))
@@ -313,45 +342,16 @@ namespace GTANetworkShared
             // Read player nethandle
             data.NetHandle = r.ReadInt32();
 
-            // Read position, rotation and velocity.
-            Vector3 position = new Vector3();
-            Vector3 rotation = new Vector3();
-            Vector3 velocity = new Vector3();
-
-            position.X = r.ReadSingle();
-            position.Y = r.ReadSingle();
-            position.Z = r.ReadSingle();
-
-            rotation.X = r.ReadSingle();
-            rotation.Y = r.ReadSingle();
-            rotation.Z = r.ReadSingle();
-
-            velocity.X = r.ReadSingle();
-            velocity.Y = r.ReadSingle();
-            velocity.Z = r.ReadSingle();
-
-            data.Position = position;
-            data.Quaternion = rotation;
-            data.Velocity = velocity;
-
             // read health values
             data.PlayerHealth = r.ReadByte();
             data.PedArmor = r.ReadByte();
-            data.VehicleHealth = r.ReadInt16();
-
-            // read RPM & steering angle
-            byte rpmCompressed = r.ReadByte();
-            data.RPM = rpmCompressed/(float) byte.MaxValue;
-
-            byte angleCompressed = r.ReadByte();
-            var angleDenorm = 90f * (angleCompressed/(float) byte.MaxValue);
-            data.Steering = angleDenorm - 45f;
 
             // read flag
             data.Flag = r.ReadByte();
 
-            if (CheckBit(data.Flag.Value, (int) VehicleDataFlags.Shooting) ||
-                CheckBit(data.Flag.Value, (int) VehicleDataFlags.Aiming))
+            // If we're shooting/aiming, read gun stuff
+            if (CheckBit(data.Flag.Value, VehicleDataFlags.Shooting) ||
+                CheckBit(data.Flag.Value, VehicleDataFlags.Aiming))
             {
                 // read gun model
                 data.WeaponHash = r.ReadInt32();
@@ -364,6 +364,42 @@ namespace GTANetworkShared
                 aimCoords.Z = r.ReadSingle();
 
                 data.AimCoords = aimCoords;
+            }
+
+            // Are we the driver?
+            if (CheckBit(data.Flag.Value, VehicleDataFlags.Driver))
+            {
+                // Read position, rotation and velocity.
+                Vector3 position = new Vector3();
+                Vector3 rotation = new Vector3();
+                Vector3 velocity = new Vector3();
+
+                position.X = r.ReadSingle();
+                position.Y = r.ReadSingle();
+                position.Z = r.ReadSingle();
+
+                rotation.X = r.ReadSingle();
+                rotation.Y = r.ReadSingle();
+                rotation.Z = r.ReadSingle();
+
+                velocity.X = DecompressSingle(r.ReadUInt16());
+                velocity.Y = DecompressSingle(r.ReadUInt16());
+                velocity.Z = DecompressSingle(r.ReadUInt16());
+
+                data.Position = position;
+                data.Quaternion = rotation;
+                data.Velocity = velocity;
+
+                // Read car health
+                data.VehicleHealth = r.ReadInt16();
+
+                // read RPM & steering angle
+                byte rpmCompressed = r.ReadByte();
+                data.RPM = rpmCompressed/(float) byte.MaxValue;
+
+                byte angleCompressed = r.ReadByte();
+                var angleDenorm = 90f*(angleCompressed/(float) byte.MaxValue);
+                data.Steering = angleDenorm - 45f;
             }
 
             return data;
@@ -385,6 +421,9 @@ namespace GTANetworkShared
 
             // read vehicle seat
             data.VehicleSeat = (sbyte)r.ReadByte();
+
+            // read gun model.
+            data.WeaponHash = r.ReadInt32();
 
             // Does he have a traielr?
             if (r.ReadBoolean())
@@ -425,9 +464,24 @@ namespace GTANetworkShared
 
         #endregion
 
-        public static bool CheckBit(int value, int bitPosition)
+        public static ushort CompressSingle(float value)
         {
-            return (value & (1 << bitPosition)) > 0;
+            return (ushort) (value*256);
+        }
+
+        public static float DecompressSingle(ushort value)
+        {
+            return value/256f;
+        }
+        
+        public static bool CheckBit(int value, VehicleDataFlags flag)
+        {
+            return (value & (int)flag) > 0;
+        }
+
+        public static bool CheckBit(int value, PedDataFlags flag)
+        {
+            return (value & (int)flag) > 0;
         }
     }
 }

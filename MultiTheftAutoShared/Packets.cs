@@ -98,6 +98,8 @@ namespace GTANetworkShared
         SirenActive = 1 << 2,
         VehicleDead = 1 << 3,
         Aiming = 1 << 4,
+        Driver = 1 << 5,
+        MountedWeapon = 1 << 6,
     }
     
     [Flags]
