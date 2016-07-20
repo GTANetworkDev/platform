@@ -631,54 +631,26 @@ namespace GTANetwork
             return rem;
         }
 
-        public SyncPed CreatePlayer(int netHandle, PedProperties prop)
+        public void UpdatePlayer(int netHandle, PedProperties prop)
         {
             SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
-            if (rem == null)
-            lock (ClientMap)
-            {
-                ClientMap.Add(rem = new SyncPed()
-                {
-                    RemoteHandle = netHandle,
-
-                    Props = prop.Props,
-                    Textures = prop.Textures,
-                    BlipSprite = prop.BlipSprite,
-                    Team = prop.Team,
-                    BlipColor = prop.BlipColor,
-                    BlipAlpha = prop.BlipAlpha,
-                    Accessories = prop.Accessories,
-                    Name = prop.Name,
-                    Position = prop.Position.ToVector(),
-                    Rotation = prop.Rotation.ToVector(),
-                    ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
-                    Alpha = prop.Alpha,
-                    Dimension = prop.Dimension,
-
-                    StreamedIn = true,
-                    LocalOnly = false,
-                });
-            }
-            else
-            {
-                rem.Props = prop.Props;
-                rem.Textures = prop.Textures;
-                rem.BlipSprite = prop.BlipSprite;
-                rem.Team = prop.Team;
-                rem.BlipColor = prop.BlipColor;
-                rem.BlipAlpha = prop.BlipAlpha;
-                rem.Accessories = prop.Accessories;
-                rem.Name = prop.Name;
-                rem.Position = prop.Position.ToVector();
-                rem.Rotation = prop.Rotation.ToVector();
-                rem.ModelHash = prop.ModelHash;
-                rem.EntityType = prop.EntityType;
-                rem.Alpha = prop.Alpha;
-                rem.Dimension = prop.Dimension;
-                rem.RemoteHandle = netHandle;
-            }
-            return rem;
+            if (rem == null) return;
+            
+            rem.Props = prop.Props;
+            rem.Textures = prop.Textures;
+            rem.BlipSprite = prop.BlipSprite;
+            rem.Team = prop.Team;
+            rem.BlipColor = prop.BlipColor;
+            rem.BlipAlpha = prop.BlipAlpha;
+            rem.Accessories = prop.Accessories;
+            rem.Name = prop.Name;
+            rem.Position = prop.Position.ToVector();
+            rem.Rotation = prop.Rotation.ToVector();
+            rem.ModelHash = prop.ModelHash;
+            rem.EntityType = prop.EntityType;
+            rem.Alpha = prop.Alpha;
+            rem.Dimension = prop.Dimension;
+            rem.RemoteHandle = netHandle;
         }
 
         public RemotePickup CreatePickup(Vector3 pos, Vector3 rot, int pickupHash, int amount, int netHandle)

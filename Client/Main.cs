@@ -635,15 +635,20 @@ namespace GTANetwork
                 list = new List<SyncPed>(NetEntityHandler.ClientMap.Where(pair => pair is SyncPed).Cast<SyncPed>());
             }
             
-            _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
+            _serverPlayers.Dictionary.Add("Total Players", (list.Count).ToString());
 
-            _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
+            //_serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
 
             foreach (var ped in list)
             {
-                if (string.IsNullOrEmpty(ped.Name)) continue;
-                if (!_serverPlayers.Dictionary.ContainsKey(ped.Name))
-                    _serverPlayers.Dictionary.Add(ped.Name, ((int)(ped.Latency * 1000)) + "ms");
+                /*if (string.IsNullOrEmpty(ped.Name))
+                {
+                    _serverPlayers.Dictionary.Add("<unk" + ped.LocalHandle + "> (" + ped.RemoteHandle + ")", "ms");
+                    continue;
+                }*/
+
+                //if (!_serverPlayers.Dictionary.ContainsKey(ped.Name))
+                _serverPlayers.Dictionary.Add(ped.Name + " (" + ped.RemoteHandle + ")", ((int)(ped.Latency * 1000)) + "ms");
             }
         }
 
@@ -1491,17 +1496,8 @@ namespace GTANetwork
                             var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
                             if (ourSyncPed != null)
                             {
-                                NetEntityHandler.CreatePlayer(pair.Key, pair.Value);
+                                NetEntityHandler.UpdatePlayer(pair.Key, pair.Value);
                                 
-                                ourSyncPed.Team = pair.Value.Team;
-                                ourSyncPed.BlipSprite = pair.Value.BlipSprite;
-                                ourSyncPed.BlipColor = pair.Value.BlipColor;
-                                ourSyncPed.BlipAlpha = pair.Value.BlipAlpha;
-                                ourSyncPed.Name = pair.Value.Name;
-                                ourSyncPed.Props = pair.Value.Props;
-                                ourSyncPed.Textures = pair.Value.Textures;
-                                ourSyncPed.Accessories = pair.Value.Accessories;
-                                ourSyncPed.Dimension = pair.Value.Dimension;
                                 if (ourSyncPed.Character != null)
                                 {
                                     ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
