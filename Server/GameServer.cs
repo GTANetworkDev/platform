@@ -485,7 +485,7 @@ namespace GTANetworkServer
                     ourResource.Map = new XmlGroup();
                     ourResource.Map.Load("resources\\" + ourResource.DirectoryName +"\\" + ourResource.Info.Map.Path);
 
-                    LoadMap(ourResource, ourResource.Map);
+                    LoadMap(ourResource, ourResource.Map, ourResource.Info.Map.Dimension);
 
                     if (ourResource.Info.Info.Type == ResourceType.gamemode)
                     {
@@ -569,7 +569,7 @@ namespace GTANetworkServer
             }
         }
 
-        public void LoadMap(Resource res, XmlGroup map)
+        public void LoadMap(Resource res, XmlGroup map, int dimension)
         {
             res.MapEntities = new List<NetHandle>();
 
@@ -595,7 +595,7 @@ namespace GTANetworkServer
                     new Vector3(prop.getElementData<float>("posX"), prop.getElementData<float>("posY"),
                         prop.getElementData<float>("posZ")),
                     new Vector3(prop.getElementData<float>("rotX"), prop.getElementData<float>("rotY"),
-                        prop.getElementData<float>("rotZ")));
+                        prop.getElementData<float>("rotZ")), dimension);
                 res.MapEntities.Add(ent);
             }
 
@@ -607,7 +607,7 @@ namespace GTANetworkServer
                         vehicle.getElementData<float>("posZ")),
                     new Vector3(vehicle.getElementData<float>("rotX"), vehicle.getElementData<float>("rotY"),
                         vehicle.getElementData<float>("rotZ")), vehicle.getElementData<int>("color1"),
-                    vehicle.getElementData<int>("color2"));
+                    vehicle.getElementData<int>("color2"), dimension);
                 res.MapEntities.Add(ent);
             }
 
@@ -618,7 +618,7 @@ namespace GTANetworkServer
                     new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
                         vehicle.getElementData<float>("posZ")),
                     new Vector3(vehicle.getElementData<float>("rotX"), vehicle.getElementData<float>("rotY"),
-                        vehicle.getElementData<float>("rotZ")), vehicle.getElementData<int>("amount"));
+                        vehicle.getElementData<float>("rotZ")), vehicle.getElementData<int>("amount"), dimension);
                 res.MapEntities.Add(ent);
             }
 
@@ -634,7 +634,7 @@ namespace GTANetworkServer
                         vehicle.getElementData<float>("rotZ")),
                     new Vector3(vehicle.getElementData<float>("scaleX"), vehicle.getElementData<float>("scaleY"),
                         vehicle.getElementData<float>("scaleZ")), vehicle.getElementData<int>("alpha"),
-                    vehicle.getElementData<int>("red"), vehicle.getElementData<int>("green"), vehicle.getElementData<int>("blue"));
+                    vehicle.getElementData<int>("red"), vehicle.getElementData<int>("green"), vehicle.getElementData<int>("blue"), dimension);
                 res.MapEntities.Add(ent);
             }
 
@@ -643,7 +643,7 @@ namespace GTANetworkServer
             {
                 var ent = PublicAPI.createBlip(
                     new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
-                        vehicle.getElementData<float>("posZ")));
+                        vehicle.getElementData<float>("posZ")), dimension);
 
                 if (vehicle.hasElementData("sprite"))
                     PublicAPI.setBlipSprite(ent, vehicle.getElementData<int>("sprite"));

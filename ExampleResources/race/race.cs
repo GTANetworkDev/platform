@@ -246,7 +246,7 @@ public class RaceGamemode : Script
                             if (nextCp != null && curCp != null)
                             {
                                 Vector3 dir = nextCp.Subtract(curCp);
-                                dir = dir.Normalize();
+                                dir.Normalize();
                                 nextDir = dir;
                             }
                         }
@@ -418,7 +418,7 @@ public class RaceGamemode : Script
         if (race.Checkpoints.Length >= 2)
         {
             Vector3 dir = race.Checkpoints[1].Subtract(race.Checkpoints[0]);
-            dir = dir.Normalize();
+            dir.Normalize();
             newDir = dir;
         }
 
@@ -498,7 +498,7 @@ public class RaceGamemode : Script
         if (CurrentRaceCheckpoints.Count > checkpoint + 2)
         {
             Vector3 dir = CurrentRaceCheckpoints[checkpoint+2].Subtract(CurrentRaceCheckpoints[checkpoint+1]);
-            dir = dir.Normalize();
+            dir.Normalize();
             newDir = dir;
         }
 
@@ -637,21 +637,6 @@ public static class RangeExtension
     public static float Length(this Vector3 vect)
     {
         return (float)Math.Sqrt((vect.X * vect.X) + (vect.Y * vect.Y) + (vect.Z * vect.Z));
-    }
-
-    public static Vector3 Normalize(this Vector3 vect)
-    {
-        float length = vect.Length();
-        if (length == 0) return vect;
-
-        float num = 1 / length;
-
-        return new Vector3()
-        {
-            X = vect.X * num,
-            Y = vect.Y * num,
-            Z = vect.Z * num,
-        };
     }
 }
 

@@ -492,6 +492,9 @@ namespace GTANetworkServer
     {
         [XmlAttribute("src")]
         public string Path { get; set; }
+
+        [XmlAttribute("dimension")]
+        public int Dimension { get; set; }
     }
 
     [XmlRoot("assembly")]
