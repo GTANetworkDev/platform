@@ -42,6 +42,7 @@ namespace GTANetworkShared
         VehiclePureSync = 32,
         VehicleLightSync = 33,
         BasicSync = 34,
+        BulletSync = 35,
     }
 
     public enum ScriptVersion
@@ -130,6 +131,7 @@ namespace GTANetworkShared
         PureSync = 7,
         LightSync = 8,
         BasicSync = 9,
+        BulletSync = 10,
     }
 
     public struct LocalHandle

@@ -51,14 +51,14 @@ namespace GTANetworkShared
             byteArray.Add(data.PedArmor.Value);
             byteArray.Add(data.Speed.Value);
 
-            // TODO: Move shooting into it's own packet.
+
+            // Write current weapon hash.
+            byteArray.AddRange(GetBytes(data.WeaponHash.Value));
+
             // Are we shooting?
             if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
                 CheckBit(data.Flag.Value, PedDataFlags.Shooting))
             {
-                // Write current weapon hash.
-                byteArray.AddRange(GetBytes(data.WeaponHash.Value));
-                
                 // Aim coordinates
                 byteArray.AddRange(GetBytes(data.AimCoords.X));
                 byteArray.AddRange(GetBytes(data.AimCoords.Y));
@@ -87,10 +87,7 @@ namespace GTANetworkShared
 
             // Write player model
             byteArray.AddRange(GetBytes(data.PedModelHash.Value));
-
-            // Write current weapon hash.
-            byteArray.AddRange(GetBytes(data.WeaponHash.Value));
-
+            
             // Write player's latency
             if (data.Latency.HasValue)
             {
@@ -240,6 +237,28 @@ namespace GTANetworkShared
             return byteArray.ToArray();
         }
 
+        public static byte[] WriteBulletSync(int netHandle, bool shooting, Vector3 aimCoords)
+        {
+            List<byte> byteArray = new List<byte>();
+
+            // write the player nethandle
+            byteArray.AddRange(GetBytes(netHandle));
+
+            // is he shooting anymore?
+            byteArray.Add(shooting ? (byte)0x01 : (byte)0x00);
+
+            if (shooting)
+            {
+                // Write his aiming point
+                byteArray.AddRange(GetBytes(aimCoords.X));
+                byteArray.AddRange(GetBytes(aimCoords.Y));
+                byteArray.AddRange(GetBytes(aimCoords.Z));
+            }
+
+            return byteArray.ToArray();
+        }
+
+
         #endregion
 
         #region Read Operations
@@ -286,13 +305,13 @@ namespace GTANetworkShared
             data.PedArmor = r.ReadByte();
             data.Speed = r.ReadByte();
 
+            // read gun model
+            data.WeaponHash = r.ReadInt32();
+
             // Is the player shooting?
             if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
                 CheckBit(data.Flag.Value, PedDataFlags.Shooting))
             {
-                // read gun model
-                data.WeaponHash = r.ReadInt32();
-
                 // read where is he aiming
                 Vector3 aimPoint = new Vector3();
 
@@ -316,9 +335,6 @@ namespace GTANetworkShared
             
             // Read player model
             data.PedModelHash = r.ReadInt32();
-
-            // Read weapon model
-            data.WeaponHash = r.ReadInt32();
 
             // If we can, read latency
 
@@ -460,9 +476,32 @@ namespace GTANetworkShared
             position.Z = r.ReadSingle();
         }
 
+        public static bool ReadBulletSync(byte[] array, out int netHandle, out Vector3 position)
+        {
+            var r = new BitReader(array);
+
+            // read netHandle
+            netHandle = r.ReadInt32();
+
+            // read whether he's shooting
+            bool output = r.ReadBoolean();
+
+            position = new Vector3();
+
+            // read aiming point
+            if (output)
+            {
+                position.X = r.ReadSingle();
+                position.Y = r.ReadSingle();
+                position.Z = r.ReadSingle();
+            }
+            return output;
+        }
+
+
         #endregion
 
-        
+
         public static ushort CompressSingle(float value)
         {
             return (ushort) (value*256);

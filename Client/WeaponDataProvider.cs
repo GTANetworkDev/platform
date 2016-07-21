@@ -7,6 +7,33 @@ namespace GTANetwork
 
     public static class WeaponDataProvider
     {
+        public static bool IsWeaponAutomatic(WeaponHash hash)
+        {
+            switch (hash)
+            {
+                default:
+                    return true;
+                case WeaponHash.Molotov:
+                case WeaponHash.BZGas:
+                case WeaponHash.SmokeGrenade:
+                case WeaponHash.ProximityMine:
+                case WeaponHash.StickyBomb:
+                case WeaponHash.Grenade:
+                case WeaponHash.Flare:
+                case WeaponHash.Snowball:
+                case WeaponHash.Ball:
+
+                case WeaponHash.RPG:
+                case WeaponHash.HomingLauncher:
+                case WeaponHash.Railgun:
+                case WeaponHash.GrenadeLauncher:
+                case WeaponHash.Firework:
+                case WeaponHash.Musket:
+                case WeaponHash.FlareGun:
+                    return false;
+            }
+        }
+
         public static bool DoesVehicleHaveParallelWeapon(VehicleHash model, bool rockets)
         {
             if (model == VehicleHash.Savage)

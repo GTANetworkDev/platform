@@ -865,6 +865,27 @@ namespace GTANResource
             }
         }
 
+        private void ResendBulletPacket(int netHandle, Vector3 aim, bool shooting, Client exception)
+        {
+            byte[] full = new byte[0];
+
+            full = PacketOptimization.WriteBulletSync(netHandle, shooting, aim);
+
+            foreach (var client in Clients)
+            {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+
+                NetOutgoingMessage msg = Server.CreateMessage();
+                msg.Write((int)PacketType.BulletSync);
+                msg.Write(full.Length);
+                msg.Write(full);
+                Server.SendMessage(msg, client.NetConnection,
+                    NetDeliveryMethod.ReliableSequenced,
+                    (int)ConnectionChannel.BulletSync);
+            }
+        }
+
         private void ResendPacket(VehicleData fullPacket, Client exception, bool pure)
         {
             byte[] full = new byte[0];
@@ -1400,6 +1421,27 @@ namespace GTANResource
                                                 ResendPacket(fullPacket, client, false);
                                             }
                                             catch(IndexOutOfRangeException)
+                                            { }
+                                        }
+                                        break;
+                                    case PacketType.BulletSync:
+                                        {
+                                            try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var bin = msg.ReadBytes(len);
+
+                                                int netHandle;
+                                                bool shooting;
+                                                Vector3 aimPoint;
+
+                                                shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out aimPoint);
+
+                                                netHandle = client.CharacterHandle.Value;
+
+                                                ResendBulletPacket(netHandle, aimPoint, shooting, client);
+                                            }
+                                            catch
                                             { }
                                         }
                                         break;

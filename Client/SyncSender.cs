@@ -170,6 +170,8 @@ namespace GTANetwork
         public static object LastSyncPacket;
         public static object Lock = new object();
 
+        private static bool _lastShooting;
+
         public SyncCollector()
         {
             var t = new Thread(SyncSender.MainLoop);
@@ -302,10 +304,10 @@ namespace GTANetwork
                     obj.Flag |= (int)PedDataFlags.InFreefall;
                 if (player.IsInMeleeCombat)
                     obj.Flag |= (int)PedDataFlags.InMeleeCombat;
-                if (aiming)
+                if (aiming || shooting)
                     obj.Flag |= (int)PedDataFlags.Aiming;
-                if ((shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) && !player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
-                    obj.Flag |= (int)PedDataFlags.Shooting;
+                if ((player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
+                    obj.Flag |= (int) PedDataFlags.Shooting;
                 if (Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle))
                     obj.Flag |= (int)PedDataFlags.Jumping;
                 if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 2)
@@ -324,6 +326,57 @@ namespace GTANetwork
                 lock (Lock)
                 {
                     LastSyncPacket = obj;
+                }
+
+                bool sendShootingPacket;
+
+                if (!WeaponDataProvider.IsWeaponAutomatic(unchecked ((WeaponHash) obj.WeaponHash.Value)))
+                {
+                    sendShootingPacket = (shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
+                                          !player.IsSubtaskActive(ESubtask.MELEE_COMBAT));
+                }
+                else
+                {
+                    sendShootingPacket = (!player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
+                                          !player.IsSubtaskActive(ESubtask.MELEE_COMBAT) &&
+                                          player.Weapons.Current.AmmoInClip > 0 &&
+                                          Game.IsEnabledControlPressed(0, Control.Attack)) ||
+                                         ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
+                                          Game.IsEnabledControlPressed(0, Control.Attack));
+                }
+
+                if (sendShootingPacket && !_lastShooting)
+                {
+                    _lastShooting = true;
+                    var bin = PacketOptimization.WriteBulletSync(0, true, aimCoord.ToLVector());
+
+                    var msg = Main.Client.CreateMessage();
+
+                    msg.Write((int)PacketType.BulletSync);
+                    msg.Write(bin.Length);
+                    msg.Write(bin);
+
+                    Main.Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.BulletSync);
+                    
+                    Main._bytesSent += bin.Length;
+                    Main._messagesSent++;
+                }
+
+                if (!sendShootingPacket && _lastShooting)
+                {
+                    _lastShooting = false;
+                    var bin = PacketOptimization.WriteBulletSync(0, false, aimCoord.ToLVector());
+
+                    var msg = Main.Client.CreateMessage();
+
+                    msg.Write((int)PacketType.BulletSync);
+                    msg.Write(bin.Length);
+                    msg.Write(bin);
+
+                    Main.Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.BulletSync);
+
+                    Main._bytesSent += bin.Length;
+                    Main._messagesSent++;
                 }
             }
         }

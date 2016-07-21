@@ -2961,6 +2961,18 @@ namespace GTANetwork
                         HandleBasicPacket(nethandle, position.ToVector());
                     }
                     break;
+                case PacketType.BulletSync:
+                    {
+                        var len = msg.ReadInt32();
+                        var data = msg.ReadBytes(len);
+
+                        int nethandle;
+                        GTANetworkShared.Vector3 position;
+                        bool shooting = PacketOptimization.ReadBulletSync(data, out nethandle, out position);
+
+                        HandleBulletPacket(nethandle, shooting, position.ToVector());
+                    }
+                    break;
                 case PacketType.NpcVehPositionData:
                     {
                         var len = msg.ReadInt32();
@@ -3940,6 +3952,15 @@ namespace GTANetwork
             }
         }
 
+        private void HandleBulletPacket(int netHandle, bool shooting, Vector3 aim)
+        {
+            var syncPed = NetEntityHandler.GetPlayer(netHandle);
+
+            syncPed.IsShooting = shooting;
+
+            if (shooting) syncPed.AimCoords = aim;
+        }
+
         private void HandlePedPacket(PedData fullPacket)
         {
             var syncPed = NetEntityHandler.GetPlayer(fullPacket.NetHandle.Value);
@@ -3967,7 +3988,7 @@ namespace GTANetwork
                 syncPed.IsRagdoll = (fullPacket.Flag.Value & (int)PedDataFlags.Ragdoll) > 0;
                 syncPed.IsAiming = (fullPacket.Flag.Value & (int)PedDataFlags.Aiming) > 0;
                 syncPed.IsJumping = (fullPacket.Flag.Value & (int)PedDataFlags.Jumping) > 0;
-                syncPed.IsShooting = (fullPacket.Flag.Value & (int)PedDataFlags.Shooting) > 0;
+                //syncPed.IsShooting = (fullPacket.Flag.Value & (int)PedDataFlags.Shooting) > 0;
                 syncPed.IsParachuteOpen = (fullPacket.Flag.Value & (int)PedDataFlags.ParachuteOpen) > 0;
                 syncPed.IsInCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCover) > 0;
                 syncPed.IsInLowCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInLowerCover) > 0;
