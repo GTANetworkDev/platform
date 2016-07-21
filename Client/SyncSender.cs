@@ -1,0 +1,331 @@
+﻿using System;
+using System.Threading;
+using GTA;
+using GTA.Math;
+using GTA.Native;
+using GTANetworkShared;
+using Lidgren.Network;
+using Vector3 = GTA.Math.Vector3;
+
+namespace GTANetwork
+{
+    public static class SyncSender
+    {
+        public static void MainLoop()
+        {
+            bool lastPedData = false;
+            int lastLightSyncSent = 0;
+
+            int LIGHT_SYNC_RATE = 1500;
+            int PURE_SYNC_RATE = 100;
+
+            while (true)
+            {
+                if (!Main.IsOnServer())
+                {
+                    Thread.Sleep(100);
+                    continue;
+                }
+
+                object lastPacket;
+                lock (SyncCollector.Lock)
+                {
+                    lastPacket = SyncCollector.LastSyncPacket;
+                    SyncCollector.LastSyncPacket = null;
+                }
+
+                if (lastPacket == null) continue;
+                try
+                {
+                    if (lastPacket is PedData)
+                    {
+                        var bin = PacketOptimization.WritePureSync((PedData) lastPacket);
+
+                        var msg = Main.Client.CreateMessage();
+                        msg.Write((int) PacketType.PedPureSync);
+                        msg.Write(bin.Length);
+                        msg.Write(bin);
+
+                        try
+                        {
+                            Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced,
+                                (int) ConnectionChannel.PureSync);
+                        }
+                        catch (Exception ex)
+                        {
+                            Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
+                            LogManager.LogException(ex, "SENDPLAYERDATA");
+                        }
+
+                        if (!lastPedData || Environment.TickCount - lastLightSyncSent > LIGHT_SYNC_RATE)
+                        {
+                            lastLightSyncSent = Environment.TickCount;
+
+                            LogManager.DebugLog("SENDING LIGHT VEHICLE SYNC");
+
+                            var lightBin = PacketOptimization.WriteLightSync((PedData) lastPacket);
+
+                            var lightMsg = Main.Client.CreateMessage();
+                            lightMsg.Write((int) PacketType.PedLightSync);
+                            lightMsg.Write(lightBin.Length);
+                            lightMsg.Write(lightBin);
+                            try
+                            {
+                                Main.Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced,
+                                    (int) ConnectionChannel.LightSync);
+                            }
+                            catch (Exception ex)
+                            {
+                                Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
+                                LogManager.LogException(ex, "SENDPLAYERDATA");
+                            }
+
+                            Main._bytesSent += lightBin.Length;
+                            Main._messagesSent++;
+                        }
+
+                        lastPedData = true;
+
+                        lock (Main._averagePacketSize)
+                        {
+                            Main._averagePacketSize.Add(bin.Length);
+                            if (Main._averagePacketSize.Count > 10)
+                                Main._averagePacketSize.RemoveAt(0);
+                        }
+
+                        Main._bytesSent += bin.Length;
+                        Main._messagesSent++;
+                    }
+                    else
+                    {
+                        var bin = PacketOptimization.WritePureSync((VehicleData) lastPacket);
+
+                        var msg = Main.Client.CreateMessage();
+                        msg.Write((int) PacketType.VehiclePureSync);
+                        msg.Write(bin.Length);
+                        msg.Write(bin);
+                        try
+                        {
+                            Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced,
+                                (int) ConnectionChannel.PureSync);
+                        }
+                        catch (Exception ex)
+                        {
+                            Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
+                            LogManager.LogException(ex, "SENDPLAYERDATA");
+                        }
+
+                        if (lastPedData || Environment.TickCount - lastLightSyncSent > LIGHT_SYNC_RATE)
+                        {
+                            lastLightSyncSent = Environment.TickCount;
+
+                            LogManager.DebugLog("SENDING LIGHT VEHICLE SYNC");
+
+                            var lightBin = PacketOptimization.WriteLightSync((VehicleData) lastPacket);
+
+                            var lightMsg = Main.Client.CreateMessage();
+                            lightMsg.Write((int) PacketType.VehicleLightSync);
+                            lightMsg.Write(lightBin.Length);
+                            lightMsg.Write(lightBin);
+                            try
+                            {
+                                Main.Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced,
+                                    (int) ConnectionChannel.LightSync);
+                            }
+                            catch (Exception ex)
+                            {
+                                Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
+                                LogManager.LogException(ex, "SENDPLAYERDATA");
+                            }
+
+                            Main._bytesSent += lightBin.Length;
+                            Main._messagesSent++;
+                        }
+
+                        lastPedData = false;
+
+                        lock (Main._averagePacketSize)
+                        {
+                            Main._averagePacketSize.Add(bin.Length);
+                            if (Main._averagePacketSize.Count > 10)
+                                Main._averagePacketSize.RemoveAt(0);
+                        }
+
+                        Main._bytesSent += bin.Length;
+                        Main._messagesSent++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogManager.LogException(ex, "SYNCSENDER");
+                }
+
+                Thread.Sleep(PURE_SYNC_RATE);
+            }
+        }
+    }
+
+    public class SyncCollector : Script
+    {
+        public static object LastSyncPacket;
+        public static object Lock = new object();
+
+        public SyncCollector()
+        {
+            var t = new Thread(SyncSender.MainLoop);
+            t.IsBackground = true;
+            t.Start();
+
+            Tick += OnTick;
+        }
+
+        public void OnTick(object sender, EventArgs e)
+        {
+            if (!Main.IsOnServer()) return;
+            var player = Game.Player.Character;
+
+            if (player.IsInVehicle())
+            {
+                var veh = player.CurrentVehicle;
+
+                var horn = Game.Player.IsPressingHorn;
+                var siren = veh.SirenActive;
+                var vehdead = veh.IsDead;
+
+                var obj = new VehicleData();
+                obj.Position = veh.Position.ToLVector();
+                obj.VehicleHandle = Main.NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
+                obj.Quaternion = veh.Rotation.ToLVector();
+                obj.PedModelHash = player.Model.Hash;
+                obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
+                obj.VehicleHealth = veh.EngineHealth;
+                obj.Velocity = veh.Velocity.ToLVector();
+                obj.PedArmor = (byte)player.Armor;
+                obj.RPM = veh.CurrentRPM;
+                obj.VehicleSeat = (short)Util.GetPedSeat(player);
+                obj.Flag = 0;
+                obj.Steering = veh.SteeringAngle;
+
+                if (horn)
+                    obj.Flag |= (byte)VehicleDataFlags.PressingHorn;
+                if (siren)
+                    obj.Flag |= (byte)VehicleDataFlags.SirenActive;
+                if (vehdead)
+                    obj.Flag |= (byte)VehicleDataFlags.VehicleDead;
+
+                if (Util.GetResponsiblePed(veh).Handle == player.Handle)
+                    obj.Flag |= (byte)VehicleDataFlags.Driver;
+
+
+                if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
+                {
+                    obj.Flag |= (byte)VehicleDataFlags.MountedWeapon;
+                    obj.AimCoords = new GTANetworkShared.Vector3(0, 0, 0);
+                    obj.WeaponHash = Main.GetCurrentVehicleWeaponHash(Game.Player.Character);
+                    if (Game.IsEnabledControlPressed(0, Control.VehicleFlyAttack))
+                        obj.Flag |= (byte)VehicleDataFlags.Shooting;
+                }
+                else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
+                {
+                    obj.Flag |= (byte)VehicleDataFlags.MountedWeapon;
+
+                    obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
+                    if (Game.IsEnabledControlPressed(0, Control.VehicleAttack))
+                        obj.Flag |= (byte)VehicleDataFlags.Shooting;
+                }
+                else
+                {
+                    if (player.IsSubtaskActive(200) &&
+                        Game.IsEnabledControlPressed(0, Control.Attack) &&
+                        Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
+                        obj.Flag |= (byte)VehicleDataFlags.Shooting;
+                    if (player.IsSubtaskActive(200) && // or 290
+                        Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
+                        obj.Flag |= (byte)VehicleDataFlags.Aiming;
+                    //obj.IsShooting = Game.Player.Character.IsShooting;
+                    obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
+
+                    var outputArg = new OutputArgument();
+                    Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
+                    obj.WeaponHash = outputArg.GetResult<int>();
+                }
+
+                Vehicle trailer;
+
+                if ((VehicleHash)veh.Model.Hash == VehicleHash.TowTruck ||
+                    (VehicleHash)veh.Model.Hash == VehicleHash.TowTruck2)
+                    trailer = veh.TowedVehicle;
+                else if ((VehicleHash)veh.Model.Hash == VehicleHash.Cargobob ||
+                         (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob2 ||
+                         (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob3 ||
+                         (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob4)
+                    trailer = SyncEventWatcher.GetVehicleCargobobVehicle(veh);
+                else trailer = SyncEventWatcher.GetVehicleTrailerVehicle(veh);
+
+                if (trailer != null && trailer.Exists())
+                {
+                    obj.Trailer = trailer.Position.ToLVector();
+                }
+
+                lock (Lock)
+                {
+                    LastSyncPacket = obj;
+                }
+            }
+            else
+            {
+                bool aiming = player.IsSubtaskActive(ESubtask.AIMED_SHOOTING_ON_FOOT) || player.IsSubtaskActive(ESubtask.AIMING_THROWABLE); // Game.IsControlPressed(0, GTA.Control.Aim);
+                bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, player.Handle);
+
+                GTA.Math.Vector3 aimCoord = new Vector3();
+                if (aiming || shooting)
+                {
+                    aimCoord = Main.RaycastEverything(new Vector2(0, 0));
+                }
+
+                var obj = new PedData();
+                obj.AimCoords = aimCoord.ToLVector();
+                obj.Position = player.Position.ToLVector();
+                obj.Quaternion = player.Rotation.ToLVector();
+                obj.PedArmor = (byte)player.Armor;
+                obj.PedModelHash = player.Model.Hash;
+                obj.WeaponHash = (int)player.Weapons.Current.Hash;
+                obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
+                obj.Velocity = player.Velocity.ToLVector();
+
+                obj.Flag = 0;
+
+                if (player.IsRagdoll)
+                    obj.Flag |= (int)PedDataFlags.Ragdoll;
+                if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 0 &&
+                    Game.Player.Character.IsInAir)
+                    obj.Flag |= (int)PedDataFlags.InFreefall;
+                if (player.IsInMeleeCombat)
+                    obj.Flag |= (int)PedDataFlags.InMeleeCombat;
+                if (aiming)
+                    obj.Flag |= (int)PedDataFlags.Aiming;
+                if ((shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) && !player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) || (player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
+                    obj.Flag |= (int)PedDataFlags.Shooting;
+                if (Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle))
+                    obj.Flag |= (int)PedDataFlags.Jumping;
+                if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character.Handle) == 2)
+                    obj.Flag |= (int)PedDataFlags.ParachuteOpen;
+                if (player.IsInCover())
+                    obj.Flag |= (int)PedDataFlags.IsInCover;
+                if (!Function.Call<bool>((Hash)0x6A03BF943D767C93, player))
+                    obj.Flag |= (int)PedDataFlags.IsInLowerCover;
+                if (player.IsInCoverFacingLeft)
+                    obj.Flag |= (int)PedDataFlags.IsInCoverFacingLeft;
+                if (player.IsReloading)
+                    obj.Flag |= (int)PedDataFlags.IsReloading;
+
+                obj.Speed = Main.GetPedWalkingSpeed(player);
+
+                lock (Lock)
+                {
+                    LastSyncPacket = obj;
+                }
+            }
+        }
+    }
+}

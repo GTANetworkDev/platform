@@ -141,6 +141,11 @@ namespace GTANetwork
             }
         }
 
+        public int TicksSinceLastUpdate
+        {
+            get { return Environment.TickCount - LastUpdateReceived; }
+        }
+
         public Dictionary<int, int> VehicleMods
         {
             get { return _vehicleMods; }
@@ -726,7 +731,7 @@ namespace GTANetwork
 
             Vector3 target, posTarget;
 
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
             
             if (Speed > 10)
             {
@@ -1041,7 +1046,7 @@ namespace GTANetwork
 				0);
 			DEBUG_STEP = 25;
 #if !DISABLE_SLERP
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1083,7 +1088,7 @@ namespace GTANetwork
 			DEBUG_STEP = 25;
 
 #if !DISABLE_SLERP
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1244,7 +1249,7 @@ namespace GTANetwork
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
 #if !DISABLE_SLERP
-                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
                 Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1265,7 +1270,7 @@ namespace GTANetwork
                 if (Game.GameTime - _lastVehicleAimUpdate > 40)
                 {
                     //Character.Task.AimAt(AimCoords, -1);
-                    var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                    var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
                     var dir = Position - _lastPosition;
                     var posTarget = Vector3.Lerp(Position, Position + dir,
                         latency / ((float)AverageLatency));
@@ -1339,7 +1344,7 @@ namespace GTANetwork
 					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 #if !DISABLE_SLERP
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1367,7 +1372,7 @@ namespace GTANetwork
             if (Game.GameTime - _lastVehicleAimUpdate > 30)
             {
                 //Character.Task.AimAt(AimCoords, -1);
-                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
                 var dir = Position - _lastPosition;
                 var posTarget = Vector3.Lerp(Position, Position + dir,
                     latency / ((float)AverageLatency));
@@ -1437,7 +1442,7 @@ namespace GTANetwork
 	        if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
 	        {
 #if !DISABLE_SLERP
-                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
                 Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1761,7 +1766,7 @@ namespace GTANetwork
             }
             
             LogManager.DebugLog("LASTPOS : " + _lastPosition);
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2);
+            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
 
             if (syncMode == SynchronizationMode.DeadReckoning)
             {

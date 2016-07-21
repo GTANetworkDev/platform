@@ -116,23 +116,19 @@ namespace GTANetwork
         private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
 
         // STATS
-        private static int _bytesSent = 0;
-        private static int _bytesReceived = 0;
+        public static int _bytesSent = 0;
+        public static int _bytesReceived = 0;
 
-        private static int _messagesSent = 0;
-        private static int _messagesReceived = 0;
+        public static int _messagesSent = 0;
+        public static int _messagesReceived = 0;
 
-        private static List<int> _averagePacketSize = new List<int>();
+        public static List<int> _averagePacketSize = new List<int>();
 
         private TabTextItem _statsItem;
         //
       
         public Main()
         {
-            var scal = new Scaleform(0);
-            scal.Load("minimap");
-            scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true, false);
-
             CrossReference.EntryPoint = this;
 
             PlayerSettings = Util.ReadSettings(GTANInstallDir + "\\settings.xml");
@@ -641,7 +637,12 @@ namespace GTANetwork
 
             foreach (var ped in list)
             {
-                _serverPlayers.Dictionary.Add(ped.Name + " (" + ped.RemoteHandle + ")", ((int)(ped.Latency * 1000)) + "ms");
+                try
+                {
+                    _serverPlayers.Dictionary.Add(ped.Name + " (" + ped.RemoteHandle + ")",
+                        ((int) (ped.Latency*1000)) + "ms");
+                }
+                catch (ArgumentException) { }
             }
         }
 
@@ -1599,7 +1600,7 @@ namespace GTANetwork
         private static bool _lastPedData;
         private static int _lastLightSync;
         private static int LIGHT_SYNC_RATE = 1500;
-
+        /*
         public static void SendPlayerData()
         {
             if (IsSpectating || !_sendData ) return; //|| !HasFinishedDownloading
@@ -1845,7 +1846,7 @@ namespace GTANetwork
                 _messagesSent++;
             }
         }
-
+        */
         ///*
         
         /// <summary>
@@ -2130,7 +2131,13 @@ namespace GTANetwork
                 Game.Player.Character.MaxHealth = 200;
                 Game.Player.Character.Health = 200;
                 _hasPlayerSpawned = true;
+
+                var scal = new Scaleform(0);
+                scal.Load("minimap");
+                scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true, false);
+
                 Game.FadeScreenIn(1000);
+
             }
 
             DEBUG_STEP = 0;
@@ -2511,11 +2518,15 @@ namespace GTANetwork
             Game.DisableControl(0, Control.Phone);
 
 
+            double aver = 0;
+            lock (_averagePacketSize)
+                aver = _averagePacketSize.Count > 0 ? _averagePacketSize.Average() : 0;
+
             _statsItem.Text =
                 string.Format(
                     "~h~Bytes Sent~h~: {0}~n~~h~Bytes Received~h~: {1}~n~~h~Bytes Sent / Second~h~: {5}~n~~h~Bytes Received / Second~h~: {6}~n~~h~Average Packet Size~h~: {4}~n~~n~~h~Messages Sent~h~: {2}~n~~h~Messages Received~h~: {3}",
                     _bytesSent, _bytesReceived, _messagesSent, _messagesReceived,
-                    _averagePacketSize.Count > 0 ? _averagePacketSize.Average() : 0, _bytesSentPerSecond,
+                    aver, _bytesSentPerSecond,
                     _bytesReceivedPerSecond);
 
 
