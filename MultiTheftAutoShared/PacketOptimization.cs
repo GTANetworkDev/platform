@@ -365,6 +365,7 @@ namespace GTANetworkShared
 
             // If we're shooting/aiming, read gun stuff
             if (CheckBit(data.Flag.Value, VehicleDataFlags.Shooting) ||
+                CheckBit(data.Flag.Value, VehicleDataFlags.MountedWeapon) ||
                 CheckBit(data.Flag.Value, VehicleDataFlags.Aiming))
             {
                 // read gun model
