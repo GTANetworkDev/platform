@@ -100,6 +100,7 @@
     <Compile Include="GUI\TabMapItem.cs" />
     <Compile Include="GUI\TabQuickConnectItem.cs" />
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />
+    <Compile Include="GUI\WeaponWheel.cs" />
     <Compile Include="InputboxThread.cs" />
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="LogManager.cs" />
@@ -116,6 +117,7 @@
     <Compile Include="StreamedItems.cs" />
     <Compile Include="Subtask.cs" />
     <Compile Include="SyncEventWatcher.cs" />
+    <Compile Include="SyncSender.cs" />
     <Compile Include="WeaponDataProvider.cs" />
     <Compile Include="SyncPed.cs" />
     <Compile Include="Util.cs" />

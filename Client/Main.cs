@@ -2081,7 +2081,8 @@ namespace GTANetwork
         private Vector3 _lastWaveReset;
         public static DateTime LastCarEnter;
         private float _debugPed;
-        private Dictionary<int, int> _debugSettings = new Dictionary<int, int>(); 
+        private Dictionary<int, int> _debugSettings = new Dictionary<int, int>();
+        private bool _minimapSet;
 
         // netstats
         private int _lastBytesSent;
@@ -2132,12 +2133,7 @@ namespace GTANetwork
                 Game.Player.Character.Health = 200;
                 _hasPlayerSpawned = true;
 
-                var scal = new Scaleform(0);
-                scal.Load("minimap");
-                scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true, false);
-
                 Game.FadeScreenIn(1000);
-
             }
 
             DEBUG_STEP = 0;
@@ -2295,6 +2291,8 @@ namespace GTANetwork
             else UI.ShowSubtitle(""+ player.Velocity);
 
             */
+
+
             if (display)
             {
                 Debug();
@@ -2837,6 +2835,18 @@ namespace GTANetwork
         public void ConnectToServer(string ip, int port = 0)
         {
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+
+            if (!_minimapSet)
+            {
+                var scal = new Scaleform(0);
+                scal.Load("minimap");
+                scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true, false);
+
+                Function.Call(Hash._SET_RADAR_BIGMAP_ENABLED, true, false);
+                Function.Call(Hash._SET_RADAR_BIGMAP_ENABLED, false, false);
+
+                _minimapSet = true;
+            }
 
             Chat.Init();
 
