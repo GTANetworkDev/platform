@@ -3918,6 +3918,15 @@ namespace GTANetwork
                 var car = NetEntityHandler.NetToStreamedItem(syncPed.VehicleNetHandle) as RemoteVehicle;
                 if (car != null) car.Position = fullData.Position;
             }
+            else if (syncPed.VehicleNetHandle != 00 && fullData.Position == null)
+            {
+                var car = NetEntityHandler.NetToStreamedItem(syncPed.VehicleNetHandle) as RemoteVehicle;
+                if (car != null)
+                {
+                    syncPed.Position = car.Position.ToVector();
+                    syncPed.VehiclePosition = car.Position.ToVector();
+                }
+            }
         }
 
         private void HandlePedPacket(PedData fullPacket)
