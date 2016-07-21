@@ -18,7 +18,7 @@ namespace GTANetworkServer
             return ServerEntities;
         }
 
-        public int CreateVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2)
+        public int CreateVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new VehicleProperties();
@@ -30,24 +30,19 @@ namespace GTANetworkServer
             obj.EntityType = (byte)EntityType.Vehicle;
             obj.PrimaryColor = color1;
             obj.SecondaryColor = color2;
+            obj.Dimension = dimension;
             ServerEntities.Add(localEntityHash, obj);
 
             var packet = new CreateEntity();
             packet.EntityType = (byte) EntityType.Vehicle;
-            var props = new VehicleProperties();
-            props.ModelHash = model;
-            props.Rotation = rot;
-            props.Position = pos;
-            props.PrimaryColor = color1;
-            props.SecondaryColor = color2;
             packet.NetHandle = localEntityHash;
-            packet.Properties = props;
+            packet.Properties = obj;
             Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
 
             return localEntityHash;
         }
 
-        public int CreateProp(int model, Vector3 pos, Vector3 rot)
+        public int CreateProp(int model, Vector3 pos, Vector3 rot, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new EntityProperties();
@@ -59,10 +54,7 @@ namespace GTANetworkServer
 
             var packet = new CreateEntity();
             packet.EntityType = (byte)EntityType.Prop;
-            packet.Properties = new EntityProperties();
-            packet.Properties.ModelHash = model;
-            packet.Properties.Rotation = rot;
-            packet.Properties.Position = pos;
+            packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
             Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
@@ -70,22 +62,20 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreateProp(int model, Vector3 pos, Quaternion rot)
+        public int CreateProp(int model, Vector3 pos, Quaternion rot, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new EntityProperties();
             obj.Position = pos;
             obj.Rotation = rot;
             obj.ModelHash = model;
+            obj.Dimension = dimension;
             obj.EntityType = (byte)EntityType.Prop;
             ServerEntities.Add(localEntityHash, obj);
 
             var packet = new CreateEntity();
             packet.EntityType = (byte)EntityType.Prop;
-            packet.Properties = new EntityProperties();
-            packet.Properties.ModelHash = model;
-            packet.Properties.Rotation = rot;
-            packet.Properties.Position = pos;
+            packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
             Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
@@ -93,7 +83,7 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreatePickup(int model, Vector3 pos, Vector3 rot, int amount)
+        public int CreatePickup(int model, Vector3 pos, Vector3 rot, int amount, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new PickupProperties();
@@ -101,6 +91,7 @@ namespace GTANetworkServer
             obj.Rotation = rot;
             obj.ModelHash = model;
             obj.Amount = amount;
+            obj.Dimension = dimension;
             obj.EntityType = (byte)EntityType.Pickup;
             ServerEntities.Add(localEntityHash, obj);
 
@@ -122,6 +113,7 @@ namespace GTANetworkServer
             var obj = new BlipProperties();
             obj.EntityType = (byte)EntityType.Blip;
             obj.AttachedNetEntity = ent.Value;
+            obj.Dimension = ServerEntities[ent.Value].Dimension;
             obj.Position = ServerEntities[ent.Value].Position;
             ServerEntities.Add(localEntityHash, obj);
 
@@ -135,12 +127,13 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreateBlip(Vector3 pos)
+        public int CreateBlip(Vector3 pos, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new BlipProperties();
             obj.EntityType = (byte)EntityType.Blip;
             obj.Position = pos;
+            obj.Dimension = dimension;
             ServerEntities.Add(localEntityHash, obj);
 
             var packet = new CreateEntity();
@@ -154,7 +147,7 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreateMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b)
+        public int CreateMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             
@@ -169,6 +162,7 @@ namespace GTANetworkServer
                 Red = r,
                 Green = g,
                 Blue = b,
+                Dimension = dimension,
                 EntityType = (byte) EntityType.Marker,
             };
             ServerEntities.Add(localEntityHash, obj);
@@ -211,7 +205,8 @@ namespace GTANetworkServer
     {
         internal static bool Exists(this NetHandle ent)
         {
-            return !ent.IsNull || Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(ent.Value);
+            if (ent.IsNull) return false;
+            return Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(ent.Value);
         }
     }
 }

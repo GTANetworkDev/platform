@@ -397,6 +397,21 @@ namespace GTANetworkServer
                 var delta = new Delta_EntityProperties();
                 delta.Dimension = dimension;
                 Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+
+                KeyValuePair<int, EntityProperties> pair;
+                if (
+                    (pair =
+                        Program.ServerInstance.NetEntityHandler.ToDict()
+                            .FirstOrDefault(
+                                p => p.Value is BlipProperties && ((BlipProperties) p.Value).AttachedNetEntity ==
+                        entity.Value)).Key != 0)
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[pair.Key].Dimension = dimension;
+
+                    var deltaBlip = new Delta_EntityProperties();
+                    deltaBlip.Dimension = dimension;
+                    Program.ServerInstance.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
+                }
             }
         }
 
@@ -1290,30 +1305,30 @@ namespace GTANetworkServer
             }
         }
 
-        public NetHandle createVehicle(VehicleHash model, Vector3 pos, Vector3 rot, int color1, int color2)
+        public NetHandle createVehicle(VehicleHash model, Vector3 pos, Vector3 rot, int color1, int color2, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateVehicle((int)model, pos, rot, color1, color2));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateVehicle((int)model, pos, rot, color1, color2, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
-        public NetHandle createObject(int model, Vector3 pos, Vector3 rot)
+        public NetHandle createObject(int model, Vector3 pos, Vector3 rot, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
-        public NetHandle createObject(int model, Vector3 pos, Quaternion rot)
+        public NetHandle createObject(int model, Vector3 pos, Quaternion rot, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateProp(model, pos, rot, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
-        public NetHandle createBlip(Vector3 pos)
+        public NetHandle createBlip(Vector3 pos, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
@@ -1326,17 +1341,17 @@ namespace GTANetworkServer
             return ent;
         }
 
-        public NetHandle createPickup(PickupHash pickupHash, Vector3 pos, Vector3 rot, int amount)
+        public NetHandle createPickup(PickupHash pickupHash, Vector3 pos, Vector3 rot, int amount, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreatePickup((int)pickupHash, pos, rot, amount));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreatePickup((int)pickupHash, pos, rot, amount, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
 
         public NetHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha,
-            int r, int g, int b)
+            int r, int g, int b, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }
