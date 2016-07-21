@@ -129,9 +129,9 @@ namespace GTANetwork
       
         public Main()
         {
-            //var scal = new Scaleform(0);
-            //scal.Load("hud");
-            //scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true);
+            var scal = new Scaleform(0);
+            scal.Load("minimap");
+            scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true, false);
 
             CrossReference.EntryPoint = this;
 
