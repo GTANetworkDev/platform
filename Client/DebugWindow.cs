@@ -38,10 +38,11 @@ namespace GTANetwork
             output += "IsInVehicle: " + player.IsInVehicle + "\n";
             output += "Position: " + player.Position + "\n";
             output += "VehiclePosition: " + player.VehiclePosition + "\n";
-            output += "Last Updated: " + player.LastUpdateReceived + "\n";
             output += "Character Pos: " + player.Character?.Position + "\n";
             output += "BlipPos: " + player.Character?.CurrentBlip?.Position + "\n";
-            output += "Ragdoll: " + player.IsRagdoll + "\n";
+            output += "AL: " + player.AverageLatency + "\n";
+            output += "TSU: " + player.TicksSinceLastUpdate + "\n";
+            output += "Latency: " + (((player.Latency * 1000) / 2) + ((Main.Latency * 1000) / 2)) + "\n";
             if (player.MainVehicle != null)
             {
                 output += "CharacterIsInVeh: " + player.Character?.IsInVehicle() + "\n";

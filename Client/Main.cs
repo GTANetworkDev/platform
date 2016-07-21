@@ -639,7 +639,7 @@ namespace GTANetwork
             {
                 try
                 {
-                    _serverPlayers.Dictionary.Add(ped.Name + " (" + ped.RemoteHandle + ")",
+                    _serverPlayers.Dictionary.Add(ped.Name,
                         ((int) (ped.Latency*1000)) + "ms");
                 }
                 catch (ArgumentException) { }
