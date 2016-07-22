@@ -22,7 +22,7 @@ namespace GTANetworkServer
             if (_log)
             lock (_filelock)
             {
-                File.AppendAllText("server.log", "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
+                File.AppendAllText("server.log", "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str + Environment.NewLine);
             }
         }
 
