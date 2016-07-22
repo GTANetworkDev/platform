@@ -32,14 +32,14 @@ namespace GTANetwork
         public static int MAX_PICKUPS = 30;
         public static int MAX_BLIPS = 200;
         public static int MAX_PLAYERS = 50;
-
+        
         void StreamerCalculationsThread()
         {
             while (true)
             {
                 if (!Main.IsOnServer() || !Main.HasFinishedDownloading) goto endTick;
 
-                var streamedItems = Main.NetEntityHandler.ClientMap.Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2);
+                var streamedItems = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap.Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2));
 
                 var position = _playerPosition.ToLVector();
 

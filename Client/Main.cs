@@ -3910,6 +3910,8 @@ namespace GTANetwork
 
             syncPed.Position = position;
             syncPed.VehiclePosition = position;
+
+            syncPed.LastUpdateReceived = Environment.TickCount;
         }
 
         private void HandleVehiclePacket(VehicleData fullData, bool purePacket)
