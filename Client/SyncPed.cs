@@ -721,34 +721,61 @@ namespace GTANetwork
 		    MainVehicle.SteeringAngle = Util.ToRadians(SteeringScale);
 	    }
 
+        struct interpolation
+        {
+            public Vector3 vecStart;
+            public Vector3 vecTarget;
+            public Vector3 vecError;
+            public int StartTime;
+            public int FinishTime;
+            public float LastAlpha;
+        }
+
+        private interpolation currentInterop = new interpolation();
+
+        public void StartInterpolation()
+        {
+            currentInterop = new interpolation();
+
+            currentInterop.vecTarget = VehiclePosition;
+            currentInterop.vecError = VehiclePosition - _lastVehiclePos;
+            currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+            currentInterop.StartTime = Environment.TickCount;
+            currentInterop.FinishTime = Environment.TickCount + 100;
+            currentInterop.LastAlpha = 0f;
+        }
+
         void DisplayVehiclePosition()
         {
-            var dir = VehiclePosition - _lastVehiclePos;
-            var vdir = VehicleVelocity - _lastVehVel;
-
-            Vector3 target, posTarget;
-
-            var latency = (int)(((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2));
-            
+            if (Speed > 0.2f)
             {
-                //target = Vector3.Lerp(VehicleVelocity, VehicleVelocity + vdir,
-                    //Math.Min(1.5f, latency + TicksSinceLastUpdate / (float)AverageLatency));
-                target = VehicleVelocity;
 
-                posTarget = Vector3.Lerp(VehiclePosition, VehiclePosition + dir,
-                    Math.Min(1.5f, latency + TicksSinceLastUpdate / (float)AverageLatency));
-            }
-            
-            
-            if (Speed > 0.5f)
-            {
-                MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
+                int currentTime = Environment.TickCount;
+                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+
+                alpha = Util.Clamp(0f, alpha, 1.5f);
+
+                float cAlpha = alpha - currentInterop.LastAlpha;
+                currentInterop.LastAlpha = alpha;
+
+                Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+
+                if (alpha == 1.5f)
+                {
+                    currentInterop.FinishTime = 0;
+                }
+
+                Vector3 newPos = VehiclePosition + comp;
+
+                MainVehicle.Velocity = VehicleVelocity + (newPos - MainVehicle.Position);
+
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = MainVehicle.Position;
             }
             else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
             {
-                posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
+                var dir = VehiclePosition - _lastVehiclePos;
+                var posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
                     (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
                 Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
                     posTarget.Z, 0, 0, 0, 0);
@@ -758,8 +785,6 @@ namespace GTANetwork
                 MainVehicle.PositionNoOffset = VehiclePosition;
             }
             
-
-            
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
             
@@ -768,10 +793,6 @@ namespace GTANetwork
                 MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
                     _vehicleRotation.ToQuaternion(),
                     Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
-
-                /*MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
-                    _vehicleRotation.ToQuaternion(),
-                    Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));*/
             }
             else
             {

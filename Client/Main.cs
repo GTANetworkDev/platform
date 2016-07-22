@@ -3911,10 +3911,6 @@ namespace GTANetwork
         {
             var syncPed = NetEntityHandler.GetPlayer(fullData.NetHandle.Value);
 
-            if (purePacket)
-            {
-                syncPed.LastUpdateReceived = Environment.TickCount;
-            }
             syncPed.IsInVehicle = true;
 
             if (fullData.VehicleHandle != null) LogManager.DebugLog("=====RECEIVED LIGHT VEHICLE PACKET " + fullData.VehicleHandle);
@@ -3962,6 +3958,12 @@ namespace GTANetwork
                     syncPed.Position = car.Position.ToVector();
                     syncPed.VehiclePosition = car.Position.ToVector();
                 }
+            }
+
+            if (purePacket)
+            {
+                syncPed.LastUpdateReceived = Environment.TickCount;
+                syncPed.StartInterpolation();
             }
         }
 

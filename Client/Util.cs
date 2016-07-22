@@ -15,6 +15,14 @@ namespace GTANetwork
 {
     public static class Util
     {
+        public static T Clamp<T>(T min, T value, T max) where T : IComparable
+        {
+            if (value.CompareTo(min) < 0) return min;
+            if (value.CompareTo(max) > 0) return max;
+
+            return value;
+        }
+
         public static float Unlerp(double left, double center, double right)
         {
             return (float)((center - left) / (right - left));
