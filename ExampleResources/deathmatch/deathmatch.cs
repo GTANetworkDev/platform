@@ -179,7 +179,10 @@ public class Deathmatch : Script
     
     public void OnPlayerRespawn(Client player)
     {
-        Respawn(player);
+        API.setPlayerBlipSprite(player, 1);
+        API.setPlayerBlipColor(player, 0);
+
+        Respawn(player);        
     }    
 
     public void PlayerKilled(Client player, NetHandle reason, int weapon)
@@ -250,8 +253,8 @@ public class Deathmatch : Script
             if (Killstreaks[player] >= 3 && killer != null)
             {
                 API.sendChatMessageToAll("~b~" + killer.Name + "~w~ ruined ~r~" + player.Name + "~w~'s killstreak!");                
-                API.setPlayerBlipSprite(player, 1);
                 API.setPlayerBlipColor(player, 0);
+                API.setPlayerBlipSprite(player, 1);                
             }
             Killstreaks[player] = 0;
         }
@@ -260,7 +263,6 @@ public class Deathmatch : Script
             Killstreaks.Add(player, 0);
         }
 
-        API.setPlayerBlipSprite(player, 1);
-        API.setPlayerBlipColor(player, 0);
+        API.setPlayerBlipSprite(player, 274);
     }
 }

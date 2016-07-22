@@ -8,13 +8,4 @@
 	<weapon model="Pistol" />	
 	<weapon model="PumpShotgun" />
 	<weapon model="CarbineRifle" />
-
-	<pickup model="PICKUP_HEALTH_STANDARD" posX="1507.29" posY="3576.58" posZ="38.74" amount="100" />
-	<pickup model="PICKUP_ARMOUR_STANDARD" posX="1531.68" posY="3590.52" posZ="38.77" amount="100" />
-	<pickup model="PICKUP_WEAPON_MOLOTOV" posX="1539.29" posY="3595.09" posZ="38.77" amount="3" />
-	<pickup model="PICKUP_WEAPON_GRENADE" posX="1553.23" posY="3603.10" posZ="38.77" amount="3" />
-	<pickup model="PICKUP_HEALTH_STANDARD" posX="1582.71" posY="3620.13" posZ="38.77" amount="100" />
-	<pickup model="PICKUP_ARMOUR_STANDARD" posX="1598.83" posY="3590.53" posZ="38.77" amount="100" />
-	<pickup model="PICKUP_WEAPON_MOLOTOV" posX="1590.34" posY="3582.7" posZ="38.9" amount="3" />
-	<pickup model="PICKUP_WEAPON_HEAVYSNIPER" posX="1571.62" posY="3576.57" posZ="32.60" amount="5" />
 </map>

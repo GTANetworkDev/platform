@@ -410,29 +410,6 @@ namespace GTANetworkServer
                     engine.InvokeResourceStart();
                 }
 
-
-                if (ourResource.Info.ExportedFunctions != null)
-                {
-                    var gPool = ExportedFunctions as IDictionary<string, object>;
-                    dynamic resPool = new System.Dynamic.ExpandoObject();
-                    var resPoolDict = resPool as IDictionary<string, object>;
-
-                    foreach (var func in ourResource.Info.ExportedFunctions)
-                    {
-                        ScriptingEngine engine;
-                        if (string.IsNullOrEmpty(func.Path))
-                            engine = ourResource.Engines.SingleOrDefault();
-                        else
-                            engine = ourResource.Engines.FirstOrDefault(en => en.Filename == func.Path);
-
-                        if (engine == null) continue;
-                        ExportedFunctionDelegate punchthrough = parameters => engine.InvokeMethod(func.Name, parameters);
-                        resPoolDict.Add(func.Name, punchthrough);
-                    }
-
-                    gPool.Add(ourResource.DirectoryName, resPool);
-                }
-
                 var randGen = new Random();
                 
                 if (ourResource.ClientsideScripts.Count > 0 || currentResInfo.Files.Count > 0)
@@ -512,6 +489,28 @@ namespace GTANetworkServer
                             Gamemode.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
                         }
                     }
+                }
+
+                if (ourResource.Info.ExportedFunctions != null)
+                {
+                    var gPool = ExportedFunctions as IDictionary<string, object>;
+                    dynamic resPool = new System.Dynamic.ExpandoObject();
+                    var resPoolDict = resPool as IDictionary<string, object>;
+
+                    foreach (var func in ourResource.Info.ExportedFunctions)
+                    {
+                        ScriptingEngine engine;
+                        if (string.IsNullOrEmpty(func.Path))
+                            engine = ourResource.Engines.SingleOrDefault();
+                        else
+                            engine = ourResource.Engines.FirstOrDefault(en => en.Filename == func.Path);
+
+                        if (engine == null) continue;
+                        ExportedFunctionDelegate punchthrough = parameters => engine.InvokeMethod(func.Name, parameters);
+                        resPoolDict.Add(func.Name, punchthrough);
+                    }
+
+                    gPool.Add(ourResource.DirectoryName, resPool);
                 }
 
                 lock (RunningResources) RunningResources.Add(ourResource);
