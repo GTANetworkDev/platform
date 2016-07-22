@@ -209,9 +209,7 @@ public class FreeroamScript : Script
         {
             VehicleHistory.Add(sender, new List<NetHandle> { veh });
         }
-
-        var start = Environment.TickCount;
-        while (!API.doesEntityExistForPlayer(sender, veh) && Environment.TickCount - start < 1000) {}
+        
         API.setPlayerIntoVehicle(sender, veh, -1);        
     }
 

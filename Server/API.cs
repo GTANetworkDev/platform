@@ -979,6 +979,8 @@ namespace GTANetworkServer
 
         public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
         {
+            var start = Environment.TickCount;
+            while (!doesEntityExistForPlayer(player, vehicle) && Environment.TickCount - start < 1000) { }
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), seat);
 
             player.IsInVehicle = true;

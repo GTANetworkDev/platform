@@ -514,7 +514,7 @@ public class RaceGamemode : Script
         }
 
 
-        var playerVehicle = API.createVehicle((VehicleHash)selectedModel, position, new Vector3(0, 0, heading), color1, color2);
+        var playerVehicle = API.createVehicle((VehicleHash)selectedModel, position, new Vector3(0, 0, heading), color1, color2);        
         API.setPlayerIntoVehicle(client, playerVehicle, -1);
 
         lock (Opponents)
