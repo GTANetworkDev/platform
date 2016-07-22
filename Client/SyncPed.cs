@@ -1663,7 +1663,7 @@ namespace GTANetwork
         {
             try
             {
-                if (IsSpectating || ModelHash == 0 || !StreamedIn) return;
+                if (IsSpectating || ModelHash == 0 || !StreamedIn || string.IsNullOrEmpty(Name)) return;
 
 
                 DEBUG_STEP = 0;
