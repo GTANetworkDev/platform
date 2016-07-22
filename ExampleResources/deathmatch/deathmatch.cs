@@ -51,7 +51,7 @@ public class Deathmatch : Script
         API.onUpdate += onUpdate;
     }
 
-    private void onMapChange(string mapName, Map map)
+    private void onMapChange(string mapName, XmlGroup map)
     {     
         spawns.Clear();
         weapons.Clear();
@@ -90,7 +90,7 @@ public class Deathmatch : Script
         var pickupSpawnpoints = map.getElementsByType("pickup");
         foreach(var pc in pickupSpawnpoints)
         {
-            pickups.Add(API.createPickup(API.pickupNameToModel(pc.getElementData<string>("model")),
+            pickups.Add(API.createPickup((PickupHash)API.pickupNameToModel(pc.getElementData<string>("model")),
                 new Vector3(pc.getElementData<float>("posX"), pc.getElementData<float>("posY"), pc.getElementData<float>("posZ")),
                 new Vector3(),
                 pc.getElementData<int>("amount")));
@@ -151,7 +151,7 @@ public class Deathmatch : Script
         {
             if (Environment.TickCount - RespawnCount[0].PickupTime > RespawnCount[0].RespawnTime)
             {
-                var newPickup = API.createPickup(RespawnCount[0].Hash, RespawnCount[0].Position, new Vector3(), RespawnCount[0].Amount);
+                var newPickup = API.createPickup((PickupHash)RespawnCount[0].Hash, RespawnCount[0].Position, new Vector3(), RespawnCount[0].Amount);
                 pickups.Add(newPickup);
                 RespawnCount.RemoveAt(0);
             }
@@ -259,5 +259,8 @@ public class Deathmatch : Script
         {
             Killstreaks.Add(player, 0);
         }
+
+        API.setPlayerBlipSprite(player, 1);
+        API.setPlayerBlipColor(player, 0);
     }
 }

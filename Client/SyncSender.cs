@@ -339,6 +339,7 @@ namespace GTANetwork
                 {
                     sendShootingPacket = (!player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
                                           !player.IsSubtaskActive(ESubtask.MELEE_COMBAT) &&
+                                          !player.IsReloading &&
                                           player.Weapons.Current.AmmoInClip > 0 &&
                                           Game.IsEnabledControlPressed(0, Control.Attack)) ||
                                          ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
