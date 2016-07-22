@@ -12,9 +12,18 @@ namespace GTANetworkServer
 {
     public static class Program
     {
+        private static object _filelock = new object();
+        private static bool _log;
+
         public static void Output(string str)
         {
             Console.WriteLine("[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
+
+            if (_log)
+            lock (_filelock)
+            {
+                File.AppendAllText("server.log", "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
+            }
         }
 
         public static int GetHash(string input)
@@ -63,6 +72,12 @@ namespace GTANetworkServer
         static void Main(string[] args)
         {
             var settings = ServerSettings.ReadSettings(Program.Location + "settings.xml");
+
+            _log = settings.LogToFile;
+
+            if (_log)
+                File.AppendAllText("server.log", "-> SERVER STARTED AT " + DateTime.Now);
+
 
             Console.WriteLine("=======================================================================");
             Console.WriteLine("= GRAND THEFT AUTO NETWORK v1.0");

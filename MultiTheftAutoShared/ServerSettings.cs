@@ -47,6 +47,9 @@ namespace GTANetworkShared
         [XmlElement("acl_enabled")]
         public bool UseACL { get; set; }
 
+        [XmlElement("log")]
+        public bool LogToFile { get; set; }
+
         [XmlRoot("resource")]
         public class SettingsResFilepath
         {
@@ -62,6 +65,7 @@ namespace GTANetworkShared
             MinimumClientVersion = ScriptVersion.VERSION_0_6;
             Password = "";
             //Gamemode = "freeroam";
+            LogToFile = true;
             Announce = true;
             UseACL = true;
             AnnounceToLan = true;

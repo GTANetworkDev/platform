@@ -444,6 +444,8 @@ namespace GTANetwork
 
 	    void DrawNametag()
 	    {
+	        if (!Main.UIVisible) return;
+
 	        if (!IsInVehicle)
 			{
 				bool isAiming = false;
@@ -749,7 +751,6 @@ namespace GTANetwork
         {
             if (Speed > 0.2f)
             {
-
                 int currentTime = Environment.TickCount;
                 float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
@@ -788,7 +789,7 @@ namespace GTANetwork
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
             
-            if (_lastVehicleRotation != null)
+            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f)
             {
                 MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
                     _vehicleRotation.ToQuaternion(),

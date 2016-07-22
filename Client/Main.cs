@@ -96,7 +96,7 @@ namespace GTANetwork
         public static bool LerpRotaion = true;
         public static bool LagCompensation = true;
         public static bool RemoveGameEntities = true;
-        public static bool ChatVisible = true;
+        public static bool UIVisible = true;
 
         public static int LocalTeam = -1;
         public static int LocalDimension = 0;
@@ -2138,6 +2138,7 @@ namespace GTANetwork
 
             DEBUG_STEP = 0;
             Game.DisableControl(0, Control.EnterCheatCode);
+            Game.DisableControl(0, Control.FrontendPause);
             Game.DisableControl(0, Control.FrontendPauseAlternate);
             Game.DisableControl(0, Control.FrontendSocialClub);
             Game.DisableControl(0, Control.FrontendSocialClubSecondary);
@@ -2171,6 +2172,8 @@ namespace GTANetwork
                     var safe = new Point(300, 180);
                     Sprite.DrawTexture(GTANInstallDir + "\\images\\scavatar.png", new Point((int)res.Width - safe.X - 64, safe.Y - 80), new Size(64, 64));
                 }
+
+                if (!IsOnServer()) Game.EnableControlThisFrame(0, Control.FrontendPause);
             }
             DEBUG_STEP = 1;
 			
@@ -2796,7 +2799,9 @@ namespace GTANetwork
 
             if (e.KeyCode == Keys.F7)
             {
-                ChatVisible = !ChatVisible;
+                UIVisible = !UIVisible;
+                Function.Call(Hash.DISPLAY_RADAR, UIVisible);
+                Function.Call(Hash.DISPLAY_HUD, UIVisible);
             }
             
             if (e.KeyCode == PlayerSettings.ScreenshotKey && IsOnServer())
@@ -2804,7 +2809,7 @@ namespace GTANetwork
                 Screenshot.TakeScreenshot();
             }
 
-            if (e.KeyCode == Keys.T && IsOnServer() && ChatVisible)
+            if (e.KeyCode == Keys.T && IsOnServer() && UIVisible)
             {
                 if (!_oldChat)
                 {
