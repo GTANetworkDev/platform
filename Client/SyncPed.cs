@@ -731,8 +731,9 @@ namespace GTANetwork
             var latency = (int)(((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2));
             
             {
-                target = Vector3.Lerp(VehicleVelocity, VehicleVelocity + vdir,
-                    Math.Min(1.5f, latency + TicksSinceLastUpdate / (float)AverageLatency));
+                //target = Vector3.Lerp(VehicleVelocity, VehicleVelocity + vdir,
+                    //Math.Min(1.5f, latency + TicksSinceLastUpdate / (float)AverageLatency));
+                target = VehicleVelocity;
 
                 posTarget = Vector3.Lerp(VehiclePosition, VehiclePosition + dir,
                     Math.Min(1.5f, latency + TicksSinceLastUpdate / (float)AverageLatency));
@@ -1562,6 +1563,7 @@ namespace GTANetwork
                 {
                     Character.CanRagdoll = false;
                     Character.Task.ClearAllImmediately();
+                    Character.PositionNoOffset = Position;
 
                     if (PedHealth > 0)
                     {

@@ -544,6 +544,10 @@ namespace GTANetworkServer
             }
 
             Program.ServerInstance.SendNativeCallToAllPlayers(0x92D619E420858204, vehicle, modType);
+
+            var delta = new Delta_VehicleProperties();
+            delta.Mods = ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods;
+            Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
         }
 
         public void setPlayerSkin(Client player, PedHash modelHash)
