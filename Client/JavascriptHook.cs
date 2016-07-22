@@ -85,20 +85,19 @@ namespace GTANetwork
         
         public void OnTick(object sender, EventArgs e)
         {
-            if (ThreadJumper.Count > 0)
-            {
-                ThreadJumper.ForEach(a =>
+            var tmpList = new List<Action>(ThreadJumper);
+            ThreadJumper.Clear();
+
+            foreach (var a in tmpList)
+            { 
+                try
                 {
-                    try
-                    {
-                        a.Invoke();
-                    }
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
-                    }
-                });
-                ThreadJumper.Clear();
+                    a.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    LogException(ex);
+                }
             }
 
             lock (ScriptEngines)
@@ -743,8 +742,8 @@ namespace GTANetwork
         }
 
         public delegate void ServerEventTrigger(string eventName, object[] arguments);
-        //public delegate void ChatEvent(string msg, CancelEventArgs cancelEv);
         public delegate void ChatEvent(string msg);
+        public delegate void StreamEvent(IStreamedItem item);
 
         public event EventHandler onResourceStart;
         public event EventHandler onResourceStop;
@@ -754,6 +753,8 @@ namespace GTANetwork
         public event ServerEventTrigger onServerEventTrigger;
         public event ChatEvent onChatMessage;
         public event ChatEvent onChatCommand;
+        public event StreamEvent onEntityStreamIn;
+        public event StreamEvent onEntityStreamOut;
 
         internal void invokeChatMessage(string msg)
         {

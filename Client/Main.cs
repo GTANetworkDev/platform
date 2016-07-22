@@ -2931,7 +2931,7 @@ namespace GTANetwork
                         var len = msg.ReadInt32();
                         var data = msg.ReadBytes(len);
                         var packet = PacketOptimization.ReadPureVehicleSync(data);
-                        HandleVehiclePacket(packet);
+                        HandleVehiclePacket(packet, true);
                     }
                     break;
                 case PacketType.VehicleLightSync:
@@ -2940,7 +2940,7 @@ namespace GTANetwork
                         var data = msg.ReadBytes(len);
                         var packet = PacketOptimization.ReadLightVehicleSync(data);
                         LogManager.DebugLog("-----RECEIVED LIGHT VEHICLE PACKET");
-                        HandleVehiclePacket(packet);
+                        HandleVehiclePacket(packet, false);
                     }
                     break;
                 case PacketType.PedPureSync:
@@ -3907,11 +3907,14 @@ namespace GTANetwork
             syncPed.VehiclePosition = position;
         }
 
-        private void HandleVehiclePacket(VehicleData fullData)
+        private void HandleVehiclePacket(VehicleData fullData, bool purePacket)
         {
             var syncPed = NetEntityHandler.GetPlayer(fullData.NetHandle.Value);
 
-            syncPed.LastUpdateReceived = Environment.TickCount;
+            if (purePacket)
+            {
+                syncPed.LastUpdateReceived = Environment.TickCount;
+            }
             syncPed.IsInVehicle = true;
 
             if (fullData.VehicleHandle != null) LogManager.DebugLog("=====RECEIVED LIGHT VEHICLE PACKET " + fullData.VehicleHandle);
@@ -3951,7 +3954,7 @@ namespace GTANetwork
                 var car = NetEntityHandler.NetToStreamedItem(syncPed.VehicleNetHandle) as RemoteVehicle;
                 if (car != null) car.Position = fullData.Position;
             }
-            else if (syncPed.VehicleNetHandle != 00 && fullData.Position == null)
+            else if (syncPed.VehicleNetHandle != 00 && fullData.Position == null && fullData.Flag != null && !PacketOptimization.CheckBit(fullData.Flag.Value, VehicleDataFlags.Driver))
             {
                 var car = NetEntityHandler.NetToStreamedItem(syncPed.VehicleNetHandle) as RemoteVehicle;
                 if (car != null)

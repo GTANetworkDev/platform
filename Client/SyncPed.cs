@@ -29,8 +29,6 @@ namespace GTANetwork
 
     public class SyncPed : RemotePlayer
     {
-
-        public DeltaCompressor DeltaCompressor = new DeltaCompressor();
         public SynchronizationMode SyncMode;
         public long Host;
         public Ped Character;
@@ -79,7 +77,6 @@ namespace GTANetwork
         public bool Siren;
         public int PedArmor;
         public bool IsVehDead;
-
 
         private object _secondSnapshot;
         private object _firstSnapshot;
@@ -217,13 +214,13 @@ namespace GTANetwork
         }
 
         private Vector3? _lastRotation;
-        public Vector3 Rotation
+        public new Vector3 Rotation
         {
             get { return _rotation; }
             set
             {
                 _lastRotation = _rotation;
-                _rotation = value; 
+                _rotation = value;
             }
         }
 
@@ -731,25 +728,17 @@ namespace GTANetwork
 
             Vector3 target, posTarget;
 
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+            var latency = (int)(((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2));
             
-            if (Speed > 10)
             {
                 target = Vector3.Lerp(VehicleVelocity, VehicleVelocity + vdir,
-                    (latency) / ((float)AverageLatency));
+                    Math.Min(1.5f, latency + TicksSinceLastUpdate / (float)AverageLatency));
 
                 posTarget = Vector3.Lerp(VehiclePosition, VehiclePosition + dir,
-                    (latency) / ((float)AverageLatency));
+                    Math.Min(1.5f, latency + TicksSinceLastUpdate / (float)AverageLatency));
             }
-            else
-            {
-                target = Util.LinearVectorLerp(VehicleVelocity, VehicleVelocity + vdir,
-                    Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
-
-                posTarget = Util.LinearVectorLerp(VehiclePosition, VehiclePosition + dir,
-                    Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
-            }
-
+            
+            
             if (Speed > 0.5f)
             {
                 MainVehicle.Velocity = target + 2 * (posTarget - MainVehicle.Position);
@@ -767,14 +756,21 @@ namespace GTANetwork
             {
                 MainVehicle.PositionNoOffset = VehiclePosition;
             }
+            
 
+            
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
-            if ((MainVehicle.Rotation - _vehicleRotation).LengthSquared() > 3f)
+            
+            if (_lastVehicleRotation != null)
             {
-                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(MainVehicle.Quaternion,
+                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
                     _vehicleRotation.ToQuaternion(),
-                    Math.Min(1f, TicksSinceLastUpdate/(float) AverageLatency));
+                    Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+
+                /*MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
+                    _vehicleRotation.ToQuaternion(),
+                    Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));*/
             }
             else
             {
@@ -783,6 +779,7 @@ namespace GTANetwork
 #else
             MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
 #endif
+            
         }
 
         public bool IsFriend()
@@ -1584,6 +1581,7 @@ namespace GTANetwork
                     if (currentTime >= 0.7f)
                     {
                         Character.Task.ClearAnimation("get_up@standard", "back");
+                        Character.Task.ClearAll();
                     }
                     else
                     {

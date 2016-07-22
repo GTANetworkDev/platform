@@ -171,6 +171,7 @@ namespace GTANetwork
         public static object Lock = new object();
 
         private static bool _lastShooting;
+        private static bool _lastBullet;
 
         public SyncCollector()
         {
@@ -344,7 +345,15 @@ namespace GTANetwork
                                           Game.IsEnabledControlPressed(0, Control.Attack)) ||
                                          ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
                                           Game.IsEnabledControlPressed(0, Control.Attack));
+
+                    if (!sendShootingPacket && _lastShooting && !_lastBullet)
+                    {
+                        _lastBullet = true;
+                        return;
+                    }
                 }
+
+                _lastBullet = false;
 
                 if (sendShootingPacket && !_lastShooting)
                 {

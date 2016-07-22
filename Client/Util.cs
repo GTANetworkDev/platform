@@ -15,6 +15,17 @@ namespace GTANetwork
 {
     public static class Util
     {
+        public static float Unlerp(double left, double center, double right)
+        {
+            return (float)((center - left) / (right - left));
+        }
+
+        // Dirty & dangerous
+        public static dynamic Lerp(dynamic from, float fAlpha, dynamic to)
+        {
+            return ((to - from)*fAlpha + from);
+        }
+
         public static int GetStationId()
         {
             if (!Game.Player.Character.IsInVehicle()) return -1;
