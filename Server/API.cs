@@ -977,6 +977,11 @@ namespace GTANetworkServer
             return null;
         }
 
+        public string getPlayerAddress(Client player)
+        {
+            return player.NetConnection.RemoteEndPoint.Address.ToString();
+        }
+
         public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
         {
             //var start = Environment.TickCount;
