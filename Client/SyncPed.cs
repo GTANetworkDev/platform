@@ -122,7 +122,7 @@ namespace GTANetwork
             get { return _latencyAverager.Count == 0 ? 0 : _latencyAverager.Average(); }
         }
 
-        public int LastUpdateReceived
+        public long LastUpdateReceived
         {
             get { return _lastUpdateReceived; }
             set
@@ -138,9 +138,18 @@ namespace GTANetwork
             }
         }
 
-        public int TicksSinceLastUpdate
+        public long TicksSinceLastUpdate
         {
-            get { return Environment.TickCount - LastUpdateReceived; }
+            get { return Util.TickCount - LastUpdateReceived; }
+        }
+
+        public int DataLatency
+        {
+            get
+            {
+                if (Debug) return Main._debugInterval;
+                return (int)(((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2));
+            }
         }
 
         public Dictionary<int, int> VehicleMods
@@ -260,7 +269,7 @@ namespace GTANetwork
 
         private bool _lastVehicleShooting;
 
-        private Queue<double> _latencyAverager;
+        private Queue<long> _latencyAverager;
 
         private Vector3 _lastStart;
         private Vector3 _lastEnd;
@@ -291,13 +300,13 @@ namespace GTANetwork
             ModelHash = hash;
             _blip = blip;
             
-            _latencyAverager = new Queue<double>();
+            _latencyAverager = new Queue<long>();
         }
 
         public SyncPed()
         {
             _blip = true;
-            _latencyAverager = new Queue<double>();
+            _latencyAverager = new Queue<long>();
         }
 
         public override int LocalHandle
@@ -315,7 +324,7 @@ namespace GTANetwork
 
         private int _modSwitch = 0;
         private int _clothSwitch = 0;
-        private int _lastUpdateReceived;
+        private long _lastUpdateReceived;
         private float _speed;
         private Vector3 _vehicleVelocity;
         private string lastMeleeAnim;
@@ -562,6 +571,7 @@ namespace GTANetwork
 			}
 		}
 
+        public int _debugVehicleHash;
 	    bool CreateVehicle()
 	    {
 	        if (IsInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 &&
@@ -584,19 +594,21 @@ namespace GTANetwork
 			    if (Debug)
 			    {
 			        if (MainVehicle != null) MainVehicle.Delete();
-			        MainVehicle = World.CreateVehicle(new Model(VehicleHash), VehiclePosition, VehicleRotation.Z);
+			        MainVehicle = World.CreateVehicle(new Model(_debugVehicleHash), VehiclePosition, VehicleRotation.Z);
 			        //MainVehicle.HasCollision = false;
 			    }
 			    else
 			    {
 			        MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
-			        if (MainVehicle.Handle == 0)
-			        {
-			            Character.Position = VehiclePosition;
-			            return true;
-			        }
 			    }
 				DEBUG_STEP = 10;
+
+			    if (MainVehicle == null || MainVehicle.Handle == 0)
+			    {
+			        Character.Position = VehiclePosition;
+			        return true;
+			    }
+                
 
                 if (Game.Player.Character.IsInVehicle(MainVehicle) &&
 					VehicleSeat == Util.GetPedSeat(Game.Player.Character))
@@ -728,8 +740,8 @@ namespace GTANetwork
             public Vector3 vecStart;
             public Vector3 vecTarget;
             public Vector3 vecError;
-            public int StartTime;
-            public int FinishTime;
+            public long StartTime;
+            public long FinishTime;
             public float LastAlpha;
         }
 
@@ -739,11 +751,14 @@ namespace GTANetwork
         {
             currentInterop = new interpolation();
 
-            currentInterop.vecTarget = VehiclePosition;
-            currentInterop.vecError = VehiclePosition - _lastVehiclePos;
+            
+            var dir = VehiclePosition - _lastVehiclePos;
+
+            currentInterop.vecTarget = VehiclePosition + dir;
+            currentInterop.vecError = MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
             currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-            currentInterop.StartTime = Environment.TickCount;
-            currentInterop.FinishTime = Environment.TickCount + 100;
+            currentInterop.StartTime = Util.TickCount;// - DataLatency;
+            currentInterop.FinishTime = currentInterop.StartTime + 100;
             currentInterop.LastAlpha = 0f;
         }
 
@@ -751,7 +766,8 @@ namespace GTANetwork
         {
             if (Speed > 0.2f)
             {
-                int currentTime = Environment.TickCount;
+                /*
+                long currentTime = Util.TickCount;
                 float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
                 alpha = Util.Clamp(0f, alpha, 1.5f);
@@ -766,9 +782,33 @@ namespace GTANetwork
                     currentInterop.FinishTime = 0;
                 }
 
+                //UI.ShowSubtitle(alpha+"", 100);
+
                 Vector3 newPos = VehiclePosition + comp;
 
-                MainVehicle.Velocity = VehicleVelocity + (newPos - MainVehicle.Position);
+                //MainVehicle.PositionNoOffset = newPos;
+
+                */
+
+                long currentTime = Util.TickCount;
+                //float alpha = (DataLatency + TicksSinceLastUpdate)/(float)AverageLatency;
+                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime + DataLatency, currentInterop.FinishTime);
+                var dir = VehiclePosition - _lastVehiclePos;
+                Vector3 newPos = Vector3.Lerp(VehiclePosition, VehiclePosition + dir, alpha);
+
+                MainVehicle.Velocity = VehicleVelocity + 10*(newPos - MainVehicle.Position);
+
+                //UI.ShowSubtitle("alpha: " + alpha);
+
+                //MainVehicle.Alpha = 100;
+                World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
+                    new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
+                if (Game.Player.Character.IsInVehicle())
+                World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position, new Vector3(), new Vector3(),
+                    new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
+                World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
+                    new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
+                    
 
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = MainVehicle.Position;
@@ -1068,13 +1108,13 @@ namespace GTANetwork
 
 			var target = Util.LinearVectorLerp(_lastPosition,
 				_position,
-                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
+                TicksSinceLastUpdate, (int)AverageLatency);
 
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
 				0);
 			DEBUG_STEP = 25;
 #if !DISABLE_SLERP
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+            var latency = DataLatency + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1109,14 +1149,14 @@ namespace GTANetwork
 
 			var target = Util.LinearVectorLerp(_lastPosition,
 				_position,
-                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
+                TicksSinceLastUpdate, (int)AverageLatency);
 
 			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
 				0);
 			DEBUG_STEP = 25;
 
 #if !DISABLE_SLERP
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+            var latency = DataLatency + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1277,7 +1317,7 @@ namespace GTANetwork
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
 #if !DISABLE_SLERP
-                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+                var latency = DataLatency + TicksSinceLastUpdate;
                 Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1298,7 +1338,7 @@ namespace GTANetwork
                 if (Game.GameTime - _lastVehicleAimUpdate > 40)
                 {
                     //Character.Task.AimAt(AimCoords, -1);
-                    var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+                    var latency = DataLatency + TicksSinceLastUpdate;
                     var dir = Position - _lastPosition;
                     var posTarget = Vector3.Lerp(Position, Position + dir,
                         latency / ((float)AverageLatency));
@@ -1372,7 +1412,7 @@ namespace GTANetwork
 					8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 #if !DISABLE_SLERP
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+            var latency = DataLatency + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1400,7 +1440,7 @@ namespace GTANetwork
             if (Game.GameTime - _lastVehicleAimUpdate > 30)
             {
                 //Character.Task.AimAt(AimCoords, -1);
-                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+                var latency = DataLatency + TicksSinceLastUpdate;
                 var dir = Position - _lastPosition;
                 var posTarget = Vector3.Lerp(Position, Position + dir,
                     latency / ((float)AverageLatency));
@@ -1470,7 +1510,7 @@ namespace GTANetwork
 	        if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
 	        {
 #if !DISABLE_SLERP
-                var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+                var latency = DataLatency + TicksSinceLastUpdate;
                 Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
                 Math.Min(1f, latency / (float)AverageLatency));
 #else
@@ -1568,11 +1608,11 @@ namespace GTANetwork
                     var dir = Position - _lastPosition;
                     var vdir = PedVelocity - _lastPedVel;
                     var target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                        Environment.TickCount - LastUpdateReceived,
+                        TicksSinceLastUpdate,
                         (int)AverageLatency);
 
                     var posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                        Environment.TickCount - LastUpdateReceived,
+                        TicksSinceLastUpdate,
                         (int)AverageLatency);
                     
                     Character.Velocity = target + 2 * (posTarget - Character.Position);
@@ -1796,7 +1836,7 @@ namespace GTANetwork
             }
             
             LogManager.DebugLog("LASTPOS : " + _lastPosition);
-            var latency = ((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2) + TicksSinceLastUpdate;
+            var latency = DataLatency + TicksSinceLastUpdate;
 
             if (syncMode == SynchronizationMode.DeadReckoning)
             {
@@ -1804,6 +1844,8 @@ namespace GTANetwork
                 var vdir = PedVelocity - _lastPedVel;
 
                 Vector3 target, posTarget;
+
+                //UI.ShowSubtitle(latency + " " + latency / ((float)AverageLatency) + " " + AverageLatency);
 
                 if (Main.LagCompensation)
                 {
@@ -1816,11 +1858,11 @@ namespace GTANetwork
                 else
                 {
                     target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                    Environment.TickCount - LastUpdateReceived,
+                    TicksSinceLastUpdate,
                     (int)AverageLatency);
 
                     posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                    Environment.TickCount - LastUpdateReceived,
+                    TicksSinceLastUpdate,
                     (int)AverageLatency);
                     
                 }

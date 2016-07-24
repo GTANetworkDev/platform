@@ -4149,11 +4149,15 @@ namespace GTANetwork
         private SyncPed _debugSyncPed;
         private int _debugPing = 150;
         private DateTime _lastPingTime;
-        private int _debugInterval = 30;
+        private int _debugSyncrate = 100;
+        private long _debugLastSync;
+
+
+        public static int _debugInterval = 60;
         private int _debugFluctuation = 0;
         private Camera _debugCamera;
         private Random _r = new Random();
-        private List<Tuple<int, object>> _lastData = new List<Tuple<int, object>>();
+        private List<Tuple<long, object>> _lastData = new List<Tuple<long, object>>();
         private void Debug()
         {
             var player = Game.Player.Character;
@@ -4163,6 +4167,7 @@ namespace GTANetwork
                 _debugSyncPed = new SyncPed(player.Model.Hash, player.Position, player.Rotation, false);
                 _debugSyncPed.Debug = true;
                 _debugSyncPed.StreamedIn = true;
+                _debugSyncPed.Name = "DEBUG";
             }
 
             if (Game.IsKeyPressed(Keys.NumPad1) && _debugInterval > 0)
@@ -4176,86 +4181,95 @@ namespace GTANetwork
                 UI.ShowSubtitle("SIMULATED PING: " + _debugInterval, 5000);
             }
 
-            _lastData.Add(new Tuple<int, object>(Environment.TickCount,
-                player.IsInVehicle() ? (object) PackageVehicleData() : (object) PackagePedData()));
-
-            if (Environment.TickCount - _lastData[0].Item1 >= (_debugInterval))
+            if (Util.TickCount - _debugLastSync > _debugSyncrate)
             {
-                //_artificialLagCounter = DateTime.Now;
-                //_debugFluctuation = _r.Next(10) - 5;
+                _debugLastSync = Util.TickCount;
 
-                var ourData = _lastData[0].Item2;
-                _lastData.RemoveAt(0);
-                
-                _debugSyncPed.Snapshot = ourData;
 
-                if (ourData is VehicleData)
+                _lastData.Add(new Tuple<long, object>(Util.TickCount,
+                    player.IsInVehicle() ? (object) PackageVehicleData() : (object) PackagePedData()));
+
+                if (Util.TickCount - _lastData[0].Item1 >= (_debugInterval))
                 {
-                    if (player.IsInVehicle())
-                        player.CurrentVehicle.Alpha = 50;
+                    //_artificialLagCounter = DateTime.Now;
+                    //_debugFluctuation = _r.Next(10) - 5;
 
-                    var data = (VehicleData) ourData;
+                    var ourData = _lastData[0].Item2;
+                    _lastData.RemoveAt(0);
 
-                    _debugSyncPed.VehicleNetHandle = data.VehicleHandle.Value;
-                    _debugSyncPed.LastUpdateReceived = Environment.TickCount;
-                    _debugSyncPed.VehiclePosition = data.Position.ToVector();
-                    _debugSyncPed.VehicleVelocity = data.Velocity.ToVector();
-                    _debugSyncPed.ModelHash = data.PedModelHash.Value;
-                    //_debugSyncPed.VehicleHash = data.VehicleModelHash.Value;
-                    _debugSyncPed.PedArmor = data.PedArmor.Value;
-                    _debugSyncPed.VehicleRPM = data.RPM.Value;
-                    _debugSyncPed.VehicleRotation =
-                        data.Quaternion.ToVector();
-                    _debugSyncPed.PedHealth = data.PlayerHealth.Value;
-                    _debugSyncPed.VehicleHealth = data.VehicleHealth.Value;
-                    _debugSyncPed.VehicleSeat = data.VehicleSeat.Value;
-                    _debugSyncPed.IsInVehicle = true;
-                    _debugSyncPed.Latency = data.Latency.Value;
-                    _debugSyncPed.SteeringScale = data.Steering.Value;
-                    _debugSyncPed.IsVehDead = (data.Flag & (short)VehicleDataFlags.VehicleDead) > 0;
-                    _debugSyncPed.IsHornPressed = (data.Flag & (short)VehicleDataFlags.PressingHorn) > 0;
-                    _debugSyncPed.Speed = data.Velocity.ToVector().Length();
-                    _debugSyncPed.Siren = (data.Flag & (short)VehicleDataFlags.SirenActive) > 0;
-                    _debugSyncPed.IsShooting = (data.Flag & (short)VehicleDataFlags.Shooting) > 0;
-                    _debugSyncPed.IsAiming = (data.Flag & (short)VehicleDataFlags.Aiming) > 0;
-                    _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
-                    if (data.AimCoords != null)
+                    _debugSyncPed.Snapshot = ourData;
+
+                    if (ourData is VehicleData)
+                    {
+                        if (player.IsInVehicle())
+                            player.CurrentVehicle.Alpha = 50;
+
+                        var data = (VehicleData) ourData;
+                        _debugSyncPed.LastUpdateReceived = Util.TickCount;
+
+                        _debugSyncPed.VehicleNetHandle = data.VehicleHandle.Value;
+                        _debugSyncPed.VehiclePosition = data.Position.ToVector();
+                        _debugSyncPed.VehicleVelocity = data.Velocity.ToVector();
+                        _debugSyncPed.ModelHash = data.PedModelHash.Value;
+                        if (Game.Player.Character.IsInVehicle())
+                            _debugSyncPed._debugVehicleHash = Game.Player.Character.CurrentVehicle.Model.Hash;
+                        _debugSyncPed.PedArmor = data.PedArmor.Value;
+                        _debugSyncPed.VehicleRPM = data.RPM.Value;
+                        _debugSyncPed.VehicleRotation =
+                            data.Quaternion.ToVector();
+                        _debugSyncPed.PedHealth = data.PlayerHealth.Value;
+                        _debugSyncPed.VehicleHealth = data.VehicleHealth.Value;
+                        _debugSyncPed.VehicleSeat = data.VehicleSeat.Value;
+                        _debugSyncPed.IsInVehicle = true;
+                        _debugSyncPed.Latency = data.Latency.Value;
+                        _debugSyncPed.SteeringScale = data.Steering.Value;
+                        _debugSyncPed.IsVehDead = (data.Flag & (short) VehicleDataFlags.VehicleDead) > 0;
+                        _debugSyncPed.IsHornPressed = (data.Flag & (short) VehicleDataFlags.PressingHorn) > 0;
+                        _debugSyncPed.Speed = data.Velocity.ToVector().Length();
+                        _debugSyncPed.Siren = (data.Flag & (short) VehicleDataFlags.SirenActive) > 0;
+                        _debugSyncPed.IsShooting = (data.Flag & (short) VehicleDataFlags.Shooting) > 0;
+                        _debugSyncPed.IsAiming = (data.Flag & (short) VehicleDataFlags.Aiming) > 0;
+                        _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
+                        if (data.AimCoords != null)
+                            _debugSyncPed.AimCoords = data.AimCoords.ToVector();
+
+                        _debugSyncPed.StartInterpolation();
+
+                        //if (_debugCamera == null)
+                        //_debugCamera = World.CreateCamera(player.Position + new Vector3(0, 0, 10f), new Vector3(), 60f);
+                        //_debugCamera.PointAt(player);
+                        //_debugCamera.Position = player.GetOffsetInWorldCoords(new Vector3(0, -10f, 20f));
+                        //World.RenderingCamera = _debugCamera;
+                    }
+                    else
+                    {
+                        var data = (PedData) ourData;
+
+                        _debugSyncPed.IsRagdoll = player.IsRagdoll;
+                        _debugSyncPed.OnFootSpeed = data.Speed.Value;
+                        _debugSyncPed.PedArmor = data.PedArmor.Value;
+                        _debugSyncPed.LastUpdateReceived = Util.TickCount;
+                        _debugSyncPed.Position = data.Position.ToVector();
+                        _debugSyncPed.ModelHash = data.PedModelHash.Value;
+                        _debugSyncPed.Rotation = data.Quaternion.ToVector();
+                        _debugSyncPed.PedHealth = data.PlayerHealth.Value;
+                        _debugSyncPed.IsInVehicle = false;
                         _debugSyncPed.AimCoords = data.AimCoords.ToVector();
-
-                    //if (_debugCamera == null)
-                    //_debugCamera = World.CreateCamera(player.Position + new Vector3(0, 0, 10f), new Vector3(), 60f);
-                    //_debugCamera.PointAt(player);
-                    //_debugCamera.Position = player.GetOffsetInWorldCoords(new Vector3(0, -10f, 20f));
-                    //World.RenderingCamera = _debugCamera;
-                }
-                else
-                {
-                    var data = (PedData) ourData;
-
-                    _debugSyncPed.IsRagdoll = player.IsRagdoll;
-                    _debugSyncPed.OnFootSpeed = data.Speed.Value;
-                    _debugSyncPed.PedArmor = data.PedArmor.Value;
-                    _debugSyncPed.LastUpdateReceived = Environment.TickCount;
-                    _debugSyncPed.Position = data.Position.ToVector();
-                    _debugSyncPed.ModelHash = data.PedModelHash.Value;
-                    _debugSyncPed.Rotation = data.Quaternion.ToVector();
-                    _debugSyncPed.PedHealth = data.PlayerHealth.Value;
-                    _debugSyncPed.IsInVehicle = false;
-                    _debugSyncPed.AimCoords = data.AimCoords.ToVector();
-                    _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
-                    _debugSyncPed.Latency = data.Latency.Value;
-                    _debugSyncPed.PedVelocity = data.Velocity.ToVector();
-                    _debugSyncPed.IsFreefallingWithParachute = (data.Flag & (int)PedDataFlags.InFreefall) > 0;
-                    _debugSyncPed.IsInMeleeCombat = (data.Flag & (int)PedDataFlags.InMeleeCombat) > 0;
-                    _debugSyncPed.IsRagdoll = (data.Flag & (int)PedDataFlags.Ragdoll) > 0;
-                    _debugSyncPed.IsAiming = (data.Flag & (int)PedDataFlags.Aiming) > 0;
-                    _debugSyncPed.IsJumping = (data.Flag & (int)PedDataFlags.Jumping) > 0;
-                    _debugSyncPed.IsShooting = (data.Flag & (int)PedDataFlags.Shooting) > 0;
-                    _debugSyncPed.IsParachuteOpen = (data.Flag & (int)PedDataFlags.ParachuteOpen) > 0;
-                    _debugSyncPed.IsInCover = (data.Flag & (int)PedDataFlags.IsInCover) > 0;
-                    _debugSyncPed.IsInLowCover = (data.Flag & (int)PedDataFlags.IsInLowerCover) > 0;
-                    _debugSyncPed.IsCoveringToLeft = (data.Flag & (int)PedDataFlags.IsInCoverFacingLeft) > 0;
-                    _debugSyncPed.IsReloading = (data.Flag & (int)PedDataFlags.IsReloading) > 0;
+                        _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
+                        _debugSyncPed.Latency = data.Latency.Value;
+                        _debugSyncPed.PedVelocity = data.Velocity.ToVector();
+                        _debugSyncPed.IsFreefallingWithParachute = (data.Flag & (int) PedDataFlags.InFreefall) > 0;
+                        _debugSyncPed.IsInMeleeCombat = (data.Flag & (int) PedDataFlags.InMeleeCombat) > 0;
+                        _debugSyncPed.IsRagdoll = (data.Flag & (int) PedDataFlags.Ragdoll) > 0;
+                        _debugSyncPed.IsAiming = (data.Flag & (int) PedDataFlags.Aiming) > 0;
+                        _debugSyncPed.IsJumping = (data.Flag & (int) PedDataFlags.Jumping) > 0;
+                        _debugSyncPed.IsShooting = (data.Flag & (int) PedDataFlags.Shooting) > 0;
+                        _debugSyncPed.IsParachuteOpen = (data.Flag & (int) PedDataFlags.ParachuteOpen) > 0;
+                        _debugSyncPed.IsInCover = (data.Flag & (int) PedDataFlags.IsInCover) > 0;
+                        _debugSyncPed.IsInLowCover = (data.Flag & (int) PedDataFlags.IsInLowerCover) > 0;
+                        _debugSyncPed.IsCoveringToLeft = (data.Flag & (int) PedDataFlags.IsInCoverFacingLeft) > 0;
+                        _debugSyncPed.IsReloading = (data.Flag & (int) PedDataFlags.IsReloading) > 0;
+                    }
                 }
             }
 
@@ -4572,6 +4586,13 @@ namespace GTANetwork
                 Weather = newWeather;
             }
 
+            if (((int)nativeType & (int)NativeType.VehicleWarp) > 0)
+            {
+                int veh = ((IntArgument)obj.Arguments[1]).Data;
+                var item = NetEntityHandler.NetToStreamedItem(veh, useGameHandle: true);
+                if (item != null && !item.StreamedIn) NetEntityHandler.StreamIn(item);
+            }
+
             if (obj.ReturnType == null)
             {
                 Function.Call((Hash)obj.Hash, list.ToArray());
@@ -4660,6 +4681,7 @@ namespace GTANetwork
             NeedsModel3 = 1 << 6,
             TimeSet = 1 << 7,
             WeatherSet = 1 << 8,
+            VehicleWarp = 1 << 9,
         }
 
         private NativeType CheckNativeHash(ulong hash)
@@ -4692,6 +4714,8 @@ namespace GTANetwork
                     return NativeType.TimeSet;
                 case 0xED712CA327900C8A:
                     return NativeType.WeatherSet;
+                case 0xF75B0D629E1C063D:
+                    return NativeType.VehicleWarp;
             }
         }
 

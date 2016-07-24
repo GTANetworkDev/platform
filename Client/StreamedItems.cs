@@ -20,6 +20,8 @@ namespace GTANetwork
         byte EntityType { get; set; }
 
         int Dimension { get; set; }
+
+        object StreamingLock { get; }
     }
 
     public class RemotePlayer : PedProperties, IStreamedItem, ILocalHandleable
@@ -31,6 +33,8 @@ namespace GTANetwork
         public bool StreamedIn { get; set; }
 
         public virtual int LocalHandle { get; set; }
+
+        public object StreamingLock { get; } = new object();
     }
 
     public class RemoteVehicle : VehicleProperties, ILocalHandleable, IStreamedItem
@@ -39,6 +43,7 @@ namespace GTANetwork
         public int RemoteHandle { get; set; }
         public bool LocalOnly { get; set; }
         public bool StreamedIn { get; set; }
+        public object StreamingLock { get; } = new object();
     }
 
     public class RemoteProp : EntityProperties, ILocalHandleable, IStreamedItem
@@ -47,6 +52,7 @@ namespace GTANetwork
         public int RemoteHandle { get; set; }
         public bool LocalOnly { get; set; }
         public bool StreamedIn { get; set; }
+        public object StreamingLock { get; } = new object();
     }
 
     public class RemoteBlip : BlipProperties, ILocalHandleable, IStreamedItem
@@ -55,6 +61,7 @@ namespace GTANetwork
         public int RemoteHandle { get; set; }
         public bool LocalOnly { get; set; }
         public bool StreamedIn { get; set; }
+        public object StreamingLock { get; } = new object();
     }
 
     public class RemoteMarker : MarkerProperties, IStreamedItem
@@ -62,6 +69,7 @@ namespace GTANetwork
         public int RemoteHandle { get; set; }
         public bool LocalOnly { get; set; }
         public bool StreamedIn { get; set; }
+        public object StreamingLock { get; } = new object();
     }
 
     public class RemotePickup : PickupProperties, ILocalHandleable, IStreamedItem
@@ -70,5 +78,6 @@ namespace GTANetwork
         public int RemoteHandle { get; set; }
         public bool LocalOnly { get; set; }
         public bool StreamedIn { get; set; }
+        public object StreamingLock { get; } = new object();
     }
 }

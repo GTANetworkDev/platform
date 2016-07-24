@@ -23,6 +23,11 @@ namespace GTANetwork
             return value;
         }
 
+        public static long TickCount
+        {
+            get { return DateTime.Now.Ticks / 10000; }
+        }
+
         public static float Unlerp(double left, double center, double right)
         {
             return (float)((center - left) / (right - left));
@@ -162,9 +167,6 @@ namespace GTANetwork
 
         public static Quaternion ToQuaternion(this Vector3 vect)
         {
-            //return Quaternion.Euler(vect);
-
-            
             vect = new Vector3()
             {
                 X = vect.X.Denormalize() * -1,
@@ -232,7 +234,7 @@ namespace GTANetwork
             return dict;
         }
 
-        public static Vector3 LinearVectorLerp(Vector3 start, Vector3 end, int currentTime, int duration)
+        public static Vector3 LinearVectorLerp(Vector3 start, Vector3 end, long currentTime, long duration)
         {
             return new Vector3()
             {
@@ -242,7 +244,7 @@ namespace GTANetwork
             };
         }
 
-        public static float LinearFloatLerp(float start, float end, int currentTime, int duration)
+        public static float LinearFloatLerp(float start, float end, long currentTime, long duration)
         {
             float change = end - start;
             return change * currentTime / duration + start;

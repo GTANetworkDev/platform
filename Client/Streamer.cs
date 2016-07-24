@@ -703,29 +703,32 @@ namespace GTANetwork
 
         public void StreamIn(IStreamedItem item)
         {
-            if (item.StreamedIn) return;
-
-            if (item.Dimension != Main.LocalDimension) return;
-
-            LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
-
-            switch ((EntityType)item.EntityType)
+            lock (item.StreamingLock)
             {
-                case EntityType.Vehicle:
-                    StreamInVehicle((RemoteVehicle)item);
-                    break;
-                case EntityType.Prop:
-                    StreamInProp((RemoteProp)item);
-                    break;
-                case EntityType.Pickup:
-                    StreamInPickup((RemotePickup)item);
-                    break;
-                case EntityType.Blip:
-                    StreamInBlip((RemoteBlip)item);
-                    break;
-                case EntityType.Ped:
-                    if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
-                    break;
+                if (item.StreamedIn) return;
+
+                if (item.Dimension != Main.LocalDimension) return;
+
+                LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
+
+                switch ((EntityType) item.EntityType)
+                {
+                    case EntityType.Vehicle:
+                        StreamInVehicle((RemoteVehicle) item);
+                        break;
+                    case EntityType.Prop:
+                        StreamInProp((RemoteProp) item);
+                        break;
+                    case EntityType.Pickup:
+                        StreamInPickup((RemotePickup) item);
+                        break;
+                    case EntityType.Blip:
+                        StreamInBlip((RemoteBlip) item);
+                        break;
+                    case EntityType.Ped:
+                        if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
+                        break;
+                }
             }
         }
 
@@ -751,30 +754,33 @@ namespace GTANetwork
 
         public void StreamOut(IStreamedItem item)
         {
-            if (!item.StreamedIn) return;
-            
-            switch ((EntityType) item.EntityType)
+            lock (item.StreamingLock)
             {
-                case EntityType.Prop:
-                case EntityType.Vehicle:
-                    StreamOutEntity((ILocalHandleable) item);
-                    break;
-                case EntityType.Blip:
-                    StreamOutBlip((ILocalHandleable) item);
-                    break;
-                case EntityType.Pickup:
-                    StreamOutPickup((ILocalHandleable) item);
-                    break;
-                case EntityType.Ped:
-                    if (item is SyncPed)
-                    {
-                        ((SyncPed)item).Clear();
-                        ((SyncPed) item).StreamedIn = false;
-                    }
-                    break;
-            }
+                if (!item.StreamedIn) return;
 
-            item.StreamedIn = false;
+                switch ((EntityType) item.EntityType)
+                {
+                    case EntityType.Prop:
+                    case EntityType.Vehicle:
+                        StreamOutEntity((ILocalHandleable) item);
+                        break;
+                    case EntityType.Blip:
+                        StreamOutBlip((ILocalHandleable) item);
+                        break;
+                    case EntityType.Pickup:
+                        StreamOutPickup((ILocalHandleable) item);
+                        break;
+                    case EntityType.Ped:
+                        if (item is SyncPed)
+                        {
+                            ((SyncPed) item).Clear();
+                            ((SyncPed) item).StreamedIn = false;
+                        }
+                        break;
+                }
+
+                item.StreamedIn = false;
+            }
         }
 
         private void StreamOutEntity(ILocalHandleable data)

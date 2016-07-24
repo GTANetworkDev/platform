@@ -39,14 +39,14 @@ public class PennedInMaster : Script
 	private Vector3 StartPos = new Vector3(1400.18f, 3170.84f, 40.41f);	
 	private Random randgen = new Random();
 	private int Countdown = -1;
-	private int _lastsecondupdate;
+	private DateTime _lastsecondupdate;
 
 	private int roundrestart = -1;
 
 	private Vector3 CurrentSpherePosition;
 	private float CurrentSphereScale;
 
-	private int LastInterpolationUpdate;
+	private DateTime? LastInterpolationUpdate;
 	private int CurrentStep = -1;
 
 	public void StartRound()
@@ -56,7 +56,7 @@ public class PennedInMaster : Script
 			API.deleteEntity(pair.Value);
 		}
 
-		LastInterpolationUpdate = 0;
+		LastInterpolationUpdate = null;
 		CurrentStep = -1;
 
 		var clients = API.getAllPlayers();
@@ -100,9 +100,9 @@ public class PennedInMaster : Script
 
 	public void update(object sender, EventArgs e)
 	{
-		if (Environment.TickCount - _lastsecondupdate > 1000)
+		if (DateTime.Now.Subtract(_lastsecondupdate).TotalMilliseconds > 1000)
 		{
-			_lastsecondupdate = Environment.TickCount;
+			_lastsecondupdate = DateTime.Now;
 
 			if (Countdown > 0)
 			{
@@ -118,7 +118,7 @@ public class PennedInMaster : Script
 					}
 
 					API.sendChatMessageToAll("Round start! Stay inside the sphere!");
-					LastInterpolationUpdate = Environment.TickCount;					
+					LastInterpolationUpdate = DateTime.Now;
 				}
 			}
 
@@ -135,9 +135,9 @@ public class PennedInMaster : Script
 
 		if (roundrestart > 0) return;
 
-		if (LastInterpolationUpdate > 0)
+		if (LastInterpolationUpdate != null)
 		{
-			if (CurrentStep == -1 || Environment.TickCount - LastInterpolationUpdate > MovementMap.Map[CurrentStep].Interval)
+			if (CurrentStep == -1 || DateTime.Now.Subtract(LastInterpolationUpdate.Value).TotalMilliseconds > MovementMap.Map[CurrentStep].Interval)
 			{
 				CurrentStep++;
 
@@ -173,7 +173,7 @@ public class PennedInMaster : Script
 						API.triggerClientEventForAll("pennedin_setscaledestination", CurrentSphereScale, MovementMap.Map[CurrentStep].Range, MovementMap.Map[CurrentStep].Interval);
 					}
 
-					LastInterpolationUpdate = Environment.TickCount;
+					LastInterpolationUpdate = DateTime.Now;
 				}
 			}
 		}
@@ -185,8 +185,8 @@ public class PennedInMaster : Script
 		if (roundrestart>0) return;
 		API.setPlayerToSpectator(player);
 		API.triggerClientEvent(player, "pennedin_roundstart", CurrentSpherePosition, CurrentSphereScale);
-		API.triggerClientEventForAll("pennedin_setposdestination", CurrentSpherePosition, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Vector, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Interval - (Environment.TickCount - LastInterpolationUpdate));
-		API.triggerClientEventForAll("pennedin_setscaledestination", CurrentSphereScale, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Range, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Interval - (Environment.TickCount - LastInterpolationUpdate));
+		API.triggerClientEventForAll("pennedin_setposdestination", CurrentSpherePosition, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Vector, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Interval - (DateTime.Now.Subtract(LastInterpolationUpdate.Value).TotalMilliseconds));
+		API.triggerClientEventForAll("pennedin_setscaledestination", CurrentSphereScale, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Range, MovementMap.Map[CurrentStep == -1 ? 0 : CurrentStep].Interval - (DateTime.Now.Subtract(LastInterpolationUpdate.Value).TotalMilliseconds));
 	}
 
 	public void onPlayerDeath(Client player, NetHandle killer, int weapon)
