@@ -94,7 +94,7 @@ namespace GTANetwork
         
         public static SynchronizationMode GlobalSyncMode;
         public static bool LerpRotaion = true;
-        public static bool LagCompensation = true;
+        public static bool LagCompensation = false;
         public static bool RemoveGameEntities = true;
         public static bool UIVisible = true;
 
@@ -2953,7 +2953,7 @@ namespace GTANetwork
                         var len = msg.ReadInt32();
                         var data = msg.ReadBytes(len);
                         var packet = PacketOptimization.ReadPurePedSync(data);
-                        HandlePedPacket(packet);
+                        HandlePedPacket(packet, true);
                     }
                     break;
                 case PacketType.PedLightSync:
@@ -2961,7 +2961,7 @@ namespace GTANetwork
                         var len = msg.ReadInt32();
                         var data = msg.ReadBytes(len);
                         var packet = PacketOptimization.ReadLightPedSync(data);
-                        HandlePedPacket(packet);
+                        HandlePedPacket(packet, false);
                     }
                     break;
                 case PacketType.BasicSync:
@@ -3911,7 +3911,7 @@ namespace GTANetwork
             syncPed.Position = position;
             syncPed.VehiclePosition = position;
 
-            syncPed.LastUpdateReceived = Environment.TickCount;
+            syncPed.LastUpdateReceived = Util.TickCount;
         }
 
         private void HandleVehiclePacket(VehicleData fullData, bool purePacket)
@@ -3969,7 +3969,7 @@ namespace GTANetwork
 
             if (purePacket)
             {
-                syncPed.LastUpdateReceived = Environment.TickCount;
+                syncPed.LastUpdateReceived = Util.TickCount;
                 syncPed.StartInterpolation();
             }
         }
@@ -3983,11 +3983,11 @@ namespace GTANetwork
             if (shooting) syncPed.AimCoords = aim;
         }
 
-        private void HandlePedPacket(PedData fullPacket)
+        private void HandlePedPacket(PedData fullPacket, bool pure)
         {
             var syncPed = NetEntityHandler.GetPlayer(fullPacket.NetHandle.Value);
 
-            syncPed.LastUpdateReceived = Environment.TickCount;
+            
             syncPed.IsInVehicle = false;
             syncPed.VehicleNetHandle = 0;
 
@@ -4017,6 +4017,11 @@ namespace GTANetwork
                 syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCoverFacingLeft) >
                                            0;
                 syncPed.IsReloading = (fullPacket.Flag.Value & (int)PedDataFlags.IsReloading) > 0;
+            }
+
+            if (pure)
+            {
+                syncPed.LastUpdateReceived = Util.TickCount;
             }
         }
 
@@ -4588,8 +4593,8 @@ namespace GTANetwork
 
             if (((int)nativeType & (int)NativeType.VehicleWarp) > 0)
             {
-                int veh = ((IntArgument)obj.Arguments[1]).Data;
-                var item = NetEntityHandler.NetToStreamedItem(veh, useGameHandle: true);
+                int veh = ((EntityArgument)obj.Arguments[1]).NetHandle;
+                var item = NetEntityHandler.NetToStreamedItem(veh);
                 if (item != null && !item.StreamedIn) NetEntityHandler.StreamIn(item);
             }
 

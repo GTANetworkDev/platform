@@ -757,7 +757,7 @@ namespace GTANetwork
             currentInterop.vecTarget = VehiclePosition + dir;
             currentInterop.vecError = MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
             currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-            currentInterop.StartTime = Util.TickCount;// - DataLatency;
+            currentInterop.StartTime = Util.TickCount - DataLatency;
             currentInterop.FinishTime = currentInterop.StartTime + 100;
             currentInterop.LastAlpha = 0f;
         }
@@ -766,49 +766,64 @@ namespace GTANetwork
         {
             if (Speed > 0.2f)
             {
-                /*
-                long currentTime = Util.TickCount;
-                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
-
-                alpha = Util.Clamp(0f, alpha, 1.5f);
-
-                float cAlpha = alpha - currentInterop.LastAlpha;
-                currentInterop.LastAlpha = alpha;
-
-                Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
-
-                if (alpha == 1.5f)
+                if (!Main.LagCompensation)
                 {
-                    currentInterop.FinishTime = 0;
+                    long currentTime = Util.TickCount;
+                    float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+
+                    alpha = Util.Clamp(0f, alpha, 1.5f);
+
+                    float cAlpha = alpha - currentInterop.LastAlpha;
+                    currentInterop.LastAlpha = alpha;
+
+                    Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+
+                    if (alpha == 1.5f)
+                    {
+                        currentInterop.FinishTime = 0;
+                    }
+                    Vector3 newPos = VehiclePosition + comp;
+                    MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
+
+                    if (Debug)
+                    {
+                        World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
+                            new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
+                        if (Game.Player.Character.IsInVehicle())
+                            World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
+                                new Vector3(), new Vector3(),
+                                new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
+                        World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
+                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
+                    }
                 }
+                else
+                {
+                    long currentTime = Util.TickCount;
+                    //float alpha = (DataLatency + TicksSinceLastUpdate)/(float)AverageLatency;
+                    float alpha = Util.Unlerp(currentInterop.StartTime + DataLatency, currentTime + DataLatency,
+                        currentInterop.FinishTime);
+                    var dir = VehiclePosition - _lastVehiclePos;
+                    Vector3 newPos = Vector3.Lerp(VehiclePosition, VehiclePosition + dir, alpha);
 
-                //UI.ShowSubtitle(alpha+"", 100);
+                    MainVehicle.Velocity = VehicleVelocity + 10*(newPos - MainVehicle.Position);
 
-                Vector3 newPos = VehiclePosition + comp;
-
-                //MainVehicle.PositionNoOffset = newPos;
-
-                */
-
-                long currentTime = Util.TickCount;
-                //float alpha = (DataLatency + TicksSinceLastUpdate)/(float)AverageLatency;
-                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime + DataLatency, currentInterop.FinishTime);
-                var dir = VehiclePosition - _lastVehiclePos;
-                Vector3 newPos = Vector3.Lerp(VehiclePosition, VehiclePosition + dir, alpha);
-
-                MainVehicle.Velocity = VehicleVelocity + 10*(newPos - MainVehicle.Position);
-
+                    if (Debug)
+                    {
+                        World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
+                            new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
+                        if (Game.Player.Character.IsInVehicle())
+                            World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
+                                new Vector3(), new Vector3(),
+                                new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
+                        World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
+                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
+                    }
+                }
                 //UI.ShowSubtitle("alpha: " + alpha);
 
                 //MainVehicle.Alpha = 100;
-                World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
-                    new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
-                if (Game.Player.Character.IsInVehicle())
-                World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position, new Vector3(), new Vector3(),
-                    new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
-                World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
-                    new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
-                    
+                
 
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = MainVehicle.Position;
