@@ -87,6 +87,12 @@ public class FreeroamScript : Script
         API.sendNativeToAllPlayers(0x1268615ACE24D504, blackout);
     }
 
+    [Command("dimension")]
+    public void ChangeDimension(Client sender, int dimension)
+    {
+        API.setEntityDimension(sender.CharacterHandle, dimension);
+    }
+
     [Command("mod")]
     public void SetCarModificationCommand(Client sender, int modIndex, int modVar)
     {

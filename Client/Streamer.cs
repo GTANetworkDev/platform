@@ -5,6 +5,7 @@ using System.Drawing;
 using GTA;
 using GTA.Native;
 using GTANetworkShared;
+using NativeUI;
 using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
@@ -53,21 +54,21 @@ namespace GTANetwork
 
                 lock (_itemsToStreamOut)
                 {
-                    _itemsToStreamOut.AddRange(streamedObjects.Skip(MAX_OBJECTS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedBlips.Skip(MAX_BLIPS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedPickups.Skip(MAX_PICKUPS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedVehicles.Skip(MAX_VEHICLES).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedPlayers.Skip(MAX_PLAYERS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedObjects.Skip(MAX_OBJECTS).Where(item => item.StreamedIn));
 
                     _itemsToStreamOut.AddRange(dimensionLeftovers);
                 }
 
                 lock (_itemsToStreamIn)
                 {
+                    _itemsToStreamIn.AddRange(streamedObjects.Take(MAX_OBJECTS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedPickups.Take(MAX_PICKUPS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedVehicles.Take(MAX_VEHICLES).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedBlips.Take(MAX_BLIPS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedObjects.Take(MAX_OBJECTS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedPlayers.Take(MAX_PLAYERS).Where(item => !item.StreamedIn));
                 }
 
@@ -133,7 +134,18 @@ namespace GTANetwork
                     marker.Scale.ToVector(),
                     Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
             }
-            
+
+            /*
+            // Uncomment to debug stuff
+            foreach (var p in ClientMap)
+            {
+                if (p == null || p.Position == null) continue;
+
+                Function.Call(Hash.SET_DRAW_ORIGIN, p.Position.X, p.Position.Y, p.Position.Z);
+                new UIResText("Type: " + p.EntityType + "~n~Dim: " + p.Dimension, Point.Empty, 0.35f).Draw();
+                Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+            }
+            */
         }
 
         public List<IStreamedItem> ClientMap;
@@ -707,7 +719,7 @@ namespace GTANetwork
             {
                 if (item.StreamedIn) return;
 
-                if (item.Dimension != Main.LocalDimension) return;
+                if (item.Dimension != Main.LocalDimension && item.Dimension != 0) return;
 
                 LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
 

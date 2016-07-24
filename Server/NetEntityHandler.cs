@@ -49,6 +49,7 @@ namespace GTANetworkServer
             obj.Position = pos;
             obj.Rotation = rot;
             obj.ModelHash = model;
+            obj.Dimension = dimension;
             obj.EntityType = (byte)EntityType.Prop;
             ServerEntities.Add(localEntityHash, obj);
 
