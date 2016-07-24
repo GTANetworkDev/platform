@@ -754,10 +754,10 @@ namespace GTANetwork
             
             var dir = VehiclePosition - _lastVehiclePos;
 
-            currentInterop.vecTarget = VehiclePosition + dir;
-            currentInterop.vecError = MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
+            currentInterop.vecTarget = VehiclePosition;// + dir;
+            currentInterop.vecError = dir;//MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
             currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-            currentInterop.StartTime = Util.TickCount - DataLatency;
+            currentInterop.StartTime = Util.TickCount;// - DataLatency;
             currentInterop.FinishTime = currentInterop.StartTime + 100;
             currentInterop.LastAlpha = 0f;
         }
@@ -783,7 +783,7 @@ namespace GTANetwork
                         currentInterop.FinishTime = 0;
                     }
                     Vector3 newPos = VehiclePosition + comp;
-                    MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
+                    MainVehicle.Velocity = VehicleVelocity + /*2 **/ (newPos - MainVehicle.Position);
 
                     if (Debug)
                     {
