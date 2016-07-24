@@ -946,7 +946,7 @@ namespace GTANetwork
             }
             else
             {
-                ourVeh.Quaternion = data.Rotation.ToVector().ToQuaternion();
+                ourVeh.Rotation = data.Rotation.ToVector();
             }
 
             ourVeh.Alpha = (int)data.Alpha;
