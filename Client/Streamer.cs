@@ -715,7 +715,7 @@ namespace GTANetwork
 
         public void StreamIn(IStreamedItem item)
         {
-            lock (item.StreamingLock)
+            //lock (item.StreamingLock) // Disabled for now
             {
                 if (item.StreamedIn) return;
 
@@ -766,7 +766,7 @@ namespace GTANetwork
 
         public void StreamOut(IStreamedItem item)
         {
-            lock (item.StreamingLock)
+            //lock (item.StreamingLock)
             {
                 if (!item.StreamedIn) return;
 

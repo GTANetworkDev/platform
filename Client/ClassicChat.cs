@@ -148,8 +148,8 @@ namespace GTANetwork
             var timePassed = Math.Min(DateTime.Now.Subtract(_focusStart).TotalMilliseconds, DateTime.Now.Subtract(_lastMsg).TotalMilliseconds);
 
             int alpha = 100;
-            if (timePassed > 15000 && !_isFocused)
-                alpha = (int)MiscExtensions.QuadraticEasingLerp(100f, 0f, (int)Math.Min(timePassed - 15000, 2000), 2000);
+            if (timePassed > 60000 && !_isFocused)
+                alpha = (int)MiscExtensions.QuadraticEasingLerp(100f, 0f, (int)Math.Min(timePassed - 60000, 2000), 2000);
             if (timePassed < 300 && _lastFadedOut)
                 alpha = (int)MiscExtensions.QuadraticEasingLerp(0f, 100f, (int)Math.Min(timePassed, 300), 300);
             
