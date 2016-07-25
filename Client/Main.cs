@@ -4023,6 +4023,7 @@ namespace GTANetwork
             if (pure)
             {
                 syncPed.LastUpdateReceived = Util.TickCount;
+                syncPed.StartInterpolation();
             }
         }
 
@@ -4275,6 +4276,8 @@ namespace GTANetwork
                         _debugSyncPed.IsInLowCover = (data.Flag & (int) PedDataFlags.IsInLowerCover) > 0;
                         _debugSyncPed.IsCoveringToLeft = (data.Flag & (int) PedDataFlags.IsInCoverFacingLeft) > 0;
                         _debugSyncPed.IsReloading = (data.Flag & (int) PedDataFlags.IsReloading) > 0;
+
+                        _debugSyncPed.StartInterpolation();
                     }
                 }
             }

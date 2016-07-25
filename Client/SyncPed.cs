@@ -751,15 +751,31 @@ namespace GTANetwork
         {
             currentInterop = new interpolation();
 
-            
-            var dir = VehiclePosition - _lastVehiclePos;
+            if (IsInVehicle)
+            {
 
-            currentInterop.vecTarget = VehiclePosition;// + dir;
-            currentInterop.vecError = dir;//MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
-            //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-            currentInterop.StartTime = Util.TickCount - DataLatency;
-            currentInterop.FinishTime = currentInterop.StartTime + 100;
-            currentInterop.LastAlpha = 0f;
+                var dir = VehiclePosition - _lastVehiclePos;
+
+                currentInterop.vecTarget = VehiclePosition; // + dir;
+                currentInterop.vecError = dir;
+                    //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
+                //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                currentInterop.StartTime = Util.TickCount - DataLatency;
+                currentInterop.FinishTime = currentInterop.StartTime + 100;
+                currentInterop.LastAlpha = 0f;
+            }
+            else
+            {
+                var dir = Position - _lastPosition;
+
+                currentInterop.vecTarget = Position; // + dir;
+                currentInterop.vecError = dir;
+                //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
+                //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                currentInterop.StartTime = Util.TickCount - DataLatency;
+                currentInterop.FinishTime = currentInterop.StartTime + 100;
+                currentInterop.LastAlpha = 0f;
+            }
         }
 
         void DisplayVehiclePosition()
@@ -1842,79 +1858,60 @@ namespace GTANetwork
             return dict;
         }
 
+
         private void UpdatePlayerPedPos()
         {
-            var syncMode = Main.GlobalSyncMode;
+            long currentTime = Util.TickCount;
+            float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
-            if (syncMode == SynchronizationMode.Dynamic)
+            alpha = Util.Clamp(0f, alpha, 15f);
+
+            //float cAlpha = alpha - currentInterop.LastAlpha;
+            //currentInterop.LastAlpha = alpha;
+
+            //Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+            Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+
+            if (alpha == 15f)
             {
-                syncMode = SynchronizationMode.DeadReckoning;
+                currentInterop.FinishTime = 0;
             }
+            Vector3 newPos = Position + comp;
             
-            LogManager.DebugLog("LASTPOS : " + _lastPosition);
-            var latency = DataLatency + TicksSinceLastUpdate;
-
-            if (syncMode == SynchronizationMode.DeadReckoning)
+            if (OnFootSpeed > 0)
             {
-                var dir = Position - _lastPosition;
-                var vdir = PedVelocity - _lastPedVel;
-
-                Vector3 target, posTarget;
-
-                //UI.ShowSubtitle(latency + " " + latency / ((float)AverageLatency) + " " + AverageLatency);
-
-                if (Main.LagCompensation)
-                {
-
-                    target = Vector3.Lerp(PedVelocity, PedVelocity + vdir,
-                        latency/((float) AverageLatency));
-                    posTarget = Vector3.Lerp(Position, Position + dir,
-                        latency/((float) AverageLatency));
-                }
-                else
-                {
-                    target = Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                    TicksSinceLastUpdate,
-                    (int)AverageLatency);
-
-                    posTarget = Util.LinearVectorLerp(Position, Position + dir,
-                    TicksSinceLastUpdate,
-                    (int)AverageLatency);
-                    
-                }
-
-                if (OnFootSpeed > 0)
-                {
-                    Character.Velocity = target + 2 * (posTarget - Character.Position);
-                    _stopTime = DateTime.Now;
-                    _carPosOnUpdate = Character.Position;
-                }
-                else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
-                {
-                    posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + dir,
-                        (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
-                        posTarget.Z, 0, 0, 0);
-                }
-                else
-                {
-                    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
-                        Position.Z, 0, 0, 0);
-                }
+                Character.Velocity = PedVelocity + 10 * (newPos - Character.Position);
+                _stopTime = DateTime.Now;
+                _carPosOnUpdate = Character.Position;
             }
-            else if (syncMode == SynchronizationMode.Teleport)
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
             {
-                Character.PositionNoOffset = Position;
+                var posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + (Position - _lastPosition),
+                    (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
+                    posTarget.Z, 0, 0, 0);
             }
-            else if (syncMode == SynchronizationMode.TeleportRudimentary)
+            else
             {
-                Character.Position = Position;
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
+                    Position.Z, 0, 0, 0);
+            }
+
+            if (Debug)
+            {
+                World.DrawMarker(MarkerType.DebugSphere, Character.Position, new Vector3(), new Vector3(),
+                    new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
+                World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.Position,
+                        new Vector3(), new Vector3(),
+                        new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
+                World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
+                    new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
             }
 
             DEBUG_STEP = 33;
 #if !DISABLE_SLERP
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
-                Math.Min(1f, latency / (float)AverageLatency));
+                Math.Min(1f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
