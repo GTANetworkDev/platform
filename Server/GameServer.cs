@@ -1017,14 +1017,12 @@ namespace GTANResource
                                 if (connReq == null)
                                 {
                                     client.NetConnection.Deny("Connection Object is null");
-                                    Server.Recycle(msg);
                                     continue;
                                 }
 
                                 if ((ScriptVersion)connReq.ScriptVersion == ScriptVersion.Unknown)
                                 {
                                     client.NetConnection.Deny("Unknown version. Please update your client.");
-                                    Server.Recycle(msg);
                                     continue;
                                 }
 
@@ -1038,9 +1036,6 @@ namespace GTANResource
                                         {
                                             client.NetConnection.Deny("Wrong password.");
                                             Program.Output("Player connection refused: wrong password.");
-
-                                            Server.Recycle(msg);
-
                                             continue;
                                         }
                                     }
@@ -1085,6 +1080,7 @@ namespace GTANResource
                                     {
                                         client.NetConnection.Deny(cancelArgs.Reason ?? "");
                                         Program.Output("Incoming connection denied: " + client.SocialClubName + " (" + client.Name + ")");
+                                        continue;
                                     }
                                     else
                                     {
@@ -1096,6 +1092,7 @@ namespace GTANResource
                                 {
                                     client.NetConnection.Deny("Server is full");
                                     Program.Output("Player connection refused: server full.");
+                                    continue;
                                 }
                             break;
                         case NetIncomingMessageType.StatusChanged:
@@ -1217,7 +1214,7 @@ namespace GTANResource
                                                             client.NetConnection.SendMessage(respMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                                         }
 
-                                                        return;
+                                                        continue;
                                                     }
 
                                                     lock (RunningResources)

@@ -756,8 +756,8 @@ namespace GTANetwork
 
             currentInterop.vecTarget = VehiclePosition;// + dir;
             currentInterop.vecError = dir;//MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
-            currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-            currentInterop.StartTime = Util.TickCount;// - DataLatency;
+            //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+            currentInterop.StartTime = Util.TickCount - DataLatency;
             currentInterop.FinishTime = currentInterop.StartTime + 100;
             currentInterop.LastAlpha = 0f;
         }
@@ -771,19 +771,20 @@ namespace GTANetwork
                     long currentTime = Util.TickCount;
                     float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
-                    alpha = Util.Clamp(0f, alpha, 1.5f);
+                    alpha = Util.Clamp(0f, alpha, 15f);
 
-                    float cAlpha = alpha - currentInterop.LastAlpha;
-                    currentInterop.LastAlpha = alpha;
+                    //float cAlpha = alpha - currentInterop.LastAlpha;
+                    //currentInterop.LastAlpha = alpha;
 
-                    Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+                    //Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+                    Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
 
-                    if (alpha == 1.5f)
+                    if (alpha == 15f)
                     {
                         currentInterop.FinishTime = 0;
                     }
                     Vector3 newPos = VehiclePosition + comp;
-                    MainVehicle.Velocity = VehicleVelocity + /*2 **/ (newPos - MainVehicle.Position);
+                    MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
 
                     if (Debug)
                     {

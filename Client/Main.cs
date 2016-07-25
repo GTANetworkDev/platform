@@ -3422,7 +3422,8 @@ namespace GTANetwork
                         if (data != null)
                         {
                             var args = DecodeArgumentList(data.Arguments.ToArray()).ToList();
-                            LogManager.DebugLog("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
+                            if (args.Count > 0)
+                                LogManager.DebugLog("RECEIVED SYNC EVENT " + ((SyncEventType)data.EventType) + ": " + args.Aggregate((f, s) => f.ToString() + ", " + s.ToString()));
                             switch ((SyncEventType)data.EventType)
                             {
                                 case SyncEventType.LandingGearChange:
@@ -4517,7 +4518,8 @@ namespace GTANetwork
 
             list.AddRange(objectList.Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
 
-            LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + objectList.Aggregate((f, s) => f + ", " + s));
+            if (objectList.Count() > 0)
+                LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + objectList.Aggregate((f, s) => f + ", " + s));
             LogManager.DebugLog("RETURN TYPE: " + obj.ReturnType);
             var nativeType = CheckNativeHash(obj.Hash);
             LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
