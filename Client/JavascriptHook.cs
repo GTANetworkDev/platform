@@ -410,6 +410,16 @@ namespace GTANetwork
             Game.Player.IsInvincible = invinc;
         }
 
+        public void setPlayerWantedLevel(int wantedLevel)
+        {
+            Function.Call(Hash.SET_FAKE_WANTED_LEVEL, wantedLevel);
+        }
+
+        public int getPlayerWantedLevel()
+        {
+            return Function.Call<int>((Hash)0x4C9296CBCD1B971E);
+        }
+
         public bool getPlayerInvincible()
         {
             return Game.Player.IsInvincible;

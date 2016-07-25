@@ -878,6 +878,16 @@ namespace GTANetworkServer
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
         }
 
+        public void setPlayerWantedLevel(Client player, int wantedLevel)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1454F2448DE30163, wantedLevel);
+        }
+
+        public int getPlayerWantedLevel(Client player)
+        {
+            return fetchNativeFromPlayer<int>(player, 0x4C9296CBCD1B971E);
+        }
+
         public void sendNativeToPlayer(Client player, ulong longHash, params object[] args)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, longHash, args);
