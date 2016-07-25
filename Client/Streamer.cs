@@ -947,7 +947,7 @@ namespace GTANetwork
         {
             var model = new Model(data.ModelHash);
             LogManager.DebugLog("PROP MODEL VALID: " + model.IsValid);
-            if (model == null || !model.IsValid || !model.IsInCdImage) return;
+            if (model == null || !model.IsValid || !model.IsInCdImage || data.Position == null || data.Rotation == null) return;
             LogManager.DebugLog("CREATING OBJECT FOR NETHANDLE " + data.RemoteHandle);
             if (!model.IsLoaded) model.Request(10000);
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
