@@ -40,7 +40,9 @@ namespace GTANetwork
             {
                 if (!Main.IsOnServer() || !Main.HasFinishedDownloading) goto endTick;
 
-                var streamedItems = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap.Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2));
+                var copyMap = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap);
+
+                var streamedItems = copyMap.Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2);
 
                 var position = _playerPosition.ToLVector();
 
