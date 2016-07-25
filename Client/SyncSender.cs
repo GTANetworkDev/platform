@@ -331,7 +331,7 @@ namespace GTANetwork
 
                 bool sendShootingPacket;
 
-                if (!WeaponDataProvider.IsWeaponAutomatic(unchecked ((WeaponHash) obj.WeaponHash.Value)))
+                if (!_lastShooting || !WeaponDataProvider.IsWeaponAutomatic(unchecked ((WeaponHash) obj.WeaponHash.Value)))
                 {
                     sendShootingPacket = (shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
                                           !player.IsSubtaskActive(ESubtask.MELEE_COMBAT));

@@ -1061,12 +1061,13 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0x953DA1E1B12C0491, vehicle);
         }
 
-        public  void setPlayerHealth(Client player, int health)
+        public void setPlayerHealth(Client player, float health)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
+            var normalized = health/100f;
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), (int)(normalized*200) + 100);
         }
 
-        public int getPlayerHealth(Client player)
+        public float getPlayerHealth(Client player)
         {
             return player.Health;
         }
