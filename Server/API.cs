@@ -931,6 +931,13 @@ namespace GTANetworkServer
             player.NetConnection.Disconnect("You have been kicked.");
         }
 
+
+        private Random r = new Random();
+        public double random()
+        {
+            return r.NextDouble();
+        }
+
         public void setEntityPosition(NetHandle netHandle, Vector3 newPosition)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0x239A3351AC1DA385, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0);

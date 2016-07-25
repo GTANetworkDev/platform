@@ -27,11 +27,14 @@ namespace GTANetworkServer
         public string Filename { get; set; }
         public Resource ResourceParent { get; set; }
         public List<Thread> ActiveThreads = new List<Thread>();
+        public bool Async = false;
 
         private Thread _workerThread;
+        private Thread _blockingThread;
         private JScriptEngine _jsEngine;
         private Script _compiledScript;
         private Queue _mainQueue;
+        private Queue _secondaryQueue;
         public bool HasTerminated = false;
         
         public Script GetAssembly
@@ -41,13 +44,20 @@ namespace GTANetworkServer
                 return _compiledScript;
             }
         }
-        public ScriptingEngine(string javascript, string name, Resource parent, string[] references)
+        public ScriptingEngine(string javascript, string name, Resource parent, string[] references, bool async)
         {
+            Async = async;
             ResourceParent = parent;
             _mainQueue = Queue.Synchronized(new Queue());
+            _secondaryQueue = Queue.Synchronized(new Queue());
+
             _workerThread = new Thread(MainThreadLoop);
             _workerThread.IsBackground = true;
             _workerThread.Start();
+
+            _blockingThread = new Thread(SecondaryThreadLoop);
+            _blockingThread.IsBackground = true;
+            _blockingThread.Start();
 
             Language = ScriptingEngineLanguage.javascript;
             Filename = name;
@@ -58,13 +68,20 @@ namespace GTANetworkServer
             }));
         }
 
-        public ScriptingEngine(Script sc, string name, Resource parent)
+        public ScriptingEngine(Script sc, string name, Resource parent, bool async)
         {
+            Async = async;
             ResourceParent = parent;
             _mainQueue = Queue.Synchronized(new Queue());
+            _secondaryQueue = Queue.Synchronized(new Queue());
+
             _workerThread = new Thread(MainThreadLoop);
             _workerThread.IsBackground = true;
             _workerThread.Start();
+
+            _blockingThread = new Thread(SecondaryThreadLoop);
+            _blockingThread.IsBackground = true;
+            _blockingThread.Start();
 
             Language = ScriptingEngineLanguage.compiled;
             Filename = name;
@@ -115,7 +132,6 @@ namespace GTANetworkServer
 
             return scriptEngine;
         }
-        
 
         private void MainThreadLoop()
         {
@@ -135,15 +151,44 @@ namespace GTANetworkServer
 
                     mainAction = (localCopy.Dequeue() as Action);
 
-                    /*
-                    if (mainAction != null) // TODO: Fix me -> NullReferenceException when calling API object on JS Engine.
+                    if (mainAction != null)
                     {
-                        var t = new Thread(mainAction.Invoke);
-                        t.IsBackground = true;
-                        lock (ActiveThreads) ActiveThreads.Add(t);
-                        t.Start();
-                    }*/
+                        if (Async)
+                        {
+                            ThreadPool.QueueUserWorkItem((WaitCallback) delegate
+                            {
+                                mainAction?.Invoke();
+                            });
+                        }
+                        else
+                        {
+                            mainAction?.Invoke();
+                        }
+                    }
+                }
 
+                Thread.Sleep(10);
+                lock (ActiveThreads) ActiveThreads.RemoveAll(t => t == null || !t.IsAlive);
+            }
+        }
+
+        private void SecondaryThreadLoop()
+        {
+            while (!HasTerminated)
+            {
+                Queue localCopy;
+                lock (_secondaryQueue.SyncRoot)
+                {
+                    localCopy = new Queue(_secondaryQueue);
+                    _secondaryQueue.Clear();
+                }
+                
+                while (localCopy.Count > 0)
+                {
+                    Action mainAction;
+
+                    mainAction = (localCopy.Dequeue() as Action);
+                    
                     mainAction?.Invoke();
                 }
 
@@ -403,9 +448,9 @@ namespace GTANetworkServer
 
         public void InvokeUpdate()
         {
-            lock (_mainQueue.SyncRoot)
+            lock (_secondaryQueue.SyncRoot)
             {
-                _mainQueue.Enqueue(new Action(() =>
+                _secondaryQueue.Enqueue(new Action(() =>
                 {
                     if (Language == ScriptingEngineLanguage.javascript)
                         _jsEngine.Script.API.invokeUpdate();
@@ -541,6 +586,7 @@ namespace GTANetworkServer
         public ResourceMetaInfo()
         {
             Type = ResourceType.script;
+            Multithreaded = false;
         }
 
         [XmlAttribute("author")]
@@ -560,5 +606,8 @@ namespace GTANetworkServer
 
         [XmlAttribute("gamemodes")]
         public string Gamemodes { get; set; }
+
+        [XmlAttribute("async")]
+        public bool Multithreaded { get; set; }
     }
 }

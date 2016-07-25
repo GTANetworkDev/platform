@@ -363,7 +363,7 @@ namespace GTANetworkServer
                         }
 
                         Program.Output("WARNING: Javascript resources will not run on GNU/Linux servers, and thus, they are deprecated.");
-                        ourResource.Engines.Add(new ScriptingEngine(scrTxt, script.Path, ourResource, currentResInfo.Referenceses.Select(r => r.Name).ToArray()));
+                        ourResource.Engines.Add(new ScriptingEngine(scrTxt, script.Path, ourResource, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), ourResource.Info.Info.Multithreaded));
                     }
                     else if (script.Language == ScriptingEngineLanguage.compiled)
                     {
@@ -377,7 +377,7 @@ namespace GTANetworkServer
 
                         var ass = Assembly.LoadFrom(baseDir + script.Path);
                         var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, ourResource.Info.Info.Multithreaded)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.csharp)
                     {
@@ -394,13 +394,13 @@ namespace GTANetworkServer
                 if (cSharp.Count > 0)
                 {
                     var csharpAss = CompileScript(cSharp.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), false);
-                    ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+                    ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, ourResource.Info.Info.Multithreaded)));
                 }
 
                 if (vBasic.Count > 0)
                 {
                     var vbasicAss = CompileScript(vBasic.ToArray(), currentResInfo.Referenceses.Select(r => r.Name).ToArray(), true);
-                    ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource)));
+                    ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, ourResource.Info.Info.Multithreaded)));
                 }
 
                 CommandHandler.Register(ourResource);
