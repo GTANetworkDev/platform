@@ -101,7 +101,8 @@ namespace GTANetwork
 
                 foreach (var item in _itemsToStreamIn)
                 {
-                    Main.NetEntityHandler.StreamIn(item);
+                    if (Main.NetEntityHandler.ClientMap.Contains(item))
+                        Main.NetEntityHandler.StreamIn(item);
                 }
 
                 _itemsToStreamIn.Clear();
