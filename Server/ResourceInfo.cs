@@ -222,11 +222,12 @@ namespace GTANetworkServer
             
         }
 
-        public object InvokeMethod(string method, object[] args)
+        public dynamic InvokeMethod(string method, object[] args)
         {
             try
             {
-                object objectToReturn = null;
+                dynamic objectToReturn = null;
+                bool hasValue = false;
                 lock (_mainQueue.SyncRoot)
                 _mainQueue.Enqueue(new Action(() =>
                 {
@@ -236,20 +237,23 @@ namespace GTANetworkServer
                         if (mi == null)
                         {
                             Program.Output("METHOD NOT ACCESSIBLE OR NOT FOUND: " + method);
+                            hasValue = true;
                             return;
                         }
-
+                        
                         objectToReturn = mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
+                        hasValue = true;
                     }
                     else if (Language == ScriptingEngineLanguage.javascript)
                     {
                         var mi = ((object) _jsEngine.Script).GetType().GetMethod(method);
                         objectToReturn = mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
+                        hasValue = true;
                     }
                 }));
 
                 var counter = 0;
-                while (counter < 50 && objectToReturn == null)
+                while (counter < 50 && !hasValue)
                     counter++;
 
                 return objectToReturn;

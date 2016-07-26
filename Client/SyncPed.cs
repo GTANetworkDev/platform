@@ -782,66 +782,41 @@ namespace GTANetwork
         {
             if (Speed > 0.2f)
             {
-                if (!Main.LagCompensation)
+                long currentTime = Util.TickCount;
+                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+
+                alpha = Util.Clamp(0f, alpha, 1.5f);
+
+                //float cAlpha = alpha - currentInterop.LastAlpha;
+                //currentInterop.LastAlpha = alpha;
+
+                //Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+                Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+
+                if (alpha == 1.5f)
                 {
-                    long currentTime = Util.TickCount;
-                    float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
-
-                    //alpha = Util.Clamp(0f, alpha, 1.5f);
-
-                    float cAlpha = alpha - currentInterop.LastAlpha;
-                    currentInterop.LastAlpha = alpha;
-
-                    Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
-                    //Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
-
-                    //if (alpha == 1.5f)
-                    {
-                        //currentInterop.FinishTime = 0;
-                    }
-
-                    Vector3 newPos = VehiclePosition + comp;
-                    MainVehicle.Velocity = VehicleVelocity + (newPos - MainVehicle.Position);
-
-                    if (Debug)
-                    {
-                        World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
-                        if (Game.Player.Character.IsInVehicle())
-                            World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
-                                new Vector3(), new Vector3(),
-                                new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
-                        World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
-                    }
+                    currentInterop.FinishTime = 0;
                 }
-                else
+
+                Vector3 newPos = VehiclePosition + comp;
+                MainVehicle.Velocity = VehicleVelocity + 2*(newPos - MainVehicle.Position);
+
+                if (Debug)
                 {
-                    long currentTime = Util.TickCount;
-                    //float alpha = (DataLatency + TicksSinceLastUpdate)/(float)AverageLatency;
-                    float alpha = Util.Unlerp(currentInterop.StartTime + DataLatency, currentTime + DataLatency,
-                        currentInterop.FinishTime);
-                    var dir = VehiclePosition - _lastVehiclePos;
-                    Vector3 newPos = Vector3.Lerp(VehiclePosition, VehiclePosition + dir, alpha);
+                    World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
+                        new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
+                    if (Game.Player.Character.IsInVehicle())
+                        World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
+                            new Vector3(), new Vector3(),
+                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
+                    World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
+                        new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
 
-                    MainVehicle.Velocity = VehicleVelocity + 10*(newPos - MainVehicle.Position);
-
-                    if (Debug)
-                    {
-                        World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
-                        if (Game.Player.Character.IsInVehicle())
-                            World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
-                                new Vector3(), new Vector3(),
-                                new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
-                        World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
-                    }
+                    World.DrawMarker(MarkerType.DebugSphere, VehiclePosition, new Vector3(), new Vector3(),
+                        new Vector3(1, 1, 1), Color.FromArgb(100, 255, 255, 0));
+                    World.DrawMarker(MarkerType.DebugSphere, VehiclePosition + (VehiclePosition - _lastVehiclePos), new Vector3(), new Vector3(),
+                        new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 255));
                 }
-                //UI.ShowSubtitle("alpha: " + alpha);
-
-                //MainVehicle.Alpha = 100;
-                
 
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = MainVehicle.Position;
@@ -1755,7 +1730,7 @@ namespace GTANetwork
 
                 DEBUG_STEP = 0;
                 
-                float hRange = IsInVehicle ? 100f : 200f;
+                float hRange = IsInVehicle ? 150f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 

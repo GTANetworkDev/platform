@@ -136,7 +136,7 @@ namespace GTANetworkServer
 
         public CommandHandler CommandHandler;
         public dynamic ExportedFunctions;
-        public delegate object ExportedFunctionDelegate(params object[] parameters);
+        public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
 
         public List<string> LoadedIPL = new List<string>();
         public List<string> RemovedIPL = new List<string>();
