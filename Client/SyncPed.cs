@@ -474,7 +474,7 @@ namespace GTANetwork
 							DEBUG_STEP = 6;
 							var nameText = Name == null ? "<nameless>" : Name;
 
-							if (Environment.TickCount - LastUpdateReceived > 10000)
+							if (TicksSinceLastUpdate > 10000)
 								nameText = "~r~AFK~w~~n~" + nameText;
                             var dist = (GameplayCamera.Position - Character.Position).Length();
 							var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
@@ -537,7 +537,7 @@ namespace GTANetwork
 
 					var nameText = Name == null ? "<nameless>" : Name;
 
-					if (Environment.TickCount - LastUpdateReceived > 10000)
+					if (TicksSinceLastUpdate > 10000)
 						nameText = "~r~AFK~w~~n~" + nameText;
 
                     var dist = (GameplayCamera.Position - Character.Position).Length();
@@ -787,20 +787,21 @@ namespace GTANetwork
                     long currentTime = Util.TickCount;
                     float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
-                    alpha = Util.Clamp(0f, alpha, 15f);
+                    //alpha = Util.Clamp(0f, alpha, 1.5f);
 
-                    //float cAlpha = alpha - currentInterop.LastAlpha;
-                    //currentInterop.LastAlpha = alpha;
+                    float cAlpha = alpha - currentInterop.LastAlpha;
+                    currentInterop.LastAlpha = alpha;
 
-                    //Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
-                    Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+                    Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+                    //Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
 
-                    if (alpha == 15f)
+                    //if (alpha == 1.5f)
                     {
-                        currentInterop.FinishTime = 0;
+                        //currentInterop.FinishTime = 0;
                     }
+
                     Vector3 newPos = VehiclePosition + comp;
-                    MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
+                    MainVehicle.Velocity = VehicleVelocity + (newPos - MainVehicle.Position);
 
                     if (Debug)
                     {
@@ -1469,14 +1470,8 @@ namespace GTANetwork
 	        }
 	        else
 	        {
-                UI.ShowSubtitle("PLAYING ANIM", 100);
-
-                //if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
-                    //3))
-                {
-                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-                        8f, 10f, -1, 2, -8f, 1, 1, 1);
-                }
+                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
+                    8f, 10f, -1, 2, -8f, 1, 1, 1);
             }
 
 	        Function.Call(Hash.SET_AI_WEAPON_DAMAGE_MODIFIER, 1f);
