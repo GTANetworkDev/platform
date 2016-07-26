@@ -294,7 +294,8 @@ namespace GTANetwork
             String = 4,
             Vector3 = 5,
             Vector2 = 6,
-            Float = 7
+            Float = 7,
+            Bool = 8,
         }
 
         public LocalHandle NetToLocal(NetHandle handle)
@@ -339,6 +340,8 @@ namespace GTANetwork
                     return Function.Call<Vector2>(ourHash, fArgs);
                 case ReturnType.Float:
                     return Function.Call<float>(ourHash, fArgs);
+                case ReturnType.Bool:
+                    return Function.Call<bool>(ourHash, fArgs);
                 default:
                     return null;
             }
@@ -744,6 +747,7 @@ namespace GTANetwork
         public void stopAudio()
         {
             JavascriptHook.AudioDevice.controls.stop();
+            JavascriptHook.AudioDevice.URL = "";
         }
 
         public void triggerServerEvent(string eventName, params object[] arguments)

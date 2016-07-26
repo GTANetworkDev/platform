@@ -1,0 +1,9 @@
+<meta>
+    <info name="Doom Deathmatch" author="Guadmaz" type="map" gamemodes="deathmatch" />
+
+    <script src="doom.js" type="client" lang="javascript" />
+
+    <file src="e1m1.mp3" />
+
+    <map src="doom.map" />
+</meta>

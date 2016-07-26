@@ -93,7 +93,6 @@
     <Compile Include="DeltaCompressor.cs" />
     <Compile Include="GUI\CEFManager.cs" />
     <Compile Include="GUI\RadioWheel.cs" />
-    <None Include="SyncPedCoop.cs" />
     <Compile Include="DebugWindow.cs" />
     <Compile Include="DownloadManager.cs" />
     <Compile Include="GameSettings.cs" />

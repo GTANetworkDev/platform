@@ -1,0 +1,13 @@
+<map>
+	<spawnpoint posX="1078.61" posY="-1979.82" posZ="31.48" />
+	<spawnpoint posX="1071.15" posY="-2000.81" posZ="30.90" />
+	<spawnpoint posX="1092.07" posY="-1990.27" posZ="28.98" />
+	<spawnpoint posX="1112.99" posY="-1998.18" posZ="31.00" />
+	<spawnpoint posX="1097.63" posY="-2012.86" posZ="30.89" />
+	<spawnpoint posX="1116.25" posY="-2002.64" posZ="35.44" />
+	<spawnpoint posX="1108.73" posY="-2016.28" posZ="35.68" />
+
+	<weapon model="Pistol50" />	
+	<weapon model="PumpShotgun" />
+	<weapon model="CompactRifle" />
+</map>

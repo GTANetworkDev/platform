@@ -1456,19 +1456,34 @@ namespace GTANetwork
 	    {
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
 			var animDict = GetAnimDictionary(ourAnim);
-			var secondaryAnimDict = GetSecondaryAnimDict();
 
-            Character.Task.ClearSecondary();
-            
-			if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
-			{
-				Character.Task.ClearAnimation(animDict, ourAnim);
-			}
 
-            Function.Call(Hash.SET_AI_WEAPON_DAMAGE_MODIFIER, 1f);
+	        if (!IsInCover)
+	        {
+                Character.Task.ClearSecondary();
+
+	            if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
+	            {
+	                Character.Task.ClearAnimation(animDict, ourAnim);
+	            }
+	        }
+	        else
+	        {
+                UI.ShowSubtitle("PLAYING ANIM", 100);
+
+                //if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
+                    //3))
+                {
+                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
+                        8f, 10f, -1, 2, -8f, 1, 1, 1);
+                }
+            }
+
+	        Function.Call(Hash.SET_AI_WEAPON_DAMAGE_MODIFIER, 1f);
 	        Function.Call(Hash.SET_PED_SHOOT_RATE, Character, 100);
             Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
 
+            if (!IsInCover)
             if (Game.GameTime - _lastVehicleAimUpdate > 30)
             {
                 //Character.Task.AimAt(AimCoords, -1);
@@ -1488,17 +1503,26 @@ namespace GTANetwork
                 _lastVehicleAimUpdate = Game.GameTime;
             }
 
-            if (!WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
-	        {
-	            Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, Character, AimCoords.X, AimCoords.Y, AimCoords.Z, true);
-	        }
-	        else
-	        {
 
-	            var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
-	            if (gunEnt != null)
+            var gunEnt = Function.Call<Entity>(Hash._0x3B390A939AF0B5FC, Character);
+	        if (gunEnt != null)
+	        {
+	            var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+	            var dir = (AimCoords - start);
+	            dir.Normalize();
+	            var end = start + dir*100f;
+
+	            if (IsInCover) // Weapon spread
 	            {
-	                var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
+	                end += Vector3.RandomXYZ()*2f;
+	            }
+
+	            if (!WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
+	            {
+	                Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, Character, end.X, end.Y, end.Z, true);
+	            }
+	            else
+	            {
 	                var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash) CurrentWeapon);
 	                var speed = 0xbf800000;
 	                var weaponH = (WeaponHash) CurrentWeapon;
@@ -1506,10 +1530,6 @@ namespace GTANetwork
 
 	                if (weaponH == WeaponHash.Minigun)
 	                    weaponH = WeaponHash.CombatPDW;
-
-	                var dir = (AimCoords - start);
-	                dir.Normalize();
-	                var end = start + dir*100f;
 
 	                if (IsFriend())
 	                    damage = 0;
@@ -1553,7 +1573,7 @@ namespace GTANetwork
 
 	    void DisplayWalkingAnimation()
 	    {
-	        if (IsReloading) return;
+	        if (IsReloading || (IsInCover && IsShooting && !IsAiming)) return;
 
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
 			var animDict = GetAnimDictionary(ourAnim);
@@ -1923,6 +1943,13 @@ namespace GTANetwork
             var altitude = IsInLowCover ? "low" : "high";
 
             var hands = GetWeaponHandsHeld(CurrentWeapon);
+
+            if (IsShooting && !IsAiming)
+            {
+                if (hands == 1) return "cover@weapon@1h";
+                if (hands == 2 || hands == 5) return "cover@weapon@2h";
+            }
+
             if (hands == 1) return "cover@idles@1h@" + altitude +"@_a";
             if (hands == 2 || hands == 5) return "cover@idles@2h@" + altitude +"@_a";
             if (hands == 3 || hands == 4 || hands == 0) return "cover@idles@unarmed@" + altitude + "@_a";
@@ -2018,10 +2045,17 @@ namespace GTANetwork
             return 0;
         }
 
-        public static string GetMovementAnim(int speed, bool inCover, bool coverFacingLeft)
+        public string GetMovementAnim(int speed, bool inCover, bool coverFacingLeft)
         {
             if (inCover)
             {
+                if (IsShooting && !IsAiming)
+                {
+                    if (IsInLowCover)
+                        return coverFacingLeft ? "blindfire_low_l_aim_med" : "blindfire_low_r_aim_med";
+                    return coverFacingLeft ? "blindfire_hi_l_aim_med" : "blindfire_hi_r_aim_med";
+                }
+                
                 return coverFacingLeft ? "idle_l_corner" : "idle_r_corner";
             }
 

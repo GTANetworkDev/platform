@@ -174,26 +174,16 @@ namespace GTANetworkServer
 
         private void SecondaryThreadLoop()
         {
+            if (!Async) return;
+
             while (!HasTerminated)
             {
-                Queue localCopy;
-                lock (_secondaryQueue.SyncRoot)
-                {
-                    localCopy = new Queue(_secondaryQueue);
-                    _secondaryQueue.Clear();
-                }
-                
-                while (localCopy.Count > 0)
-                {
-                    Action mainAction;
+                if (Language == ScriptingEngineLanguage.javascript)
+                    _jsEngine.Script.API.invokeUpdate();
+                else if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeUpdate();
 
-                    mainAction = (localCopy.Dequeue() as Action);
-                    
-                    mainAction?.Invoke();
-                }
-
-                Thread.Sleep(10);
-                lock (ActiveThreads) ActiveThreads.RemoveAll(t => t == null || !t.IsAlive);
+                Thread.Sleep(16);
             }
         }
 
@@ -448,9 +438,10 @@ namespace GTANetworkServer
 
         public void InvokeUpdate()
         {
-            lock (_secondaryQueue.SyncRoot)
+            if (Async) return;
+            lock (_mainQueue.SyncRoot)
             {
-                _secondaryQueue.Enqueue(new Action(() =>
+                _mainQueue.Enqueue(new Action(() =>
                 {
                     if (Language == ScriptingEngineLanguage.javascript)
                         _jsEngine.Script.API.invokeUpdate();
