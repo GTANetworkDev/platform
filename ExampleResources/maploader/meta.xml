@@ -1,5 +1,5 @@
 <meta>
-    <info name="Map Loader" author="Guadmaz" type="script" description="Load the .XML maps from the Map Editor mod." />
+    <info name="Map Loader" author="Guadmaz" type="script" description="Load the .XML maps from the Map Editor mod." async="true" />
     
     <assembly ref="mscorlib.dll" />
     <assembly ref="System.Xml.Serialization.dll" />

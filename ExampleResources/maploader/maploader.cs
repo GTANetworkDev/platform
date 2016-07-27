@@ -46,7 +46,14 @@ using System.Threading;
                 {
                     if (prop.Type == ObjectTypes.Prop)
                     {
-                        CreatedEntities.Add(API.createObject(prop.Hash, prop.Position, prop.Quaternion));
+                        if (prop.Quaternion != null)
+                        {
+                            CreatedEntities.Add(API.createObject(prop.Hash, prop.Position, prop.Quaternion));
+                        }
+                        else
+                        {
+                            CreatedEntities.Add(API.createObject(prop.Hash, prop.Position, prop.Rotation));   
+                        }
                     }
                     else if (prop.Type == ObjectTypes.Vehicle)
                     {

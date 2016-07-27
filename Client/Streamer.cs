@@ -923,13 +923,6 @@ namespace GTANetwork
 
         private void StreamOutEntity(ILocalHandleable data)
         {
-            /* // Fun debug stuff
-            var pos = new Prop(data.LocalHandle).Position;
-            Function.Call(Hash.REQUEST_NAMED_PTFX_ASSET, "scr_rcbarry2");
-            Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, "scr_rcbarry2");
-            Function.Call(Hash.START_PARTICLE_FX_NON_LOOPED_AT_COORD, "scr_clown_appears", pos.X, pos.Y, pos.Z, 0, 0, 0, 2f, 0, 0, 0);
-            */
-
             new Prop(data.LocalHandle).Delete();
         }
 
