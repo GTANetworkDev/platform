@@ -66,6 +66,7 @@ namespace GTANetworkServer
             CommandHandler = new CommandHandler();
             FileHashes = new Dictionary<string, string>();
             ExportedFunctions = new System.Dynamic.ExpandoObject();
+            PickupManager = new PickupManager();
 
             MaxPlayers = 32;
             Port = conf.Port;
@@ -145,6 +146,7 @@ namespace GTANetworkServer
         public DateTime TimeOfDay { get; set; } = DateTime.Now;
 
         public List<Resource> RunningResources;
+        public PickupManager PickupManager;
 
         private Dictionary<string, string> FileHashes { get; set; }
 
@@ -617,7 +619,7 @@ namespace GTANetworkServer
                     new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
                         vehicle.getElementData<float>("posZ")),
                     new Vector3(vehicle.getElementData<float>("rotX"), vehicle.getElementData<float>("rotY"),
-                        vehicle.getElementData<float>("rotZ")), vehicle.getElementData<int>("amount"), dimension);
+                        vehicle.getElementData<float>("rotZ")), vehicle.getElementData<int>("amount"), vehicle.getElementData<uint>("respawn"), dimension);
                 res.MapEntities.Add(ent);
             }
 
@@ -654,6 +656,18 @@ namespace GTANetworkServer
                     PublicAPI.setBlipShortRange(ent, vehicle.getElementData<bool>("shortRange"));
 
                 res.MapEntities.Add(ent);
+            }
+
+            var neededInteriors = map.getElementsByType("ipl");
+            foreach (var point in neededInteriors)
+            {
+                PublicAPI.requestIpl(point.getElementData<string>("name"));
+            }
+
+            var removedInteriors = map.getElementsByType("removeipl");
+            foreach (var point in removedInteriors)
+            {
+                PublicAPI.removeIpl(point.getElementData<string>("name"));
             }
         }
 
@@ -1820,6 +1834,8 @@ namespace GTANResource
                 AnnounceSelfToMaster();
             }
 
+            PickupManager.Pulse();
+
             lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
             {
                 en.InvokeUpdate();
@@ -1880,10 +1896,16 @@ namespace GTANResource
                 case SyncEventType.PickupPickedUp:
                 {
                     var pickupId = (int) args[0];
+
                     if (NetEntityHandler.ToDict().ContainsKey(pickupId))
                     {
-                        ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).PickedUp = true;
-                        RunningResources.ForEach(res => res.Engines.ForEach(en => en.InvokePlayerPickup(sender, new NetHandle(pickupId))));
+                        if (!((PickupProperties) NetEntityHandler.ToDict()[pickupId]).PickedUp)
+                        {
+                            ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).PickedUp = true;
+                            RunningResources.ForEach(res => res.Engines.ForEach(en => en.InvokePlayerPickup(sender, new NetHandle(pickupId))));
+                            if (((PickupProperties)NetEntityHandler.ToDict()[pickupId]).RespawnTime > 0)
+                                PickupManager.Add(pickupId);
+                        }
                     }
                     break;
                 }

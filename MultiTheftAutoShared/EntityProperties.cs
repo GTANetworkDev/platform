@@ -166,6 +166,9 @@ namespace GTANetworkShared
 
         [ProtoMember(2)]
         public bool PickedUp { get; set; }
+
+        [ProtoMember(3)]
+        public uint RespawnTime { get; set; }
     }
 
     [ProtoContract]
@@ -356,6 +359,9 @@ namespace GTANetworkShared
 
         [ProtoMember(2)]
         public bool? PickedUp { get; set; }
+
+        [ProtoMember(3)]
+        public uint? RespawnTime { get; set; }
     }
 
     [ProtoContract]

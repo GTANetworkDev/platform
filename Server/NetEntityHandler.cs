@@ -18,6 +18,12 @@ namespace GTANetworkServer
             return ServerEntities;
         }
 
+        public T NetToProp<T>(int handle) where T : EntityProperties
+        {
+            if (ServerEntities.ContainsKey(handle) && ServerEntities[handle] is T) return (T)ServerEntities[handle];
+            return null;
+        }
+
         public int CreateVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2, int dimension)
         {
             int localEntityHash = ++EntityCounter;
@@ -84,13 +90,14 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreatePickup(int model, Vector3 pos, Vector3 rot, int amount, int dimension)
+        public int CreatePickup(int model, Vector3 pos, Vector3 rot, int amount, uint respawnTime, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new PickupProperties();
             obj.Position = pos;
             obj.Rotation = rot;
             obj.ModelHash = model;
+            obj.RespawnTime = respawnTime;
             obj.Amount = amount;
             obj.Dimension = dimension;
             obj.EntityType = (byte)EntityType.Pickup;

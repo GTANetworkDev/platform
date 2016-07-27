@@ -1415,11 +1415,20 @@ namespace GTANetworkServer
             return ent;
         }
 
-        public NetHandle createPickup(PickupHash pickupHash, Vector3 pos, Vector3 rot, int amount, int dimension = 0)
+        public NetHandle createPickup(PickupHash pickupHash, Vector3 pos, Vector3 rot, int amount, uint respawnTime, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreatePickup((int)pickupHash, pos, rot, amount, dimension));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreatePickup((int)pickupHash, pos, rot, amount, respawnTime, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
+        }
+
+        public void respawnPickup(NetHandle pickup)
+        {
+            var pic = Program.ServerInstance.NetEntityHandler.NetToProp<PickupProperties>(pickup.Value);
+            if (pic != null && pic.PickedUp)
+            {
+                Program.ServerInstance.PickupManager.RespawnPickup(pickup.Value, pic);
+            }
         }
 
         public NetHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha,

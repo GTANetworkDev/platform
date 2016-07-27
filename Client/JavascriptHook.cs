@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
@@ -279,7 +280,7 @@ namespace GTANetwork
         {
             if (ParentResourceName == null) throw new NullReferenceException("Illegal call to isPathSafe inside constructor!");
 
-            var absPath = System.IO.Path.GetFullPath(path);
+            var absPath = System.IO.Path.GetFullPath(FileTransferId._DOWNLOADFOLDER_ + ParentResourceName + Path.DirectorySeparatorChar + path);
             var resourcePath = System.IO.Path.GetFullPath(FileTransferId._DOWNLOADFOLDER_ + ParentResourceName);
 
             return absPath.StartsWith(resourcePath);

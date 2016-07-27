@@ -229,7 +229,7 @@ public class FreeroamScript : Script
     [Command("pic")]
     public void SpawnPickupCommand(Client sender, PickupHash pickup)
     {
-        API.createPickup(pickup, new Vector3(sender.Position.X + 10, sender.Position.Y, sender.Position.Z), new Vector3(), 10);
+        API.createPickup(pickup, new Vector3(sender.Position.X + 10, sender.Position.Y, sender.Position.Z), new Vector3(), 100, 0);
     }
 
     [Command("countdown")]

@@ -290,6 +290,11 @@ namespace GTANetwork
             }
         }
 
+        public void Remove(IStreamedItem item)
+        {
+            lock (ClientMap) ClientMap.Remove(item);
+        }
+
         public void RemoveByNetHandle(int netHandle)
         {
             lock (ClientMap) ClientMap.Remove(NetToStreamedItem(netHandle));
@@ -297,7 +302,7 @@ namespace GTANetwork
 
         public void RemoveByLocalHandle(int localHandle)
         {
-            lock (ClientMap) ClientMap.Remove(NetToStreamedItem(localHandle));
+            lock (ClientMap) ClientMap.Remove(NetToStreamedItem(localHandle, true));
         }
         
         public void UpdateVehicle(int netHandle, Delta_VehicleProperties prop)
@@ -1090,7 +1095,7 @@ namespace GTANetwork
             var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, pickup.ModelHash,
                 pickup.Position.X, pickup.Position.Y, pickup.Position.Z,
                 pickup.Rotation.X, pickup.Rotation.Y, pickup.Rotation.Z,
-                512, pickup.Amount, 0, true, 0);
+                515, pickup.Amount, 0, true, 0);
 
             var start = 0;
             while (Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup) == -1 && start < 20)

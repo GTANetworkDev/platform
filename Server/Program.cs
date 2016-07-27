@@ -15,6 +15,11 @@ namespace GTANetworkServer
         private static object _filelock = new object();
         private static bool _log;
 
+        public static long GetTicks()
+        {
+            return DateTime.Now.Ticks/10000;
+        }
+
         public static void Output(string str)
         {
             Console.WriteLine("[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);

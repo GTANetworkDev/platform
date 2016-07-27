@@ -16,9 +16,7 @@ public class Deathmatch : Script
 {
     private List<Vector3> spawns;
     private List<int> weapons;
-    private List<NetHandle> pickups;
     private Dictionary<Client, int> Killstreaks;
-    private List<RespawnablePickup> RespawnCount;
     private Random rInst;
     
     public Deathmatch()
@@ -37,9 +35,7 @@ public class Deathmatch : Script
         
         rInst = new Random();
 
-        RespawnCount = new List<RespawnablePickup>();
-        pickups = new List<NetHandle>();
-        
+               
         Killstreaks = new Dictionary<Client, int>();
 
         API.onPlayerConnected += OnPlayerConnected;
@@ -48,7 +44,6 @@ public class Deathmatch : Script
         API.onResourceStart += onResourceStart;
         API.onMapChange += onMapChange;
         API.onPlayerDeath += PlayerKilled;
-        API.onUpdate += onUpdate;
     }
 
     private void onMapChange(string mapName, XmlGroup map)
@@ -57,13 +52,10 @@ public class Deathmatch : Script
         weapons.Clear();
         Killstreaks.Clear();
 
-        RespawnCount.Clear();
-
         foreach(var pc in pickups)
         {
             API.deleteEntity(pc);            
         }
-        pickups.Clear();
 
         var spawnpoints = map.getElementsByType("spawnpoint");
         foreach(var point in spawnpoints)
@@ -85,15 +77,6 @@ public class Deathmatch : Script
         foreach(var point in neededInteriors)
         {
             API.requestIpl(point.getElementData<string>("name"));
-        }
-
-        var pickupSpawnpoints = map.getElementsByType("pickup");
-        foreach(var pc in pickupSpawnpoints)
-        {
-            pickups.Add(API.createPickup((PickupHash)API.pickupNameToModel(pc.getElementData<string>("model")),
-                new Vector3(pc.getElementData<float>("posX"), pc.getElementData<float>("posY"), pc.getElementData<float>("posZ")),
-                new Vector3(),
-                pc.getElementData<int>("amount")));
         }
 
         var players = API.getAllPlayers();
@@ -124,37 +107,6 @@ public class Deathmatch : Script
         {
             API.setPlayerBlipSprite(player, 1);
             API.setPlayerBlipColor(player, 0);
-        }
-    }
-
-    private void onPlayerPickup(Client pickupee, NetHandle pickupHandle)
-    {
-        var pos = API.getEntityPosition(pickupHandle);
-        var model = API.getEntityModel(pickupHandle);
-        var amount = ((PickupProperties)Program.ServerInstance.NetEntityHandler.ToDict()[pickupHandle.Value]).Amount;
-        var timePickedUp = Environment.TickCount;
-        var timeOut = 60000;
-
-        var pcObj = new RespawnablePickup();
-        pcObj.PickupTime = timePickedUp;
-        pcObj.RespawnTime = timeOut;
-        pcObj.Hash = model;
-        pcObj.Position = pos;
-        pcObj.Amount = amount;
-
-        RespawnCount.Add(pcObj);
-    }
-    
-    private void onUpdate(object sender, EventArgs e)
-    {
-        if (RespawnCount.Count > 0)
-        {
-            if (Environment.TickCount - RespawnCount[0].PickupTime > RespawnCount[0].RespawnTime)
-            {
-                var newPickup = API.createPickup((PickupHash)RespawnCount[0].Hash, RespawnCount[0].Position, new Vector3(), RespawnCount[0].Amount);
-                pickups.Add(newPickup);
-                RespawnCount.RemoveAt(0);
-            }
         }
     }
 
