@@ -1475,9 +1475,11 @@ namespace GTANetwork
 
                 if (map.Players != null)
                 {
+                    LogManager.DebugLog("STARTING PLAYER MAP");
+
                     foreach (var pair in map.Players)
                     {
-                        if (NetEntityHandler.NetToEntity(pair.Key).Handle == Game.Player.Character.Handle)
+                        if (NetEntityHandler.NetToEntity(pair.Key)?.Handle == Game.Player.Character.Handle)
                         {
                             // It's us!
                             var remPl = NetEntityHandler.NetToStreamedItem(pair.Key) as RemotePlayer;

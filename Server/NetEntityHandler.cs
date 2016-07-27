@@ -223,6 +223,11 @@ namespace GTANetworkServer
             ServerEntities.Remove(netId);
         }
 
+        public void DeleteEntityQuiet(int netId)
+        {
+            ServerEntities.Remove(netId);
+        }
+
         public int GeneratePedHandle()
         {
             var localHan = ++EntityCounter;

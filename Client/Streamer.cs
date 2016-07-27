@@ -735,8 +735,10 @@ namespace GTANetwork
 
             if (rem is SyncPed)
             {
-                ((SyncPed)rem).Position = prop.Position.ToVector();
-                ((SyncPed)rem).Rotation = prop.Rotation.ToVector();
+                if (prop.Position != null)
+                    ((SyncPed)rem).Position = prop.Position.ToVector();
+                if (prop.Rotation != null)
+                    ((SyncPed)rem).Rotation = prop.Rotation.ToVector();
             }
         }
 

@@ -30,11 +30,14 @@ namespace GTANetworkServer
             get { return Program.ServerInstance.NetEntityHandler.ToDict()[CharacterHandle.Value] as PedProperties; }
         }
 
+        internal void CommitConnection()
+        {
+            CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle());
+        }
+
         public Client(NetConnection nc)
         {
             NetConnection = nc;
-            DeltaCompressor = new DeltaCompressor(this);
-            CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle());
         }
     }
 }

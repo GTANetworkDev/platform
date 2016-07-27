@@ -21,6 +21,7 @@ namespace GTANetwork.GUI
         private Size Size  = new Size(6420, 7898);
         private float Zoom = 1f;
         private bool _isHeldDown;
+        private bool _justOpened;
         private PointF _heldDownPoint;
         private PointF _mapPosAtHelddown;
         private Sprite _crosshair = new Sprite("minimap", "minimap_g0", new Point(), new Size(256, 1));
@@ -98,10 +99,16 @@ namespace GTANetwork.GUI
 
             if (!Directory.Exists(Main.GTANInstallDir + "\\map\\blips"))
                 BLIP_PATH = Main.GTANInstallDir + "\\bin\\scripts\\map\\blips\\";
-
+            
             if (!Focused)
             {
                 DrawSprite("minimap_sea_2_0", "minimap_sea_2_0", new Point(BottomRight.X - 1024, TopLeft.Y), new Size(1024, 1024));
+
+                if (Game.IsControlJustPressed(0, Control.Attack))
+                {
+                    Focused = true;
+                    _justOpened = true;
+                }
             }
             else
             {
@@ -121,21 +128,29 @@ namespace GTANetwork.GUI
                 }
                 else if (Game.IsControlJustReleased(0, Control.CursorAccept))
                 {
-                    Position = _mapPosAtHelddown + new SizeF((_heldDownPoint.X - mouseX) / Zoom, (_heldDownPoint.Y - mouseY) / Zoom);
-                    _isHeldDown = false;
-
-                    if (DateTime.Now.Subtract(_holdDownTime).TotalMilliseconds < 100)
+                    if (_justOpened)
                     {
-                        if (Function.Call<bool>(Hash.IS_WAYPOINT_ACTIVE))
+                        _justOpened = false;
+                    }
+                    else
+                    {
+                        Position = _mapPosAtHelddown +
+                                   new SizeF((_heldDownPoint.X - mouseX)/Zoom, (_heldDownPoint.Y - mouseY)/Zoom);
+                        _isHeldDown = false;
+
+                        if (DateTime.Now.Subtract(_holdDownTime).TotalMilliseconds < 100)
                         {
-                            Function.Call(Hash.SET_WAYPOINT_OFF);
-                        }
-                        else
-                        {
-                            var wpyPos = new PointF(center.X - Position.X*Zoom, center.Y - Position.Y*Zoom);
-                            var ourShit = new SizeF(mouseX - wpyPos.X, mouseY - wpyPos.Y);
-                            var realPos = Map2DToWorld3d(wpyPos, wpyPos + ourShit);
-                            Function.Call(Hash.SET_NEW_WAYPOINT, realPos.X, realPos.Y*-1f);
+                            if (Function.Call<bool>(Hash.IS_WAYPOINT_ACTIVE))
+                            {
+                                Function.Call(Hash.SET_WAYPOINT_OFF);
+                            }
+                            else
+                            {
+                                var wpyPos = new PointF(center.X - Position.X*Zoom, center.Y - Position.Y*Zoom);
+                                var ourShit = new SizeF(mouseX - wpyPos.X, mouseY - wpyPos.Y);
+                                var realPos = Map2DToWorld3d(wpyPos, wpyPos + ourShit);
+                                Function.Call(Hash.SET_NEW_WAYPOINT, realPos.X, realPos.Y*-1f);
+                            }
                         }
                     }
                 }

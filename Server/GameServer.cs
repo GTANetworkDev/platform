@@ -991,6 +991,8 @@ namespace GTANResource
                     }
 
                     if (client == null) client = new Client(msg.SenderConnection);
+
+
                     try
                     {
                         switch (msg.MessageType)
@@ -1068,6 +1070,7 @@ namespace GTANResource
                                         Clients.Add(client);
                                     }
 
+                                    client.CommitConnection();
                                     client.SocialClubName = connReq.SocialClubName;
                                     client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
                                     client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
@@ -1076,7 +1079,6 @@ namespace GTANResource
 
                                     var respObj = new ConnectionResponse();
                                     respObj.CharacterHandle = client.CharacterHandle.Value;
-                                    //respObj.AssignedChannel = GetChannelIdForConnection(client);
                                     
                                     var channelHail = Server.CreateMessage();
                                     var respBin = SerializeBinary(respObj);
@@ -1139,8 +1141,9 @@ namespace GTANResource
                                             Program.Output("Player disconnected: " + client.SocialClubName + " (" +
                                                             client.Name + ")");
                                             
-                                        Clients.Remove(client);
-                                        if (ACLEnabled) ACL.LogOutClient(client);
+                                            Clients.Remove(client);
+                                            NetEntityHandler.DeleteEntityQuiet(client.CharacterHandle.Value);
+                                            if (ACLEnabled) ACL.LogOutClient(client);
 
                                             Downloads.RemoveAll(d => d.Parent == client);
                                         }
