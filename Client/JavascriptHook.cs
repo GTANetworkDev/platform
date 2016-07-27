@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 using GTA;
 using GTA.Math;
@@ -14,7 +15,7 @@ using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using NativeUI;
-using WMPLib;
+using NAudio.Wave;
 using Vector3 = GTANetworkShared.Vector3;
 
 namespace GTANetwork
@@ -33,6 +34,73 @@ namespace GTANetwork
         public string Filename { get; set; }
     }
 
+    public static class AudioThread
+    {
+        public static void StartAudio(string path)
+        {
+            try
+            {
+                JavascriptHook.AudioDevice?.Stop();
+                JavascriptHook.AudioDevice?.Dispose();
+                JavascriptHook.AudioReader?.Dispose();
+
+                JavascriptHook.AudioReader = new Mp3FileReader(path);
+                JavascriptHook.AudioDevice = new WaveOutEvent();
+                JavascriptHook.AudioDevice.Init(JavascriptHook.AudioReader);
+                JavascriptHook.AudioDevice.Play();
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "STARTAUDIO");
+            }
+
+            /*
+            // BUG: very buggy, for some reason
+            var t = new Thread((ThreadStart) delegate
+            {
+                try
+                {
+                    JavascriptHook.AudioDevice?.Stop();
+                    JavascriptHook.AudioDevice?.Dispose();
+                    JavascriptHook.AudioReader?.Dispose();
+
+                    JavascriptHook.AudioReader = new Mp3FileReader(path);
+                    JavascriptHook.AudioDevice = new WaveOutEvent();
+                    JavascriptHook.AudioDevice.Init(JavascriptHook.AudioReader);
+                    JavascriptHook.AudioDevice.Play();
+                }
+                catch (Exception ex)
+                {
+                    LogManager.LogException(ex, "STARTAUDIO");
+                }
+            });
+            t.IsBackground = true;
+            t.Start();
+            */
+        }
+
+        public static void DisposeAudio()
+        {
+            var t = new Thread((ThreadStart)delegate
+            {
+                try
+                {
+                    JavascriptHook.AudioDevice?.Stop();
+                    JavascriptHook.AudioDevice?.Dispose();
+                    JavascriptHook.AudioReader?.Dispose();
+                    JavascriptHook.AudioDevice = null;
+                    JavascriptHook.AudioReader = null;
+                }
+                catch (Exception ex)
+                {
+                    LogManager.LogException(ex, "DISPOSEAUDIO");
+                }
+            });
+            t.IsBackground = true;
+            t.Start();
+        }
+    }
+
     public class JavascriptHook : Script
     {
         public JavascriptHook()
@@ -43,7 +111,6 @@ namespace GTANetwork
             ScriptEngines = new List<ClientsideScriptWrapper>();
             ThreadJumper = new List<Action>();
             TextElements = new List<UIResText>();
-            AudioDevice = new WindowsMediaPlayerClass();
         }
 
         public static List<UIResText> TextElements { get; set; }
@@ -52,7 +119,8 @@ namespace GTANetwork
 
         public static List<Action> ThreadJumper;
 
-        public static WindowsMediaPlayer AudioDevice { get; set; }
+        public static WaveOutEvent AudioDevice { get; set; }
+        public static Mp3FileReader AudioReader { get; set; }
 
         public static void InvokeServerEvent(string eventName, object[] arguments)
         {
@@ -229,7 +297,11 @@ namespace GTANetwork
                     }
 
                     ScriptEngines.Clear();
-                    AudioDevice.controls.stop();
+                    AudioDevice?.Stop();
+                    AudioDevice?.Dispose();
+                    AudioReader?.Dispose();
+                    AudioDevice = null;
+                    AudioReader = null;
                 }
             });
         }
@@ -550,6 +622,7 @@ namespace GTANetwork
 
         public string getResourceFilePath(string fileName)
         {
+            if (!isPathSafe(fileName)) throw new AccessViolationException("Illegal path to file!");
             return FileTransferId._DOWNLOADFOLDER_ + ParentResourceName + "\\" + fileName;
         }
 
@@ -698,7 +771,7 @@ namespace GTANetwork
             return (float) d;
         }
 
-        public void wait(int ms)
+        public void sleep(int ms)
         {
             Script.Wait(ms);
         }
@@ -706,43 +779,41 @@ namespace GTANetwork
         public void startAudio(string path)
         {
             if (path.StartsWith("http")) return;
-
-            var absPath = getResourceFilePath(path);
-            JavascriptHook.AudioDevice.controls.stop();
-            JavascriptHook.AudioDevice.URL = absPath;
-            JavascriptHook.AudioDevice.controls.play();
+            path = getResourceFilePath(path);
+            AudioThread.StartAudio(path);
         }
 
         public void pauseAudio()
         {
-            JavascriptHook.AudioDevice.controls.pause();
+            JavascriptHook.AudioDevice?.Pause();
         }
 
         public void resumeAudio()
         {
-            JavascriptHook.AudioDevice.controls.play();
+            JavascriptHook.AudioDevice?.Play();
         }
 
         public void setAudioTime(double seconds)
         {
-            JavascriptHook.AudioDevice.controls.currentPosition = seconds;
+            if (JavascriptHook.AudioReader != null)
+                JavascriptHook.AudioReader.CurrentTime = TimeSpan.FromSeconds(seconds);
         }
 
         public double getAudioTime()
         {
-            if (JavascriptHook.AudioDevice != null) return JavascriptHook.AudioDevice.controls.currentPosition;
+            if (JavascriptHook.AudioReader != null) return JavascriptHook.AudioReader.CurrentTime.TotalSeconds;
             return 0;
         }
 
         public bool isAudioPlaying()
         {
-            if (JavascriptHook.AudioDevice != null) return JavascriptHook.AudioDevice.playState == WMPPlayState.wmppsPlaying;
+            if (JavascriptHook.AudioDevice != null) return JavascriptHook.AudioDevice.PlaybackState == PlaybackState.Playing;
             return false;
         }
 
-        public void setGameVolume(int vol)
+        public void setGameVolume(double vol)
         {
-            if (JavascriptHook.AudioDevice != null) JavascriptHook.AudioDevice.settings.volume = vol;
+            if (JavascriptHook.AudioDevice != null) JavascriptHook.AudioDevice.Volume = (float)vol;
         }
 
         public bool isAudioInitialized()
@@ -752,8 +823,7 @@ namespace GTANetwork
 
         public void stopAudio()
         {
-            JavascriptHook.AudioDevice.controls.stop();
-            JavascriptHook.AudioDevice.URL = "";
+            AudioThread.DisposeAudio();
         }
 
         public void triggerServerEvent(string eventName, params object[] arguments)

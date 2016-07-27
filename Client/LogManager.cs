@@ -32,10 +32,15 @@ namespace GTANetwork
             catch (Exception) { }
         }
 
+        public static object errorLogLock = new object();
         public static void LogException(Exception ex, string source)
         {
             CreateLogDirectory();
-            File.AppendAllText(LogDirectory + "\\error.log", ">> EXCEPTION OCCURED AT " + DateTime.Now + " FROM " +source + "\r\n" +  ex.ToString() + "\r\n\r\n");
+            lock (errorLogLock)
+            {
+                File.AppendAllText(LogDirectory + "\\error.log",
+                    ">> EXCEPTION OCCURED AT " + DateTime.Now + " FROM " + source + "\r\n" + ex.ToString() + "\r\n\r\n");
+            }
         }
     }
 }

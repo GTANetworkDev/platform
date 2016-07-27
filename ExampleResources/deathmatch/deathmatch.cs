@@ -51,12 +51,6 @@ public class Deathmatch : Script
         spawns.Clear();
         weapons.Clear();
         Killstreaks.Clear();
-
-        foreach(var pc in pickups)
-        {
-            API.deleteEntity(pc);            
-        }
-
         var spawnpoints = map.getElementsByType("spawnpoint");
         foreach(var point in spawnpoints)
         {
