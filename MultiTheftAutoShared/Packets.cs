@@ -218,6 +218,7 @@ namespace GTANetworkShared
             Markers = new Dictionary<int, MarkerProperties>();
             Pickups = new Dictionary<int, PickupProperties>();
             Players = new Dictionary<int, PedProperties>();
+            TextLabels = new Dictionary<int, TextLabelProperties>();
             LoadedIpl = new List<string>();
             RemovedIpl = new List<string>();
         }
@@ -241,18 +242,21 @@ namespace GTANetworkShared
         public Dictionary<int, PedProperties> Players { get; set; }
 
         [ProtoMember(7)]
-        public byte Hours { get; set; }
+        public Dictionary<int, TextLabelProperties> TextLabels { get; set; }
 
         [ProtoMember(8)]
-        public byte Minutes { get; set; }
+        public byte Hours { get; set; }
 
         [ProtoMember(9)]
-        public string Weather { get; set; }
+        public byte Minutes { get; set; }
 
         [ProtoMember(10)]
-        public List<string> LoadedIpl { get; set; } 
+        public string Weather { get; set; }
 
         [ProtoMember(11)]
+        public List<string> LoadedIpl { get; set; } 
+
+        [ProtoMember(12)]
         public List<string> RemovedIpl { get; set; } 
     }
 

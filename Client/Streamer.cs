@@ -191,7 +191,7 @@ namespace GTANetwork
             var ray = World.Raycast(origin,
                 (position - origin).Normalized,
                 distance,
-                flags);
+                flags, Game.Player.Character);
 
             if (ray.HitCoords.DistanceTo(origin) >=
                     distance)

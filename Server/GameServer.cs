@@ -1606,6 +1606,10 @@ namespace GTANResource
                                                     {
                                                         mapObj.Players.Add(pair.Key, (PedProperties)pair.Value);
                                                     }
+                                                    else if (pair.Value.EntityType == (byte) EntityType.TextLabel)
+                                                    {
+                                                        mapObj.TextLabels.Add(pair.Key, (TextLabelProperties) pair.Value);
+                                                    }
                                                 }
 
                                                 // TODO: replace this filth

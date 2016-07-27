@@ -1467,6 +1467,14 @@ namespace GTANetwork
                     }
                 }
 
+                if (map.TextLabels != null)
+                {
+                    foreach (var label in map.TextLabels)
+                    {
+                        NetEntityHandler.CreateTextLabel(label.Key, label.Value);
+                    }
+                }
+
                 if (map.Players != null)
                 {
                     foreach (var pair in map.Players)
