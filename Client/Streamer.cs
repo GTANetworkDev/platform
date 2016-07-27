@@ -91,6 +91,16 @@ namespace GTANetwork
         {
             _playerPosition = Game.Player.Character.Position;
 
+            bool spinner = false;
+
+            if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
+            {
+                Function.Call(Hash._0xABA17D7CE615ADBF, "STRING");
+                Function.Call((Hash)0x6C188BE134E074AA, "Streaming");
+                Function.Call(Hash._0xBD12F8228410D9B4, 5);
+                spinner = true;
+            }
+
             lock (_itemsToStreamOut)
             {
                 LogManager.DebugLog("STREAMING OUT " + _itemsToStreamOut.Count + " ITEMS");
@@ -115,6 +125,9 @@ namespace GTANetwork
 
                 _itemsToStreamIn.Clear();
             }
+
+            if (spinner)
+                Function.Call((Hash)0x10D373323E5B9C0D);
         }
     }
 
@@ -923,7 +936,9 @@ namespace GTANetwork
 
         private void StreamOutEntity(ILocalHandleable data)
         {
+            LogManager.DebugLog("PRESTREAM OUT " + data.LocalHandle);
             new Prop(data.LocalHandle).Delete();
+            LogManager.DebugLog("POSTSTREAM OUT " + data.LocalHandle);
         }
 
         private void StreamOutBlip(ILocalHandleable blip)
@@ -1066,7 +1081,12 @@ namespace GTANetwork
             LogManager.DebugLog("PROP MODEL VALID: " + model.IsValid);
             if (model == null || !model.IsValid || !model.IsInCdImage || data.Position == null || data.Rotation == null) return;
             LogManager.DebugLog("CREATING OBJECT FOR NETHANDLE " + data.RemoteHandle);
-            if (!model.IsLoaded) model.Request(10000);
+
+            if (!model.IsLoaded)
+            {
+                Util.LoadModel(model);
+            }
+
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
             var ourVeh = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, data.Position.X, data.Position.Y, data.Position.Z, false, true, false));
 
@@ -1080,12 +1100,17 @@ namespace GTANetwork
                 ourVeh.Rotation = data.Rotation.ToVector();
             }
 
+            LogManager.DebugLog("SETTING MISC PROPERTIES");
+
             ourVeh.Alpha = (int)data.Alpha;
             ourVeh.FreezePosition = true;
             ourVeh.LodDistance = 3000;
 
             data.StreamedIn = true;
             data.LocalHandle = ourVeh.Handle;
+            LogManager.DebugLog("STREAMIN DONE");
+
+            model.MarkAsNoLongerNeeded();
         }
 
         private void StreamInPickup(RemotePickup pickup)

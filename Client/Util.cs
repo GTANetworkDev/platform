@@ -23,6 +23,18 @@ namespace GTANetwork
             return value;
         }
 
+        public static void LoadModel(Model model)
+        {
+            LogManager.DebugLog("REQUESTING MODEL " + model.Hash);
+            while (!model.IsLoaded)
+            {
+                model.Request();
+                Script.Yield();
+            }
+
+            LogManager.DebugLog("MODEL REQUESTED!");
+        }
+
         public static long TickCount
         {
             get { return DateTime.Now.Ticks / 10000; }

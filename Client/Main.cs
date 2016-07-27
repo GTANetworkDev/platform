@@ -2294,13 +2294,13 @@ namespace GTANetwork
 
             */
 
-
+            
             if (display)
             {
                 Debug();
                 //unsafe
                 //{
-                    //UI.ShowSubtitle(new IntPtr(Game.Player.Character.MemoryAddress).ToInt64().ToString("X"));
+                //UI.ShowSubtitle(new IntPtr(Game.Player.Character.MemoryAddress).ToInt64().ToString("X"));
                 //}
                 //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
@@ -3162,8 +3162,8 @@ namespace GTANetwork
                             var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
                             if (streamItem != null)
                             {
-                                NetEntityHandler.StreamOut(streamItem);
                                 NetEntityHandler.RemoveByNetHandle(data.NetHandle);
+                                NetEntityHandler.StreamOut(streamItem);
                             }
                         }
                     }
