@@ -289,6 +289,11 @@ namespace GTANetworkServer
 
         public void sleep(int ms)
         {
+            if (ResourceParent != null && !ResourceParent.Async)
+            {
+                Program.Output("WARN: using API.sleep in a non-async environment is not recommended!");
+            }
+
             var start = DateTime.Now;
             while (DateTime.Now.Subtract(start).TotalMilliseconds < ms)
             {

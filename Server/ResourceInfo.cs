@@ -252,9 +252,7 @@ namespace GTANetworkServer
                     }
                 }));
 
-                var counter = 0;
-                while (counter < 50 && !hasValue)
-                    counter++;
+                while (!hasValue) { }
 
                 return objectToReturn;
             }
