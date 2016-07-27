@@ -3742,7 +3742,6 @@ namespace GTANetwork
                             Util.SafeNotify("You have been disconnected" +
                                         (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
                             DEBUG_STEP = 40;
-							// TODO: Dissect This
                             OnLocalDisconnect();
                             break;
                     }
@@ -4089,6 +4088,25 @@ namespace GTANetwork
 
 		}
 
+        private void ResetPlayer()
+        {
+            Game.Player.Character.Position = _vinewoodSign;
+            Game.Player.Character.FreezePosition = false;
+
+            Util.SetPlayerSkin(PedHash.Clown01SMY);
+
+            Game.Player.Character.MaxHealth = 200;
+            Game.Player.Character.Health = 200;
+
+            Game.Player.Character.FreezePosition = false;
+            Game.Player.IsInvincible = false;
+            Game.Player.Character.HasCollision = true;
+            Game.Player.Character.Alpha = 255;
+            Game.Player.Character.IsInvincible = false;
+            Game.Player.Character.Weapons.RemoveAll();
+
+        }
+
 	    private void ResetWorld()
 	    {
 
@@ -4102,19 +4120,7 @@ namespace GTANetwork
 	        LocalDimension = 0;
 			DEBUG_STEP = 57;
 
-			Game.Player.Character.Position = _vinewoodSign;
-	        Game.Player.Character.FreezePosition = false;
-
-			Util.SetPlayerSkin(PedHash.Clown01SMY);
-
-	        Game.Player.Character.MaxHealth = 200;
-	        Game.Player.Character.Health = 200;
-
-            Game.Player.Character.FreezePosition = false;
-            Game.Player.IsInvincible = false;
-            Game.Player.Character.HasCollision = true;
-
-            //Script.Wait(500);
+			//Script.Wait(500);
             //Game.Player.Character.SetDefaultClothes();
         }
 
@@ -4149,6 +4155,8 @@ namespace GTANetwork
 			DEBUG_STEP = 56;
 
 			ResetWorld();
+
+		    ResetPlayer();
 
             if (_serverProcess != null)
             {
