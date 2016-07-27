@@ -34,7 +34,7 @@ namespace GTANetwork
         public static int MAX_BLIPS = 200;
         public static int MAX_PLAYERS = 50;
         public static int MAX_MARKERS = 100;
-        public static int MAX_LABELS = 10;
+        public static int MAX_LABELS = 20;
 
         void StreamerCalculationsThread()
         {
