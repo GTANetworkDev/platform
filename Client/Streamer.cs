@@ -803,6 +803,7 @@ namespace GTANetwork
                 Dimension = dimension,
                 EntityType = (byte)EntityType.Marker,
                 LocalOnly = true,
+                StreamedIn = true,
                 RemoteHandle = newId,
             });
             return newId;
