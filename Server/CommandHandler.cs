@@ -169,8 +169,8 @@ namespace GTANetworkServer
                 catch (Exception ex)
                 {
                     // TODO: Check if logging is extremely verbose
-                    Program.Output("UNHANDLED EXCEPTION WHEN PARSING COMMAND " + (Sensitive ? "[SENSITIVE INFO]" : cmdRaw) + " FROM PLAYER " + sender.SocialClubName);
-                    Program.Output(ex.ToString());
+                    //Program.Output("UNHANDLED EXCEPTION WHEN PARSING COMMAND " + (Sensitive ? "[SENSITIVE INFO]" : cmdRaw) + " FROM PLAYER " + sender.SocialClubName);
+                    //Program.Output(ex.ToString());
 
                     Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, helpText);
                     return true;
