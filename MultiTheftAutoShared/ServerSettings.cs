@@ -17,7 +17,7 @@ namespace GTANetworkShared
         public int MaxPlayers { get; set; }
 
         [XmlElement("minclientversion")]
-        public ScriptVersion MinimumClientVersion { get; set; }
+        public string MinimumClientVersion { get; set; }
 
         [XmlElement("minclientversion_auto_update")]
         public bool AutoUpdateMinClientVersion { get; set; }
@@ -62,7 +62,7 @@ namespace GTANetworkShared
             Port = 4499;
             MaxPlayers = 16;
             Name = "Simple GTA Server";
-            MinimumClientVersion = ScriptVersion.VERSION_0_6;
+            MinimumClientVersion = "0.0.0.0";
             Password = "";
             //Gamemode = "freeroam";
             LogToFile = true;

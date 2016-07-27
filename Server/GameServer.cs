@@ -112,8 +112,10 @@ namespace GTANetworkServer
             MaxPlayers = conf.MaxPlayers;
             AnnounceToLAN = conf.AnnounceToLan;
             UseUPnP = conf.UseUPnP;
+            MinimumClientVersion = ParseableVersion.Parse(conf.MinimumClientVersion);
         }
-        
+
+        public ParseableVersion MinimumClientVersion;
         public NetServer Server;
         public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
@@ -1036,9 +1038,10 @@ namespace GTANResource
                                     continue;
                                 }
 
-                                if ((ScriptVersion)connReq.ScriptVersion == ScriptVersion.Unknown)
+                                var cVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
+                                if (cVersion < MinimumClientVersion)
                                 {
-                                    client.NetConnection.Deny("Unknown version. Please update your client.");
+                                    client.NetConnection.Deny("Outdated version. Please update your client.");
                                     continue;
                                 }
 

@@ -159,14 +159,14 @@ namespace GTANetworkShared
 
         public ulong ToLong()
         {
-            ulong output = 0;
+            List<byte> bytes = new List<byte>();
 
-            output |= (ushort) Revision;
-            output |= (ushort)(Build << 16); // 2 bytes
-            output |= (ushort)(Minor << 32);
-            output |= (ushort)(Major << 48);
+            bytes.AddRange(BitConverter.GetBytes((ushort)Revision));
+            bytes.AddRange(BitConverter.GetBytes((ushort)Build));
+            bytes.AddRange(BitConverter.GetBytes((ushort)Minor));
+            bytes.AddRange(BitConverter.GetBytes((ushort)Major));
 
-            return output;
+            return BitConverter.ToUInt64(bytes.ToArray(), 0);
         }
 
         public static ParseableVersion FromLong(ulong version)
