@@ -331,20 +331,30 @@ namespace GTANetwork
 
                 bool sendShootingPacket;
 
-                if (!_lastShooting || !WeaponDataProvider.IsWeaponAutomatic(unchecked ((WeaponHash) obj.WeaponHash.Value)))
+                if (!WeaponDataProvider.IsWeaponAutomatic(unchecked ((WeaponHash) obj.WeaponHash.Value)))
                 {
                     sendShootingPacket = (shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
                                           !player.IsSubtaskActive(ESubtask.MELEE_COMBAT));
                 }
                 else
                 {
-                    sendShootingPacket = (!player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
-                                          !player.IsSubtaskActive(ESubtask.MELEE_COMBAT) &&
-                                          !player.IsReloading &&
-                                          player.Weapons.Current.AmmoInClip > 0 &&
-                                          Game.IsEnabledControlPressed(0, Control.Attack)) ||
-                                         ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
-                                          Game.IsEnabledControlPressed(0, Control.Attack));
+                    if (!_lastShooting && !player.IsSubtaskActive(ESubtask.MELEE_COMBAT))
+                    {
+                        sendShootingPacket = (shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
+                                              !player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) ||
+                                              ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
+                                              Game.IsEnabledControlPressed(0, Control.Attack));
+                    }
+                    else
+                    {
+                        sendShootingPacket = (!player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
+                                              !player.IsSubtaskActive(ESubtask.MELEE_COMBAT) &&
+                                              !player.IsReloading &&
+                                              player.Weapons.Current.AmmoInClip > 0 &&
+                                              Game.IsEnabledControlPressed(0, Control.Attack)) ||
+                                             ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
+                                              Game.IsEnabledControlPressed(0, Control.Attack));
+                    }
 
                     if (!sendShootingPacket && _lastShooting && !_lastBullet)
                     {
