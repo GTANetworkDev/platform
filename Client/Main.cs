@@ -4532,6 +4532,16 @@ namespace GTANetwork
         {
             var list = new List<InputArgument>();
 
+            var nativeType = CheckNativeHash(obj.Hash);
+            LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
+
+            if (((int)nativeType & (int)NativeType.VehicleWarp) > 0)
+            {
+                int veh = ((EntityArgument)obj.Arguments[1]).NetHandle;
+                var item = NetEntityHandler.NetToStreamedItem(veh);
+                if (item != null && !item.StreamedIn) NetEntityHandler.StreamIn(item);
+            }
+
             var objectList = DecodeArgumentList(obj.Arguments.ToArray());
 
             list.AddRange(objectList.Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
@@ -4539,8 +4549,6 @@ namespace GTANetwork
             if (objectList.Count() > 0)
                 LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + objectList.Aggregate((f, s) => f + ", " + s));
             LogManager.DebugLog("RETURN TYPE: " + obj.ReturnType);
-            var nativeType = CheckNativeHash(obj.Hash);
-            LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
             Model model = null;
             if (((int)nativeType & (int)NativeType.NeedsModel) > 0)
             {
@@ -4609,13 +4617,6 @@ namespace GTANetwork
             {
                 var newWeather = ((StringArgument)obj.Arguments[0]).Data;
                 Weather = newWeather;
-            }
-
-            if (((int)nativeType & (int)NativeType.VehicleWarp) > 0)
-            {
-                int veh = ((EntityArgument)obj.Arguments[1]).NetHandle;
-                var item = NetEntityHandler.NetToStreamedItem(veh);
-                if (item != null && !item.StreamedIn) NetEntityHandler.StreamIn(item);
             }
 
             if (obj.ReturnType == null)
