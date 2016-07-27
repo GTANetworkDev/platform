@@ -49,6 +49,7 @@ namespace GTANetworkServer
         public bool Parse(Client sender, string cmdRaw)
         {
             if (string.IsNullOrWhiteSpace(cmdRaw)) return false;
+            cmdRaw = cmdRaw.TrimEnd();
             var args = cmdRaw.Split();
 
             if (args[0].TrimStart('/').ToLower() != Command.ToLower()) return false;

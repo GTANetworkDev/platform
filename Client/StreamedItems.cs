@@ -80,4 +80,12 @@ namespace GTANetwork
         public bool StreamedIn { get; set; }
         public object StreamingLock { get; } = new object();
     }
+
+    public class RemoteTextLabel : TextLabelProperties, IStreamedItem
+    {
+        public int RemoteHandle { get; set; }
+        public bool LocalOnly { get; set; }
+        public bool StreamedIn { get; set; }
+        public object StreamingLock { get; } = new object();
+    }
 }

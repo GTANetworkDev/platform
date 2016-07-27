@@ -182,7 +182,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         if (nextCheckpointMarker == null) {
             nextCheckpointMarker = API.createMarker(1, newPos, new Vector3(), new Vector3(), new Vector3(10, 10, 2), 241, 247, 57, 180);
         } else {
-            API.deleteMarker(nextCheckpointMarker);
+            API.deleteEntity(nextCheckpointMarker);
             nextCheckpointMarker = API.createMarker(1, newPos, new Vector3(), new Vector3(), new Vector3(10, 10, 2), 241, 247, 57, 180);
         }
         
@@ -190,7 +190,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
             if (nextCheckpointDir == null) {
                 nextCheckpointDir = API.createMarker(20, new Vector3(newPos.X, newPos.Y, newPos.Z + 2), newDir, new Vector3(60, 0, 0), new Vector3(4, 4, 4), 87, 193, 250, 100);
             } else {
-                API.deleteMarker(nextCheckpointDir);
+                API.deleteEntity(nextCheckpointDir);
                 nextCheckpointDir = API.createMarker(20, new Vector3(newPos.X, newPos.Y, newPos.Z + 2), newDir, new Vector3(60, 0, 0), new Vector3(4, 4, 4), 87, 193, 250, 100);
             }
 
@@ -203,7 +203,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         }
 
         if (isFinishLine && nextCheckpointDir != null) {
-            API.deleteMarker(nextCheckpointDir);
+            API.deleteEntity(nextCheckpointDir);
             nextCheckpointDir = null;
         }
 
@@ -228,12 +228,12 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         }
 
         if (nextCheckpointMarker != null) {
-            API.deleteMarker(nextCheckpointMarker);
+            API.deleteEntity(nextCheckpointMarker);
             nextCheckpointMarker = null;
         }
 
         if (nextCheckpointDir != null) {
-            API.deleteMarker(nextCheckpointDir);
+            API.deleteEntity(nextCheckpointDir);
             nextCheckpointDir = null;
         }
         racePosition = null;
@@ -251,12 +251,12 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         }
 
         if (nextCheckpointMarker != null) {
-            API.deleteMarker(nextCheckpointMarker);
+            API.deleteEntity(nextCheckpointMarker);
             nextCheckpointMarker = null;
         }
 
         if (nextCheckpointDir != null) {
-            API.deleteMarker(nextCheckpointDir);
+            API.deleteEntity(nextCheckpointDir);
             nextCheckpointDir = null;
         }
         racePosition = null;

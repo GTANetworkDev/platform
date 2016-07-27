@@ -18,7 +18,7 @@ var roundEnd = false;
 API.onServerEventTrigger.connect(function (eventName, args) {
 	if (eventName == "pennedin_roundend") {
 		if (marker != null)	{
-			API.deleteMarker(marker);
+			API.deleteEntity(marker);
 		}
 
 		roundEnd = true;
@@ -44,7 +44,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
 
 		if (marker != null)	{
-			API.deleteMarker(marker);
+			API.deleteEntity(marker);
 		}
 
 		marker = API.createMarker(28, currentSpherePos,
@@ -136,7 +136,7 @@ API.onUpdate.connect(function(sender, e) {
 	    	if (API.getGlobalTime() - lastSphereLeave > 10000) {
 	    		API.explodeVehicle(API.getPlayerVehicle(player));
 	    		API.setPlayerHealth(player, -1);
-	    		API.deleteMarker(marker);
+	    		API.deleteEntity(marker);
 	    		marker = null;
 	    		roundEnd = true;
 	    	}
@@ -147,6 +147,6 @@ API.onUpdate.connect(function(sender, e) {
 
 API.onResourceStop.connect(function(sender, e) {
 	if (marker != null)	{
-		API.deleteMarker(marker);
+		API.deleteEntity(marker);
 	}
 });

@@ -178,6 +178,33 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
+        public int CreateTextLabel(string text, float size, float range, int r, int g, int b, Vector3 pos, int dimension)
+        {
+            int localEntityHash = ++EntityCounter;
+            var obj = new TextLabelProperties();
+            obj.EntityType = (byte)EntityType.TextLabel;
+            obj.Position = pos;
+            obj.Size = size;
+            obj.Blue = b;
+            obj.Green = g;
+            obj.Range = range;
+            obj.Red = r;
+            obj.Text = text;
+            obj.Alpha = 255;
+            obj.EntitySeethrough = false;
+            obj.Dimension = dimension;
+            ServerEntities.Add(localEntityHash, obj);
+
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.TextLabel;
+            packet.Properties = obj;
+            packet.NetHandle = localEntityHash;
+
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+
+            return localEntityHash;
+        }
+
         public void DeleteEntity(int netId)
         {
             if (!ServerEntities.ContainsKey(netId)) return;

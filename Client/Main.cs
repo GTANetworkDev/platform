@@ -2555,6 +2555,8 @@ namespace GTANetwork
             }
 
             NetEntityHandler.DrawMarkers();
+            NetEntityHandler.DrawLabels();
+
             DEBUG_STEP = 16;
             var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
@@ -3101,7 +3103,8 @@ namespace GTANetwork
                             {
                                 var prop = (MarkerProperties) data.Properties;
                                 var mark = NetEntityHandler.CreateMarker(data.NetHandle, prop);
-                                NetEntityHandler.StreamIn(mark);
+                                if (NetEntityHandler.Count(typeof(RemoteMarker)) < StreamerThread.MAX_MARKERS)
+                                    NetEntityHandler.StreamIn(mark);
                             }
                             else if (data.EntityType == (byte) EntityType.Pickup)
                             {
@@ -3109,6 +3112,13 @@ namespace GTANetwork
                                 var pickup = NetEntityHandler.CreatePickup(data.NetHandle, prop);
                                 if (NetEntityHandler.Count(typeof(RemotePickup)) < StreamerThread.MAX_PICKUPS)
                                     NetEntityHandler.StreamIn(pickup);
+                            }
+                            else if (data.EntityType == (byte) EntityType.TextLabel)
+                            {
+                                var prop = (TextLabelProperties) data.Properties;
+                                var label = NetEntityHandler.CreateTextLabel(data.NetHandle, prop);
+                                if (NetEntityHandler.Count(typeof (RemoteTextLabel)) < StreamerThread.MAX_LABELS)
+                                    NetEntityHandler.StreamIn(label);
                             }
                         }
                     }

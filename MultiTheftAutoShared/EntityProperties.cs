@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using GTANetworkShared;
 using ProtoBuf;
 
 namespace GTANetworkShared
@@ -12,6 +13,7 @@ namespace GTANetworkShared
         Marker = 4,
         Pickup = 5,
         Ped = 6,
+        TextLabel = 7,
     }
 
     [ProtoContract]
@@ -20,6 +22,7 @@ namespace GTANetworkShared
     [ProtoInclude(9, typeof(MarkerProperties))]
     [ProtoInclude(10, typeof(PickupProperties))]
     [ProtoInclude(11, typeof(PedProperties))]
+    [ProtoInclude(12, typeof(TextLabelProperties))]
     public class EntityProperties
     {
         public EntityProperties()
@@ -203,6 +206,36 @@ namespace GTANetworkShared
         public string Name { get; set; }
     }
 
+    [ProtoContract]
+    public class TextLabelProperties : EntityProperties
+    {
+        public TextLabelProperties()
+        {
+            EntityType = (byte) GTANetworkShared.EntityType.TextLabel;
+        }
+
+        [ProtoMember(1)]
+        public string Text { get; set; }
+
+        [ProtoMember(2)]
+        public int Red { get; set; }
+
+        [ProtoMember(3)]
+        public int Green { get; set; }
+
+        [ProtoMember(4)]
+        public int Blue { get; set; }
+
+        [ProtoMember(5)]
+        public float Size { get; set; }
+
+        [ProtoMember(6)]
+        public float Range { get; set; }
+
+        [ProtoMember(7)]
+        public bool EntitySeethrough { get; set; }
+    }
+
     /*
      * DELTA COMPRESSION
      * */
@@ -214,6 +247,7 @@ namespace GTANetworkShared
     [ProtoInclude(9, typeof(Delta_MarkerProperties))]
     [ProtoInclude(10, typeof(Delta_PickupProperties))]
     [ProtoInclude(11, typeof(Delta_PedProperties))]
+    [ProtoInclude(12, typeof(Delta_TextLabelProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
@@ -350,6 +384,31 @@ namespace GTANetworkShared
 
         [ProtoMember(8)]
         public string Name { get; set; }
+    }
+
+    [ProtoContract]
+    public class Delta_TextLabelProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public string Text { get; set; }
+
+        [ProtoMember(2)]
+        public int? Red { get; set; }
+
+        [ProtoMember(3)]
+        public int? Green { get; set; }
+
+        [ProtoMember(4)]
+        public int? Blue { get; set; }
+
+        [ProtoMember(5)]
+        public float? Size { get; set; }
+
+        [ProtoMember(6)]
+        public float? Range { get; set; }
+
+        [ProtoMember(7)]
+        public bool EntitySeethrough { get; set; }
     }
     #endregion
 }

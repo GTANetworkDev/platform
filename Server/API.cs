@@ -172,6 +172,12 @@ namespace GTANetworkServer
             return Program.ServerInstance.RunningResources.FirstOrDefault(res => res.Info.Info.Type == ResourceType.gamemode)?.DirectoryName;
         }
 
+        public void setServerName(string serverName)
+        {
+            if (!string.IsNullOrWhiteSpace(serverName))
+                Program.ServerInstance.Name = serverName;
+        }
+
         public IEnumerable<string> getMapsForGamemode(string gamemode)
         {
             foreach (var map in Program.ServerInstance.AvailableMaps)
@@ -980,9 +986,9 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(entity))
             {
-                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Position;
+                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Position ?? new Vector3();
             }
-            return null;
+            return new Vector3();
         }
 
         public Vector3 getEntityRotation(NetHandle entity)
@@ -991,7 +997,7 @@ namespace GTANetworkServer
             {
                 return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Rotation ?? new Vector3(0, 0, 0);
             }
-            return null;
+            return new Vector3();
         }
         
 
@@ -1330,6 +1336,49 @@ namespace GTANetworkServer
             }
         }
 
+        public void setTextLabelText(NetHandle label, string newText)
+        {
+            if (doesEntityExist(label))
+            {
+                ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Text = newText;
+
+                var delta = new Delta_TextLabelProperties();
+                delta.Text = newText;
+                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+            }
+        }
+
+        public void setTextLabelColor(NetHandle label, int red, int green, int blue, int alpha)
+        {
+            if (doesEntityExist(label))
+            {
+                ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Alpha = (byte)alpha;
+                ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Red = red;
+                ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Green = green;
+                ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Blue = blue;
+
+                var delta = new Delta_TextLabelProperties();
+                delta.Alpha = (byte)alpha;
+                delta.Red = red;
+                delta.Green = green;
+                delta.Blue = blue;
+                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+            }
+        }
+
+        public void setTextLabelSeethrough(NetHandle label, bool seethrough)
+        {
+            if (doesEntityExist(label))
+            {
+                ((TextLabelProperties) Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).EntitySeethrough =
+                    seethrough;
+
+                var delta = new Delta_TextLabelProperties();
+                delta.EntitySeethrough = seethrough;
+                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+            }
+        }
+
         public NetHandle createVehicle(VehicleHash model, Vector3 pos, Vector3 rot, int color1, int color2, int dimension = 0)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateVehicle((int)model, pos, rot, color1, color2, dimension));
@@ -1377,6 +1426,13 @@ namespace GTANetworkServer
             int r, int g, int b, int dimension = 0)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension));
+            lock (ResourceEntities) ResourceEntities.Add(ent);
+            return ent;
+        }
+
+        public NetHandle createTextLabel(string text, Vector3 pos, float range, float size, int dimension = 0)
+        {
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateTextLabel(text, size, range, 255, 255, 255, pos, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }

@@ -33,7 +33,9 @@ namespace GTANetwork
         public static int MAX_PICKUPS = 30;
         public static int MAX_BLIPS = 200;
         public static int MAX_PLAYERS = 50;
-        
+        public static int MAX_MARKERS = 100;
+        public static int MAX_LABELS = 10;
+
         void StreamerCalculationsThread()
         {
             while (true)
@@ -46,11 +48,13 @@ namespace GTANetwork
 
                 var position = _playerPosition.ToLVector();
 
-                var streamedObjects = streamedItems.OfType<RemoteProp>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedPickups = streamedItems.OfType<RemotePickup>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedBlips = streamedItems.OfType<RemoteBlip>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.Sub(position).LengthSquared());
-                var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => (item.Position - _playerPosition).LengthSquared());
+                var streamedObjects = streamedItems.OfType<RemoteProp>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
+                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
+                var streamedPickups = streamedItems.OfType<RemotePickup>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
+                var streamedBlips = streamedItems.OfType<RemoteBlip>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
+                var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(_playerPosition));
+                var streamedMarkers = streamedItems.OfType<RemoteMarker>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
+                var streamedLabels = streamedItems.OfType<RemoteTextLabel>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
 
                 var dimensionLeftovers = streamedItems.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
 
@@ -61,6 +65,8 @@ namespace GTANetwork
                     _itemsToStreamOut.AddRange(streamedVehicles.Skip(MAX_VEHICLES).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedPlayers.Skip(MAX_PLAYERS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedObjects.Skip(MAX_OBJECTS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedMarkers.Skip(MAX_MARKERS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedLabels.Skip(MAX_LABELS).Where(item => item.StreamedIn));
 
                     _itemsToStreamOut.AddRange(dimensionLeftovers);
                 }
@@ -72,6 +78,8 @@ namespace GTANetwork
                     _itemsToStreamIn.AddRange(streamedVehicles.Take(MAX_VEHICLES).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedBlips.Take(MAX_BLIPS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedPlayers.Take(MAX_PLAYERS).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedMarkers.Take(MAX_MARKERS).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedLabels.Take(MAX_LABELS).Where(item => !item.StreamedIn));
                 }
 
                 endTick:
@@ -128,7 +136,7 @@ namespace GTANetwork
 
         public void DrawMarkers()
         {
-            var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).Cast<RemoteMarker>());
+            var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker && item.StreamedIn).Cast<RemoteMarker>());
 
             foreach (var marker in markers)
             {
@@ -138,48 +146,73 @@ namespace GTANetwork
                     Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
             }
 
-            /*
+            
             // Uncomment to debug stuff
+            /*
             foreach (var p in ClientMap)
             {
                 if (p == null || p.Position == null) continue;
-
-                Function.Call(Hash.SET_DRAW_ORIGIN, p.Position.X, p.Position.Y, p.Position.Z);
-                new UIResText("Type: " + p.EntityType + "~n~Dim: " + p.Dimension, Point.Empty, 0.35f).Draw();
-                Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+                DrawLabel3D((EntityType) p.EntityType + "\nId: " + p.RemoteHandle, p.Position.ToVector(), 100f, 0.4f);
             }
             */
         }
 
-        public List<IStreamedItem> ClientMap;
-
-        public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b)
+        public void DrawLabels()
         {
-            var newId = ++_localHandleCounter;
-            ClientMap.Add(new RemoteMarker()
+            var labels = new List<RemoteTextLabel>(ClientMap.Where(item => item is RemoteTextLabel && item.StreamedIn).Cast<RemoteTextLabel>());
+
+            foreach (var label in labels)
             {
-                MarkerType = markerType,
-                Position = pos.ToLVector(),
-                Direction = dir.ToLVector(),
-                Rotation = rot.ToLVector(),
-                Scale = scale.ToLVector(),
-                Alpha = (byte)alpha,
-                Red = r,
-                Green = g,
-                Blue = b,
-                EntityType = (byte)EntityType.Marker,
-                LocalOnly = true,
-                RemoteHandle = newId,
-            });
-            return newId;
+                DrawLabel3D(label.Text, label.Position.ToVector(), label.Range, label.Size,
+                    Color.FromArgb(label.Alpha, label.Red, label.Green, label.Blue), label.EntitySeethrough);
+            }
         }
 
-
-        public void DeleteLocalMarker(int handle)
+        private void DrawLabel3D(string text, Vector3 position, float range, float size)
         {
-            ClientMap.RemoveAll(item => item is RemoteMarker &&
-                                ((RemoteMarker)item).LocalOnly &&
-                                ((RemoteMarker)item).RemoteHandle == handle);
+            DrawLabel3D(text, position, range, size, Color.White, true);
+        }
+
+        private void DrawLabel3D(string text, Vector3 position, float range, float size, Color col, bool entitySeethrough)
+        {
+            Vector3 origin = GameplayCamera.Position;
+            float distanceSquared = position.DistanceToSquared(origin);
+
+            if (string.IsNullOrWhiteSpace(text) ||
+                !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, position.X, position.Y, position.Z, 1f) ||
+                distanceSquared >= range * range) return;
+
+            float distance = position.DistanceTo(origin);
+
+            var flags = entitySeethrough
+                ? IntersectOptions.Map | IntersectOptions.Vegetation
+                : IntersectOptions.Everything;
+
+            var ray = World.Raycast(origin,
+                (position - origin).Normalized,
+                distance,
+                flags);
+
+            if (ray.HitCoords.DistanceTo(origin) >=
+                    distance)
+            {
+                var scale = Math.Max(0.3f, 1f - (distance/range));
+                
+                Function.Call(Hash.SET_DRAW_ORIGIN, position.X, position.Y, position.Z);
+                new UIResText(text, Point.Empty, size * scale, col)
+                {
+                    TextAlignment = UIResText.Alignment.Centered,
+                    Outline = true
+                }.Draw();
+                Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+            }
+        }
+
+        public List<IStreamedItem> ClientMap;
+
+        public void DeleteLocalEntity(int handle)
+        {
+            ClientMap.RemoveAll(item => !(item is RemotePlayer) && item.LocalOnly && item.RemoteHandle == handle);
         }
 
         public IStreamedItem NetToStreamedItem(int netId, bool local = false, bool useGameHandle = false)
@@ -624,6 +657,34 @@ namespace GTANetwork
             return rem;
         }
 
+        public RemoteTextLabel CreateTextLabel(int netHandle, TextLabelProperties prop)
+        {
+            RemoteTextLabel rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemoteTextLabel()
+                {
+                    RemoteHandle = netHandle,
+
+                    Red = prop.Red,
+                    Green = prop.Green,
+                    Blue = prop.Blue,
+                    Alpha = prop.Alpha,
+                    Size = prop.Size,
+                    Position = prop.Position,
+                    Dimension = prop.Dimension,
+                    EntityType = (byte)EntityType.TextLabel,
+                    Text = prop.Text,
+                    Range = prop.Range,
+                    EntitySeethrough = prop.EntitySeethrough,
+
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
         public SyncPed GetPlayer(int netHandle)
         {
             SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
@@ -716,6 +777,50 @@ namespace GTANetwork
             return rem;
         }
 
+        public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
+        {
+            var newId = ++_localHandleCounter;
+            ClientMap.Add(new RemoteMarker()
+            {
+                MarkerType = markerType,
+                Position = pos.ToLVector(),
+                Direction = dir.ToLVector(),
+                Rotation = rot.ToLVector(),
+                Scale = scale.ToLVector(),
+                Alpha = (byte)alpha,
+                Red = r,
+                Green = g,
+                Blue = b,
+                Dimension = dimension,
+                EntityType = (byte)EntityType.Marker,
+                LocalOnly = true,
+                RemoteHandle = newId,
+            });
+            return newId;
+        }
+
+        public int CreateLocalLabel(string text, Vector3 pos, float range, float size, int dimension = 0)
+        {
+            var newId = ++_localHandleCounter;
+            ClientMap.Add(new RemoteTextLabel()
+            {
+                Position = pos.ToLVector(),
+                Size = size,
+                Alpha = 255,
+                Red = 255,
+                Green = 255,
+                Blue = 255,
+                Dimension = dimension,
+                EntityType = (byte)EntityType.TextLabel,
+                LocalOnly = true,
+                RemoteHandle = newId,
+                Text = text,
+                Range = range,
+                EntitySeethrough = false,
+            });
+            return newId;
+        }
+
         public void StreamIn(IStreamedItem item)
         {
             //lock (item.StreamingLock) // Disabled for now
@@ -742,6 +847,10 @@ namespace GTANetwork
                         break;
                     case EntityType.Ped:
                         if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
+                        break;
+                    case EntityType.Marker:
+                    case EntityType.TextLabel:
+                        item.StreamedIn = true;
                         break;
                 }
             }
@@ -791,6 +900,10 @@ namespace GTANetwork
                             ((SyncPed) item).Clear();
                             ((SyncPed) item).StreamedIn = false;
                         }
+                        break;
+                    case EntityType.Marker:
+                    case EntityType.TextLabel:
+                        item.StreamedIn = false;
                         break;
                 }
 

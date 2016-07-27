@@ -537,11 +537,16 @@ namespace GTANetwork
             Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
         }
 
-        public void deleteMarker(LocalHandle handle)
+        public void deleteEntity(LocalHandle handle)
         {
-            Main.NetEntityHandler.DeleteLocalMarker(handle.Value);
+            Main.NetEntityHandler.DeleteLocalEntity(handle.Value);
         }
-        
+
+        public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size)
+        {
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0));
+        }
+
         public string getResourceFilePath(string fileName)
         {
             return FileTransferId._DOWNLOADFOLDER_ + ParentResourceName + "\\" + fileName;
