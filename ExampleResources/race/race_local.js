@@ -94,7 +94,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         while (API.getGlobalTime() - start < 1000) {
             disableControls();
             countdown.Render2D();
-            API.wait(0);
+            API.sleep(0);
         }
 
         API.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
@@ -105,7 +105,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         while (API.getGlobalTime() - start < 1000) {
             disableControls();
             countdown.Render2D();
-            API.wait(0);
+            API.sleep(0);
         }
 
 
@@ -117,7 +117,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         while (API.getGlobalTime() - start < 1000) {
             disableControls();
             countdown.Render2D();
-            API.wait(0);
+            API.sleep(0);
         }
 
         API.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
@@ -128,7 +128,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         while (API.getGlobalTime() - start < 1000) {
             disableControls();
             countdown.Render2D();
-            API.wait(0);
+            API.sleep(0);
         }
     }
 
