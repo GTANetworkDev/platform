@@ -139,7 +139,6 @@ namespace GTANetwork
 
             Watcher = new SyncEventWatcher(this);
 
-            Names = new Dictionary<int, string>();
             Npcs = new Dictionary<string, SyncPed>();
             _tickNatives = new Dictionary<string, NativeData>();
             _dcNatives = new Dictionary<string, NativeData>();
@@ -260,7 +259,6 @@ namespace GTANetwork
         private string _currentServerIp;
         private bool _debugWindow;
 
-        public static Dictionary<int, string> Names;
         public static Dictionary<string, SyncPed> Npcs;
         public static float Latency;
         private int Port = 4499;
@@ -1479,47 +1477,38 @@ namespace GTANetwork
                 {
                     foreach (var pair in map.Players)
                     {
-                        var ourPed = NetEntityHandler.NetToEntity(pair.Key);
-                        if (ourPed != null)
+                        if (NetEntityHandler.NetToEntity(pair.Key).Handle == Game.Player.Character.Handle)
                         {
-                            for (int i = 0; i < 15; i++)
+                            // It's us!
+                            var remPl = NetEntityHandler.NetToStreamedItem(pair.Key) as RemotePlayer;
+                            remPl.Name = pair.Value.Name;
+                        }
+                        else
+                        { 
+                            var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
+                            NetEntityHandler.UpdatePlayer(pair.Key, pair.Value);
+
+                            if (ourSyncPed.Character != null)
                             {
-                                Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourPed, i,
-                                    pair.Value.Props.Get((byte) i),
-                                    pair.Value.Textures.Get((byte) i), 2);
-                            }
+                                ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
+                                                                            pair.Value.Team != -1)
+                                    ? Main.FriendRelGroup
+                                    : Main.RelGroup;
 
-                            if (!Names.ContainsKey(pair.Key)) Names.Add(pair.Key, pair.Value.Name);
-                            else Names[pair.Key] = pair.Value.Name;
-
-                            ourPed.Alpha = pair.Value.Alpha;
-
-                            if (NetEntityHandler.NetToEntity(pair.Key).Handle == Game.Player.Character.Handle)
-                            {
-                                // It's us!
-                                var remPl = NetEntityHandler.NetToStreamedItem(pair.Key) as RemotePlayer;
-                                remPl.Name = pair.Value.Name;
-                            }
-                            else
-                            { 
-                                var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
-                                if (ourSyncPed != null)
+                                for (int i = 0; i < 15; i++)
                                 {
-                                    NetEntityHandler.UpdatePlayer(pair.Key, pair.Value);
+                                    Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourSyncPed.Character, i,
+                                        pair.Value.Props.Get((byte)i),
+                                        pair.Value.Textures.Get((byte)i), 2);
+                                }
 
-                                    if (ourSyncPed.Character != null)
-                                    {
-                                        ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&
-                                                                                  pair.Value.Team != -1)
-                                            ? Main.FriendRelGroup
-                                            : Main.RelGroup;
-                                        if (ourSyncPed.Character.CurrentBlip != null)
-                                        {
-                                            ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite) pair.Value.BlipSprite;
-                                            ourSyncPed.Character.CurrentBlip.Color = (BlipColor) pair.Value.BlipColor;
-                                            ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
-                                        }
-                                    }
+                                ourSyncPed.Character.Alpha = pair.Value.Alpha;
+
+                                if (ourSyncPed.Character.CurrentBlip != null)
+                                {
+                                    ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite) pair.Value.BlipSprite;
+                                    ourSyncPed.Character.CurrentBlip.Color = (BlipColor) pair.Value.BlipColor;
+                                    ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
                                 }
                             }
                         }

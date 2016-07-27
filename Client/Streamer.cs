@@ -694,6 +694,7 @@ namespace GTANetwork
         {
             SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
             if (rem == null)
+            {
                 lock (ClientMap)
                 {
                     ClientMap.Add(rem = new SyncPed()
@@ -709,6 +710,7 @@ namespace GTANetwork
                         Team = -1,
                     });
                 }
+            }
             return rem;
         }
 
