@@ -323,6 +323,8 @@ namespace GTANetworkServer
 
         public void InvokePlayerDisconnected(Client client, string reason)
         {
+            bool canContinue = false;
+
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
@@ -330,7 +332,12 @@ namespace GTANetworkServer
                     _jsEngine.Script.API.invokePlayerDisconnected(client, reason);
                 else if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerDisconnected(client, reason);
+
+                canContinue = true;
             }));
+
+            DateTime start = DateTime.Now;
+            while (!canContinue && DateTime.Now.Subtract(start).TotalMilliseconds < 10000) { Thread.Sleep(10); }
         }
 
         public void InvokePlayerDownloadFinished(Client client)

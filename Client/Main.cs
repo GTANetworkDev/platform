@@ -2142,6 +2142,12 @@ namespace GTANetwork
             Game.DisableControl(0, Control.FrontendSocialClub);
             Game.DisableControl(0, Control.FrontendSocialClubSecondary);
 
+            if (Game.Player.Character.IsRagdoll)
+            {
+                Game.DisableControl(0, Control.Attack);
+                Game.DisableControl(0, Control.Attack2);
+            }
+
             if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
             {
                 MainMenu.Visible = true;
@@ -3163,7 +3169,7 @@ namespace GTANetwork
                             var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
                             if (streamItem != null)
                             {
-                                StreamerThread.CancelStreamTick = true;
+                                //StreamerThread.CancelStreamTick = true;
                                 NetEntityHandler.RemoveByNetHandle(data.NetHandle);
                                 NetEntityHandler.StreamOut(streamItem);
                             }

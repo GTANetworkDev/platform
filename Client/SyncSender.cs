@@ -365,6 +365,9 @@ namespace GTANetwork
 
                 _lastBullet = false;
 
+                if (Game.Player.Character.IsRagdoll)
+                    sendShootingPacket = false;
+
                 if (sendShootingPacket && !_lastShooting)
                 {
                     _lastShooting = true;

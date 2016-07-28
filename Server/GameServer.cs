@@ -475,7 +475,9 @@ namespace GTANetworkServer
                     }
                     else if (ourResource.Info.Info.Type == ResourceType.map)
                     {
-                        if (ourResource.Info.Info.Gamemodes?.Split(',').Length != 1 && Gamemode == null)
+                        if (string.IsNullOrWhiteSpace(ourResource.Info.Info.Gamemodes))
+                        {}
+                        else if (ourResource.Info.Info.Gamemodes?.Split(',').Length != 1 && Gamemode == null)
                         {}
                         else if (ourResource.Info.Info.Gamemodes?.Split(',').Length == 1 && (Gamemode == null || !ourResource.Info.Info.Gamemodes.Split(',').Contains(Gamemode.DirectoryName)))
                         {
