@@ -87,12 +87,19 @@ namespace GTANetwork
             }
         }
 
-        public static object StreamerLock = new object();
+        public static bool CancelStreamTick = false;
 
         void StreamerTick(object sender, System.EventArgs e)
         {
             _playerPosition = Game.Player.Character.Position;
-            
+
+            if (CancelStreamTick)
+            {
+                _itemsToStreamIn.Clear();
+                _itemsToStreamOut.Clear();
+                CancelStreamTick = false;
+            }
+
             bool spinner = false;
 
             if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
@@ -102,33 +109,30 @@ namespace GTANetwork
                 Function.Call(Hash._0xBD12F8228410D9B4, 5);
                 spinner = true;
             }
-
-            lock (StreamerLock)
+            
+            lock (_itemsToStreamOut)
             {
-                lock (_itemsToStreamOut)
+                LogManager.DebugLog("STREAMING OUT " + _itemsToStreamOut.Count + " ITEMS");
+
+                foreach (var item in _itemsToStreamOut)
                 {
-                    LogManager.DebugLog("STREAMING OUT " + _itemsToStreamOut.Count + " ITEMS");
-
-                    foreach (var item in _itemsToStreamOut)
-                    {
-                        Main.NetEntityHandler.StreamOut(item);
-                    }
-
-                    _itemsToStreamOut.Clear();
+                    Main.NetEntityHandler.StreamOut(item);
                 }
 
-                lock (_itemsToStreamIn)
+                _itemsToStreamOut.Clear();
+            }
+
+            lock (_itemsToStreamIn)
+            {
+                LogManager.DebugLog("STREAMING IN " + _itemsToStreamIn.Count + " ITEMS");
+
+                foreach (var item in _itemsToStreamIn)
                 {
-                    LogManager.DebugLog("STREAMING IN " + _itemsToStreamIn.Count + " ITEMS");
-
-                    foreach (var item in _itemsToStreamIn)
-                    {
-                        if (Main.NetEntityHandler.ClientMap.Contains(item))
-                            Main.NetEntityHandler.StreamIn(item);
-                    }
-
-                    _itemsToStreamIn.Clear();
+                    if (Main.NetEntityHandler.ClientMap.Contains(item))
+                        Main.NetEntityHandler.StreamIn(item);
                 }
+
+                _itemsToStreamIn.Clear();
             }
             if (spinner)
                 Function.Call((Hash)0x10D373323E5B9C0D);
