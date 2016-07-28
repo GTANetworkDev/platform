@@ -1749,15 +1749,50 @@ namespace GTANetwork
         {
             try
             {
-                if (IsSpectating || ModelHash == 0 || !StreamedIn || string.IsNullOrEmpty(Name)) return;
+                if (IsSpectating || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
-
-                DEBUG_STEP = 0;
-                
                 float hRange = IsInVehicle ? 150f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
+                if (!StreamedIn)
+                {
+                    if (Character != null && Character.Exists())
+                    {
+                        Character.Delete();
+                    }
+
+                    if (_parachuteProp != null && _parachuteProp.Exists())
+                    {
+                        _parachuteProp.Delete();
+                    }
+
+                    if (_mainBlip == null || !_mainBlip.Exists())
+                    {
+                        _mainBlip = World.CreateBlip(gPos);
+                        SetBlipNameFromTextFile(_mainBlip, Name);
+                    }
+
+                    if (BlipSprite != -1)
+                        _mainBlip.Sprite = (BlipSprite)BlipSprite;
+                    if (BlipColor != -1)
+                        _mainBlip.Color = (BlipColor)BlipColor;
+                    else
+                        _mainBlip.Color = GTA.BlipColor.White;
+                    _mainBlip.Scale = 0.8f;
+                    _mainBlip.Alpha = BlipAlpha;
+
+                    _mainBlip.Position = gPos;
+                }
+                else if (StreamedIn && _mainBlip != null && _mainBlip.Exists())
+                {
+                    _mainBlip.Remove();
+                    _mainBlip = null;
+                }
+
+
+                DEBUG_STEP = 0;
+                
                 if (CrossReference.EntryPoint.CurrentSpectatingPlayer == this ||
                     (Character != null && CrossReference.EntryPoint.SpectatingEntity == Character.Handle))
                     inRange = true;
@@ -2068,6 +2103,7 @@ namespace GTANetwork
                 Character.Model.MarkAsNoLongerNeeded();
                 Character.Delete();
             }
+
             if (_mainBlip != null && _mainBlip.Exists())
             {
                 _mainBlip.Remove();

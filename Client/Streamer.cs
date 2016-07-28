@@ -86,19 +86,10 @@ namespace GTANetwork
                 System.Threading.Thread.Sleep(1000);
             }
         }
-
-        public static bool CancelStreamTick = false;
-
+        
         void StreamerTick(object sender, System.EventArgs e)
         {
             _playerPosition = Game.Player.Character.Position;
-
-            if (CancelStreamTick)
-            {
-                _itemsToStreamIn.Clear();
-                _itemsToStreamOut.Clear();
-                CancelStreamTick = false;
-            }
 
             bool spinner = false;
 
