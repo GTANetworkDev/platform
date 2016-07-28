@@ -286,7 +286,7 @@ public class RaceGamemode : Script
         }
     }
 
-    [Command("forcemap", ACLRequired = true)]
+    [Command("forcemap", ACLRequired = true, GreedyArg = true)]
     public void ForceMapCommand(Client sender, string mapFilename)
     {
         var locatedMap = AvailableRaces.FirstOrDefault(m => m.Filename == mapFilename);

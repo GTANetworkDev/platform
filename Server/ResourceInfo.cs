@@ -51,14 +51,6 @@ namespace GTANetworkServer
             _mainQueue = Queue.Synchronized(new Queue());
             _secondaryQueue = Queue.Synchronized(new Queue());
 
-            _workerThread = new Thread(MainThreadLoop);
-            _workerThread.IsBackground = true;
-            _workerThread.Start();
-
-            _blockingThread = new Thread(SecondaryThreadLoop);
-            _blockingThread.IsBackground = true;
-            _blockingThread.Start();
-
             Language = ScriptingEngineLanguage.javascript;
             Filename = name;
             lock (_mainQueue.SyncRoot)
@@ -66,6 +58,14 @@ namespace GTANetworkServer
             {
                 _jsEngine = InstantiateScripts(javascript, name, references);
             }));
+
+            _workerThread = new Thread(MainThreadLoop);
+            _workerThread.IsBackground = true;
+            _workerThread.Start();
+
+            _blockingThread = new Thread(SecondaryThreadLoop);
+            _blockingThread.IsBackground = true;
+            _blockingThread.Start();
         }
 
         public ScriptingEngine(Script sc, string name, Resource parent, bool async)
@@ -75,6 +75,12 @@ namespace GTANetworkServer
             _mainQueue = Queue.Synchronized(new Queue());
             _secondaryQueue = Queue.Synchronized(new Queue());
 
+            Language = ScriptingEngineLanguage.compiled;
+            Filename = name;
+
+            _compiledScript = sc;
+            _compiledScript.API.ResourceParent = this;
+
             _workerThread = new Thread(MainThreadLoop);
             _workerThread.IsBackground = true;
             _workerThread.Start();
@@ -82,12 +88,6 @@ namespace GTANetworkServer
             _blockingThread = new Thread(SecondaryThreadLoop);
             _blockingThread.IsBackground = true;
             _blockingThread.Start();
-
-            Language = ScriptingEngineLanguage.compiled;
-            Filename = name;
-
-            _compiledScript = sc;
-            _compiledScript.API.ResourceParent = this;
         }
 
         private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)

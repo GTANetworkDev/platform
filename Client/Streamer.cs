@@ -116,7 +116,8 @@ namespace GTANetwork
 
                 foreach (var item in _itemsToStreamOut)
                 {
-                    Main.NetEntityHandler.StreamOut(item);
+                    if (Main.NetEntityHandler.ClientMap.Contains(item))
+                        Main.NetEntityHandler.StreamOut(item);
                 }
 
                 _itemsToStreamOut.Clear();
@@ -883,27 +884,6 @@ namespace GTANetwork
                     break;
             }
         }
-
-        private void StreamInBlip(RemoteBlip item)
-        {
-            Blip ourBlip;
-            if (item.AttachedNetEntity == 0)
-                ourBlip = World.CreateBlip(item.Position.ToVector());
-            else
-            {
-                var entAtt = NetToStreamedItem(item.AttachedNetEntity, item.LocalOnly);
-                StreamIn(entAtt);
-                ourBlip = NetToEntity(item.AttachedNetEntity).AddBlip();
-            }
-                
-            if (item.Sprite != 0)
-                ourBlip.Sprite = (BlipSprite)item.Sprite;
-            ourBlip.Color = (BlipColor)item.Color;
-            ourBlip.Alpha = item.Alpha;
-            ourBlip.IsShortRange = item.IsShortRange;
-            ourBlip.Scale = item.Scale;
-        }
-
         public void StreamOut(IStreamedItem item)
         {
             if (!item.StreamedIn) return;
@@ -952,6 +932,28 @@ namespace GTANetwork
         {
             Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
         }
+
+
+        private void StreamInBlip(RemoteBlip item)
+        {
+            Blip ourBlip;
+            if (item.AttachedNetEntity == 0)
+                ourBlip = World.CreateBlip(item.Position.ToVector());
+            else
+            {
+                var entAtt = NetToStreamedItem(item.AttachedNetEntity, item.LocalOnly);
+                StreamIn(entAtt);
+                ourBlip = NetToEntity(item.AttachedNetEntity).AddBlip();
+            }
+
+            if (item.Sprite != 0)
+                ourBlip.Sprite = (BlipSprite)item.Sprite;
+            ourBlip.Color = (BlipColor)item.Color;
+            ourBlip.Alpha = item.Alpha;
+            ourBlip.IsShortRange = item.IsShortRange;
+            ourBlip.Scale = item.Scale;
+        }
+
 
         private void StreamInVehicle(RemoteVehicle data)
         {
