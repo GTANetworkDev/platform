@@ -3159,11 +3159,14 @@ namespace GTANetwork
                         if (data != null)
                         {
                             LogManager.DebugLog("RECEIVED DELETE ENTITY " + data.NetHandle);
-                            var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
-                            if (streamItem != null)
+                            lock (StreamerThread.StreamerLock)
                             {
-                                NetEntityHandler.RemoveByNetHandle(data.NetHandle);
-                                NetEntityHandler.StreamOut(streamItem);
+                                var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
+                                if (streamItem != null)
+                                {
+                                    NetEntityHandler.RemoveByNetHandle(data.NetHandle);
+                                    NetEntityHandler.StreamOut(streamItem);
+                                }
                             }
                         }
                     }

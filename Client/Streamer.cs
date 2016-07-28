@@ -87,10 +87,12 @@ namespace GTANetwork
             }
         }
 
+        public static object StreamerLock = new object();
+
         void StreamerTick(object sender, System.EventArgs e)
         {
             _playerPosition = Game.Player.Character.Position;
-
+            
             bool spinner = false;
 
             if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
@@ -101,31 +103,33 @@ namespace GTANetwork
                 spinner = true;
             }
 
-            lock (_itemsToStreamOut)
+            lock (StreamerLock)
             {
-                LogManager.DebugLog("STREAMING OUT " + _itemsToStreamOut.Count + " ITEMS");
-
-                foreach (var item in _itemsToStreamOut)
+                lock (_itemsToStreamOut)
                 {
-                    Main.NetEntityHandler.StreamOut(item);
+                    LogManager.DebugLog("STREAMING OUT " + _itemsToStreamOut.Count + " ITEMS");
+
+                    foreach (var item in _itemsToStreamOut)
+                    {
+                        Main.NetEntityHandler.StreamOut(item);
+                    }
+
+                    _itemsToStreamOut.Clear();
                 }
 
-                _itemsToStreamOut.Clear();
-            }
-
-            lock (_itemsToStreamIn)
-            {
-                LogManager.DebugLog("STREAMING IN " + _itemsToStreamIn.Count + " ITEMS");
-
-                foreach (var item in _itemsToStreamIn)
+                lock (_itemsToStreamIn)
                 {
-                    if (Main.NetEntityHandler.ClientMap.Contains(item))
-                        Main.NetEntityHandler.StreamIn(item);
+                    LogManager.DebugLog("STREAMING IN " + _itemsToStreamIn.Count + " ITEMS");
+
+                    foreach (var item in _itemsToStreamIn)
+                    {
+                        if (Main.NetEntityHandler.ClientMap.Contains(item))
+                            Main.NetEntityHandler.StreamIn(item);
+                    }
+
+                    _itemsToStreamIn.Clear();
                 }
-
-                _itemsToStreamIn.Clear();
             }
-
             if (spinner)
                 Function.Call((Hash)0x10D373323E5B9C0D);
         }
@@ -846,36 +850,33 @@ namespace GTANetwork
 
         public void StreamIn(IStreamedItem item)
         {
-            //lock (item.StreamingLock) // Disabled for now
+            if (item.StreamedIn) return;
+
+            if (item.Dimension != Main.LocalDimension && item.Dimension != 0) return;
+
+            LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
+
+            switch ((EntityType) item.EntityType)
             {
-                if (item.StreamedIn) return;
-
-                if (item.Dimension != Main.LocalDimension && item.Dimension != 0) return;
-
-                LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
-
-                switch ((EntityType) item.EntityType)
-                {
-                    case EntityType.Vehicle:
-                        StreamInVehicle((RemoteVehicle) item);
-                        break;
-                    case EntityType.Prop:
-                        StreamInProp((RemoteProp) item);
-                        break;
-                    case EntityType.Pickup:
-                        StreamInPickup((RemotePickup) item);
-                        break;
-                    case EntityType.Blip:
-                        StreamInBlip((RemoteBlip) item);
-                        break;
-                    case EntityType.Ped:
-                        if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
-                        break;
-                    case EntityType.Marker:
-                    case EntityType.TextLabel:
-                        item.StreamedIn = true;
-                        break;
-                }
+                case EntityType.Vehicle:
+                    StreamInVehicle((RemoteVehicle) item);
+                    break;
+                case EntityType.Prop:
+                    StreamInProp((RemoteProp) item);
+                    break;
+                case EntityType.Pickup:
+                    StreamInPickup((RemotePickup) item);
+                    break;
+                case EntityType.Blip:
+                    StreamInBlip((RemoteBlip) item);
+                    break;
+                case EntityType.Ped:
+                    if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
+                    break;
+                case EntityType.Marker:
+                case EntityType.TextLabel:
+                    item.StreamedIn = true;
+                    break;
             }
         }
 
@@ -901,37 +902,34 @@ namespace GTANetwork
 
         public void StreamOut(IStreamedItem item)
         {
-            //lock (item.StreamingLock)
+            if (!item.StreamedIn) return;
+
+            switch ((EntityType) item.EntityType)
             {
-                if (!item.StreamedIn) return;
-
-                switch ((EntityType) item.EntityType)
-                {
-                    case EntityType.Prop:
-                    case EntityType.Vehicle:
-                        StreamOutEntity((ILocalHandleable) item);
-                        break;
-                    case EntityType.Blip:
-                        StreamOutBlip((ILocalHandleable) item);
-                        break;
-                    case EntityType.Pickup:
-                        StreamOutPickup((ILocalHandleable) item);
-                        break;
-                    case EntityType.Ped:
-                        if (item is SyncPed)
-                        {
-                            ((SyncPed) item).Clear();
-                            ((SyncPed) item).StreamedIn = false;
-                        }
-                        break;
-                    case EntityType.Marker:
-                    case EntityType.TextLabel:
-                        item.StreamedIn = false;
-                        break;
-                }
-
-                item.StreamedIn = false;
+                case EntityType.Prop:
+                case EntityType.Vehicle:
+                    StreamOutEntity((ILocalHandleable) item);
+                    break;
+                case EntityType.Blip:
+                    StreamOutBlip((ILocalHandleable) item);
+                    break;
+                case EntityType.Pickup:
+                    StreamOutPickup((ILocalHandleable) item);
+                    break;
+                case EntityType.Ped:
+                    if (item is SyncPed)
+                    {
+                        ((SyncPed) item).Clear();
+                        ((SyncPed) item).StreamedIn = false;
+                    }
+                    break;
+                case EntityType.Marker:
+                case EntityType.TextLabel:
+                    item.StreamedIn = false;
+                    break;
             }
+
+            item.StreamedIn = false;
         }
 
         private void StreamOutEntity(ILocalHandleable data)

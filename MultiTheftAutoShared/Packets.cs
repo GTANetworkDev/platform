@@ -496,6 +496,16 @@ namespace GTANetworkShared
             Z = Z/len;
         }
 
+        public Vector3 Normalized
+        {
+            get
+            {
+                var len = Length();
+
+                return new Vector3(X/len, Y/len, Z/len);
+            }
+        }
+
         public static Vector3 RandomXY()
         {
             Vector3 v = new Vector3();

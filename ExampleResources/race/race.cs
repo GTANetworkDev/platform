@@ -488,8 +488,14 @@ public class RaceGamemode : Script
             next = CurrentRaceCheckpoints[checkpoint - 1];
         }
 
-        
-        var heading = (float)Math.Abs((Math.Atan2(next.Y, next.X) - Math.Atan2(position.Y, position.X)) * (180.0 / Math.PI));
+        float heading;
+
+        var direction = next - position;
+        direction.Normalize();
+
+        var radAtan = -Math.Atan2(direction.X, direction.Y);
+
+        heading = (float)(radAtan * 180f / Math.PI);
 
         API.setEntityPosition(client.CharacterHandle, position);
 
@@ -514,7 +520,7 @@ public class RaceGamemode : Script
         }
 
 
-        var playerVehicle = API.createVehicle((VehicleHash)selectedModel, position, new Vector3(0, 0, -heading), color1, color2);        
+        var playerVehicle = API.createVehicle((VehicleHash)selectedModel, position, new Vector3(0, 0, heading), color1, color2);        
         API.setPlayerIntoVehicle(client, playerVehicle, -1);
 
         lock (Opponents)
