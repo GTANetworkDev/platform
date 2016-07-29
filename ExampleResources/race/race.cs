@@ -310,6 +310,11 @@ public class RaceGamemode : Script
             SetUpPlayerForRace(player, CurrentRace, false, 0);
         }
 
+        if (ghostmode)
+        {
+            API.triggerClientEvent(player, "race_toggleGhostMode", true);
+        }
+
         if (DateTime.Now.Subtract(VoteStart).TotalSeconds < 60)
         {
             object[] argumentList = new object[11];
@@ -400,6 +405,14 @@ public class RaceGamemode : Script
         API.triggerClientEventForAll("resetRace");
 
         CurrentRaceCheckpoints.Clear();
+    }
+
+    private bool ghostmode;
+    [Command("ghostmode")]
+    public void ghostmodetoggle(Client sender, bool ghost)
+    {
+        API.triggerClientEventForAll("race_toggleGhostMode", ghost);
+        ghostmode = ghost;
     }
 
     private Random randGen = new Random();

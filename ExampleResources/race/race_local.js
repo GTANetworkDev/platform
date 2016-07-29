@@ -77,6 +77,7 @@ API.onUpdate.connect(function(sender, args) {
             if (API.isPlayerInAnyVehicle(players[i])) {
                 var car = API.getPlayerVehicle(players[i]);
                 API.callNative("SET_ENTITY_NO_COLLISION_ENTITY", playerCar.Value, car.Value, false);
+                API.setEntityTransparency(car, 150);
             }
         };
     }

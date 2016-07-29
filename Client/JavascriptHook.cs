@@ -942,6 +942,11 @@ namespace GTANetwork
             sc.Render2DScreenSpace(new PointF((float) x, (float) y), new PointF((float) w, (float) h));
         }
 
+        public void setEntityTransparency(LocalHandle entity, int alpha)
+        {
+            new Prop(entity.Value).Alpha = alpha;
+        }
+
         internal PointF convertAnchorPos(float x, float y, Anchor anchor, float xOffset, float yOffset)
         {
             var res = UIMenu.GetScreenResolutionMantainRatio();
