@@ -160,6 +160,8 @@ namespace GTANetwork.GUI
                 Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\User Music";
 
             _hasUserMusic = Directory.Exists(path) && Directory.GetFiles(path).Length > 0;
+
+            Function.Call(Hash.REQUEST_ADDITIONAL_TEXT, "TRACKID");
         }
 
         private bool _hasUserMusic;
@@ -317,7 +319,36 @@ namespace GTANetwork.GUI
 
                 var currentSong = Function.Call<int>(Hash.GET_AUDIBLE_MUSIC_TRACK_TEXT_ID);
 
-                new UIResText(radios[currentRadio] + "~n~TRACK_ID_" + currentSong, new Point((int) center.X, (int) center.Y - 100), 0.5f)
+                var l_33 = currentSong;
+                var l_14/*"64"*/ = "";
+                l_14/*64*/ += l_33;
+                l_14/*64*/ += "S";
+                var l_14_f10/*"32"*/ = "";
+                l_14_f10/*32*/ += l_33;
+                l_14_f10/*32*/ += "A";
+                var l_14_f19/*"24"*/ = GTA.Native.Function.Call<string>(Hash.GET_PLAYER_RADIO_STATION_NAME);
+                if (!Function.Call<bool>(Hash.DOES_TEXT_LABEL_EXIST, l_14))
+                {
+                    l_14/*"64"*/ = "CELL_195";
+                }
+                if (!Function.Call<bool>(Hash.DOES_TEXT_LABEL_EXIST, l_14_f10))
+                {
+                    l_14_f10/*"32"*/ = "CELL_195";
+                    l_14_f19/*"24"*/ = "CELL_195";
+                }
+
+                var text1 = Function.Call<string>(Hash._GET_LABEL_TEXT, l_14);
+                var text2 = Function.Call<string>(Hash._GET_LABEL_TEXT, l_14_f10);
+                //var text3 = Function.Call<string>(Hash._GET_LABEL_TEXT, l_14_f19);
+                var text3 = Function.Call<string>(Hash._GET_LABEL_TEXT, radios[currentRadio]);
+
+                if (currentSong == 1)
+                {
+                    text1 = "";
+                    text2 = "";
+                }
+
+                new UIResText(text3 + "~n~" + text2 + "~n~" + text1, new Point((int)center.X, (int)center.Y - 100), 0.5f)
                 {
                     Outline = true,
                     TextAlignment = UIResText.Alignment.Centered,
