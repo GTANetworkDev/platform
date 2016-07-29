@@ -53,6 +53,8 @@ namespace GTANetwork
         public bool IsInMeleeCombat;
         public bool IsFreefallingWithParachute;
         public bool IsShooting;
+        public bool IsInBurnout;
+        private bool _lastBurnout;
         public float VehicleRPM;
 	    public float SteeringScale;
 
@@ -724,7 +726,24 @@ namespace GTANetwork
 				_lastHorn = false;
 				MainVehicle.SoundHorn(1);
 			}
-			DEBUG_STEP = 18;
+
+	        if (IsInBurnout && !_lastBurnout)
+	        {
+	            Function.Call(Hash.SET_VEHICLE_BURNOUT, MainVehicle, true);
+                Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, Character, MainVehicle, 23, 120000); // 30 - burnout
+            }
+
+	        if (!IsInBurnout && _lastBurnout)
+	        {
+                Function.Call(Hash.SET_VEHICLE_BURNOUT, MainVehicle, false);
+                Character.Task.ClearAll();
+            }
+
+	        _lastBurnout = IsInBurnout;
+
+            Function.Call(Hash.SET_VEHICLE_BRAKE_LIGHTS, MainVehicle, Speed > 0.2 && _lastSpeed > Speed);
+
+            DEBUG_STEP = 18;
 
 			if (MainVehicle.SirenActive && !Siren)
 				MainVehicle.SirenActive = Siren;
@@ -780,7 +799,7 @@ namespace GTANetwork
 
         void DisplayVehiclePosition()
         {
-            if (Speed > 0.2f)
+            if (Speed > 0.2f || IsInBurnout)
             {
                 if (!Main.LagCompensation)
                 {

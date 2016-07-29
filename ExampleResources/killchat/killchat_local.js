@@ -89,8 +89,10 @@ API.onUpdate.connect(function (sender, args) {
     if (show) {
         var res = API.getScreenResolutionMantainRatio();
         for (var i = 0; i < mainArr.length; i++) {
-            API.drawText(mainArr[i].k, host.toInt32(res.Width - 275), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 2, false, true, 0);        
-            API.drawText(mainArr[i].v, host.toInt32(res.Width - 200), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 0, false, true, 0);
+            if (mainArr[i].k != null)
+                API.drawText(mainArr[i].k, host.toInt32(res.Width - 275), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 2, false, true, 0);        
+            if (mainArr[i].v != null)
+                API.drawText(mainArr[i].v, host.toInt32(res.Width - 200), 300 + 70 * i, 0.4, 255, 255, 255, 255, 0, 0, false, true, 0);
             
             var dct = weaponDicts[mainArr[i].w];
             var nam = weaponNames[mainArr[i].w];

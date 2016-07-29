@@ -1950,6 +1950,9 @@ namespace GTANetwork
                 if (vehdead)
                     obj.Flag |= (byte)VehicleDataFlags.VehicleDead;
 
+                if (veh.IsInBurnout())
+                    obj.Flag |= (byte)VehicleDataFlags.BurnOut;
+
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
                     obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
@@ -2298,9 +2301,10 @@ namespace GTANetwork
             if (player.IsInVehicle()) UI.ShowSubtitle(""+ player.CurrentVehicle.Velocity);
             else UI.ShowSubtitle(""+ player.Velocity);
 
+            if (player.IsInVehicle()) UI.ShowSubtitle("" + player.CurrentVehicle.IsInBurnout());
             */
 
-            
+
             if (display)
             {
                 Debug();
@@ -3958,6 +3962,7 @@ namespace GTANetwork
                 syncPed.Siren = (fullData.Flag.Value & (short)VehicleDataFlags.SirenActive) > 0;
                 syncPed.IsShooting = (fullData.Flag.Value & (short)VehicleDataFlags.Shooting) > 0;
                 syncPed.IsAiming = (fullData.Flag.Value & (short)VehicleDataFlags.Aiming) > 0;
+                syncPed.IsInBurnout = (fullData.Flag.Value & (short) VehicleDataFlags.BurnOut) > 0;
             }
 
             if (fullData.WeaponHash != null)
@@ -4259,6 +4264,7 @@ namespace GTANetwork
                         _debugSyncPed.Siren = (data.Flag & (short) VehicleDataFlags.SirenActive) > 0;
                         _debugSyncPed.IsShooting = (data.Flag & (short) VehicleDataFlags.Shooting) > 0;
                         _debugSyncPed.IsAiming = (data.Flag & (short) VehicleDataFlags.Aiming) > 0;
+                        _debugSyncPed.IsInBurnout = (data.Flag & (short)VehicleDataFlags.BurnOut) > 0;
                         _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
                         if (data.AimCoords != null)
                             _debugSyncPed.AimCoords = data.AimCoords.ToVector();

@@ -219,6 +219,9 @@ namespace GTANetwork
                 if (Util.GetResponsiblePed(veh).Handle == player.Handle)
                     obj.Flag |= (byte)VehicleDataFlags.Driver;
 
+                if (veh.IsInBurnout())
+                    obj.Flag |= (byte)VehicleDataFlags.BurnOut;
+
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {

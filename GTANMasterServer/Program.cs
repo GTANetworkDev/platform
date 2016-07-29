@@ -46,12 +46,19 @@ namespace GTANMasterServer
 
                 while (true)
                 {
-                    ContinuousIntegration.Work();
-                    GtanServerWorker.Work();
-                    CoopServerWorker.Work();
-                    foreach (var pair in UpdateChannels) pair.Value.Work();
-                    WelcomeMessageWorker.Work();
-                    Thread.Sleep(100);
+                    try
+                    {
+                        ContinuousIntegration.Work();
+                        GtanServerWorker.Work();
+                        CoopServerWorker.Work();
+                        foreach (var pair in UpdateChannels) pair.Value.Work();
+                        WelcomeMessageWorker.Work();
+                    }
+                    catch {}
+                    finally
+                    {
+                        Thread.Sleep(100);
+                    }
                 }
             }
         }

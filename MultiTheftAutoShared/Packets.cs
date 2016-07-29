@@ -101,6 +101,7 @@ namespace GTANetworkShared
         Aiming = 1 << 4,
         Driver = 1 << 5,
         MountedWeapon = 1 << 6,
+        BurnOut = 1 << 7,
     }
     
     [Flags]
