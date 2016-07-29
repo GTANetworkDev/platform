@@ -185,7 +185,7 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreateTextLabel(string text, float size, float range, int r, int g, int b, Vector3 pos, int dimension)
+        public int CreateTextLabel(string text, float size, float range, int r, int g, int b, Vector3 pos, bool entitySeethrough, int dimension)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new TextLabelProperties();
@@ -198,7 +198,7 @@ namespace GTANetworkServer
             obj.Red = r;
             obj.Text = text;
             obj.Alpha = 255;
-            obj.EntitySeethrough = false;
+            obj.EntitySeethrough = entitySeethrough;
             obj.Dimension = dimension;
             ServerEntities.Add(localEntityHash, obj);
 

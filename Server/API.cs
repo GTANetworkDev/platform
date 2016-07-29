@@ -1444,9 +1444,9 @@ namespace GTANetworkServer
             return ent;
         }
 
-        public NetHandle createTextLabel(string text, Vector3 pos, float range, float size, int dimension = 0)
+        public NetHandle createTextLabel(string text, Vector3 pos, float range, float size, bool entitySeethrough = false, int dimension = 0)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateTextLabel(text, size, range, 255, 255, 255, pos, dimension));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateTextLabel(text, size, range, 255, 255, 255, pos, entitySeethrough, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }

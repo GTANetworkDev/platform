@@ -801,6 +801,9 @@ namespace GTANetwork
         {
             if (Speed > 0.2f || IsInBurnout)
             {
+                if (_lastVehiclePos.X == 0 && _lastVehiclePos.Y == 0 && _lastVehiclePos.Z == 0)
+                    return;
+
                 if (!Main.LagCompensation)
                 {
                     long currentTime = Util.TickCount;
