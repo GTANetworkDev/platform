@@ -596,12 +596,24 @@ namespace GTANetworkServer
             var props = map.getElementsByType("prop");
             foreach (var prop in props)
             {
-                var ent = PublicAPI.createObject(prop.getElementData<int>("model"),
-                    new Vector3(prop.getElementData<float>("posX"), prop.getElementData<float>("posY"),
-                        prop.getElementData<float>("posZ")),
-                    new Vector3(prop.getElementData<float>("rotX"), prop.getElementData<float>("rotY"),
-                        prop.getElementData<float>("rotZ")), dimension);
-                res.MapEntities.Add(ent);
+                if (prop.hasElementData("quatX"))
+                {
+                    var ent = PublicAPI.createObject(prop.getElementData<int>("model"),
+                        new Vector3(prop.getElementData<float>("posX"), prop.getElementData<float>("posY"),
+                            prop.getElementData<float>("posZ")),
+                        new Quaternion(prop.getElementData<float>("quatX"), prop.getElementData<float>("quatY"),
+                            prop.getElementData<float>("quatZ"), prop.getElementData<float>("quatW")), dimension);
+                    res.MapEntities.Add(ent);
+                }
+                else
+                {
+                    var ent = PublicAPI.createObject(prop.getElementData<int>("model"),
+                        new Vector3(prop.getElementData<float>("posX"), prop.getElementData<float>("posY"),
+                            prop.getElementData<float>("posZ")),
+                        new Vector3(prop.getElementData<float>("rotX"), prop.getElementData<float>("rotY"),
+                            prop.getElementData<float>("rotZ")), dimension);
+                    res.MapEntities.Add(ent);
+                }
             }
 
             var vehicles = map.getElementsByType("vehicle");
