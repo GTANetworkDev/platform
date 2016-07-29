@@ -90,7 +90,7 @@ namespace GTANetwork
         void StreamerTick(object sender, System.EventArgs e)
         {
             _playerPosition = Game.Player.Character.Position;
-
+            if (Util.ModelRequest) return;
             bool spinner = false;
 
             if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
@@ -117,7 +117,7 @@ namespace GTANetwork
             lock (_itemsToStreamIn)
             {
                 LogManager.DebugLog("STREAMING IN " + _itemsToStreamIn.Count + " ITEMS");
-
+                
                 foreach (var item in _itemsToStreamIn)
                 {
                     if (Main.NetEntityHandler.ClientMap.Contains(item))
@@ -167,7 +167,7 @@ namespace GTANetwork
                 if (p == null || p.Position == null) continue;
                 DrawLabel3D((EntityType) p.EntityType + "\nId: " + p.RemoteHandle, p.Position.ToVector(), 100f, 0.4f);
             }
-            */
+            //*/
         }
 
         public void DrawLabels()
@@ -912,6 +912,7 @@ namespace GTANetwork
             LogManager.DebugLog("PRESTREAM OUT " + data.LocalHandle);
             new Prop(data.LocalHandle).Delete();
             LogManager.DebugLog("POSTSTREAM OUT " + data.LocalHandle);
+            LogManager.DebugLog("POSTSTREAM OUT SUCCESS? " + !new Prop(data.LocalHandle).Exists());
         }
 
         private void StreamOutBlip(ILocalHandleable blip)
@@ -1084,7 +1085,7 @@ namespace GTANetwork
 
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
             var ourVeh = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, data.Position.X, data.Position.Y, data.Position.Z, false, true, false));
-
+            LogManager.DebugLog("PROP HANDLE: " + ourVeh.Handle);
             LogManager.DebugLog("ROTATION: " + data.Rotation.GetType());
             if (data.Rotation is Quaternion)
             {

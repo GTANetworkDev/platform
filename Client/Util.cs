@@ -23,15 +23,17 @@ namespace GTANetwork
             return value;
         }
 
+        public static bool ModelRequest;
         public static void LoadModel(Model model)
         {
             LogManager.DebugLog("REQUESTING MODEL " + model.Hash);
+            ModelRequest = true;
             while (!model.IsLoaded)
             {
                 model.Request();
                 Script.Yield();
             }
-
+            ModelRequest = false;
             LogManager.DebugLog("MODEL REQUESTED!");
         }
 

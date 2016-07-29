@@ -3170,7 +3170,7 @@ namespace GTANetwork
                             if (streamItem != null)
                             {
                                 //StreamerThread.CancelStreamTick = true;
-                                NetEntityHandler.RemoveByNetHandle(data.NetHandle);
+                                NetEntityHandler.Remove(streamItem);
                                 NetEntityHandler.StreamOut(streamItem);
                             }
                         }

@@ -163,6 +163,11 @@ namespace GTANetworkShared
             return Value.GetHashCode();
         }
 
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
+
         public bool IsNull { get { return Value == 0; } }
     }
 
@@ -191,6 +196,11 @@ namespace GTANetworkShared
         public override int GetHashCode()
         {
             return Value.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return Value.ToString();
         }
 
         public bool IsNull { get { return Value == 0; } }
