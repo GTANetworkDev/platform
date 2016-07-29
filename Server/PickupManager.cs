@@ -34,6 +34,7 @@ namespace GTANetworkServer
                         {
                             RespawnPickup(pair.Key, prop);
                             PickupsToRespawn.Remove(pair.Key);
+                            Program.ServerInstance.RunningResources.ForEach(res => res.Engines.ForEach(en => en.InvokePickupRespawn(new NetHandle(pair.Key))));
                         }
                     }
                     else

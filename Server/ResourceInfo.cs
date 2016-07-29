@@ -364,6 +364,18 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokePickupRespawn(NetHandle pickup)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.javascript)
+                    _jsEngine.Script.API.invokePickupRespawn(pickup);
+                else if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePickupRespawn(pickup);
+            }));
+        }
+
         public void InvokeChatCommand(Client sender, string command)
         {
             lock (_mainQueue.SyncRoot)

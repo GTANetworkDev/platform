@@ -54,6 +54,7 @@ namespace GTANetworkServer
         public delegate void PlayerKilledEvent(Client player, NetHandle entityKiller, int weapon);
         public delegate void ServerEventTrigger(Client sender, string eventName, params object[] arguments);
         public delegate void PickupEvent(Client pickupee, NetHandle pickupHandle);
+        public delegate void EntityEvent(NetHandle entity);
         public delegate void MapChangeEvent(string mapName, XmlGroup map);
         #endregion
 
@@ -71,6 +72,7 @@ namespace GTANetworkServer
         public event PlayerEvent onPlayerRespawn;
         public event ServerEventTrigger onClientEventTrigger;
         public event PickupEvent onPlayerPickup;
+        public event EntityEvent onPickupRespawn;
         public event MapChangeEvent onMapChange;
 
         internal void invokeMapChange(string mapName, XmlGroup map)
@@ -86,6 +88,11 @@ namespace GTANetworkServer
         internal void invokeFinishedDownload(Client sender)
         {
             onPlayerFinishedDownload?.Invoke(sender);
+        }
+
+        internal void invokePickupRespawn(NetHandle pickup)
+        {
+            onPickupRespawn?.Invoke(pickup);
         }
 
         internal void invokeResourceStart()

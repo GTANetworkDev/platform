@@ -3568,8 +3568,11 @@ namespace GTANetwork
                                 case SyncEventType.PickupPickedUp:
                                     {
                                         var pickupItem = NetEntityHandler.NetToStreamedItem((int) args[0]);
-                                        NetEntityHandler.StreamOut(pickupItem);
-                                        NetEntityHandler.Remove(pickupItem);
+                                        if (pickupItem != null)
+                                        {
+                                            NetEntityHandler.StreamOut(pickupItem);
+                                            NetEntityHandler.Remove(pickupItem);
+                                        }
                                     }
                                     break;
                             }
