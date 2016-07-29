@@ -197,8 +197,7 @@ namespace GTANetwork.GUI
                 DateTime.Now.Subtract(_lastPress).TotalMilliseconds > 100)
             {
                 _disable = true;
-                Function.Call(Hash.SET_AUDIO_FLAG, "MobileRadioInGame", 1);
-                //AUDIO::SET_AUDIO_FLAG("ActivateSwitchWheelAudio", 1);
+                Function.Call(Hash.SET_AUDIO_FLAG, "ActivateSwitchWheelAudio", 1);
                 Function.Call(Hash._START_SCREEN_EFFECT, "SwitchHUDIn", 0, 0);
 
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_In", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
@@ -214,7 +213,7 @@ namespace GTANetwork.GUI
 
                 _disable = false;
                 _lastRadio = -1;
-                Function.Call(Hash.SET_AUDIO_FLAG, "MobileRadioInGame", 0);
+                Function.Call(Hash.SET_AUDIO_FLAG, "ActivateSwitchWheelAudio", 0);
                 Function.Call(Hash._STOP_SCREEN_EFFECT, "SwitchHUDIn");
                 Function.Call(Hash._START_SCREEN_EFFECT, "SwitchHUDOut", 0, 0);
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_Out", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
@@ -262,7 +261,7 @@ namespace GTANetwork.GUI
 
             var delta = new PointF(mouseX, mouseY);
 
-            if (delta.X*delta.X + delta.Y*delta.Y > 0.02)
+            if (delta.X*delta.X + delta.Y*delta.Y > 0.005)
             {
                 float angle = 0;
 
