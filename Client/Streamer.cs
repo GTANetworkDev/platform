@@ -953,7 +953,7 @@ namespace GTANetwork
             var model = new Model(data.ModelHash);
             if (model == null || !model.IsValid || !model.IsInCdImage) return;
             LogManager.DebugLog("CREATING VEHICLE FOR NETHANDLE " + data.RemoteHandle);
-            if (!model.IsLoaded) model.Request(10000);
+            if (!model.IsLoaded) Util.LoadModel(model);
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
 
             LogManager.DebugLog("POSITION: " + data.Position?.ToVector());
