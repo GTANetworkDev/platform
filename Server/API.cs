@@ -969,6 +969,12 @@ namespace GTANetworkServer
             }
         }
 
+        public void setPlayerSeatbelt(Client player, bool seatbelt)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1913FE4CBF41C463,
+                new EntityArgument(player.CharacterHandle.Value), 32, !seatbelt);
+        }
+
         public void freezePlayer(Client player, bool freeze)
         {
             if (player.IsInVehicle)
