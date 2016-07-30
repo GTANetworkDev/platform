@@ -532,6 +532,16 @@ namespace GTANetwork
             return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>().Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
         }
 
+        public LocalHandle[] getAllVehicles()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteVehicle && item.StreamedIn).Cast<RemoteVehicle>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+        }
+
+        public LocalHandle[] getAllObjects()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteVehicle && item.StreamedIn).Cast<RemoteVehicle>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+        }
+        
         public LocalHandle getPlayerVehicle(LocalHandle player)
         {
             return new LocalHandle(new Ped(player.Value).CurrentVehicle?.Handle ?? 0);
@@ -938,6 +948,31 @@ namespace GTANetwork
             menu.ProcessControl();
             menu.ProcessMouse();
             menu.Draw();
+        }
+
+        public bool isControlJustPressed(int control)
+        {
+            return Game.IsControlJustPressed(0, (GTA.Control) control);
+        }
+
+        public bool isControlPressed(int control)
+        {
+            return Game.IsControlPressed(0, (GTA.Control)control);
+        }
+
+        public bool isControlJustReleased(int control)
+        {
+            return Game.IsControlJustReleased(0, (GTA.Control)control);
+        }
+
+        public void disableControlThisFrame(int control)
+        {
+            Game.DisableControlThisFrame(0, (GTA.Control)control);
+        }
+
+        public void enableControlThisFrame(int control)
+        {
+            Game.EnableControlThisFrame(0, (GTA.Control)control);
         }
 
         public Scaleform requestScaleform(string scaleformName)
