@@ -2026,6 +2026,10 @@ namespace GTANResource
                     var tmp = (Vector3Argument)arg;
                     list.Add(new GTANetworkShared.Vector3(tmp.X, tmp.Y, tmp.Z));
                 }
+                else if (arg is EntityArgument)
+                {
+                    list.Add(new NetHandle(((EntityArgument) arg).NetHandle));
+                }
                 else if (args == null)
                 {
                     list.Add(null);

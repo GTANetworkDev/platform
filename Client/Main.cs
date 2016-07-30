@@ -4582,6 +4582,10 @@ namespace GTANetwork
                 {
                     list.Add(new EntityArgument(((NetHandle)o).Value));
                 }
+                else if (o is LocalHandle)
+                {
+                    list.Add(new EntityArgument(NetEntityHandler.EntityToNet(((LocalHandle)o).Value)));
+                }
                 else
                 {
                     list.Add(null);

@@ -400,7 +400,12 @@ namespace GTANetwork
             Hash ourHash;
             if (!Hash.TryParse(hash, out ourHash))
                 return null;
-            var fArgs = args.Select(o => new InputArgument(o)).ToArray();
+            var fArgs = args.Select(o =>
+            {
+                if (o is LocalHandle)
+                    return new InputArgument(((LocalHandle) o).Value);
+                return new InputArgument(o);
+            }).ToArray();
             switch ((ReturnType)returnType)
             {
                 case ReturnType.Int:
@@ -414,7 +419,7 @@ namespace GTANetwork
                 case ReturnType.String:
                     return Function.Call<string>(ourHash, fArgs);
                 case ReturnType.Vector3:
-                    return Function.Call<Vector3>(ourHash, fArgs);
+                    return Function.Call<GTA.Math.Vector3>(ourHash, fArgs).ToLVector();
                 case ReturnType.Vector2:
                     return Function.Call<Vector2>(ourHash, fArgs);
                 case ReturnType.Float:

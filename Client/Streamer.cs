@@ -353,6 +353,10 @@ namespace GTANetwork
         public int EntityToNet(int entityHandle)
         {
             if (entityHandle == 0) return 0;
+            if (entityHandle == Game.Player.Character.Handle)
+                return
+                    ClientMap.FirstOrDefault(i => i is RemotePlayer && ((RemotePlayer) i).LocalHandle == -2)
+                        ?.RemoteHandle ?? 0;
             lock (ClientMap)
             {
                 var ourItem = ClientMap.FirstOrDefault(item =>

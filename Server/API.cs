@@ -611,7 +611,7 @@ namespace GTANetworkServer
         {
             Program.ServerInstance.ChangePlayerTeam(player, team);
         }
-
+        
         public void playPlayerAnimation(Client player, int flag, string animDict, string animName)
         {
             Program.ServerInstance.PlayCustomPlayerAnimation(player, flag, animDict, animName);
@@ -1080,7 +1080,7 @@ namespace GTANetworkServer
             return false;
         }
 
-        public void detachEntity(NetHandle entity, bool resetCollision)
+        public void detachEntity(NetHandle entity, bool resetCollision = true)
         {
             if (doesEntityExist(entity))
             {
