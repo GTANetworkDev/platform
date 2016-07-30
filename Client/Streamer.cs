@@ -153,7 +153,7 @@ namespace GTANetwork
 
             foreach (var item in attaches)
             {
-                var attachedTo = NetToStreamedItem(item.AttachedTo.AttachedTo);
+                var attachedTo = NetToStreamedItem(item.AttachedTo.NetHandle);
 
                 if (attachedTo == null || !attachedTo.StreamedIn) continue;
 
@@ -213,10 +213,18 @@ namespace GTANetwork
             
             // Uncomment to debug stuff
             /*
+            
             foreach (var p in ClientMap)
             {
                 if (p == null || p.Position == null) continue;
-                DrawLabel3D((EntityType) p.EntityType + "\nId: " + p.RemoteHandle, p.Position.ToVector(), 100f, 0.4f);
+                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nAttached: " + (p.AttachedTo != null);
+
+                if (p.AttachedTo != null)
+                {
+                    text += "\nTo:" + p.AttachedTo.NetHandle;
+                }
+
+                DrawLabel3D(text, p.Position.ToVector(), 100f, 0.4f);
             }
             //*/
         }
@@ -401,7 +409,7 @@ namespace GTANetwork
             if (prop.AttachedTo != null)
             {
                 veh.AttachedTo = prop.AttachedTo;
-                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
@@ -436,7 +444,7 @@ namespace GTANetwork
             if (prop.AttachedTo != null)
             {
                 veh.AttachedTo = prop.AttachedTo;
-                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
                 if (attachedTo != null)
                 {
                     LogManager.DebugLog("ATTACHING THIS ENTITY (" + ((EntityType) veh.EntityType) + " id: " + netHandle + ") TO " + attachedTo.GetType());
@@ -471,7 +479,7 @@ namespace GTANetwork
             if (prop.AttachedTo != null)
             {
                 veh.AttachedTo = prop.AttachedTo;
-                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
@@ -506,7 +514,7 @@ namespace GTANetwork
             if (prop.AttachedTo != null)
             {
                 veh.AttachedTo = prop.AttachedTo;
-                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
@@ -547,7 +555,7 @@ namespace GTANetwork
             if (prop.AttachedTo != null)
             {
                 veh.AttachedTo = prop.AttachedTo;
-                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
@@ -578,7 +586,7 @@ namespace GTANetwork
             if (prop.AttachedTo != null)
             {
                 veh.AttachedTo = prop.AttachedTo;
-                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
@@ -631,6 +639,10 @@ namespace GTANetwork
                     Dimension = prop.Dimension,
                     Alpha = prop.Alpha,
 
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+                    Flag = prop.Flag,
+
                     StreamedIn = false,
                     LocalOnly = false,
                 });
@@ -672,6 +684,10 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = 2,
                     Alpha = prop.Alpha,
+
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+                    Flag = prop.Flag,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -718,6 +734,10 @@ namespace GTANetwork
                     EntityType = (byte)EntityType.Blip,
                     Alpha = prop.Alpha,
 
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+                    Flag = prop.Flag,
+
                     StreamedIn = false,
                     LocalOnly = false,
                 });
@@ -759,6 +779,7 @@ namespace GTANetwork
                     Blue = b,
                     Alpha = (byte)a,
                     RemoteHandle = netHandle,
+
                     EntityType = (byte)EntityType.Marker,
                 });
             }
@@ -785,6 +806,10 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = (byte)EntityType.Marker,
                     Alpha = prop.Alpha,
+
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+                    Flag = prop.Flag,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -814,8 +839,12 @@ namespace GTANetwork
                     Range = prop.Range,
                     EntitySeethrough = prop.EntitySeethrough,
 
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+
                     StreamedIn = false,
                     LocalOnly = false,
+                    Flag = prop.Flag,
                 });
             }
             return rem;
@@ -864,6 +893,10 @@ namespace GTANetwork
             rem.Dimension = prop.Dimension;
             rem.RemoteHandle = netHandle;
 
+            rem.AttachedTo = prop.AttachedTo;
+            rem.Attachables = prop.Attachables;
+            rem.Flag = prop.Flag;
+
             if (rem is SyncPed)
             {
                 if (prop.Position != null)
@@ -909,6 +942,11 @@ namespace GTANetwork
                     EntityType = prop.EntityType,
                     Alpha = prop.Alpha,
                     Dimension = prop.Dimension,
+
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+
+                    Flag = prop.Flag,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -1002,10 +1040,18 @@ namespace GTANetwork
                 }
             }
 
+
+
             if (item is EntityProperties && ((EntityProperties)item).AttachedTo != null)
             {
-                var target = NetToStreamedItem(((EntityProperties) item).AttachedTo.AttachedTo);
-                if (target != null) AttachEntityToEntity(item, target, ((EntityProperties)item).AttachedTo);
+                LogManager.DebugLog("ITEM " + item.RemoteHandle + " IS ATTACHED TO " + ((EntityProperties)item).AttachedTo);
+
+                var target = NetToStreamedItem(((EntityProperties) item).AttachedTo.NetHandle);
+                if (target != null)
+                {
+                    LogManager.DebugLog("ATTACHED TO " + target.GetType());
+                    AttachEntityToEntity(item, target, ((EntityProperties)item).AttachedTo);
+                }
             }
         }
         public void StreamOut(IStreamedItem item)
@@ -1101,23 +1147,48 @@ namespace GTANetwork
                 );
         }
 
-        public void DetachEntity(IStreamedItem ent)
+        public void DetachEntity(IStreamedItem ent, bool collision)
         {
             if (ent == null || ((EntityProperties) ent).AttachedTo == null) return;
 
-            var target = NetToStreamedItem(((EntityProperties) ent).AttachedTo.AttachedTo);
+            var target = NetToStreamedItem(((EntityProperties) ent).AttachedTo.NetHandle);
 
             if (target != null && ((EntityProperties) target).Attachables != null)
             {
                 ((EntityProperties) target).Attachables.Remove(ent.RemoteHandle);
             }
 
-            if (ent.StreamedIn && ent is ILocalHandleable && !(ent is RemoteBlip))
+            var entHandle = NetToEntity(ent.RemoteHandle);
+
+            if (entHandle != null && entHandle.Handle != 0 && !(ent is RemoteBlip))
             {
-                Function.Call(Hash.DETACH_ENTITY, ((ILocalHandleable) ent).LocalHandle, false, true);
+                Function.Call(Hash.DETACH_ENTITY, entHandle.Handle, true, collision);
             }
 
             ((EntityProperties) ent).AttachedTo = null;
+        }
+
+        public void ReattachAllEntities(IStreamedItem ent, bool recursive)
+        {
+            var prop = ent as EntityProperties;
+            if (prop == null) return;
+            if (prop.Attachables != null)
+            {
+                LogManager.DebugLog("REATTACHING ALL ENTITIES FOR " + ent.GetType());
+
+                foreach (var i in prop.Attachables)
+                {
+                    LogManager.DebugLog("REATTACHING ENTITY " + i);
+
+                    var target = NetToStreamedItem(i);
+
+                    if (target == null) continue;
+                    AttachEntityToEntity(target, ent, ((EntityProperties) ent).AttachedTo);
+
+                    if (recursive)
+                        ReattachAllEntities(target, true);
+                }
+            }
         }
 
         private void StreamOutEntity(ILocalHandleable data)

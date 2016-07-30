@@ -346,7 +346,16 @@ namespace GTANetwork
         public int CustomAnimationFlag;
 
         #region NeoSyncPed
-        
+
+        public bool CreateCharacter()
+        {
+            float hRange = IsInVehicle ? 150f : 200f;
+            var gPos = IsInVehicle ? VehiclePosition : _position;
+            var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
+
+            return CreateCharacter(gPos, hRange);
+        }
+
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
 			if (Character == null || !Character.Exists() || (!Character.IsInRangeOf(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
@@ -363,7 +372,7 @@ namespace GTANetwork
 
 				LogManager.DebugLog("REQUESTING MODEL FOR " + Name);
 
-				charModel.Request(10000);
+				Util.LoadModel(charModel);
 
 				LogManager.DebugLog("CREATING PED FOR " + Name);
 
@@ -415,6 +424,8 @@ namespace GTANetwork
                         Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character, pair.Key, pair.Value.Item1, pair.Value.Item2, 2);
                     }
 			    }
+
+                Main.NetEntityHandler.ReattachAllEntities(this, false);
 
 				LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
 

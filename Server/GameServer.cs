@@ -2494,12 +2494,11 @@ namespace GTANResource
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
-        public void DetachEntity(int nethandle)
+        public void DetachEntity(int nethandle, bool collision)
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.EntityDetachment;
-            obj.Arguments = ParseNativeArguments(nethandle);
-
+            obj.Arguments = ParseNativeArguments(nethandle, collision);
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 

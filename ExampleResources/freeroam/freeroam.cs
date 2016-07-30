@@ -136,6 +136,49 @@ public class FreeroamScript : Script
         }
     }
 
+    [Command("attachveh")]
+    public void attachtest2(Client sender)
+    {
+        var prop = API.createVehicle(VehicleHash.Caddy, API.getEntityPosition(sender.CharacterHandle), new Vector3(), 0, 0);
+        API.attachEntityToEntity(prop, sender.CharacterHandle, null,
+                    new Vector3(), new Vector3());
+    }
+
+    private Dictionary<Client, NetHandle> labels = new Dictionary<Client, NetHandle>();
+
+    [Command("attachlabel")]    
+    public void attachtest3(Client sender, string message)
+    {
+        if (labels.ContainsKey(sender))
+        {
+            API.deleteEntity(labels[sender]);
+            labels.Remove(sender);
+        }
+
+        var prop = API.createTextLabel(message, API.getEntityPosition(sender.CharacterHandle), 50f, 0.4f, true);
+
+        API.attachEntityToEntity(prop, sender.CharacterHandle, null,
+                    new Vector3(0, 0, 1f), new Vector3());
+
+        labels.Add(sender, prop);
+    }
+
+    [Command("attachmarker")]
+    public void attachtest4(Client sender)
+    {
+        var prop = API.createMarker(0, API.getEntityPosition(sender.CharacterHandle), new Vector3(), new Vector3(), new Vector3(1f, 1f, 1f), 255, 255, 255, 255);
+        API.attachEntityToEntity(prop, sender.CharacterHandle, null,
+                    new Vector3(), new Vector3());
+    }
+
+    [Command("attachrpg")]
+    public void attachtest1(Client sender)
+    {
+        var prop = API.createObject(API.getHashKey("w_lr_rpg"), API.getEntityPosition(sender.CharacterHandle), new Vector3());
+        API.attachEntityToEntity(prop, sender.CharacterHandle, "SKEL_SPINE3",
+            new Vector3(-0.13f, -0.231f, 0.07f), new Vector3(0f, 200f, 10f));
+    }
+
     [Command("colorsrgb")]
     public void CustomVehicleColorsCommand(Client sender, int primaryRed, int primaryGreen, int primaryBlue, int secondaryRed, int secondaryGreen, int secondaryBlue)
     {

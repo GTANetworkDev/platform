@@ -25,7 +25,7 @@ namespace GTANetworkShared
     public class Attachment
     {
         [ProtoMember(1)]
-        public int AttachedTo { get; set; }
+        public int NetHandle { get; set; }
         [ProtoMember(2)]
         public Vector3 PositionOffset { get; set; }
         [ProtoMember(3)]

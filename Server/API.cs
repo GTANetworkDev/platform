@@ -1029,12 +1029,12 @@ namespace GTANetworkServer
             {
                 if (Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].AttachedTo != null)
                 {
-                    detachEntity(entity);
+                    detachEntity(entity, true);
                 }
 
                 Attachment info = new Attachment();
 
-                info.AttachedTo = entityTarget.Value;
+                info.NetHandle = entityTarget.Value;
                 info.Bone = bone;
                 info.PositionOffset = positionOffset;
                 info.RotationOffset = rotationOffset;
@@ -1048,6 +1048,7 @@ namespace GTANetworkServer
                 }
 
                 Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entity.Value).AttachedTo = info;
+                Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entityTarget.Value).Attachables.Add(entity.Value);
 
                 var ent1 = new Delta_EntityProperties();
                 ent1.AttachedTo = info;
@@ -1073,17 +1074,29 @@ namespace GTANetworkServer
             if (doesEntityExist(entity))
             {
                 if (!isEntityAttachedToAnything(entity)) return false;
-                return Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entity.Value).AttachedTo.AttachedTo == attachedTo.Value;
+                return Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entity.Value).AttachedTo.NetHandle == attachedTo.Value;
             }
 
             return false;
         }
 
-        public void detachEntity(NetHandle entity)
+        public void detachEntity(NetHandle entity, bool resetCollision)
         {
             if (doesEntityExist(entity))
             {
-                Program.ServerInstance.DetachEntity(entity.Value);
+                Program.ServerInstance.DetachEntity(entity.Value, resetCollision);
+                var prop = Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entity.Value);
+                if (prop != null && prop.AttachedTo != null)
+                {
+                    var target =
+                        Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(prop.AttachedTo.NetHandle);
+
+                    if (target != null && target.Attachables != null)
+                    {
+                        target.Attachables.Remove(entity.Value);
+                    }
+                }
+                prop.AttachedTo = null;
             }
         }
 

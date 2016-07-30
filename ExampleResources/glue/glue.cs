@@ -14,7 +14,7 @@ public class GlueScript : Script
 	{
 		if(API.isEntityAttachedToAnything(sender.CharacterHandle))
 		{
-			API.detachEntity(sender.CharacterHandle);
+			API.detachEntity(sender.CharacterHandle, false);
 			API.sendChatMessageToPlayer(sender, "~g~Unglued!");
 			return;
 		}
@@ -35,6 +35,8 @@ public class GlueScript : Script
 		{
 			var positionOffset = API.fetchNativeFromPlayer<Vector3>(sender, 0x2274BC1C4885E333, targetVehicle, playerPos.X, playerPos.Y, playerPos.Z);
 			var rotOffset = API.getEntityRotation(targetVehicle) - API.getEntityRotation(sender.CharacterHandle);
+
+			rotOffset = new Vector3(rotOffset.X, rotOffset.Y, rotOffset.Z * -1f);
 
 			API.attachEntityToEntity(sender.CharacterHandle, targetVehicle, null, positionOffset, rotOffset);
 

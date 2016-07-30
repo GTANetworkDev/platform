@@ -1,4 +1,5 @@
-﻿using GTANetworkShared;
+﻿using System.Collections.Generic;
+using GTANetworkShared;
 
 namespace GTANetwork
 {
@@ -20,6 +21,10 @@ namespace GTANetwork
         byte EntityType { get; set; }
 
         int Dimension { get; set; }
+
+        Attachment AttachedTo { get; set; }
+
+        List<int> Attachables { get; set; }
     }
 
     public class RemotePlayer : PedProperties, IStreamedItem, ILocalHandleable

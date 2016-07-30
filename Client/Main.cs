@@ -1473,6 +1473,8 @@ namespace GTANetwork
                     }
                 }
 
+                
+
                 if (map.Players != null)
                 {
                     LogManager.DebugLog("STARTING PLAYER MAP");
@@ -1486,7 +1488,7 @@ namespace GTANetwork
                             remPl.Name = pair.Value.Name;
                         }
                         else
-                        { 
+                        {
                             var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
                             NetEntityHandler.UpdatePlayer(pair.Key, pair.Value);
 
@@ -1508,14 +1510,17 @@ namespace GTANetwork
 
                                 if (ourSyncPed.Character.CurrentBlip != null)
                                 {
-                                    ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite) pair.Value.BlipSprite;
-                                    ourSyncPed.Character.CurrentBlip.Color = (BlipColor) pair.Value.BlipColor;
+                                    ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
+                                    ourSyncPed.Character.CurrentBlip.Color = (BlipColor)pair.Value.BlipColor;
                                     ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
                                 }
+
+                                NetEntityHandler.ReattachAllEntities(ourSyncPed, false);
                             }
                         }
                     }
                 }
+
             }
             catch(Exception ex)
             {
@@ -3485,7 +3490,8 @@ namespace GTANetwork
                                 case ServerEventType.EntityDetachment:
                                 {
                                     var netHandle = (int) args[0];
-                                    NetEntityHandler.DetachEntity(NetEntityHandler.NetToStreamedItem(netHandle));
+                                    bool col = (bool) args[1];
+                                    NetEntityHandler.DetachEntity(NetEntityHandler.NetToStreamedItem(netHandle), col);
                                 }
                                     break;
                             }
@@ -4165,7 +4171,7 @@ namespace GTANetwork
             Game.Player.Character.Alpha = 255;
             Game.Player.Character.IsInvincible = false;
             Game.Player.Character.Weapons.RemoveAll();
-
+            Function.Call(Hash.DETACH_ENTITY, Game.Player.Character.Handle, true, true);
         }
 
 	    private void ResetWorld()
