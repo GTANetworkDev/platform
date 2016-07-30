@@ -1138,16 +1138,16 @@ namespace GTANResource
                                 {
                                     var reason = msg.ReadString();
 
-                                    lock (Clients)
+                                    if (Clients.Contains(client))
                                     {
-                                        if (Clients.Contains(client))
-                                        {
-                                            lock (RunningResources)
+                                        lock (RunningResources)
                                                 RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                 {
                                                     en.InvokePlayerDisconnected(client, reason);
                                                 }));
 
+                                        lock (Clients)
+                                        {
                                             var dcObj = new PlayerDisconnect()
                                             {
                                                 Id = client.CharacterHandle.Value,

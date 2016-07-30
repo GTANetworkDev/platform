@@ -136,12 +136,38 @@ public class FreeroamScript : Script
         }
     }
 
-    [Command("attachveh")]
-    public void attachtest2(Client sender)
+    private Dictionary<Client, NetHandle> cars = new Dictionary<Client, NetHandle>();
+
+    [Command("detach")]
+    public void detachtest(Client sender)
     {
-        var prop = API.createVehicle(VehicleHash.Caddy, API.getEntityPosition(sender.CharacterHandle), new Vector3(), 0, 0);
+        if (cars.ContainsKey(sender))
+        {
+            API.deleteEntity(cars[sender]);
+            cars.Remove(sender);
+        }
+
+        if (labels.ContainsKey(sender))
+        {
+            API.deleteEntity(labels[sender]);
+            labels.Remove(sender);
+        }
+    }
+
+    [Command("attachveh")]
+    public void attachtest2(Client sender, VehicleHash veh)
+    {
+        if (cars.ContainsKey(sender))
+        {
+            API.deleteEntity(cars[sender]);
+            cars.Remove(sender);
+        }
+
+        var prop = API.createVehicle(veh, API.getEntityPosition(sender.CharacterHandle), new Vector3(), 0, 0);
         API.attachEntityToEntity(prop, sender.CharacterHandle, null,
                     new Vector3(), new Vector3());
+
+        cars.Add(sender, prop);
     }
 
     private Dictionary<Client, NetHandle> labels = new Dictionary<Client, NetHandle>();

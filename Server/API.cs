@@ -1352,22 +1352,22 @@ namespace GTANetworkServer
 
         public void sendNotificationToPlayer(Client player, string message, bool flashing = false)
         {
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
             for (int i = 0; i < message.Length; i += 99)
             {
-                Program.ServerInstance.SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
                 Program.ServerInstance.SendNativeCallToPlayer(player, 0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
-                Program.ServerInstance.SendNativeCallToPlayer(player, 0xF020C96915705B3A, flashing, true);
             }
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF020C96915705B3A, flashing, true);
         }
 
         public void sendNotificationToAll(string message, bool flashing = false)
         {
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
             for (int i = 0; i < message.Length; i += 99)
             {
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
-                Program.ServerInstance.SendNativeCallToAllPlayers(0xF020C96915705B3A, flashing, true);
             }
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xF020C96915705B3A, flashing, true);
         }
         
         public  void sendPictureNotificationToPlayer(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
