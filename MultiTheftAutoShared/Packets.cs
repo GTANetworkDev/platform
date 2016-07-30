@@ -524,6 +524,17 @@ namespace GTANetworkShared
             return this + RandomXY()*distance;
         }
 
+        public float DistanceToSquared(Vector3 right)
+        {
+            if ((object)right == null) return 0f;
+
+            var nX = X - right.X;
+            var nY = Y - right.Y;
+            var nZ = Z - right.Z;
+
+            return nX * nX + nY * nY + nZ * nZ;
+        }
+
         public Vector3()
         { }
     }

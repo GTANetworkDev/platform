@@ -55,7 +55,7 @@ namespace GTANetwork
                 var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(_playerPosition));
                 var streamedMarkers = streamedItems.OfType<RemoteMarker>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
                 var streamedLabels = streamedItems.OfType<RemoteTextLabel>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
-
+                
                 var dimensionLeftovers = streamedItems.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
 
                 lock (_itemsToStreamOut)

@@ -1059,6 +1059,26 @@ namespace GTANetworkServer
             }
         }
 
+        public bool isEntityAttachedToAnything(NetHandle entity)
+        {
+            if (doesEntityExist(entity))
+            {
+                return Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entity.Value).AttachedTo != null;
+            }
+            return false;
+        }
+
+        public bool isEntityAttachedToEntity(NetHandle entity, NetHandle attachedTo)
+        {
+            if (doesEntityExist(entity))
+            {
+                if (!isEntityAttachedToAnything(entity)) return false;
+                return Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entity.Value).AttachedTo.AttachedTo == attachedTo.Value;
+            }
+
+            return false;
+        }
+
         public void detachEntity(NetHandle entity)
         {
             if (doesEntityExist(entity))
