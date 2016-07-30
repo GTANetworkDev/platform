@@ -257,7 +257,11 @@ namespace GTANetwork
             scriptEngine.AddHostObject("host", new HostFunctions());
             scriptEngine.AddHostObject("API", new ScriptContext());
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
-            scriptEngine.AddHostType("List", typeof(IList));
+            scriptEngine.AddHostType("List", typeof(List<>));
+            scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
+            scriptEngine.AddHostType("String", typeof(string));
+            scriptEngine.AddHostType("Int32", typeof(int));
+            scriptEngine.AddHostType("Bool", typeof(bool));
             scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
             scriptEngine.AddHostType("Keys", typeof(Keys));
             scriptEngine.AddHostType("Point", typeof(Point));
@@ -918,7 +922,7 @@ namespace GTANetwork
             return new UIMenuCheckboxItem(label, isChecked, description);
         }
 
-        public UIMenuListItem createListItem(string label, string description, string[] items, int index)
+        public UIMenuListItem createListItem(string label, string description, List<string> items, int index)
         {
             return new UIMenuListItem(label, items.Select(s => (dynamic)s).ToList(), index, description);
         }
