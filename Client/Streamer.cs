@@ -1149,13 +1149,13 @@ namespace GTANetwork
 
         public void DetachEntity(IStreamedItem ent, bool collision)
         {
-            if (ent == null || ((EntityProperties) ent).AttachedTo == null) return;
+            if (ent == null || ent.AttachedTo == null) return;
 
-            var target = NetToStreamedItem(((EntityProperties) ent).AttachedTo.NetHandle);
+            var target = NetToStreamedItem(ent.AttachedTo.NetHandle);
 
-            if (target != null && ((EntityProperties) target).Attachables != null)
+            if (target != null && target.Attachables != null)
             {
-                ((EntityProperties) target).Attachables.Remove(ent.RemoteHandle);
+                target.Attachables.Remove(ent.RemoteHandle);
             }
 
             var entHandle = NetToEntity(ent.RemoteHandle);
@@ -1165,7 +1165,7 @@ namespace GTANetwork
                 Function.Call(Hash.DETACH_ENTITY, entHandle.Handle, true, collision);
             }
 
-            ((EntityProperties) ent).AttachedTo = null;
+            ent.AttachedTo = null;
         }
 
         public void ReattachAllEntities(IStreamedItem ent, bool recursive)
@@ -1183,7 +1183,7 @@ namespace GTANetwork
                     var target = NetToStreamedItem(i);
 
                     if (target == null) continue;
-                    AttachEntityToEntity(target, ent, ((EntityProperties) ent).AttachedTo);
+                    AttachEntityToEntity(target, ent, ent.AttachedTo);
 
                     if (recursive)
                         ReattachAllEntities(target, true);

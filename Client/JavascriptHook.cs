@@ -645,6 +645,7 @@ namespace GTANetwork
         
         public void dxDrawTexture(string path, Point pos, Size size, int id = 60)
         {
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
             if (!isPathSafe(path)) throw new Exception("Illegal path for texture!");
             path = getResourceFilePath(path);
             Util.DxDrawTexture(id, path, pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
@@ -653,6 +654,7 @@ namespace GTANetwork
         public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading,
             int r, int g, int b, int alpha)
         {
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
@@ -673,6 +675,7 @@ namespace GTANetwork
 
         public void drawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
         {
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
             int screenw = Game.ScreenResolution.Width;
             int screenh = Game.ScreenResolution.Height;
             const float height = 1080f;
@@ -690,7 +693,7 @@ namespace GTANetwork
         public void drawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
             int justify, bool shadow, bool outline, int wordWrap)
         {
-            
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
             int screenw = Game.ScreenResolution.Width;
             int screenh = Game.ScreenResolution.Height;
             const float height = 1080f;
@@ -915,7 +918,7 @@ namespace GTANetwork
             return new UIMenuCheckboxItem(label, isChecked, description);
         }
 
-        public UIMenuListItem createListItem(string label, string description, List<string> items, int index)
+        public UIMenuListItem createListItem(string label, string description, string[] items, int index)
         {
             return new UIMenuListItem(label, items.Select(s => (dynamic)s).ToList(), index, description);
         }
@@ -927,6 +930,7 @@ namespace GTANetwork
 
         public void drawMenu(UIMenu menu)
         {
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
             menu.ProcessControl();
             menu.ProcessMouse();
             menu.Draw();
