@@ -8,6 +8,17 @@ namespace GTANetworkShared
 {
     public static class Extensions
     {
+        public static float DistanceToSquared(this Vector3 left, Vector3 right)
+        {
+            if ((object)right == null || (object) left == null) return 0f;
+
+            var nX = left.X - right.X;
+            var nY = left.Y - right.Y;
+            var nZ = left.Z - right.Z;
+
+            return nX * nX + nY * nY + nZ * nZ;
+        }
+
         public static float Clamp(float value, float min, float max)
         {
             if (value > max) return max;

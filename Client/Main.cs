@@ -2305,6 +2305,38 @@ namespace GTANetwork
             if (player.IsInVehicle()) UI.ShowSubtitle("" + player.CurrentVehicle.IsInBurnout());
             */
 
+            if (false)
+            {
+                Game.Player.Character.Alpha = 150;
+                var rattleMeBones = Enum.GetValues(typeof (Bone)).Cast<Bone>().ToList();
+                int count = 0;
+                //37
+                for (var i = _debugPed; i < Math.Min(_debugPed+37, rattleMeBones.Count); i++)
+                {
+                    var bone = rattleMeBones[(int)i];
+
+                    var pos = Game.Player.Character.GetBoneCoord(bone);
+
+                    World.DrawMarker(MarkerType.DebugSphere, pos, new Vector3(), new Vector3(),
+                        new Vector3(0.05f, 0.05f, 0.05f), Color.FromArgb(100, 255, 255, 255));
+
+                    new UIResText(bone.ToString(), new Point(10, count * 30), 0.35f, Color.White).Draw();
+                    var lineSt = new Point(10, count*30) +
+                                 new Size(StringMeasurer.MeasureString(bone.ToString()) + 10, 10);
+
+                    var denorm = new Vector2((2 * lineSt.X / res.Width) - 1f, (2 * lineSt.Y / res.Height) - 1f);
+
+                    var start = RaycastEverything(denorm);
+
+                    Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, pos.X, pos.Y, pos.Z, 255 ,255 ,255 ,255);
+
+                    count ++;
+                }
+
+                if (Game.IsKeyPressed(Keys.NumPad8)) _debugPed++;
+                if (Game.IsKeyPressed(Keys.NumPad5) && _debugPed > 0) _debugPed--;
+            }
+
 
             if (display)
             {
@@ -2564,9 +2596,6 @@ namespace GTANetwork
                 }
             }
 
-            NetEntityHandler.DrawMarkers();
-            NetEntityHandler.DrawLabels();
-
             DEBUG_STEP = 16;
             var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
@@ -2710,8 +2739,9 @@ namespace GTANetwork
             Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
             Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Game.Player.Character, true, true);
+            Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
 
-            if ((Game.Player.Character.Position - _lastWaveReset).LengthSquared() > 100000f) // 100f * 100f
+            if ((Game.Player.Character.Position - _lastWaveReset).LengthSquared() > 10000f) // 100f * 100f
             {
                 Function.Call((Hash)0x5E5E99285AE812DB);
                 Function.Call((Hash)0xB96B00E976BE977F, 0f);
@@ -2726,7 +2756,7 @@ namespace GTANetwork
 
             if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS))
                 Function.Call(Hash.CANCEL_STUNT_JUMP);
-
+            
             DEBUG_STEP = 23;
             if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character) == 2)
             {
@@ -2736,7 +2766,7 @@ namespace GTANetwork
             DEBUG_STEP = 24;
             if (RemoveGameEntities)
             {
-                if (_whoseturnisitanyways)
+                //if (_whoseturnisitanyways)
                 { 
                     foreach (var entity in World.GetAllPeds())
                     {
@@ -2744,7 +2774,7 @@ namespace GTANetwork
                             entity.Delete();
                     }
                 }
-                else
+                //else
                 {
                     foreach (var entity in World.GetAllVehicles())
                     {
@@ -2759,9 +2789,28 @@ namespace GTANetwork
                         veh.Rotation = entity.Rotation.ToLVector();
                     }
                 }
+                //else
+                {
+                    /*foreach (var entity in World.GetAllProps())
+                    {
+                        if (entity == null) continue;
+                        var veh = NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteProp;
+                        if (veh == null)
+                        {
+                            entity.Delete();
+                            continue;
+                        }
+                        veh.Position = entity.Position.ToLVector();
+                        veh.Rotation = entity.Rotation.ToLVector();
+                    }*/
+                }
             }
             DEBUG_STEP = 25;
             _whoseturnisitanyways = !_whoseturnisitanyways;
+
+            NetEntityHandler.UpdateAttachments();
+            NetEntityHandler.DrawMarkers();
+            NetEntityHandler.DrawLabels();
 
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
@@ -3432,6 +3481,12 @@ namespace GTANetwork
                                             Game.Player.Character.Task.ClearAll();
                                         }
                                     }
+                                    break;
+                                case ServerEventType.EntityDetachment:
+                                {
+                                    var netHandle = (int) args[0];
+                                    NetEntityHandler.DetachEntity(NetEntityHandler.NetToStreamedItem(netHandle));
+                                }
                                     break;
                             }
                         }

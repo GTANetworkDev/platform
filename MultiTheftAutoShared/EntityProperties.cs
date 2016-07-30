@@ -16,13 +16,31 @@ namespace GTANetworkShared
         TextLabel = 7,
     }
 
+    public enum EntityFlag
+    {
+        Collisionless = 0,
+    }
+
     [ProtoContract]
-    [ProtoInclude(7, typeof(VehicleProperties))]
-    [ProtoInclude(8, typeof(BlipProperties))]
-    [ProtoInclude(9, typeof(MarkerProperties))]
-    [ProtoInclude(10, typeof(PickupProperties))]
-    [ProtoInclude(11, typeof(PedProperties))]
-    [ProtoInclude(12, typeof(TextLabelProperties))]
+    public class Attachment
+    {
+        [ProtoMember(1)]
+        public int AttachedTo { get; set; }
+        [ProtoMember(2)]
+        public Vector3 PositionOffset { get; set; }
+        [ProtoMember(3)]
+        public Vector3 RotationOffset { get; set; }
+        [ProtoMember(4)]
+        public string Bone { get; set; }
+    }
+
+    [ProtoContract]
+    [ProtoInclude(10, typeof(VehicleProperties))]
+    [ProtoInclude(11, typeof(BlipProperties))]
+    [ProtoInclude(12, typeof(MarkerProperties))]
+    [ProtoInclude(13, typeof(PickupProperties))]
+    [ProtoInclude(14, typeof(PedProperties))]
+    [ProtoInclude(15, typeof(TextLabelProperties))]
     public class EntityProperties
     {
         public EntityProperties()
@@ -47,6 +65,15 @@ namespace GTANetworkShared
 
         [ProtoMember(6)]
         public int Dimension { get; set; }
+
+        [ProtoMember(7)]
+        public Attachment AttachedTo { get; set; }
+
+        [ProtoMember(8)]
+        public List<int> Attachables { get; set; }
+
+        [ProtoMember(9)]
+        public byte Flag { get; set; }
     }
 
     [ProtoContract]
@@ -245,12 +272,12 @@ namespace GTANetworkShared
 
     #region DeltaCompressed
     [ProtoContract]
-    [ProtoInclude(7, typeof(Delta_VehicleProperties))]
-    [ProtoInclude(8, typeof(Delta_BlipProperties))]
-    [ProtoInclude(9, typeof(Delta_MarkerProperties))]
-    [ProtoInclude(10, typeof(Delta_PickupProperties))]
-    [ProtoInclude(11, typeof(Delta_PedProperties))]
-    [ProtoInclude(12, typeof(Delta_TextLabelProperties))]
+    [ProtoInclude(10, typeof(Delta_VehicleProperties))]
+    [ProtoInclude(11, typeof(Delta_BlipProperties))]
+    [ProtoInclude(12, typeof(Delta_MarkerProperties))]
+    [ProtoInclude(13, typeof(Delta_PickupProperties))]
+    [ProtoInclude(14, typeof(Delta_PedProperties))]
+    [ProtoInclude(15, typeof(Delta_TextLabelProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
@@ -270,6 +297,15 @@ namespace GTANetworkShared
 
         [ProtoMember(6)]
         public int? Dimension { get; set; }
+
+        [ProtoMember(7)]
+        public Attachment AttachedTo { get; set; }
+
+        [ProtoMember(8)]
+        public List<int> Attachables { get; set; }
+
+        [ProtoMember(9)]
+        public byte Flag { get; set; }
     }
 
     [ProtoContract]

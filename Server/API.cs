@@ -833,6 +833,60 @@ namespace GTANetworkServer
             return new List<Client>(Program.ServerInstance.Clients);
         }
 
+        public List<NetHandle> getAllVehicles()
+        {
+            return
+                new List<NetHandle>(
+                    Program.ServerInstance.NetEntityHandler.ToDict()
+                        .Where(pair => pair.Value.EntityType == (byte) EntityType.Vehicle)
+                        .Select(pair => new NetHandle(pair.Key)));
+        }
+
+        public List<NetHandle> getAllObjects()
+        {
+            return
+                new List<NetHandle>(
+                    Program.ServerInstance.NetEntityHandler.ToDict()
+                        .Where(pair => pair.Value.EntityType == (byte)EntityType.Prop)
+                        .Select(pair => new NetHandle(pair.Key)));
+        }
+
+        public List<NetHandle> getAllMarkers()
+        {
+            return
+                new List<NetHandle>(
+                    Program.ServerInstance.NetEntityHandler.ToDict()
+                        .Where(pair => pair.Value.EntityType == (byte)EntityType.Marker)
+                        .Select(pair => new NetHandle(pair.Key)));
+        }
+
+        public List<NetHandle> getAllBlips()
+        {
+            return
+                new List<NetHandle>(
+                    Program.ServerInstance.NetEntityHandler.ToDict()
+                        .Where(pair => pair.Value.EntityType == (byte)EntityType.Blip)
+                        .Select(pair => new NetHandle(pair.Key)));
+        }
+
+        public List<NetHandle> getAllPickups()
+        {
+            return
+                new List<NetHandle>(
+                    Program.ServerInstance.NetEntityHandler.ToDict()
+                        .Where(pair => pair.Value.EntityType == (byte)EntityType.Pickup)
+                        .Select(pair => new NetHandle(pair.Key)));
+        }
+
+        public List<NetHandle> getAllLabels()
+        {
+            return
+                new List<NetHandle>(
+                    Program.ServerInstance.NetEntityHandler.ToDict()
+                        .Where(pair => pair.Value.EntityType == (byte)EntityType.TextLabel)
+                        .Select(pair => new NetHandle(pair.Key)));
+        }
+
         public void setEntityPositionFrozen(Client player, NetHandle entity, bool frozen)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
@@ -966,6 +1020,50 @@ namespace GTANetworkServer
                 var delta = new Delta_EntityProperties();
 	            delta.Position = newPosition;
                 Program.ServerInstance.UpdateEntityInfo(netHandle.Value, EntityType.Prop, delta);
+            }
+        }
+
+        public void attachEntityToEntity(NetHandle entity, NetHandle entityTarget, string bone, Vector3 positionOffset, Vector3 rotationOffset)
+        {
+            if (doesEntityExist(entity) && doesEntityExist(entityTarget) && entity != entityTarget)
+            {
+                if (Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].AttachedTo != null)
+                {
+                    detachEntity(entity);
+                }
+
+                Attachment info = new Attachment();
+
+                info.AttachedTo = entityTarget.Value;
+                info.Bone = bone;
+                info.PositionOffset = positionOffset;
+                info.RotationOffset = rotationOffset;
+
+                if (
+                    Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entityTarget.Value).Attachables ==
+                    null)
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entityTarget.Value).Attachables
+                        = new List<int>();
+                }
+
+                Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entity.Value).AttachedTo = info;
+
+                var ent1 = new Delta_EntityProperties();
+                ent1.AttachedTo = info;
+                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, ent1);
+
+                var ent2 = new Delta_EntityProperties();
+                ent2.Attachables = Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entityTarget.Value).Attachables;
+                Program.ServerInstance.UpdateEntityInfo(entityTarget.Value, EntityType.Prop, ent2);
+            }
+        }
+
+        public void detachEntity(NetHandle entity)
+        {
+            if (doesEntityExist(entity))
+            {
+                Program.ServerInstance.DetachEntity(entity.Value);
             }
         }
 

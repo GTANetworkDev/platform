@@ -83,6 +83,7 @@ namespace GTANetworkShared
         PlayerSpectatorChange = 4,
         PlayerAnimationStart = 5,
         PlayerAnimationStop = 6,
+        EntityDetachment = 7,
     }
 
     public enum Lights
@@ -470,17 +471,6 @@ namespace GTANetworkShared
         {
             if ((object)left == null) return new Vector3();
             return new Vector3(left.X / right, left.Y / right, left.Z / right);
-        }
-
-        public float DistanceToSquared(Vector3 right)
-        {
-            if ((object) right == null) return 0f;
-
-            var nX = X - right.X;
-            var nY = Y - right.Y;
-            var nZ = Z - right.Z;
-
-            return nX*nX + nY*nY + nZ*nZ;
         }
 
         public override string ToString()

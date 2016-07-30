@@ -147,6 +147,57 @@ namespace GTANetwork
             return ClientMap.Count(item => item.GetType() == type);
         }
 
+        public void UpdateAttachments()
+        {
+            var attaches = new List<EntityProperties>(ClientMap.Where(item => item.StreamedIn && item is EntityProperties && ((EntityProperties) item).AttachedTo != null).Cast<EntityProperties>());
+
+            foreach (var item in attaches)
+            {
+                var attachedTo = NetToStreamedItem(item.AttachedTo.AttachedTo);
+
+                if (attachedTo == null || !attachedTo.StreamedIn) continue;
+
+                if (attachedTo.Position != null)
+                {
+                    item.Position = attachedTo.Position;
+                }
+
+                Entity entityTarget;
+                if (attachedTo is ILocalHandleable && !(attachedTo is RemoteBlip))
+                {
+                    entityTarget = NetToEntity(attachedTo.RemoteHandle);
+                }
+                else
+                {
+                    continue;
+                }
+
+                item.Position = entityTarget.Position.ToLVector();
+
+                switch ((EntityType) item.EntityType)
+                {
+                    case EntityType.Blip:
+                    {
+                        var blipHandle = new Blip((item as RemoteBlip).LocalHandle);
+                        blipHandle.Position =
+                            entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector());
+                    }
+                        break;
+                    case EntityType.Marker:
+                    {
+                        item.Position = entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector()).ToLVector();
+                        item.Rotation = entityTarget.Rotation.ToLVector() + item.AttachedTo.RotationOffset;
+                    }
+                        break;
+                    case EntityType.TextLabel:
+                        {
+                            item.Position = entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector()).ToLVector();
+                        }
+                        break;
+                }
+            }
+        }
+
         public void DrawMarkers()
         {
             var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker && item.StreamedIn).Cast<RemoteMarker>());
@@ -345,6 +396,17 @@ namespace GTANetwork
                 veh.Dimension = prop.Dimension.Value;
                 if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
         }
 
         public void UpdateProp(int netHandle, Delta_EntityProperties prop)
@@ -369,6 +431,18 @@ namespace GTANetwork
                 }
                 else if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                if (attachedTo != null)
+                {
+                    LogManager.DebugLog("ATTACHING THIS ENTITY (" + ((EntityType) veh.EntityType) + " id: " + netHandle + ") TO " + attachedTo.GetType());
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
         }
 
         public void UpdateBlip(int netHandle, Delta_BlipProperties prop)
@@ -391,6 +465,17 @@ namespace GTANetwork
             {
                 veh.Dimension = prop.Dimension.Value;
                 if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
+            }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
             }
         }
 
@@ -415,6 +500,17 @@ namespace GTANetwork
             {
                 veh.Dimension = prop.Dimension.Value;
                 if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
+            }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
             }
         }
 
@@ -446,6 +542,17 @@ namespace GTANetwork
                 veh.Dimension = prop.Dimension.Value;
                 if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
         }
 
         public void UpdatePickup(int netHandle, Delta_PickupProperties prop)
@@ -465,6 +572,17 @@ namespace GTANetwork
             {
                 veh.Dimension = prop.Dimension.Value;
                 if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
+            }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.AttachedTo);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
             }
         }
 
@@ -874,6 +992,21 @@ namespace GTANetwork
                     item.StreamedIn = true;
                     break;
             }
+
+            if (item is EntityProperties && ((EntityProperties) item).Attachables != null)
+            {
+                foreach (var attachable in ((EntityProperties)item).Attachables)
+                {
+                    var att = NetToStreamedItem(attachable);
+                    if (att != null) StreamIn(att);
+                }
+            }
+
+            if (item is EntityProperties && ((EntityProperties)item).AttachedTo != null)
+            {
+                var target = NetToStreamedItem(((EntityProperties) item).AttachedTo.AttachedTo);
+                if (target != null) AttachEntityToEntity(item, target, ((EntityProperties)item).AttachedTo);
+            }
         }
         public void StreamOut(IStreamedItem item)
         {
@@ -905,6 +1038,86 @@ namespace GTANetwork
             }
 
             item.StreamedIn = false;
+
+            if (item is EntityProperties && ((EntityProperties)item).Attachables != null)
+            {
+                foreach (var attachable in ((EntityProperties)item).Attachables)
+                {
+                    var att = NetToStreamedItem(attachable);
+                    if (att != null) StreamOut(att);
+                }
+            }
+        }
+
+        private void AttachEntityToEntity(IStreamedItem ent, IStreamedItem entTarget, Attachment info)
+        {
+            if (!ent.StreamedIn || !entTarget.StreamedIn || info == null) return;
+            LogManager.DebugLog("AE2E_1");
+            if (entTarget.EntityType == (byte) EntityType.Blip ||
+                entTarget.EntityType == (byte)EntityType.TextLabel || // Can't attach to a blip, textlabel or marker
+                entTarget.EntityType == (byte)EntityType.Marker ||
+                ent.EntityType == (byte)EntityType.Marker ||
+                ent.EntityType == (byte)EntityType.TextLabel || // If we're attaching blip/label/marker, UpdateAttachments will take care of it for us.
+                ent.EntityType == (byte)EntityType.Blip ||
+                ent.EntityType == (byte)EntityType.Pickup) // TODO: Make pickups attachable.
+            {
+                return;
+            }
+            LogManager.DebugLog("AE2E_2");
+            var handleSource = NetToEntity(ent.RemoteHandle);
+            var handleTarget = NetToEntity(entTarget.RemoteHandle);
+            LogManager.DebugLog("AE2E_3");
+            if (handleSource == null || handleTarget == null) return;
+            LogManager.DebugLog("AE2E_4");
+            int bone = 0;
+
+            if (!string.IsNullOrWhiteSpace(info.Bone))
+            {
+                if (entTarget is RemotePlayer)
+                {
+                    bone = Function.Call<int>(Hash.GET_PED_BONE_INDEX, handleTarget.Handle, (int) Enum.Parse(typeof (Bone), info.Bone, true));
+                }
+                else
+                {
+                    bone = new Prop(handleTarget.Handle).GetBoneIndex(info.Bone);
+                }
+            }
+
+            if (bone == -1) bone = 0;
+            
+            LogManager.DebugLog("ATTACHING " + handleSource.Handle + " TO " + handleTarget.Handle +
+                                " WITH BONE " + bone);
+
+            Function.Call(Hash.ATTACH_ENTITY_TO_ENTITY, handleSource.Handle, handleTarget.Handle,
+                bone,
+                info.PositionOffset.X, info.PositionOffset.Y, info.PositionOffset.Z,
+                info.RotationOffset.X, info.RotationOffset.Y, info.RotationOffset.Z,
+                false, // p9
+                false, // useSoftPinning
+                false, // collision
+                false, // p12
+                2, // vertexIndex
+                true // fixedRot
+                );
+        }
+
+        public void DetachEntity(IStreamedItem ent)
+        {
+            if (ent == null || ((EntityProperties) ent).AttachedTo == null) return;
+
+            var target = NetToStreamedItem(((EntityProperties) ent).AttachedTo.AttachedTo);
+
+            if (target != null && ((EntityProperties) target).Attachables != null)
+            {
+                ((EntityProperties) target).Attachables.Remove(ent.RemoteHandle);
+            }
+
+            if (ent.StreamedIn && ent is ILocalHandleable && !(ent is RemoteBlip))
+            {
+                Function.Call(Hash.DETACH_ENTITY, ((ILocalHandleable) ent).LocalHandle, false, true);
+            }
+
+            ((EntityProperties) ent).AttachedTo = null;
         }
 
         private void StreamOutEntity(ILocalHandleable data)

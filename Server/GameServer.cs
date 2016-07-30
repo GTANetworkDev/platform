@@ -834,9 +834,9 @@ namespace GTANResource
             packet.Properties = newInfo;
             packet.NetHandle = netId;
             if (exclude == null)
-                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.EntityBackend);
+                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
             else
-                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, exclude, ConnectionChannel.EntityBackend);
+                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, exclude, ConnectionChannel.NativeCall);
         }
 
         private void ResendPacket(PedData fullPacket, Client exception, bool pure)
@@ -1349,8 +1349,11 @@ namespace GTANResource
                                                 }
 
                                                 ResendPacket(fullPacket, client, true);
+
+                                                UpdateAttachables(client.CharacterHandle.Value);
+                                                UpdateAttachables(client.CurrentVehicle.Value);
                                                 //SendToAll(data, PacketType.VehiclePositionData, false, client, ConnectionChannel.PositionData);
-                                                
+
                                             }
                                             catch (IndexOutOfRangeException)
                                             {
@@ -1423,6 +1426,7 @@ namespace GTANResource
                                                 }
 
                                                 ResendPacket(fullPacket, client, true);
+                                                UpdateAttachables(client.CharacterHandle.Value);
                                                 //SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
                                             }
                                             catch (IndexOutOfRangeException)
@@ -1761,6 +1765,25 @@ namespace GTANResource
                         Server.Recycle(msg);
                     }
                 }
+        }
+
+        private void UpdateAttachables(int root)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(root);
+
+            if (prop == null || prop.Attachables == null) return;
+
+            foreach (var attachable in prop.Attachables)
+            {
+                // TODO: Proper position with offsets
+                var attachableProp = NetEntityHandler.NetToProp<EntityProperties>(attachable);
+
+                if (attachableProp == null) continue;
+
+                attachableProp.Position = prop.Position;
+
+                UpdateAttachables(attachable);
+            }
         }
 
         public Client GetClientFromName(string name)
@@ -2467,6 +2490,15 @@ namespace GTANResource
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newAlpha);
+
+            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
+
+        public void DetachEntity(int nethandle)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.EntityDetachment;
+            obj.Arguments = ParseNativeArguments(nethandle);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }

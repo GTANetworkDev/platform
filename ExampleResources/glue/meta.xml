@@ -1,0 +1,5 @@
+<meta>
+    <info name="Glue" author="Guadmaz" type="script" async="true" />
+    
+    <script src="glue.cs" type="server" lang="csharp" />    
+</meta>
