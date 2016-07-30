@@ -267,7 +267,7 @@ namespace GTANetwork.GUI
             {
                 float angle = 0;
 
-                angle = (float) (Math.Atan2(delta.Y, delta.X)/_loc7_);
+                angle = (float) (Math.Atan2(delta.Y * 1000f, delta.X * 1000f)/_loc7_);
 
                 if (angle < 0)
                     angle += 360f;

@@ -358,6 +358,8 @@ namespace GTANetwork
             return absPath.StartsWith(resourcePath);
         }
 
+
+
         public enum ReturnType
         {
             Int = 0,

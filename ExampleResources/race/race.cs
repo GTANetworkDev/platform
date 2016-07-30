@@ -413,6 +413,7 @@ public class RaceGamemode : Script
     {
         API.triggerClientEventForAll("race_toggleGhostMode", ghost);
         ghostmode = ghost;
+        API.sendChatMessageToAll("Ghost mode has been " + (ghost ? "~g~enabled~" : "~r~disabled!"));
     }
 
     private Random randGen = new Random();

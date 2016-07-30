@@ -234,7 +234,7 @@ namespace GTANetwork
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                 {
                     obj.Flag |= (byte)VehicleDataFlags.MountedWeapon;
-
+                    obj.WeaponHash = 0;
                     obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
                     if (Game.IsEnabledControlPressed(0, Control.VehicleAttack))
                         obj.Flag |= (byte)VehicleDataFlags.Shooting;

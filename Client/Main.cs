@@ -1962,6 +1962,7 @@ namespace GTANetwork
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                 {
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
+                    obj.WeaponHash = 0;
                     if (Game.IsEnabledControlPressed(0, Control.VehicleAttack))
                         obj.Flag |= (byte)VehicleDataFlags.Shooting;
                 }
