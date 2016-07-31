@@ -141,9 +141,17 @@ namespace GTANetworkShared
         public LocalHandle(int handle)
         {
             Value = handle;
+            GameValue = true;
+        }
+
+        public LocalHandle(int handle, bool gamevalue)
+        {
+            Value = handle;
+            GameValue = gamevalue;
         }
 
         public int Value { get; set; }
+        public bool GameValue;
 
         public override bool Equals(object obj)
         {

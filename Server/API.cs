@@ -633,6 +633,41 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public bool setEntityData(NetHandle entity, string key, object value)
+        {
+            if (doesEntityExist(entity))
+            {
+                return Program.ServerInstance.SetEntityProperty(entity.Value, key, value);
+            }
+            return false;
+        }
+
+        public dynamic getEntityData(NetHandle entity, string key)
+        {
+            if (doesEntityExist(entity))
+            {
+                return Program.ServerInstance.GetEntityProperty(entity.Value, key);
+            }
+            return null;
+        }
+
+        public void resetEntityData(NetHandle entity, string key)
+        {
+            if (doesEntityExist(entity))
+            {
+                Program.ServerInstance.ResetEntityProperty(entity.Value, key);
+            }
+        }
+
+        public bool hasEntityData(NetHandle entity, string key)
+        {
+            if (doesEntityExist(entity))
+            {
+                return Program.ServerInstance.HasEntityProperty(entity.Value, key);
+            }
+            return false;
+        }
+
         public void setVehicleMod(NetHandle vehicle, int modType, int mod)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))

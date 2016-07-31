@@ -36,12 +36,12 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
-    [ProtoInclude(10, typeof(VehicleProperties))]
-    [ProtoInclude(11, typeof(BlipProperties))]
-    [ProtoInclude(12, typeof(MarkerProperties))]
-    [ProtoInclude(13, typeof(PickupProperties))]
-    [ProtoInclude(14, typeof(PedProperties))]
-    [ProtoInclude(15, typeof(TextLabelProperties))]
+    [ProtoInclude(11, typeof(VehicleProperties))]
+    [ProtoInclude(12, typeof(BlipProperties))]
+    [ProtoInclude(13, typeof(MarkerProperties))]
+    [ProtoInclude(14, typeof(PickupProperties))]
+    [ProtoInclude(15, typeof(PedProperties))]
+    [ProtoInclude(16, typeof(TextLabelProperties))]
     public class EntityProperties
     {
         public EntityProperties()
@@ -75,6 +75,9 @@ namespace GTANetworkShared
 
         [ProtoMember(9)]
         public byte Flag { get; set; }
+
+        [ProtoMember(10)]
+        public Dictionary<string, NativeArgument> SyncedProperties { get; set; }
     }
 
     [ProtoContract]
@@ -273,12 +276,12 @@ namespace GTANetworkShared
 
     #region DeltaCompressed
     [ProtoContract]
-    [ProtoInclude(10, typeof(Delta_VehicleProperties))]
-    [ProtoInclude(11, typeof(Delta_BlipProperties))]
-    [ProtoInclude(12, typeof(Delta_MarkerProperties))]
-    [ProtoInclude(13, typeof(Delta_PickupProperties))]
-    [ProtoInclude(14, typeof(Delta_PedProperties))]
-    [ProtoInclude(15, typeof(Delta_TextLabelProperties))]
+    [ProtoInclude(11, typeof(Delta_VehicleProperties))]
+    [ProtoInclude(12, typeof(Delta_BlipProperties))]
+    [ProtoInclude(13, typeof(Delta_MarkerProperties))]
+    [ProtoInclude(14, typeof(Delta_PickupProperties))]
+    [ProtoInclude(15, typeof(Delta_PedProperties))]
+    [ProtoInclude(16, typeof(Delta_TextLabelProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
@@ -307,6 +310,9 @@ namespace GTANetworkShared
 
         [ProtoMember(9)]
         public byte? Flag { get; set; }
+
+        [ProtoMember(10)]
+        public Dictionary<string, NativeArgument> SyncedProperties { get; set; }
     }
 
     [ProtoContract]

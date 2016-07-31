@@ -60,10 +60,18 @@ namespace GTANetworkShared
     [ProtoInclude(9, typeof(LocalGamePlayerArgument))]
     [ProtoInclude(10, typeof(Vector3Argument))]
     [ProtoInclude(11, typeof(EntityPointerArgument))]
+    [ProtoInclude(12, typeof(ListArgument))]
     public class NativeArgument
     {
         [ProtoMember(1)]
         public string Id { get; set; }
+    }
+
+    [ProtoContract]
+    public class ListArgument : NativeArgument
+    {
+        [ProtoMember(1)]
+        public List<NativeArgument> Data { get; set; }
     }
 
     [ProtoContract]

@@ -366,6 +366,35 @@ namespace GTANetwork
             }
         }
 
+        public int EntityToNet(LocalHandle entityHandle)
+        {
+            if (entityHandle.GameValue)
+            {
+                if (entityHandle.Value == 0) return 0;
+                if (entityHandle.Value == Game.Player.Character.Handle)
+                    return
+                        ClientMap.FirstOrDefault(i => i is RemotePlayer && ((RemotePlayer) i).LocalHandle == -2)
+                            ?.RemoteHandle ?? 0;
+                lock (ClientMap)
+                {
+                    var ourItem = ClientMap.FirstOrDefault(item =>
+                        !item.LocalOnly && item.StreamedIn && item is ILocalHandleable &&
+                        ((ILocalHandleable) item).LocalHandle == entityHandle.Value);
+                    return ourItem?.RemoteHandle ?? 0;
+                }
+            }
+            else
+            {
+                lock (ClientMap)
+                {
+                    var ourItem = ClientMap.FirstOrDefault(item =>
+                        !item.LocalOnly && item.StreamedIn && item is ILocalHandleable &&
+                        ((ILocalHandleable)item).LocalHandle == entityHandle.Value);
+                    return ourItem?.RemoteHandle ?? 0;
+                }
+            }
+        }
+
         public void Remove(IStreamedItem item)
         {
             lock (ClientMap) ClientMap.Remove(item);
@@ -420,6 +449,17 @@ namespace GTANetwork
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
                 }
             }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
         }
 
         public void UpdateProp(int netHandle, Delta_EntityProperties prop)
@@ -457,6 +497,18 @@ namespace GTANetwork
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
                 }
             }
+
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
         }
 
         public void UpdateBlip(int netHandle, Delta_BlipProperties prop)
@@ -490,6 +542,17 @@ namespace GTANetwork
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
         }
@@ -526,6 +589,17 @@ namespace GTANetwork
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
         }
@@ -570,6 +644,17 @@ namespace GTANetwork
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
                 }
             }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
         }
 
         public void UpdatePickup(int netHandle, Delta_PickupProperties prop)
@@ -600,6 +685,17 @@ namespace GTANetwork
                 if (attachedTo != null)
                 {
                     AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
         }
@@ -648,7 +744,7 @@ namespace GTANetwork
                     EntityType = prop.EntityType,
                     Dimension = prop.Dimension,
                     Alpha = prop.Alpha,
-
+                    SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
@@ -694,7 +790,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = 2,
                     Alpha = prop.Alpha,
-
+                    SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
@@ -731,7 +827,7 @@ namespace GTANetwork
                 ClientMap.Add(rem = new RemoteBlip()
                 {
                     RemoteHandle = netHandle,
-
+                    SyncedProperties = prop.SyncedProperties,
                     Sprite = prop.Sprite,
                     Scale = prop.Scale,
                     Color = prop.Color,
@@ -789,7 +885,6 @@ namespace GTANetwork
                     Blue = b,
                     Alpha = (byte)a,
                     RemoteHandle = netHandle,
-
                     EntityType = (byte)EntityType.Marker,
                 });
             }
@@ -816,7 +911,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = (byte)EntityType.Marker,
                     Alpha = prop.Alpha,
-
+                    SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
@@ -848,7 +943,7 @@ namespace GTANetwork
                     Text = prop.Text,
                     Range = prop.Range,
                     EntitySeethrough = prop.EntitySeethrough,
-
+                    SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
 
@@ -902,7 +997,7 @@ namespace GTANetwork
             rem.Alpha = prop.Alpha;
             rem.Dimension = prop.Dimension;
             rem.RemoteHandle = netHandle;
-
+            rem.SyncedProperties = prop.SyncedProperties;
             rem.AttachedTo = prop.AttachedTo;
             rem.Attachables = prop.Attachables;
             rem.Flag = prop.Flag;
@@ -952,7 +1047,7 @@ namespace GTANetwork
                     EntityType = prop.EntityType,
                     Alpha = prop.Alpha,
                     Dimension = prop.Dimension,
-
+                    SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
 

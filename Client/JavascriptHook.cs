@@ -431,6 +431,26 @@ namespace GTANetwork
             }
         }
 
+        public bool setEntityData(LocalHandle entity, string key, object data)
+        {
+            return Main.SetEntityProperty(entity, key, data);
+        }
+
+        public void resetEntityData(LocalHandle entity, string key)
+        {
+            Main.ResetEntityProperty(entity, key);
+        }
+
+        public bool hasEntityProperty(LocalHandle entity, string key)
+        {
+            return Main.HasEntityProperty(entity, key);
+        }
+
+        public object getEntityData(LocalHandle entity, string key)
+        {
+            return Main.GetEntityProperty(entity, key);
+        }
+
         public int getGamePlayer()
         {
             return Game.Player.Handle;
@@ -612,7 +632,7 @@ namespace GTANetwork
 
         public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b));
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b), false);
         }
 
         public void setMarkerPosition(LocalHandle marker, Vector3 pos)
@@ -638,7 +658,7 @@ namespace GTANetwork
 
         public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0));
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0), true);
         }
 
         public string getResourceFilePath(string fileName)

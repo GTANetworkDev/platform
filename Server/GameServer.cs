@@ -1792,6 +1792,31 @@ namespace GTANResource
 
                                         }
                                         break;
+                                    case PacketType.UpdateEntityProperties:
+                                        {
+                                            var len = msg.ReadInt32();
+                                            var data = DeserializeBinary<UpdateEntity>(msg.ReadBytes(len)) as UpdateEntity;
+                                            if (data != null && data.Properties != null)
+                                            {
+                                                var item = NetEntityHandler.NetToProp<EntityProperties>(data.NetHandle);
+
+                                                if (item != null)
+                                                {
+                                                    if (data.Properties.SyncedProperties != null)
+                                                    {
+                                                        if (item.SyncedProperties == null) item.SyncedProperties = new Dictionary<string, NativeArgument>();
+                                                        foreach (var pair in data.Properties.SyncedProperties)
+                                                        {
+                                                            if (pair.Value is LocalGamePlayerArgument)
+                                                                item.SyncedProperties.Remove(pair.Key);
+                                                            else
+                                                                item.SyncedProperties.Set(pair.Key, pair.Value);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
                                 }
                                 break;
                             default:
@@ -2484,6 +2509,63 @@ namespace GTANResource
 
             _callbacks.Add(salt, callback);
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+        }
+
+        public bool SetEntityProperty(int entity, string key, object value)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null || string.IsNullOrEmpty(key)) return false;
+
+            if (prop.SyncedProperties == null) prop.SyncedProperties = new Dictionary<string, NativeArgument>();
+
+            var nativeArg = ParseNativeArguments(value).Single();
+
+            prop.SyncedProperties.Set(key, nativeArg);
+
+            var delta = new Delta_EntityProperties();
+            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+            delta.SyncedProperties.Add(key, nativeArg);
+            UpdateEntityInfo(entity, EntityType.Prop, delta);
+            return true;
+        }
+
+        public void ResetEntityProperty(int entity, string key)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null || string.IsNullOrEmpty(key)) return;
+
+            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return;
+
+            prop.SyncedProperties.Remove(key);
+
+            var delta = new Delta_EntityProperties();
+            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+            delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
+            UpdateEntityInfo(entity, EntityType.Prop, delta);
+        }
+
+        public bool HasEntityProperty(int entity, string key)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null || string.IsNullOrEmpty(key) || prop.SyncedProperties == null) return false;
+
+            return prop.SyncedProperties.ContainsKey(key);
+        }
+
+        public dynamic GetEntityProperty(int entity, string key)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null || string.IsNullOrEmpty(key)) return null;
+
+            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return null;
+
+            var natArg = prop.SyncedProperties[key];
+
+            return DecodeArgumentListPure(natArg).Single();
         }
 
         public void ChangePlayerTeam(Client target, int newTeam)

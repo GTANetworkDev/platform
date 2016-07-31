@@ -2348,6 +2348,36 @@ namespace GTANetwork
                 UI.ShowSubtitle(cveh.GetOffsetFromWorldCoords(Game.Player.Character.Position)+"");
             }
 
+
+            public void setPlayerSeatbelt(Client player, bool seatbelt)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1913FE4CBF41C463,
+                new EntityArgument(player.CharacterHandle.Value), 32, !seatbelt);
+        }
+
+        public bool getPlayerSeatbelt(Client player)
+        {
+            return fetchNativeFromPlayer<bool>(player, 0x1913FE4CBF41C463, new EntityArgument(player.CharacterHandle.Value), 32, true);
+        }
+
+            if (Game.IsControlJustPressed(0, Control.Context))
+            {
+                //Function.Call(Hash.SET_VEHICLE_ENGINE_ON, Game.Player.Character.CurrentVehicle, false, true, true);
+                //Function.Call(Hash.SET_VEHICLE_UNDRIVEABLE, Game.Player.Character.CurrentVehicle, true);
+                //SET_VEHICLE_UNDRIVEABLE
+
+                Function.Call((Hash)0x1913FE4CBF41C463, Game.Player.Character, 32, false);
+            }
+
+            UI.ShowSubtitle(""+ Function.Call<bool>((Hash)0x7EE53118C892B513, Game.Player.Character, 32, true));
+
+            if (Game.IsControlJustPressed(0, Control.LookBehind))
+            {
+                Function.Call((Hash)0x1913FE4CBF41C463, Game.Player.Character, 32, true);
+                //Function.Call(Hash.SET_VEHICLE_ENGINE_ON, Game.Player.Character.CurrentVehicle, true, true, true);
+                //Function.Call(Hash.SET_VEHICLE_UNDRIVEABLE, Game.Player.Character.CurrentVehicle, false);
+                //SET_VEHICLE_UNDRIVEABLE
+            }
             */
 
             if (display)
@@ -4460,7 +4490,7 @@ namespace GTANetwork
             return list;
         }
 
-        public IEnumerable<object> DecodeArgumentListPure(params NativeArgument[] args)
+        public static IEnumerable<object> DecodeArgumentListPure(params NativeArgument[] args)
         {
             var list = new List<object>();
 
@@ -5017,6 +5047,85 @@ namespace GTANetwork
                 select p;
 
             return range.Except(portsInUse).FirstOrDefault();
+        }
+
+        public static void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
+        {
+            var packet = new UpdateEntity();
+            packet.EntityType = (byte)entity;
+            packet.Properties = newInfo;
+            packet.NetHandle = netId;
+            SendToServer(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
+        }
+
+        public static bool SetEntityProperty(LocalHandle entity, string key, object value)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity);
+            var item = NetEntityHandler.NetToStreamedItem(handle);
+            var prop = item as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key)) return false;
+
+            if (prop.SyncedProperties == null) prop.SyncedProperties = new Dictionary<string, NativeArgument>();
+
+            var nativeArg = ParseNativeArguments(value).Single();
+
+            prop.SyncedProperties.Set(key, nativeArg);
+
+            if (!item.LocalOnly)
+            {
+                var delta = new Delta_EntityProperties();
+                delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+                delta.SyncedProperties.Add(key, nativeArg);
+                UpdateEntityInfo(handle, EntityType.Prop, delta);
+            }
+
+            return true;
+        }
+
+        public static void ResetEntityProperty(LocalHandle entity, string key)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity);
+            var item = NetEntityHandler.NetToStreamedItem(handle);
+            var prop = item as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key)) return;
+
+            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return;
+
+            prop.SyncedProperties.Remove(key);
+
+            if (!item.LocalOnly)
+            {
+                var delta = new Delta_EntityProperties();
+                delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+                delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
+                UpdateEntityInfo(handle, EntityType.Prop, delta);
+            }
+        }
+
+        public static bool HasEntityProperty(LocalHandle entity, string key)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity);
+            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key) || prop.SyncedProperties == null) return false;
+
+            return prop.SyncedProperties.ContainsKey(key);
+        }
+
+        public static object GetEntityProperty(LocalHandle entity, string key)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity);
+            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key)) return null;
+
+            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return null;
+
+            var natArg = prop.SyncedProperties[key];
+
+            return DecodeArgumentListPure(natArg).Single();
         }
 
         public void TerminateGameScripts()
