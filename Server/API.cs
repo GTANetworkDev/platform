@@ -537,6 +537,7 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x2497C4717C8B881E, vehicle, turnedOn, true, true);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x8ABA6AF54B942B95, vehicle, !turnedOn);
 
                 if (turnedOn)
                 {
@@ -1176,6 +1177,11 @@ namespace GTANetworkServer
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x1913FE4CBF41C463,
                 new EntityArgument(player.CharacterHandle.Value), 32, !seatbelt);
+        }
+
+        public bool getPlayerSeatbelt(Client player)
+        {
+            return !fetchNativeFromPlayer<bool>(player, 0x7EE53118C892B513, new EntityArgument(player.CharacterHandle.Value), 32, true);
         }
 
         public void freezePlayer(Client player, bool freeze)

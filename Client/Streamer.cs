@@ -1365,6 +1365,7 @@ namespace GTANetwork
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.EngineOff))
             {
                 Function.Call(Hash.SET_VEHICLE_ENGINE_ON, veh, false, true, true);
+                Function.Call(Hash.SET_VEHICLE_UNDRIVEABLE, veh, true);
             }
             else
             {
