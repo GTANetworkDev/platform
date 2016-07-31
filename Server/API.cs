@@ -532,6 +532,78 @@ namespace GTANetworkServer
             return null;
         }
 
+        public void setVehicleEngineStatus(NetHandle vehicle, bool turnedOn)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x2497C4717C8B881E, vehicle, turnedOn, true, true);
+
+                if (turnedOn)
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag = (byte)
+                        PacketOptimization.ResetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
+                            EntityFlag.EngineOff);
+                }
+                else
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag = (byte)
+                        PacketOptimization.SetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
+                            EntityFlag.EngineOff);
+
+                }
+
+                var delta = new Delta_EntityProperties();
+                delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;
+                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Prop, delta);
+            }
+        }
+
+        public bool getVehicleEngineStatus(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return !PacketOptimization.CheckBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag, EntityFlag.EngineOff);
+            }
+
+            return false;
+        }
+
+        public void setEntityCollisionless(NetHandle entity, bool collisionless)
+        {
+            if (doesEntityExist(entity))
+            {
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x1A9205C1B9EE827F, entity, !collisionless, true);
+
+                if (!collisionless)
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Flag = (byte)
+                        PacketOptimization.ResetBit(Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Flag,
+                            EntityFlag.Collisionless);
+                }
+                else
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Flag = (byte)
+                        PacketOptimization.SetBit(Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Flag,
+                            EntityFlag.Collisionless);
+
+                }
+
+                var delta = new Delta_EntityProperties();
+                delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Flag;
+                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+            }
+        }
+
+        public bool getEntityCollisionless(NetHandle entity)
+        {
+            if (doesEntityExist(entity))
+            {
+                return PacketOptimization.CheckBit(Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Flag, EntityFlag.Collisionless);
+            }
+
+            return false;
+        }
+
         public int getEntityModel(NetHandle ent)
         {
             if (doesEntityExist(ent))

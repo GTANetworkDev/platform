@@ -402,6 +402,7 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
 
             if (prop.Dimension != null)
             {
@@ -431,6 +432,7 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
 
             if (prop.Dimension != null)
             {
@@ -472,6 +474,7 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
 
             if (prop.Dimension != null)
             {
@@ -507,6 +510,7 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
 
             if (prop.Dimension != null)
             {
@@ -548,6 +552,7 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
 
             if (prop.Dimension != null)
             {
@@ -579,6 +584,7 @@ namespace GTANetwork
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
 
             if (prop.Dimension != null)
             {
@@ -1351,6 +1357,20 @@ namespace GTANetwork
 
             Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
 
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless))
+            {
+                veh.HasCollision = false;
+            }
+
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.EngineOff))
+            {
+                Function.Call(Hash.SET_VEHICLE_ENGINE_ON, veh, false, true, true);
+            }
+            else
+            {
+                Function.Call(Hash.SET_VEHICLE_ENGINE_ON, veh, true, true, true);
+            }
+
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;
             LogManager.DebugLog("DISCARDING MODEL");
@@ -1389,6 +1409,11 @@ namespace GTANetwork
             ourVeh.Alpha = (int)data.Alpha;
             ourVeh.FreezePosition = true;
             ourVeh.LodDistance = 3000;
+
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless))
+            {
+                ourVeh.HasCollision = false;
+            }
 
             data.StreamedIn = true;
             data.LocalHandle = ourVeh.Handle;

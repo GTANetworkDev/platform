@@ -18,7 +18,8 @@ namespace GTANetworkShared
 
     public enum EntityFlag
     {
-        Collisionless = 0,
+        Collisionless = 1 << 0,
+        EngineOff = 1 << 1,
     }
 
     [ProtoContract]
@@ -305,7 +306,7 @@ namespace GTANetworkShared
         public List<int> Attachables { get; set; }
 
         [ProtoMember(9)]
-        public byte Flag { get; set; }
+        public byte? Flag { get; set; }
     }
 
     [ProtoContract]

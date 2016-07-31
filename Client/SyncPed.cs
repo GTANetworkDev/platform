@@ -427,7 +427,13 @@ namespace GTANetwork
 
                 Main.NetEntityHandler.ReattachAllEntities(this, false);
 
-				LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
+                if (PacketOptimization.CheckBit(Flag, EntityFlag.Collisionless))
+                {
+                    Character.HasCollision = false;
+                }
+
+
+                LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
 
 				if (_blip)
 				{
