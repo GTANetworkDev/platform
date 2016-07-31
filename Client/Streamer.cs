@@ -149,7 +149,7 @@ namespace GTANetwork
 
         public void UpdateAttachments()
         {
-            var attaches = new List<EntityProperties>(ClientMap.Where(item => item.StreamedIn && item is EntityProperties && ((EntityProperties) item).AttachedTo != null).Cast<EntityProperties>());
+            var attaches = new List<EntityProperties>(ClientMap.Where(item => item.StreamedIn && item.AttachedTo != null).Cast<EntityProperties>());
 
             foreach (var item in attaches)
             {
@@ -171,29 +171,44 @@ namespace GTANetwork
                 {
                     continue;
                 }
-
                 item.Position = entityTarget.Position.ToLVector();
 
-                switch ((EntityType) item.EntityType)
+                if (item is ILocalHandleable && !(item is RemoteBlip))
                 {
-                    case EntityType.Blip:
+                    Entity us = NetToEntity(((IStreamedItem) item).RemoteHandle);
+
+                    if (!Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, us, entityTarget))
                     {
-                        var blipHandle = new Blip((item as RemoteBlip).LocalHandle);
-                        blipHandle.Position =
-                            entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector());
+                        AttachEntityToEntity(((IStreamedItem) item), attachedTo, item.AttachedTo);
                     }
-                        break;
-                    case EntityType.Marker:
+                }
+                else
+                {
+                    switch ((EntityType) item.EntityType)
                     {
-                        item.Position = entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector()).ToLVector();
-                        item.Rotation = entityTarget.Rotation.ToLVector() + item.AttachedTo.RotationOffset;
-                    }
-                        break;
-                    case EntityType.TextLabel:
+                        case EntityType.Blip:
                         {
-                            item.Position = entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector()).ToLVector();
+                            var blipHandle = new Blip((item as RemoteBlip).LocalHandle);
+                            blipHandle.Position =
+                                entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector());
                         }
-                        break;
+                            break;
+                        case EntityType.Marker:
+                        {
+                            item.Position =
+                                entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector())
+                                    .ToLVector();
+                            item.Rotation = entityTarget.Rotation.ToLVector() + item.AttachedTo.RotationOffset;
+                        }
+                            break;
+                        case EntityType.TextLabel:
+                        {
+                            item.Position =
+                                entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector())
+                                    .ToLVector();
+                        }
+                            break;
+                    }
                 }
             }
         }
