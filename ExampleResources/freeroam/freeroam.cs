@@ -137,6 +137,7 @@ public class FreeroamScript : Script
     }
 
     private Dictionary<Client, NetHandle> cars = new Dictionary<Client, NetHandle>();
+    private Dictionary<Client, NetHandle> shields = new Dictionary<Client, NetHandle>();
 
     [Command("detach")]
     public void detachtest(Client sender)
@@ -151,6 +152,12 @@ public class FreeroamScript : Script
         {
             API.deleteEntity(labels[sender]);
             labels.Remove(sender);
+        }
+
+        if (shields.ContainsKey(sender))
+        {
+            API.deleteEntity(shields[sender]);
+            shields.Remove(sender);
         }
     }
 
@@ -195,6 +202,22 @@ public class FreeroamScript : Script
         var prop = API.createMarker(0, API.getEntityPosition(sender.CharacterHandle), new Vector3(), new Vector3(), new Vector3(1f, 1f, 1f), 255, 255, 255, 255);
         API.attachEntityToEntity(prop, sender.CharacterHandle, null,
                     new Vector3(), new Vector3());
+    }
+
+    [Command("shield")]
+    public void attachtest5(Client sender)
+    {
+        if (shields.ContainsKey(sender))
+        {
+            API.deleteEntity(shields[sender]);
+            shields.Remove(sender);
+        }
+
+        var prop = API.createObject(API.getHashKey("prop_riot_shield"), API.getEntityPosition(sender.CharacterHandle), new Vector3());
+        API.attachEntityToEntity(prop, sender.CharacterHandle, "SKEL_L_Hand",
+            new Vector3(0, 0, 0), new Vector3(0f, 0f, 0f)); 
+
+        shields.Add(sender, prop);
     }
 
     [Command("attachrpg")]

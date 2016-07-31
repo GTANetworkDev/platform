@@ -63,6 +63,17 @@ public class HeligrabScript : Script
 				API.playPlayerAnimation(sender, 1, "missfam1_yachtbattleonyacht02_", "onboom_twohand_hang_idle");
 
 				API.triggerClientEvent(sender, "heligrab_confirm", chopperHandle);
+
+				if (right)
+				{
+					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
+						new Vector3(1.0402, 0.91039, -2.2), new Vector3(0, 0, 270));
+				}
+				else	
+				{
+					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
+						new Vector3(-1.0402, 0.91039, -2.2), new Vector3(0, 0, 90));
+				}
 			}
 
 		}
