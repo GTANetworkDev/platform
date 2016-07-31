@@ -1,0 +1,6 @@
+<meta>
+    <info name="Heligrab" author="Guadmaz" type="script" async="true" />
+    
+    <script src="heligrab.cs" type="server" lang="csharp" />
+    <script src="heligrab.js" type="client" lang="javascript" />
+</meta>

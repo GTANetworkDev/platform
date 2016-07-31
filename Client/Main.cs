@@ -2308,7 +2308,6 @@ namespace GTANetwork
             else UI.ShowSubtitle(""+ player.Velocity);
 
             if (player.IsInVehicle()) UI.ShowSubtitle("" + player.CurrentVehicle.IsInBurnout());
-            */
 
             if (false)
             {
@@ -2342,6 +2341,14 @@ namespace GTANetwork
                 if (Game.IsKeyPressed(Keys.NumPad5) && _debugPed > 0) _debugPed--;
             }
 
+            var cveh = World.GetClosestVehicle(Game.Player.Character.Position, 100f);
+
+            if (cveh != null)
+            {
+                UI.ShowSubtitle(cveh.GetOffsetFromWorldCoords(Game.Player.Character.Position)+"");
+            }
+
+            */
 
             if (display)
             {
