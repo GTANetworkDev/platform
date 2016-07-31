@@ -15,6 +15,7 @@ namespace GTANetworkServer
         public bool GreedyArg { get; set; }
         public bool SensitiveInfo { get; set; }
         public bool ACLRequired { get; set; }
+        public string Alias { get; set; }
 
         public CommandAttribute(string command)
         {
@@ -39,6 +40,7 @@ namespace GTANetworkServer
     {
         public string Command;
         public string Helptext;
+        public string[] Aliases;
         public bool Greedy;
         public ScriptingEngine Engine;
         public MethodInfo Method;
@@ -52,7 +54,9 @@ namespace GTANetworkServer
             cmdRaw = cmdRaw.TrimEnd();
             var args = cmdRaw.Split();
 
-            if (args[0].TrimStart('/').ToLower() != Command.ToLower()) return false;
+            var ourcmd = args[0].TrimStart('/').ToLower();
+
+            if (ourcmd != Command.ToLower() || Aliases.All(a => a.ToLower() != ourcmd)) return false;
 
             string helpText;
 
@@ -219,6 +223,7 @@ namespace GTANetworkServer
                     parser.Sensitive = cmd.SensitiveInfo;
                     parser.ACLRequired = cmd.ACLRequired;
                     parser.Helptext = cmd.CommandHelpText;
+                    parser.Aliases = cmd.Alias.Split(',').ToArray();
 
                     lock (ResourceCommands) ResourceCommands.Add(parser);
                 }
