@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -4432,7 +4433,7 @@ namespace GTANetwork
         
         #endregion
 
-        public IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
+        public static IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {
             var list = new List<object>();
 
@@ -4537,6 +4538,13 @@ namespace GTANetwork
                 {
                     list.Add(new OutputArgument(NetEntityHandler.NetToEntity(((EntityPointerArgument)arg).NetHandle)));
                 }
+                else if (arg is ListArgument)
+                {
+                    List<object> output = new List<object>();
+                    var larg = (ListArgument) arg;
+                    output.AddRange(DecodeArgumentListPure(larg.Data.ToArray()));
+                    list.Add(output);
+                }
                 else
                 {
                     list.Add(null);
@@ -4622,6 +4630,12 @@ namespace GTANetwork
                 else if (o is LocalHandle)
                 {
                     list.Add(new EntityArgument(NetEntityHandler.EntityToNet(((LocalHandle)o).Value)));
+                }
+                else if (o is IList)
+                {
+                    var larg = new ListArgument();
+                    larg.Data = new List<NativeArgument>(ParseNativeArguments(((IList)o)));
+                    list.Add(larg);
                 }
                 else
                 {

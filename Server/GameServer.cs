@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -2099,6 +2100,13 @@ namespace GTANResource
                 {
                     list.Add(new NetHandle(((EntityArgument) arg).NetHandle));
                 }
+                else if (arg is ListArgument)
+                {
+                    List<object> output = new List<object>();
+                    var larg = (ListArgument)arg;
+                    output.AddRange(DecodeArgumentListPure(larg.Data.ToArray()));
+                    list.Add(output);
+                }
                 else if (args == null)
                 {
                     list.Add(null);
@@ -2281,6 +2289,12 @@ namespace GTANResource
                 else if (o is NetHandle)
                 {
                     list.Add(new EntityArgument(((NetHandle) o).Value));
+                }
+                else if (o is IList)
+                {
+                    var larg = new ListArgument();
+                    larg.Data = new List<NativeArgument>(ParseNativeArguments(((IList) o)));
+                    list.Add(larg);
                 }
                 else
                 {
