@@ -56,7 +56,7 @@ namespace GTANetworkServer
 
             var ourcmd = args[0].TrimStart('/').ToLower();
 
-            if (ourcmd != Command.ToLower() || Aliases.All(a => a.ToLower() != ourcmd)) return false;
+            if (ourcmd != Command.ToLower() && (Aliases == null || Aliases.All(a => a.ToLower() != ourcmd))) return false;
 
             string helpText;
 
@@ -223,7 +223,7 @@ namespace GTANetworkServer
                     parser.Sensitive = cmd.SensitiveInfo;
                     parser.ACLRequired = cmd.ACLRequired;
                     parser.Helptext = cmd.CommandHelpText;
-                    parser.Aliases = cmd.Alias.Split(',').ToArray();
+                    if (!string.IsNullOrEmpty(cmd.Alias)) parser.Aliases = cmd.Alias.Split(',').ToArray();
 
                     lock (ResourceCommands) ResourceCommands.Add(parser);
                 }

@@ -56,6 +56,7 @@ namespace GTANetworkServer
         public delegate void PickupEvent(Client pickupee, NetHandle pickupHandle);
         public delegate void EntityEvent(NetHandle entity);
         public delegate void MapChangeEvent(string mapName, XmlGroup map);
+        public delegate void VehicleChangeEvent(Client player, NetHandle vehicle);
         #endregion
 
         #region Events
@@ -74,10 +75,28 @@ namespace GTANetworkServer
         public event PickupEvent onPlayerPickup;
         public event EntityEvent onPickupRespawn;
         public event MapChangeEvent onMapChange;
+        public event VehicleChangeEvent onPlayerEnterVehicle;
+        public event VehicleChangeEvent onPlayerExitVehicle;
+        public event EntityEvent onVehicleDeath;
+
+        internal void invokeVehicleDeath(NetHandle vehicle)
+        {
+            onVehicleDeath?.Invoke(vehicle);
+        }
 
         internal void invokeMapChange(string mapName, XmlGroup map)
         {
             onMapChange?.Invoke(mapName, map);
+        }
+
+        internal void invokePlayerEnterVeh(Client player, NetHandle veh)
+        {
+            onPlayerEnterVehicle?.Invoke(player, veh);
+        }
+
+        internal void invokePlayerExitVeh(Client player, NetHandle veh)
+        {
+            onPlayerExitVehicle?.Invoke(player, veh);
         }
 
         internal void invokeClientEvent(Client sender, string eventName, params object[] arsg)
@@ -1031,6 +1050,12 @@ namespace GTANetworkServer
         public int getPlayerWantedLevel(Client player)
         {
             return fetchNativeFromPlayer<int>(player, 0x4C9296CBCD1B971E);
+        }
+
+        public int getPlayerVehicleSeat(Client player)
+        {
+            if (!player.IsInVehicle || player.CurrentVehicle.IsNull) return -3;
+            return player.VehicleSeat;
         }
 
         public void sendNativeToPlayer(Client player, ulong longHash, params object[] args)

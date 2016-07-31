@@ -1286,7 +1286,6 @@ namespace GTANResource
 
                                                 client.Health = fullPacket.PlayerHealth.Value;
                                                 client.Armor = fullPacket.PedArmor.Value;
-                                                client.IsInVehicle = true;
                                                 client.LastUpdate = DateTime.Now;
 
                                                 if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
@@ -1304,10 +1303,26 @@ namespace GTANResource
                                                         NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation
                                                             = fullPacket.Quaternion;
                                                         if (fullPacket.Flag.HasValue)
+                                                        {
+                                                            var newDead = (fullPacket.Flag &
+                                                                           (byte) VehicleDataFlags.VehicleDead) > 0;
+                                                            if (!((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                .IsDead && newDead)
+                                                            {
+                                                                lock (RunningResources)
+                                                                    RunningResources.ForEach(
+                                                                        fs => fs.Engines.ForEach(en =>
+                                                                        {
+                                                                            en.InvokeVehicleDeath(client.CurrentVehicle);
+                                                                        }));
+                                                            }
+
                                                             ((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                .IsDead = (fullPacket.Flag &
-                                                                           (byte) VehicleDataFlags.VehicleDead) > 0;
+                                                                .IsDead = newDead;
+                                                        }
+
                                                         if (fullPacket.VehicleHealth.HasValue)
                                                             ((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
@@ -1347,6 +1362,7 @@ namespace GTANResource
                                                             carRot;
                                                     }
                                                 }
+                                                client.IsInVehicle = true;
 
                                                 ResendPacket(fullPacket, client, true);
 
@@ -1373,7 +1389,23 @@ namespace GTANResource
                                                 fullPacket.Latency = client.Latency;
 
                                                 client.IsInVehicle = true;
-                                                client.CurrentVehicle = new NetHandle(fullPacket.VehicleHandle.Value);
+                                                client.VehicleSeat = fullPacket.VehicleSeat.Value;
+
+                                                var car = new NetHandle(fullPacket.VehicleHandle.Value);
+
+                                                if (!client.IsInVehicleInternal || client.VehicleHandleInternal != car.Value)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerEnterVehicle(client, car);
+                                                        }));
+                                                }
+
+                                                client.IsInVehicleInternal = true;
+                                                client.VehicleHandleInternal = car.Value;
+                                                client.CurrentVehicle = car;
+
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                                 {
@@ -1413,10 +1445,22 @@ namespace GTANResource
                                                 client.Health = fullPacket.PlayerHealth.Value;
                                                 client.Armor = fullPacket.PedArmor.Value;
                                                 client.Position = fullPacket.Position;
-                                                client.IsInVehicle = false;
                                                 client.LastUpdate = DateTime.Now;
                                                 client.Rotation = fullPacket.Quaternion;
+
+                                                if (client.IsInVehicleInternal && !client.CurrentVehicle.IsNull)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerExitVehicle(client, client.CurrentVehicle);
+                                                        }));
+                                                }
+
+                                                client.IsInVehicleInternal = false;
+                                                client.IsInVehicle = false;
                                                 client.CurrentVehicle = new NetHandle(0);
+                                                client.VehicleHandleInternal = 0;
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                                 {

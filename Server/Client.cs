@@ -6,6 +6,10 @@ namespace GTANetworkServer
 {
     public class Client
     {
+        internal bool IsInVehicleInternal { get; set; }
+        internal int VehicleHandleInternal { get; set; }
+
+
         public NetConnection NetConnection { get; private set; }
         public DeltaCompressor DeltaCompressor { get; set; }
         public string SocialClubName { get; set; }
@@ -20,6 +24,7 @@ namespace GTANetworkServer
         public int Health { get; internal set; }
         public int Armor { get; internal set; }
         public bool IsInVehicle { get; internal set; }
+        public int VehicleSeat { get; internal set; }
 
         public DateTime LastUpdate { get; internal set; }
 

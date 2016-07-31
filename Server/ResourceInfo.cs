@@ -309,6 +309,42 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokePlayerEnterVehicle(Client client, NetHandle veh)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.javascript)
+                    _jsEngine.Script.API.invokePlayerEnterVeh(client, veh);
+                else if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePlayerEnterVeh(client, veh);
+            }));
+        }
+
+        public void InvokePlayerExitVehicle(Client client, NetHandle veh)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.javascript)
+                    _jsEngine.Script.API.invokePlayerExitVeh(client, veh);
+                else if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePlayerExitVeh(client, veh);
+            }));
+        }
+
+        public void InvokeVehicleDeath(NetHandle veh)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.javascript)
+                    _jsEngine.Script.API.invokeVehicleDeath(veh);
+                else if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeVehicleDeath(veh);
+            }));
+        }
+
         public void InvokeMapChange(string mapName, XmlGroup map)
         {
             lock (_mainQueue.SyncRoot)
