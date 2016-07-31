@@ -2,7 +2,7 @@ var currentChopper = null;
 
 
 API.onUpdate.connect(function(s, e) {
-	if (currentChopper == null && API.isControlJustPressed(22)) {
+	if (!API.isChatOpen() && currentChopper == null && API.isControlJustPressed(22)) {
 		var cars = API.getAllVehicles();
 
 		if (cars.Length == 0) return;
@@ -36,7 +36,7 @@ API.onUpdate.connect(function(s, e) {
 			API.triggerServerEvent("heligrab_requestGrab", closestVeh, rightSide);
 		}
 	}
-	else if (currentChopper != null && API.isControlJustPressed(22)) {
+	else if (!API.isChatOpen() && currentChopper != null && API.isControlJustPressed(22)) {
 		API.triggerServerEvent("heligrab_stop");
 		currentChopper = null;
 	}

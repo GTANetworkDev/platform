@@ -67,12 +67,12 @@ public class HeligrabScript : Script
 				if (right)
 				{
 					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
-						new Vector3(1.0402, 0.91039, -2.2), new Vector3(0, 0, 270));
+						new Vector3(1.0402, 0.91039, -2.4), new Vector3(0, 0, 270));
 				}
 				else	
 				{
 					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
-						new Vector3(-1.0402, 0.91039, -2.2), new Vector3(0, 0, 90));
+						new Vector3(-1.0402, 0.91039, -2.4), new Vector3(0, 0, 90));
 				}
 			}
 

@@ -980,6 +980,11 @@ namespace GTANetwork
             Game.EnableControlThisFrame(0, (GTA.Control)control);
         }
 
+        public bool isChatOpen()
+        {
+            return Main.Chat.IsFocused;
+        }
+
         public Scaleform requestScaleform(string scaleformName)
         {
             var sc = new Scaleform(0);
