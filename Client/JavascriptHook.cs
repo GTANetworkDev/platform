@@ -1075,6 +1075,29 @@ namespace GTANetwork
             new Prop(entity.Value).Alpha = alpha;
         }
 
+        public void setWeather(string weather)
+        {
+            Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, weather);
+        }
+
+        public void resetWeather()
+        {
+            Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Main.Weather);
+        }
+
+        public void setTime(double hours, double minutes)
+        {
+            World.CurrentDayTime = new TimeSpan((int) hours, (int) minutes, 00);
+        }
+
+        public void resetTime()
+        {
+            if (Main.Time != null)
+            {
+                World.CurrentDayTime = Main.Time.Value;
+            }
+        }
+
         internal PointF convertAnchorPos(float x, float y, Anchor anchor, float xOffset, float yOffset)
         {
             var res = UIMenu.GetScreenResolutionMantainRatio();

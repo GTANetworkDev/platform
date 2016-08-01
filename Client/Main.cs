@@ -1407,8 +1407,8 @@ namespace GTANetwork
         private static Dictionary<int, int> _vehMods = new Dictionary<int, int>();
         private static Dictionary<int, int> _pedClothes = new Dictionary<int, int>();
 
-        private static string Weather { get; set; }
-        private static TimeSpan? Time { get; set; }
+        public static string Weather { get; set; }
+        public static TimeSpan? Time { get; set; }
 
         public static void AddMap(ServerMap map)
         {
