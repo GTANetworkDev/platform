@@ -91,6 +91,7 @@
     <Compile Include="ChatData.cs" />
     <Compile Include="DeltaCompressor.cs" />
     <Compile Include="EntityMemoryHandler.cs" />
+    <Compile Include="GameScript.cs" />
     <Compile Include="GUI\CEFManager.cs" />
     <Compile Include="GUI\RadioWheel.cs" />
     <Compile Include="DebugWindow.cs" />
