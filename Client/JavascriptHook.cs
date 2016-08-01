@@ -362,7 +362,13 @@ namespace GTANetwork
             return absPath.StartsWith(resourcePath);
         }
 
-
+        internal void checkPathSafe(string path)
+        {
+            if (!isPathSafe(path))
+            {
+                throw new AccessViolationException("Illegal path to file!");
+            }
+        }
 
         public enum ReturnType
         {
@@ -973,6 +979,11 @@ namespace GTANetwork
             return new UIMenuItem(label, description);
         }
 
+        public UIMenuColoredItem createColoredItem(string label, string description, string hexColor, string hexHighlightColor)
+        {
+            return new UIMenuColoredItem(label, description, ColorTranslator.FromHtml(hexColor), ColorTranslator.FromHtml(hexHighlightColor));
+        }
+
         public UIMenuCheckboxItem createCheckboxItem(string label, string description, bool isChecked)
         {
             return new UIMenuCheckboxItem(label, isChecked, description);
@@ -994,6 +1005,27 @@ namespace GTANetwork
             menu.ProcessControl();
             menu.ProcessMouse();
             menu.Draw();
+        }
+
+        public void setMenuBannerSprite(UIMenu menu, string spritedict, string spritename)
+        {
+            menu.SetBannerType(new Sprite(spritedict, spritename, new Point(), new Size()));
+        }
+
+        public void setMenuBannerTexture(UIMenu menu, string path)
+        {
+            var realpath = getResourceFilePath(path);
+            menu.SetBannerType(realpath);
+        }
+
+        public void setMenuBannerRectangle(UIMenu menu, int alpha, int red, int green, int blue)
+        {
+            menu.SetBannerType(new UIResRectangle(new Point(), new Size(), Color.FromArgb(alpha, red, green, blue)));
+        }
+
+        public string getUserInput(string defaultText, int maxlen)
+        {
+            return Game.GetUserInput(defaultText, maxlen);
         }
 
         public bool isControlJustPressed(int control)
