@@ -1097,6 +1097,28 @@ namespace GTANetworkServer
             return fetchNativeFromPlayer<int>(player, 0x4C9296CBCD1B971E);
         }
 
+        public bool setPlayerName(Client player, string newName)
+        {
+            if (string.IsNullOrWhiteSpace(newName)) return false;
+            if (getAllPlayers().Any(p => p.Name.ToLower() == newName.ToLower())) return false;
+
+            player.Name = newName;
+
+            Program.ServerInstance.NetEntityHandler.NetToProp<PedProperties>(player.CharacterHandle.Value).Name =
+                newName;
+
+            var delta = new Delta_PedProperties();
+            delta.Name = newName;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Ped, delta);
+
+            return true;
+        }
+
+        public string getPlayerName(Client player)
+        {
+            return player.Name;
+        }
+
         public int getPlayerVehicleSeat(Client player)
         {
             if (!player.IsInVehicle || player.CurrentVehicle.IsNull) return -3;
