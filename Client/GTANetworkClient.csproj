@@ -90,6 +90,7 @@
     <Compile Include="Chat.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="DeltaCompressor.cs" />
+    <Compile Include="EntityMemoryHandler.cs" />
     <Compile Include="GUI\CEFManager.cs" />
     <Compile Include="GUI\RadioWheel.cs" />
     <Compile Include="DebugWindow.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="Main.cs" />
+    <Compile Include="MemoryScan.cs" />
     <Compile Include="Streamer.cs" />
     <Compile Include="PedThread.cs" />
     <Compile Include="Program.cs" />
