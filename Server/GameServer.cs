@@ -1184,7 +1184,7 @@ namespace GTANResource
                                 lock (Clients)
                                     obj.PlayerCount =
                                         (short)
-                                            Clients.Count(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
+                                            Clients.Count;//(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
                                 obj.Port = Port;
                                 obj.LAN = isIPLocal(msg.SenderEndPoint.Address.ToString());
 
