@@ -545,12 +545,10 @@ namespace GTANetwork
 					}
 				}
 			}
-			else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) && !Character.IsOccluded && MainVehicle.IsOnScreen && !MainVehicle.IsOccluded)
+			else if (IsInVehicle && MainVehicle != null && Character.IsInRangeOf(GameplayCamera.Position, 100f) &&
+			         !Character.IsOccluded && MainVehicle.IsOnScreen && !MainVehicle.IsOccluded &&
+			         Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, MainVehicle, 17))
 			{
-                /*
-                var ray = World.Raycast(GameplayCamera.Position, MainVehicle.Position,
-                        IntersectOptions.Everything,
-                        Game.Player.Character);*/
                 var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 2f));
 				var targetPos = Character.Position + new Vector3(0, 0, 2f);
 				if ((oldPos.X != 0 && oldPos.Y != 0)/* && (ray.HitEntity == Character || ray.HitEntity == MainVehicle)*/)
