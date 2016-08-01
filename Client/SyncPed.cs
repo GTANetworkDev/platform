@@ -164,7 +164,7 @@ namespace GTANetwork
             }
         }
         
-        private Vector3 _lastVehiclePos;
+        private Vector3? _lastVehiclePos;
         private Vector3 _carPosOnUpdate;
         public Vector3 VehiclePosition
         {
@@ -210,6 +210,8 @@ namespace GTANetwork
             {
                 _lastPosition = _position;
                 _position = value;
+                if (!IsInVehicle)
+                    _lastVehiclePos = null;
             }
         }
 
@@ -413,8 +415,7 @@ namespace GTANetwork
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, Character, true);
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, Character, Game.Player, true);
                 Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, Character, false);
-                Function.Call(Hash.SET_PED_AS_COP, Character, false);
-                Function.Call(Hash.SET_PED_AS_ENEMY, Character, true);
+                Function.Call(Hash.SET_PED_AS_ENEMY, Character, false);
                 Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Character, true, false);
 
                 LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
@@ -797,8 +798,9 @@ namespace GTANetwork
 
             if (IsInVehicle)
             {
+                if (_lastVehiclePos == null) return;
 
-                var dir = VehiclePosition - _lastVehiclePos;
+                var dir = VehiclePosition - _lastVehiclePos.Value;
 
                 currentInterop.vecTarget = VehiclePosition; // + dir;
                 currentInterop.vecError = dir;
@@ -824,11 +826,8 @@ namespace GTANetwork
 
         void DisplayVehiclePosition()
         {
-            if (Speed > 0.2f || IsInBurnout)
+            if ((Speed > 0.2f || IsInBurnout) && currentInterop.FinishTime > 0 && _lastVehiclePos != null)
             {
-                if (_lastVehiclePos.X == 0 && _lastVehiclePos.Y == 0 && _lastVehiclePos.Z == 0)
-                    return;
-
                 if (!Main.LagCompensation)
                 {
                     long currentTime = Util.TickCount;
@@ -867,7 +866,7 @@ namespace GTANetwork
                     //float alpha = (DataLatency + TicksSinceLastUpdate)/(float)AverageLatency;
                     float alpha = Util.Unlerp(currentInterop.StartTime + DataLatency, currentTime + DataLatency,
                         currentInterop.FinishTime);
-                    var dir = VehiclePosition - _lastVehiclePos;
+                    var dir = VehiclePosition - _lastVehiclePos.Value;
                     Vector3 newPos = Vector3.Lerp(VehiclePosition, VehiclePosition + dir, alpha);
 
                     MainVehicle.Velocity = VehicleVelocity + 10 * (newPos - MainVehicle.Position);
@@ -892,9 +891,9 @@ namespace GTANetwork
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = MainVehicle.Position;
             }
-            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && _lastVehiclePos != null)
             {
-                var dir = VehiclePosition - _lastVehiclePos;
+                var dir = VehiclePosition - _lastVehiclePos.Value;
                 var posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
                     (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
                 Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y,
@@ -1335,13 +1334,13 @@ namespace GTANetwork
 			if (currentTime >= 1f)
 			{
 				lastMeleeAnim = null;
-				meleeSwingDone = false;
+				meleeSwingDone = true;
 			}
 			if (currentTime >= meleeanimationend)
 			{
 				Character.Task.ClearAnimation(lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
 				lastMeleeAnim = null;
-				meleeSwingDone = false;
+				meleeSwingDone = true;
 			}
 		}
 
