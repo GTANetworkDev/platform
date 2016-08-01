@@ -1874,6 +1874,12 @@ namespace GTANetwork
 
                 DEBUG_STEP = 2;
 
+                if (Character != null && Character.IsSubtaskActive(67))
+                {
+                    DrawNametag();
+                    return;
+                }
+
                 if (CreateCharacter(gPos, hRange)) return;
 
                 DEBUG_STEP = 5;

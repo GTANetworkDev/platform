@@ -289,6 +289,16 @@ namespace GTANetworkServer
             return Program.ServerInstance.Clients.FirstOrDefault(c => c.CharacterHandle == handle);
         }
 
+        public bool isPlayerInAnyVehicle(Client player)
+        {
+            return player.IsInVehicle;
+        }
+
+        public NetHandle getPlayerCurrentVehicle(Client player)
+        {
+            return player.CurrentVehicle;
+        }
+
         public void requestIpl(string iplName)
         {
             if (!Program.ServerInstance.LoadedIPL.Contains(iplName))

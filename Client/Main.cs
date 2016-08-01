@@ -2396,7 +2396,19 @@ namespace GTANetwork
                 _debug.Visible = true;
                 _debug.Draw();
             }
+            /*
+            StringBuilder sb = new StringBuilder();
 
+            for (int i = 0; i < 500; i++)
+            {
+                if (Game.Player.Character.IsSubtaskActive(i))
+                {
+                    sb.Append(i+",");
+                }
+            }
+
+            new UIResText(sb.ToString(), new Point(10, 10), 0.3f).Draw();
+            */
             /*
             UI.ShowSubtitle(Game.Player.Character.RelationshipGroup.ToString());
             if (Game.Player.Character.LastVehicle != null)
