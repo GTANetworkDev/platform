@@ -630,6 +630,27 @@ namespace GTANetwork
             }
         }
 
+        public void setChatVisible(bool display)
+        {
+            Main.ScriptChatVisible = display;
+        }
+
+        public bool getChatVisible()
+        {
+            return Main.ScriptChatVisible;
+        }
+
+        public void setHudVisible(bool visible)
+        {
+            Function.Call(Hash.DISPLAY_RADAR, visible);
+            Function.Call(Hash.DISPLAY_HUD, visible);
+        }
+
+        public bool getHudVisible()
+        {
+            return !Function.Call<bool>(Hash.IS_HUD_HIDDEN);
+        }
+
         public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
         {
             return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b), false);

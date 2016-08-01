@@ -97,6 +97,8 @@ namespace GTANetwork
         public static bool LerpRotaion = true;
         public static bool LagCompensation = false;
         public static bool RemoveGameEntities = true;
+        public static bool ChatVisible = true;
+        public static bool ScriptChatVisible = true;
         public static bool UIVisible = true;
 
         public static int LocalTeam = -1;
@@ -2379,7 +2381,9 @@ namespace GTANetwork
                 //Function.Call(Hash.SET_VEHICLE_UNDRIVEABLE, Game.Player.Character.CurrentVehicle, false);
                 //SET_VEHICLE_UNDRIVEABLE
             }
+            UI.ShowSubtitle(Function.Call<int>(Hash.GET_PED_TYPE, Game.Player.Character)+"");
             */
+
 
             if (display)
             {
@@ -2917,6 +2921,7 @@ namespace GTANetwork
 
             if (e.KeyCode == Keys.F7)
             {
+                ChatVisible = !ChatVisible;
                 UIVisible = !UIVisible;
                 Function.Call(Hash.DISPLAY_RADAR, UIVisible);
                 Function.Call(Hash.DISPLAY_HUD, UIVisible);
@@ -2927,7 +2932,7 @@ namespace GTANetwork
                 Screenshot.TakeScreenshot();
             }
 
-            if (e.KeyCode == Keys.T && IsOnServer() && UIVisible)
+            if (e.KeyCode == Keys.T && IsOnServer() && UIVisible && ChatVisible && ScriptChatVisible)
             {
                 if (!_oldChat)
                 {
@@ -4265,6 +4270,7 @@ namespace GTANetwork
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
 		    HasFinishedDownloading = false;
+		    ScriptChatVisible = true;
 			DEBUG_STEP = 52;
 
             ClearStats();
