@@ -905,9 +905,9 @@ namespace GTANetworkServer
             return getAllPlayers().FirstOrDefault(c => c.Name == name);
         }
 
-        public float getPlayerLatency(Client player)
+        public int getPlayerPing(Client player)
         {
-            return player.Latency*1000f;
+            return (int)(player.Latency*1000f);
         }
 
         public List<Client> getPlayersInRadiusOfPlayer(float radius, Client player)

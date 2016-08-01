@@ -627,13 +627,13 @@ namespace GTANetwork
             return null;
         }
 
-        public double getPlayerPing(LocalHandle player)
+        public int getPlayerPing(LocalHandle player)
         {
-            if (player == getLocalPlayer()) return Main.Latency*1000f;
+            if (player == getLocalPlayer()) return (int)(Main.Latency*1000f);
 
             var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
             if (opp != null)
-                return opp.Latency * 1000f;
+                return (int)(opp.Latency * 1000f);
             return 0;
         }
 
