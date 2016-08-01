@@ -131,7 +131,6 @@ public class RaceGamemode : Script
         {
             if (opponent.HasFinished || !opponent.HasStarted)
             {
-                UpdateScoreboardData(opponent, -1);
             }
             else
             {
@@ -140,13 +139,32 @@ public class RaceGamemode : Script
                 {
                     opponent.RacePosition = newPos;
                     API.triggerClientEvent(opponent.Client, "updatePosition", newPos, Opponents.Count, opponent.CheckpointsPassed, CurrentRaceCheckpoints.Count);
-                }
-
-                UpdateScoreboardData(opponent, newPos);
+                }                
             }
         }
 
         _lastPositionCalculation = DateTime.Now;
+    }
+
+    private DateTime _lastScoreboardUpdate;
+    private void UpdateScoreboard()
+    {
+        if (DateTime.Now.Subtract(_lastScoreboardUpdate).TotalMilliseconds < 5000)
+            return;
+
+        foreach (var opponent in Opponents)
+        {
+            if (opponent.HasFinished || !opponent.HasStarted)
+            {
+                UpdateScoreboardData(opponent, -1);
+            }
+            else
+            {
+                UpdateScoreboardData(opponent, opponent.RacePosition);
+            }
+        }
+
+        _lastScoreboardUpdate = DateTime.Now;
     }
 
     private void onClientEvent(Client sender, string eventName, params object[] arguments)
@@ -231,6 +249,7 @@ public class RaceGamemode : Script
         if (!IsRaceOngoing) return;
 
         CalculatePositions();
+        UpdateScoreboard();
 
         lock (Opponents)
         {
