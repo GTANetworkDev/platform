@@ -87,9 +87,24 @@ public class Deathmatch : Script
     {
         var players = API.getAllPlayers();
 
+        API.exported.scoreboard.addScoreboardColumn("dm_score", "Score", 80);
+        API.exported.scoreboard.addScoreboardColumn("dm_kdr", "Ratio", 80);
+        API.exported.scoreboard.addScoreboardColumn("dm_deaths", "Deaths", 80);        
+        API.exported.scoreboard.addScoreboardColumn("dm_kills", "Kills", 80);
+
         foreach (var player in players)
         {
             Respawn(player);
+
+            API.setEntityData(player.CharacterHandle, "dm_score", 0);
+            API.setEntityData(player.CharacterHandle, "dm_deaths", 0);
+            API.setEntityData(player.CharacterHandle, "dm_kills", 0);
+            API.setEntityData(player.CharacterHandle, "dm_kdr", 0);
+
+            API.exported.scoreboard.setPlayerScoreboardData(player, "dm_score", "0");
+            API.exported.scoreboard.setPlayerScoreboardData(player, "dm_deaths", "0");
+            API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kills", "0");
+            API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kdr", "0");
         }
     }
 
@@ -101,7 +116,19 @@ public class Deathmatch : Script
         {
             API.setPlayerBlipSprite(player, 1);
             API.setPlayerBlipColor(player, 0);
+
+            API.setEntityData(player.CharacterHandle, "dm_score", 0);
+            API.setEntityData(player.CharacterHandle, "dm_deaths", 0);
+            API.setEntityData(player.CharacterHandle, "dm_kills", 0);
+            API.setEntityData(player.CharacterHandle, "dm_kdr", 0);
+
+            UpdateScoreboardData(player);
         }
+
+        API.exported.scoreboard.removeScoreboardColumn("dm_score");
+        API.exported.scoreboard.removeScoreboardColumn("dm_kdr");
+        API.exported.scoreboard.removeScoreboardColumn("dm_deaths");
+        API.exported.scoreboard.removeScoreboardColumn("dm_kills");
     }
 
     // Exported
@@ -120,6 +147,13 @@ public class Deathmatch : Script
     
     public void OnPlayerConnected(Client player)
     {
+        API.setEntityData(player.CharacterHandle, "dm_score", 0);
+        API.setEntityData(player.CharacterHandle, "dm_deaths", 0);
+        API.setEntityData(player.CharacterHandle, "dm_kills", 0);
+        API.setEntityData(player.CharacterHandle, "dm_kdr", 0);
+
+        UpdateScoreboardData(player);
+
         Respawn(player);
     }
     
@@ -130,6 +164,14 @@ public class Deathmatch : Script
 
         Respawn(player);        
     }    
+
+    private void UpdateScoreboardData(Client player)
+    {
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_score", API.getEntityData(player.CharacterHandle, "dm_score").ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_deaths", API.getEntityData(player.CharacterHandle, "dm_deaths").ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kills", API.getEntityData(player.CharacterHandle, "dm_kills").ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kdr", API.getEntityData(player.CharacterHandle, "dm_kdr").ToString("F2"));
+    }
 
     public void PlayerKilled(Client player, NetHandle reason, int weapon)
     {
@@ -147,8 +189,22 @@ public class Deathmatch : Script
             }        
         }
 
+        API.setEntityData(player.CharacterHandle, "dm_score", API.getEntityData(player.CharacterHandle, "dm_score") - 1);
+        API.setEntityData(player.CharacterHandle, "dm_deaths", API.getEntityData(player.CharacterHandle, "dm_deaths") + 1);
+
+        API.setEntityData(player.CharacterHandle, "dm_kdr", API.getEntityData(player.CharacterHandle, "dm_kills") / (float)API.getEntityData(player.CharacterHandle, "dm_deaths"));
+
+        UpdateScoreboardData(player);
+
         if (killer != null)
         {
+            API.setEntityData(killer.CharacterHandle, "dm_kills", API.getEntityData(killer.CharacterHandle, "dm_kills") + 1);
+            API.setEntityData(killer.CharacterHandle, "dm_score", API.getEntityData(killer.CharacterHandle, "dm_score") + 1);
+            if (API.getEntityData(killer.CharacterHandle, "dm_deaths") != 0)
+            API.setEntityData(killer.CharacterHandle, "dm_kdr", API.getEntityData(killer.CharacterHandle, "dm_kills") / (float)API.getEntityData(killer.CharacterHandle, "dm_deaths"));
+
+            UpdateScoreboardData(killer);
+
             if (Killstreaks.ContainsKey(killer))
             {
                 Killstreaks[killer]++;

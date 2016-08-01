@@ -21,7 +21,7 @@ public class ScoreboardScript : Script
         API.setWorldData("scoreboard_column_friendlynames", new List<string>());
         API.setWorldData("scoreboard_column_widths", new List<int>());
 
-        addScoreboardColumn("ping", "Ping", 30);
+        addScoreboardColumn("ping", "Ping", 60);
     }
 
     private void stopResourceHandler(object sender, EventArgs e)
@@ -50,9 +50,12 @@ public class ScoreboardScript : Script
         var currentFNames = API.getWorldData("scoreboard_column_friendlynames");
         var currentWidths = API.getWorldData("scoreboard_column_widths");
 
-        currentNames.Add("scoreboard_" + name);
-        currentFNames.Add(friendlyName);
-        currentWidths.Add(width);
+        if (!currentNames.Contains("scoreboard_" + name))
+        {
+            currentNames.Add("scoreboard_" + name);
+            currentFNames.Add(friendlyName);
+            currentWidths.Add(width);
+        }
 
         API.setWorldData("scoreboard_column_names", currentNames);
         API.setWorldData("scoreboard_column_friendlynames", currentFNames);

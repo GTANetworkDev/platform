@@ -7,4 +7,6 @@
     
     <script src="race.cs" type="server" lang="csharp" />    
     <script src="race_local.js" type="client" lang="javascript" />
+
+    <include resource="scoreboard" />
 </meta>

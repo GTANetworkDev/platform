@@ -527,7 +527,7 @@ namespace GTANetworkServer
             }
         }
 
-        public void StopResource(string resourceName)
+        public void StopResource(string resourceName, Resource[] resourceParent = null)
         {
             lock (RunningResources)
             {
@@ -535,6 +535,14 @@ namespace GTANetworkServer
                 if (ourRes == null) return;
 
                 Program.Output("Stopping " + resourceName);
+
+                var dependencies =
+                    RunningResources.Where(r => r.Info.Includes.Any(i => i.Resource == resourceName))
+                        .Except(resourceParent ?? new Resource[0]);
+                foreach (var res in dependencies)
+                {
+                    StopResource(res.DirectoryName, dependencies.ToArray());
+                }
 
                 ourRes.Engines.ForEach(en => en.InvokeResourceStop());
 

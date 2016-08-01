@@ -55,7 +55,19 @@ public class RaceGamemode : Script
 
         API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
 
+        API.exported.scoreboard.addScoreboardColumn("race_place", "Place", 80);
+        API.exported.scoreboard.addScoreboardColumn("race_checkpoints", "Checkpoints", 160);
+        API.exported.scoreboard.addScoreboardColumn("race_time", "Time", 120);
+
         StartVote();
+    }
+
+    private void UpdateScoreboardData(Opponent player, int place)
+    {
+        if (place != -1)
+            API.exported.scoreboard.setPlayerScoreboardData(player.Client, "race_place", place.ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player.Client, "race_checkpoints", player.CheckpointsPassed.ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player.Client, "race_time", player.TimeFinished);
     }
 
     public bool IsVoteActive()
@@ -103,6 +115,10 @@ public class RaceGamemode : Script
             if (!t.IsAlive) continue;
             t.Abort();
         }
+
+        API.exported.scoreboard.removeScoreboardColumn("race_place");
+        API.exported.scoreboard.removeScoreboardColumn("race_checkpoints");
+        API.exported.scoreboard.removeScoreboardColumn("race_time");
     }
 
     private DateTime _lastPositionCalculation;
@@ -113,12 +129,20 @@ public class RaceGamemode : Script
 
         foreach (var opponent in Opponents)
         {
-            if (opponent.HasFinished || !opponent.HasStarted) continue;
-            var newPos = CalculatePlayerPositionInRace(opponent);
-            if (true)
+            if (opponent.HasFinished || !opponent.HasStarted)
             {
-                opponent.RacePosition = newPos;
-                API.triggerClientEvent(opponent.Client, "updatePosition", newPos, Opponents.Count, opponent.CheckpointsPassed, CurrentRaceCheckpoints.Count);
+                UpdateScoreboardData(opponent, -1);
+            }
+            else
+            {
+                var newPos = CalculatePlayerPositionInRace(opponent);
+                if (true)
+                {
+                    opponent.RacePosition = newPos;
+                    API.triggerClientEvent(opponent.Client, "updatePosition", newPos, Opponents.Count, opponent.CheckpointsPassed, CurrentRaceCheckpoints.Count);
+                }
+
+                UpdateScoreboardData(opponent, newPos);
             }
         }
 
@@ -231,6 +255,7 @@ public class RaceGamemode : Script
                                 : pos.ToString().EndsWith("2") ? "nd" : pos.ToString().EndsWith("3") ? "rd" : "th";
                             var timeElapsed = DateTime.Now.Subtract(RaceTimer);
                             API.sendChatMessageToAll("~h~" + opponent.Client.Name + "~h~ has finished " + pos + suffix + " (" + timeElapsed.ToString("mm\\:ss\\.fff") + ")");
+                            opponent.TimeFinished = timeElapsed.ToString("mm\\:ss\\.fff");
                             API.triggerClientEvent(opponent.Client, "finishRace");
                             continue;
                         }
@@ -357,6 +382,7 @@ public class RaceGamemode : Script
         {
             op.HasFinished = false;
             op.CheckpointsPassed = 0;
+            op.TimeFinished = "";
             if (!op.Vehicle.IsNull)
             {
                 API.deleteEntity(op.Vehicle);
@@ -720,4 +746,5 @@ public class Opponent
     public NetHandle Vehicle { get; set; }
     public NetHandle Blip { get; set; }
     public int RacePosition { get; set; }
+    public string TimeFinished { get; set; }
 }
