@@ -2795,6 +2795,8 @@ namespace GTANetwork
             Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
             Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Game.Player.Character, true, true);
             Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
+            Function.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
+            Function.Call((Hash)0xD2B315B6689D537D, Game.Player, false);
 
             if ((Game.Player.Character.Position - _lastWaveReset).LengthSquared() > 10000f) // 100f * 100f
             {

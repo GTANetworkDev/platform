@@ -388,6 +388,7 @@ namespace GTANetwork
 				DEBUG_STEP = 4;
 
 				Character.BlockPermanentEvents = true;
+                Function.Call(Hash.TASK_SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, Character, true);
 				Character.IsInvincible = true;
 				Character.CanRagdoll = false;
 
@@ -409,7 +410,14 @@ namespace GTANetwork
 
                 Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, Character, false);
 
-				LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
+                Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, Character, true);
+                Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, Character, Game.Player, true);
+                Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, Character, false);
+                Function.Call(Hash.SET_PED_AS_COP, Character, false);
+                Function.Call(Hash.SET_PED_AS_ENEMY, Character, true);
+                Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Character, true, false);
+
+                LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
 
 				if (Props != null)
 					foreach (var pair in Props)
