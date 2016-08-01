@@ -457,6 +457,26 @@ namespace GTANetwork
             return Main.GetEntityProperty(entity, key);
         }
 
+        public bool setWorldData(string key, object data)
+        {
+            return Main.SetWorldData(key, data);
+        }
+
+        public void resetWorldData(string key)
+        {
+            Main.ResetWorldData(key);
+        }
+
+        public bool hasWorldProperty(string key)
+        {
+            return Main.HasWorldData(key);
+        }
+
+        public object getWorldData(string key)
+        {
+            return Main.GetWorldData(key);
+        }
+
         public int getGamePlayer()
         {
             return Game.Player.Handle;
@@ -593,10 +613,28 @@ namespace GTANetwork
 
         public string getPlayerName(LocalHandle player)
         {
+            if (player == getLocalPlayer())
+            {
+                return
+                    ((RemotePlayer)
+                        Main.NetEntityHandler.ClientMap.First(
+                            op => op is RemotePlayer && ((RemotePlayer) op).LocalHandle == -2)).Name;
+            }
+
             var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
             if (opp != null)
                 return opp.Name;
             return null;
+        }
+
+        public double getPlayerPing(LocalHandle player)
+        {
+            if (player == getLocalPlayer()) return Main.Latency*1000f;
+
+            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            if (opp != null)
+                return opp.Latency * 1000f;
+            return 0;
         }
 
         public LocalHandle createBlip(Vector3 pos)
@@ -900,6 +938,11 @@ namespace GTANetwork
         public void triggerServerEvent(string eventName, params object[] arguments)
         {
             Main.TriggerServerEvent(eventName, arguments);
+        }
+
+        public string toString(object obj)
+        {
+            return obj.ToString();
         }
 
         public delegate void ServerEventTrigger(string eventName, object[] arguments);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using GTANetworkShared;
 
 namespace GTANetworkServer
@@ -22,6 +23,23 @@ namespace GTANetworkServer
         {
             if (ServerEntities.ContainsKey(handle) && ServerEntities[handle] is T) return (T)ServerEntities[handle];
             return null;
+        }
+
+        private bool _hasWorldBeenCreated;
+        public void CreateWorld()
+        {
+            if (_hasWorldBeenCreated) return;
+
+            var obj = new WorldProperties();
+            obj.EntityType = 255;
+            obj.Hours = (byte)DateTime.Now.Hour;
+            obj.Minutes = (byte)DateTime.Now.Minute;
+            obj.Weather = "CLEAR";
+            obj.LoadedIpl = new List<string>();
+            obj.RemovedIpl = new List<string>();
+
+            ServerEntities.Add(1, obj);
+            _hasWorldBeenCreated = true;
         }
 
         public int CreateVehicle(int model, Vector3 pos, Vector3 rot, int color1, int color2, int dimension)

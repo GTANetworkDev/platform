@@ -14,6 +14,7 @@ namespace GTANetworkShared
         Pickup = 5,
         Ped = 6,
         TextLabel = 7,
+        World = 255,
     }
 
     public enum EntityFlag
@@ -42,6 +43,7 @@ namespace GTANetworkShared
     [ProtoInclude(14, typeof(PickupProperties))]
     [ProtoInclude(15, typeof(PedProperties))]
     [ProtoInclude(16, typeof(TextLabelProperties))]
+    [ProtoInclude(17, typeof(WorldProperties))]
     public class EntityProperties
     {
         public EntityProperties()
@@ -270,6 +272,25 @@ namespace GTANetworkShared
         public bool EntitySeethrough { get; set; }
     }
 
+    [ProtoContract]
+    public class WorldProperties : EntityProperties
+    {
+        [ProtoMember(1)]
+        public byte Hours { get; set; }
+
+        [ProtoMember(2)]
+        public byte Minutes { get; set; }
+
+        [ProtoMember(3)]
+        public string Weather { get; set; }
+
+        [ProtoMember(4)]
+        public List<string> LoadedIpl { get; set; }
+
+        [ProtoMember(5)]
+        public List<string> RemovedIpl { get; set; }
+    }
+
     /*
      * DELTA COMPRESSION
      * */
@@ -282,6 +303,7 @@ namespace GTANetworkShared
     [ProtoInclude(14, typeof(Delta_PickupProperties))]
     [ProtoInclude(15, typeof(Delta_PedProperties))]
     [ProtoInclude(16, typeof(Delta_TextLabelProperties))]
+    [ProtoInclude(17, typeof(Delta_WorldProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
@@ -459,5 +481,26 @@ namespace GTANetworkShared
         [ProtoMember(7)]
         public bool EntitySeethrough { get; set; }
     }
+
+
+    [ProtoContract]
+    public class Delta_WorldProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public byte? Hours { get; set; }
+
+        [ProtoMember(2)]
+        public byte? Minutes { get; set; }
+
+        [ProtoMember(3)]
+        public string Weather { get; set; }
+
+        [ProtoMember(4)]
+        public List<string> LoadedIpl { get; set; }
+
+        [ProtoMember(5)]
+        public List<string> RemovedIpl { get; set; }
+    }
+
     #endregion
 }

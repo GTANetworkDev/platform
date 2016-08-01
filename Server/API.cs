@@ -301,26 +301,30 @@ namespace GTANetworkServer
 
         public void requestIpl(string iplName)
         {
-            if (!Program.ServerInstance.LoadedIPL.Contains(iplName))
-                Program.ServerInstance.LoadedIPL.Add(iplName);
-            if (Program.ServerInstance.RemovedIPL.Contains(iplName))
-                Program.ServerInstance.RemovedIPL.Remove(iplName);
+            var world = Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
+
+            if (!world.LoadedIpl.Contains(iplName))
+                world.LoadedIpl.Add(iplName);
+            if (world.RemovedIpl.Contains(iplName))
+                world.RemovedIpl.Remove(iplName);
             sendNativeToAllPlayers(0x41B4893843BBDB74, iplName);
         }
 
         public void removeIpl(string iplName)
         {
-            if (!Program.ServerInstance.RemovedIPL.Contains(iplName))
-                Program.ServerInstance.RemovedIPL.Add(iplName);
-            if (Program.ServerInstance.LoadedIPL.Contains(iplName))
-                Program.ServerInstance.LoadedIPL.Remove(iplName);
+            var world = Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
+
+            if (!world.RemovedIpl.Contains(iplName))
+                world.RemovedIpl.Add(iplName);
+            if (world.LoadedIpl.Contains(iplName))
+                world.LoadedIpl.Remove(iplName);
             sendNativeToAllPlayers(0xEE6C5AD3ECE0A82D, iplName);
         }
 
         public void resetIplList()
         {
-            Program.ServerInstance.RemovedIPL.Clear();
-            Program.ServerInstance.LoadedIPL.Clear();
+            Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).RemovedIpl.Clear();
+            Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).LoadedIpl.Clear();
         }
 
         public void sleep(int ms)
@@ -678,6 +682,26 @@ namespace GTANetworkServer
             return false;
         }
 
+        public bool setWorldData(string key, object value)
+        {
+            return Program.ServerInstance.SetEntityProperty(1, key, value, true);
+        }
+
+        public dynamic getWorldData(string key)
+        {
+            return Program.ServerInstance.GetEntityProperty(1, key);
+        }
+
+        public void resetWorldData(string key)
+        {
+            Program.ServerInstance.ResetEntityProperty(1, key, true);
+        }
+
+        public bool hasWorldData(string key)
+        {
+            return Program.ServerInstance.HasEntityProperty(1, key);
+        }
+
         public void setVehicleMod(NetHandle vehicle, int modType, int mod)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))
@@ -741,7 +765,7 @@ namespace GTANetworkServer
         public void setWeather(string weather)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0xED712CA327900C8A, weather);
-            Program.ServerInstance.Weather = weather;
+            Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Weather = weather;
         }
 
         public void setPlayerTeam(Client player, int team)
@@ -767,7 +791,8 @@ namespace GTANetworkServer
         public void setTime(int hours, int minutes)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0x47C3B5848C3E45D8, hours, minutes, 0);
-            Program.ServerInstance.TimeOfDay = new DateTime(2016, 1, 1, hours, minutes, 0);
+            Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Hours = (byte)hours;
+            Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Minutes = (byte) minutes;
         }
 
         public void freezePlayerTime(Client client, bool freeze)
@@ -878,6 +903,11 @@ namespace GTANetworkServer
         public Client getPlayerFromName(string name)
         {
             return getAllPlayers().FirstOrDefault(c => c.Name == name);
+        }
+
+        public float getPlayerLatency(Client player)
+        {
+            return player.Latency*1000f;
         }
 
         public List<Client> getPlayersInRadiusOfPlayer(float radius, Client player)

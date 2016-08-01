@@ -1418,14 +1418,16 @@ namespace GTANetwork
 
             try
             {
-                if (map.LoadedIpl != null)
-                    foreach (var ipl in map.LoadedIpl)
+                NetEntityHandler.ServerWorld = map.World;
+
+                if (map.World.LoadedIpl != null)
+                    foreach (var ipl in map.World.LoadedIpl)
                     {
                         Function.Call(Hash.REQUEST_IPL, ipl);
                     }
 
-                if (map.RemovedIpl != null)
-                    foreach (var ipl in map.RemovedIpl)
+                if (map.World.RemovedIpl != null)
+                    foreach (var ipl in map.World.RemovedIpl)
                     {
                         Function.Call(Hash.REMOVE_IPL, ipl);
                     }
@@ -1536,11 +1538,11 @@ namespace GTANetwork
                 return;
             }
 
-            World.CurrentDayTime = new TimeSpan(map.Hours, map.Minutes, 00);
-            Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, map.Weather);
+            World.CurrentDayTime = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
+            Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, map.World.Weather);
 
-            Time = new TimeSpan(map.Hours, map.Minutes, 00);
-            Weather = map.Weather;
+            Time = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
+            Weather = map.World.Weather;
 
             Function.Call(Hash.PAUSE_CLOCK, true);
         }
@@ -3272,6 +3274,9 @@ namespace GTANetwork
                                 case EntityType.Vehicle:
                                     NetEntityHandler.UpdateVehicle(data.NetHandle, data.Properties as Delta_VehicleProperties);
                                     break;
+                                case EntityType.World:
+                                    NetEntityHandler.UpdateWorld(data.Properties);
+                                    break;
                             }
                         }
                     }
@@ -4564,7 +4569,8 @@ namespace GTANetwork
                 {
                     List<object> output = new List<object>();
                     var larg = (ListArgument) arg;
-                    output.AddRange(DecodeArgumentListPure(larg.Data.ToArray()));
+                    if (larg.Data != null && larg.Data.Count > 0)
+                        output.AddRange(DecodeArgumentListPure(larg.Data.ToArray()));
                     list.Add(output);
                 }
                 else
@@ -4656,7 +4662,10 @@ namespace GTANetwork
                 else if (o is IList)
                 {
                     var larg = new ListArgument();
-                    larg.Data = new List<NativeArgument>(ParseNativeArguments(((IList)o)));
+                    var l = ((IList)o);
+                    object[] array = new object[l.Count];
+                    l.CopyTo(array, 0);
+                    larg.Data = new List<NativeArgument>(ParseNativeArguments(array));
                     list.Add(larg);
                 }
                 else
@@ -5160,6 +5169,52 @@ namespace GTANetwork
             if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return null;
 
             var natArg = prop.SyncedProperties[key];
+
+            return DecodeArgumentListPure(natArg).Single();
+        }
+
+        public static bool SetWorldData(string key, object value)
+        {
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null) NetEntityHandler.ServerWorld.SyncedProperties = new Dictionary<string, NativeArgument>();
+
+            var nativeArg = ParseNativeArguments(value).Single();
+
+            NetEntityHandler.ServerWorld.SyncedProperties.Set(key, nativeArg);
+
+            var delta = new Delta_EntityProperties();
+            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+            delta.SyncedProperties.Add(key, nativeArg);
+            UpdateEntityInfo(1, EntityType.Prop, delta);
+
+            return true;
+        }
+
+        public static void ResetWorldData(string key)
+        {
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null || !NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key)) return;
+
+            NetEntityHandler.ServerWorld.SyncedProperties.Remove(key);
+            
+            var delta = new Delta_EntityProperties();
+            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+            delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
+            UpdateEntityInfo(1, EntityType.Prop, delta);
+        }
+
+        public static bool HasWorldData(string key)
+        {
+            if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key) || NetEntityHandler.ServerWorld.SyncedProperties == null) return false;
+
+            return NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key);
+        }
+
+        public static object GetWorldData(string key)
+        {
+            if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key)) return null;
+
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null || !NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key)) return null;
+
+            var natArg = NetEntityHandler.ServerWorld.SyncedProperties[key];
 
             return DecodeArgumentListPure(natArg).Single();
         }

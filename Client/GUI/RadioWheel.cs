@@ -230,9 +230,9 @@ namespace GTANetwork.GUI
             Game.DisableControlThisFrame(0, Control.LookUpDown);
             Game.DisableControlThisFrame(0, Control.LookLeftRight);
 
-            var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int) Control.LookLeftRight);
-            var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int) Control.LookUpDown);
-            
+            var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)Control.RadioWheelLeftRight);
+            var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)Control.RadioWheelUpDown);
+
             if (_lastRadio == -1)
             {
                 _lastRadio = currentRadio;

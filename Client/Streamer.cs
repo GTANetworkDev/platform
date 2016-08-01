@@ -296,6 +296,7 @@ namespace GTANetwork
         }
 
         public List<IStreamedItem> ClientMap;
+        public WorldProperties ServerWorld;
 
         public void DeleteLocalEntity(int handle)
         {
@@ -424,7 +425,42 @@ namespace GTANetwork
         {
             lock (ClientMap) ClientMap.Remove(NetToStreamedItem(localHandle, true));
         }
-        
+
+        public void UpdateWorld(Delta_EntityProperties prop)
+        {
+            if (prop == null || ServerWorld == null) return;
+
+            if (prop.Position != null) ServerWorld.Position = prop.Position;
+            if (prop.Rotation != null) ServerWorld.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) ServerWorld.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) ServerWorld.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) ServerWorld.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) ServerWorld.Flag = prop.Flag.Value;
+
+            if (prop.Dimension != null)
+            {
+                ServerWorld.Dimension = prop.Dimension.Value;
+            }
+
+            if (prop.Attachables != null) ServerWorld.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                ServerWorld.AttachedTo = prop.AttachedTo;
+                
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (ServerWorld.SyncedProperties == null) ServerWorld.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        ServerWorld.SyncedProperties.Remove(pair.Key);
+                    else
+                        ServerWorld.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
+        }
+
         public void UpdateVehicle(int netHandle, Delta_VehicleProperties prop)
         {
             RemoteVehicle veh = null;

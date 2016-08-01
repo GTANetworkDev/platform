@@ -1,0 +1,6 @@
+<meta>
+    <info name="Scoreboard" author="Guadmaz" type="script" />
+    
+    <script src="scoreboard.cs" type="server" lang="csharp" />    
+    <script src="scoreboard_local.js" type="client" lang="javascript" />
+</meta>

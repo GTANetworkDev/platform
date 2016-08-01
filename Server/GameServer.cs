@@ -142,12 +142,6 @@ namespace GTANetworkServer
         public dynamic ExportedFunctions;
         public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
 
-        public List<string> LoadedIPL = new List<string>();
-        public List<string> RemovedIPL = new List<string>();
-
-        public string Weather { get; set; } = "CLEAR";
-        public DateTime TimeOfDay { get; set; } = DateTime.Now;
-
         public List<Resource> RunningResources;
         public PickupManager PickupManager;
 
@@ -213,6 +207,8 @@ namespace GTANetworkServer
                     Program.Output("Failed to load resource \"" + path + "\", error: " + ex.Message);
                 }
             }
+
+            NetEntityHandler.CreateWorld();
         }
 
         public void AnnounceSelfToMaster()
@@ -1657,11 +1653,9 @@ namespace GTANResource
                                                 UpdateEntityInfo(client.CharacterHandle.Value, EntityType.Ped, delta, client);
 
                                                 var mapObj = new ServerMap();
-                                                mapObj.Hours = (byte)TimeOfDay.Hour;
-                                                mapObj.Minutes = (byte)TimeOfDay.Minute;
-                                                mapObj.Weather = Weather;
-                                                mapObj.LoadedIpl = LoadedIPL;
-                                                mapObj.RemovedIpl = RemovedIPL;
+                                                mapObj.World =
+                                                    Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
+
                                                 foreach (var pair in NetEntityHandler.ToDict())
                                                 {
                                                     if (pair.Value.EntityType == (byte)EntityType.Vehicle)
@@ -2293,7 +2287,10 @@ namespace GTANResource
                 else if (o is IList)
                 {
                     var larg = new ListArgument();
-                    larg.Data = new List<NativeArgument>(ParseNativeArguments(((IList) o)));
+                    var l = ((IList) o);
+                    object[] array = new object[l.Count];
+                    l.CopyTo(array, 0);
+                    larg.Data = new List<NativeArgument>(ParseNativeArguments(array));
                     list.Add(larg);
                 }
                 else
@@ -2525,7 +2522,7 @@ namespace GTANResource
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
         }
 
-        public bool SetEntityProperty(int entity, string key, object value)
+        public bool SetEntityProperty(int entity, string key, object value, bool world = false)
         {
             var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
 
@@ -2540,11 +2537,11 @@ namespace GTANResource
             var delta = new Delta_EntityProperties();
             delta.SyncedProperties = new Dictionary<string, NativeArgument>();
             delta.SyncedProperties.Add(key, nativeArg);
-            UpdateEntityInfo(entity, EntityType.Prop, delta);
+            UpdateEntityInfo(entity, world ? EntityType.World : EntityType.Prop, delta);
             return true;
         }
 
-        public void ResetEntityProperty(int entity, string key)
+        public void ResetEntityProperty(int entity, string key, bool world = false)
         {
             var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
 
@@ -2557,7 +2554,7 @@ namespace GTANResource
             var delta = new Delta_EntityProperties();
             delta.SyncedProperties = new Dictionary<string, NativeArgument>();
             delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
-            UpdateEntityInfo(entity, EntityType.Prop, delta);
+            UpdateEntityInfo(entity, world ? EntityType.World : EntityType.Prop, delta);
         }
 
         public bool HasEntityProperty(int entity, string key)
