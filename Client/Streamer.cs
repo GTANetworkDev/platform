@@ -428,6 +428,7 @@ namespace GTANetwork
 
         public bool IsLocalPlayer(IStreamedItem item)
         {
+            if (item == null) return false;
             return NetToEntity(item.RemoteHandle)?.Handle == Game.Player.Character.Handle;
         }
 
@@ -663,6 +664,7 @@ namespace GTANetwork
         public void UpdatePlayer(int netHandle, Delta_PedProperties prop)
         {
             LogManager.DebugLog("UPDATING PLAYER " + netHandle + " PROP NULL? " + (prop == null));
+
             if (IsLocalPlayer(NetToStreamedItem(netHandle)))
             {
                 UpdateRemotePlayer(netHandle, prop);
