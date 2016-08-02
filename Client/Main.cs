@@ -101,6 +101,8 @@ namespace GTANetwork
         public static bool ScriptChatVisible = true;
         public static bool UIVisible = true;
 
+        public static StringCache StringCache;
+
         public static int LocalTeam = -1;
         public static int LocalDimension = 0;
         public int SpectatingEntity;
@@ -2106,6 +2108,8 @@ namespace GTANetwork
         private int _bytesReceivedPerSecond;
         //
 
+        private CachedString _debugCachedString;
+
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
@@ -2387,6 +2391,37 @@ namespace GTANetwork
             */
 
 
+            if (Game.IsControlPressed(0, Control.Context))
+            {
+                if (_debugCachedString == null)
+                {
+                    _debugCachedString = new CachedString();
+                    _debugCachedString.Allocate("Hello world!");
+                    UI.ShowSubtitle("Allocated text to " + _debugCachedString.Pointer.ToInt64());
+                    return;
+                }
+
+                int screenw = Game.ScreenResolution.Width;
+                int screenh = Game.ScreenResolution.Height;
+                const float height = 1080f;
+                float ratio = (float)screenw / screenh;
+                var width = height * ratio;
+
+                float x = (float)(10) / width;
+                float y = (float)(10) / height;
+
+                Function.Call(Hash.SET_TEXT_FONT, 0);
+                Function.Call(Hash.SET_TEXT_SCALE, 1.0f, 0.35f);
+                Function.Call(Hash.SET_TEXT_COLOUR, 255, 255, 255, 255);
+                
+                Function.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
+                //Function.Call((Hash)0x6C188BE134E074AA, _debugCachedString.Pointer.ToInt64());
+                Function.Call((Hash)0x6C188BE134E074AA, "Hello world!");
+
+                Function.Call(Hash._DRAW_TEXT, x, y);
+            }
+
+
             if (display)
             {
                 Debug();
@@ -2621,6 +2656,11 @@ namespace GTANetwork
             Game.DisableControl(0, Control.CharacterWheel);
             Game.DisableControl(0, Control.Phone);
 
+
+            if (StringCache != null)
+            {
+                StringCache.Pulse();
+            }
 
             double aver = 0;
             lock (_averagePacketSize)
@@ -3843,6 +3883,10 @@ namespace GTANetwork
                             Game.Player.Character.Weapons.RemoveAll();
                             Game.Player.Character.Health = Game.Player.Character.MaxHealth;
                             Game.Player.Character.Armor = 0;
+
+                            if (StringCache != null) StringCache.Dispose();
+
+                            StringCache = new StringCache();
                             break;
                         case NetConnectionStatus.Connected:
                             Util.SafeNotify("Connection successful!");
@@ -4287,6 +4331,8 @@ namespace GTANetwork
 			DEBUG_STEP = 50;
 			JavascriptHook.StopAllScripts();
             JavascriptHook.TextElements.Clear();
+            StringCache.Dispose();
+		    StringCache = null;
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
 		    HasFinishedDownloading = false;
