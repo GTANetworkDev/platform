@@ -321,24 +321,14 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         public void SetBitmap(Bitmap bt)
         {
-            if (MainBitmap != null)
-            {
-                MainBitmap.Dispose();
-                MainBitmap = null;
-            }
-
-            MainBitmap = bt;
-            //((ImageElement)this.OverlayEngine.Overlays[0].Elements[0]).Bitmap?.Dispose();
-            //((ImageElement) this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = bt;
             ((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Dispose();
             this.OverlayEngine.Overlays[0].Elements.RemoveAt(1);
             this.OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(bt)
                 {
                     Location = new System.Drawing.Point(0, 0)
                 });
-            //this.OverlayEngine.FlushCache();
 
-            //((TextElement) this.OverlayEngine.Overlays[0].Elements[1]).Text = "GC: " + SharpDX.Diagnostics.ObjectTracker.ReportActiveObjects();
+            this.OverlayEngine.FlushCache();
         }
 
         public void SetText(string txt)
@@ -347,7 +337,6 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 ((TextElement) this.OverlayEngine.Overlays[0].Elements[0]).Text = txt;
         }
 
-        public Bitmap MainBitmap;
         private int counter;
 
         public bool NewSwapchain;
@@ -380,7 +369,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                         Elements =
                         {
                             new Common.TextElement(new System.Drawing.Font("Times New Roman", 22)) { Text = "CEF ENGINE RUNNING", Location = new System.Drawing.Point(0, 0), Color = System.Drawing.Color.Red, AntiAliased = false},
-                            new Common.ImageElement(MainBitmap ?? new Bitmap(Width, Height)) { Location = new System.Drawing.Point(0, 0) },
+                            new Common.ImageElement(new Bitmap(Width, Height)) { Location = new System.Drawing.Point(0, 0) },
                         }
                     });
                     OverlayEngine.Initialise(swapChain);

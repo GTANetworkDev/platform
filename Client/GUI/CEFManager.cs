@@ -34,14 +34,9 @@ namespace GTANetwork.GUI
                     LogManager.SimpleLog("directx", ObjectTracker.ReportActiveObjects());
                 }
 
-                if (CEFManager.DirectXHook.NewSwapchain)
-                {
-                    UI.ShowSubtitle("CHAIN SWAPPED!", 500);
-                    CEFManager.DirectXHook.NewSwapchain = false;
-                }
 
-                //UI.ShowSubtitle("GC: " + ObjectTracker.ReportActiveObjects());
-                /*
+                return;
+
                 var res = Game.ScreenResolution;
                 var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
                 var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
@@ -80,7 +75,6 @@ namespace GTANetwork.GUI
                         browser._browser.GetBrowser().GetHost().SetFocus(false);
                     }
                 }
-            */
             };
         }
     }
@@ -112,40 +106,45 @@ namespace GTANetwork.GUI
         public static void RenderLoop()
         {
             //var settings = new CefSharp.CefSettings();
-            ///settings.SetOffScreenRenderingBestPerformanceArgs();
+            //settings.SetOffScreenRenderingBestPerformanceArgs();
+            LogManager.DebugLog("WAITING FOR INITIALIZATION...");
             //if (!Cef.IsInitialized)
                 //Cef.Initialize(settings);
+            LogManager.DebugLog("STARTING MAIN LOOP");
 
-            LogManager.DebugLog("WAITING FOR INITIALIZATION...");
-            
-            var bm = new Bitmap(@"A:\Dropbox\stuff\Reaction Images\1467065292578.gif");
+            SharpDX.Configuration.EnableObjectTracking = true;
+
+            var bm = new Bitmap(@"C:\Users\Guad\Documents\Rockstar Games\GTA V\GTA Network\Screenshots\gtanetwork-007.png");
 
             while (!StopRender)
             {
                 try
                 {
-                    Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
-                        PixelFormat.Format32bppArgb);
-
-                    using (var graphics = Graphics.FromImage(doubleBuffer))
+                    /*
+                    using (
+                        Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
+                            PixelFormat.Format32bppArgb))
                     {
-                        graphics.DrawImage(bm, new Point(0, 0));
-                        /*
-                        lock (Browsers)
-                        foreach (var browser in Browsers)
+
+                        using (var graphics = Graphics.FromImage(doubleBuffer))
                         {
-                            if (browser.Headless) continue;
-                            var bitmap = browser.GetRawBitmap();
+                            graphics.DrawImage(bm, new Point(0,0));
 
-                            if (bitmap == null) continue;
+                            lock (Browsers)
+                                foreach (var browser in Browsers)
+                                {
+                                    if (browser.Headless) continue;
+                                    var bitmap = browser.GetRawBitmap();
 
-                            graphics.DrawImage(bitmap, browser.Position);
-                        }
-                        */
-                    }
+                                    if (bitmap == null) continue;
 
-                    DirectXHook.SetBitmap(doubleBuffer);
-                    //DirectXHook.SetText("GC: " + ObjectTracker.ReportActiveObjects());
+                                    graphics.DrawImage(bitmap, browser.Position);
+                                    bitmap.Dispose();
+                                }
+                        }*/
+
+                    //}
+                    DirectXHook.SetBitmap(bm);
                 }
                 catch (Exception ex)
                 {

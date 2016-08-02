@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using GTANetwork.GUI.DirectXHook.Hook.Common;
 using SharpDX;
 using SharpDX.Direct3D11;
@@ -191,15 +192,19 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         public void FlushCache()
         {
-            Disposable = true;
-
             lock (_imageCache)
             {
                 foreach (var dxImage in _imageCache)
                 {
-                    var val = dxImage.Value;
+                    dxImage.Value?.Dispose();
+                    ((ImageElement)dxImage.Key).Dispose();
+                }
 
-                    val.Initialise(((ImageElement) dxImage.Key).Bitmap);
+                foreach (var element in Overlays[0].Elements.OfType<ImageElement>())
+                {
+                    DXImage result = ToDispose(new DXImage(_device, _deviceContext));
+                    result.Initialise(element.Bitmap);
+                    _imageCache[element] = result;
                 }
             }
         }
