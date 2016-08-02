@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using GTA;
 
 namespace GTANetwork
 {
@@ -10,25 +11,28 @@ namespace GTANetwork
     {
         public StringCache()
         {
-            CachedData = new List<CachedString>();
+            CachedData = new Dictionary<string, CachedString>();
         }
 
         public int Timeout = 5;
-        private List<CachedString> CachedData;
-
+        private Dictionary<string, CachedString> CachedData;
+        public bool createdCache;
         public IntPtr GetCached(string text)
         {
             lock (CachedData)
             {
                 CachedString ourString;
 
-                if ((ourString = CachedData.FirstOrDefault(d => d.Data == text)) == null)
+                if (!CachedData.ContainsKey(text))
                 {
                     ourString = new CachedString();
                     ourString.Allocate(text);
+                    CachedData.Add(text, ourString);
+                    createdCache = true;
                 }
                 else
                 {
+                    ourString = CachedData[text];
                     ourString.LastAccess = DateTime.Now;
                 }
 
@@ -42,10 +46,10 @@ namespace GTANetwork
             {
                 for (int i = CachedData.Count - 1; i >= 0; i--)
                 {
-                    if (DateTime.Now.Subtract(CachedData[i].LastAccess).TotalSeconds > Timeout)
+                    if (DateTime.Now.Subtract(CachedData.ElementAt(i).Value.LastAccess).TotalSeconds > Timeout)
                     {
-                        CachedData[i].Free();
-                        CachedData.RemoveAt(i);
+                        CachedData.ElementAt(i).Value.Free();
+                        CachedData.Remove(CachedData.ElementAt(i).Key);
                     }
                 }
             }
@@ -57,7 +61,7 @@ namespace GTANetwork
             {
                 foreach (var s in CachedData)
                 {
-                    s.Free();
+                    s.Value.Free();
                 }
 
                 CachedData.Clear();

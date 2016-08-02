@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using GTA;
@@ -13,7 +11,7 @@ using GTA.Math;
 using GTA.Native;
 using GTANetworkShared;
 using Microsoft.ClearScript;
-using Microsoft.ClearScript.Windows;
+using Microsoft.ClearScript.V8;
 using NativeUI;
 using NAudio.Wave;
 using Newtonsoft.Json;
@@ -24,14 +22,14 @@ namespace GTANetwork
 {
     public class ClientsideScriptWrapper
     {
-        public ClientsideScriptWrapper(JScriptEngine en, string rs, string filename)
+        public ClientsideScriptWrapper(V8ScriptEngine en, string rs, string filename)
         {
             Engine = en;
             ResourceParent = rs;
             Filename = filename;
         }
 
-        public JScriptEngine Engine { get; set; }
+        public V8ScriptEngine Engine { get; set; }
         public string ResourceParent { get; set; }
         public string Filename { get; set; }
     }
@@ -277,7 +275,7 @@ namespace GTANetwork
         {
             ClientsideScriptWrapper csWrapper = null;
             
-            var scriptEngine = new JScriptEngine();
+            var scriptEngine = new V8ScriptEngine();
             scriptEngine.AddHostObject("host", new HostFunctions());
             scriptEngine.AddHostObject("API", new ScriptContext());
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
