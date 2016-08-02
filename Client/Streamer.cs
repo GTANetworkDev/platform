@@ -1080,7 +1080,7 @@ namespace GTANetwork
                     {
                         RemoteHandle = netHandle,
                         EntityType = (byte) EntityType.Ped,
-                        StreamedIn = true,
+                        StreamedIn = false, // change me
                         LocalOnly = false,
 
                         BlipSprite = -1,
