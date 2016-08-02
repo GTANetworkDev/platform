@@ -4070,13 +4070,20 @@ namespace GTANetwork
 
             if (fullData.VehicleHandle != null) LogManager.DebugLog("=====RECEIVED LIGHT VEHICLE PACKET " + fullData.VehicleHandle);
 
-            if (fullData.Position != null) syncPed.VehiclePosition = fullData.Position.ToVector();
+            if (fullData.Position != null)
+            {
+                syncPed.VehiclePosition = fullData.Position.ToVector();
+            }
+
             if (fullData.VehicleHandle != null) syncPed.VehicleNetHandle = fullData.VehicleHandle.Value;
             if (fullData.Velocity != null) syncPed.VehicleVelocity = fullData.Velocity.ToVector();
             if (fullData.PedModelHash != null) syncPed.ModelHash = fullData.PedModelHash.Value;
             if (fullData.PedArmor != null) syncPed.PedArmor = fullData.PedArmor.Value;
             if (fullData.RPM != null) syncPed.VehicleRPM = fullData.RPM.Value;
-            if (fullData.Quaternion != null) syncPed.VehicleRotation = fullData.Quaternion.ToVector();
+            if (fullData.Quaternion != null)
+            {
+                syncPed.VehicleRotation = fullData.Quaternion.ToVector();
+            }
             if (fullData.PlayerHealth != null) syncPed.PedHealth = fullData.PlayerHealth.Value;
             if (fullData.VehicleHealth != null) syncPed.VehicleHealth = fullData.VehicleHealth.Value;
             if (fullData.VehicleSeat != null) syncPed.VehicleSeat = fullData.VehicleSeat.Value;
@@ -4104,7 +4111,12 @@ namespace GTANetwork
             if (syncPed.VehicleNetHandle != 0 && fullData.Position != null)
             {
                 var car = NetEntityHandler.NetToStreamedItem(syncPed.VehicleNetHandle) as RemoteVehicle;
-                if (car != null) car.Position = fullData.Position;
+                if (car != null)
+                {
+                    car.Position = fullData.Position;
+                    car.Rotation = fullData.Quaternion;
+                }
+
             }
             else if (syncPed.VehicleNetHandle != 00 && fullData.Position == null && fullData.Flag != null && !PacketOptimization.CheckBit(fullData.Flag.Value, VehicleDataFlags.Driver))
             {
@@ -4113,6 +4125,7 @@ namespace GTANetwork
                 {
                     syncPed.Position = car.Position.ToVector();
                     syncPed.VehiclePosition = car.Position.ToVector();
+                    syncPed.VehicleRotation = car.Rotation.ToVector();
                 }
             }
 
