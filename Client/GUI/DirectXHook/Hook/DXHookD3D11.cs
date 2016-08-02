@@ -319,19 +319,38 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             _finalRTMapped = false;
         }
 
-        private Texture2D _tex;
         public void SetBitmap(Bitmap bt)
         {
+            if (MainBitmap != null)
+            {
+                MainBitmap.Dispose();
+                MainBitmap = null;
+            }
+
             MainBitmap = bt;
             //((ImageElement)this.OverlayEngine.Overlays[0].Elements[0]).Bitmap?.Dispose();
-            ((ImageElement) this.OverlayEngine.Overlays[0].Elements[0]).Bitmap = bt;
-            this.OverlayEngine.FlushCache();
+            //((ImageElement) this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = bt;
+            ((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Dispose();
+            this.OverlayEngine.Overlays[0].Elements.RemoveAt(1);
+            this.OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(bt)
+                {
+                    Location = new System.Drawing.Point(0, 0)
+                });
+            //this.OverlayEngine.FlushCache();
 
             //((TextElement) this.OverlayEngine.Overlays[0].Elements[1]).Text = "GC: " + SharpDX.Diagnostics.ObjectTracker.ReportActiveObjects();
-       }
+        }
+
+        public void SetText(string txt)
+        {
+            if (((TextElement)this.OverlayEngine.Overlays[0].Elements[0]) != null)
+                ((TextElement) this.OverlayEngine.Overlays[0].Elements[0]).Text = txt;
+        }
 
         public Bitmap MainBitmap;
         private int counter;
+
+        public bool NewSwapchain;
 
         /// <summary>
         /// Our present hook that will grab a copy of the backbuffer when requested. Note: this supports multi-sampling (anti-aliasing)
@@ -351,6 +370,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 // Initialise Overlay Engine
                 if (_swapChainPointer != swapChain.NativePointer || OverlayEngine == null)
                 {
+                    NewSwapchain = true;
+
                     if (OverlayEngine != null)
                         OverlayEngine.Dispose();
                     OverlayEngine = new DX11.DXOverlayEngine();
@@ -358,8 +379,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     {
                         Elements =
                         {
-                            new Common.ImageElement(MainBitmap ?? new Bitmap(Width, Height)) { Location = new System.Drawing.Point(0, 0) },
                             new Common.TextElement(new System.Drawing.Font("Times New Roman", 22)) { Text = "CEF ENGINE RUNNING", Location = new System.Drawing.Point(0, 0), Color = System.Drawing.Color.Red, AntiAliased = false},
+                            new Common.ImageElement(MainBitmap ?? new Bitmap(Width, Height)) { Location = new System.Drawing.Point(0, 0) },
                         }
                     });
                     OverlayEngine.Initialise(swapChain);

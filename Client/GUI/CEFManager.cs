@@ -8,12 +8,16 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Forms;
 using CefSharp;
 using CefSharp.OffScreen;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
 using NativeUI;
+using SharpDX;
+using SharpDX.Diagnostics;
+using Point = System.Drawing.Point;
 
 
 namespace GTANetwork.GUI
@@ -24,6 +28,20 @@ namespace GTANetwork.GUI
         {
             Tick += (sender, args) =>
             {
+                if (Game.IsKeyPressed(Keys.U)) CEFManager.StopRender = true;
+                if (Game.IsKeyPressed(Keys.H))
+                {
+                    LogManager.SimpleLog("directx", ObjectTracker.ReportActiveObjects());
+                }
+
+                if (CEFManager.DirectXHook.NewSwapchain)
+                {
+                    UI.ShowSubtitle("CHAIN SWAPPED!", 500);
+                    CEFManager.DirectXHook.NewSwapchain = false;
+                }
+
+                //UI.ShowSubtitle("GC: " + ObjectTracker.ReportActiveObjects());
+                /*
                 var res = Game.ScreenResolution;
                 var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
                 var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
@@ -62,6 +80,7 @@ namespace GTANetwork.GUI
                         browser._browser.GetBrowser().GetHost().SetFocus(false);
                     }
                 }
+            */
             };
         }
     }
@@ -72,7 +91,7 @@ namespace GTANetwork.GUI
         public static void Initialize(Size screenSize)
         {
             ScreenSize = screenSize;
-            
+            SharpDX.Configuration.EnableObjectTracking = true;
             DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
             DirectXHook.Hook();
 
@@ -87,22 +106,20 @@ namespace GTANetwork.GUI
         public static bool StopRender;
         public static Size ScreenSize;
 
-        private static DXHookD3D11 DirectXHook;
-
-        private static Mutex _memorySharedMutex;
-        private static MemoryMappedFile _bitmapRegion;
-
+        internal static DXHookD3D11 DirectXHook;
+        
 
         public static void RenderLoop()
         {
-            var settings = new CefSharp.CefSettings();
-            settings.SetOffScreenRenderingBestPerformanceArgs();
-            if (!Cef.IsInitialized)
-                Cef.Initialize(settings);
+            //var settings = new CefSharp.CefSettings();
+            ///settings.SetOffScreenRenderingBestPerformanceArgs();
+            //if (!Cef.IsInitialized)
+                //Cef.Initialize(settings);
 
             LogManager.DebugLog("WAITING FOR INITIALIZATION...");
             
-            
+            var bm = new Bitmap(@"A:\Dropbox\stuff\Reaction Images\1467065292578.gif");
+
             while (!StopRender)
             {
                 try
@@ -112,6 +129,8 @@ namespace GTANetwork.GUI
 
                     using (var graphics = Graphics.FromImage(doubleBuffer))
                     {
+                        graphics.DrawImage(bm, new Point(0, 0));
+                        /*
                         lock (Browsers)
                         foreach (var browser in Browsers)
                         {
@@ -122,42 +141,27 @@ namespace GTANetwork.GUI
 
                             graphics.DrawImage(bitmap, browser.Position);
                         }
+                        */
                     }
-                    
+
                     DirectXHook.SetBitmap(doubleBuffer);
+                    //DirectXHook.SetText("GC: " + ObjectTracker.ReportActiveObjects());
                 }
-                catch {}
+                catch (Exception ex)
+                {
+                    LogManager.LogException(ex, "DIRECTX HOOK");
+                }
                 finally
                 {
                     Thread.Sleep(1000 / FPS);
                 }
             }
-        }
 
-        public static byte[] BitmapToByteArray(Bitmap bitmap)
-        {
-            BitmapData bmpdata = null;
-
-            try
-            {
-                bmpdata = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, bitmap.PixelFormat);
-                int numbytes = bmpdata.Stride * bitmap.Height;
-                byte[] bytedata = new byte[numbytes];
-                IntPtr ptr = bmpdata.Scan0;
-
-                Marshal.Copy(ptr, bytedata, 0, numbytes);
-
-                return bytedata;
-            }
-            finally
-            {
-                if (bmpdata != null)
-                    bitmap.UnlockBits(bmpdata);
-            }
+            DirectXHook.Dispose();
         }
     }
 
-
+    //*
     public class Browser : IDisposable
     {
         internal ChromiumWebBrowser _browser;
@@ -248,5 +252,6 @@ namespace GTANetwork.GUI
             _browser = null;
         }
     }
+    //*/
 }
 #endif

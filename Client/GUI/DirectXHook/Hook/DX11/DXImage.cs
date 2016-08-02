@@ -55,6 +55,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
             RemoveAndDispose(ref _tex);
             RemoveAndDispose(ref _texSRV);
 
+            _tex = null;
+
             //Debug.Assert(bitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             System.Drawing.Imaging.BitmapData bmData;
 
@@ -108,17 +110,19 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         public void Update(Bitmap bitmap)
         {
-            Initialise(bitmap);
+            //Initialise(bitmap);
 
-            /*
             System.Drawing.Imaging.BitmapData bmData;
 
             _tex.Dispose();
             _texSRV.Dispose();
 
+            RemoveAndDispose(ref _tex);
+            RemoveAndDispose(ref _texSRV);
+
             lock (_srvLock)
             {
-                //_tex = null;
+                _tex = null;
                 //_texSRV = null;
 
                 bmData = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, _texWidth, _texHeight),
@@ -161,7 +165,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                 {
                     bitmap.UnlockBits(bmData);
                 }
-            }*/
+            }
+            //*/
         }
 
         public ShaderResourceView GetSRV()
