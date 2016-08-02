@@ -61,7 +61,7 @@ namespace GTANetworkServer
             string commandUsed = Command.ToLower();
 
             string aliasCmd;
-            if ((aliasCmd = Aliases.FirstOrDefault(a => a.ToLower() == ourcmd)) != null)
+            if (Aliases != null && (aliasCmd = Aliases.FirstOrDefault(a => a.ToLower() == ourcmd)) != null)
                 commandUsed = aliasCmd;
 
             string helpText;
