@@ -2390,38 +2390,6 @@ namespace GTANetwork
             UI.ShowSubtitle(Function.Call<int>(Hash.GET_PED_TYPE, Game.Player.Character)+"");
             */
 
-
-            if (Game.IsControlPressed(0, Control.Context))
-            {
-                if (_debugCachedString == null)
-                {
-                    _debugCachedString = new CachedString();
-                    _debugCachedString.Allocate("Hello world!");
-                    UI.ShowSubtitle("Allocated text to " + _debugCachedString.Pointer.ToInt64());
-                    return;
-                }
-
-                int screenw = Game.ScreenResolution.Width;
-                int screenh = Game.ScreenResolution.Height;
-                const float height = 1080f;
-                float ratio = (float)screenw / screenh;
-                var width = height * ratio;
-
-                float x = (float)(10) / width;
-                float y = (float)(10) / height;
-
-                Function.Call(Hash.SET_TEXT_FONT, 0);
-                Function.Call(Hash.SET_TEXT_SCALE, 1.0f, 0.35f);
-                Function.Call(Hash.SET_TEXT_COLOUR, 255, 255, 255, 255);
-                
-                Function.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
-                //Function.Call((Hash)0x6C188BE134E074AA, _debugCachedString.Pointer.ToInt64());
-                Function.Call((Hash)0x6C188BE134E074AA, "Hello world!");
-
-                Function.Call(Hash._DRAW_TEXT, x, y);
-            }
-
-
             if (display)
             {
                 Debug();
