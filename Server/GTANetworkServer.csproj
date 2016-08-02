@@ -67,6 +67,9 @@
     <Reference Include="Lidgren.Network">
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\libs\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\libs\protobuf-net.dll</HintPath>
     </Reference>
