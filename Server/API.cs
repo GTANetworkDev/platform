@@ -6,6 +6,9 @@ using System.Threading;
 using System.Xml;
 using GTANetworkShared;
 using Lidgren.Network;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Extensions = GTANetworkShared.Extensions;
 
 namespace GTANetworkServer
 {
@@ -219,6 +222,16 @@ namespace GTANetworkServer
             var xml = new XmlGroup();
             xml.Load(path);
             return xml;
+        }
+
+        public dynamic fromJson(string json)
+        {
+            return JObject.Parse(json);
+        }
+
+        public string toJson(object data)
+        {
+            return JsonConvert.SerializeObject(data);
         }
 
         public object call(string resourceName, string scriptName, string methodName, params object[] arguments)

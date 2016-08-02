@@ -16,6 +16,8 @@ using Microsoft.ClearScript;
 using Microsoft.ClearScript.Windows;
 using NativeUI;
 using NAudio.Wave;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Vector3 = GTANetworkShared.Vector3;
 
 namespace GTANetwork
@@ -511,6 +513,16 @@ namespace GTANetwork
         public void showShard(string text, int timeout)
         {
             NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
+        }
+
+        public dynamic fromJson(string json)
+        {
+            return JObject.Parse(json);
+        }
+
+        public string toJson(object data)
+        {
+            return JsonConvert.SerializeObject(data);
         }
 
         public SizeF getScreenResolutionMantainRatio()
