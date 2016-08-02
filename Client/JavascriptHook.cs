@@ -153,7 +153,29 @@ namespace GTANetwork
                 }
             });
         }
-        
+
+        public static void InvokeStreamInEvent(LocalHandle handle, int type)
+        {
+            ThreadJumper.Add(() =>
+            {
+                lock (ScriptEngines)
+                {
+                    ScriptEngines.ForEach(en => en.Engine.Script.API.invokeEntityStreamIn(handle, type));
+                }
+            });
+        }
+
+        public static void InvokeStreamOutEvent(LocalHandle handle, int type)
+        {
+            ThreadJumper.Add(() =>
+            {
+                lock (ScriptEngines)
+                {
+                    ScriptEngines.ForEach(en => en.Engine.Script.API.invokeEntityStreamOut(handle, type));
+                }
+            });
+        }
+
         public void OnTick(object sender, EventArgs e)
         {
             var tmpList = new List<Action>(ThreadJumper);
@@ -969,7 +991,7 @@ namespace GTANetwork
 
         public delegate void ServerEventTrigger(string eventName, object[] arguments);
         public delegate void ChatEvent(string msg);
-        public delegate void StreamEvent(IStreamedItem item);
+        public delegate void StreamEvent(LocalHandle item, int entityType);
 
         public event EventHandler onResourceStart;
         public event EventHandler onResourceStop;
@@ -981,6 +1003,16 @@ namespace GTANetwork
         public event ChatEvent onChatCommand;
         public event StreamEvent onEntityStreamIn;
         public event StreamEvent onEntityStreamOut;
+
+        internal void invokeEntityStreamIn(LocalHandle item, int type)
+        {
+            onEntityStreamIn?.Invoke(item, type);
+        }
+
+        internal void invokeEntityStreamOut(LocalHandle item, int type)
+        {
+            onEntityStreamOut?.Invoke(item, type);
+        }
 
         internal void invokeChatMessage(string msg)
         {

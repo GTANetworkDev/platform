@@ -1292,6 +1292,7 @@ namespace GTANetwork
                 case EntityType.Ped:
                     if (item is SyncPed)
                     {
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(((SyncPed) item).Character?.Handle ?? 0), (int)EntityType.Ped);
                         ((SyncPed) item).Clear();
                         ((SyncPed) item).StreamedIn = false;
                     }
@@ -1412,6 +1413,7 @@ namespace GTANetwork
 
         private void StreamOutEntity(ILocalHandleable data)
         {
+            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)(data is RemoteVehicle ? EntityType.Vehicle : EntityType.Prop));
             LogManager.DebugLog("PRESTREAM OUT " + data.LocalHandle);
             new Prop(data.LocalHandle).Delete();
             LogManager.DebugLog("POSTSTREAM OUT " + data.LocalHandle);
@@ -1420,11 +1422,13 @@ namespace GTANetwork
 
         private void StreamOutBlip(ILocalHandleable blip)
         {
+            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(blip.LocalHandle), (int)EntityType.Blip);
             new Blip(blip.LocalHandle).Remove();
         }
 
         private void StreamOutPickup(ILocalHandleable pickup)
         {
+            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(pickup.LocalHandle), (int)EntityType.Pickup);
             Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
         }
 
@@ -1447,6 +1451,8 @@ namespace GTANetwork
             ourBlip.Alpha = item.Alpha;
             ourBlip.IsShortRange = item.IsShortRange;
             ourBlip.Scale = item.Scale;
+
+            JavascriptHook.InvokeStreamInEvent(new LocalHandle(ourBlip.Handle), (int)EntityType.Blip);
         }
 
 
@@ -1591,6 +1597,8 @@ namespace GTANetwork
             LogManager.DebugLog("DISCARDING MODEL");
             model.MarkAsNoLongerNeeded();
             LogManager.DebugLog("CREATEVEHICLE COMPLETE");
+
+            JavascriptHook.InvokeStreamInEvent(new LocalHandle(veh.Handle), (int)EntityType.Vehicle);
         }
     
 
@@ -1635,6 +1643,8 @@ namespace GTANetwork
             LogManager.DebugLog("STREAMIN DONE");
 
             model.MarkAsNoLongerNeeded();
+
+            JavascriptHook.InvokeStreamInEvent(new LocalHandle(ourVeh.Handle), (int)EntityType.Prop);
         }
 
         private void StreamInPickup(RemotePickup pickup)
@@ -1656,6 +1666,8 @@ namespace GTANetwork
 
             pickup.StreamedIn = true;
             pickup.LocalHandle = newPickup;
+
+            JavascriptHook.InvokeStreamInEvent(new LocalHandle(newPickup), (int)EntityType.Pickup);
         }
 
         public void ClearAll()

@@ -441,6 +441,7 @@ namespace GTANetwork
                     Character.HasCollision = false;
                 }
 
+                JavascriptHook.InvokeStreamInEvent(new LocalHandle(Character.Handle), (int)GTANetworkShared.EntityType.Ped);
 
                 LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
 

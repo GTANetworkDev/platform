@@ -81,7 +81,7 @@ namespace GTANetworkServer
         public event VehicleChangeEvent onPlayerEnterVehicle;
         public event VehicleChangeEvent onPlayerExitVehicle;
         public event EntityEvent onVehicleDeath;
-
+        
         internal void invokeVehicleDeath(NetHandle vehicle)
         {
             onVehicleDeath?.Invoke(vehicle);
