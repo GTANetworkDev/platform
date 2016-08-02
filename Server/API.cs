@@ -68,7 +68,7 @@ namespace GTANetworkServer
         public event EventHandler onUpdate;
         public event ChatEvent onChatMessage;
         public event CommandEvent onChatCommand;
-        public event PlayerConnectingEvent OnPlayerBeginConnect;
+        public event PlayerConnectingEvent onPlayerBeginConnect;
         public event PlayerEvent onPlayerConnected;
         public event PlayerEvent onPlayerFinishedDownload;
         public event PlayerDisconnectedEvent onPlayerDisconnected;
@@ -159,7 +159,7 @@ namespace GTANetworkServer
 
         internal void invokePlayerBeginConnect(Client player, CancelEventArgs e)
         {            
-            OnPlayerBeginConnect?.Invoke(player, e);
+            onPlayerBeginConnect?.Invoke(player, e);
         }
 
         internal void invokePlayerConnected(Client player)

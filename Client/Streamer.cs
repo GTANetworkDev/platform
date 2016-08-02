@@ -426,6 +426,11 @@ namespace GTANetwork
             lock (ClientMap) ClientMap.Remove(NetToStreamedItem(localHandle, true));
         }
 
+        public bool IsLocalPlayer(IStreamedItem item)
+        {
+            return NetToEntity(item.RemoteHandle)?.Handle == Game.Player.Character.Handle;
+        }
+
         public void UpdateWorld(Delta_EntityProperties prop)
         {
             if (prop == null || ServerWorld == null) return;
@@ -658,6 +663,12 @@ namespace GTANetwork
         public void UpdatePlayer(int netHandle, Delta_PedProperties prop)
         {
             LogManager.DebugLog("UPDATING PLAYER " + netHandle + " PROP NULL? " + (prop == null));
+            if (IsLocalPlayer(NetToStreamedItem(netHandle)))
+            {
+                UpdateRemotePlayer(netHandle, prop);
+                return;
+            }
+
             if (prop == null) return;
             var veh = GetPlayer(netHandle);
             if (prop.Props != null) veh.Props = prop.Props;
