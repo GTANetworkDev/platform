@@ -58,12 +58,18 @@ namespace GTANetworkServer
 
             if (ourcmd != Command.ToLower() && (Aliases == null || Aliases.All(a => a.ToLower() != ourcmd))) return false;
 
+            string commandUsed = Command.ToLower();
+
+            string aliasCmd;
+            if ((aliasCmd = Aliases.FirstOrDefault(a => a.ToLower() == ourcmd)) != null)
+                commandUsed = aliasCmd;
+
             string helpText;
 
             if (Parameters.Length > 1)
             {
                 int paramCounter = 0;
-                helpText = "~y~USAGE: ~w~/" + Command + " [" +
+                helpText = "~y~USAGE: ~w~/" + commandUsed + " [" +
                            Parameters.Skip(1)
                                .Select(param => param.Name)
                                .Aggregate((prev, next) => prev + (paramCounter++ == 0 ? "]" : "") + " [" + next + "]") +
@@ -71,7 +77,7 @@ namespace GTANetworkServer
             }
             else
             {
-                helpText = "~y~USAGE: ~w~/" + Command;
+                helpText = "~y~USAGE: ~w~/" + commandUsed;
             }
 
             if (!string.IsNullOrEmpty(Helptext))

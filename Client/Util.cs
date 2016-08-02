@@ -31,6 +31,7 @@ namespace GTANetwork
             while (!model.IsLoaded)
             {
                 model.Request();
+                //Function.Call(Hash.REQUEST_COLLISION_FOR_MODEL, model.Hash);
                 Script.Yield();
             }
             ModelRequest = false;

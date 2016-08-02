@@ -708,6 +708,58 @@ namespace GTANetwork
             }
         }
 
+        public void UpdateRemotePlayer(int netHandle, Delta_PedProperties prop)
+        {
+            RemotePlayer veh = NetToStreamedItem(netHandle) as RemotePlayer;
+            if (prop == null || veh == null) return;
+            if (prop.Props != null) veh.Props = prop.Props;
+            if (prop.Textures != null) veh.Textures = prop.Textures;
+            if (prop.BlipSprite != null) veh.BlipSprite = prop.BlipSprite.Value;
+            if (prop.Team != null) veh.Team = prop.Team.Value;
+            if (prop.BlipColor != null) veh.BlipColor = prop.BlipColor.Value;
+            if (prop.BlipAlpha != null) veh.BlipAlpha = prop.BlipAlpha.Value;
+            if (prop.Accessories != null) veh.Accessories = prop.Accessories;
+            if (prop.Name != null)
+            {
+                veh.Name = prop.Name;
+                LogManager.DebugLog("New name: " + prop.Name);
+            }
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+            }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
+        }
+
         public void UpdatePickup(int netHandle, Delta_PickupProperties prop)
         {
             IStreamedItem item = null;
@@ -1394,11 +1446,14 @@ namespace GTANetwork
             if (model == null || !model.IsValid || !model.IsInCdImage) return;
             LogManager.DebugLog("CREATING VEHICLE FOR NETHANDLE " + data.RemoteHandle);
             if (!model.IsLoaded) Util.LoadModel(model);
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, data.Position.X, data.Position.Y, data.Position.Z);
+            Function.Call(Hash.REQUEST_ADDITIONAL_COLLISION_AT_COORD, data.Position.X, data.Position.Y, data.Position.Z);
             LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
 
             LogManager.DebugLog("POSITION: " + data.Position?.ToVector());
 
             var veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
+            Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, veh, true);
             Function.Call(Hash.TRACK_VEHICLE_VISIBILITY, veh);
             Function.Call((Hash)0x068F64F2470F9656, false);
             LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null));

@@ -504,8 +504,9 @@ namespace GTANetwork
 
 							if (TicksSinceLastUpdate > 10000)
 								nameText = "~r~AFK~w~~n~" + nameText;
+
                             var dist = (GameplayCamera.Position - Character.Position).Length();
-							var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
+						    var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
 
                             new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
 								Font.ChaletLondon, UIResText.Alignment.Centered)
@@ -1895,12 +1896,7 @@ namespace GTANetwork
 
 	            if (CreateVehicle()) return;
                 
-				if (Character != null)
-                {
-                    Character.Health = (int) ((PedHealth/(float) 100)*Character.MaxHealth);
-                }
-
-                _switch++;
+				_switch++;
                 DEBUG_STEP = 15;
 
 	            if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
@@ -1909,7 +1905,13 @@ namespace GTANetwork
 
 	            WorkaroundBlip();
 
-	            if (UpdatePosition()) return;
+                if (Character != null)
+                {
+                    Character.Health = (int)(Math.Max(2 * (PedHealth / 100f), 0f)) * Character.MaxHealth;
+                    if (PedHealth == 0 && !Character.IsDead) Character.Kill();
+                }
+
+                if (UpdatePosition()) return;
 
                 _lastJumping = IsJumping;
                 _lastFreefall = IsFreefallingWithParachute;

@@ -530,6 +530,16 @@ namespace GTANetwork
             return UIMenu.GetScreenResolutionMantainRatio();
         }
 
+        public void sendChatMessage(string sender, string text)
+        {
+            Main.Chat.AddMessage(sender, text);
+        }
+
+        public void sendChatMessage(string text)
+        {
+            Main.Chat.AddMessage(null, text);
+        }
+
         public void sendNotification(string text)
         {
             Util.SafeNotify(text);
