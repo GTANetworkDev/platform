@@ -7,9 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using GTANetworkShared;
-using Microsoft.ClearScript;
-using Microsoft.ClearScript.V8;
-using Microsoft.ClearScript.Windows;
 
 namespace GTANetworkServer
 {
@@ -31,7 +28,6 @@ namespace GTANetworkServer
 
         private Thread _workerThread;
         private Thread _blockingThread;
-        private JScriptEngine _jsEngine;
         private Script _compiledScript;
         private Queue _mainQueue;
         private Queue _secondaryQueue;
@@ -43,29 +39,6 @@ namespace GTANetworkServer
             {
                 return _compiledScript;
             }
-        }
-        public ScriptingEngine(string javascript, string name, Resource parent, string[] references, bool async)
-        {
-            Async = async;
-            ResourceParent = parent;
-            _mainQueue = Queue.Synchronized(new Queue());
-            _secondaryQueue = Queue.Synchronized(new Queue());
-
-            Language = ScriptingEngineLanguage.javascript;
-            Filename = name;
-            lock (_mainQueue.SyncRoot)
-            _mainQueue.Enqueue(new Action(() =>
-            {
-                _jsEngine = InstantiateScripts(javascript, name, references);
-            }));
-
-            _workerThread = new Thread(MainThreadLoop);
-            _workerThread.IsBackground = true;
-            _workerThread.Start();
-
-            _blockingThread = new Thread(SecondaryThreadLoop);
-            _blockingThread.IsBackground = true;
-            _blockingThread.Start();
         }
 
         public ScriptingEngine(Script sc, string name, Resource parent, bool async)
@@ -89,50 +62,7 @@ namespace GTANetworkServer
             _blockingThread.IsBackground = true;
             _blockingThread.Start();
         }
-
-        private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
-        {
-            var scriptEngine = new JScriptEngine();
-            var collect = new HostTypeCollection(refs);
-
-            scriptEngine.AddHostObject("clr", collect);
-            scriptEngine.AddHostObject("API", new API() { ResourceParent = this});
-            scriptEngine.AddHostObject("host", new HostFunctions());
-            scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
-            scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
-            scriptEngine.AddHostType("NetHandle", typeof(NetHandle));
-            scriptEngine.AddHostType("String", typeof(string));
-            scriptEngine.AddHostType("List", typeof(List<>));
-            scriptEngine.AddHostType("Client", typeof(Client));
-            scriptEngine.AddHostType("Vector3", typeof(Vector3));
-            scriptEngine.AddHostType("Quaternion", typeof(Vector3));
-            scriptEngine.AddHostType("Client", typeof(Client));
-            scriptEngine.AddHostType("LocalPlayerArgument", typeof(LocalPlayerArgument));
-            scriptEngine.AddHostType("LocalGamePlayerArgument", typeof(LocalGamePlayerArgument));
-            scriptEngine.AddHostType("EntityArgument", typeof(EntityArgument));
-            scriptEngine.AddHostType("EntityPointerArgument", typeof(EntityPointerArgument));
-            scriptEngine.AddHostType("console", typeof(Console));
-            scriptEngine.AddHostType("VehicleHash", typeof(VehicleHash));
-            scriptEngine.AddHostType("Int32", typeof(int));
-            scriptEngine.AddHostType("EntityArgument", typeof(EntityArgument));
-            scriptEngine.AddHostType("EntityPtrArgument", typeof(EntityPointerArgument));
-
-            try
-            {
-                scriptEngine.Execute(script);
-            }
-            catch (ScriptEngineException ex)
-            {
-                Program.Output("EXCEPTION WHEN COMPILING JAVASCRIPT " + Filename);
-                Program.Output(ex.Message);
-                Program.Output(ex.StackTrace);
-                HasTerminated = true;
-                throw;
-            }
-
-            return scriptEngine;
-        }
-
+        
         private void MainThreadLoop()
         {
             while (!HasTerminated)
@@ -178,9 +108,7 @@ namespace GTANetworkServer
 
             while (!HasTerminated)
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokeUpdate();
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeUpdate();
 
                 Thread.Sleep(16);
@@ -213,12 +141,7 @@ namespace GTANetworkServer
 
                     mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
                 }
-                else if (Language == ScriptingEngineLanguage.javascript)
-                {
-                    var mi = ((object)_jsEngine.Script).GetType().GetMethod(method);
-                    mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
-                }
-            }));
+          }));
             
         }
 
@@ -244,12 +167,6 @@ namespace GTANetworkServer
                         objectToReturn = mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
                         hasValue = true;
                     }
-                    else if (Language == ScriptingEngineLanguage.javascript)
-                    {
-                        var mi = ((object) _jsEngine.Script).GetType().GetMethod(method);
-                        objectToReturn = mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
-                        hasValue = true;
-                    }
                 }));
 
                 while (!hasValue) { }
@@ -268,9 +185,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokeResourceStart();
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeResourceStart();
             }));
         }
@@ -281,9 +196,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokeResourceStop();
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeResourceStop();
                 canContinue = true;
             }));
@@ -302,9 +215,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerBeginConnect(client);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerBeginConnect(client, e);
             }));
         }
@@ -314,9 +225,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerEnterVeh(client, veh);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerEnterVeh(client, veh);
             }));
         }
@@ -326,9 +235,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerExitVeh(client, veh);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerExitVeh(client, veh);
             }));
         }
@@ -338,9 +245,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokeVehicleDeath(veh);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeVehicleDeath(veh);
             }));
         }
@@ -350,9 +255,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokeMapChange(mapName, map);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeMapChange(mapName, map);
             }));
         }
@@ -364,9 +267,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerDisconnected(client, reason);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerDisconnected(client, reason);
 
                 canContinue = true;
@@ -381,9 +282,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokeFinishedDownload(client);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeFinishedDownload(client);
             }));
         }
@@ -393,9 +292,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerPickup(client, pickup);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerPickup(client, pickup);
             }));
         }
@@ -405,9 +302,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePickupRespawn(pickup);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePickupRespawn(pickup);
             }));
         }
@@ -417,11 +312,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                {
-                    _jsEngine.Script.API.invokeChatCommand(sender, command);
-                }
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                 {
                     _compiledScript.API.invokeChatCommand(sender, command);
                 }
@@ -434,9 +325,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    passThroughMessage = _jsEngine.Script.API.invokeChatMessage(sender, cmd);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     passThroughMessage = _compiledScript.API.invokeChatMessage(sender, cmd);
             }));
             int counter = Environment.TickCount;
@@ -450,9 +339,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokeClientEvent(sender, eventName, args);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeClientEvent(sender, eventName, args);
             }));
         }
@@ -462,9 +349,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerConnected(sender);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerConnected(sender);
             }));
         }
@@ -474,9 +359,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerDeath(killed, new NetHandle(reason), weapon);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerDeath(killed, new NetHandle(reason), weapon);
             }));
         }
@@ -486,9 +369,7 @@ namespace GTANetworkServer
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
-                if (Language == ScriptingEngineLanguage.javascript)
-                    _jsEngine.Script.API.invokePlayerRespawn(sender);
-                else if (Language == ScriptingEngineLanguage.compiled)
+                if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokePlayerRespawn(sender);
             }));
         }
@@ -500,9 +381,7 @@ namespace GTANetworkServer
             {
                 _mainQueue.Enqueue(new Action(() =>
                 {
-                    if (Language == ScriptingEngineLanguage.javascript)
-                        _jsEngine.Script.API.invokeUpdate();
-                    else if (Language == ScriptingEngineLanguage.compiled)
+                    if (Language == ScriptingEngineLanguage.compiled)
                         _compiledScript.API.invokeUpdate();
                 }));
             }

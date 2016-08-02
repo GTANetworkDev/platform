@@ -60,10 +60,6 @@
     </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ClearScript, Version=5.4.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\ClearScript.dll</HintPath>
-    </Reference>
     <Reference Include="Lidgren.Network">
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>

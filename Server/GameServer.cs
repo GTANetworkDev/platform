@@ -14,8 +14,6 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using GTANetworkShared;
 using Lidgren.Network;
-using Microsoft.ClearScript;
-using Microsoft.ClearScript.Windows;
 using Microsoft.CSharp;
 using Microsoft.VisualBasic;
 using ProtoBuf;
@@ -193,7 +191,6 @@ namespace GTANetworkServer
              }
 
             Program.Output("Loading resources...");
-            var list = new List<JScriptEngine>();
             foreach (var path in filterscripts)
             {
                 if (string.IsNullOrWhiteSpace(path)) continue;
@@ -362,9 +359,6 @@ namespace GTANetworkServer
                             csScripts.Add(csScript);
                             continue;
                         }
-
-                        Program.Output("WARNING: Javascript resources will not run on GNU/Linux servers, and thus, they are deprecated.");
-                        ourResource.Engines.Add(new ScriptingEngine(scrTxt, script.Path, ourResource, currentResInfo.Referenceses.Select(r => r.Name).ToArray(), ourResource.Info.Info.Multithreaded));
                     }
                     else if (script.Language == ScriptingEngineLanguage.compiled)
                     {
@@ -691,45 +685,7 @@ namespace GTANetworkServer
                 PublicAPI.removeIpl(point.getElementData<string>("name"));
             }
         }
-
-        private JScriptEngine InstantiateScripts(string script, string resourceName, string[] refs)
-        {
-            var scriptEngine = new JScriptEngine();
-
-            var collect = new HostTypeCollection(refs);
-
-            scriptEngine.AddHostObject("clr", collect);
-            scriptEngine.AddHostObject("API", new API());
-            scriptEngine.AddHostObject("host", new HostFunctions());
-            scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
-            scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
-            scriptEngine.AddHostType("String", typeof(string));
-            scriptEngine.AddHostType("List", typeof (List<>));
-            scriptEngine.AddHostType("Client", typeof(Client));
-            scriptEngine.AddHostType("Vector3", typeof(Vector3));
-            scriptEngine.AddHostType("Quaternion", typeof(Vector3));
-            scriptEngine.AddHostType("Client", typeof(Client));
-            scriptEngine.AddHostType("LocalPlayerArgument", typeof(LocalPlayerArgument));
-            scriptEngine.AddHostType("LocalGamePlayerArgument", typeof(LocalGamePlayerArgument));
-            scriptEngine.AddHostType("EntityArgument", typeof(EntityArgument));
-            scriptEngine.AddHostType("EntityPointerArgument", typeof(EntityPointerArgument));
-            scriptEngine.AddHostType("console", typeof(Console));
-            scriptEngine.AddHostType("VehicleHash", typeof(VehicleHash));
-            scriptEngine.AddHostType("Int32", typeof(int));
-            scriptEngine.AddHostType("EntityArgument", typeof(EntityArgument));
-            scriptEngine.AddHostType("EntityPtrArgument", typeof(EntityPointerArgument));
-            try
-            {
-                scriptEngine.Execute(script);
-            }
-            catch (ScriptEngineException ex)
-            {
-                LogException(ex, resourceName);
-            }
-
-            return scriptEngine;
-        }
-
+        
         private IEnumerable<Script> InstantiateScripts(Assembly targetAssembly)
         {
             var types = targetAssembly.GetExportedTypes();
