@@ -45,26 +45,26 @@ public class CopsNCrooks : Script
 		Vehicles.Clear();
 
 		// Crooks
-		Vehicles.Add(API.createVehicle(1777363799, new Vector3(634.32f, 622.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
-		Vehicles.Add(API.createVehicle(1777363799, new Vector3(636.32f, 635.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
-		Vehicles.Add(API.createVehicle(1777363799, new Vector3(631.32f, 613.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)1777363799, new Vector3(634.32f, 622.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)1777363799, new Vector3(636.32f, 635.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)1777363799, new Vector3(631.32f, 613.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
 
-		Vehicles.Add(API.createVehicle(1777363799, new Vector3(611.32f, 637.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
-		Vehicles.Add(API.createVehicle(1777363799, new Vector3(607.32f, 626.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
-		Vehicles.Add(API.createVehicle(1777363799, new Vector3(593.32f, 618.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)1777363799, new Vector3(611.32f, 637.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)1777363799, new Vector3(607.32f, 626.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)1777363799, new Vector3(593.32f, 618.54f, 128.44f), new Vector3(0, 0, 250.89f), 0, 0));
 
-		Vehicles.Add(API.createVehicle(-114627507, new Vector3(631.5f, 642.54f, 128.44f), new Vector3(0, 0, 327.15f), 0, 0));
-		Vehicles.Add(API.createVehicle(-1660661558, new Vector3(644.09f, 599.09f, 129.01f), new Vector3(0, 0, 0.15f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)(-114627507), new Vector3(631.5f, 642.54f, 128.44f), new Vector3(0, 0, 327.15f), 0, 0));
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1660661558), new Vector3(644.09f, 599.09f, 129.01f), new Vector3(0, 0, 0.15f), 0, 0));
 
 		// Cops
-		Vehicles.Add(API.createVehicle(-1627000575, new Vector3(407.37f, -979.13f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
-		Vehicles.Add(API.createVehicle(-1627000575, new Vector3(407.37f, -983.99f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
-		Vehicles.Add(API.createVehicle(-1627000575, new Vector3(407.37f, -988.8f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
-		Vehicles.Add(API.createVehicle(-1627000575, new Vector3(407.37f, -992.76f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
-		Vehicles.Add(API.createVehicle(-1627000575, new Vector3(407.37f, -997.72f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
-		Vehicles.Add(API.createVehicle(-1627000575, new Vector3(393.51f, -981.3f, 28.96f), new Vector3(0, 0, 356.26f), 111, 0));		
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1627000575), new Vector3(407.37f, -979.13f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1627000575), new Vector3(407.37f, -983.99f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1627000575), new Vector3(407.37f, -988.8f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1627000575), new Vector3(407.37f, -992.76f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1627000575), new Vector3(407.37f, -997.72f, 28.88f), new Vector3(0, 0, 52.84f), 111, 0));		
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1627000575), new Vector3(393.51f, -981.3f, 28.96f), new Vector3(0, 0, 356.26f), 111, 0));		
 
-		Vehicles.Add(API.createVehicle(-1860900134, new Vector3(428.9f, -960.98f, 29.11f), new Vector3(0, 0, 90.12f), 111, 0));		
+		Vehicles.Add(API.createVehicle((VehicleHash)(-1860900134), new Vector3(428.9f, -960.98f, 29.11f), new Vector3(0, 0, 90.12f), 111, 0));		
 	}
 
 	private void onResStart(object e, EventArgs ob)
@@ -162,13 +162,13 @@ public class CopsNCrooks : Script
 		{
 			if (c == CrookBoss)
 			{
-				API.setPlayerSkin(c, 1226102803); // MexBoss02GMM
+				API.setPlayerSkin(c, (PedHash)1226102803); // MexBoss02GMM
 				API.sendNotificationToPlayer(c, "You are ~r~the boss~w~! Get to the ~y~extraction point~w~ alive!~");				
 			}					
 			else
 			{
 				API.sendNotificationToPlayer(c, "Don't let the ~r~cops~w~ kill your boss!");
-				API.setPlayerSkin(c, -1773333796); // MexGoon03GMY
+				API.setPlayerSkin(c, (PedHash)(-1773333796)); // MexGoon03GMY
 			}
 			CrookRespawn(c);
 			API.setPlayerTeam(c, CrookTeam);			
@@ -188,7 +188,7 @@ public class CopsNCrooks : Script
 			Cops.Add(player);
 		}
 
-		API.setPlayerSkin(player, 1581098148); // Cop01SMY
+		API.setPlayerSkin(player, (PedHash)1581098148); // Cop01SMY
 
 		API.givePlayerWeapon(player, 1737195953, 1, true, true);
 		API.givePlayerWeapon(player, 1593441988, 300, true, true);

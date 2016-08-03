@@ -1348,13 +1348,13 @@ namespace GTANetwork
 			if (currentTime >= 1f)
 			{
 				lastMeleeAnim = null;
-				meleeSwingDone = true;
+			    meleeSwingDone = false;
 			}
 			if (currentTime >= meleeanimationend)
 			{
 				Character.Task.ClearAnimation(lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
 				lastMeleeAnim = null;
-				meleeSwingDone = true;
+				meleeSwingDone = false;
 			}
 		}
 
