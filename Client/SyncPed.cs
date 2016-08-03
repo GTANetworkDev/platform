@@ -683,7 +683,8 @@ namespace GTANetwork
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
 						MainVehicle.PositionNoOffset = gPos;
-                        MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
+                        if (_lastVehiclePos != null)
+                            MainVehicle.Quaternion = Main.DirectionToRotation(_lastVehiclePos.Value - gPos).ToQuaternion();
                     }
                 }
 				return true;
