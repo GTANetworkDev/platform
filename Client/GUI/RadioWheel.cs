@@ -173,7 +173,7 @@ namespace GTANetwork.GUI
         
         public void OnTick(object sender, EventArgs e)
         {
-            if (!Game.Player.Character.IsInVehicle()) return;
+            if (!Game.Player.Character.IsInVehicle() || Main.Chat.IsFocused) return;
 
             if (_disable)
                 Game.DisableControl(0, Control.VehicleRadioWheel);

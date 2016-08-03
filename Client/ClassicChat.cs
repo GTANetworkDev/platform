@@ -204,11 +204,8 @@ namespace GTANetwork
             }
             
             if (!IsFocused) return;
+            Game.DisableControlThisFrame(0, Control.NextCamera);
             Game.DisableAllControlsThisFrame(0);
-            foreach (var value in Enum.GetValues(typeof(Control)).Cast<Control>())
-            {
-                Game.DisableControlThisFrame(0, value);
-            }
         }
 
         public void AddMessage(string sender, string msg)
