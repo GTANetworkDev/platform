@@ -1642,6 +1642,7 @@ namespace GTANetwork
 			var secondaryAnimDict = GetSecondaryAnimDict();
 
 			DEBUG_STEP = 34;
+
 			if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
@@ -1649,11 +1650,7 @@ namespace GTANetwork
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
 					8f, 10f, -1, 1 | 2147483648, -8f, 1, 1, 1);
 			}
-
             
-
-			// BUG: Animation doesn't clear for 1-2 seconds after aiming.
-
 			
 			if (secondaryAnimDict != null &&
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
@@ -1751,14 +1748,16 @@ namespace GTANetwork
                     return true;
                 }
 
-                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, "get_up@standard", "back", 3))
+			    var getupAnim = GetAnimalGetUpAnimation().Split();
+
+                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
                 {
                     UpdatePlayerPedPos();
-                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, "get_up@standard", "back");
+                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0], getupAnim[1]);
 
                     if (currentTime >= 0.7f)
                     {
-                        Character.Task.ClearAnimation("get_up@standard", "back");
+                        Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
                         Character.Task.ClearAll();
                     }
                     else
@@ -1867,42 +1866,6 @@ namespace GTANetwork
 
                 DEBUG_STEP = 1;
                 
-
-                /*
-            if (inRange && !_isStreamedIn)
-            {
-                _isStreamedIn = true;
-                if (_mainBlip != null)
-                {
-                    _mainBlip.Remove();
-                    _mainBlip = null;
-                }
-            }
-            else if(!inRange && _isStreamedIn)
-            {
-                Clear();
-                _isStreamedIn = false;
-            }
-
-
-            if (!inRange)
-            {
-                if (_mainBlip == null && _blip)
-                {
-                    _mainBlip = World.CreateBlip(gPos);
-                    _mainBlip.Color = BlipColor.White;
-                    _mainBlip.Scale = 0.8f;
-                    SetBlipNameFromTextFile(_mainBlip, Name == null ? "<nameless>" : Name);
-                }
-                if(_blip && _mainBlip != null)
-                    _mainBlip.Position = gPos;
-                return;
-            }
-            */
-
-
-                DEBUG_STEP = 2;
-
                 if (Character != null && Character.IsSubtaskActive(67))
                 {
                     DrawNametag();
@@ -1972,6 +1935,9 @@ namespace GTANetwork
         {
             if (IsInCover) return GetCoverIdleAnimDict();
 
+            if (GetAnimalAnimationDictionary(ModelHash) != null)
+                return GetAnimalAnimationDictionary(ModelHash);
+
             string dict = "move_m@generic";
 
             if (Character.Gender == Gender.Female)
@@ -1993,7 +1959,7 @@ namespace GTANetwork
 
             Vector3 newPos = Position + comp;
 
-            if (OnFootSpeed > 0)
+            if (OnFootSpeed > 0 || IsAnimal(ModelHash))
             {
                 Character.Velocity = PedVelocity + 10 * (newPos - Character.Position);
                 _stopTime = DateTime.Now;
@@ -2226,11 +2192,275 @@ namespace GTANetwork
                 return coverFacingLeft ? "idle_l_corner" : "idle_r_corner";
             }
 
+            if (GetAnimalAnimationName(ModelHash,speed) != null)
+                return GetAnimalAnimationName(ModelHash,speed);
+
             if (speed == 0) return "idle";
             if (speed == 1) return "walk";
             if (speed == 2) return "run";
             if (speed == 3) return "sprint";
             return "";
+        }
+
+        public static bool IsAnimal(int model)
+        {
+            return GetAnimalAnimationDictionary(model) != null;
+        }
+
+        public static string GetAnimalAnimationName(int modelhash, int speed)
+        {
+            var hash = (PedHash)modelhash;
+
+            switch (hash)
+            {
+                case PedHash.Cat:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "canter";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.Boar:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "trot";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.ChickenHawk:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "glide";
+                    if (speed == 3) return "flapping";
+                }
+                    break;
+                case PedHash.Chop:
+                case PedHash.Shepherd:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "canter";
+                    if (speed == 3) return "sprint";
+                }
+                    break;
+                case PedHash.Cormorant:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "glide";
+                    if (speed == 3) return "flapping";
+                }
+                    break;
+                case PedHash.Cow:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "trot";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.Coyote:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "trot";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.Crow:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "glide";
+                    if (speed == 3) return "flapping";
+                }
+                    break;
+                case PedHash.Deer:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "trot";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.Dolphin:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "swim";
+                    if (speed == 2) return "accelerate";
+                    if (speed == 3) return "accelerate";
+                }
+                    break;
+                case PedHash.Fish:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "swim";
+                    if (speed == 2) return "accelerate";
+                    if (speed == 3) return "accelerate";
+                }
+                    break;
+                case PedHash.Hen:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "run";
+                    if (speed == 3) return "run";
+                }
+                    break;
+                case PedHash.Humpback:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "swim";
+                    if (speed == 2) return "accelerate";
+                    if (speed == 3) return "accelerate";
+                }
+                    break;
+                case PedHash.Husky:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "canter";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.TigerShark:
+                case PedHash.HammerShark:
+                case PedHash.KillerWhale:
+                case PedHash.Stingray:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "swim";
+                    if (speed == 2) return "accelerate";
+                    if (speed == 3) return "accelerate";
+                }
+                    break;
+                case PedHash.Pig:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "trot";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.Seagull:
+                case PedHash.Pigeon:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "glide";
+                    if (speed == 3) return "flapping";
+                }
+                    break;
+                case PedHash.Pug:
+                case PedHash.Poodle:
+                case PedHash.Westy:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "canter";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.Rabbit:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "canter";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+                case PedHash.Rat:
+                    {
+                        if (speed == 0) return "idle";
+                        if (speed == 1) return "walk";
+                        if (speed == 2) return "canter";
+                        if (speed == 3) return "gallop";
+                    }
+                    break;
+                case PedHash.Rottweiler:
+                case PedHash.Retriever:
+                {
+                    if (speed == 0) return "idle";
+                    if (speed == 1) return "walk";
+                    if (speed == 2) return "canter";
+                    if (speed == 3) return "gallop";
+                }
+                    break;
+            }
+
+            return null;
+        }
+
+        public static string GetAnimalAnimationDictionary(int modelhash)
+        {
+            var hash = (PedHash)modelhash;
+
+            if (hash == PedHash.Boar)
+                return "creatures@boar@move";
+            if (hash == PedHash.Cat)
+                return "creatures@cat@move";
+            if (hash == PedHash.ChickenHawk)
+                return "creatures@chickenhawk@move";
+            if (hash == PedHash.Chop || hash == PedHash.Shepherd)
+                return "creatures@dog@move";
+            if (hash == PedHash.Cormorant)
+                return "creatures@cormorant@move";
+            if (hash == PedHash.Cow)
+                return "creatures@cow@move";
+            if (hash == PedHash.Coyote)
+                return "creatures@coyote@move";
+            if (hash == PedHash.Crow)
+                return "creatures@crow@move";
+            if (hash == PedHash.Deer)
+                return "creatures@deer@move";
+            if (hash == PedHash.Dolphin)
+                return "creatures@dolphin@move";
+            if (hash == PedHash.Fish)
+                return "creatures@fish@move";
+            if (hash == PedHash.Hen)
+                return "creatures@hen@move";
+            if (hash == PedHash.Humpback)
+                return "creatures@humpback@move";
+            if (hash == PedHash.Husky)
+                return "creatures@husky@move";
+            if (hash == PedHash.KillerWhale)
+                return "creatures@killerwhale@move";
+            if (hash == PedHash.Pig)
+                return "creatures@pig@move";
+            if (hash == PedHash.Pigeon)
+                return "creatures@pigeon@move";
+            if (hash == PedHash.Poodle || hash == PedHash.Pug || hash == PedHash.Westy)
+                return "creatures@pug@move";
+            if (hash == PedHash.Rabbit)
+                return "creatures@rabbit@move";
+            if (hash == PedHash.Rat)
+                return "creatures@rat@move";
+            if (hash == PedHash.Retriever)
+                return "creatures@retriever@move";
+            if (hash == PedHash.Rottweiler)
+                return "creatures@rottweiler@move";
+            if (hash == PedHash.Seagull)
+                return "creatures@pigeon@move";
+            if (hash == PedHash.HammerShark || hash == PedHash.TigerShark)
+                return "creatures@shark@move";
+            if (hash == PedHash.Stingray)
+                return "creatures@stingray@move";
+
+            return null;
+        }
+
+        public string GetAnimalGetUpAnimation()
+        {
+            var hash = (PedHash) ModelHash;
+
+            if (hash == PedHash.Boar)
+                return "creatures@boar@getup getup_l";
+            
+
+            return "get_up@standard back";
         }
 
         public void Clear()

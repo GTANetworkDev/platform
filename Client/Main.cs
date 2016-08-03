@@ -2024,7 +2024,25 @@ namespace GTANetwork
         public static byte GetPedWalkingSpeed(Ped ped)
         {
             byte output = 0;
+            string animd;
+            if ((animd = SyncPed.GetAnimalAnimationDictionary(ped.Model.Hash)) != null)
+            {
+                var hash = (PedHash) ped.Model.Hash;
 
+                if (hash == PedHash.ChickenHawk || hash == PedHash.Cormorant || hash == PedHash.Crow ||
+                    hash == PedHash.Seagull || hash == PedHash.Pigeon)
+                {
+                    if (ped.Velocity.Length() > 0.1) output = 1;
+                    if (ped.IsInAir || ped.Velocity.Length() > 0.5) output = 3;
+                }
+                else if (hash == PedHash.Dolphin || hash == PedHash.Fish || hash == PedHash.Humpback ||
+                         hash == PedHash.KillerWhale || hash == PedHash.Stingray || hash == PedHash.HammerShark ||
+                         hash == PedHash.TigerShark)
+                {
+                    if (ped.Velocity.Length() > 0.1) output = 1;
+                    if (ped.Velocity.Length() > 0.5) output = 2;
+                }
+            }
             if (Function.Call<bool>(Hash.IS_PED_WALKING, ped))
                 output = 1;
             if (Function.Call<bool>(Hash.IS_PED_RUNNING, ped))
