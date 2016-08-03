@@ -803,7 +803,7 @@ namespace GTANetwork
 
                 var dir = VehiclePosition - _lastVehiclePos.Value;
 
-                currentInterop.vecTarget = VehiclePosition; // + dir;
+                currentInterop.vecTarget = VehiclePosition + dir;
                 currentInterop.vecError = dir;
                 //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
                 //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
@@ -825,65 +825,72 @@ namespace GTANetwork
             }
         }
 
+        private int m_uiForceLocalZCounter;
         void DisplayVehiclePosition()
         {
             if ((Speed > 0.2f || IsInBurnout) && currentInterop.FinishTime > 0 && _lastVehiclePos != null)
             {
-                if (!Main.LagCompensation)
+                long currentTime = Util.TickCount;
+                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+
+                Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+                Vector3 newPos = VehiclePosition + comp;
+                MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
+
+                if (Debug)
                 {
-                    long currentTime = Util.TickCount;
-                    float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+                    World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
+                        new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
+                    if (Game.Player.Character.IsInVehicle())
+                        World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
+                            new Vector3(), new Vector3(),
+                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
+                    World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
+                        new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
+                }
 
-                    alpha = Util.Clamp(0f, alpha, 15f);
+                // Check if we're too far
 
-                    //float cAlpha = alpha - currentInterop.LastAlpha;
-                    //currentInterop.LastAlpha = alpha;
+                const int VEHICLE_INTERPOLATION_WARP_THRESHOLD = 15;
+                const int VEHICLE_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 10;
 
-                    //Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
-                    Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+                float fThreshold = (VEHICLE_INTERPOLATION_WARP_THRESHOLD + VEHICLE_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * Speed);
 
-                    if (alpha == 15f)
+                if (MainVehicle.Position.DistanceTo(currentInterop.vecTarget) > fThreshold)
+                {
+                    // Abort all interpolation
+                    currentInterop.FinishTime = 0;
+                    MainVehicle.PositionNoOffset = currentInterop.vecTarget;
+                }
+
+                // Check if we're under floor
+                bool bForceLocalZ = false;
+                bool bValidVelocityZ = true;
+                if (bValidVelocityZ /* && Check whether its not a plane or helicopter*/)
+                {
+                    // If remote z higher by too much and remote not doing any z movement, warp local z coord
+                    float fDeltaZ = newPos.Z - MainVehicle.Position.Z;
+
+                    if (fDeltaZ > 0.4f && fDeltaZ < 10.0f)
                     {
-                        currentInterop.FinishTime = 0;
-                    }
-                    Vector3 newPos = VehiclePosition + comp;
-                    MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
-
-                    if (Debug)
-                    {
-                        World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
-                        if (Game.Player.Character.IsInVehicle())
-                            World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
-                                new Vector3(), new Vector3(),
-                                new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
-                        World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
+                        if (Math.Abs(VehicleVelocity.Z) < 0.01f)
+                        {
+                            bForceLocalZ = true;
+                        }
                     }
                 }
+
+                // Only force z coord if needed for at least two consecutive calls
+                if (!bForceLocalZ)
+                    m_uiForceLocalZCounter = 0;
                 else
+                if (m_uiForceLocalZCounter++ > 1)
                 {
-                    long currentTime = Util.TickCount;
-                    //float alpha = (DataLatency + TicksSinceLastUpdate)/(float)AverageLatency;
-                    float alpha = Util.Unlerp(currentInterop.StartTime + DataLatency, currentTime + DataLatency,
-                        currentInterop.FinishTime);
-                    var dir = VehiclePosition - _lastVehiclePos.Value;
-                    Vector3 newPos = Vector3.Lerp(VehiclePosition, VehiclePosition + dir, alpha);
-
-                    MainVehicle.Velocity = VehicleVelocity + 10 * (newPos - MainVehicle.Position);
-
-                    if (Debug)
-                    {
-                        World.DrawMarker(MarkerType.DebugSphere, MainVehicle.Position, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 255, 0, 0));
-                        if (Game.Player.Character.IsInVehicle())
-                            World.DrawMarker(MarkerType.DebugSphere, Game.Player.Character.CurrentVehicle.Position,
-                                new Vector3(), new Vector3(),
-                                new Vector3(1, 1, 1), Color.FromArgb(100, 0, 255, 0));
-                        World.DrawMarker(MarkerType.DebugSphere, newPos, new Vector3(), new Vector3(),
-                            new Vector3(1, 1, 1), Color.FromArgb(100, 0, 0, 255));
-                    }
+                    var t = new Vector3(MainVehicle.Position.X, MainVehicle.Position.Y, newPos.Z);
+                    MainVehicle.PositionNoOffset = t;
                 }
+
+
                 //UI.ShowSubtitle("alpha: " + alpha);
 
                 //MainVehicle.Alpha = 100;
@@ -1974,31 +1981,94 @@ namespace GTANetwork
             return dict;
         }
 
-
+        private int m_uiForceLocalCounter;
         private void UpdatePlayerPedPos()
         {
             long currentTime = Util.TickCount;
+            
             float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
-            alpha = Util.Clamp(0f, alpha, 15f);
-
-            //float cAlpha = alpha - currentInterop.LastAlpha;
-            //currentInterop.LastAlpha = alpha;
-
-            //Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
             Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
 
-            if (alpha == 15f)
-            {
-                currentInterop.FinishTime = 0;
-            }
             Vector3 newPos = Position + comp;
-            
+
             if (OnFootSpeed > 0)
             {
                 Character.Velocity = PedVelocity + 10 * (newPos - Character.Position);
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = Character.Position;
+
+                const int PED_INTERPOLATION_WARP_THRESHOLD = 5;
+                const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
+
+                // Check if the distance to interpolate is too far.
+                float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
+                                    PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED*PedVelocity.Length());
+
+                // There is a reason to have this condition this way: To prevent NaNs generating new NaNs after interpolating (Comparing with NaNs always results to false).
+                if (Character.Position.DistanceTo(currentInterop.vecTarget) > fThreshold || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25)
+                {
+                    // Abort all interpolation
+                    currentInterop.FinishTime = 0;
+                    Character.PositionNoOffset = currentInterop.vecTarget;
+                }
+
+                // Calc remote movement
+                var vecRemoteMovement = Position - _lastPosition;
+                
+                // Calc local error
+                var vecLocalError = currentInterop.vecTarget - Character.Position;
+
+                // Small remote movement + local position error = force a warp
+                bool bForceLocalZ = false;
+                bool bForceLocalXY = false;
+                if (Math.Abs(vecRemoteMovement.Z) < 0.01f)
+                {
+                    float fLocalErrorZ = Math.Abs(vecLocalError.Z);
+                    if (fLocalErrorZ > 0.1f && fLocalErrorZ < 10)
+                    {
+                        bForceLocalZ = true;
+                    }
+                }
+
+                if (Math.Abs(vecRemoteMovement.X) < 0.01f)
+                {
+                    float fLocalErrorX = Math.Abs(vecLocalError.X);
+                    if (fLocalErrorX > 0.1f && fLocalErrorX < 10)
+                    {
+                        bForceLocalXY = true;
+                    }
+                }
+
+                if (Math.Abs(vecRemoteMovement.Y) < 0.01f)
+                {
+                    float fLocalErrorY = Math.Abs(vecLocalError.Y);
+                    if (fLocalErrorY > 0.1f && fLocalErrorY < 10)
+                    {
+                        bForceLocalXY = true;
+                    }
+                }
+
+                // Only force position if needed for at least two consecutive calls
+                if (!bForceLocalZ && !bForceLocalXY)
+                    m_uiForceLocalCounter = 0;
+                else
+                if (m_uiForceLocalCounter++ > 1)
+                {
+                    Vector3 targetPos = Character.Position;
+
+                    if (bForceLocalZ)
+                    {
+                        targetPos = new Vector3(targetPos.X, targetPos.Y, currentInterop.vecTarget.Z);
+                        Character.Velocity = new Vector3(Character.Velocity.X, Character.Velocity.Y, 0);
+                    }
+                    if (bForceLocalXY)
+                    {
+                        targetPos = new Vector3(currentInterop.vecTarget.X, currentInterop.vecTarget.Y, targetPos.Z);
+                    }
+
+                    Character.PositionNoOffset = targetPos;
+                }
             }
             else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
             {
