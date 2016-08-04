@@ -108,6 +108,7 @@
     <Compile Include="LogManager.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MemoryScan.cs" />
+    <Compile Include="ModelSpoofer.cs" />
     <Compile Include="Streamer.cs" />
     <Compile Include="PedThread.cs" />
     <Compile Include="Program.cs" />
