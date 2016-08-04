@@ -1773,7 +1773,10 @@ namespace GTANResource
                                                         }
                                                     }
                                                 }
+
+                                                UpdateEntityInfo(data.NetHandle, (EntityType)data.EntityType, data.Properties, client);
                                             }
+
                                         }
                                         break;
                                 }
