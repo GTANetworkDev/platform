@@ -636,7 +636,13 @@ namespace GTANetwork
             
             _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
 
-            _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
+            var us =
+                NetEntityHandler.ClientMap.FirstOrDefault(p => p is RemotePlayer && ((RemotePlayer) p).LocalHandle == -2) as RemotePlayer;
+
+            if (us == null)
+                _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
+            else
+                _serverPlayers.Dictionary.Add(us.Name, ((int)(Latency * 1000)) + "ms");
 
             foreach (var ped in list)
             {
