@@ -1602,6 +1602,23 @@ namespace GTANetwork
                 Function.Call(Hash.SET_VEHICLE_EXTRA, veh, i, (data.VehicleComponents & 1 << i) != 0 ? 0 : -1);
             }
 
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.SpecialLight))
+            {
+                if (model.IsHelicopter)
+                {
+                    veh.SearchLightOn = true;
+                }
+                else
+                {
+                    veh.TaxiLightOn = true;
+                }
+            }
+            else
+            {
+                veh.SearchLightOn = false;
+                veh.TaxiLightOn = false;
+            }
+
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;
             LogManager.DebugLog("DISCARDING MODEL");

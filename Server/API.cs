@@ -649,6 +649,43 @@ namespace GTANetworkServer
             return false;
         }
 
+        public void setVehicleSpecialLightStatus(NetHandle vehicle, bool turnedOn)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x14E85C5EE7A4D542, vehicle, turnedOn, false);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x598803E85E8448D9, vehicle, turnedOn);
+
+                if (turnedOn)
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag = (byte)
+                        PacketOptimization.SetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
+                            EntityFlag.SpecialLight);
+                }
+                else
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag = (byte)
+                        PacketOptimization.ResetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
+                            EntityFlag.SpecialLight);
+
+                }
+
+                var delta = new Delta_EntityProperties();
+                delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;
+                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Prop, delta);
+            }
+        }
+
+        public bool getVehicleSpecialLightStatus(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return !PacketOptimization.CheckBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag, EntityFlag.SpecialLight);
+            }
+
+            return false;
+        }
+
         public void setEntityCollisionless(NetHandle entity, bool collisionless)
         {
             if (doesEntityExist(entity))
