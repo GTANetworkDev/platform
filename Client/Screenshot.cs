@@ -37,7 +37,7 @@ namespace GTANetwork
                    graphics.Dispose();
                 }
 
-                var filename = "gtanetwork-" + Directory.GetFiles(destinationFolder, "*.png").Count().ToString("000") + ".png";
+                var filename = "gtanetwork-" + (Directory.GetFiles(destinationFolder, "*.png").Count()+1).ToString("000") + ".png";
 
                 bmp.Save(destinationFolder + Path.DirectorySeparatorChar + filename);
 

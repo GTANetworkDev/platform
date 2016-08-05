@@ -186,6 +186,11 @@ namespace GTANetworkServer
 
         #region Functions
 
+        public long TickCount
+        {
+            get { return DateTime.Now.Ticks/10000; }
+        }
+
         public string getResourceFolder()
         {
             if (ResourceParent == null)
@@ -502,6 +507,16 @@ namespace GTANetworkServer
         public void setCollisionBetweenEntities(NetHandle entity1, NetHandle entity2, bool collision)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0xA53ED5520C07654A, entity1, entity2, collision);
+        }
+
+        public void setPlayerInvincible(Client target, bool invincible)
+        {
+            sendNativeToPlayer(target, 0x239528EACDC3E7DE, new LocalGamePlayerArgument(), invincible);
+        }
+
+        public bool getPlayerInvincible(Client target)
+        {
+            return fetchNativeFromPlayer<bool>(target, 0xB721981B2B939E07, new LocalGamePlayerArgument());
         }
 
         public void setPlayerBlipColor(Client target, int newColor)
