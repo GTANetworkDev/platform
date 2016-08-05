@@ -55,6 +55,7 @@ namespace GTANetworkServer
             obj.PrimaryColor = color1;
             obj.SecondaryColor = color2;
             obj.Dimension = dimension;
+            obj.VehicleComponents = ~0;
             ServerEntities.Add(localEntityHash, obj);
 
             var packet = new CreateEntity();
