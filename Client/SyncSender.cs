@@ -332,7 +332,7 @@ namespace GTANetwork
                     obj.Flag |= (int)PedDataFlags.HasAimData;
                 if (player.IsSubtaskActive(ESubtask.USING_LADDER))
                     obj.Flag |= (int) PedDataFlags.IsOnLadder;
-                if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player))
+                if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player) && !player.IsSubtaskActive(ESubtask.USING_LADDER))
                     obj.Flag |= (int)PedDataFlags.IsVaulting;
 
                 obj.Speed = Main.GetPedWalkingSpeed(player);

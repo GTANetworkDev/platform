@@ -2207,7 +2207,12 @@ namespace GTANetwork
             {
                 if (Math.Abs(PedVelocity.Z) < 0.5) return "base_left_hand_up";
                 else if (PedVelocity.Z > 0) return "climb_up";
-                else if (PedVelocity.Z < 0) return "climb_down";
+                else if (PedVelocity.Z < 0)
+                {
+                    if (PedVelocity.Z < -2f)
+                        return "slide_climb_down";
+                    return "climb_down";
+                }
             }
 
             if (IsVaulting) return "standclimbup_180_low";
