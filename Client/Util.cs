@@ -76,12 +76,10 @@ namespace GTANetwork
         public static void SetPlayerSkin(PedHash skin)
         {
             var model = new Model(skin);
-            model.Request(10000);
-            do
-            {
-                Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
-                Script.Yield();
-            } while ((PedHash) Game.Player.Character.Model.Hash != skin);
+
+            model.Request(5000);
+
+            Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
 
             model.MarkAsNoLongerNeeded();
         }

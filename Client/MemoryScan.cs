@@ -1,258 +1,333 @@
-﻿/**
- * sigScan C# Implementation - Written by atom0s [aka Wiccaan]
- * Class Version: 2.0.0
- *
- * [ CHANGE LOG ] -------------------------------------------------------------------------
- *
- *      2.0.0
- *          - Updated to no longer require unsafe or fixed code.
- *          - Removed unneeded methods and code.
- *         
- *      1.0.0
- *          - First version written and release.
- *         
- * [ CREDITS ] ----------------------------------------------------------------------------
- *
- *      sigScan is based on the FindPattern code written by
- *      dom1n1k and Patrick at GameDeception.net
- *     
- *      Full credit to them for the purpose of this code. I, atom0s, simply
- *      take credit for converting it to C#.
- *
- */
-
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.Globalization;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace GTANetwork
+public static class Memory
 {
-    public class SigScan
+    /// <summary>
+    /// Turns a byte pattern in the format "XX XX ?? ?? XX XX" etc to a byte array and a mask array
+    /// </summary>
+    /// <param name="pattern">The pattern.</param>
+    /// <param name="oPattern">The output byte array.</param>
+    /// <param name="oMask">The output mask </param>
+    /// <exception cref="ArgumentException">
+    /// Invalid pattern format if pattern isnt in specified format from above
+    /// </exception>
+    static void ExtractPattern(string pattern, out byte[] oPattern, out bool[] oMask)
     {
-        /// <summary>
-        /// ReadProcessMemory
-        /// 
-        ///     API import definition for ReadProcessMemory.
-        /// </summary>
-        /// <param name="hProcess">Handle to the process we want to read from.</param>
-        /// <param name="lpBaseAddress">The base address to start reading from.</param>
-        /// <param name="lpBuffer">The return buffer to write the read data to.</param>
-        /// <param name="dwSize">The size of data we wish to read.</param>
-        /// <param name="lpNumberOfBytesRead">The number of bytes successfully read.</param>
-        /// <returns></returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool ReadProcessMemory(
-            IntPtr hProcess,
-            IntPtr lpBaseAddress,
-            [Out] byte[] lpBuffer,
-            int dwSize,
-            out int lpNumberOfBytesRead
-            );
-
-        /// <summary>
-        /// m_vDumpedRegion
-        /// 
-        ///     The memory dumped from the external process.
-        /// </summary>
-        private byte[] m_vDumpedRegion;
-
-        /// <summary>
-        /// m_vProcess
-        /// 
-        ///     The process we want to read the memory of.
-        /// </summary>
-        private Process m_vProcess;
-
-        /// <summary>
-        /// m_vAddress
-        /// 
-        ///     The starting address we want to begin reading at.
-        /// </summary>
-        private IntPtr m_vAddress;
-
-        /// <summary>
-        /// m_vSize
-        /// 
-        ///     The number of bytes we wish to read from the process.
-        /// </summary>
-        private Int32 m_vSize;
-
-
-        #region "sigScan Class Construction"
-        /// <summary>
-        /// SigScan
-        /// 
-        ///     Main class constructor that uses no params. 
-        ///     Simply initializes the class properties and 
-        ///     expects the user to set them later.
-        /// </summary>
-        public SigScan()
+        string[] items = pattern.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        byte[] output = new byte[items.Length];
+        bool[] mask = new bool[items.Length];
+        for (int i = 0; i < items.Length; i++)
         {
-            this.m_vProcess = null;
-            this.m_vAddress = IntPtr.Zero;
-            this.m_vSize = 0;
-            this.m_vDumpedRegion = null;
-        }
-        /// <summary>
-        /// SigScan
-        /// 
-        ///     Overloaded class constructor that sets the class
-        ///     properties during construction.
-        /// </summary>
-        /// <param name="proc">The process to dump the memory from.</param>
-        /// <param name="addr">The started address to begin the dump.</param>
-        /// <param name="size">The size of the dump.</param>
-        public SigScan(Process proc, IntPtr addr, int size)
-        {
-            this.m_vProcess = proc;
-            this.m_vAddress = addr;
-            this.m_vSize = size;
-        }
-        #endregion
-
-        #region "sigScan Class Private Methods"
-        /// <summary>
-        /// DumpMemory
-        /// 
-        ///     Internal memory dump function that uses the set class
-        ///     properties to dump a memory region.
-        /// </summary>
-        /// <returns>Boolean based on RPM results and valid properties.</returns>
-        public bool DumpMemory()
-        {
-            try
+            string s = items[i];
+            if (s.Length > 0 && s.Length < 3)
             {
-                // Checks to ensure we have valid data.
-                if (this.m_vProcess == null)
-                    return false;
-                if (this.m_vProcess.HasExited)
-                    return false;
-                if (this.m_vAddress == IntPtr.Zero)
-                    return false;
-                if (this.m_vSize == 0)
-                    return false;
-
-                // Create the region space to dump into.
-                this.m_vDumpedRegion = new byte[this.m_vSize];
-
-                int nBytesRead;
-
-                // Dump the memory.
-                var ret = ReadProcessMemory(
-                    this.m_vProcess.Handle, this.m_vAddress, this.m_vDumpedRegion, this.m_vSize, out nBytesRead
-                    );
-
-                // Validation checks.
-                return ret && nBytesRead == this.m_vSize;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-
-        public byte[] GetDumpedMemory()
-        {
-            return m_vDumpedRegion;
-        }
-
-        /// <summary>
-        /// MaskCheck
-        /// 
-        ///     Compares the current pattern byte to the current memory dump
-        ///     byte to check for a match. Uses wildcards to skip bytes that
-        ///     are deemed unneeded in the compares.
-        /// </summary>
-        /// <param name="nOffset">Offset in the dump to start at.</param>
-        /// <param name="btPattern">Pattern to scan for.</param>
-        /// <param name="strMask">Mask to compare against.</param>
-        /// <returns>Boolean depending on if the pattern was found.</returns>
-        private bool MaskCheck(int nOffset, IEnumerable<byte> btPattern, string strMask)
-        {
-            // Loop the pattern and compare to the mask and dump.
-            return !btPattern.Where((t, x) => strMask[x] != '?' && ((strMask[x] == 'x') && (t != this.m_vDumpedRegion[nOffset + x]))).Any();
-        }
-
-        #endregion
-
-        #region "sigScan Class Public Methods"
-        /// <summary>
-        /// FindPattern
-        /// 
-        ///     Attempts to locate the given pattern inside the dumped memory region
-        ///     compared against the given mask. If the pattern is found, the offset
-        ///     is added to the located address and returned to the user.
-        /// </summary>
-        /// <param name="btPattern">Byte pattern to look for in the dumped region.</param>
-        /// <param name="strMask">The mask string to compare against.</param>
-        /// <param name="nOffset">The offset added to the result address.</param>
-        /// <returns>IntPtr - zero if not found, address if found.</returns>
-        public IntPtr FindPattern(byte[] btPattern, string strMask, int nOffset)
-        {
-            try
-            {
-                // Dump the memory region if we have not dumped it yet.
-                if (this.m_vDumpedRegion == null || this.m_vDumpedRegion.Length == 0)
+                if (s == "?" || s == "??")
                 {
-                    if (!this.DumpMemory())
-                        return IntPtr.Zero;
+                    output[i] = 0;
+                    mask[i] = false;
                 }
-
-                // Ensure the mask and pattern lengths match.
-                if (strMask.Length != btPattern.Length)
-                    return IntPtr.Zero;
-
-                // Loop the region and look for the pattern.
-                for (int x = 0; x < this.m_vDumpedRegion.Length; x++)
+                else
                 {
-                    if (this.MaskCheck(x, btPattern, strMask))
+                    if (byte.TryParse(s, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out output[i]))
                     {
-                        // The pattern was found, return it.
-                        return new IntPtr((int)this.m_vAddress + (x + nOffset));
+                        mask[i] = true;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Invalid pattern format");
                     }
                 }
-
-                // Pattern was not found.
-                return IntPtr.Zero;
             }
-            catch (Exception)
+            else
             {
-                return IntPtr.Zero;
+                throw new ArgumentException("Invalid pattern format");
             }
         }
+        oPattern = output;
+        oMask = mask;
 
-        /// <summary>
-        /// ResetRegion
-        /// 
-        ///     Resets the memory dump array to nothing to allow
-        ///     the class to redump the memory.
-        /// </summary>
-        public void ResetRegion()
-        {
-            this.m_vDumpedRegion = null;
-        }
-        #endregion
+    }
 
-        #region "sigScan Class Properties"
-        public Process Process
-        {
-            get { return this.m_vProcess; }
-            set { this.m_vProcess = value; }
-        }
-        public IntPtr Address
-        {
-            get { return this.m_vAddress; }
-            set { this.m_vAddress = value; }
-        }
-        public Int32 Size
-        {
-            get { return this.m_vSize; }
-            set { this.m_vSize = value; }
-        }
-        #endregion
+    /// <summary>
+    /// Gets the main module base address
+    /// </summary>
+    public static IntPtr BaseAddress
+    {
+        get { return Process.GetCurrentProcess().MainModule.BaseAddress; }
+    }
 
+    /// <summary>
+    /// Gets the size of the main module
+    /// </summary>
+    public static int ModuleSize
+    {
+        get { return Process.GetCurrentProcess().MainModule.ModuleMemorySize; }
+    }
+
+    static unsafe IntPtr FindPattern(byte[] pattern, bool[] mask)
+    {
+        return FindPattern(pattern, mask, BaseAddress, ModuleSize);
+    }
+
+    static unsafe IntPtr FindPattern(byte[] pattern, bool[] mask, IntPtr startAddress, int searchSize)
+    {
+        int maskLength = mask.Length - 1;
+        byte* address = (byte*)startAddress.ToPointer();
+        byte* end = address + searchSize - maskLength;
+
+        for (int i = 0; address < end; address++)
+        {
+            if (*address == pattern[i] || !mask[i])
+            {
+                if (i == maskLength)
+                {
+                    return new IntPtr(address - maskLength);
+                }
+                i++;
+            }
+            else
+            {
+                i = 0;
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Finds the address of a byte pattern in the format "XX XX ?? ?? XX" etc in the Main Module of the current process
+    /// </summary>
+    /// <param name="pattern">The pattern to find</param>
+    /// <returns></returns>
+    public static IntPtr FindPattern(string pattern)
+    {
+        byte[] pBytes;
+        bool[] pBool;
+        try
+        {
+            ExtractPattern(pattern, out pBytes, out pBool);
+        }
+        catch
+        {
+            return IntPtr.Zero;
+        }
+        return FindPattern(pBytes, pBool);
+    }
+
+    /// <summary>
+    /// Finds the address of a byte pattern in the format "XX XX ?? ?? XX" etc in the range of addresses specified
+    /// Memory exceptions will be thrown if the addresses specified arent inside the current processes allocated memory
+    /// </summary>
+    /// <param name="pattern">The pattern.</param>
+    /// <param name="startAddress">The start address.</param>
+    /// <param name="searchSize">Size of the search.</param>
+    /// <returns></returns>
+    public static IntPtr FindPattern(string pattern, IntPtr startAddress, int searchSize)
+    {
+        byte[] pBytes;
+        bool[] pBool;
+        try
+        {
+            ExtractPattern(pattern, out pBytes, out pBool);
+        }
+        catch
+        {
+            return IntPtr.Zero;
+        }
+        return FindPattern(pBytes, pBool, startAddress, searchSize);
+    }
+
+    public static unsafe IntPtr ReadPtr(IntPtr ptr)
+    {
+        return new IntPtr(*(long*)ptr.ToPointer());
+    }
+
+    public static unsafe int ReadInt(IntPtr ptr)
+    {
+        return *(int*)ptr.ToPointer();
+    }
+
+    public static unsafe short ReadShort(IntPtr ptr)
+    {
+        return *(short*)ptr.ToPointer();
+    }
+
+    public static unsafe byte ReadByte(IntPtr ptr)
+    {
+        return *(byte*)ptr.ToPointer();
+    }
+
+    public static unsafe long ReadLong(IntPtr ptr)
+    {
+        return *(long*)ptr.ToPointer();
+    }
+
+    public static unsafe uint ReadUInt(IntPtr ptr)
+    {
+        return *(uint*)ptr.ToPointer();
+    }
+
+    public static unsafe ushort ReadUShort(IntPtr ptr)
+    {
+        return *(ushort*)ptr.ToPointer();
+    }
+
+    public static unsafe sbyte ReadSByte(IntPtr ptr)
+    {
+        return *(sbyte*)ptr.ToPointer();
+    }
+
+    public static unsafe ulong ReadULong(IntPtr ptr)
+    {
+        return *(ulong*)ptr.ToPointer();
+    }
+
+    public static void ReadBytes(IntPtr ptr, byte[] buffer, int count, int offset)
+    {
+        Marshal.Copy(ptr, buffer, offset, count);
+    }
+
+    public static void ReadBytes(IntPtr ptr, byte[] buffer)
+    {
+        Marshal.Copy(ptr, buffer, 0, buffer.Length);
+    }
+
+    public static unsafe void WriteInt(IntPtr ptr, int value)
+    {
+        *(int*)ptr.ToPointer() = value;
+    }
+
+    public static unsafe void WriteShort(IntPtr ptr, short value)
+    {
+        *(short*)ptr.ToPointer() = value;
+    }
+
+    public static unsafe void WriteByte(IntPtr ptr, byte value)
+    {
+        *(byte*)ptr.ToPointer() = value;
+    }
+
+    public static unsafe void WriteLong(IntPtr ptr, long value)
+    {
+        *(long*)ptr.ToPointer() = value;
+    }
+
+    public static unsafe void WriteUInt(IntPtr ptr, uint value)
+    {
+        *(uint*)ptr.ToPointer() = value;
+    }
+
+    public static unsafe void WriteUShort(IntPtr ptr, ushort value)
+    {
+        *(ushort*)ptr.ToPointer() = value;
+    }
+
+    public static unsafe void WriteSByte(IntPtr ptr, sbyte value)
+    {
+        *(sbyte*)ptr.ToPointer() = value;
+    }
+
+    public static unsafe void WriteULong(IntPtr ptr, ulong value)
+    {
+        *(ulong*)ptr.ToPointer() = value;
+    }
+
+    public static void WriteBytes(IntPtr ptr, byte[] buffer, int count, int offset)
+    {
+        Marshal.Copy(buffer, offset, ptr, count);
+    }
+    public static void WriteBytes(IntPtr ptr, byte[] buffer)
+    {
+        Marshal.Copy(buffer, 0, ptr, buffer.Length);
+    }
+}
+
+public static unsafe class ScriptTable
+{
+    [StructLayout(LayoutKind.Explicit, Size = 0x10)]
+    public struct ScriptTableItem
+    {
+        [FieldOffset(0x0)]
+        public long ScriptStartAddress;
+        [FieldOffset(0xC)]
+        public int ScriptHash;
+    }
+
+    private static ScriptTableItem** itemsPtr;
+    private static int* count;
+
+    public static int Count { get { return *count; } }
+    public static IntPtr GetScriptAddress(int hash)
+    {
+        if (!IsTableInitialised) return IntPtr.Zero;
+        ScriptTableItem* items = *itemsPtr;
+        for (int i = 0; i < *count; i++)
+        {
+            if (items[i].ScriptHash == hash)
+            {
+                return new IntPtr(items[i].ScriptStartAddress);
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    public static bool DoesScriptExist(int hash)
+    {
+        if (!IsTableInitialised) return false;
+        ScriptTableItem* items = *itemsPtr;
+        for (int i = 0; i < *count; i++)
+        {
+            if (items[i].ScriptHash == hash)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static bool IsScriptLoaded(int hash)
+    {
+        if (!IsTableInitialised) return false;
+        ScriptTableItem* items = *itemsPtr;
+        for (int i = 0; i < *count; i++)
+        {
+            if (items[i].ScriptHash == hash)
+            {
+                return items[i].ScriptStartAddress != 0;
+            }
+        }
+        return false;
+    }
+
+    public static bool IsTableInitialised
+    {
+        get { return (long)itemsPtr != 0; }
+    }
+    static unsafe ScriptTable()
+    {
+        IntPtr TablePtr = Memory.FindPattern("48 03 15 ?? ?? ?? ?? 4C 23 C2 49 8B 08");
+        IntPtr address = TablePtr + *(int*)(TablePtr + 3) + 7;
+        itemsPtr = (ScriptTableItem**)address.ToPointer();
+        count = (int*)(address + 0x18);
+
+    }
+}
+public static class GTAMemory
+{
+    private static IntPtr GlobalAddress;
+
+    static unsafe GTAMemory()
+    {
+        IntPtr GlobalPattern = Memory.FindPattern("4C 8D 05 ?? ?? ?? ?? 4D 8B 08 4D 85 C9 74 11");
+
+        GlobalAddress = GlobalPattern + *(int*)(GlobalPattern + 3) + 7;
+    }
+
+    public static unsafe IntPtr GetGlobalAddress(int index)
+    {
+        long** addr = (long**)GlobalAddress.ToPointer();
+        return new IntPtr(&addr[index >> 18][index & 0x3FFFF]);
     }
 }
