@@ -2243,7 +2243,7 @@ namespace GTANetwork
                     if (speed == 0) return "idle";
                     if (speed == 1) return "walk";
                     if (speed == 2) return "canter";
-                    if (speed == 3) return "sprint";
+                    if (speed == 3) return "gallop";
                 }
                     break;
                 case PedHash.Cormorant:
