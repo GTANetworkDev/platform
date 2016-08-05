@@ -1196,6 +1196,11 @@ namespace GTANetworkServer
             return player.Name;
         }
 
+        public Vector3 getPlayerVelocity(Client player)
+        {
+            return player.Velocity ?? new Vector3();
+        }
+
         public int getPlayerVehicleSeat(Client player)
         {
             if (!player.IsInVehicle || player.CurrentVehicle.IsNull) return -3;

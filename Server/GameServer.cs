@@ -1254,6 +1254,7 @@ namespace GTANResource
                                                 {
                                                     client.Position = fullPacket.Position;
                                                     client.Rotation = fullPacket.Quaternion;
+                                                    client.Velocity = fullPacket.Velocity;
 
                                                     if (!client.CurrentVehicle.IsNull &&
                                                         NetEntityHandler.ToDict()
@@ -1408,6 +1409,7 @@ namespace GTANResource
                                                 client.Position = fullPacket.Position;
                                                 client.LastUpdate = DateTime.Now;
                                                 client.Rotation = fullPacket.Quaternion;
+                                                client.Velocity = fullPacket.Velocity;
 
                                                 if (client.IsInVehicleInternal && !client.CurrentVehicle.IsNull)
                                                 {

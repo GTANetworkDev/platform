@@ -21,6 +21,7 @@ namespace GTANetworkServer
         public NetHandle CurrentVehicle { get; set; }
         public Vector3 Position { get; internal set; }
         public Vector3 Rotation { get; internal set; }
+        public Vector3 Velocity { get; internal set; }
         public int Health { get; internal set; }
         public int Armor { get; internal set; }
         public bool IsInVehicle { get; internal set; }
