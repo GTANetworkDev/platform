@@ -130,6 +130,9 @@ namespace GTANetworkShared
 
         [ProtoMember(11)]
         public string NumberPlate { get; set; }
+
+        [ProtoMember(12)]
+        public short VehicleComponents { get; set; }
     }
 
     [ProtoContract]
@@ -372,6 +375,8 @@ namespace GTANetworkShared
 
         [ProtoMember(11)]
         public string NumberPlate { get; set; }
+        [ProtoMember(12)]
+        public short? VehicleComponents { get; set; }
     }
 
     [ProtoContract]

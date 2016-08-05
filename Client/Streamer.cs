@@ -489,6 +489,7 @@ namespace GTANetwork
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.VehicleComponents != null) veh.VehicleComponents = prop.VehicleComponents.Value;
 
             if (prop.Dimension != null)
             {
@@ -864,6 +865,7 @@ namespace GTANetwork
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
+                    VehicleComponents = prop.VehicleComponents,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -1592,6 +1594,12 @@ namespace GTANetwork
             else
             {
                 Function.Call(Hash.SET_VEHICLE_ENGINE_ON, veh, true, true, true);
+            }
+
+            for (int i = 0; i < 16; i++)
+            {
+                if (!Function.Call<bool>(Hash.DOES_EXTRA_EXIST, veh, i)) continue;
+                Function.Call(Hash.SET_VEHICLE_EXTRA, veh, i, (data.VehicleComponents & 1 << i) != 0 ? 0 : -1);
             }
 
             LogManager.DebugLog("PROPERTIES SET");
