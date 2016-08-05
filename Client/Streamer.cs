@@ -213,6 +213,23 @@ namespace GTANetwork
             }
         }
 
+        public void UpdateMisc()
+        {
+            var cars =
+                new List<RemoteVehicle>(
+                    ClientMap.Where(
+                        item => item.StreamedIn && item is RemoteVehicle && new Model(((RemoteVehicle) item).ModelHash).IsHelicopter)
+                        .Cast<RemoteVehicle>());
+
+            foreach (var remoteVehicle in cars)
+            {
+                if (PacketOptimization.CheckBit(remoteVehicle.Flag, EntityFlag.SpecialLight))
+                {
+                    Function.Call(Hash.SET_VEHICLE_SEARCHLIGHT, NetToEntity(remoteVehicle), true, true);
+                }
+            }
+        }
+
         public void DrawMarkers()
         {
             var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker && item.StreamedIn).Cast<RemoteMarker>());
@@ -339,6 +356,17 @@ namespace GTANetwork
                 if (handleable.LocalHandle == -2) return Game.Player.Character;
                 return new Prop(handleable.LocalHandle);
              }
+        }
+
+        public Entity NetToEntity(IStreamedItem netId)
+        {
+            lock (ClientMap)
+            {
+                var handleable = netId as ILocalHandleable;
+                if (netId == null || handleable == null) return null;
+                if (handleable.LocalHandle == -2) return Game.Player.Character;
+                return new Prop(handleable.LocalHandle);
+            }
         }
 
         public bool IsBlip(int localHandle)
@@ -1606,7 +1634,7 @@ namespace GTANetwork
             {
                 if (model.IsHelicopter)
                 {
-                    veh.SearchLightOn = true;
+                    Function.Call(Hash.SET_VEHICLE_SEARCHLIGHT, veh, true, true);
                 }
                 else
                 {

@@ -653,7 +653,7 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(vehicle))
             {
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x14E85C5EE7A4D542, vehicle, turnedOn, false);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x14E85C5EE7A4D542, vehicle, turnedOn, true);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x598803E85E8448D9, vehicle, turnedOn);
 
                 if (turnedOn)

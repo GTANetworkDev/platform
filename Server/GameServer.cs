@@ -1190,7 +1190,8 @@ namespace GTANResource
                                                                         fs.Engines.ForEach(
                                                                             en => en.InvokeChatCommand(client, data.Message)));
                                                             
-                                                            CommandHandler.Parse(client, data.Message);
+                                                            if (!CommandHandler.Parse(client, data.Message))
+                                                                PublicAPI.sendChatMessageToPlayer(client, "~r~ERROR:~w~ Command not found.");
                                                         }
                                                         else
                                                         {
