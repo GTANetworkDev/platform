@@ -1,0 +1,5 @@
+<meta>
+    <info name="Hunter" author="Guadmaz" type="gamemode" async="true"/>
+    
+    <script src="hunter.cs" type="server" lang="csharp" />
+</meta>

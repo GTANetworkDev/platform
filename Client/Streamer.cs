@@ -31,7 +31,7 @@ namespace GTANetwork
         public static int MAX_OBJECTS = 1000;
         public static int MAX_VEHICLES = 50;
         public static int MAX_PICKUPS = 30;
-        public static int MAX_BLIPS = 200;
+        public static int MAX_BLIPS = 100;
         public static int MAX_PLAYERS = 50;
         public static int MAX_MARKERS = 100;
         public static int MAX_LABELS = 20;
@@ -1291,8 +1291,6 @@ namespace GTANetwork
                 }
             }
 
-
-
             if (item is EntityProperties && ((EntityProperties)item).AttachedTo != null)
             {
                 LogManager.DebugLog("ITEM " + item.RemoteHandle + " IS ATTACHED TO " + ((EntityProperties)item).AttachedTo);
@@ -1337,9 +1335,9 @@ namespace GTANetwork
 
             item.StreamedIn = false;
 
-            if (item is EntityProperties && ((EntityProperties)item).Attachables != null)
+            if (item.Attachables != null)
             {
-                foreach (var attachable in ((EntityProperties)item).Attachables)
+                foreach (var attachable in item.Attachables)
                 {
                     var att = NetToStreamedItem(attachable);
                     if (att != null) StreamOut(att);
@@ -1483,6 +1481,9 @@ namespace GTANetwork
             ourBlip.Alpha = item.Alpha;
             ourBlip.IsShortRange = item.IsShortRange;
             ourBlip.Scale = item.Scale;
+
+            item.StreamedIn = true;
+            item.LocalHandle = ourBlip.Handle;
 
             JavascriptHook.InvokeStreamInEvent(new LocalHandle(ourBlip.Handle), (int)EntityType.Blip);
         }

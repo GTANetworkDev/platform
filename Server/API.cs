@@ -312,6 +312,11 @@ namespace GTANetworkServer
             return player.IsInVehicle;
         }
 
+        public bool isPlayerDead(Client player)
+        {
+            return player.Health <= 0;
+        }
+
         public NetHandle getPlayerCurrentVehicle(Client player)
         {
             return player.CurrentVehicle;
@@ -524,14 +529,29 @@ namespace GTANetworkServer
             Program.ServerInstance.ChangePlayerBlipColor(target, newColor);
         }
 
+        public void setPlayerBlipColorForPlayer(Client target, int newColor, Client forPlayer)
+        {
+            Program.ServerInstance.ChangePlayerBlipColorForPlayer(target, newColor, forPlayer);
+        }
+
         public void setPlayerBlipAlpha(Client target, int newAlpha)
         {
             Program.ServerInstance.ChangePlayerBlipAlpha(target, newAlpha);
         }
 
+        public void setPlayerBlipAlphaForPlayer(Client target, int newAlpha, Client forPlayer)
+        {
+            Program.ServerInstance.ChangePlayerBlipAlphaForPlayer(target, newAlpha, forPlayer);
+        }
+
         public void setPlayerBlipSprite(Client target, int newSprite)
         {
             Program.ServerInstance.ChangePlayerBlipSprite(target, newSprite);
+        }
+
+        public void setPlayerBlipSpriteForPlayer(Client target, int newSprite, Client forPlayer)
+        {
+            Program.ServerInstance.ChangePlayerBlipSpriteForPlayer(target, newSprite, forPlayer);
         }
 
         public void setPlayerToSpectator(Client player)
@@ -1559,6 +1579,28 @@ namespace GTANetworkServer
             if (doesEntityExist(blip))
             {
                 return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color;
+            }
+            return 0;
+        }
+
+        public void setBlipAlpha(NetHandle blip, int alpha)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Alpha = (byte)alpha;
+                var delta = new Delta_BlipProperties();
+                delta.Alpha = (byte)alpha;
+                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+            }
+
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x45FF974EEE1C8734, blip, alpha);
+        }
+
+        public int getBlipAlpha(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Alpha;
             }
             return 0;
         }

@@ -192,21 +192,23 @@ namespace GTANetworkServer
 
         public void InvokeResourceStop()
         {
-            bool canContinue = false;
-            lock (_mainQueue.SyncRoot)
-            _mainQueue.Enqueue(new Action(() =>
-            {
-                if (Language == ScriptingEngineLanguage.compiled)
-                    _compiledScript.API.invokeResourceStop();
-                canContinue = true;
-            }));
-            DateTime start = DateTime.Now;
-            while (!canContinue && DateTime.Now.Subtract(start).TotalMilliseconds < 10000) { Thread.Sleep(10); }
+            _workerThread.Abort();
+            _blockingThread.Abort();
+
             lock (ActiveThreads)
             {
                 ActiveThreads.Where(t => t != null && t.IsAlive).ToList().ForEach(t => t.Abort());
                 ActiveThreads.Clear();
             }
+
+            try
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeResourceStop();
+            }
+            catch
+            { }
+
             HasTerminated = true;
         }
 

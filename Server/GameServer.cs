@@ -2577,6 +2577,15 @@ namespace GTANResource
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
+        public void ChangePlayerBlipColorForPlayer(Client target, int newColor, Client forPlayer)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerBlipColorChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newColor);
+
+            SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
+
         public void ChangePlayerBlipSprite(Client target, int newSprite)
         {
             if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
@@ -2591,6 +2600,15 @@ namespace GTANResource
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
+        public void ChangePlayerBlipSpriteForPlayer(Client target, int newSprite, Client forPlayer)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerBlipSpriteChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newSprite);
+
+            SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
+
         public void ChangePlayerBlipAlpha(Client target, int newAlpha)
         {
             if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
@@ -2603,6 +2621,15 @@ namespace GTANResource
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newAlpha);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
+
+        public void ChangePlayerBlipAlphaForPlayer(Client target, int newAlpha, Client forPlayer)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
+            obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newAlpha);
+
+            SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void DetachEntity(int nethandle, bool collision)

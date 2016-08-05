@@ -3473,17 +3473,13 @@ namespace GTANetwork
                                     {
                                         var netHandle = (int)args[0];
                                         var newAlpha = (int)args[1];
-                                        var lclHndl = NetEntityHandler.NetToEntity(netHandle);
-                                        if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
+                                        var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
+                                        if (pair != null)
                                         {
-                                            var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
-                                            if (pair != null)
-                                            {
-                                                pair.BlipAlpha = (byte)newAlpha;
-                                                if (pair.Character != null &&
-                                                    pair.Character.CurrentBlip != null)
-                                                    pair.Character.CurrentBlip.Alpha = newAlpha;
-                                            }
+                                            pair.BlipAlpha = (byte)newAlpha;
+                                            if (pair.Character != null &&
+                                                pair.Character.CurrentBlip != null)
+                                                pair.Character.CurrentBlip.Alpha = newAlpha;
                                         }
                                     }
                                     break;

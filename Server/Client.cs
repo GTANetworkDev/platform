@@ -45,5 +45,31 @@ namespace GTANetworkServer
         {
             NetConnection = nc;
         }
+
+        public override bool Equals(object obj)
+        {
+            Client target;
+            if ((target = obj as Client) != null)
+            {
+                return NetConnection.RemoteUniqueIdentifier == target.NetConnection.RemoteUniqueIdentifier;
+            }
+            return false;
+        }
+
+        public static bool operator ==(Client left, Client right)
+        {
+            if ((object) left == null && (object) right == null) return true;
+            if ((object)left == null || (object)right == null) return false;
+
+            return left.NetConnection.RemoteUniqueIdentifier == right.NetConnection.RemoteUniqueIdentifier;
+        }
+
+        public static bool operator !=(Client left, Client right)
+        {
+            if ((object)left == null && (object)right == null) return false;
+            if ((object)left == null || (object)right == null) return true;
+
+            return left.NetConnection.RemoteUniqueIdentifier != right.NetConnection.RemoteUniqueIdentifier;
+        }
     }
 }
