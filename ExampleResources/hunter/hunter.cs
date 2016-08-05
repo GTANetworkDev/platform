@@ -17,13 +17,13 @@ public class HunterScript : Script
 		API.onPlayerDeath += dead;
 		API.onPlayerRespawn += respawn;
 		API.onPlayerConnected += respawn;
-		API.onPlayerDisconnect += playerleft;
+		API.onPlayerDisconnected += playerleft;
 	}
 
 	private List<Vector3> _animalSpawnpoints = new List<Vector3>
 	{
 		new Vector3(-1488.76f, 4720.44f, 46.22f),
-		new Vector3(-1317.07, 4642.76, 108.31),
+		new Vector3(-1317.07f, 4642.76f, 108.31f),
 		new Vector3(-1291.08f, 4496.54f, 14.7f),
 		new Vector3(-1166.29f, 4409.41f, 8.87f),
 		new Vector3(-1522.33f, 4418.05f, 12.2f),
@@ -41,7 +41,10 @@ public class HunterScript : Script
 
 	private List<PedHash> _skinList = new List<PedHash>
 	{
-		PedHash.Hunter, PedHash.Hillbilly01AMM, PedHash.Hillbilly02AMM, PedHash.Cletus,
+		PedHash.Hunter,
+		PedHash.Hillbilly01AMM,
+		PedHash.Hillbilly02AMM,
+		PedHash.Cletus,
 		PedHash.OldMan1aCutscene,
 	};
 
@@ -80,6 +83,8 @@ public class HunterScript : Script
 		if (player == animal)
 		{
 			API.sendChatMessageToAll("The animal has left! Restarting...");
+			animal = null;
+			roundstarted = false;
 			roundstart();
 		}
 	}
@@ -87,6 +92,8 @@ public class HunterScript : Script
 	public void roundstart()
 	{
 		var players = API.getAllPlayers();
+
+		API.deleteEntity(breadcrumb);
 
 		animal = players[r.Next(players.Count)];
 		API.setPlayerSkin(animal, PedHash.Deer);
@@ -181,9 +188,8 @@ public class HunterScript : Script
 					API.setPlayerBlipAlpha(animal, 0);
 				}
 
-				if (!breadcrumbLock)
+				if (!breadcrumbLock) // breadcrumbs are very messy since i was debugging the blips not disappearing
 				{
-					API.consoleOutput("Putting a breadcrumb...");
 					breadcrumbLock = true;
 					breadcrumb = API.createBlip(lastIdlePosition);
 					API.setBlipSprite(breadcrumb, 161);
@@ -199,7 +205,6 @@ public class HunterScript : Script
 			if (API.TickCount - lastBreadcrumb > 15000 && breadcrumbLock)
 			{
 				API.deleteEntity(breadcrumb);
-				API.consoleOutput("removing breadcrumb...");
 				breadcrumbLock = false;
 			}
 	}

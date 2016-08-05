@@ -83,16 +83,40 @@ namespace GTANetworkServer
 
                     if (mainAction != null)
                     {
-                        if (Async)
+                        try
                         {
-                            ThreadPool.QueueUserWorkItem((WaitCallback) delegate
+                            if (Async)
+                            {
+                                ThreadPool.QueueUserWorkItem((WaitCallback) delegate
+                                {
+                                    try
+                                    {
+                                        mainAction?.Invoke();
+                                    }
+                                    catch (ResourceAbortedException)
+                                    {
+
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Program.Output("EXCEPTION IN RESOURCE " + ResourceParent.DirectoryName + " INSIDE SCRIPTENGINE " + Filename);
+                                        Program.Output(ex.ToString());
+                                    }
+                                });
+                            }
+                            else
                             {
                                 mainAction?.Invoke();
-                            });
+                            }
                         }
-                        else
+                        catch (ResourceAbortedException)
                         {
-                            mainAction?.Invoke();
+                            
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.Output("EXCEPTION IN RESOURCE " + ResourceParent.DirectoryName + " INSIDE SCRIPTENGINE " + Filename);
+                            Program.Output(ex.ToString());
                         }
                     }
                 }
@@ -108,8 +132,19 @@ namespace GTANetworkServer
 
             while (!HasTerminated)
             {
-                if (Language == ScriptingEngineLanguage.compiled)
-                    _compiledScript.API.invokeUpdate();
+                try
+                {
+                    if (Language == ScriptingEngineLanguage.compiled)
+                        _compiledScript.API.invokeUpdate();
+                }
+                catch (ResourceAbortedException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    Program.Output("EXCEPTION IN RESOURCE " + ResourceParent.DirectoryName + " INSIDE SCRIPTENGINE " + Filename);
+                    Program.Output(ex.ToString());
+                }
 
                 Thread.Sleep(16);
             }
@@ -195,6 +230,8 @@ namespace GTANetworkServer
             _workerThread.Abort();
             _blockingThread.Abort();
 
+            HasTerminated = true;
+
             lock (ActiveThreads)
             {
                 ActiveThreads.Where(t => t != null && t.IsAlive).ToList().ForEach(t => t.Abort());
@@ -209,7 +246,6 @@ namespace GTANetworkServer
             catch
             { }
 
-            HasTerminated = true;
         }
 
         public void InvokePlayerBeginConnect(Client client, CancelEventArgs e)

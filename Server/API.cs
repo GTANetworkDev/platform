@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Xml;
 using GTANetworkShared;
@@ -22,6 +23,11 @@ namespace GTANetworkServer
         {
             Cancel = cancel;
         }
+    }
+
+    public class ResourceAbortedException : Exception
+    {
+        
     }
 
     public abstract class Script
@@ -360,6 +366,7 @@ namespace GTANetworkServer
             var start = DateTime.Now;
             while (DateTime.Now.Subtract(start).TotalMilliseconds < ms)
             {
+                if (ResourceParent?.HasTerminated == true) throw new ResourceAbortedException();
                 Thread.Sleep(10);
             }
         }
