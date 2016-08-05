@@ -1,5 +1,8 @@
-﻿using GTA;
+﻿using System.Drawing;
+using System.Text;
+using GTA;
 using GTA.Native;
+using NativeUI;
 
 namespace GTANetwork
 {
@@ -13,6 +16,21 @@ namespace GTANetwork
         public static bool IsSubtaskActive(this Ped ped, int sub)
         {
             return Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, ped, sub);
+        }
+
+        public static void Debug()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < 500; i++)
+            {
+                if (Game.Player.Character.IsSubtaskActive(i))
+                {
+                    sb.Append(i + ",");
+                }
+            }
+
+            new UIResText(sb.ToString(), new Point(10, 10), 0.3f).Draw();
         }
     }
 

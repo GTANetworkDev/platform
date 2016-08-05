@@ -49,6 +49,8 @@ namespace GTANetwork
         public bool IsInActionMode;
         public bool IsInCover;
         public bool IsInLowCover;
+        public bool IsOnLadder;
+        public bool IsVaulting;
         public bool IsCoveringToLeft;
         public bool IsInMeleeCombat;
         public bool IsFreefallingWithParachute;
@@ -1380,10 +1382,9 @@ namespace GTANetwork
 				secAnim = "idle";
 			}
 			//
+
 			var animDict = GetAnimDictionary();
-
-
-
+            
 			if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
@@ -1640,6 +1641,7 @@ namespace GTANetwork
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
 			var animDict = GetAnimDictionary(ourAnim);
 			var secondaryAnimDict = GetSecondaryAnimDict();
+	        var flag = GetAnimFlag();
 
 			DEBUG_STEP = 34;
 
@@ -1648,7 +1650,7 @@ namespace GTANetwork
 					3))
 			{
 				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-					8f, 10f, -1, 1 | 2147483648, -8f, 1, 1, 1);
+					8f, 10f, -1, flag, -8f, 1, 1, 1);
 			}
             
 			
@@ -1934,6 +1936,8 @@ namespace GTANetwork
         public string GetAnimDictionary(string ourAnim = "")
         {
             if (IsInCover) return GetCoverIdleAnimDict();
+            if (IsOnLadder) return "laddersbase";
+            if (IsVaulting) return "move_climb";
 
             if (GetAnimalAnimationDictionary(ModelHash) != null)
                 return GetAnimalAnimationDictionary(ModelHash);
@@ -1946,6 +1950,13 @@ namespace GTANetwork
             dict = Character.IsInWater ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : dict;
 
             return dict;
+        }
+
+        public uint GetAnimFlag()
+        {
+            if (IsVaulting)
+                return 2 | 2147483648;
+            return 1 | 2147483648; // Loop + dont move
         }
 
         private int m_uiForceLocalCounter;
@@ -2191,6 +2202,15 @@ namespace GTANetwork
                 
                 return coverFacingLeft ? "idle_l_corner" : "idle_r_corner";
             }
+
+            if (IsOnLadder)
+            {
+                if (Math.Abs(PedVelocity.Z) < 0.5) return "base_left_hand_up";
+                else if (PedVelocity.Z > 0) return "climb_up";
+                else if (PedVelocity.Z < 0) return "climb_down";
+            }
+
+            if (IsVaulting) return "standclimbup_180_low";
 
             if (GetAnimalAnimationName(ModelHash,speed) != null)
                 return GetAnimalAnimationName(ModelHash,speed);

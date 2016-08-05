@@ -57,7 +57,8 @@ namespace GTANetworkShared
 
             // Are we shooting?
             if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, PedDataFlags.Shooting))
+                CheckBit(data.Flag.Value, PedDataFlags.Shooting) ||
+                CheckBit(data.Flag.Value, PedDataFlags.HasAimData))
             {
                 // Aim coordinates
                 byteArray.AddRange(GetBytes(data.AimCoords.X));
@@ -123,7 +124,7 @@ namespace GTANetworkShared
             byteArray.Add(data.Flag.Value);
 
             if (CheckBit(data.Flag.Value, VehicleDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, VehicleDataFlags.MountedWeapon) ||
+                CheckBit(data.Flag.Value, VehicleDataFlags.HasAimData) ||
                 CheckBit(data.Flag.Value, VehicleDataFlags.Shooting))
             {
                 // Write the gun model
@@ -310,7 +311,8 @@ namespace GTANetworkShared
 
             // Is the player shooting?
             if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, PedDataFlags.Shooting))
+                CheckBit(data.Flag.Value, PedDataFlags.Shooting) ||
+                CheckBit(data.Flag.Value, PedDataFlags.HasAimData))
             {
                 // read where is he aiming
                 Vector3 aimPoint = new Vector3();
@@ -365,7 +367,7 @@ namespace GTANetworkShared
 
             // If we're shooting/aiming, read gun stuff
             if (CheckBit(data.Flag.Value, VehicleDataFlags.Shooting) ||
-                CheckBit(data.Flag.Value, VehicleDataFlags.MountedWeapon) ||
+                CheckBit(data.Flag.Value, VehicleDataFlags.HasAimData) ||
                 CheckBit(data.Flag.Value, VehicleDataFlags.Aiming))
             {
                 // read gun model

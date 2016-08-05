@@ -167,6 +167,7 @@ namespace GTANetwork
 
     public class SyncCollector : Script
     {
+        public static bool ForceAimData;
         public static object LastSyncPacket;
         public static object Lock = new object();
 
@@ -222,10 +223,13 @@ namespace GTANetwork
                 if (veh.IsInBurnout())
                     obj.Flag |= (byte)VehicleDataFlags.BurnOut;
 
+                if (ForceAimData)
+                    obj.Flag |= (byte) VehicleDataFlags.HasAimData;
+
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
-                    obj.Flag |= (byte)VehicleDataFlags.MountedWeapon;
+                    obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                     obj.AimCoords = new GTANetworkShared.Vector3(0, 0, 0);
                     obj.WeaponHash = Main.GetCurrentVehicleWeaponHash(Game.Player.Character);
                     if (Game.IsEnabledControlPressed(0, Control.VehicleFlyAttack))
@@ -233,7 +237,7 @@ namespace GTANetwork
                 }
                 else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
                 {
-                    obj.Flag |= (byte)VehicleDataFlags.MountedWeapon;
+                    obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                     obj.WeaponHash = 0;
                     obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
                     if (Game.IsEnabledControlPressed(0, Control.VehicleAttack))
@@ -324,6 +328,12 @@ namespace GTANetwork
                     obj.Flag |= (int)PedDataFlags.IsInCoverFacingLeft;
                 if (player.IsReloading)
                     obj.Flag |= (int)PedDataFlags.IsReloading;
+                if (ForceAimData)
+                    obj.Flag |= (int)PedDataFlags.HasAimData;
+                if (player.IsSubtaskActive(ESubtask.USING_LADDER))
+                    obj.Flag |= (int) PedDataFlags.IsOnLadder;
+                if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player))
+                    obj.Flag |= (int)PedDataFlags.IsVaulting;
 
                 obj.Speed = Main.GetPedWalkingSpeed(player);
 

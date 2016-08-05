@@ -101,7 +101,7 @@ namespace GTANetworkShared
         VehicleDead = 1 << 3,
         Aiming = 1 << 4,
         Driver = 1 << 5,
-        MountedWeapon = 1 << 6,
+        HasAimData = 1 << 6,
         BurnOut = 1 << 7,
     }
     
@@ -119,6 +119,9 @@ namespace GTANetworkShared
         IsInLowerCover = 1 << 8,
         IsInCoverFacingLeft = 1 << 9,
         IsReloading = 1 << 10,
+        HasAimData = 1 << 11,
+        IsOnLadder = 1 << 12,
+        IsVaulting = 1 << 13,
     }
 
     public enum ConnectionChannel

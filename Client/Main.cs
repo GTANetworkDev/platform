@@ -601,7 +601,7 @@ namespace GTANetwork
                     {
                         if (i != 0 && i%10 == 0)
                         {
-                            Thread.Sleep(3000);
+                            Thread.Sleep(1000);
                         }
                         var spl = list[i].Split(':');
                         if (spl.Length < 2) continue;
@@ -1917,6 +1917,10 @@ namespace GTANetwork
                     obj.Flag |= (int)PedDataFlags.IsInLowerCover;
                 if (player.IsInCoverFacingLeft)
                     obj.Flag |= (int)PedDataFlags.IsInCoverFacingLeft;
+                if (player.IsSubtaskActive(ESubtask.USING_LADDER))
+                    obj.Flag |= (int)PedDataFlags.IsOnLadder;
+                if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player))
+                    obj.Flag |= (int)PedDataFlags.IsVaulting;
 
                 obj.Speed = GetPedWalkingSpeed(player);
                 return obj;
@@ -2417,6 +2421,7 @@ namespace GTANetwork
                 //}
                 //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
+
             DEBUG_STEP = 4;
             if (_debugWindow)
             {
@@ -4202,13 +4207,13 @@ namespace GTANetwork
                 syncPed.IsRagdoll = (fullPacket.Flag.Value & (int)PedDataFlags.Ragdoll) > 0;
                 syncPed.IsAiming = (fullPacket.Flag.Value & (int)PedDataFlags.Aiming) > 0;
                 syncPed.IsJumping = (fullPacket.Flag.Value & (int)PedDataFlags.Jumping) > 0;
-                //syncPed.IsShooting = (fullPacket.Flag.Value & (int)PedDataFlags.Shooting) > 0;
                 syncPed.IsParachuteOpen = (fullPacket.Flag.Value & (int)PedDataFlags.ParachuteOpen) > 0;
                 syncPed.IsInCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCover) > 0;
                 syncPed.IsInLowCover = (fullPacket.Flag.Value & (int)PedDataFlags.IsInLowerCover) > 0;
-                syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCoverFacingLeft) >
-                                           0;
+                syncPed.IsCoveringToLeft = (fullPacket.Flag.Value & (int)PedDataFlags.IsInCoverFacingLeft) > 0;
+                syncPed.IsOnLadder = (fullPacket.Flag.Value & (int) PedDataFlags.IsOnLadder) > 0;
                 syncPed.IsReloading = (fullPacket.Flag.Value & (int)PedDataFlags.IsReloading) > 0;
+                syncPed.IsVaulting = (fullPacket.Flag.Value & (int)PedDataFlags.IsVaulting) > 0;
             }
 
             if (pure)
@@ -4317,6 +4322,7 @@ namespace GTANetwork
 			DEBUG_STEP = 50;
 			JavascriptHook.StopAllScripts();
             JavascriptHook.TextElements.Clear();
+		    SyncCollector.ForceAimData = false;
             StringCache.Dispose();
 		    StringCache = null;
 			DEBUG_STEP = 51;
@@ -4480,6 +4486,8 @@ namespace GTANetwork
                         _debugSyncPed.IsInLowCover = (data.Flag & (int) PedDataFlags.IsInLowerCover) > 0;
                         _debugSyncPed.IsCoveringToLeft = (data.Flag & (int) PedDataFlags.IsInCoverFacingLeft) > 0;
                         _debugSyncPed.IsReloading = (data.Flag & (int) PedDataFlags.IsReloading) > 0;
+                        _debugSyncPed.IsOnLadder = (data.Flag & (int)PedDataFlags.IsOnLadder) > 0;
+                        _debugSyncPed.IsVaulting = (data.Flag & (int)PedDataFlags.IsVaulting) > 0;
 
                         _debugSyncPed.StartInterpolation();
                     }

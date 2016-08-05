@@ -669,6 +669,26 @@ namespace GTANetwork
             return null;
         }
 
+        public void forceSendAimData(bool force)
+        {
+            SyncCollector.ForceAimData = force;
+        }
+
+        public bool isAimDataForced()
+        {
+            return SyncCollector.ForceAimData;
+        }
+
+        public Vector3 getPlayerAimCoords(LocalHandle player)
+        {
+            if (player == getLocalPlayer()) return Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
+
+            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            if (opp != null)
+                return opp.AimCoords.ToLVector();
+            return new Vector3();
+        }
+
         public int getPlayerPing(LocalHandle player)
         {
             if (player == getLocalPlayer()) return (int)(Main.Latency*1000f);
