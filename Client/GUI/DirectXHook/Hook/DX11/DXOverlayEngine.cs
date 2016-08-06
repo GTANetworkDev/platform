@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using GTANetwork.GUI.DirectXHook.Hook.Common;
+using GTANetworkShared;
 using SharpDX;
 using SharpDX.Direct3D11;
 using Device = SharpDX.Direct3D11.Device;
@@ -49,7 +50,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         public bool Initialise(Device device, Texture2D renderTarget)
         {
-            Debug.Assert(!_initialised);
+            //Debug.Assert(!_initialised);
+            if (_initialised) return false;
             if (_initialising)
                 return false;
 
@@ -131,7 +133,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
         /// </summary>
         public void Draw()
         {
-            EnsureInitiliased();
+            if (!_initialised) return;
 
             Begin();
             
@@ -197,14 +199,16 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                 foreach (var dxImage in _imageCache)
                 {
                     dxImage.Value?.Dispose();
-                    ((ImageElement)dxImage.Key).Dispose();
+                    //((ImageElement)dxImage.Key).Dispose();
                 }
+
+                _imageCache.Clear();
 
                 foreach (var element in Overlays[0].Elements.OfType<ImageElement>())
                 {
                     DXImage result = ToDispose(new DXImage(_device, _deviceContext));
                     result.Initialise(element.Bitmap);
-                    _imageCache[element] = result;
+                    _imageCache.Set(element, result);
                 }
             }
         }

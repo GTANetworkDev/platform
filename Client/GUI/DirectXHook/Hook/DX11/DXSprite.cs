@@ -71,7 +71,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
         SafeHGlobal _indexBuffer = null;
         public bool Initialize()
         {
-            Debug.Assert(!_initialized);
+            //Debug.Assert(!_initialized);
+            if (_initialized) return false;
 
             #region Shaders
             string SpriteFX = @"Texture2D SpriteTex;
@@ -205,7 +206,8 @@ technique11 SpriteTech {
 
         public void DrawImage(int x, int y, float scale, float angle, System.Drawing.Color? color, DXImage image)
         {
-            Debug.Assert(_initialized);
+            //Debug.Assert(_initialized);
+            if (!_initialized) return;
 
             Color4 blendFactor = new Color4(1.0f);
             Color4 backupBlendFactor;
@@ -273,8 +275,9 @@ technique11 SpriteTech {
 
         public void BeginBatch(ShaderResourceView texSRV)
         {
-            Debug.Assert(_initialized);
-            Debug.Assert(texSRV != null);
+            //Debug.Assert(_initialized);
+            //Debug.Assert(texSRV != null);
+            if (!_initialized || texSRV == null) return;
 
             _batchTexSRV = texSRV;
 
@@ -290,7 +293,8 @@ technique11 SpriteTech {
 
         public void EndBatch()
         {
-            Debug.Assert(_initialized);
+            //Debug.Assert(_initialized);
+            if (!_initialized) return;
 
             ViewportF[] vp = _deviceContext.Rasterizer.GetViewports();
 

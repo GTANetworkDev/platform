@@ -321,13 +321,16 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         public void SetBitmap(Bitmap bt)
         {
-            ((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Dispose();
-            this.OverlayEngine.Overlays[0].Elements.RemoveAt(1);
-            this.OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(bt)
-                {
-                    Location = new System.Drawing.Point(0, 0)
-                });
+            //((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Dispose();
+            //this.OverlayEngine.Overlays[0].Elements.RemoveAt(1);
+            //this.OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(bt)
+            //{
+            //Location = new System.Drawing.Point(0, 0)
+            //});
 
+            //((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Bitmap?.Dispose();
+            ((ImageElement) this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = null;
+            ((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = bt;
             this.OverlayEngine.FlushCache();
         }
 

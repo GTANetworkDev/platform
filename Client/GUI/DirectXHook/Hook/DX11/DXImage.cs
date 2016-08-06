@@ -171,7 +171,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         public ShaderResourceView GetSRV()
         {
-            Debug.Assert(_initialised);
+            //Debug.Assert(_initialised);
+            if (!_initialised) return null;
             lock (_srvLock)
             {
                 return _texSRV;

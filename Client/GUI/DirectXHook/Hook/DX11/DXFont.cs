@@ -61,7 +61,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         public bool Initialize(string FontName, float FontSize, System.Drawing.FontStyle FontStyle, bool AntiAliased)
         {
-            Debug.Assert(!_initialized);
+            //Debug.Assert(!_initialized);
+            if (_initialized) return false;
             System.Drawing.Font font = new System.Drawing.Font(FontName, FontSize, FontStyle, System.Drawing.GraphicsUnit.Pixel);
 
             System.Drawing.Text.TextRenderingHint hint = AntiAliased ? System.Drawing.Text.TextRenderingHint.AntiAlias : System.Drawing.Text.TextRenderingHint.SystemDefault;
@@ -237,28 +238,32 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         public ShaderResourceView GetFontSheetSRV()
         {
-            Debug.Assert(_initialized);
+            //Debug.Assert(_initialized);
+            if (!_initialized) return null;
 
             return _fontSheetSRV;
         }
 
         public Rectangle GetCharRect(char c)
         {
-            Debug.Assert(_initialized);
+            //Debug.Assert(_initialized);
+            if (!_initialized) return new Rectangle();
 
             return _charRects[c - StartChar];
         }
 
         public int GetSpaceWidth()
         {
-            Debug.Assert(_initialized);
+            //Debug.Assert(_initialized);
+            if (!_initialized) return 0;
 
             return _spaceWidth;
         }
 
         public int GetCharHeight()
         {
-            Debug.Assert(_initialized);
+            //Debug.Assert(_initialized);
+            if (!_initialized) return 0;
 
             return _charHeight;
         }

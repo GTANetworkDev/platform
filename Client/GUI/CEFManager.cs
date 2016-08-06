@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.IO.MemoryMappedFiles;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
@@ -24,25 +25,35 @@ namespace GTANetwork.GUI
 {
     public class CefController : Script
     {
+        public static PointF _lastMousePoint;
+
         public CefController()
         {
             Tick += (sender, args) =>
             {
-                if (Game.IsKeyPressed(Keys.U)) CEFManager.StopRender = true;
-                if (Game.IsKeyPressed(Keys.H))
+                if (Game.IsKeyPressed(Keys.F11)) CEFManager.StopRender = true;
+                if (Game.IsKeyPressed(Keys.F12))
                 {
                     LogManager.SimpleLog("directx", ObjectTracker.ReportActiveObjects());
                 }
-
-
-                return;
-
+                
                 var res = Game.ScreenResolution;
-                var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
-                var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
+                var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
+                var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
 
-                var mouseDown = Game.IsControlJustPressed(0, GTA.Control.CursorAccept);
-                var mouseUp = Game.IsControlJustReleased(0, GTA.Control.CursorAccept);
+                _lastMousePoint = new PointF(mouseX, mouseY);
+
+                var mouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorAccept);
+                var mouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorAccept);
+
+                var rmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorCancel);
+                var rmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorCancel);
+
+                var wumouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollUp);
+                var wumouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollUp);
+
+                var wdmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollDown);
+                var wdmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollDown);
 
                 foreach (var browser in CEFManager.Browsers)
                 {
@@ -69,11 +80,74 @@ namespace GTANetwork.GUI
                                 .GetHost()
                                 .SendMouseClickEvent((int)(mouseX - browser.Position.X),
                                     (int)(mouseY - browser.Position.Y), MouseButtonType.Left, true, 1, CefEventFlags.None);
+
+                        if (rmouseDown)
+                            browser._browser.GetBrowser()
+                                .GetHost()
+                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, false, 1, CefEventFlags.None);
+
+                        if (rmouseUp)
+                            browser._browser.GetBrowser()
+                                .GetHost()
+                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, true, 1, CefEventFlags.None);
+
+                        if (wdmouseDown)
+                            browser._browser.GetBrowser()
+                                .GetHost()
+                                .SendMouseWheelEvent((int) (mouseX - browser.Position.X),
+                                    (int) (mouseY - browser.Position.Y), 0, -30, CefEventFlags.None);
+
+                        if (wumouseDown)
+                            browser._browser.GetBrowser()
+                                .GetHost()
+                                .SendMouseWheelEvent((int)(mouseX - browser.Position.X),
+                                    (int)(mouseY - browser.Position.Y), 0, 30, CefEventFlags.None);
                     }
                     else
                     {
                         browser._browser.GetBrowser().GetHost().SetFocus(false);
                     }
+                }
+            };
+
+            KeyDown += (sender, args) =>
+            {
+                foreach (var browser in CEFManager.Browsers)
+                {
+                    if (!browser.IsInitialized()) continue;
+
+                    CefEventFlags mod = CefEventFlags.None;
+                    if (args.Control) mod |= CefEventFlags.ControlDown;
+                    if (args.Shift) mod |= CefEventFlags.ShiftDown;
+                    if (args.Alt) mod |= CefEventFlags.AltDown;
+                    
+                    KeyEvent kEvent = new KeyEvent();
+                    kEvent.Type = KeyEventType.KeyDown;
+                    kEvent.Modifiers = mod;
+                    
+                    kEvent.WindowsKeyCode = (int) args.KeyCode;
+                    browser._browser.GetBrowser().GetHost().SendKeyEvent(kEvent);
+
+                    KeyEvent charEvent = new KeyEvent();
+                    charEvent.Type = KeyEventType.Char;
+                    charEvent.WindowsKeyCode = (int)args.KeyCode;
+                    charEvent.Modifiers = mod;
+                    browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
+                }
+            };
+
+            KeyUp += (sender, args) =>
+            {
+                foreach (var browser in CEFManager.Browsers)
+                {
+                    if (!browser.IsInitialized()) continue;
+
+                    KeyEvent kEvent = new KeyEvent();
+                    kEvent.Type = KeyEventType.KeyUp;
+                    kEvent.WindowsKeyCode = (int)args.KeyCode;
+                    browser._browser.GetBrowser().GetHost().SendKeyEvent(kEvent);
                 }
             };
         }
@@ -86,6 +160,9 @@ namespace GTANetwork.GUI
         {
             ScreenSize = screenSize;
             SharpDX.Configuration.EnableObjectTracking = true;
+            Configuration.EnableReleaseOnFinalizer = true;
+            Configuration.EnableTrackingReleaseOnFinalizer = true;
+            
             DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
             DirectXHook.Hook();
 
@@ -95,7 +172,7 @@ namespace GTANetwork.GUI
         }
 
         public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 1;
+        public static int FPS = 15;
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
@@ -105,22 +182,21 @@ namespace GTANetwork.GUI
 
         public static void RenderLoop()
         {
-            //var settings = new CefSharp.CefSettings();
-            //settings.SetOffScreenRenderingBestPerformanceArgs();
+            var settings = new CefSharp.CefSettings();
+            settings.SetOffScreenRenderingBestPerformanceArgs();
             LogManager.DebugLog("WAITING FOR INITIALIZATION...");
-            //if (!Cef.IsInitialized)
-                //Cef.Initialize(settings);
+            if (!Cef.IsInitialized)
+                Cef.Initialize(settings);
             LogManager.DebugLog("STARTING MAIN LOOP");
 
             SharpDX.Configuration.EnableObjectTracking = true;
 
-            var bm = new Bitmap(@"C:\Users\Guad\Documents\Rockstar Games\GTA V\GTA Network\Screenshots\gtanetwork-007.png");
+            var cursor = new Bitmap(Main.GTANInstallDir + "\\images\\cef\\cursor.png");
 
             while (!StopRender)
             {
                 try
                 {
-                    /*
                     using (
                         Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
                             PixelFormat.Format32bppArgb))
@@ -128,8 +204,6 @@ namespace GTANetwork.GUI
 
                         using (var graphics = Graphics.FromImage(doubleBuffer))
                         {
-                            graphics.DrawImage(bm, new Point(0,0));
-
                             lock (Browsers)
                                 foreach (var browser in Browsers)
                                 {
@@ -141,10 +215,13 @@ namespace GTANetwork.GUI
                                     graphics.DrawImage(bitmap, browser.Position);
                                     bitmap.Dispose();
                                 }
-                        }*/
 
-                    //}
-                    DirectXHook.SetBitmap(bm);
+                            if (Browsers.Count > 0)
+                                graphics.DrawImage(cursor, CefController._lastMousePoint);
+                        }
+
+                        DirectXHook.SetBitmap(doubleBuffer);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -156,7 +233,16 @@ namespace GTANetwork.GUI
                 }
             }
 
+            cursor.Dispose();
+
+            lock (Browsers)
+            foreach (var browser in Browsers)
+            {
+                browser.Dispose();
+            }
+
             DirectXHook.Dispose();
+            Cef.Shutdown();
         }
     }
 
@@ -182,13 +268,21 @@ namespace GTANetwork.GUI
 
         internal Browser(Size browserSize)
         {
-            _browser = new ChromiumWebBrowser();
+            var settings = new BrowserSettings();
+            settings.LocalStorage = CefState.Disabled;
+            settings.OffScreenTransparentBackground = true;
+
+            _browser = new ChromiumWebBrowser(browserSettings: settings);
             Size = browserSize;
         }
 
         internal Browser(string uri, Size browserSize)
         {
-            _browser = new ChromiumWebBrowser(uri);
+            var settings = new BrowserSettings();
+            settings.LocalStorage = CefState.Disabled;
+            settings.OffScreenTransparentBackground = true;
+
+            _browser = new ChromiumWebBrowser(uri, browserSettings: settings);
             Size = browserSize;
         }
 

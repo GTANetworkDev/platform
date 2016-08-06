@@ -33,7 +33,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX9
 
         public bool Initialise(Device device)
         {
-            Debug.Assert(!_initialised);
+            //Debug.Assert(!_initialised);
+            if (_initialised) return false;
             if (_initialising)
                 return false;
 
