@@ -288,6 +288,26 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokeColshapeEnter(ColShape shape, NetHandle veh)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeColShapeEnter(shape, veh);
+            }));
+        }
+
+        public void InvokeColshapeExit(ColShape shape, NetHandle veh)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeColShapeExit(shape, veh);
+            }));
+        }
+
         public void InvokeMapChange(string mapName, XmlGroup map)
         {
             lock (_mainQueue.SyncRoot)

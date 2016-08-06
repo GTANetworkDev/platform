@@ -66,6 +66,7 @@ namespace GTANetworkServer
             FileHashes = new Dictionary<string, string>();
             ExportedFunctions = new System.Dynamic.ExpandoObject();
             PickupManager = new PickupManager();
+            ColShapeManager = new ColShapeManager();
 
             MaxPlayers = 32;
             Port = conf.Port;
@@ -136,6 +137,8 @@ namespace GTANetworkServer
         public bool ACLEnabled { get; set; }
         public bool UseUPnP { get; set; }
 
+
+        public ColShapeManager ColShapeManager;
         public CommandHandler CommandHandler;
         public dynamic ExportedFunctions;
         public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
@@ -1838,6 +1841,8 @@ namespace GTANResource
                 {
                     Clients[i].NetConnection.Disconnect("Server is shutting down");
                 }
+
+                ColShapeManager.Shutdown();
 
                 if (UseUPnP) Server.UPnP?.DeleteForwardingRule(Port);
 

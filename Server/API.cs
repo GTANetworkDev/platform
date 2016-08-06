@@ -66,6 +66,7 @@ namespace GTANetworkServer
         public delegate void EntityEvent(NetHandle entity);
         public delegate void MapChangeEvent(string mapName, XmlGroup map);
         public delegate void VehicleChangeEvent(Client player, NetHandle vehicle);
+        public delegate void GlobalColShapeEvent(ColShape colshape, NetHandle entity);
         #endregion
 
         #region Events
@@ -87,7 +88,19 @@ namespace GTANetworkServer
         public event VehicleChangeEvent onPlayerEnterVehicle;
         public event VehicleChangeEvent onPlayerExitVehicle;
         public event EntityEvent onVehicleDeath;
-        
+        public event GlobalColShapeEvent onEntityEnterColShape;
+        public event GlobalColShapeEvent onEntityExitColShape;
+
+        internal void invokeColShapeEnter(ColShape shape, NetHandle vehicle)
+        {
+            onEntityEnterColShape?.Invoke(shape, vehicle);
+        }
+
+        internal void invokeColShapeExit(ColShape shape, NetHandle vehicle)
+        {
+            onEntityExitColShape?.Invoke(shape, vehicle);
+        }
+
         internal void invokeVehicleDeath(NetHandle vehicle)
         {
             onVehicleDeath?.Invoke(vehicle);
@@ -1879,6 +1892,32 @@ namespace GTANetworkServer
                 delta.EntitySeethrough = seethrough;
                 Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
             }
+        }
+
+        public SphereColShape createSphereColShape(Vector3 position, float range)
+        {
+            var shape = new SphereColShape(position, range);
+            Program.ServerInstance.ColShapeManager.Add(shape);
+            return shape;
+        }
+
+        public Rectangle2DColShape create2DColShape(float x, float y, float width, float height)
+        {
+            var shape = new Rectangle2DColShape(x, y, width, height);
+            Program.ServerInstance.ColShapeManager.Add(shape);
+            return shape;
+        }
+
+        public Rectangle3DColShape create3DColShape(Vector3 start, Vector3 end)
+        {
+            var shape = new Rectangle3DColShape(start, end);
+            Program.ServerInstance.ColShapeManager.Add(shape);
+            return shape;
+        }
+
+        public void deleteColShape(ColShape shape)
+        {
+            Program.ServerInstance.ColShapeManager.Remove(shape);
         }
 
         public NetHandle createVehicle(VehicleHash model, Vector3 pos, Vector3 rot, int color1, int color2, int dimension = 0)
