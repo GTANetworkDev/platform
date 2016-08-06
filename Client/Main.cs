@@ -4763,6 +4763,23 @@ namespace GTANetwork
                 if (item != null && !item.StreamedIn) NetEntityHandler.StreamIn(item);
             }
 
+            if (((int) nativeType & (int) NativeType.EntityWarp) > 0)
+            {
+                float x = ((FloatArgument) obj.Arguments[1]).Data;
+                float y = ((FloatArgument)obj.Arguments[2]).Data;
+                float z = ((FloatArgument)obj.Arguments[3]).Data;
+
+                int interior;
+                if ((interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, x, y, z)) != 0)
+                {
+                    Function.Call(Hash._0x2CA429C029CCF247, interior); // LOAD_INTERIOR
+                    Function.Call(Hash.SET_INTERIOR_ACTIVE, interior, true);
+                    Function.Call(Hash.DISABLE_INTERIOR, interior, false);
+                    if (Function.Call<bool>(Hash.IS_INTERIOR_CAPPED, interior))
+                        Function.Call(Hash.CAP_INTERIOR, interior, false);
+                }
+            }
+
             var objectList = DecodeArgumentList(obj.Arguments.ToArray());
 
             list.AddRange(objectList.Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
@@ -4929,6 +4946,7 @@ namespace GTANetwork
             TimeSet = 1 << 7,
             WeatherSet = 1 << 8,
             VehicleWarp = 1 << 9,
+            EntityWarp = 1 << 10,
         }
 
         private NativeType CheckNativeHash(ulong hash)
@@ -4963,6 +4981,8 @@ namespace GTANetwork
                     return NativeType.WeatherSet;
                 case 0xF75B0D629E1C063D:
                     return NativeType.VehicleWarp;
+                case 0x239A3351AC1DA385:
+                    return NativeType.EntityWarp;
             }
         }
 
