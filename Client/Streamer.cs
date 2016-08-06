@@ -1628,7 +1628,9 @@ namespace GTANetwork
             for (int i = 0; i < 16; i++)
             {
                 if (!Function.Call<bool>(Hash.DOES_EXTRA_EXIST, veh, i)) continue;
-                Function.Call(Hash.SET_VEHICLE_EXTRA, veh, i, (data.VehicleComponents & 1 << i) != 0 ? 0 : -1);
+                bool turnedOn = (data.VehicleComponents & 1 << i) != 0;
+                if (Function.Call<bool>(Hash.IS_VEHICLE_EXTRA_TURNED_ON, veh, i) ^ turnedOn)
+                    Function.Call(Hash.SET_VEHICLE_EXTRA, veh, i, turnedOn ? 0 : -1);
             }
 
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.SpecialLight))
