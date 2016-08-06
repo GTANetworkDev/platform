@@ -51,6 +51,9 @@ namespace GTANetworkServer
             obj.ModelHash = model;
             obj.IsDead = false;
             obj.Health = 1000;
+            obj.Alpha = 255;
+            obj.Livery = 0;
+            obj.NumberPlate = "NETWORK";
             obj.EntityType = (byte)EntityType.Vehicle;
             obj.PrimaryColor = color1;
             obj.SecondaryColor = color2;
@@ -75,6 +78,7 @@ namespace GTANetworkServer
             obj.Rotation = rot;
             obj.ModelHash = model;
             obj.Dimension = dimension;
+            obj.Alpha = 255;
             obj.EntityType = (byte)EntityType.Prop;
             ServerEntities.Add(localEntityHash, obj);
 
@@ -96,6 +100,7 @@ namespace GTANetworkServer
             obj.Rotation = rot;
             obj.ModelHash = model;
             obj.Dimension = dimension;
+            obj.Alpha = 255;
             obj.EntityType = (byte)EntityType.Prop;
             ServerEntities.Add(localEntityHash, obj);
 
@@ -119,6 +124,7 @@ namespace GTANetworkServer
             obj.RespawnTime = respawnTime;
             obj.Amount = amount;
             obj.Dimension = dimension;
+            obj.Alpha = 255;
             obj.EntityType = (byte)EntityType.Pickup;
             ServerEntities.Add(localEntityHash, obj);
 
@@ -142,6 +148,9 @@ namespace GTANetworkServer
             obj.AttachedNetEntity = ent.Value;
             obj.Dimension = ServerEntities[ent.Value].Dimension;
             obj.Position = ServerEntities[ent.Value].Position;
+            obj.Sprite = 0;
+            obj.Alpha = 255;
+            obj.Scale = 1f;
             ServerEntities.Add(localEntityHash, obj);
 
             var packet = new CreateEntity();
@@ -161,6 +170,10 @@ namespace GTANetworkServer
             obj.EntityType = (byte)EntityType.Blip;
             obj.Position = pos;
             obj.Dimension = dimension;
+            obj.Sprite = 0;
+            obj.Scale = 1f;
+            obj.Alpha = 255;
+            obj.AttachedNetEntity = 0;
             ServerEntities.Add(localEntityHash, obj);
 
             var packet = new CreateEntity();
@@ -254,6 +267,8 @@ namespace GTANetworkServer
             ServerEntities.Add(localHan, new PedProperties()
             {
                 EntityType = (byte) EntityType.Ped,
+                BlipSprite = 1,
+                BlipAlpha = 255,
             });
 
             return localHan;

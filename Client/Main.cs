@@ -1420,7 +1420,7 @@ namespace GTANetwork
 
         public static void AddMap(ServerMap map)
         {
-            //File.WriteAllText("logs\\map.json", JsonConvert.SerializeObject(map));
+            //File.WriteAllText(GTANInstallDir + "\\logs\\map.json", JsonConvert.SerializeObject(map));
 
             UI.ShowSubtitle("Downloading Map...", 500000);
 
@@ -1504,7 +1504,6 @@ namespace GTANetwork
                         {
                             var ourSyncPed = NetEntityHandler.GetPlayer(pair.Key);
                             NetEntityHandler.UpdatePlayer(pair.Key, pair.Value);
-
                             if (ourSyncPed.Character != null)
                             {
                                 ourSyncPed.Character.RelationshipGroup = (pair.Value.Team == LocalTeam &&

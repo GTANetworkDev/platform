@@ -49,7 +49,6 @@ namespace GTANetworkShared
     {
         public EntityProperties()
         {
-            Alpha = 255;
         }
 
         [ProtoMember(1)]
@@ -90,12 +89,9 @@ namespace GTANetworkShared
         {
             Mods = new Dictionary<int, int>();
 
-            Health = 1000;
             Doors = new bool[7];
             Tires = new bool[8];
-            Livery = 0;
-            NumberPlate = "NETWORK";
-
+            
             EntityType = (byte)GTANetworkShared.EntityType.Vehicle;
         }
 
@@ -141,10 +137,7 @@ namespace GTANetworkShared
     {
         public BlipProperties()
         {
-            Sprite = 0;
-            Scale = 1f;
             EntityType = (byte)GTANetworkShared.EntityType.Blip;
-            AttachedNetEntity = 0;
         }
 
         [ProtoMember(1)]
@@ -216,8 +209,6 @@ namespace GTANetworkShared
             Props = new Dictionary<byte, byte>();
             Textures = new Dictionary<byte, byte>();
             Accessories = new Dictionary<byte, Tuple<byte, byte>>();
-            BlipSprite = 1;
-            BlipAlpha = 255;
             EntityType = (byte)GTANetworkShared.EntityType.Ped;
         }
 

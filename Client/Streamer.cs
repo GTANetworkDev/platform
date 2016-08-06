@@ -1132,8 +1132,8 @@ namespace GTANetwork
             
             rem.Props = prop.Props;
             rem.Textures = prop.Textures;
-            rem.BlipSprite = prop.BlipSprite;
             rem.Team = prop.Team;
+            rem.BlipSprite = prop.BlipSprite;
             rem.BlipColor = prop.BlipColor;
             rem.BlipAlpha = prop.BlipAlpha;
             rem.Accessories = prop.Accessories;
