@@ -20,6 +20,9 @@ public class HunterScript : Script
 		API.onPlayerDisconnected += playerleft;
 	}
 
+	private Vector3 _quadSpawn = new Vector3(-1564.36f, 4499.71f, 21.37f);
+	private NetHandle _quad;
+
 	private List<Vector3> _animalSpawnpoints = new List<Vector3>
 	{
 		new Vector3(-1488.76f, 4720.44f, 46.22f),
@@ -48,11 +51,25 @@ public class HunterScript : Script
 		PedHash.OldMan1aCutscene,
 	};
 
+	private List<Vector3> _checkpointPoses = new List<Vector3>
+	{
+		new Vector3(-1567.13f, 4541.15f, 17.26f),
+		new Vector3(-1582.11f, 4654.32f, 46.93f),
+		new Vector3(-1607.65f, 4369.2f, 2.45f),
+		new Vector3(-1336.23f, 4404.12f, 31.91f),
+		new Vector3(-1289.52f, 4498.14f, 14.8f),
+		new Vector3(-1268.58f, 4690.92f, 83.74f),
+	};
+
+	private List<NetHandle> _checkpoints = new List<NetHandle>();
+	private List<NetHandle> _checkpointBlips = new List<NetHandle>();
+
 	public bool roundstarted;
 	public Client animal;
 	private long roundStart;
 	private long lastIdleCheck;
 	private Vector3 lastIdlePosition;
+	private Client hawk;
 
 	private const int TEAM_ANIMAL = 2;
 	private const int TEAM_HUNTER = 1;
@@ -94,6 +111,30 @@ public class HunterScript : Script
 		var players = API.getAllPlayers();
 
 		API.deleteEntity(breadcrumb);
+		API.deleteEntity(_quad);
+
+		foreach (var c in _checkpoints)
+		{
+			API.deleteEntity(c);
+		}
+
+		foreach (var c in _checkpointBlips)
+		{
+			API.deleteEntity(c);
+		}
+
+		_checkpoints.Clear();
+		_checkpointBlips.Clear();
+
+		for(int i = 0; i < _checkpointPoses.Count; i++)
+		{
+			_checkpoints.Add(API.createMarker(1, _checkpointPoses[i], new Vector3(), new Vector3(), new Vector3(10f, 10f, 3f), 200, 255, 255, 0));
+			var b = API.createBlip(_checkpointPoses[i]);
+			API.setBlipColor(b, 66);
+			_checkpointBlips.Add(b);
+		}
+
+		_quad = API.createVehicle(VehicleHash.Blazer, _quadSpawn, new Vector3(0,0,0), 0, 0);
 
 		animal = players[r.Next(players.Count)];
 		API.setPlayerSkin(animal, PedHash.Deer);
@@ -105,7 +146,7 @@ public class HunterScript : Script
 		API.setPlayerBlipSprite(animal, 141);
 		API.setPlayerBlipColor(animal, 1);
 
-		API.sendChatMessageToPlayer(animal, "You are the animal! Survive five minutes to win!");		
+		API.sendChatMessageToPlayer(animal, "You are the animal! Collect all the checkpoints to win!");		
 
 		roundStart = API.TickCount;
 		lastIdleCheck = API.TickCount;
@@ -113,25 +154,42 @@ public class HunterScript : Script
 		roundstarted = true;
 		lastIdlePosition = spawnp;
 
+		if (players.Count > 3)
+		{
+			do
+			{
+				hawk = players[r.Next(players.Count)];
+			} while (hawk == animal);
+		}
 		foreach(var p in players)
 		{
 			if (p == animal)
 				continue;
 
-			Spawn(p);
+			Spawn(p, p == hawk);
 		}
 	}
 
-	public void Spawn(Client player)
+	public void Spawn(Client player, bool hawk = false)
 	{
-		var skin = _skinList[r.Next(_skinList.Count)];
-		API.setPlayerSkin(player, skin);
-		API.givePlayerWeapon(player, 487013001, 9999, true, true);
-		API.setEntityPosition(player.CharacterHandle, _hunterSpawnpoints[r.Next(_hunterSpawnpoints.Count)]);
-		if (animal != null) API.sendChatMessageToPlayer(player, "~r~" + animal.Name + "~w~ is the animal! ~r~Hunt~w~ it!");
-		API.setPlayerBlipAlpha(player, 0);
-		API.setPlayerBlipSprite(player, 1);
+		if (!hawk)
+		{
+			var skin = _skinList[r.Next(_skinList.Count)];		
+			API.setPlayerSkin(player, skin);
+			API.givePlayerWeapon(player, 487013001, 9999, true, true);
+			API.givePlayerWeapon(player, 100416529, 9999, true, true);
+			API.setPlayerBlipAlpha(player, 0);
+			API.setPlayerBlipSprite(player, 1);		
+		}
+		else
+		{
+			API.setPlayerSkin(player, PedHash.ChickenHawk);
+			API.setPlayerBlipAlpha(player, 255);
+			API.setPlayerBlipSprite(player, 422);
+		}
 		API.setPlayerBlipColor(player, 0);
+		API.setEntityPosition(player.CharacterHandle, _hunterSpawnpoints[r.Next(_hunterSpawnpoints.Count)]);
+		if (animal != null) API.sendChatMessageToPlayer(player, "~r~" + animal.Name + "~w~ is the animal! ~r~Hunt~w~ it!");		
 		API.setPlayerTeam(player, TEAM_HUNTER);
 		API.setPlayerInvincible(player, false);
 	}
@@ -154,22 +212,44 @@ public class HunterScript : Script
 	public void respawn (Client player)
 	{
 		if (roundstarted && player != animal)		
-			Spawn(player);
+			Spawn(player, player == hawk);
 	}
 
 	public void update(object s, EventArgs e)
 	{
 		if (!roundstarted) return;
-
-		if (API.TickCount - roundStart > 5 * 60 * 1000) // 5 min
+		if (animal != null)
 		{
-			roundstarted = false;
-			API.sendChatMessageToAll("The animal has survived 5 minutes! " + animal.Name + " has won!");
-			API.sendChatMessageToAll("Starting next round in 15 seconds...");
-			animal = null;
-			roundstarted = false;
-			API.sleep(15000);
-			roundstart();
+			for(int i = 0; i < _checkpoints.Count; i++)
+			{
+				var pos = API.getEntityPosition(_checkpoints[i]);
+				if (API.getEntityPosition(animal.CharacterHandle).DistanceToSquared(pos) < 100f)
+				{
+					API.deleteEntity(_checkpoints[i]);
+					API.deleteEntity(_checkpointBlips[i]);
+					_checkpointBlips.RemoveAt(i);
+					_checkpoints.RemoveAt(i);
+					API.sendChatMessageToAll("The animal has picked up a checkpoint!");
+
+					if (_checkpoints.Count == 0)
+					{
+						roundstarted = false;
+						API.sendChatMessageToAll("The animal has collected all checkpoints! " + animal.Name + " has won!");
+						API.sendChatMessageToAll("Starting next round in 15 seconds...");
+						animal = null;
+						roundstarted = false;
+						API.sleep(15000);
+						roundstart();
+						break;
+					}
+
+					API.setPlayerBlipAlpha(animal, 255);
+					API.sleep(5000);
+					API.setPlayerBlipAlpha(animal, 0);					
+
+					break;
+				}
+			}
 		}
 
 		if (animal != null)
@@ -194,7 +274,7 @@ public class HunterScript : Script
 					breadcrumb = API.createBlip(lastIdlePosition);
 					API.setBlipSprite(breadcrumb, 161);
 					API.setBlipColor(breadcrumb, 1);
-					API.setBlipAlpha(breadcrumb, 30);
+					API.setBlipAlpha(breadcrumb, 200);
 
 					lastBreadcrumb = API.TickCount;					
 				}
