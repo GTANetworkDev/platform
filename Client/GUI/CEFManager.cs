@@ -126,14 +126,15 @@ namespace GTANetwork.GUI
                     KeyEvent kEvent = new KeyEvent();
                     kEvent.Type = KeyEventType.KeyDown;
                     kEvent.Modifiers = mod;
-                    
                     kEvent.WindowsKeyCode = (int) args.KeyCode;
+                    kEvent.NativeKeyCode = (int)args.KeyValue;
                     browser._browser.GetBrowser().GetHost().SendKeyEvent(kEvent);
 
                     KeyEvent charEvent = new KeyEvent();
                     charEvent.Type = KeyEventType.Char;
                     charEvent.WindowsKeyCode = (int)args.KeyCode;
                     charEvent.Modifiers = mod;
+                    charEvent.NativeKeyCode = (int) args.KeyValue;
                     browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
                 }
             };
@@ -242,11 +243,10 @@ namespace GTANetwork.GUI
             }
 
             DirectXHook.Dispose();
-            Cef.Shutdown();
+            //Cef.Shutdown();
         }
     }
 
-    //*
     public class Browser : IDisposable
     {
         internal ChromiumWebBrowser _browser;
