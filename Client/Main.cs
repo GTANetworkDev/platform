@@ -3511,7 +3511,7 @@ namespace GTANetwork
                                                     opponent.Character.RelationshipGroup =
                                                         Main.FriendRelGroup;
                                                 }
-                                                else
+                                                else if (opponent.Character != null)
                                                 {
                                                     opponent.Character.RelationshipGroup =
                                                         Main.RelGroup;

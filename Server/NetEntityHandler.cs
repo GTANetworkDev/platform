@@ -186,8 +186,7 @@ namespace GTANetworkServer
 
             var packet = new CreateEntity();
             packet.EntityType = (byte) EntityType.Blip;
-            packet.Properties = new BlipProperties();
-            packet.Properties.Position = pos;
+            packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
             Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
