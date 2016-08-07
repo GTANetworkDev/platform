@@ -1331,6 +1331,8 @@ namespace GTANetwork
                 welcomeItem.Activated += (sender, args) =>
                 {
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
+                    CEFManager.DirectXHook.Dispose();
+                    CefSharp.Cef.Shutdown();
                     Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);

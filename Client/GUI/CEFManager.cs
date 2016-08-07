@@ -226,7 +226,7 @@ namespace GTANetwork.GUI
         }
 
         public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 15;
+        public static int FPS = 30;
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
@@ -259,7 +259,16 @@ namespace GTANetwork.GUI
 
             LogManager.DebugLog("WAITING FOR INITIALIZATION...");
             if (!Cef.IsInitialized)
-                Cef.Initialize(settings);
+            {
+                try
+                {
+                    Cef.Initialize(settings, true, false);
+                }
+                catch
+                {
+                    return;
+                }
+            }
             LogManager.DebugLog("STARTING MAIN LOOP");
 
             SharpDX.Configuration.EnableObjectTracking = true;
@@ -268,8 +277,6 @@ namespace GTANetwork.GUI
 
             while (!StopRender)
             {
-                if (Main.MainMenu.Visible) continue;
-
                 try
                 {
                     using (
@@ -277,23 +284,24 @@ namespace GTANetwork.GUI
                             PixelFormat.Format32bppArgb))
                     {
 
-                        using (var graphics = Graphics.FromImage(doubleBuffer))
-                        {
-                            lock (Browsers)
-                                foreach (var browser in Browsers)
-                                {
-                                    if (browser.Headless) continue;
-                                    var bitmap = browser.GetRawBitmap();
+                        if (!Main.MainMenu.Visible)
+                            using (var graphics = Graphics.FromImage(doubleBuffer))
+                            {
+                                lock (Browsers)
+                                    foreach (var browser in Browsers)
+                                    {
+                                        if (browser.Headless) continue;
+                                        var bitmap = browser.GetRawBitmap();
 
-                                    if (bitmap == null) continue;
+                                        if (bitmap == null) continue;
 
-                                    graphics.DrawImage(bitmap, browser.Position);
-                                    bitmap.Dispose();
-                                }
+                                        graphics.DrawImage(bitmap, browser.Position);
+                                        bitmap.Dispose();
+                                    }
 
-                            if (CefController.ShowCursor)
-                                graphics.DrawImage(cursor, CefController._lastMousePoint);
-                        }
+                                if (CefController.ShowCursor)
+                                    graphics.DrawImage(cursor, CefController._lastMousePoint);
+                            }
 
                         DirectXHook.SetBitmap(doubleBuffer);
                     }
@@ -317,7 +325,7 @@ namespace GTANetwork.GUI
             }
 
             DirectXHook.Dispose();
-            //Cef.Shutdown();
+            Cef.Shutdown();
         }
     }
 
@@ -348,19 +356,69 @@ namespace GTANetwork.GUI
 
         public object call(string functionName, params object[] arguments)
         {
-            var method = ((object) _parent.Script).GetType().GetMethod(functionName);
+            object objToReturn = null;
+            bool hasValue = false;
 
-            if (method != null)
+            lock (JavascriptHook.ThreadJumper)
+            JavascriptHook.ThreadJumper.Add(() =>
             {
-                return method.Invoke(_parent.Script, arguments);
-            }
+                try
+                {
+                    string callString = functionName + "(";
 
-            return null;
+                    for (int i = 0; i < arguments.Length; i++)
+                    {
+                        string comma = ", ";
+
+                        if (i == arguments.Length - 1)
+                            comma = "";
+
+                        if (arguments[i] is string)
+                        {
+                            callString += "\"" + arguments[i] + "\"" + comma;
+                        }
+                        else
+                        {
+                            callString += arguments[i] + comma;
+                        }
+                    }
+
+                    callString += ");";
+
+                    objToReturn = _parent.Evaluate(callString);
+                }
+                finally
+                {
+                    hasValue = true;
+                }
+            });
+
+            while (!hasValue) Thread.Sleep(10);
+
+            return objToReturn;
         }
 
         public object eval(string code)
         {
-            return _parent.Evaluate(code);
+            object objToReturn = null;
+            bool hasValue = false;
+
+            lock (JavascriptHook.ThreadJumper)
+            JavascriptHook.ThreadJumper.Add(() =>
+            {
+                try
+                {
+                    objToReturn = _parent.Evaluate(code);
+                }
+                finally
+                {
+                    hasValue = true;
+                }
+            });
+
+            while (!hasValue) Thread.Sleep(10);
+
+            return objToReturn;
         }
 
         public void addEventHandler(string eventName, Action<object[]> action)
@@ -405,7 +463,7 @@ namespace GTANetwork.GUI
         {
             var task = _browser.EvaluateScriptAsync(code);
 
-            task.RunSynchronously();
+            task.Wait();
 
             if (task.Result.Success)
                 return task.Result.Result;
@@ -414,7 +472,6 @@ namespace GTANetwork.GUI
 
         public object call(string method, params object[] arguments)
         {
-            //string callString = string.Format("{0}({1});", method, arguments.Select(a => a.ToString()).Aggregate((prev, next) => prev + ", " + next));
             string callString = method + "(";
 
             for (int i = 0; i < arguments.Length; i++)
@@ -438,7 +495,7 @@ namespace GTANetwork.GUI
 
             var task = _browser.EvaluateScriptAsync(callString);
 
-            task.RunSynchronously();
+            task.Wait();
 
             if (task.Result.Success)
                 return task.Result.Result;
