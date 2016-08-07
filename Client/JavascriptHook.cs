@@ -515,6 +515,16 @@ namespace GTANetwork
             return browser.Position;
         }
 
+        public void verifyIntegrityOfCache()
+        {
+            if (!DownloadManager.CheckFileIntegrity())
+            {
+                Main.Client.Disconnect("Quit");
+                DownloadManager.FileIntegrity.Clear();
+                return;
+            }
+        }
+
         public void loadPageCefBrowser(Browser browser, string uri)
         {
             checkPathSafe(uri);

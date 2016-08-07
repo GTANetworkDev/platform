@@ -361,7 +361,7 @@ namespace GTANetwork
                         {
                     if (IsOnServer())
                     {
-                        Client.Disconnect("Switching servers.");
+                        Client.Disconnect("Switching servers");
 
                         if (Npcs != null)
                         {
@@ -409,7 +409,7 @@ namespace GTANetwork
                 {
                     if (IsOnServer())
                     {
-                        Client.Disconnect("Switching servers.");
+                        Client.Disconnect("Switching servers");
 
                         NetEntityHandler.ClearAll();
 
@@ -787,7 +787,7 @@ namespace GTANetwork
                                 {
                                     if (IsOnServer())
                                     {
-                                        Client.Disconnect("Switching servers.");
+                                        Client.Disconnect("Switching servers");
 
                                         NetEntityHandler.ClearAll();
 
@@ -843,7 +843,7 @@ namespace GTANetwork
                                 {
                                     if (IsOnServer())
                                     {
-                                        Client.Disconnect("Switching servers.");
+                                        Client.Disconnect("Switching servers");
 
                                         NetEntityHandler.ClearAll();
 
@@ -1363,7 +1363,7 @@ namespace GTANetwork
                 {
                     if (IsOnServer())
                     {
-                        Client.Disconnect("Switching servers.");
+                        Client.Disconnect("Switching servers");
 
                         NetEntityHandler.ClearAll();
 
@@ -3965,7 +3965,7 @@ namespace GTANetwork
                         {
                             if (IsOnServer())
                             {
-                                Client.Disconnect("Switching servers.");
+                                Client.Disconnect("Switching servers");
                                 NetEntityHandler.ClearAll();
 
                                 if (Npcs != null)
@@ -4014,7 +4014,7 @@ namespace GTANetwork
                         {
                             if (IsOnServer())
                             {
-                                Client.Disconnect("Switching servers.");
+                                Client.Disconnect("Switching servers");
 
 
                                 NetEntityHandler.ClearAll();
