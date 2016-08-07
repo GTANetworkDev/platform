@@ -192,7 +192,7 @@ namespace GTANetwork
             
             var scriptEngine = new JScriptEngine();
             scriptEngine.AddHostObject("host", new HostFunctions());
-            scriptEngine.AddHostObject("API", new ScriptContext());
+            scriptEngine.AddHostObject("API", new ScriptContext(scriptEngine));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
             scriptEngine.AddHostType("List", typeof(IList));
             scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
@@ -279,7 +279,14 @@ namespace GTANetwork
 
     public class ScriptContext
     {
+        public ScriptContext(JScriptEngine engine)
+        {
+            Engine = engine;
+        }
+
         internal string ParentResourceName;
+        internal JScriptEngine Engine;
+
 
         public enum ReturnType
         {
@@ -298,9 +305,19 @@ namespace GTANetwork
             return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
         }
 
+        public void showCursor(bool show)
+        {
+            CefController.ShowCursor = show;
+        }
+
+        public bool isCursorShown()
+        {
+            return CefController.ShowCursor;
+        }
+
         public Browser createCefBrowser(double width, double height)
         {
-            var newBrowser = new Browser(new Size((int)width, (int)height));
+            var newBrowser = new Browser(Engine, new Size((int)width, (int)height));
             CEFManager.Browsers.Add(newBrowser);
             return newBrowser;
         }

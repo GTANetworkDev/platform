@@ -15,6 +15,8 @@ using CefSharp.OffScreen;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
+using Microsoft.ClearScript.V8;
+using Microsoft.ClearScript.Windows;
 using NativeUI;
 using SharpDX;
 using SharpDX.Diagnostics;
@@ -25,8 +27,9 @@ namespace GTANetwork.GUI
 {
     public class CefController : Script
     {
+        public static bool ShowCursor;
         public static PointF _lastMousePoint;
-
+        private Keys _lastKey;
         public CefController()
         {
             Tick += (sender, args) =>
@@ -35,6 +38,15 @@ namespace GTANetwork.GUI
                 if (Game.IsKeyPressed(Keys.F12))
                 {
                     LogManager.SimpleLog("directx", ObjectTracker.ReportActiveObjects());
+                }
+
+                if (ShowCursor)
+                {
+                    Game.DisableAllControlsThisFrame(0);
+                }
+                else
+                {
+                    return;
                 }
                 
                 var res = Game.ScreenResolution;
@@ -114,6 +126,7 @@ namespace GTANetwork.GUI
 
             KeyDown += (sender, args) =>
             {
+                if (!ShowCursor) return;
                 foreach (var browser in CEFManager.Browsers)
                 {
                     if (!browser.IsInitialized()) continue;
@@ -132,15 +145,55 @@ namespace GTANetwork.GUI
 
                     KeyEvent charEvent = new KeyEvent();
                     charEvent.Type = KeyEventType.Char;
-                    charEvent.WindowsKeyCode = (int)args.KeyCode;
+                    
+                    var key = args.KeyCode;
+
+                    if ((key == Keys.ShiftKey && _lastKey == Keys.Menu) ||
+                        (key == Keys.Menu && _lastKey == Keys.ShiftKey))
+                    {
+                        ClassicChat.ActivateKeyboardLayout(1, 0);
+                        return;
+                    }
+
+                    _lastKey = key;
+
+                    if (key == Keys.Escape)
+                    {
+                        return;
+                    }
+
+                    var keyChar = ClassicChat.GetCharFromKey(key, Game.IsKeyPressed(Keys.ShiftKey), false);
+
+                    if (keyChar.Length == 0) return;
+
+                    if (keyChar[0] == (char)8)
+                    {
+                        charEvent.WindowsKeyCode = (int) args.KeyCode;
+                        charEvent.Modifiers = mod;
+                        browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
+                        return;
+                    }
+                    if (keyChar[0] == (char)13)
+                    {
+                        charEvent.WindowsKeyCode = (int)args.KeyCode;
+                        charEvent.Modifiers = mod;
+                        browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
+                        return;
+                    }
+                    else if (keyChar[0] == 27)
+                    {
+                        return;
+                    }
+
+                    charEvent.WindowsKeyCode = keyChar[0];
                     charEvent.Modifiers = mod;
-                    charEvent.NativeKeyCode = (int) args.KeyValue;
                     browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
                 }
             };
 
             KeyUp += (sender, args) =>
             {
+                if (!ShowCursor) return;
                 foreach (var browser in CEFManager.Browsers)
                 {
                     if (!browser.IsInitialized()) continue;
@@ -196,6 +249,8 @@ namespace GTANetwork.GUI
 
             while (!StopRender)
             {
+                if (Main.MainMenu.Visible) continue;
+
                 try
                 {
                     using (
@@ -217,7 +272,7 @@ namespace GTANetwork.GUI
                                     bitmap.Dispose();
                                 }
 
-                            if (Browsers.Count > 0)
+                            if (CefController.ShowCursor)
                                 graphics.DrawImage(cursor, CefController._lastMousePoint);
                         }
 
@@ -247,6 +302,35 @@ namespace GTANetwork.GUI
         }
     }
 
+    public class BrowserJavascriptCallback
+    {
+        private JScriptEngine _parent;
+
+        public BrowserJavascriptCallback(JScriptEngine parent)
+        {
+            _parent = parent;
+        }
+
+        public BrowserJavascriptCallback() { }
+
+        public object call(string functionName, params object[] arguments)
+        {
+            var method = ((object) _parent.Script).GetType().GetMethod(functionName);
+
+            if (method != null)
+            {
+                return method.Invoke(_parent.Script, arguments);
+            }
+
+            return null;
+        }
+
+        public object eval(string code)
+        {
+            return _parent.Evaluate(code);
+        }
+    }
+
     public class Browser : IDisposable
     {
         internal ChromiumWebBrowser _browser;
@@ -266,18 +350,25 @@ namespace GTANetwork.GUI
             }
         }
 
-        internal Browser(Size browserSize)
+        private JScriptEngine Father;
+
+        internal Browser(JScriptEngine father, Size browserSize)
         {
+            Father = father;
+
             var settings = new BrowserSettings();
             settings.LocalStorage = CefState.Disabled;
             settings.OffScreenTransparentBackground = true;
 
             _browser = new ChromiumWebBrowser(browserSettings: settings);
+            _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father), false);
             Size = browserSize;
         }
 
-        internal Browser(string uri, Size browserSize)
+        internal Browser(JScriptEngine father, string uri, Size browserSize)
         {
+            Father = father;
+
             var settings = new BrowserSettings();
             settings.LocalStorage = CefState.Disabled;
             settings.OffScreenTransparentBackground = true;

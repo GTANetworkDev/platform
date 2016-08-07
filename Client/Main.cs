@@ -4063,6 +4063,7 @@ namespace GTANetwork
 			DEBUG_STEP = 50;
 			JavascriptHook.StopAllScripts();
             JavascriptHook.TextElements.Clear();
+		    CefController.ShowCursor = false;
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
 			DEBUG_STEP = 52;
