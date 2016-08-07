@@ -98,6 +98,7 @@ namespace GTANetwork
         public static bool LagCompensation = false;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
+        public static bool CanOpenChatbox = true;
         public static bool ScriptChatVisible = true;
         public static bool UIVisible = true;
 
@@ -1331,8 +1332,12 @@ namespace GTANetwork
                 welcomeItem.Activated += (sender, args) =>
                 {
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
-                    CEFManager.DirectXHook.Dispose();
-                    CefSharp.Cef.Shutdown();
+                    CEFManager.StopRender = true;
+
+                    while (!CEFManager.Disposed)
+                    {
+                        Script.Yield();
+                    }
                     Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);
@@ -2975,7 +2980,7 @@ namespace GTANetwork
                 Screenshot.TakeScreenshot();
             }
 
-            if (e.KeyCode == Keys.T && IsOnServer() && UIVisible && ChatVisible && ScriptChatVisible)
+            if (e.KeyCode == Keys.T && IsOnServer() && UIVisible && ChatVisible && ScriptChatVisible && CanOpenChatbox)
             {
                 if (!_oldChat)
                 {
@@ -4332,6 +4337,7 @@ namespace GTANetwork
 		    CefController.ShowCursor = false;
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
+            DownloadManager.FileIntegrity.Clear();
 		    HasFinishedDownloading = false;
 		    ScriptChatVisible = true;
 			DEBUG_STEP = 52;

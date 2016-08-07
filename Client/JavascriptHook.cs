@@ -204,7 +204,7 @@ namespace GTANetwork
                     {
                         engine.Engine.Script.API.invokeUpdate();
                     }  
-                    catch (ScriptEngineException ex)
+                    catch (Exception ex)
                     {
                         LogException(ex);
                     }
@@ -412,6 +412,13 @@ namespace GTANetwork
             {
                 throw new AccessViolationException("Illegal path to file!");
             }
+
+            if (!DownloadManager.CheckFileIntegrity())
+            {
+                UI.Notify("File integrity compromised!");
+                Main.Client.Disconnect("Quit");
+                throw new AccessViolationException("File integrity compromised!");
+            }
         }
 
         public enum ReturnType
@@ -442,6 +449,16 @@ namespace GTANetwork
             return CefController.ShowCursor;
         }
 
+        public void setCanOpenChat(bool show)
+        {
+            Main.CanOpenChatbox = show;
+        }
+
+        public bool getCanOpenChat()
+        {
+            return Main.CanOpenChatbox;
+        }
+
         public Browser createCefBrowser(double width, double height)
         {
             var newBrowser = new Browser(Engine, new Size((int)width, (int)height));
@@ -452,7 +469,14 @@ namespace GTANetwork
         public void destroyCefBrowser(Browser browser)
         {
             CEFManager.Browsers.Remove(browser);
-            browser.Dispose();
+            try
+            {
+                browser.Dispose();
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "DESTROYCEFBROWSER");
+            }
         }
 
         public bool isCefBrowserInitialized(Browser browser)
@@ -500,9 +524,11 @@ namespace GTANetwork
 
         public void loadPageCefBrowser(Browser browser, string uri)
         {
-            // TODO: Allow only local pages.
+            checkPathSafe(uri);
 
-            browser.GoToPage(uri);
+            string fullUri = "http://" + ParentResourceName + "/" + uri.TrimStart('/');
+
+            browser.GoToPage(fullUri);
         }
 
         public bool isCefBrowserLoading(Browser browser)

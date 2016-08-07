@@ -230,6 +230,7 @@ namespace GTANetwork.GUI
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
+        public static bool Disposed;
 
         internal static DXHookD3D11 DirectXHook;
         
@@ -326,6 +327,8 @@ namespace GTANetwork.GUI
 
             DirectXHook.Dispose();
             Cef.Shutdown();
+
+            Disposed = true;
         }
     }
 
@@ -338,7 +341,11 @@ namespace GTANetwork.GUI
 
             var requestedFile = path + uri.Host + uri.LocalPath;
 
-            if (!File.Exists(requestedFile)) return null;
+            if (!File.Exists(requestedFile))
+            {
+                return ResourceHandler.FromString(@"<!DOCTYPE html><html><body><h1>404</h1></body></html>", ".html");
+            }
+
             return ResourceHandler.FromFileName(requestedFile, Path.GetExtension(requestedFile));
         }
     }

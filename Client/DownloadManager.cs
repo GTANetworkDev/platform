@@ -13,6 +13,28 @@ namespace GTANetwork
     {
         private static ScriptCollection PendingScripts = new ScriptCollection() { ClientsideScripts = new List<ClientsideScript>()};
 
+        public static Dictionary<string, string> FileIntegrity = new Dictionary<string, string>();
+
+        public static bool CheckFileIntegrity()
+        {
+            foreach (var pair in FileIntegrity)
+            {
+                byte[] myData;
+
+                using (var md5 = MD5.Create())
+                using (var stream = File.OpenRead(FileTransferId._DOWNLOADFOLDER_ + pair.Key))
+                {
+                    myData = md5.ComputeHash(stream);
+                }
+
+                string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+
+                if (hash != pair.Value) return false;
+            }
+
+            return true;
+        }
+
         private static FileTransferId CurrentFile;
         public static bool StartDownload(int id, string path, FileType type, int len, string md5hash, string resource)
         {
@@ -33,6 +55,8 @@ namespace GTANetwork
                 }
 
                 string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+
+                FileIntegrity.Set(path, hash);
                 
                 if (hash == md5hash)
                 {

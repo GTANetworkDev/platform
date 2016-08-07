@@ -204,6 +204,9 @@ namespace GTANetwork
             }
             
             if (!IsFocused) return;
+
+            if (!Main.CanOpenChatbox) IsFocused = false;
+
             Game.DisableControlThisFrame(0, Control.NextCamera);
             Game.DisableAllControlsThisFrame(0);
         }
