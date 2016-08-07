@@ -14,6 +14,12 @@ namespace GTANetworkServer
 
         public event ColShapeEvent onEntityEnterColShape;
         public event ColShapeEvent onEntityExitColShape;
+        public int handle;
+
+        public bool containsEntity(NetHandle ent)
+        {
+            return EntitiesInContact.Contains(ent.Value);
+        }
 
         internal void InvokeEnterColshape(NetHandle ent)
         {
@@ -26,8 +32,6 @@ namespace GTANetworkServer
         }
 
         internal List<int> EntitiesInContact = new List<int>();
-
-        public int Handle;
     }
 
     public class SphereColShape : ColShape
@@ -141,7 +145,7 @@ namespace GTANetworkServer
         private int _shapeHandles = 0;
         public void Add(ColShape shape)
         {
-            shape.Handle = ++_shapeHandles;
+            shape.handle = ++_shapeHandles;
             lock (ColShapes) ColShapes.Add(shape);
         }
 
