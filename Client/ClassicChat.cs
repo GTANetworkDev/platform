@@ -205,7 +205,6 @@ namespace GTANetwork
             
             if (!IsFocused) return;
             Game.DisableAllControlsThisFrame(0);
-            Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
             foreach (var value in Enum.GetValues(typeof(Control)).Cast<Control>())
             {
                 Game.DisableControlThisFrame(0, value);

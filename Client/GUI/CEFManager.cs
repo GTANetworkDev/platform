@@ -238,6 +238,25 @@ namespace GTANetwork.GUI
         {
             var settings = new CefSharp.CefSettings();
             settings.SetOffScreenRenderingBestPerformanceArgs();
+            
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeHandlerFactory = new ResourceFilePathHandler(),
+                SchemeName = "http",
+            });
+
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeHandlerFactory = new ResourceFilePathHandler(),
+                SchemeName = "https",
+            });
+
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeHandlerFactory = new ResourceFilePathHandler(),
+                SchemeName = "resource",
+            });
+
             LogManager.DebugLog("WAITING FOR INITIALIZATION...");
             if (!Cef.IsInitialized)
                 Cef.Initialize(settings);
@@ -302,6 +321,20 @@ namespace GTANetwork.GUI
         }
     }
 
+    public class ResourceFilePathHandler : ISchemeHandlerFactory
+    {
+        public IResourceHandler Create(IBrowser browser, IFrame frame, string schemeName, IRequest request)
+        {
+            var uri = new Uri(request.Url);
+            var path = Main.GTANInstallDir + "\\resources\\";
+
+            var requestedFile = path + uri.Host + uri.LocalPath;
+
+            if (!File.Exists(requestedFile)) return null;
+            return ResourceHandler.FromFileName(requestedFile, Path.GetExtension(requestedFile));
+        }
+    }
+
     public class BrowserJavascriptCallback
     {
         private JScriptEngine _parent;
@@ -329,6 +362,22 @@ namespace GTANetwork.GUI
         {
             return _parent.Evaluate(code);
         }
+
+        public void addEventHandler(string eventName, Action<object[]> action)
+        {
+            _eventHandlers.Add(new Tuple<string, Action<object[]>>(eventName, action));
+        }
+
+        internal void TriggerEvent(string eventName, params object[] arguments)
+        {
+            foreach (var handler in _eventHandlers)
+            {
+                if (handler.Item1 == eventName)
+                    handler.Item2.Invoke(arguments);
+            }
+        }
+
+        private List<Tuple<string, Action<object[]>>> _eventHandlers = new List<Tuple<string, Action<object[]>>>();
     }
 
     public class Browser : IDisposable
@@ -352,6 +401,50 @@ namespace GTANetwork.GUI
 
         private JScriptEngine Father;
 
+        public object eval(string code)
+        {
+            var task = _browser.EvaluateScriptAsync(code);
+
+            task.RunSynchronously();
+
+            if (task.Result.Success)
+                return task.Result.Result;
+            return null;
+        }
+
+        public object call(string method, params object[] arguments)
+        {
+            //string callString = string.Format("{0}({1});", method, arguments.Select(a => a.ToString()).Aggregate((prev, next) => prev + ", " + next));
+            string callString = method + "(";
+
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                string comma = ", ";
+
+                if (i == arguments.Length - 1)
+                    comma = "";
+
+                if (arguments[i] is string)
+                {
+                    callString += "\"" + arguments[i] + "\"" + comma;
+                }
+                else
+                {
+                    callString += arguments[i] + comma;
+                }
+            }
+
+            callString += ");";
+
+            var task = _browser.EvaluateScriptAsync(callString);
+
+            task.RunSynchronously();
+
+            if (task.Result.Success)
+                return task.Result.Result;
+            return null;
+        }
+
         internal Browser(JScriptEngine father, Size browserSize)
         {
             Father = father;
@@ -359,7 +452,7 @@ namespace GTANetwork.GUI
             var settings = new BrowserSettings();
             settings.LocalStorage = CefState.Disabled;
             settings.OffScreenTransparentBackground = true;
-
+            
             _browser = new ChromiumWebBrowser(browserSettings: settings);
             _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father), false);
             Size = browserSize;

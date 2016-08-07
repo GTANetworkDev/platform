@@ -237,6 +237,16 @@ namespace GTANetwork
                     AudioDevice.controls.stop();
                 }
             });
+
+            lock (CEFManager.Browsers)
+            {
+                foreach (var browser in CEFManager.Browsers)
+                {
+                    browser.Dispose();
+                }
+
+                CEFManager.Browsers.Clear();
+            }
         }
 
         public static void StopScript(string resourceName)
