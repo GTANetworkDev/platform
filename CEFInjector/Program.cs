@@ -43,8 +43,8 @@ namespace CEFInjector
             }
 
             
-            const int FPS = 1;
-            const int waitTime = 1000/FPS;
+            const float FPS = 0.1f;
+            const int waitTime = (int)(1000/FPS);
             /*
             var cirno = new Bitmap(@"A:\Dropbox\stuff\Reaction Images\cirno.png");
             Bitmap testBitmap = new Bitmap(cirno.Width, cirno.Height, PixelFormat.Format32bppArgb);

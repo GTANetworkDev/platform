@@ -1,0 +1,4 @@
+<meta>
+    <info name="CEF Capabilities Test" author="Guadmaz" type="script" />        
+    <script src="cef.js" type="client" lang="javascript" />    
+</meta>

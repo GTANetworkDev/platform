@@ -6,9 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
+using CefSharp;
 using GTA;
 using GTA.Math;
 using GTA.Native;
+using GTANetwork.GUI;
 using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.V8;
@@ -112,6 +114,9 @@ namespace GTANetwork
             ThreadJumper = new List<Action>();
             TextElements = new List<UIResText>();
         }
+
+        public static PointF MousePosition { get; set; }
+        public static bool MouseClick { get; set; }
 
         public static List<UIResText> TextElements { get; set; }
 
@@ -277,7 +282,7 @@ namespace GTANetwork
             
             var scriptEngine = new V8ScriptEngine();
             scriptEngine.AddHostObject("host", new HostFunctions());
-            scriptEngine.AddHostObject("API", new ScriptContext());
+            scriptEngine.AddHostObject("API", new ScriptContext(scriptEngine));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
             scriptEngine.AddHostType("List", typeof(List<>));
             scriptEngine.AddHostType("Dictionary", typeof(Dictionary<,>));
@@ -330,6 +335,16 @@ namespace GTANetwork
                     AudioReader = null;
                 }
             });
+
+            lock (CEFManager.Browsers)
+            {
+                foreach (var browser in CEFManager.Browsers)
+                {
+                    browser.Dispose();
+                }
+
+                CEFManager.Browsers.Clear();
+            }
         }
 
         public static void StopScript(string resourceName)
@@ -372,7 +387,14 @@ namespace GTANetwork
 
     public class ScriptContext
     {
+        public ScriptContext(V8ScriptEngine engine)
+        {
+            Engine = engine;
+        }
+
         internal string ParentResourceName;
+        internal V8ScriptEngine Engine;
+
 
         internal bool isPathSafe(string path)
         {
@@ -408,6 +430,84 @@ namespace GTANetwork
         public LocalHandle NetToLocal(NetHandle handle)
         {
             return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
+        }
+
+        public void showCursor(bool show)
+        {
+            CefController.ShowCursor = show;
+        }
+
+        public bool isCursorShown()
+        {
+            return CefController.ShowCursor;
+        }
+
+        public Browser createCefBrowser(double width, double height)
+        {
+            var newBrowser = new Browser(Engine, new Size((int)width, (int)height));
+            CEFManager.Browsers.Add(newBrowser);
+            return newBrowser;
+        }
+
+        public void destroyCefBrowser(Browser browser)
+        {
+            CEFManager.Browsers.Remove(browser);
+            browser.Dispose();
+        }
+
+        public bool isCefBrowserInitialized(Browser browser)
+        {
+            return browser.IsInitialized();
+        }
+
+        public void waitUntilCefBrowserInitalization(Browser browser)
+        {
+            while (!browser.IsInitialized())
+            {
+                sleep(0);
+            }
+        }
+
+        public void setCefBrowserSize(Browser browser, double width, double height)
+        {
+            browser.Size = new Size((int) width, (int) height);
+        }
+
+        public Size getCefBrowserSize(Browser browser)
+        {
+            return browser.Size;
+        }
+
+        public void setCefBrowserHeadless(Browser browser, bool headless)
+        {
+            browser.Headless = headless;
+        }
+
+        public bool getCefBrowserHeadless(Browser browser)
+        {
+            return browser.Headless;
+        }
+
+        public void setCefBrowserPosition(Browser browser, double xPos, double yPos)
+        {
+            browser.Position = new Point((int) xPos, (int) yPos);
+        }
+
+        public Point getCefBrowserPosition(Browser browser)
+        {
+            return browser.Position;
+        }
+
+        public void loadPageCefBrowser(Browser browser, string uri)
+        {
+            // TODO: Allow only local pages.
+
+            browser.GoToPage(uri);
+        }
+
+        public bool isCefBrowserLoading(Browser browser)
+        {
+            return browser.IsLoading();
         }
 
         public void callNative(string hash, params object[] args)
@@ -558,6 +658,11 @@ namespace GTANetwork
         public void sendChatMessage(string text)
         {
             Main.Chat.AddMessage(null, text);
+        }
+
+        public Size getScreenResolution()
+        {
+            return Game.ScreenResolution;
         }
 
         public void sendNotification(string text)
