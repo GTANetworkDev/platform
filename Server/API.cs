@@ -51,6 +51,7 @@ namespace GTANetworkServer
         }
 
         internal List<NetHandle> ResourceEntities = new List<NetHandle>();
+        internal List<ColShape> ResourceColShapes = new List<ColShape>();
         public bool autoGarbageCollection = true;
         #endregion
 
@@ -156,6 +157,16 @@ namespace GTANetworkServer
                 {
                     deleteEntityInternal(ResourceEntities[i]);
                 }
+                ResourceEntities.Clear();
+            }
+
+            lock (ResourceColShapes)
+            {
+                for (int i = ResourceColShapes.Count - 1; i >= 0; i--)
+                {
+                    Program.ServerInstance.ColShapeManager.Remove(ResourceColShapes[i]);
+                }
+                ResourceColShapes.Clear();
             }
         }
 
@@ -776,7 +787,7 @@ namespace GTANetworkServer
 
             return false;
         }
-
+        
         public int getEntityModel(NetHandle ent)
         {
             if (doesEntityExist(ent))
@@ -1898,6 +1909,7 @@ namespace GTANetworkServer
         {
             var shape = new SphereColShape(position, range);
             Program.ServerInstance.ColShapeManager.Add(shape);
+            lock (ResourceColShapes) ResourceColShapes.Add(shape);
             return shape;
         }
 
@@ -1905,6 +1917,7 @@ namespace GTANetworkServer
         {
             var shape = new Rectangle2DColShape(x, y, width, height);
             Program.ServerInstance.ColShapeManager.Add(shape);
+            lock (ResourceColShapes) ResourceColShapes.Add(shape);
             return shape;
         }
 
@@ -1912,11 +1925,13 @@ namespace GTANetworkServer
         {
             var shape = new Rectangle3DColShape(start, end);
             Program.ServerInstance.ColShapeManager.Add(shape);
+            lock (ResourceColShapes) ResourceColShapes.Add(shape);
             return shape;
         }
 
         public void deleteColShape(ColShape shape)
         {
+            lock (ResourceColShapes) ResourceColShapes.Remove(shape);
             Program.ServerInstance.ColShapeManager.Remove(shape);
         }
 
