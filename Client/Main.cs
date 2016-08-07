@@ -5202,7 +5202,10 @@ namespace GTANetwork
 
             var nativeArg = ParseNativeArguments(value).Single();
 
+            NativeArgument oldValue = prop.SyncedProperties.Get(key);
+            
             prop.SyncedProperties.Set(key, nativeArg);
+
 
             if (!item.LocalOnly)
             {
@@ -5212,6 +5215,7 @@ namespace GTANetwork
                 UpdateEntityInfo(handle, EntityType.Prop, delta);
             }
 
+            JavascriptHook.InvokeDataChangeEvent(entity, key, DecodeArgumentListPure(oldValue).FirstOrDefault());
             return true;
         }
 
@@ -5266,13 +5270,17 @@ namespace GTANetwork
 
             var nativeArg = ParseNativeArguments(value).Single();
 
+            NativeArgument oldValue = NetEntityHandler.ServerWorld.SyncedProperties.Get(key);
+
             NetEntityHandler.ServerWorld.SyncedProperties.Set(key, nativeArg);
+
 
             var delta = new Delta_EntityProperties();
             delta.SyncedProperties = new Dictionary<string, NativeArgument>();
             delta.SyncedProperties.Add(key, nativeArg);
             UpdateEntityInfo(1, EntityType.Prop, delta);
 
+            JavascriptHook.InvokeDataChangeEvent(new LocalHandle(0), key, DecodeArgumentListPure(oldValue).FirstOrDefault());
             return true;
         }
 

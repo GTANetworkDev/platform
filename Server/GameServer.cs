@@ -1777,7 +1777,18 @@ namespace GTANResource
                                                             if (pair.Value is LocalGamePlayerArgument)
                                                                 item.SyncedProperties.Remove(pair.Key);
                                                             else
+                                                            {
+                                                                object oldValue =
+                                                                    DecodeArgumentListPure(
+                                                                        item.SyncedProperties.Get(pair.Key));
                                                                 item.SyncedProperties.Set(pair.Key, pair.Value);
+                                                                NetHandle ent = new NetHandle(data.NetHandle);
+                                                                lock (RunningResources)
+                                                                    RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                                    {
+                                                                        en.InvokeEntityDataChange(ent, pair.Key, oldValue);
+                                                                    }));
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -2509,12 +2520,23 @@ namespace GTANResource
 
             var nativeArg = ParseNativeArguments(value).Single();
 
+            object oldValue = DecodeArgumentListPure(prop.SyncedProperties.Get(key)).FirstOrDefault();
+
             prop.SyncedProperties.Set(key, nativeArg);
 
             var delta = new Delta_EntityProperties();
             delta.SyncedProperties = new Dictionary<string, NativeArgument>();
             delta.SyncedProperties.Add(key, nativeArg);
             UpdateEntityInfo(entity, world ? EntityType.World : EntityType.Prop, delta);
+
+            var ent = new NetHandle(entity);
+
+            lock (RunningResources)
+                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                {
+                    en.InvokeEntityDataChange(ent, key, oldValue);
+                }));
+
             return true;
         }
 

@@ -68,6 +68,7 @@ namespace GTANetworkServer
         public delegate void MapChangeEvent(string mapName, XmlGroup map);
         public delegate void VehicleChangeEvent(Client player, NetHandle vehicle);
         public delegate void GlobalColShapeEvent(ColShape colshape, NetHandle entity);
+        public delegate void EntityDataChangedEvent(NetHandle entity, string key, object oldValue);
         #endregion
 
         #region Events
@@ -91,6 +92,12 @@ namespace GTANetworkServer
         public event EntityEvent onVehicleDeath;
         public event GlobalColShapeEvent onEntityEnterColShape;
         public event GlobalColShapeEvent onEntityExitColShape;
+        public event EntityDataChangedEvent onEntityDataChange;
+
+        internal void invokeOnEntityDataChange(NetHandle entity, string key, object oldValue)
+        {
+            onEntityDataChange?.Invoke(entity, key, oldValue);
+        }
 
         internal void invokeColShapeEnter(ColShape shape, NetHandle vehicle)
         {

@@ -490,7 +490,13 @@ namespace GTANetwork
                     if (pair.Value is LocalGamePlayerArgument)
                         ServerWorld.SyncedProperties.Remove(pair.Key);
                     else
+                    {
+                        NativeArgument oldValue = ServerWorld.SyncedProperties.Get(pair.Key);
+
                         ServerWorld.SyncedProperties.Set(pair.Key, pair.Value);
+
+                        JavascriptHook.InvokeDataChangeEvent(new LocalHandle(0), pair.Key, Main.DecodeArgumentListPure(oldValue).FirstOrDefault());
+                    }
                 }
             }
         }
@@ -592,7 +598,15 @@ namespace GTANetwork
                     if (pair.Value is LocalGamePlayerArgument)
                         veh.SyncedProperties.Remove(pair.Key);
                     else
+                    {
+                        NativeArgument oldValue = veh.SyncedProperties.Get(pair.Key);
+
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
+
+                        var ent = new LocalHandle(NetToEntity(veh as IStreamedItem)?.Handle ?? 0);
+                        if (!ent.IsNull)
+                            JavascriptHook.InvokeDataChangeEvent(ent, pair.Key, Main.DecodeArgumentListPure(oldValue).FirstOrDefault());
+                    }
                 }
             }
         }

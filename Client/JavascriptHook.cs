@@ -179,6 +179,17 @@ namespace GTANetwork
             });
         }
 
+        public static void InvokeDataChangeEvent(LocalHandle handle, string key, object oldValue)
+        {
+            ThreadJumper.Add(() =>
+            {
+                lock (ScriptEngines)
+                {
+                    ScriptEngines.ForEach(en => en.Engine.Script.API.invokeEntityDataChange(handle, key, oldValue));
+                }
+            });
+        }
+
         public void OnTick(object sender, EventArgs e)
         {
             var tmpList = new List<Action>(ThreadJumper);
@@ -426,12 +437,7 @@ namespace GTANetwork
             Float = 7,
             Bool = 8,
         }
-
-        public LocalHandle NetToLocal(NetHandle handle)
-        {
-            return new LocalHandle(Main.NetEntityHandler.NetToEntity(handle.Value)?.Handle ?? 0);
-        }
-
+        
         public void showCursor(bool show)
         {
             CefController.ShowCursor = show;
@@ -1164,6 +1170,7 @@ namespace GTANetwork
         public delegate void ServerEventTrigger(string eventName, object[] arguments);
         public delegate void ChatEvent(string msg);
         public delegate void StreamEvent(LocalHandle item, int entityType);
+        public delegate void DataChangedEvent(LocalHandle entity, string key, object oldValue);
 
         public event EventHandler onResourceStart;
         public event EventHandler onResourceStop;
@@ -1175,10 +1182,16 @@ namespace GTANetwork
         public event ChatEvent onChatCommand;
         public event StreamEvent onEntityStreamIn;
         public event StreamEvent onEntityStreamOut;
+        public event DataChangedEvent onEntityDataChange;
 
         internal void invokeEntityStreamIn(LocalHandle item, int type)
         {
             onEntityStreamIn?.Invoke(item, type);
+        }
+
+        internal void invokeEntityDataChange(LocalHandle item, string key, object oldValue)
+        {
+            onEntityDataChange?.Invoke(item, key, oldValue);
         }
 
         internal void invokeEntityStreamOut(LocalHandle item, int type)

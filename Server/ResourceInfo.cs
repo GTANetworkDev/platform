@@ -225,6 +225,16 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokeEntityDataChange(NetHandle ent, string key, object oldValue)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeOnEntityDataChange(ent, key, oldValue);
+            }));
+        }
+
         public void InvokeResourceStop()
         {
             _workerThread.Abort();

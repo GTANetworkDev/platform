@@ -46,6 +46,11 @@ namespace GTANetworkServer
             NetConnection = nc;
         }
 
+        public static implicit operator NetHandle(Client c)
+        {
+            return c.CharacterHandle;
+        }
+
         public override bool Equals(object obj)
         {
             Client target;
