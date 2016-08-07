@@ -66,7 +66,6 @@ namespace GTANetworkServer
             FileHashes = new Dictionary<string, string>();
             ExportedFunctions = new System.Dynamic.ExpandoObject();
             PickupManager = new PickupManager();
-            ColShapeManager = new ColShapeManager();
 
             MaxPlayers = 32;
             Port = conf.Port;
@@ -209,6 +208,7 @@ namespace GTANetworkServer
             }
 
             NetEntityHandler.CreateWorld();
+            ColShapeManager = new ColShapeManager();
         }
 
         public void AnnounceSelfToMaster()
@@ -262,11 +262,11 @@ namespace GTANetworkServer
             return allScripts;
         }
 
-        public void StartResource(string resourceName, string father = null)
+        public bool StartResource(string resourceName, string father = null)
         {
             try
             {
-                if (RunningResources.Any(res => res.DirectoryName == resourceName)) return;
+                if (RunningResources.Any(res => res.DirectoryName == resourceName)) return false;
 
                 Program.Output("Starting " + resourceName);
 
@@ -514,22 +514,23 @@ namespace GTANetworkServer
                 }
 
                 lock (RunningResources) RunningResources.Add(ourResource);
-
                 Program.Output("Resource " + ourResource.DirectoryName + " started!");
+                return true;
             }
             catch (Exception ex)
             {
                 Program.Output("ERROR STARTING RESOURCE " + resourceName);
                 Program.Output(ex.ToString());
+                return false;
             }
         }
 
-        public void StopResource(string resourceName, Resource[] resourceParent = null)
+        public bool StopResource(string resourceName, Resource[] resourceParent = null)
         {
             lock (RunningResources)
             {
                 var ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
-                if (ourRes == null) return;
+                if (ourRes == null) return false;
 
                 Program.Output("Stopping " + resourceName);
 
@@ -573,6 +574,7 @@ namespace GTANetworkServer
                 RunningResources.Remove(ourRes);
 
                 Program.Output("Stopped " + resourceName + "!");
+                return true;
             }
         }
 

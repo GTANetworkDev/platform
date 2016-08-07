@@ -293,14 +293,14 @@ namespace GTANetworkServer
             get { return Program.ServerInstance.ExportedFunctions; }
         }
         
-        public void startResource(string resourceName)
+        public bool startResource(string resourceName)
         {
-            Program.ServerInstance.StartResource(resourceName);
+            return Program.ServerInstance.StartResource(resourceName);
         }
 
-        public void stopResource(string name)
+        public bool stopResource(string name)
         {
-            Program.ServerInstance.StopResource(name);
+            return Program.ServerInstance.StopResource(name);
         }
 
         public bool isResourceRunning(string resource)

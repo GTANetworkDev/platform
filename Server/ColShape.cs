@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using GTANetworkShared;
@@ -25,6 +26,8 @@ namespace GTANetworkServer
         }
 
         internal List<int> EntitiesInContact = new List<int>();
+
+        public int Handle;
     }
 
     public class SphereColShape : ColShape
@@ -135,8 +138,10 @@ namespace GTANetworkServer
             MainThread.Abort();
         }
 
+        private int _shapeHandles = 0;
         public void Add(ColShape shape)
         {
+            shape.Handle = ++_shapeHandles;
             lock (ColShapes) ColShapes.Add(shape);
         }
 
@@ -152,12 +157,12 @@ namespace GTANetworkServer
                 try
                 {
                     var entities = new Dictionary<int, EntityProperties>(Program.ServerInstance.NetEntityHandler.ToDict());
-                    entities = entities.Where(pair => _validTypes.Contains((EntityType) pair.Value.EntityType)) as Dictionary<int, EntityProperties>;
+                    var entList = entities.Where(pair => _validTypes.Contains((EntityType) pair.Value.EntityType));
 
                     lock (ColShapes)
                     {
                         foreach (var shape in ColShapes)
-                            foreach (var entity in entities)
+                            foreach (var entity in entList)
                             {
                                 if (entity.Value == null || entity.Value.Position == null) continue;
                                 if (shape.Check(entity.Value.Position))
@@ -197,12 +202,14 @@ namespace GTANetworkServer
                             }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Program.Output("COLSHAPE FAILURE");
+                    Program.Output(ex.ToString());
                 }
                 finally
                 {
-                    Thread.Sleep(500);
+                    Thread.Sleep(100);
                 }
             }
         }
