@@ -412,13 +412,6 @@ namespace GTANetwork
             {
                 throw new AccessViolationException("Illegal path to file!");
             }
-
-            if (!DownloadManager.CheckFileIntegrity())
-            {
-                UI.Notify("File integrity compromised!");
-                Main.Client.Disconnect("Quit");
-                throw new AccessViolationException("File integrity compromised!");
-            }
         }
 
         public enum ReturnType
@@ -525,6 +518,13 @@ namespace GTANetwork
         public void loadPageCefBrowser(Browser browser, string uri)
         {
             checkPathSafe(uri);
+
+            if (!DownloadManager.CheckFileIntegrity())
+            {
+                Main.Client.Disconnect("Quit");
+                DownloadManager.FileIntegrity.Clear();
+                return;
+            }
 
             string fullUri = "http://" + ParentResourceName + "/" + uri.TrimStart('/');
 

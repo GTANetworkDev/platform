@@ -29,6 +29,8 @@ namespace GTANetwork
 
                 string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
 
+                LogManager.DebugLog("GOD: " + pair.Value + " == " + hash);
+
                 if (hash != pair.Value) return false;
             }
 
@@ -56,7 +58,7 @@ namespace GTANetwork
 
                 string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
 
-                FileIntegrity.Set(path, hash);
+                FileIntegrity.Set(path, md5hash);
                 
                 if (hash == md5hash)
                 {

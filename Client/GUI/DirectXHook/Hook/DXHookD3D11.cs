@@ -371,7 +371,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     {
                         Elements =
                         {
-                            new Common.TextElement(new System.Drawing.Font("Times New Roman", 22)) { Text = "CEF ENGINE RUNNING", Location = new System.Drawing.Point(0, 0), Color = System.Drawing.Color.Red, AntiAliased = false},
+                            new Common.TextElement(new System.Drawing.Font("Times New Roman", 22)) { Text = "*", Location = new System.Drawing.Point(0, 0), Color = System.Drawing.Color.Red, AntiAliased = false},
                             new Common.ImageElement(new Bitmap(Width, Height)) { Location = new System.Drawing.Point(0, 0) },
                         }
                     });
