@@ -421,6 +421,8 @@ namespace GTANetwork
                 Function.Call(Hash.SET_PED_AS_ENEMY, Character, false);
                 Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Character, true, false);
 
+			    if (Alpha < 255) Character.Alpha = Alpha;
+
                 LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
 
 				if (Props != null)

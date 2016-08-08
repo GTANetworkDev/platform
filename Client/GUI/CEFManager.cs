@@ -1,4 +1,7 @@
-﻿#if true
+﻿//#define DISABLE_HOOK
+//#define DISABLE_CEF
+
+#if true
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -206,8 +209,7 @@ namespace GTANetwork.GUI
             };
         }
     }
-
-
+    
     public static class CEFManager
     {
         public static void Initialize(Size screenSize)
@@ -217,6 +219,7 @@ namespace GTANetwork.GUI
             Configuration.EnableReleaseOnFinalizer = true;
             Configuration.EnableTrackingReleaseOnFinalizer = true;
 
+            #if !DISABLE_HOOK
             try
             {
                 DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
@@ -226,6 +229,7 @@ namespace GTANetwork.GUI
             {
                 LogManager.LogException(ex, "DIRECTX START");
             }
+            #endif
 
             RenderThread = new Thread(RenderLoop);
             RenderThread.IsBackground = true;
@@ -244,6 +248,7 @@ namespace GTANetwork.GUI
 
         public static void RenderLoop()
         {
+            #if !DISABLE_CEF
             var settings = new CefSharp.CefSettings();
             settings.SetOffScreenRenderingBestPerformanceArgs();
             
@@ -277,16 +282,23 @@ namespace GTANetwork.GUI
                     return;
                 }
             }
+
+            #endif
+
             LogManager.DebugLog("STARTING MAIN LOOP");
 
             SharpDX.Configuration.EnableObjectTracking = true;
 
             var cursor = new Bitmap(Main.GTANInstallDir + "\\images\\cef\\cursor.png");
 
+            #if !DISABLE_HOOK
+
             while (!StopRender)
             {
                 try
                 {
+
+                //*
                     using (
                         Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
                             PixelFormat.Format32bppArgb))
@@ -313,6 +325,8 @@ namespace GTANetwork.GUI
 
                         DirectXHook.SetBitmap(doubleBuffer);
                     }
+                    
+                    //*/
                 }
                 catch (Exception ex)
                 {
@@ -334,8 +348,13 @@ namespace GTANetwork.GUI
 
             DirectXHook.Dispose();
             Cef.Shutdown();
-
+            #endif
             Disposed = true;
+        }
+
+        private static void ApplicationOnThreadException(object sender, ThreadExceptionEventArgs threadExceptionEventArgs)
+        {
+            LogManager.LogException(threadExceptionEventArgs.Exception, "APPTHREAD");
         }
     }
 

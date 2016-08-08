@@ -1549,7 +1549,6 @@ namespace GTANetwork
             veh.EngineHealth = data.Health;
             veh.SirenActive = data.Siren;
             veh.NumberPlate = data.NumberPlate;
-            Function.Call(Hash.SET_VEHICLE_EXTRA_COLOURS, veh, 0, 0);
 
             for (int i = 0; i < data.Doors.Length; i++)
             {
@@ -1618,7 +1617,7 @@ namespace GTANetwork
             else
                 veh.IsInvincible = true;
 
-            veh.Alpha = (int)data.Alpha;
+            if (data.Alpha < 255) veh.Alpha = (int)data.Alpha;
             LogManager.DebugLog("ALPHA: " + veh.Alpha);
 
 
@@ -1701,7 +1700,7 @@ namespace GTANetwork
 
             LogManager.DebugLog("SETTING MISC PROPERTIES");
 
-            ourVeh.Alpha = (int)data.Alpha;
+            if (data.Alpha < 255) ourVeh.Alpha = (int)data.Alpha;
             ourVeh.FreezePosition = true;
             ourVeh.LodDistance = 3000;
 

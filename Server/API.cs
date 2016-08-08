@@ -492,8 +492,11 @@ namespace GTANetworkServer
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
             {
                 Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Alpha = (byte) newAlpha;
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x44A0870B7E92D7C0, new EntityArgument(entity.Value), newAlpha, false);
-                
+                if (newAlpha < 255)
+                    Program.ServerInstance.SendNativeCallToAllPlayers(0x44A0870B7E92D7C0, new EntityArgument(entity.Value), newAlpha, false);
+                else
+                    Program.ServerInstance.SendNativeCallToAllPlayers(0x9B1E824FFBB7027A, new EntityArgument(entity.Value));
+
                 var delta = new Delta_EntityProperties();
                 delta.Alpha = (byte) newAlpha;
                 Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
