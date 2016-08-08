@@ -329,6 +329,16 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             //});
 
             //((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Bitmap?.Dispose();
+
+            if (OverlayEngine.Overlays.Count == 0)
+                OverlayEngine.Overlays.Add(new Overlay());
+
+            if (this.OverlayEngine.Overlays[0].Elements.Count <= 1)
+                OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(new Bitmap(Width, Height))
+                {
+                    Location = new System.Drawing.Point(0, 0)
+                });
+
             ((ImageElement) this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = null;
             ((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = bt;
             this.OverlayEngine.FlushCache();

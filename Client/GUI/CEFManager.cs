@@ -216,9 +216,16 @@ namespace GTANetwork.GUI
             SharpDX.Configuration.EnableObjectTracking = true;
             Configuration.EnableReleaseOnFinalizer = true;
             Configuration.EnableTrackingReleaseOnFinalizer = true;
-            
-            DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
-            DirectXHook.Hook();
+
+            try
+            {
+                DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
+                DirectXHook.Hook();
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "DIRECTX START");
+            }
 
             RenderThread = new Thread(RenderLoop);
             RenderThread.IsBackground = true;

@@ -73,6 +73,7 @@ namespace GTANetwork
                         {
                             // Download latest version.
                             if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
+                            wc.Timeout = Int32.MaxValue;
                             wc.DownloadFile(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/files", "tempstorage\\files.zip");
                             using (var zipfile = ZipFile.Read("tempstorage\\files.zip"))
                             {

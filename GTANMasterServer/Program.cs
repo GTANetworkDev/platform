@@ -42,7 +42,7 @@ namespace GTANMasterServer
             {
                 Console.WriteLine("Running on {0}", url);
                 WelcomeMessageWorker.UpdateWelcomeMessage();
-                ContinuousIntegration.Work();
+                ContinuousIntegration.GetLastVersion();
 
                 while (true)
                 {
@@ -149,9 +149,25 @@ namespace GTANMasterServer
                         filesZip.AddDirectory(basedir + "" + Path.DirectorySeparatorChar + "scripts", "scripts");
                         filesZip.AddFiles(Directory.GetFiles(basedir), "" + Path.DirectorySeparatorChar + "");
                         if (Directory.Exists(basedir + Path.DirectorySeparatorChar + "scripts_auto"))
+                        {
                             filesZip.AddFiles(Directory.GetFiles(basedir + Path.DirectorySeparatorChar + "scripts_auto"), "scripts");
+                            foreach (
+                                var dir in
+                                    Directory.GetDirectories(basedir + Path.DirectorySeparatorChar + "scripts_auto"))
+                                filesZip.AddDirectory(dir,
+                                    "scripts" + Path.DirectorySeparatorChar + Path.GetDirectoryName(dir));
+                        }
+
                         if (Directory.Exists(basedir + Path.DirectorySeparatorChar + "root_auto"))
+                        {
                             filesZip.AddFiles(Directory.GetFiles(basedir + Path.DirectorySeparatorChar + "root_auto"), Path.DirectorySeparatorChar+"");
+                            foreach (
+                                var dir in
+                                    Directory.GetDirectories(basedir + Path.DirectorySeparatorChar + "root_auto"))
+                                filesZip.AddDirectory(dir,
+                                        Path.DirectorySeparatorChar + Path.GetFileName(dir));
+                        }
+
                         if (File.Exists("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "files.zip"))
                             File.Delete("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "files.zip");
                         filesZip.Save("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "files.zip");
