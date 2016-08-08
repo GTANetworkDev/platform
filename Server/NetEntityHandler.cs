@@ -276,6 +276,7 @@ namespace GTANetworkServer
                 EntityType = (byte) EntityType.Ped,
                 BlipSprite = 1,
                 BlipAlpha = 255,
+                Alpha = 255,
             });
 
             return localHan;

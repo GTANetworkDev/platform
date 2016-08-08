@@ -1132,6 +1132,7 @@ namespace GTANetwork
                         BlipSprite = -1,
                         BlipColor = -1,
                         BlipAlpha = 255,
+                        Alpha = 255,
                         Team = -1,
                     });
                 }

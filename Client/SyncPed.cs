@@ -1,4 +1,7 @@
-﻿using System;
+﻿//#define DISABLE_SLERP
+//#define DISABLE_UNDER_FLOOR_FIX
+
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing;
@@ -856,6 +859,8 @@ namespace GTANetwork
 
                 // Check if we're too far
 
+                #if !DISABLE_UNDER_FLOOR_FIX
+
                 const int VEHICLE_INTERPOLATION_WARP_THRESHOLD = 15;
                 const int VEHICLE_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 10;
 
@@ -894,7 +899,7 @@ namespace GTANetwork
                     var t = new Vector3(MainVehicle.Position.X, MainVehicle.Position.Y, newPos.Z);
                     MainVehicle.PositionNoOffset = t;
                 }
-
+                #endif
 
                 //UI.ShowSubtitle("alpha: " + alpha);
 
@@ -1978,6 +1983,8 @@ namespace GTANetwork
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = Character.Position;
 
+                #if !DISABLE_UNDER_FLOOR_FIX
+
                 const int PED_INTERPOLATION_WARP_THRESHOLD = 5;
                 const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
 
@@ -2049,6 +2056,8 @@ namespace GTANetwork
 
                     Character.PositionNoOffset = targetPos;
                 }
+
+                #endif
             }
             else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
             {
