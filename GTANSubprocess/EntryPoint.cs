@@ -304,6 +304,18 @@ namespace GTANetwork
                 File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
                 OurFiles.Add(InstallFolder + "\\scripts\\" + Path.GetFileName(path));
             }
+
+            foreach (var path in Directory.GetFiles("cef"))
+            {
+                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
+                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
+            }
+
+            foreach (var path in Directory.GetDirectories("cef"))
+            {
+                CopyFolder(path, InstallFolder + "\\" + Path.GetFileName(path));
+                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
+            }
         }
 
         public void MoveStuffOut()
@@ -373,7 +385,7 @@ namespace GTANetwork
             {
                 string name = Path.GetFileName(file);
                 string dest = Path.Combine(destFolder, name);
-                File.Copy(file, dest);
+                File.Copy(file, dest, true);
             }
             string[] folders = Directory.GetDirectories(sourceFolder);
             foreach (string folder in folders)
