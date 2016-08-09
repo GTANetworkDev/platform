@@ -965,15 +965,6 @@ namespace GTANetwork
                     };
                     internetServers.Items.Add(debugItem);
                 }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Use Experimental Lag Compensation", VehicleLagCompensation);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        VehicleLagCompensation = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
                 
                 {
                     var debugItem = new UIMenuCheckboxItem("Hide Map Nametags When Zoomed Out", PlayerSettings.HideNametagsWhenZoomedOutMap);
