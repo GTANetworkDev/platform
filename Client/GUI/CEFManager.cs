@@ -4,13 +4,9 @@
 #if true
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.IO.MemoryMappedFiles;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using CefSharp;
@@ -19,8 +15,6 @@ using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
 using Microsoft.ClearScript.V8;
-using Microsoft.ClearScript.Windows;
-using NativeUI;
 using SharpDX;
 using SharpDX.Diagnostics;
 using Point = System.Drawing.Point;

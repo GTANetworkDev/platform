@@ -1,8 +1,8 @@
 ﻿//#define DISABLE_SLERP
 //#define DISABLE_UNDER_FLOOR_FIX
+#define DISABLE_ROTATION_SIM
 
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -689,10 +689,12 @@ namespace GTANetwork
 				    }
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
-						MainVehicle.PositionNoOffset = gPos;
+					    MainVehicle.PositionNoOffset = gPos;
+                        #if !DISABLE_ROTATION_SIM
                         if (_lastVehiclePos != null)
                             MainVehicle.Quaternion = Main.DirectionToRotation(_lastVehiclePos.Value - gPos).ToQuaternion();
-                    }
+                        #endif
+					}
                 }
 				return true;
 			}
@@ -859,7 +861,7 @@ namespace GTANetwork
 
                 // Check if we're too far
 
-                #if !DISABLE_UNDER_FLOOR_FIX
+#if !DISABLE_UNDER_FLOOR_FIX
 
                 const int VEHICLE_INTERPOLATION_WARP_THRESHOLD = 15;
                 const int VEHICLE_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 10;
@@ -899,7 +901,7 @@ namespace GTANetwork
                     var t = new Vector3(MainVehicle.Position.X, MainVehicle.Position.Y, newPos.Z);
                     MainVehicle.PositionNoOffset = t;
                 }
-                #endif
+#endif
 
                 //UI.ShowSubtitle("alpha: " + alpha);
 
@@ -1983,7 +1985,7 @@ namespace GTANetwork
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = Character.Position;
 
-                #if !DISABLE_UNDER_FLOOR_FIX
+#if !DISABLE_UNDER_FLOOR_FIX
 
                 const int PED_INTERPOLATION_WARP_THRESHOLD = 5;
                 const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
@@ -2057,7 +2059,7 @@ namespace GTANetwork
                     Character.PositionNoOffset = targetPos;
                 }
 
-                #endif
+#endif
             }
             else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
             {
