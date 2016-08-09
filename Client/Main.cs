@@ -2602,7 +2602,7 @@ namespace GTANetwork
 
                     if (relPos.X < 0 && relPos.Y > 0)
                     {
-                        seat = VehicleSeat.RightFront;
+                        seat = VehicleSeat.LeftRear;
                     }
                     else if (relPos.X >= 0 && relPos.Y > 0)
                     {
