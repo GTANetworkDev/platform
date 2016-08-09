@@ -228,6 +228,19 @@ namespace GTANetworkShared
     {
         [ProtoMember(1)]
         public int CharacterHandle { get; set; }
+
+        [ProtoMember(2)]
+        public SharedSettings Settings { get; set; }
+    }
+
+    [ProtoContract]
+    public class SharedSettings
+    {
+        [ProtoMember(1)]
+        public bool VehicleLagCompensation { get; set; }
+
+        [ProtoMember(2)]
+        public bool OnFootLagCompensation { get; set; }
     }
 
     [ProtoContract]

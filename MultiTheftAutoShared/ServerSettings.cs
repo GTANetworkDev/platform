@@ -50,6 +50,12 @@ namespace GTANetworkShared
         [XmlElement("log")]
         public bool LogToFile { get; set; }
 
+        [XmlElement("vehicle_lagcomp")]
+        public bool VehicleLagCompensation { get; set; }
+
+        [XmlElement("onfoot_lagcomp")]
+        public bool OnFootLagCompensation { get; set; }
+
         [XmlRoot("resource")]
         public class SettingsResFilepath
         {
@@ -64,15 +70,15 @@ namespace GTANetworkShared
             Name = "Simple GTA Server";
             MinimumClientVersion = "0.0.0.0";
             Password = "";
-            //Gamemode = "freeroam";
             LogToFile = true;
             Announce = true;
             UseACL = true;
             AnnounceToLan = true;
             AutoUpdateMinClientVersion = true;
-            //AllowDisplayNames = true;
             MasterServer = "http://46.101.1.92";
             Resources = new List<SettingsResFilepath>();
+            OnFootLagCompensation = true;
+            VehicleLagCompensation = true;
         }
 
         public static ServerSettings ReadSettings(string path)

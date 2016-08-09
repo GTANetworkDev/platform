@@ -112,6 +112,8 @@ namespace GTANetworkServer
             AnnounceToLAN = conf.AnnounceToLan;
             UseUPnP = conf.UseUPnP;
             MinimumClientVersion = ParseableVersion.Parse(conf.MinimumClientVersion);
+            OnFootLagComp = conf.OnFootLagCompensation;
+            VehLagComp = conf.VehicleLagCompensation;
         }
 
         public ParseableVersion MinimumClientVersion;
@@ -135,7 +137,8 @@ namespace GTANetworkServer
         public bool ReadyToClose { get; set; }
         public bool ACLEnabled { get; set; }
         public bool UseUPnP { get; set; }
-
+        public bool VehLagComp { get; set; }
+        public bool OnFootLagComp { get; set; }
 
         public ColShapeManager ColShapeManager;
         public CommandHandler CommandHandler;
@@ -1061,7 +1064,13 @@ namespace GTANResource
                                     ((PedProperties)NetEntityHandler.ToDict()[client.CharacterHandle.Value]).Name = client.Name;
 
                                     var respObj = new ConnectionResponse();
+
                                     respObj.CharacterHandle = client.CharacterHandle.Value;
+                                    respObj.Settings = new SharedSettings()
+                                    {
+                                        OnFootLagCompensation = OnFootLagComp,
+                                        VehicleLagCompensation = VehLagComp,
+                                    };
                                     
                                     var channelHail = Server.CreateMessage();
                                     var respBin = SerializeBinary(respObj);

@@ -95,7 +95,8 @@ namespace GTANetwork
         
         public static SynchronizationMode GlobalSyncMode;
         public static bool LerpRotaion = true;
-        public static bool LagCompensation = false;
+        public static bool VehicleLagCompensation = true;
+        public static bool OnFootLagCompensation = true;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
         public static bool CanOpenChatbox = true;
@@ -966,10 +967,10 @@ namespace GTANetwork
                 }
 
                 {
-                    var debugItem = new UIMenuCheckboxItem("Use Experimental Lag Compensation", LagCompensation);
+                    var debugItem = new UIMenuCheckboxItem("Use Experimental Lag Compensation", VehicleLagCompensation);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
-                        LagCompensation = @checked;
+                        VehicleLagCompensation = @checked;
                     };
                     internetServers.Items.Add(debugItem);
                 }
@@ -3899,7 +3900,14 @@ namespace GTANetwork
                                 Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
                                 return;
                             }
+
                             NetEntityHandler.AddLocalCharacter(respObj.CharacterHandle);
+
+                            if (respObj.Settings != null)
+                            {
+                                OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
+                                VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
+                            }
 
                             var confirmObj = Client.CreateMessage();
                             confirmObj.Write((int) PacketType.ConnectionConfirmed);

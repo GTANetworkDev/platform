@@ -817,9 +817,6 @@ namespace GTANetwork
                 currentInterop.vecError = dir;
                 //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
                 //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-                currentInterop.StartTime = Util.TickCount - DataLatency;
-                currentInterop.FinishTime = currentInterop.StartTime + 100;
-                currentInterop.LastAlpha = 0f;
             }
             else
             {
@@ -829,10 +826,11 @@ namespace GTANetwork
                 currentInterop.vecError = dir;
                 //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
                 //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-                currentInterop.StartTime = Util.TickCount - DataLatency;
-                currentInterop.FinishTime = currentInterop.StartTime + 100;
-                currentInterop.LastAlpha = 0f;
             }
+
+            currentInterop.StartTime = Util.TickCount - DataLatency;
+            currentInterop.FinishTime = currentInterop.StartTime + 100;
+            currentInterop.LastAlpha = 0f;
         }
 
         private int m_uiForceLocalZCounter;
