@@ -1,5 +1,5 @@
-﻿#define DISABLE_HOOK
-#define DISABLE_CEF
+﻿//#define DISABLE_HOOK
+//#define DISABLE_CEF
 
 #if true
 using System;
@@ -64,6 +64,8 @@ namespace GTANetwork.GUI
                 var wdmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollDown);
                 var wdmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollDown);
 
+                #if !DISABLE_CEF
+
                 foreach (var browser in CEFManager.Browsers)
                 {
                     if (!browser.IsInitialized()) continue;
@@ -119,11 +121,16 @@ namespace GTANetwork.GUI
                         browser._browser.GetBrowser().GetHost().SetFocus(false);
                     }
                 }
+
+                #endif
             };
 
             KeyDown += (sender, args) =>
             {
                 if (!ShowCursor) return;
+
+                #if !DISABLE_CEF
+
                 foreach (var browser in CEFManager.Browsers)
                 {
                     if (!browser.IsInitialized()) continue;
@@ -186,10 +193,13 @@ namespace GTANetwork.GUI
                     charEvent.Modifiers = mod;
                     browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
                 }
+
+                #endif
             };
 
             KeyUp += (sender, args) =>
             {
+                #if !DISABLE_CEF
                 if (!ShowCursor) return;
                 foreach (var browser in CEFManager.Browsers)
                 {
@@ -200,6 +210,7 @@ namespace GTANetwork.GUI
                     kEvent.WindowsKeyCode = (int)args.KeyCode;
                     browser._browser.GetBrowser().GetHost().SendKeyEvent(kEvent);
                 }
+                #endif
             };
         }
     }
@@ -209,11 +220,11 @@ namespace GTANetwork.GUI
         public static void Initialize(Size screenSize)
         {
             ScreenSize = screenSize;
+#if !DISABLE_HOOK
             SharpDX.Configuration.EnableObjectTracking = true;
             Configuration.EnableReleaseOnFinalizer = true;
             Configuration.EnableTrackingReleaseOnFinalizer = true;
 
-            #if !DISABLE_HOOK
             try
             {
                 DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
@@ -223,7 +234,7 @@ namespace GTANetwork.GUI
             {
                 LogManager.LogException(ex, "DIRECTX START");
             }
-            #endif
+#endif
 
             RenderThread = new Thread(RenderLoop);
             RenderThread.IsBackground = true;
@@ -242,7 +253,7 @@ namespace GTANetwork.GUI
 
         public static void RenderLoop()
         {
-            #if !DISABLE_CEF
+#if !DISABLE_CEF
             var settings = new CefSharp.CefSettings();
             settings.SetOffScreenRenderingBestPerformanceArgs();
             
@@ -277,15 +288,15 @@ namespace GTANetwork.GUI
                 }
             }
 
-            #endif
+#endif
 
             LogManager.DebugLog("STARTING MAIN LOOP");
 
-            SharpDX.Configuration.EnableObjectTracking = true;
 
             var cursor = new Bitmap(Main.GTANInstallDir + "\\images\\cef\\cursor.png");
 
-            #if !DISABLE_HOOK
+#if !DISABLE_HOOK
+            SharpDX.Configuration.EnableObjectTracking = true;
 
             while (!StopRender)
             {
@@ -301,6 +312,7 @@ namespace GTANetwork.GUI
                         if (!Main.MainMenu.Visible)
                             using (var graphics = Graphics.FromImage(doubleBuffer))
                             {
+#if !DISABLE_CEF
                                 lock (Browsers)
                                     foreach (var browser in Browsers)
                                     {
@@ -312,7 +324,7 @@ namespace GTANetwork.GUI
                                         graphics.DrawImage(bitmap, browser.Position);
                                         bitmap.Dispose();
                                     }
-
+#endif
                                 if (CefController.ShowCursor)
                                     graphics.DrawImage(cursor, CefController._lastMousePoint);
                             }
@@ -341,8 +353,10 @@ namespace GTANetwork.GUI
             }
 
             DirectXHook.Dispose();
+#if !DISABLE_CEF
             Cef.Shutdown();
-            #endif
+#endif
+#endif
             Disposed = true;
         }
 

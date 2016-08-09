@@ -56,13 +56,13 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
-    [ProtoInclude(11, typeof(VehicleProperties))]
-    [ProtoInclude(12, typeof(BlipProperties))]
-    [ProtoInclude(13, typeof(MarkerProperties))]
-    [ProtoInclude(14, typeof(PickupProperties))]
-    [ProtoInclude(15, typeof(PedProperties))]
-    [ProtoInclude(16, typeof(TextLabelProperties))]
-    [ProtoInclude(17, typeof(WorldProperties))]
+    [ProtoInclude(13, typeof(VehicleProperties))]
+    [ProtoInclude(14, typeof(BlipProperties))]
+    [ProtoInclude(15, typeof(MarkerProperties))]
+    [ProtoInclude(16, typeof(PickupProperties))]
+    [ProtoInclude(17, typeof(PedProperties))]
+    [ProtoInclude(18, typeof(TextLabelProperties))]
+    [ProtoInclude(19, typeof(WorldProperties))]
     public class EntityProperties
     {
         public EntityProperties()
@@ -316,13 +316,13 @@ namespace GTANetworkShared
 
     #region DeltaCompressed
     [ProtoContract]
-    [ProtoInclude(11, typeof(Delta_VehicleProperties))]
-    [ProtoInclude(12, typeof(Delta_BlipProperties))]
-    [ProtoInclude(13, typeof(Delta_MarkerProperties))]
-    [ProtoInclude(14, typeof(Delta_PickupProperties))]
-    [ProtoInclude(15, typeof(Delta_PedProperties))]
-    [ProtoInclude(16, typeof(Delta_TextLabelProperties))]
-    [ProtoInclude(17, typeof(Delta_WorldProperties))]
+    [ProtoInclude(13, typeof(Delta_VehicleProperties))]
+    [ProtoInclude(14, typeof(Delta_BlipProperties))]
+    [ProtoInclude(15, typeof(Delta_MarkerProperties))]
+    [ProtoInclude(16, typeof(Delta_PickupProperties))]
+    [ProtoInclude(17, typeof(Delta_PedProperties))]
+    [ProtoInclude(18, typeof(Delta_TextLabelProperties))]
+    [ProtoInclude(19, typeof(Delta_WorldProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
