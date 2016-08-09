@@ -1383,6 +1383,22 @@ namespace GTANetworkServer
             }
         }
 
+        public void moveEntityPosition(NetHandle netHandle, Vector3 target, int duration)
+        {
+            if (doesEntityExist(netHandle))
+            {
+                Program.ServerInstance.CreatePositionInterpolation(netHandle.Value, target, duration);
+            }
+        }
+
+        public void moveEntityRotation(NetHandle netHandle, Vector3 target, int duration)
+        {
+            if (doesEntityExist(netHandle))
+            {
+                Program.ServerInstance.CreateRotationInterpolation(netHandle.Value, target, duration);
+            }
+        }
+
         public void attachEntityToEntity(NetHandle entity, NetHandle entityTarget, string bone, Vector3 positionOffset, Vector3 rotationOffset)
         {
             if (doesEntityExist(entity) && doesEntityExist(entityTarget) && entity != entityTarget)

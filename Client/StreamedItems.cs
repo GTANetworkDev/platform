@@ -25,6 +25,10 @@ namespace GTANetwork
         Attachment AttachedTo { get; set; }
 
         List<int> Attachables { get; set; }
+
+        Movement PositionMovement { get; set; }
+
+        Movement RotationMovement { get; set; }
     }
 
     public class RemotePlayer : PedProperties, IStreamedItem, ILocalHandleable

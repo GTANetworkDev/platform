@@ -1929,8 +1929,10 @@ namespace GTANResource
                     }
                 }
             }
-            
+
             ProcessMessages();
+
+            NetEntityHandler.UpdateMovements();
 
             if (AnnounceSelf && DateTime.Now.Subtract(_lastAnnounceDateTime).TotalMinutes >= 5)
             {
@@ -2517,6 +2519,44 @@ namespace GTANResource
 
             _callbacks.Add(salt, callback);
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
+        }
+
+        public void CreatePositionInterpolation(int entity, Vector3 target, int duration)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null) return;
+
+            var mov = new Movement();
+            mov.ServerStartTime = Program.GetTicks();
+            mov.Duration = duration;
+            mov.StartVector = prop.Position;
+            mov.EndVector = target;
+            mov.Start = 0;
+            prop.PositionMovement = mov;
+
+            var delta = new Delta_EntityProperties();
+            delta.PositionMovement = mov;
+            UpdateEntityInfo(entity, EntityType.Prop, delta);
+        }
+
+        public void CreateRotationInterpolation(int entity, Vector3 target, int duration)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null) return;
+
+            var mov = new Movement();
+            mov.ServerStartTime = Program.GetTicks();
+            mov.Duration = duration;
+            mov.StartVector = prop.Position;
+            mov.EndVector = target;
+            mov.Start = 0;
+            prop.RotationMovement = mov;
+
+            var delta = new Delta_EntityProperties();
+            delta.RotationMovement = mov;
+            UpdateEntityInfo(entity, EntityType.Prop, delta);
         }
 
         public bool SetEntityProperty(int entity, string key, object value, bool world = false)

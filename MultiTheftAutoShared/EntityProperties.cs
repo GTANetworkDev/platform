@@ -38,6 +38,24 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
+    public class Movement
+    {
+        [ProtoMember(1)]
+        public long Duration { get; set; }
+
+        [ProtoMember(2)]
+        public long Start { get; set; }
+
+        [ProtoMember(3)]
+        public Vector3 StartVector { get; set; }
+
+        [ProtoMember(4)]
+        public Vector3 EndVector { get; set; }
+
+        public long ServerStartTime { get; set; }
+    }
+
+    [ProtoContract]
     [ProtoInclude(11, typeof(VehicleProperties))]
     [ProtoInclude(12, typeof(BlipProperties))]
     [ProtoInclude(13, typeof(MarkerProperties))]
@@ -80,6 +98,12 @@ namespace GTANetworkShared
 
         [ProtoMember(10)]
         public Dictionary<string, NativeArgument> SyncedProperties { get; set; }
+
+        [ProtoMember(11)]
+        public Movement PositionMovement { get; set; }
+
+        [ProtoMember(12)]
+        public Movement RotationMovement { get; set; }
     }
 
     [ProtoContract]
@@ -330,6 +354,12 @@ namespace GTANetworkShared
 
         [ProtoMember(10)]
         public Dictionary<string, NativeArgument> SyncedProperties { get; set; }
+
+        [ProtoMember(11)]
+        public Movement PositionMovement { get; set; }
+
+        [ProtoMember(12)]
+        public Movement RotationMovement { get; set; }
     }
 
     [ProtoContract]

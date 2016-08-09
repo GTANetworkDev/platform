@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using GTANetworkShared;
 
 namespace GTANetworkServer
@@ -23,6 +24,45 @@ namespace GTANetworkServer
         {
             if (ServerEntities.ContainsKey(handle) && ServerEntities[handle] is T) return (T)ServerEntities[handle];
             return null;
+        }
+
+        public void UpdateMovements()
+        {
+            lock (ServerEntities)
+            {
+                // Get all entities who are interpolating
+                foreach (var pair in ServerEntities
+                    .Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null))
+                {
+                    var currentTime = Program.GetTicks();
+
+                    if (pair.Value.PositionMovement != null)
+                    {
+                        var delta = currentTime - pair.Value.PositionMovement.ServerStartTime;
+                        pair.Value.PositionMovement.Start = delta;
+
+                        pair.Value.Position = Vector3.Lerp(pair.Value.PositionMovement.StartVector,
+                            pair.Value.PositionMovement.EndVector,
+                            Math.Min(((float) delta) / pair.Value.PositionMovement.Duration, 1f));
+
+                        if (delta >= pair.Value.PositionMovement.Duration)
+                            pair.Value.PositionMovement = null;
+                    }
+
+                    if (pair.Value.RotationMovement != null)
+                    {
+                        var delta = currentTime - pair.Value.RotationMovement.ServerStartTime;
+                        pair.Value.RotationMovement.Start = delta;
+
+                        pair.Value.Rotation = Vector3.Lerp(pair.Value.RotationMovement.StartVector,
+                            pair.Value.RotationMovement.EndVector,
+                            Math.Min(((float)delta) / pair.Value.RotationMovement.Duration, 1f));
+
+                        if (delta >= pair.Value.RotationMovement.Duration)
+                            pair.Value.RotationMovement = null;
+                    }
+                }
+            }
         }
 
         private bool _hasWorldBeenCreated;

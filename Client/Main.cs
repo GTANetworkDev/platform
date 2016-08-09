@@ -2912,6 +2912,7 @@ namespace GTANetwork
             NetEntityHandler.DrawMarkers();
             NetEntityHandler.DrawLabels();
             NetEntityHandler.UpdateMisc();
+            NetEntityHandler.UpdateInterpolations();
 
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);

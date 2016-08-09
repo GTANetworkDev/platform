@@ -483,6 +483,16 @@ namespace GTANetworkShared
             return new Vector3(left.X / right, left.Y / right, left.Z / right);
         }
 
+        public static Vector3 Lerp(Vector3 start, Vector3 end, float n)
+        {
+            return new Vector3()
+            {
+                X = start.X + (end.X - start.X) * n,
+                Y = start.Y + (end.Y - start.Y) * n,
+                Z = start.Z + (end.Z - start.Z) * n,
+            };
+        }
+
         public override string ToString()
         {
             return string.Format("X: {0} Y: {1} Z: {2}", X, Y, Z);

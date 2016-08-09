@@ -230,6 +230,88 @@ namespace GTANetwork
             }
         }
 
+        public void UpdateInterpolations()
+        {
+            var ents =
+                new List<EntityProperties>(
+                    ClientMap.Where(item => item.PositionMovement != null || item.RotationMovement != null).Cast<EntityProperties>());
+
+            foreach (var ent in ents)
+            {
+                if (ent.PositionMovement != null)
+                {
+                    if (ent.PositionMovement.ServerStartTime == 0) // Assume this is the first time we see the object
+                        ent.PositionMovement.ServerStartTime = Util.TickCount;
+
+                    var delta = Util.TickCount - ent.PositionMovement.ServerStartTime;
+                    delta += ent.PositionMovement.Start;
+
+                    ent.Position = GTANetworkShared.Vector3.Lerp(ent.PositionMovement.StartVector,
+                        ent.PositionMovement.EndVector,
+                        Math.Min(((float) delta/ent.PositionMovement.Duration), 1f));
+
+                    var item = (IStreamedItem) ent;
+                    if (item.StreamedIn)
+                    {
+                        switch ((EntityType)item.EntityType)
+                        {
+                            case EntityType.Prop:
+                            case EntityType.Vehicle:
+                            case EntityType.Ped:
+                                {
+                                    var gameEnt = NetToEntity(item);
+                                    if (gameEnt != null) gameEnt.PositionNoOffset = ent.Position.ToVector();
+                                }
+                                break;
+                            case EntityType.Blip:
+                                {
+                                    var gameEnt = NetToEntity(item);
+                                    if (gameEnt != null) new Blip(gameEnt.Handle).Position = ent.Position.ToVector();
+                                }
+                                break;
+                        }
+                    }
+
+                    if (delta >= ent.PositionMovement.Duration) ent.PositionMovement = null;
+                }
+
+                if (ent.RotationMovement != null)
+                {
+                    if (ent.RotationMovement.ServerStartTime == 0) // Assume this is the first time we see the object
+                        ent.RotationMovement.ServerStartTime = Util.TickCount;
+
+                    var delta = Util.TickCount - ent.RotationMovement.ServerStartTime;
+                    delta += ent.RotationMovement.Start;
+
+                    ent.Rotation = GTANetworkShared.Vector3.Lerp(ent.RotationMovement.StartVector,
+                        ent.RotationMovement.EndVector,
+                        Math.Min(((float)delta / ent.RotationMovement.Duration), 1f));
+
+                    var item = (IStreamedItem)ent;
+                    if (item.StreamedIn)
+                    {
+                        switch ((EntityType)item.EntityType)
+                        {
+                            case EntityType.Prop:
+                            case EntityType.Vehicle:
+                            case EntityType.Ped:
+                                {
+                                    var gameEnt = NetToEntity(item);
+                                    if (gameEnt != null)
+                                    {
+                                        gameEnt.Quaternion = ent.Rotation.ToVector().ToQuaternion();
+                                        //gameEnt.Rotation = ent.Rotation.ToVector(); // Gimbal lock!
+                                    }
+                                }
+                                break;
+                        }
+                    }
+
+                    if (delta >= ent.RotationMovement.Duration) ent.RotationMovement = null;
+                }
+            }
+        }
+
         public void DrawMarkers()
         {
             var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker && item.StreamedIn).Cast<RemoteMarker>());
@@ -552,6 +634,9 @@ namespace GTANetwork
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
         public void UpdateProp(int netHandle, Delta_EntityProperties prop)
@@ -609,6 +694,9 @@ namespace GTANetwork
                     }
                 }
             }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
         public void UpdateBlip(int netHandle, Delta_BlipProperties prop)
@@ -655,6 +743,9 @@ namespace GTANetwork
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
         public void UpdateMarker(int netHandle, Delta_MarkerProperties prop, bool localOnly = false)
@@ -702,6 +793,9 @@ namespace GTANetwork
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
         public void UpdatePlayer(int netHandle, Delta_PedProperties prop)
@@ -762,6 +856,9 @@ namespace GTANetwork
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
         public void UpdateRemotePlayer(int netHandle, Delta_PedProperties prop)
@@ -814,6 +911,9 @@ namespace GTANetwork
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
         public void UpdatePickup(int netHandle, Delta_PickupProperties prop)
@@ -857,6 +957,9 @@ namespace GTANetwork
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
         public RemoteVehicle CreateVehicle(int model, Vector3 position, Vector3 rotation, int netHash)
@@ -908,6 +1011,8 @@ namespace GTANetwork
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
                     VehicleComponents = prop.VehicleComponents,
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -954,6 +1059,8 @@ namespace GTANetwork
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -1002,6 +1109,8 @@ namespace GTANetwork
 
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
                     Flag = prop.Flag,
 
                     StreamedIn = false,
@@ -1076,6 +1185,9 @@ namespace GTANetwork
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
 
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
+
                     StreamedIn = false,
                     LocalOnly = false,
                 });
@@ -1106,6 +1218,9 @@ namespace GTANetwork
                     SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
+
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -1162,6 +1277,8 @@ namespace GTANetwork
             rem.AttachedTo = prop.AttachedTo;
             rem.Attachables = prop.Attachables;
             rem.Flag = prop.Flag;
+            rem.PositionMovement = prop.PositionMovement;
+            rem.RotationMovement = prop.RotationMovement;
 
             if (rem is SyncPed)
             {
@@ -1211,6 +1328,9 @@ namespace GTANetwork
                     SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
+
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
 
                     Flag = prop.Flag,
 
