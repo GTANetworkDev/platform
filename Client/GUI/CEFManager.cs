@@ -1,5 +1,5 @@
-﻿#define DISABLE_HOOK
-#define DISABLE_CEF
+﻿//#define DISABLE_HOOK
+//#define DISABLE_CEF
 
 #if true
 using System;
