@@ -3928,7 +3928,7 @@ namespace GTANetwork
                 else if (msg.MessageType == NetIncomingMessageType.DiscoveryResponse)
                 {
                     #region DiscoveryResponse
-                    var discType = msg.ReadInt32();
+                    var discType = msg.ReadByte();
                     var len = msg.ReadInt32();
                     var bin = msg.ReadBytes(len);
                     var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;

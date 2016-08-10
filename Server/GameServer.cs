@@ -1027,7 +1027,7 @@ namespace GTANResource
                                 client.Latency = msg.ReadFloat();
                                 break;
                             case NetIncomingMessageType.ConnectionApproval:
-                                var type = msg.ReadInt32();
+                                var type = msg.ReadByte();
                                 var leng = msg.ReadInt32();
                                 var connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
                                 if (connReq == null)
