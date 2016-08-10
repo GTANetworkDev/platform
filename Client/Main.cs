@@ -4108,6 +4108,19 @@ namespace GTANetwork
             syncPed.VehiclePosition = position;
 
             syncPed.LastUpdateReceived = Util.TickCount;
+
+            if (syncPed.VehicleNetHandle != 0)
+            {
+                var car = NetEntityHandler.NetToStreamedItem(syncPed.VehicleNetHandle) as RemoteVehicle;
+                if (car != null)
+                {
+                    car.Position = position.ToLVector();
+                    if (car.StreamedIn)
+                    {
+                        NetEntityHandler.NetToEntity(car).PositionNoOffset = position;
+                    }
+                }
+            }
         }
 
         private void HandleVehiclePacket(VehicleData fullData, bool purePacket)
