@@ -257,7 +257,7 @@ namespace GTANetwork
                         {
                             case EntityType.Prop:
                             case EntityType.Vehicle:
-                            case EntityType.Ped:
+                            case EntityType.Player:
                                 {
                                     var gameEnt = NetToEntity(item);
                                     if (gameEnt != null) gameEnt.PositionNoOffset = ent.Position.ToVector();
@@ -294,7 +294,7 @@ namespace GTANetwork
                         {
                             case EntityType.Prop:
                             case EntityType.Vehicle:
-                            case EntityType.Ped:
+                            case EntityType.Player:
                                 {
                                     var gameEnt = NetToEntity(item);
                                     if (gameEnt != null)
@@ -1240,7 +1240,7 @@ namespace GTANetwork
                     ClientMap.Add(rem = new SyncPed()
                     {
                         RemoteHandle = netHandle,
-                        EntityType = (byte) EntityType.Ped,
+                        EntityType = (byte) EntityType.Player,
                         StreamedIn = false, // change me
                         LocalOnly = false,
 
@@ -1255,7 +1255,7 @@ namespace GTANetwork
             return rem;
         }
 
-        public void UpdatePlayer(int netHandle, PedProperties prop)
+        public void UpdatePlayer(int netHandle, PlayerProperties prop)
         {
             RemotePlayer rem = NetToStreamedItem(netHandle) as RemotePlayer;
             if (rem == null) return;
@@ -1408,7 +1408,7 @@ namespace GTANetwork
                 case EntityType.Blip:
                     StreamInBlip((RemoteBlip) item);
                     break;
-                case EntityType.Ped:
+                case EntityType.Player:
                     if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
                     break;
                 case EntityType.Marker:
@@ -1454,10 +1454,10 @@ namespace GTANetwork
                 case EntityType.Pickup:
                     StreamOutPickup((ILocalHandleable) item);
                     break;
-                case EntityType.Ped:
+                case EntityType.Player:
                     if (item is SyncPed)
                     {
-                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(((SyncPed) item).Character?.Handle ?? 0), (int)EntityType.Ped);
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(((SyncPed) item).Character?.Handle ?? 0), (int)EntityType.Player);
                         ((SyncPed) item).Clear();
                         ((SyncPed) item).StreamedIn = false;
                     }

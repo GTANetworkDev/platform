@@ -1061,7 +1061,7 @@ namespace GTANResource
                                     client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
                                     client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
                                     client.GameVersion = connReq.GameVersion;
-                                    ((PedProperties)NetEntityHandler.ToDict()[client.CharacterHandle.Value]).Name = client.Name;
+                                    ((PlayerProperties)NetEntityHandler.ToDict()[client.CharacterHandle.Value]).Name = client.Name;
 
                                     var respObj = new ConnectionResponse();
 
@@ -1631,7 +1631,7 @@ namespace GTANResource
                                             {
                                                 var delta = new Delta_PedProperties();
                                                 delta.Name = client.Name;
-                                                UpdateEntityInfo(client.CharacterHandle.Value, EntityType.Ped, delta, client);
+                                                UpdateEntityInfo(client.CharacterHandle.Value, EntityType.Player, delta, client);
 
                                                 var mapObj = new ServerMap();
                                                 mapObj.World =
@@ -1660,9 +1660,9 @@ namespace GTANResource
                                                         if (!((PickupProperties)pair.Value).PickedUp)
                                                             mapObj.Pickups.Add(pair.Key, (PickupProperties)pair.Value);
                                                     }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Ped)
+                                                    else if (pair.Value.EntityType == (byte)EntityType.Player)
                                                     {
-                                                        mapObj.Players.Add(pair.Key, (PedProperties)pair.Value);
+                                                        mapObj.Players.Add(pair.Key, (PlayerProperties)pair.Value);
                                                     }
                                                     else if (pair.Value.EntityType == (byte) EntityType.TextLabel)
                                                     {
@@ -2631,7 +2631,7 @@ namespace GTANResource
         {
             if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
             {
-                ((PedProperties) NetEntityHandler.ToDict()[target.CharacterHandle.Value]).Team = newTeam;
+                ((PlayerProperties) NetEntityHandler.ToDict()[target.CharacterHandle.Value]).Team = newTeam;
             }
 
             var obj = new SyncEvent();
@@ -2645,7 +2645,7 @@ namespace GTANResource
         {
             if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
             {
-                ((PedProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipColor = newColor;
+                ((PlayerProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipColor = newColor;
             }
 
             var obj = new SyncEvent();
@@ -2668,7 +2668,7 @@ namespace GTANResource
         {
             if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
             {
-                ((PedProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipSprite = newSprite;
+                ((PlayerProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipSprite = newSprite;
             }
 
             var obj = new SyncEvent();
@@ -2691,7 +2691,7 @@ namespace GTANResource
         {
             if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.Value))
             {
-                ((PedProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipAlpha = (byte)newAlpha;
+                ((PlayerProperties)NetEntityHandler.ToDict()[target.CharacterHandle.Value]).BlipAlpha = (byte)newAlpha;
             }
 
             var obj = new SyncEvent();

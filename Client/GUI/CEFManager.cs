@@ -1,5 +1,5 @@
-﻿//#define DISABLE_HOOK
-//#define DISABLE_CEF
+﻿#define DISABLE_HOOK
+#define DISABLE_CEF
 
 #if true
 using System;
@@ -253,6 +253,9 @@ namespace GTANetwork.GUI
 
         public static void RenderLoop()
         {
+            Application.ThreadException += ApplicationOnThreadException;
+            AppDomain.CurrentDomain.UnhandledException += AppDomainException;
+
 #if !DISABLE_CEF
             var settings = new CefSharp.CefSettings();
             settings.SetOffScreenRenderingBestPerformanceArgs();
@@ -363,6 +366,11 @@ namespace GTANetwork.GUI
         private static void ApplicationOnThreadException(object sender, ThreadExceptionEventArgs threadExceptionEventArgs)
         {
             LogManager.LogException(threadExceptionEventArgs.Exception, "APPTHREAD");
+        }
+
+        private static void AppDomainException(object sender, UnhandledExceptionEventArgs threadExceptionEventArgs)
+        {
+            LogManager.LogException(threadExceptionEventArgs.ExceptionObject as Exception, "APPTHREAD");
         }
     }
 

@@ -131,7 +131,7 @@ namespace GTANetworkServer
 
         private readonly EntityType[] _validTypes = new[]
         {
-            EntityType.Ped,
+            EntityType.Player,
             EntityType.Prop,
             EntityType.Vehicle,
         };

@@ -304,7 +304,7 @@ namespace GTANetwork
                 File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
                 OurFiles.Add(InstallFolder + "\\scripts\\" + Path.GetFileName(path));
             }
-
+            
             foreach (var path in Directory.GetFiles("cef"))
             {
                 File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
@@ -373,7 +373,7 @@ namespace GTANetwork
                 DeleteDirectory(dir);
             }
 
-            Directory.Delete(target_dir, false);
+            Directory.Delete(target_dir, true);
         }
 
         public static void CopyFolder(string sourceFolder, string destFolder)

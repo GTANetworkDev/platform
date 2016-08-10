@@ -201,7 +201,7 @@ namespace GTANetwork
                 obj.VehicleHandle = Main.NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
-                obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
+                obj.PlayerHealth = (byte) Util.Clamp(0, player.Health, 255);
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = (byte)player.Armor;
@@ -300,7 +300,7 @@ namespace GTANetwork
                 obj.PedArmor = (byte)player.Armor;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
-                obj.PlayerHealth = (byte)(100 * ((player.Health < 0 ? 0 : player.Health) / (float)player.MaxHealth));
+                obj.PlayerHealth = (byte)Util.Clamp(0, player.Health, 255);
                 obj.Velocity = player.Velocity.ToLVector();
 
                 obj.Flag = 0;

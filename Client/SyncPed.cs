@@ -449,7 +449,7 @@ namespace GTANetwork
                     Character.HasCollision = false;
                 }
 
-                JavascriptHook.InvokeStreamInEvent(new LocalHandle(Character.Handle), (int)GTANetworkShared.EntityType.Ped);
+                JavascriptHook.InvokeStreamInEvent(new LocalHandle(Character.Handle), (int)GTANetworkShared.EntityType.Player);
 
                 LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
 
@@ -545,7 +545,7 @@ namespace GTANetwork
 								new UIResRectangle(
 									new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
 									new Size(
-										(int)((142 * Math.Min(Math.Max(2 * (PedHealth / 100f), 0f), 1f)) * sizeOffset),
+										(int)((142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset),
 										(int)(12 * sizeOffset)),
 									Color.FromArgb(150, 50, 250, 50)).Draw();
 							}

@@ -31,7 +31,7 @@ namespace GTANetwork
         Movement RotationMovement { get; set; }
     }
 
-    public class RemotePlayer : PedProperties, IStreamedItem, ILocalHandleable
+    public class RemotePlayer : PlayerProperties, IStreamedItem, ILocalHandleable
     {
         public int RemoteHandle { get; set; }
 

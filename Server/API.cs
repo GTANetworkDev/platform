@@ -894,12 +894,12 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), (int)modelHash);
             if (doesEntityExist(player.CharacterHandle))
             {
-                ((PedProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                     .ModelHash = (int)modelHash;
                 
                 var delta = new Delta_PedProperties();
                 delta.ModelHash = (int)modelHash;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Ped, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
             }
 
             setPlayerDefaultClothes(player);
@@ -910,15 +910,15 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0x45EEE61580806D63, player.CharacterHandle);
             if (doesEntityExist(player.CharacterHandle))
             {
-                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Clear();
-                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Clear();
-                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Clear();
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Clear();
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Clear();
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Clear();
 
                 var delta = new Delta_PedProperties();
                 delta.Textures = new Dictionary<byte, byte>();
                 delta.Accessories = new Dictionary<byte, Tuple<byte, byte>>();
                 delta.Props = new Dictionary<byte, byte>();
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Ped, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
             }
         }
 
@@ -1088,18 +1088,18 @@ namespace GTANetworkServer
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
             {
-                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Set((byte)slot, (byte)drawable);
-                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Set((byte)slot, (byte)texture);
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Set((byte)slot, (byte)drawable);
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Set((byte)slot, (byte)texture);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x262B14F48D29DE80, new EntityArgument(player.CharacterHandle.Value), slot, drawable, texture, 2);
 
                 var delta = new Delta_PedProperties();
                 delta.Textures =
-                    ((PedProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                         .Textures;
                 delta.Props =
-                    ((PedProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                         .Props;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Ped, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
             }
         }
 
@@ -1107,14 +1107,14 @@ namespace GTANetworkServer
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
             {
-                ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Set((byte)slot, new Tuple<byte, byte>((byte)drawable, (byte) texture));
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Set((byte)slot, new Tuple<byte, byte>((byte)drawable, (byte) texture));
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x93376B65A266EB5F, new EntityArgument(player.CharacterHandle.Value), slot, drawable, texture, true);
 
                 var delta = new Delta_PedProperties();
                 delta.Accessories =
-                    ((PedProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                         .Accessories;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Ped, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
             }
         }
 
@@ -1122,14 +1122,14 @@ namespace GTANetworkServer
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
             {
-                ((PedProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Remove((byte) slot);
+                ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Remove((byte) slot);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x0943E5B8E078E76E, new EntityArgument(player.CharacterHandle.Value), slot);
 
                 var delta = new Delta_PedProperties();
                 delta.Accessories =
-                    ((PedProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                         .Accessories;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Ped, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
             }
         }
 
@@ -1294,12 +1294,12 @@ namespace GTANetworkServer
 
             player.Name = newName;
 
-            Program.ServerInstance.NetEntityHandler.NetToProp<PedProperties>(player.CharacterHandle.Value).Name =
+            Program.ServerInstance.NetEntityHandler.NetToProp<PlayerProperties>(player.CharacterHandle.Value).Name =
                 newName;
 
             var delta = new Delta_PedProperties();
             delta.Name = newName;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Ped, delta);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
 
             return true;
         }
@@ -1599,8 +1599,7 @@ namespace GTANetworkServer
 
         public void setPlayerHealth(Client player, float health)
         {
-            var normalized = health/100f;
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), (int)(normalized*200) + 100);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
         }
 
         public float getPlayerHealth(Client player)

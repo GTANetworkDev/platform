@@ -12,7 +12,7 @@ namespace GTANetworkShared
         Blip = 3,
         Marker = 4,
         Pickup = 5,
-        Ped = 6,
+        Player = 6,
         TextLabel = 7,
         World = 255,
     }
@@ -60,7 +60,7 @@ namespace GTANetworkShared
     [ProtoInclude(14, typeof(BlipProperties))]
     [ProtoInclude(15, typeof(MarkerProperties))]
     [ProtoInclude(16, typeof(PickupProperties))]
-    [ProtoInclude(17, typeof(PedProperties))]
+    [ProtoInclude(17, typeof(PlayerProperties))]
     [ProtoInclude(18, typeof(TextLabelProperties))]
     [ProtoInclude(19, typeof(WorldProperties))]
     public class EntityProperties
@@ -226,14 +226,14 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
-    public class PedProperties : EntityProperties
+    public class PlayerProperties : EntityProperties
     {
-        public PedProperties()
+        public PlayerProperties()
         {
             Props = new Dictionary<byte, byte>();
             Textures = new Dictionary<byte, byte>();
             Accessories = new Dictionary<byte, Tuple<byte, byte>>();
-            EntityType = (byte)GTANetworkShared.EntityType.Ped;
+            EntityType = (byte)GTANetworkShared.EntityType.Player;
         }
 
         [ProtoMember(1)]

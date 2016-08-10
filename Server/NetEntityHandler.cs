@@ -311,9 +311,9 @@ namespace GTANetworkServer
         {
             var localHan = ++EntityCounter;
 
-            ServerEntities.Add(localHan, new PedProperties()
+            ServerEntities.Add(localHan, new PlayerProperties()
             {
-                EntityType = (byte) EntityType.Ped,
+                EntityType = (byte) EntityType.Player,
                 BlipSprite = 1,
                 BlipAlpha = 255,
                 Alpha = 255,

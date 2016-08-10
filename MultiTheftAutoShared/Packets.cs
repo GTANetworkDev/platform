@@ -253,7 +253,7 @@ namespace GTANetworkShared
             Blips = new Dictionary<int, BlipProperties>();
             Markers = new Dictionary<int, MarkerProperties>();
             Pickups = new Dictionary<int, PickupProperties>();
-            Players = new Dictionary<int, PedProperties>();
+            Players = new Dictionary<int, PlayerProperties>();
             TextLabels = new Dictionary<int, TextLabelProperties>();
         }
 
@@ -273,7 +273,7 @@ namespace GTANetworkShared
         public Dictionary<int, PickupProperties> Pickups { get; set; }
 
         [ProtoMember(6)]
-        public Dictionary<int, PedProperties> Players { get; set; }
+        public Dictionary<int, PlayerProperties> Players { get; set; }
 
         [ProtoMember(7)]
         public Dictionary<int, TextLabelProperties> TextLabels { get; set; }

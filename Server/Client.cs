@@ -31,9 +31,9 @@ namespace GTANetworkServer
 
         public NetHandle CharacterHandle { get; set; }
 
-        public PedProperties Properties
+        public PlayerProperties Properties
         {
-            get { return Program.ServerInstance.NetEntityHandler.ToDict()[CharacterHandle.Value] as PedProperties; }
+            get { return Program.ServerInstance.NetEntityHandler.ToDict()[CharacterHandle.Value] as PlayerProperties; }
         }
 
         internal void CommitConnection()
