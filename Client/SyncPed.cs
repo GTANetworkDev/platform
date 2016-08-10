@@ -849,7 +849,14 @@ namespace GTANetwork
 
                 Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
                 Vector3 newPos = VehiclePosition + comp;
-                MainVehicle.Velocity = VehicleVelocity + 3 * (newPos - MainVehicle.Position);
+                int forceMultiplier = 3;
+
+                if (Game.Player.Character.IsInVehicle() && MainVehicle.IsTouching(Game.Player.Character.CurrentVehicle))
+                {
+                    forceMultiplier = 1;
+                }
+
+                MainVehicle.Velocity = VehicleVelocity + forceMultiplier * (newPos - MainVehicle.Position);
 
                 if (Debug)
                 {
