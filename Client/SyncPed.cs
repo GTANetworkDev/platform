@@ -849,7 +849,7 @@ namespace GTANetwork
 
                 Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
                 Vector3 newPos = VehiclePosition + comp;
-                MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
+                MainVehicle.Velocity = VehicleVelocity + 3 * (newPos - MainVehicle.Position);
 
                 if (Debug)
                 {
