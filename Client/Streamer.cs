@@ -715,6 +715,7 @@ namespace GTANetwork
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.RangedBlip != null) veh.RangedBlip = prop.RangedBlip.Value;
 
             if (prop.Dimension != null)
             {
@@ -1106,7 +1107,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = (byte)EntityType.Blip,
                     Alpha = prop.Alpha,
-
+                    RangedBlip = prop.RangedBlip,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     PositionMovement = prop.PositionMovement,
@@ -1601,14 +1602,18 @@ namespace GTANetwork
         private void StreamInBlip(RemoteBlip item)
         {
             Blip ourBlip;
-            if (item.AttachedNetEntity == 0)
-                ourBlip = World.CreateBlip(item.Position.ToVector());
-            else
+            if (item.AttachedNetEntity != 0)
             {
                 var entAtt = NetToStreamedItem(item.AttachedNetEntity, item.LocalOnly);
                 StreamIn(entAtt);
                 ourBlip = NetToEntity(item.AttachedNetEntity).AddBlip();
             }
+            else if (item.RangedBlip != 0)
+            {
+                ourBlip = World.CreateBlip(item.Position.ToVector(), item.RangedBlip);
+            }
+            else
+                ourBlip = World.CreateBlip(item.Position.ToVector());
 
             if (item.Sprite != 0)
                 ourBlip.Sprite = (BlipSprite)item.Sprite;

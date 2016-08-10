@@ -234,6 +234,30 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
+        public int CreateBlip(Vector3 pos, float range, int dimension)
+        {
+            int localEntityHash = ++EntityCounter;
+            var obj = new BlipProperties();
+            obj.EntityType = (byte)EntityType.Blip;
+            obj.Position = pos;
+            obj.Dimension = dimension;
+            obj.Sprite = 0;
+            obj.Scale = 1f;
+            obj.RangedBlip = range;
+            obj.Alpha = 255;
+            obj.AttachedNetEntity = 0;
+            ServerEntities.Add(localEntityHash, obj);
+
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.Blip;
+            packet.Properties = obj;
+            packet.NetHandle = localEntityHash;
+
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+
+            return localEntityHash;
+        }
+
         public int CreateMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension)
         {
             int localEntityHash = ++EntityCounter;

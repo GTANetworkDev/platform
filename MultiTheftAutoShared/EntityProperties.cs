@@ -178,6 +178,9 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public int AttachedNetEntity { get; set; }
+
+        [ProtoMember(6)]
+        public float RangedBlip { get; set; }
     }
 
     [ProtoContract]
@@ -419,6 +422,9 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public int? AttachedNetEntity { get; set; }
+
+        [ProtoMember(6)]
+        public float? RangedBlip { get; set; }
     }
 
     [ProtoContract]

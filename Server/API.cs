@@ -1981,6 +1981,13 @@ namespace GTANetworkServer
             return ent;
         }
 
+        public NetHandle createBlip(Vector3 pos, float range, int dimension = 0)
+        {
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos, range, dimension));
+            lock (ResourceEntities) ResourceEntities.Add(ent);
+            return ent;
+        }
+
         public NetHandle createBlip(Vector3 pos, int dimension = 0)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(pos, dimension));
