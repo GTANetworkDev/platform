@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using GTANetworkShared;
 using Lidgren.Network;
 
@@ -8,6 +9,7 @@ namespace GTANetworkServer
     {
         internal bool IsInVehicleInternal { get; set; }
         internal int VehicleHandleInternal { get; set; }
+        internal Dictionary<int, long> LastPacketReceived = new Dictionary<int, long>();
 
 
         public NetConnection NetConnection { get; private set; }

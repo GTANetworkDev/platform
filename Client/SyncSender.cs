@@ -42,7 +42,7 @@ namespace GTANetwork
                         var bin = PacketOptimization.WritePureSync((PedData) lastPacket);
 
                         var msg = Main.Client.CreateMessage();
-                        msg.Write((int) PacketType.PedPureSync);
+                        msg.Write((byte) PacketType.PedPureSync);
                         msg.Write(bin.Length);
                         msg.Write(bin);
 
@@ -66,7 +66,7 @@ namespace GTANetwork
                             var lightBin = PacketOptimization.WriteLightSync((PedData) lastPacket);
 
                             var lightMsg = Main.Client.CreateMessage();
-                            lightMsg.Write((int) PacketType.PedLightSync);
+                            lightMsg.Write((byte) PacketType.PedLightSync);
                             lightMsg.Write(lightBin.Length);
                             lightMsg.Write(lightBin);
                             try
@@ -101,7 +101,7 @@ namespace GTANetwork
                         var bin = PacketOptimization.WritePureSync((VehicleData) lastPacket);
 
                         var msg = Main.Client.CreateMessage();
-                        msg.Write((int) PacketType.VehiclePureSync);
+                        msg.Write((byte) PacketType.VehiclePureSync);
                         msg.Write(bin.Length);
                         msg.Write(bin);
                         try
@@ -124,7 +124,7 @@ namespace GTANetwork
                             var lightBin = PacketOptimization.WriteLightSync((VehicleData) lastPacket);
 
                             var lightMsg = Main.Client.CreateMessage();
-                            lightMsg.Write((int) PacketType.VehicleLightSync);
+                            lightMsg.Write((byte) PacketType.VehicleLightSync);
                             lightMsg.Write(lightBin.Length);
                             lightMsg.Write(lightBin);
                             try
@@ -388,7 +388,7 @@ namespace GTANetwork
 
                     var msg = Main.Client.CreateMessage();
 
-                    msg.Write((int)PacketType.BulletSync);
+                    msg.Write((byte)PacketType.BulletSync);
                     msg.Write(bin.Length);
                     msg.Write(bin);
 
@@ -405,7 +405,7 @@ namespace GTANetwork
 
                     var msg = Main.Client.CreateMessage();
 
-                    msg.Write((int)PacketType.BulletSync);
+                    msg.Write((byte)PacketType.BulletSync);
                     msg.Write(bin.Length);
                     msg.Write(bin);
 

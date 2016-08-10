@@ -171,7 +171,7 @@ namespace GTANetwork
                     var data = SerializeBinary(obj);
 
                     var msg = Client.CreateMessage();
-                    msg.Write((int)PacketType.ChatData);
+                    msg.Write((byte)PacketType.ChatData);
                     msg.Write(data.Length);
                     msg.Write(data);
                     Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int) ConnectionChannel.Chat);
@@ -2067,7 +2067,7 @@ namespace GTANetwork
         public static void InvokeFinishedDownload()
         {
             var confirmObj = Client.CreateMessage();
-            confirmObj.Write((int)PacketType.ConnectionConfirmed);
+            confirmObj.Write((byte)PacketType.ConnectionConfirmed);
             confirmObj.Write(true);
             Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
 
@@ -2702,7 +2702,7 @@ namespace GTANetwork
             {
                 _lastDead = true;
                 var msg = Client.CreateMessage();
-                msg.Write((int)PacketType.PlayerRespawned);
+                msg.Write((byte)PacketType.PlayerRespawned);
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
 
                 if (Weather != null) Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Weather);
@@ -2722,7 +2722,7 @@ namespace GTANetwork
             {
 
                 var msg = Client.CreateMessage();
-                msg.Write((int)PacketType.PlayerKilled);
+                msg.Write((byte)PacketType.PlayerKilled);
                 var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
                 var weapon = Function.Call<int>(Hash.GET_PED_CAUSE_OF_DEATH, Game.Player.Character);
 
@@ -2996,7 +2996,7 @@ namespace GTANetwork
                         var data = SerializeBinary(obj);
 
                         var msg = Client.CreateMessage();
-                        msg.Write((int)PacketType.ChatData);
+                        msg.Write((byte)PacketType.ChatData);
                         msg.Write(data.Length);
                         msg.Write(data);
                         Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
@@ -3050,7 +3050,7 @@ namespace GTANetwork
 
             var bin = SerializeBinary(obj);
 
-            msg.Write((int)PacketType.ConnectionRequest);
+            msg.Write((byte)PacketType.ConnectionRequest);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -3358,7 +3358,7 @@ namespace GTANetwork
                             LogManager.DebugLog("FILE TYPE: " + (FileType) data.FileType);
                             LogManager.DebugLog("DOWNLOAD ACCEPTED: " + acceptDownload);
                             var newMsg = Client.CreateMessage();
-                            newMsg.Write((int)PacketType.FileAcceptDeny);
+                            newMsg.Write((byte)PacketType.FileAcceptDeny);
                             newMsg.Write(data.Id);
                             newMsg.Write(acceptDownload);
                             Client.SendMessage(newMsg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
@@ -3847,7 +3847,7 @@ namespace GTANetwork
                 _bytesReceived += msg.LengthBytes;
                 if (msg.MessageType == NetIncomingMessageType.Data)
                 {
-                    type = (PacketType)msg.ReadInt32();
+                    type = (PacketType)msg.ReadByte();
                     if (IsPacketTypeThreadsafe(type))
                     {
                         var pcmsgThread = new Thread((ThreadStart) delegate
@@ -3906,7 +3906,7 @@ namespace GTANetwork
                             }
 
                             var confirmObj = Client.CreateMessage();
-                            confirmObj.Write((int) PacketType.ConnectionConfirmed);
+                            confirmObj.Write((byte) PacketType.ConnectionConfirmed);
                             confirmObj.Write(false);
                             Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
                             JustJoinedServer = true;
@@ -4657,7 +4657,7 @@ namespace GTANetwork
         {
             var data = SerializeBinary(newData);
             NetOutgoingMessage msg = Client.CreateMessage();
-            msg.Write((int)packetType);
+            msg.Write((byte)packetType);
             msg.Write(data.Length);
             msg.Write(data);
             Client.SendMessage(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
@@ -4757,7 +4757,7 @@ namespace GTANetwork
             var bin = SerializeBinary(packet);
 
             var msg = Client.CreateMessage();
-            msg.Write((int)PacketType.ScriptEventTrigger);
+            msg.Write((byte)PacketType.ScriptEventTrigger);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -4943,7 +4943,7 @@ namespace GTANetwork
 
             var msg = Client.CreateMessage();
             var bin = SerializeBinary(obj);
-            msg.Write((int)PacketType.NativeResponse);
+            msg.Write((byte)PacketType.NativeResponse);
             msg.Write(bin.Length);
             msg.Write(bin);
             Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);

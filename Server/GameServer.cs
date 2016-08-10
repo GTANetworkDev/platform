@@ -548,7 +548,7 @@ namespace GTANetworkServer
                 ourRes.Engines.ForEach(en => en.InvokeResourceStop());
 
                 var msg = Server.CreateMessage();
-                msg.Write((int) PacketType.StopResource);
+                msg.Write((byte) PacketType.StopResource);
                 msg.Write(resourceName);
                 Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
 
@@ -832,18 +832,25 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f)
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f) // 200f
                     {
-                        msg.Write((int)PacketType.BasicSync);
-                        msg.Write(basic.Length);
-                        msg.Write(basic);
-                        Server.SendMessage(msg, client.NetConnection,
-                            NetDeliveryMethod.UnreliableSequenced,
-                            (int)ConnectionChannel.BasicSync);
+                        var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.Value);
+
+                        if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
+                        { 
+                            msg.Write((byte) PacketType.BasicSync);
+                            msg.Write(basic.Length);
+                            msg.Write(basic);
+                            Server.SendMessage(msg, client.NetConnection,
+                                NetDeliveryMethod.UnreliableSequenced,
+                                (int) ConnectionChannel.BasicSync);
+
+                            client.LastPacketReceived.Set(exception.CharacterHandle.Value, Program.GetTicks());
+                        }
                     }
                     else
                     {
-                        msg.Write((int)PacketType.PedPureSync);
+                        msg.Write((byte)PacketType.PedPureSync);
                         msg.Write(full.Length);
                         msg.Write(full);
                         Server.SendMessage(msg, client.NetConnection,
@@ -853,7 +860,7 @@ namespace GTANResource
                 }
                 else
                 {
-                    msg.Write((int)PacketType.PedLightSync);
+                    msg.Write((byte)PacketType.PedLightSync);
                     msg.Write(full.Length);
                     msg.Write(full);
                     Server.SendMessage(msg, client.NetConnection,
@@ -873,9 +880,10 @@ namespace GTANResource
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+                if (client.Position.DistanceToSquared(exception.Position) > 40000f) continue;
 
                 NetOutgoingMessage msg = Server.CreateMessage();
-                msg.Write((int)PacketType.BulletSync);
+                msg.Write((byte)PacketType.BulletSync);
                 msg.Write(full.Length);
                 msg.Write(full);
                 Server.SendMessage(msg, client.NetConnection,
@@ -916,18 +924,25 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f)
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f) // 200f
                     {
-                        msg.Write((int)PacketType.BasicSync);
-                        msg.Write(basic.Length);
-                        msg.Write(basic);
-                        Server.SendMessage(msg, client.NetConnection,
-                            NetDeliveryMethod.UnreliableSequenced,
-                            (int)ConnectionChannel.BasicSync);
+                        var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.Value);
+
+                        if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
+                        {
+                            msg.Write((byte) PacketType.BasicSync);
+                            msg.Write(basic.Length);
+                            msg.Write(basic);
+                            Server.SendMessage(msg, client.NetConnection,
+                                NetDeliveryMethod.UnreliableSequenced,
+                                (int) ConnectionChannel.BasicSync);
+
+                            client.LastPacketReceived.Set(exception.CharacterHandle.Value, Program.GetTicks());
+                        }
                     }
                     else
                     {
-                        msg.Write((int)PacketType.VehiclePureSync);
+                        msg.Write((byte)PacketType.VehiclePureSync);
                         msg.Write(full.Length);
                         msg.Write(full);
                         Server.SendMessage(msg, client.NetConnection,
@@ -937,7 +952,7 @@ namespace GTANResource
                 }
                 else
                 {
-                    msg.Write((int)PacketType.VehicleLightSync);
+                    msg.Write((byte)PacketType.VehicleLightSync);
                     msg.Write(full.Length);
                     msg.Write(full);
                     Server.SendMessage(msg, client.NetConnection,
@@ -1166,7 +1181,7 @@ namespace GTANResource
                                 {
                                     var bin = SerializeBinary(obj);
 
-                                    response.Write((int)PacketType.DiscoveryResponse);
+                                    response.Write((byte)PacketType.DiscoveryResponse);
                                     response.Write(bin.Length);
                                     response.Write(bin);
 
@@ -1174,7 +1189,7 @@ namespace GTANResource
                                 }
                                 break;
                             case NetIncomingMessageType.Data:
-                                var packetType = (PacketType)msg.ReadInt32();
+                                var packetType = (PacketType)msg.ReadByte();
 
                                 switch (packetType)
                                 {
@@ -1218,7 +1233,7 @@ namespace GTANResource
                                                             var binData = Program.ServerInstance.SerializeBinary(chatObj);
 
                                                             NetOutgoingMessage respMsg = Program.ServerInstance.Server.CreateMessage();
-                                                            respMsg.Write((int)PacketType.ChatData);
+                                                            respMsg.Write((byte)PacketType.ChatData);
                                                             respMsg.Write(binData.Length);
                                                             respMsg.Write(binData);
                                                             client.NetConnection.SendMessage(respMsg, NetDeliveryMethod.ReliableOrdered, 0);
@@ -2145,7 +2160,7 @@ namespace GTANResource
                 if (client == exclude) continue;
                 var data = SerializeBinary(newData);
                 NetOutgoingMessage msg = Server.CreateMessage();
-                msg.Write((int)packetType);
+                msg.Write((byte)packetType);
                 msg.Write(data.Length);
                 msg.Write(data);
                 Server.SendMessage(msg, client.NetConnection,

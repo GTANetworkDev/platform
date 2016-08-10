@@ -1794,16 +1794,6 @@ namespace GTANetworkServer
                 0xEEF059FAD016D209, new IntArgument(), callback, new LocalPlayerArgument());
         }
 
-        public  void toggleNightVisionForPlayer(Client player, bool status)
-        {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x18F621F7A5B1F85D, status);
-        }
-
-        public  void toggleNightVisionForAll(Client player, bool status)
-        {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x18F621F7A5B1F85D, status);
-        }
-
         public  void isNightVisionActive(Client player, Action<object> callback, string salt = "salt")
         {
             Program.ServerInstance.GetNativeCallFromPlayer(player, salt, 0x2202A3F42C8E5F79, new BooleanArgument(), callback, new LocalPlayerArgument());

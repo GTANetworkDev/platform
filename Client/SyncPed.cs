@@ -681,15 +681,21 @@ namespace GTANetwork
 	    {
 			if (!inRange)
 			{
-				if (Character != null && Environment.TickCount - LastUpdateReceived < 10000)
+			    var delta = Util.TickCount - LastUpdateReceived;
+                if (Character != null && delta < 10000)
 				{
+				    Vector3 lastPos = IsInVehicle
+				        ? _lastVehiclePos == null ? VehiclePosition : _lastVehiclePos.Value
+				        : _lastPosition == null ? Position : _lastPosition;
+
 				    if (!IsInVehicle)
 				    {
-				        Character.PositionNoOffset = gPos;
+				        Character.PositionNoOffset = Vector3.Lerp(lastPos, gPos, (delta / 1000f));
 				    }
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
-					    MainVehicle.PositionNoOffset = gPos;
+					    MainVehicle.PositionNoOffset = Vector3.Lerp(lastPos, gPos, (delta / 1000f));
+
                         #if !DISABLE_ROTATION_SIM
                         if (_lastVehiclePos != null)
                             MainVehicle.Quaternion = Main.DirectionToRotation(_lastVehiclePos.Value - gPos).ToQuaternion();
@@ -1827,7 +1833,7 @@ namespace GTANetwork
             {
                 if (IsSpectating || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
-                float hRange = IsInVehicle ? 150f : 200f;
+                float hRange = IsInVehicle ? 200f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
@@ -1858,7 +1864,12 @@ namespace GTANetwork
                     _mainBlip.Scale = 0.8f;
                     _mainBlip.Alpha = BlipAlpha;
 
-                    _mainBlip.Position = gPos;
+                    Vector3 lastPos = IsInVehicle
+                        ? _lastVehiclePos == null ? VehiclePosition : _lastVehiclePos.Value
+                        : _lastPosition == null ? Position : _lastPosition;
+                    var delta = Util.TickCount - LastUpdateReceived;
+
+                    _mainBlip.Position = Vector3.Lerp(lastPos, gPos, delta / 1000f);
                 }
                 else if (StreamedIn && _mainBlip != null && _mainBlip.Exists())
                 {
