@@ -2871,8 +2871,11 @@ namespace GTANetwork
                 { 
                     foreach (var entity in World.GetAllPeds())
                     {
-                        if (!NetEntityHandler.ContainsLocalHandle(entity.Handle))
+                        if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.Player.Character)
+                        {
+                            entity.Kill();
                             entity.Delete();
+                        }
                     }
                 }
                 //else
