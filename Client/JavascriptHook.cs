@@ -601,6 +601,11 @@ namespace GTANetwork
             }
         }
 
+        public int getHashKey(string input)
+        {
+            return Game.GenerateHash(input);
+        }
+
         public bool setEntityData(LocalHandle entity, string key, object data)
         {
             return Main.SetEntityProperty(entity, key, data);

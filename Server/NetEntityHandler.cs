@@ -103,6 +103,8 @@ namespace GTANetworkServer
                 obj.VehicleComponents = 1 << 5;
             else if (model == (int) VehicleHash.Police)
                 obj.VehicleComponents = 1 << 2;
+            else if (model == (int) VehicleHash.Skylift)
+                obj.VehicleComponents = -1537;
             else
                 obj.VehicleComponents = ~0;
 
