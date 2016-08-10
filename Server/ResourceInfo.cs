@@ -248,14 +248,20 @@ namespace GTANetworkServer
                 ActiveThreads.Clear();
             }
 
-            try
+            Task shutdownTask = new Task(() =>
             {
-                if (Language == ScriptingEngineLanguage.compiled)
-                    _compiledScript.API.invokeResourceStop();
-            }
-            catch
-            { }
+                try
+                {
+                    if (Language == ScriptingEngineLanguage.compiled)
+                        _compiledScript.API.invokeResourceStop();
+                }
+                catch
+                {
+                }
+            });
 
+            shutdownTask.Start();
+            shutdownTask.Wait(5000);
         }
 
         public void InvokePlayerBeginConnect(Client client, CancelEventArgs e)
