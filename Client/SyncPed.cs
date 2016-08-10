@@ -690,11 +690,11 @@ namespace GTANetwork
 
 				    if (!IsInVehicle)
 				    {
-				        Character.PositionNoOffset = Vector3.Lerp(lastPos, gPos, (delta / 1000f));
+				        Character.PositionNoOffset = Vector3.Lerp(lastPos, gPos, Math.Min(1f, delta / 1000f));
 				    }
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
-					    MainVehicle.PositionNoOffset = Vector3.Lerp(lastPos, gPos, (delta / 1000f));
+					    MainVehicle.PositionNoOffset = Vector3.Lerp(lastPos, gPos, Math.Min(1f, delta / 1000f));
 
                         #if !DISABLE_ROTATION_SIM
                         if (_lastVehiclePos != null)
@@ -1869,7 +1869,7 @@ namespace GTANetwork
                         : _lastPosition == null ? Position : _lastPosition;
                     var delta = Util.TickCount - LastUpdateReceived;
 
-                    _mainBlip.Position = Vector3.Lerp(lastPos, gPos, delta / 1000f);
+                    _mainBlip.Position = Vector3.Lerp(lastPos, gPos,Math.Min(delta / 1000f, 1f));
                 }
                 else if (StreamedIn && _mainBlip != null && _mainBlip.Exists())
                 {
