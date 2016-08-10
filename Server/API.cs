@@ -1271,7 +1271,7 @@ namespace GTANetworkServer
             var data = Program.ServerInstance.SerializeBinary(chatObj);
 
             NetOutgoingMessage msg = Program.ServerInstance.Server.CreateMessage();
-            msg.Write((int)PacketType.ChatData);
+            msg.Write((byte)PacketType.ChatData);
             msg.Write(data.Length);
             msg.Write(data);
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);

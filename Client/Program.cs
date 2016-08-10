@@ -40,7 +40,7 @@ namespace GTANetwork
             var peer = (NetPeer)sender;
             var msg = peer.ReadMessage();
 
-            var type = (PacketType)msg.ReadInt32();
+            var type = (PacketType)msg.ReadByte();
 
 
             Console.WriteLine("Data is " + type);

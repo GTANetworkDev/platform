@@ -1917,7 +1917,7 @@ namespace GTANResource
                                 : (int) remaining);
 
                             var updateObj = Server.CreateMessage();
-                            updateObj.Write((int) PacketType.FileTransferTick);
+                            updateObj.Write((byte) PacketType.FileTransferTick);
                             updateObj.Write(Downloads[i].Files[0].Id);
                             updateObj.Write(sendBytes);
                             updateObj.Write(Downloads[i].Files[0].Data, (int)Downloads[i].Files[0].BytesSent, sendBytes);
@@ -1929,7 +1929,7 @@ namespace GTANResource
                             if (remaining - sendBytes <= 0)
                             {
                                 var endObject = Server.CreateMessage();
-                                endObject.Write((int)PacketType.FileTransferComplete);
+                                endObject.Write((byte)PacketType.FileTransferComplete);
                                 endObject.Write(Downloads[i].Files[0].Id);
 
                                 Server.SendMessage(endObject, Downloads[i].Parent.NetConnection,
@@ -2128,7 +2128,7 @@ namespace GTANResource
         {
             var data = SerializeBinary(newData);
             NetOutgoingMessage msg = Server.CreateMessage();
-            msg.Write((int)packetType);
+            msg.Write((byte)packetType);
             msg.Write(data.Length);
             msg.Write(data);
             Server.SendMessage(msg, c.NetConnection,
@@ -2143,7 +2143,7 @@ namespace GTANResource
             {
                 var data = SerializeBinary(newData);
                 NetOutgoingMessage msg = Server.CreateMessage();
-                msg.Write((int)packetType);
+                msg.Write((byte)packetType);
                 msg.Write(data.Length);
                 msg.Write(data);
                 Server.SendMessage(msg, client.NetConnection,
@@ -2324,7 +2324,7 @@ namespace GTANResource
             var bin = SerializeBinary(obj);
 
             var msg = Server.CreateMessage();
-            msg.Write((int)PacketType.NativeCall);
+            msg.Write((byte)PacketType.NativeCall);
             msg.Write(bin.Length);
             msg.Write(bin);
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
@@ -2344,7 +2344,7 @@ namespace GTANResource
             {
                 var msg = Server.CreateMessage();
 
-                msg.Write((int) PacketType.NativeCall);
+                msg.Write((byte) PacketType.NativeCall);
                 msg.Write(bin.Length);
                 msg.Write(bin);
 
@@ -2367,7 +2367,7 @@ namespace GTANResource
 
             var msg = Server.CreateMessage();
 
-            msg.Write((int)PacketType.NativeTick);
+            msg.Write((byte)PacketType.NativeTick);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2389,7 +2389,7 @@ namespace GTANResource
 
             var msg = Server.CreateMessage();
 
-            msg.Write((int)PacketType.NativeTick);
+            msg.Write((byte)PacketType.NativeTick);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2404,7 +2404,7 @@ namespace GTANResource
             var bin = SerializeBinary(wrapper);
 
             var msg = Server.CreateMessage();
-            msg.Write((int)PacketType.NativeTickRecall);
+            msg.Write((byte)PacketType.NativeTickRecall);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2419,7 +2419,7 @@ namespace GTANResource
             var bin = SerializeBinary(wrapper);
 
             var msg = Server.CreateMessage();
-            msg.Write((int)PacketType.NativeTickRecall);
+            msg.Write((byte)PacketType.NativeTickRecall);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2438,7 +2438,7 @@ namespace GTANResource
 
             var msg = Server.CreateMessage();
 
-            msg.Write((int)PacketType.NativeOnDisconnect);
+            msg.Write((byte)PacketType.NativeOnDisconnect);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2456,7 +2456,7 @@ namespace GTANResource
 
             var msg = Server.CreateMessage();
 
-            msg.Write((int)PacketType.NativeOnDisconnect);
+            msg.Write((byte)PacketType.NativeOnDisconnect);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2471,7 +2471,7 @@ namespace GTANResource
             var bin = SerializeBinary(obj);
 
             var msg = Server.CreateMessage();
-            msg.Write((int)PacketType.NativeOnDisconnectRecall);
+            msg.Write((byte)PacketType.NativeOnDisconnectRecall);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2486,7 +2486,7 @@ namespace GTANResource
             var bin = SerializeBinary(obj);
 
             var msg = Server.CreateMessage();
-            msg.Write((int)PacketType.NativeOnDisconnectRecall);
+            msg.Write((byte)PacketType.NativeOnDisconnectRecall);
             msg.Write(bin.Length);
             msg.Write(bin);
 
@@ -2528,7 +2528,7 @@ namespace GTANResource
 
             var msg = Server.CreateMessage();
 
-            msg.Write((int)PacketType.NativeCall);
+            msg.Write((byte)PacketType.NativeCall);
             msg.Write(bin.Length);
             msg.Write(bin);
 
