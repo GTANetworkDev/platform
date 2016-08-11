@@ -2801,7 +2801,7 @@ namespace GTANetwork
                 if (ent != null)
                 {
                     if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent) && new Ped(ent.Handle).IsInVehicle())
-                        Game.Player.Character.PositionNoOffset = ent.Position + new Vector3(0, 0, 1.5f);
+                        Game.Player.Character.PositionNoOffset = ent.Position + new Vector3(0, 0, 1.3f);
                     else
                         Game.Player.Character.PositionNoOffset = ent.Position;
                 }
@@ -2809,10 +2809,10 @@ namespace GTANetwork
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed) > 0)
             {
                 CurrentSpectatingPlayer =
-                    NetEntityHandler.ClientMap.Where(op => op is SyncPed)
+                    NetEntityHandler.ClientMap.Where(op => op is SyncPed && !((SyncPed)op).IsSpectating)
                         .ElementAt(_currentSpectatingPlayerIndex%
                                    NetEntityHandler.ClientMap.Count(
-                                       op => op is SyncPed)) as SyncPed;
+                                       op => op is SyncPed && !((SyncPed)op).IsSpectating)) as SyncPed;
             }
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer != null)
             {
@@ -2824,7 +2824,7 @@ namespace GTANetwork
                 if (CurrentSpectatingPlayer.Character == null)
                     Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Position;
                 else if (CurrentSpectatingPlayer.IsInVehicle)
-                    Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position + new Vector3(0, 0, 1.5f);
+                    Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position + new Vector3(0, 0, 1.3f);
                 else
                     Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position;
 
