@@ -1936,7 +1936,7 @@ namespace GTANetwork
                 DEBUG_STEP = 0;
                 
                 if (CrossReference.EntryPoint.CurrentSpectatingPlayer == this ||
-                    (Character != null && CrossReference.EntryPoint.SpectatingEntity == Character.Handle))
+                    (Character != null && Main.NetEntityHandler.NetToEntity(CrossReference.EntryPoint.SpectatingEntity)?.Handle == Character.Handle))
                     inRange = true;
 
                 DEBUG_STEP = 1;

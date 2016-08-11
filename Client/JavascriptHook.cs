@@ -904,6 +904,11 @@ namespace GTANetwork
             Function.Call(Hash.DISPLAY_HUD, visible);
         }
 
+        public bool isSpectating()
+        {
+            return Main.IsSpectating;
+        }
+
         public bool getHudVisible()
         {
             return !Function.Call<bool>(Hash.IS_HUD_HIDDEN);

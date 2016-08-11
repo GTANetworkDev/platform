@@ -23,6 +23,7 @@ using NativeUI.PauseMenu;
 using Newtonsoft.Json;
 using ProtoBuf;
 using Control = GTA.Control;
+using Font = GTA.Font;
 using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
@@ -79,6 +80,7 @@ namespace GTANetwork
         public static bool Multithreading;
 
         public static bool IsSpectating;
+        private static Vector3 _preSpectatorPos;
 
         public static Streamer NetEntityHandler;
 
@@ -2774,15 +2776,8 @@ namespace GTANetwork
             
             DEBUG_STEP = 21;
 
-            if (IsSpectating && !_lastSpectating)
-            {
-                Game.Player.Character.Alpha = 0;
-                Game.Player.Character.FreezePosition = true;
-                Game.Player.IsInvincible = true;
-                Game.Player.Character.HasCollision = false;
-            }
-
-            else if (!IsSpectating && _lastSpectating)
+            
+            if (!IsSpectating && _lastSpectating)
             {
                 Game.Player.Character.Alpha = 255;
                 Game.Player.Character.FreezePosition = false;
@@ -2791,6 +2786,7 @@ namespace GTANetwork
                 SpectatingEntity = 0;
                 CurrentSpectatingPlayer = null;
                 _currentSpectatingPlayerIndex = 0;
+                Game.Player.Character.PositionNoOffset = _preSpectatorPos;
             }
 
             if (IsSpectating && SpectatingEntity != 0)
@@ -2800,19 +2796,37 @@ namespace GTANetwork
                 Game.Player.IsInvincible = true;
                 Game.Player.Character.HasCollision = false;
 
-                Game.Player.Character.PositionNoOffset = new Prop(SpectatingEntity).Position;
+                var ent = NetEntityHandler.NetToEntity(SpectatingEntity);
+
+                if (ent != null)
+                {
+                    if (Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent) && new Ped(ent.Handle).IsInVehicle())
+                        Game.Player.Character.PositionNoOffset = ent.Position + new Vector3(0, 0, 1.5f);
+                    else
+                        Game.Player.Character.PositionNoOffset = ent.Position;
+                }
             }
-            else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed) op).Character != null) > 0)
+            else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed) > 0)
             {
-                CurrentSpectatingPlayer = NetEntityHandler.ClientMap.Where(op => op is SyncPed && ((SyncPed)op).Character != null).ElementAt(_currentSpectatingPlayerIndex % NetEntityHandler.ClientMap.Count(op => op is SyncPed && ((SyncPed)op).Character != null)) as SyncPed;
+                CurrentSpectatingPlayer =
+                    NetEntityHandler.ClientMap.Where(op => op is SyncPed)
+                        .ElementAt(_currentSpectatingPlayerIndex%
+                                   NetEntityHandler.ClientMap.Count(
+                                       op => op is SyncPed)) as SyncPed;
             }
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer != null)
             {
-                Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position;
                 Game.Player.Character.Alpha = 0;
                 Game.Player.Character.FreezePosition = true;
                 Game.Player.IsInvincible = true;
                 Game.Player.Character.HasCollision = false;
+
+                if (CurrentSpectatingPlayer.Character == null)
+                    Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Position;
+                else if (CurrentSpectatingPlayer.IsInVehicle)
+                    Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position + new Vector3(0, 0, 1.5f);
+                else
+                    Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position;
 
                 if (Game.IsControlJustPressed(0, Control.PhoneLeft))
                 {
@@ -2823,6 +2837,21 @@ namespace GTANetwork
                 {
                     _currentSpectatingPlayerIndex++;
                     CurrentSpectatingPlayer = null;
+                }
+
+                if (CurrentSpectatingPlayer != null)
+                {
+                    var center = new Point((int) (res.Width/2), (int) (res.Height/2));
+
+                    new UIResText("Now spectating:~n~" + CurrentSpectatingPlayer.Name,
+                        new Point(center.X, (int) (res.Height - 200)), 0.4f, Color.White, Font.ChaletLondon,
+                        UIResText.Alignment.Centered)
+                    {
+                        Outline = true,
+                    }.Draw();
+
+                    new Sprite("mparrow", "mp_arrowxlarge", new Point(center.X - 264, (int)(res.Height - 232)), new Size(64, 128), 180f, Color.White).Draw();
+                    new Sprite("mparrow", "mp_arrowxlarge", new Point(center.X + 200, (int)(res.Height - 232)), new Size(64, 128)).Draw();
                 }
             }
 
@@ -3434,16 +3463,12 @@ namespace GTANetwork
                                         else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
                                         {
                                             IsSpectating = spectating;
+                                            if (spectating)
+                                                _preSpectatorPos = Game.Player.Character.Position;
                                             if (spectating && args.Count >= 3)
                                             {
                                                 var target = (int)args[2];
-                                                var targetHandle = NetEntityHandler.NetToEntity(target);
-
-                                                var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
-                                                if (pair != null)
-                                                {
-                                                    pair.Clear();
-                                                }
+                                                SpectatingEntity = target;
                                             }
                                         }
                                     }
