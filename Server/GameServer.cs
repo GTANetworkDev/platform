@@ -530,9 +530,10 @@ namespace GTANetworkServer
 
         public bool StopResource(string resourceName, Resource[] resourceParent = null)
         {
+            Resource ourRes;
             lock (RunningResources)
             {
-                var ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
+                ourRes = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName);
                 if (ourRes == null) return false;
 
                 Program.Output("Stopping " + resourceName);
@@ -545,40 +546,42 @@ namespace GTANetworkServer
                     StopResource(res.DirectoryName, dependencies.ToArray());
                 }
 
-                ourRes.Engines.ForEach(en => en.InvokeResourceStop());
-
-                var msg = Server.CreateMessage();
-                msg.Write((byte) PacketType.StopResource);
-                msg.Write(resourceName);
-                Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
-
-                if (Gamemode == ourRes)
-                {
-                    if (CurrentMap != null && CurrentMap != ourRes)
-                    {
-                        StopResource(CurrentMap.DirectoryName);
-                        CurrentMap = null;
-                    }
-                    
-                    Gamemode = null;
-                }
-
-                if (ourRes.MapEntities != null)
-                foreach (var entity in ourRes.MapEntities)
-                {
-                    PublicAPI.deleteEntity(entity);
-                }
-
-                if (CurrentMap == ourRes) CurrentMap = null;
-
-                var gPool = ExportedFunctions as IDictionary<string, object>;
-                if (gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
-                CommandHandler.Unregister(ourRes.DirectoryName);
                 RunningResources.Remove(ourRes);
-
-                Program.Output("Stopped " + resourceName + "!");
-                return true;
             }
+
+            ourRes.Engines.ForEach(en => en.InvokeResourceStop());
+
+            var msg = Server.CreateMessage();
+            msg.Write((byte) PacketType.StopResource);
+            msg.Write(resourceName);
+            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
+
+            if (Gamemode == ourRes)
+            {
+                if (CurrentMap != null && CurrentMap != ourRes)
+                {
+                    StopResource(CurrentMap.DirectoryName);
+                    CurrentMap = null;
+                }
+                    
+                Gamemode = null;
+            }
+
+            if (ourRes.MapEntities != null)
+            foreach (var entity in ourRes.MapEntities)
+            {
+                PublicAPI.deleteEntity(entity);
+            }
+
+            if (CurrentMap == ourRes) CurrentMap = null;
+
+            var gPool = ExportedFunctions as IDictionary<string, object>;
+            if (gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
+            CommandHandler.Unregister(ourRes.DirectoryName);
+                
+
+            Program.Output("Stopped " + resourceName + "!");
+            return true;
         }
 
         public void LoadMap(Resource res, XmlGroup map, int dimension)
