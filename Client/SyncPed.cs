@@ -816,22 +816,44 @@ namespace GTANetwork
             if (IsInVehicle)
             {
                 if (_lastVehiclePos == null) return;
+                if (Main.VehicleLagCompensation)
+                {
 
-                var dir = VehiclePosition - _lastVehiclePos.Value;
+                    var dir = VehiclePosition - _lastVehiclePos.Value;
 
-                currentInterop.vecTarget = VehiclePosition + dir;
-                currentInterop.vecError = dir;
-                //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
-                //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                    currentInterop.vecTarget = VehiclePosition + dir;
+                    currentInterop.vecError = dir;
+                    //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
+                    //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                }
+                else
+                {
+                    var dir = VehiclePosition - _lastVehiclePos.Value;
+
+                    currentInterop.vecTarget = VehiclePosition;
+                    currentInterop.vecError = dir;
+                    currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                }
             }
             else
             {
-                var dir = Position - _lastPosition;
+                if (Main.OnFootLagCompensation)
+                {
+                    var dir = Position - _lastPosition;
 
-                currentInterop.vecTarget = Position; // + dir;
-                currentInterop.vecError = dir;
-                //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
-                //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                    currentInterop.vecTarget = Position; // + dir;
+                    currentInterop.vecError = dir;
+                    //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
+                    //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                }
+                else
+                {
+                    var dir = Position - _lastPosition;
+
+                    currentInterop.vecTarget = Position;
+                    currentInterop.vecError = dir;
+                    currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
+                }
             }
 
             currentInterop.StartTime = Util.TickCount - DataLatency;
@@ -844,19 +866,45 @@ namespace GTANetwork
         {
             if ((Speed > 0.2f || IsInBurnout) && currentInterop.FinishTime > 0 && _lastVehiclePos != null)
             {
-                long currentTime = Util.TickCount;
-                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+                Vector3 newPos;
 
-                Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
-                Vector3 newPos = VehiclePosition + comp;
-                int forceMultiplier = 3;
-
-                if (Game.Player.Character.IsInVehicle() && MainVehicle.IsTouching(Game.Player.Character.CurrentVehicle))
+                if (Main.VehicleLagCompensation)
                 {
-                    forceMultiplier = 1;
-                }
+                    long currentTime = Util.TickCount;
+                    float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
-                MainVehicle.Velocity = VehicleVelocity + forceMultiplier * (newPos - MainVehicle.Position);
+                    Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+                    newPos = VehiclePosition + comp;
+                    int forceMultiplier = 3;
+
+                    if (Game.Player.Character.IsInVehicle() &&
+                        MainVehicle.IsTouching(Game.Player.Character.CurrentVehicle))
+                    {
+                        forceMultiplier = 1;
+                    }
+
+                    MainVehicle.Velocity = VehicleVelocity + forceMultiplier*(newPos - MainVehicle.Position);
+                }
+                else
+                {
+                    long currentTime = Util.TickCount;
+                    float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+
+                    alpha = Util.Clamp(0f, alpha, 1.5f);
+
+                    float cAlpha = alpha - currentInterop.LastAlpha;
+                    currentInterop.LastAlpha = alpha;
+
+                    Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
+
+                    if (alpha == 1.5f)
+                    {
+                        currentInterop.FinishTime = 0;
+                    }
+
+                    newPos = VehiclePosition + comp;
+                    MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
+                }
 
                 if (Debug)
                 {
@@ -1987,17 +2035,40 @@ namespace GTANetwork
         private int m_uiForceLocalCounter;
         private void UpdatePlayerPedPos()
         {
-            long currentTime = Util.TickCount;
-            
-            float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+            Vector3 newPos;
+            Vector3 velTarget = new Vector3();
 
-            Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+            if (Main.OnFootLagCompensation)
+            {
+                long currentTime = Util.TickCount;
 
-            Vector3 newPos = Position + comp;
+                float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+
+                Vector3 comp = Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+
+                newPos = Position + comp;
+            }
+            else
+            {
+                var dir = Position - _lastPosition;
+                var vdir = PedVelocity - _lastPedVel;
+                
+                var latency = DataLatency + TicksSinceLastUpdate;
+
+                velTarget = Vector3.Lerp(PedVelocity, PedVelocity + vdir,
+                    latency / ((float)AverageLatency));
+                newPos = Vector3.Lerp(Position, Position + dir,
+                    latency / ((float)AverageLatency));
+            }
 
             if (OnFootSpeed > 0 || IsAnimal(ModelHash))
             {
-                Character.Velocity = PedVelocity + 10 * (newPos - Character.Position);
+                if (Main.OnFootLagCompensation)
+                    Character.Velocity = PedVelocity + 10 * (newPos - Character.Position);
+                else
+                    Character.Velocity = velTarget + 2 * (newPos - Character.Position);
+
+
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = Character.Position;
 
