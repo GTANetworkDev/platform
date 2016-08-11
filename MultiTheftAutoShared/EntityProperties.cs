@@ -14,6 +14,7 @@ namespace GTANetworkShared
         Pickup = 5,
         Player = 6,
         TextLabel = 7,
+        Ped = 8,
         World = 255,
     }
 
@@ -63,6 +64,7 @@ namespace GTANetworkShared
     [ProtoInclude(17, typeof(PlayerProperties))]
     [ProtoInclude(18, typeof(TextLabelProperties))]
     [ProtoInclude(19, typeof(WorldProperties))]
+    [ProtoInclude(20, typeof(PedProperties))]
     public class EntityProperties
     {
         public EntityProperties()
@@ -295,6 +297,18 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
+    public class PedProperties : EntityProperties
+    {
+        public PedProperties()
+        {
+            EntityType = (byte)GTANetworkShared.EntityType.Player;
+        }
+
+        [ProtoMember(1)]
+        public string LoopingAnimation { get; set; }
+    }
+
+    [ProtoContract]
     public class WorldProperties : EntityProperties
     {
         [ProtoMember(1)]
@@ -323,9 +337,10 @@ namespace GTANetworkShared
     [ProtoInclude(14, typeof(Delta_BlipProperties))]
     [ProtoInclude(15, typeof(Delta_MarkerProperties))]
     [ProtoInclude(16, typeof(Delta_PickupProperties))]
-    [ProtoInclude(17, typeof(Delta_PedProperties))]
+    [ProtoInclude(17, typeof(Delta_PlayerProperties))]
     [ProtoInclude(18, typeof(Delta_TextLabelProperties))]
     [ProtoInclude(19, typeof(Delta_WorldProperties))]
+    [ProtoInclude(20, typeof(Delta_PedProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
@@ -463,7 +478,7 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
-    public class Delta_PedProperties : Delta_EntityProperties
+    public class Delta_PlayerProperties : Delta_EntityProperties
     {
         [ProtoMember(1)]
         public Dictionary<byte, byte> Props { get; set; }
@@ -515,6 +530,12 @@ namespace GTANetworkShared
         public bool EntitySeethrough { get; set; }
     }
 
+    [ProtoContract]
+    public class Delta_PedProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public string LoopingAnimation { get; set; }
+    }
 
     [ProtoContract]
     public class Delta_WorldProperties : Delta_EntityProperties

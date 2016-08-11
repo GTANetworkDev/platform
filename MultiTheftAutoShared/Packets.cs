@@ -255,6 +255,7 @@ namespace GTANetworkShared
             Pickups = new Dictionary<int, PickupProperties>();
             Players = new Dictionary<int, PlayerProperties>();
             TextLabels = new Dictionary<int, TextLabelProperties>();
+            Peds = new Dictionary<int, EntityProperties>();
         }
 
         [ProtoMember(1)]
@@ -279,6 +280,9 @@ namespace GTANetworkShared
         public Dictionary<int, TextLabelProperties> TextLabels { get; set; }
 
         [ProtoMember(8)]
+        public Dictionary<int, EntityProperties> Peds { get; set; }
+
+        [ProtoMember(9)]
         public WorldProperties World { get; set; }
     }
 

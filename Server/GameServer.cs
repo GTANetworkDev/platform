@@ -1700,7 +1700,7 @@ namespace GTANResource
                                             var state = msg.ReadBoolean();
                                             if (!state)
                                             {
-                                                var delta = new Delta_PedProperties();
+                                                var delta = new Delta_PlayerProperties();
                                                 delta.Name = client.Name;
                                                 UpdateEntityInfo(client.CharacterHandle.Value, EntityType.Player, delta, client);
 
@@ -1738,6 +1738,10 @@ namespace GTANResource
                                                     else if (pair.Value.EntityType == (byte) EntityType.TextLabel)
                                                     {
                                                         mapObj.TextLabels.Add(pair.Key, (TextLabelProperties) pair.Value);
+                                                    }
+                                                    else if (pair.Value.EntityType == (byte) EntityType.Ped)
+                                                    {
+                                                        mapObj.Peds.Add(pair.Key, pair.Value);
                                                     }
                                                 }
 

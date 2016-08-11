@@ -317,6 +317,28 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
+        public int CreateStaticPed(int model, Vector3 pos, float heading, int dimension = 0)
+        {
+            int localEntityHash = ++EntityCounter;
+            var obj = new PedProperties();
+            obj.EntityType = (byte)EntityType.Ped;
+            obj.Position = pos;
+            obj.Alpha = 255;
+            obj.ModelHash = model;
+            obj.Rotation = new Vector3(0, 0, heading);
+            obj.Dimension = dimension;
+            ServerEntities.Add(localEntityHash, obj);
+
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.Ped;
+            packet.Properties = obj;
+            packet.NetHandle = localEntityHash;
+
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+
+            return localEntityHash;
+        }
+
         public void DeleteEntity(int netId)
         {
             if (!ServerEntities.ContainsKey(netId)) return;

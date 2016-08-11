@@ -897,7 +897,7 @@ namespace GTANetworkServer
                 ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                     .ModelHash = (int)modelHash;
                 
-                var delta = new Delta_PedProperties();
+                var delta = new Delta_PlayerProperties();
                 delta.ModelHash = (int)modelHash;
                 Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
             }
@@ -914,7 +914,7 @@ namespace GTANetworkServer
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Clear();
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Clear();
 
-                var delta = new Delta_PedProperties();
+                var delta = new Delta_PlayerProperties();
                 delta.Textures = new Dictionary<byte, byte>();
                 delta.Accessories = new Dictionary<byte, Tuple<byte, byte>>();
                 delta.Props = new Dictionary<byte, byte>();
@@ -946,6 +946,54 @@ namespace GTANetworkServer
         public void stopPlayerAnimation(Client player)
         {
             Program.ServerInstance.PlayCustomPlayerAnimationStop(player);
+        }
+
+        public void playPedAnimation(NetHandle ped, bool looped, string animDict, string animName)
+        {
+            PedProperties prop;
+            if ((prop = Program.ServerInstance.NetEntityHandler.NetToProp<PedProperties>(ped.Value)) != null)
+            {
+                if (looped)
+                {
+                    prop.LoopingAnimation = animDict + " " + animName;
+
+                    var delta = new Delta_PedProperties();
+                    delta.LoopingAnimation = prop.LoopingAnimation;
+                    Program.ServerInstance.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
+                }
+
+                sendNativeToAllPlayers(0xEA47FE3719165B94, ped, animDict, animName, -8f, -10f, -1, looped ? 1 : 0, 8f, false, false, false);
+            }
+        }
+
+        public void playPedScenario(NetHandle ped, string scenario)
+        {
+            PedProperties prop;
+            if ((prop = Program.ServerInstance.NetEntityHandler.NetToProp<PedProperties>(ped.Value)) != null)
+            {
+                prop.LoopingAnimation = scenario;
+
+                var delta = new Delta_PedProperties();
+                delta.LoopingAnimation = prop.LoopingAnimation;
+                Program.ServerInstance.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
+
+                sendNativeToAllPlayers(0x142A02425FF02BD9, ped, scenario, 0, false);
+            }
+        }
+
+        public void stopPedAnimation(NetHandle ped)
+        {
+            PedProperties prop;
+            if ((prop = Program.ServerInstance.NetEntityHandler.NetToProp<PedProperties>(ped.Value)) != null)
+            {
+                prop.LoopingAnimation = "";
+
+                var delta = new Delta_PedProperties();
+                delta.LoopingAnimation = prop.LoopingAnimation;
+                Program.ServerInstance.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
+
+                sendNativeToAllPlayers(0xE1EF3C1216AFF2CD, ped);
+            }
         }
 
         public void setTime(int hours, int minutes)
@@ -1092,7 +1140,7 @@ namespace GTANetworkServer
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Set((byte)slot, (byte)texture);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x262B14F48D29DE80, new EntityArgument(player.CharacterHandle.Value), slot, drawable, texture, 2);
 
-                var delta = new Delta_PedProperties();
+                var delta = new Delta_PlayerProperties();
                 delta.Textures =
                     ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                         .Textures;
@@ -1110,7 +1158,7 @@ namespace GTANetworkServer
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Set((byte)slot, new Tuple<byte, byte>((byte)drawable, (byte) texture));
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x93376B65A266EB5F, new EntityArgument(player.CharacterHandle.Value), slot, drawable, texture, true);
 
-                var delta = new Delta_PedProperties();
+                var delta = new Delta_PlayerProperties();
                 delta.Accessories =
                     ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                         .Accessories;
@@ -1125,7 +1173,7 @@ namespace GTANetworkServer
                 ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Remove((byte) slot);
                 Program.ServerInstance.SendNativeCallToAllPlayers(0x0943E5B8E078E76E, new EntityArgument(player.CharacterHandle.Value), slot);
 
-                var delta = new Delta_PedProperties();
+                var delta = new Delta_PlayerProperties();
                 delta.Accessories =
                     ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
                         .Accessories;
@@ -1297,7 +1345,7 @@ namespace GTANetworkServer
             Program.ServerInstance.NetEntityHandler.NetToProp<PlayerProperties>(player.CharacterHandle.Value).Name =
                 newName;
 
-            var delta = new Delta_PedProperties();
+            var delta = new Delta_PlayerProperties();
             delta.Name = newName;
             Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
 
@@ -2020,6 +2068,13 @@ namespace GTANetworkServer
         public NetHandle createTextLabel(string text, Vector3 pos, float range, float size, bool entitySeethrough = false, int dimension = 0)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateTextLabel(text, size, range, 255, 255, 255, pos, entitySeethrough, dimension));
+            lock (ResourceEntities) ResourceEntities.Add(ent);
+            return ent;
+        }
+
+        public NetHandle createPed(PedHash model, Vector3 pos, float heading, int dimension = 0)
+        {
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateStaticPed((int) model, pos, heading, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }

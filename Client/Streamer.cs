@@ -32,7 +32,8 @@ namespace GTANetwork
         public static int MAX_VEHICLES = 50;
         public static int MAX_PICKUPS = 30;
         public static int MAX_BLIPS = 100;
-        public static int MAX_PLAYERS = 50;
+        public static int MAX_PLAYERS = 40;
+        public static int MAX_PEDS = 10;
         public static int MAX_MARKERS = 100;
         public static int MAX_LABELS = 20;
 
@@ -55,7 +56,8 @@ namespace GTANetwork
                 var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(_playerPosition));
                 var streamedMarkers = streamedItems.OfType<RemoteMarker>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
                 var streamedLabels = streamedItems.OfType<RemoteTextLabel>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
-                
+                var streamedPeds = streamedItems.OfType<RemotePed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(position));
+
                 var dimensionLeftovers = streamedItems.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
 
                 lock (_itemsToStreamOut)
@@ -67,6 +69,7 @@ namespace GTANetwork
                     _itemsToStreamOut.AddRange(streamedObjects.Skip(MAX_OBJECTS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedMarkers.Skip(MAX_MARKERS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedLabels.Skip(MAX_LABELS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedPeds.Skip(MAX_PEDS).Where(item => item.StreamedIn));
 
                     _itemsToStreamOut.AddRange(dimensionLeftovers);
                 }
@@ -80,6 +83,7 @@ namespace GTANetwork
                     _itemsToStreamIn.AddRange(streamedPlayers.Take(MAX_PLAYERS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedMarkers.Take(MAX_MARKERS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedLabels.Take(MAX_LABELS).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedPeds.Take(MAX_PEDS).Where(item => !item.StreamedIn));
                 }
 
                 endTick:
@@ -639,6 +643,51 @@ namespace GTANetwork
             if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
+        public void UpdatePed(int netHandle, Delta_PedProperties prop)
+        {
+            RemotePed veh = null;
+            if (prop == null || (veh = (NetToStreamedItem(netHandle) as RemotePed)) == null) return;
+
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.LoopingAnimation != null) veh.LoopingAnimation = prop.LoopingAnimation;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+            }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
+        }
+
         public void UpdateProp(int netHandle, Delta_EntityProperties prop)
         {
             IStreamedItem item = null;
@@ -799,7 +848,7 @@ namespace GTANetwork
             if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
-        public void UpdatePlayer(int netHandle, Delta_PedProperties prop)
+        public void UpdatePlayer(int netHandle, Delta_PlayerProperties prop)
         {
             LogManager.DebugLog("UPDATING PLAYER " + netHandle + " PROP NULL? " + (prop == null));
 
@@ -862,7 +911,7 @@ namespace GTANetwork
             if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
-        public void UpdateRemotePlayer(int netHandle, Delta_PedProperties prop)
+        public void UpdateRemotePlayer(int netHandle, Delta_PlayerProperties prop)
         {
             RemotePlayer veh = NetToStreamedItem(netHandle) as RemotePlayer;
             if (prop == null || veh == null) return;
@@ -1014,6 +1063,37 @@ namespace GTANetwork
                     VehicleComponents = prop.VehicleComponents,
                     PositionMovement = prop.PositionMovement,
                     RotationMovement = prop.RotationMovement,
+
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
+        public RemotePed CreatePed(int netHandle, PedProperties prop)
+        {
+            RemotePed rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemotePed()
+                {
+                    RemoteHandle = netHandle,
+
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Dimension = prop.Dimension,
+                    Alpha = prop.Alpha,
+                    SyncedProperties = prop.SyncedProperties,
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+                    Flag = prop.Flag,
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
+
+                    LoopingAnimation = prop.LoopingAnimation,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -1412,6 +1492,9 @@ namespace GTANetwork
                 case EntityType.Player:
                     if (item is SyncPed) ((SyncPed) item).StreamedIn = true;
                     break;
+                case EntityType.Ped:
+                    StreamInPed((RemotePed) item);
+                    break;
                 case EntityType.Marker:
                 case EntityType.TextLabel:
                     item.StreamedIn = true;
@@ -1447,6 +1530,7 @@ namespace GTANetwork
             {
                 case EntityType.Prop:
                 case EntityType.Vehicle:
+                case EntityType.Ped:
                     StreamOutEntity((ILocalHandleable) item);
                     break;
                 case EntityType.Blip:
@@ -1505,7 +1589,7 @@ namespace GTANetwork
 
             if (!string.IsNullOrWhiteSpace(info.Bone))
             {
-                if (entTarget is RemotePlayer)
+                if (entTarget is RemotePlayer || entTarget is RemotePed)
                 {
                     bone = Function.Call<int>(Hash.GET_PED_BONE_INDEX, handleTarget.Handle, (int) Enum.Parse(typeof (Bone), info.Bone, true));
                 }
@@ -1628,6 +1712,57 @@ namespace GTANetwork
             JavascriptHook.InvokeStreamInEvent(new LocalHandle(ourBlip.Handle), (int)EntityType.Blip);
         }
 
+        private void StreamInPed(RemotePed data)
+        {
+            if (data == null || (object) data.Position == null || (object) data.Rotation == null) return;
+            var model = new Model(data.ModelHash);
+            if (!model.IsValid || !model.IsInCdImage) return;
+            if (!model.IsLoaded) Util.LoadModel(model);
+
+            var ped = World.CreatePed(model, data.Position.ToVector(), data.Rotation.Z);
+            model.MarkAsNoLongerNeeded();
+
+            if (ped == null) return;
+
+            ped.PositionNoOffset = data.Position.ToVector();
+
+            ped.CanBeTargetted = true;
+            ped.BlockPermanentEvents = true;
+            Function.Call(Hash.TASK_SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, ped, true);
+            ped.RelationshipGroup = Main.RelGroup;
+            ped.IsInvincible = true;
+            ped.CanRagdoll = false;
+
+            Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, ped);
+
+            Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, ped, false);
+
+            Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, ped, true);
+            Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, ped, Game.Player, true);
+            Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, ped, false);
+            Function.Call(Hash.SET_PED_AS_ENEMY, ped, false);
+            Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ped, true, false);
+
+            ped.FreezePosition = true;
+
+            if (!string.IsNullOrEmpty(data.LoopingAnimation))
+            {
+                string[] dictsplit = data.LoopingAnimation.Split();
+                if (dictsplit.Length >= 2)
+                {
+                    Function.Call(Hash.TASK_PLAY_ANIM, ped,
+                        Util.LoadDict(data.LoopingAnimation.Split()[0]), data.LoopingAnimation.Split()[1],
+                        8f, 10f, -1, 1, -8f, 1, 1, 1);
+                }
+                else
+                {
+                    Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, ped, data.LoopingAnimation, 0, 0);
+                }
+            }
+
+            data.LocalHandle = ped.Handle;
+            data.StreamedIn = true;
+        }
 
         private void StreamInVehicle(RemoteVehicle data)
         {

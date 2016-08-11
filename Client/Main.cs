@@ -1485,7 +1485,13 @@ namespace GTANetwork
                     }
                 }
 
-                
+                if (map.Peds != null)
+                {
+                    foreach (var ped in map.Peds)
+                    {
+                        NetEntityHandler.CreatePed(ped.Key, ped.Value as PedProperties);
+                    }
+                }
 
                 if (map.Players != null)
                 {
@@ -3286,6 +3292,12 @@ namespace GTANetwork
                                 if (NetEntityHandler.Count(typeof (RemoteTextLabel)) < StreamerThread.MAX_LABELS)
                                     NetEntityHandler.StreamIn(label);
                             }
+                            else if (data.EntityType == (byte) EntityType.Ped)
+                            {
+                                var ped = NetEntityHandler.CreatePed(data.NetHandle, data.Properties as PedProperties);
+                                if (NetEntityHandler.Count(typeof (RemotePed)) < StreamerThread.MAX_PEDS)
+                                    NetEntityHandler.StreamIn(ped);
+                            }
                         }
                     }
                     break;
@@ -3304,7 +3316,7 @@ namespace GTANetwork
                                     NetEntityHandler.UpdateMarker(data.NetHandle, data.Properties as Delta_MarkerProperties);
                                     break;
                                 case EntityType.Player:
-                                    NetEntityHandler.UpdatePlayer(data.NetHandle, data.Properties as Delta_PedProperties);
+                                    NetEntityHandler.UpdatePlayer(data.NetHandle, data.Properties as Delta_PlayerProperties);
                                     break;
                                 case EntityType.Pickup:
                                     NetEntityHandler.UpdatePickup(data.NetHandle, data.Properties as Delta_PickupProperties);
@@ -3314,6 +3326,9 @@ namespace GTANetwork
                                     break;
                                 case EntityType.Vehicle:
                                     NetEntityHandler.UpdateVehicle(data.NetHandle, data.Properties as Delta_VehicleProperties);
+                                    break;
+                                case EntityType.Ped:
+                                    NetEntityHandler.UpdatePed(data.NetHandle, data.Properties as Delta_PedProperties);
                                     break;
                                 case EntityType.World:
                                     NetEntityHandler.UpdateWorld(data.Properties);
@@ -3333,7 +3348,6 @@ namespace GTANetwork
                             var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
                             if (streamItem != null)
                             {
-                                //StreamerThread.CancelStreamTick = true;
                                 NetEntityHandler.Remove(streamItem);
                                 NetEntityHandler.StreamOut(streamItem);
                             }
@@ -4847,6 +4861,12 @@ namespace GTANetwork
                 }
             }
 
+            if (((int) nativeType & (int) NativeType.NeedsAnimDict) > 0)
+            {
+                var animDict = ((StringArgument)obj.Arguments[1]).Data;
+                Util.LoadDict(animDict);
+            }
+
             if (((int)nativeType & (int)NativeType.ReturnsEntity) > 0)
             {
                 var entId = Function.Call<int>((Hash) obj.Hash, list.ToArray());
@@ -4975,6 +4995,7 @@ namespace GTANetwork
             WeatherSet = 1 << 8,
             VehicleWarp = 1 << 9,
             EntityWarp = 1 << 10,
+            NeedsAnimDict = 1 << 11,
         }
 
         private NativeType CheckNativeHash(ulong hash)
@@ -5011,6 +5032,8 @@ namespace GTANetwork
                     return NativeType.VehicleWarp;
                 case 0x239A3351AC1DA385:
                     return NativeType.EntityWarp;
+                case 0xEA47FE3719165B94:
+                    return NativeType.NeedsAnimDict;
             }
         }
 

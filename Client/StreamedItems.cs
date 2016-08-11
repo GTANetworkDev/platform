@@ -47,6 +47,22 @@ namespace GTANetwork
         }
     }
 
+    public class RemotePed : PedProperties, IStreamedItem, ILocalHandleable
+    {
+        public int RemoteHandle { get; set; }
+
+        public bool LocalOnly { get; set; }
+
+        public bool StreamedIn { get; set; }
+
+        public int LocalHandle { get; set; }
+
+        public override int GetHashCode()
+        {
+            return RemoteHandle;
+        }
+    }
+
     public class RemoteVehicle : VehicleProperties, ILocalHandleable, IStreamedItem
     {
         public int LocalHandle { get; set; }
