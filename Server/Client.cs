@@ -10,6 +10,7 @@ namespace GTANetworkServer
         internal bool IsInVehicleInternal { get; set; }
         internal int VehicleHandleInternal { get; set; }
         internal Dictionary<int, long> LastPacketReceived = new Dictionary<int, long>();
+        internal Streamer Streamer { get; set; }
 
 
         public NetConnection NetConnection { get; private set; }
@@ -46,6 +47,7 @@ namespace GTANetworkServer
         public Client(NetConnection nc)
         {
             NetConnection = nc;
+            Streamer = new Streamer(this);
         }
 
         public static implicit operator NetHandle(Client c)

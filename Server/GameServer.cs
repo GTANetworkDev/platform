@@ -147,6 +147,7 @@ namespace GTANetworkServer
 
         public List<Resource> RunningResources;
         public PickupManager PickupManager;
+        public Thread StreamerThread;
 
         private Dictionary<string, string> FileHashes { get; set; }
 
@@ -212,6 +213,9 @@ namespace GTANetworkServer
 
             NetEntityHandler.CreateWorld();
             ColShapeManager = new ColShapeManager();
+            StreamerThread = new Thread(Streamer.MainThread);
+            StreamerThread.IsBackground = true;
+            StreamerThread.Start();
         }
 
         public void AnnounceSelfToMaster()
@@ -826,7 +830,7 @@ namespace GTANResource
                 full = PacketOptimization.WriteLightSync(fullPacket);
             }
 
-            foreach (var client in Clients)
+            foreach(var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
@@ -871,6 +875,30 @@ namespace GTANResource
                         (int)ConnectionChannel.LightSync);
                 }
             }
+
+            foreach (var client in exception.Streamer.GetFarClients())
+            {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+
+                NetOutgoingMessage msg = Server.CreateMessage();
+                if (pure)
+                {
+                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.Value);
+
+                    if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
+                    {
+                        msg.Write((byte)PacketType.BasicSync);
+                        msg.Write(basic.Length);
+                        msg.Write(basic);
+                        Server.SendMessage(msg, client.NetConnection,
+                            NetDeliveryMethod.UnreliableSequenced,
+                            (int)ConnectionChannel.BasicSync);
+
+                        client.LastPacketReceived.Set(exception.CharacterHandle.Value, Program.GetTicks());
+                    }
+                }
+            }
         }
 
         private void ResendBulletPacket(int netHandle, Vector3 aim, bool shooting, Client exception)
@@ -879,7 +907,7 @@ namespace GTANResource
 
             full = PacketOptimization.WriteBulletSync(netHandle, shooting, aim);
 
-            foreach (var client in Clients)
+            foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
@@ -918,7 +946,7 @@ namespace GTANResource
                 full = PacketOptimization.WriteLightSync(fullPacket);
             }
 
-            foreach (var client in Clients)
+            foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
@@ -963,7 +991,32 @@ namespace GTANResource
                         (int)ConnectionChannel.LightSync);
                 }
             }
+
+            foreach (var client in exception.Streamer.GetFarClients())
+            {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+
+                NetOutgoingMessage msg = Server.CreateMessage();
+                if (pure)
+                {
+                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.Value);
+
+                    if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
+                    {
+                        msg.Write((byte)PacketType.BasicSync);
+                        msg.Write(basic.Length);
+                        msg.Write(basic);
+                        Server.SendMessage(msg, client.NetConnection,
+                            NetDeliveryMethod.UnreliableSequenced,
+                            (int)ConnectionChannel.BasicSync);
+
+                        client.LastPacketReceived.Set(exception.CharacterHandle.Value, Program.GetTicks());
+                    }
+                }
+            }
         }
+
         private void LogException(Exception ex, string resourceName)
         {
             Program.Output("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
@@ -1872,6 +1925,8 @@ namespace GTANResource
         {
             if (IsClosing)
             {
+                Streamer.Stop = true;
+
                 for (int i = RunningResources.Count - 1; i >= 0; i--)
                 {
                     StopResource(RunningResources[i].DirectoryName);

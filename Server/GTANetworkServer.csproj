@@ -90,6 +90,7 @@
     <Compile Include="MemberwiseClone.cs" />
     <Compile Include="PedHashes.cs" />
     <Compile Include="PickupManager.cs" />
+    <Compile Include="Streamer.cs" />
     <Compile Include="XmlParser.cs" />
     <Compile Include="PickupHashes.cs" />
     <Compile Include="ResourceInfo.cs" />
