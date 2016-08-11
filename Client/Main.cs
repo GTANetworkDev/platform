@@ -2126,7 +2126,7 @@ namespace GTANetwork
         private int _debugmask;
         private Vehicle _debugVehicle;
         private bool _lastSpectating;
-        private int _currentSpectatingPlayerIndex;
+        private int _currentSpectatingPlayerIndex = 100000;
         public SyncPed CurrentSpectatingPlayer;
         private Vector3 _lastWaveReset;
         public static DateTime LastCarEnter;
@@ -2785,7 +2785,7 @@ namespace GTANetwork
                 Game.Player.Character.HasCollision = true;
                 SpectatingEntity = 0;
                 CurrentSpectatingPlayer = null;
-                _currentSpectatingPlayerIndex = 0;
+                _currentSpectatingPlayerIndex = 100000;
                 Game.Player.Character.PositionNoOffset = _preSpectatorPos;
             }
 
@@ -2806,13 +2806,22 @@ namespace GTANetwork
                         Game.Player.Character.PositionNoOffset = ent.Position;
                 }
             }
-            else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null && NetEntityHandler.ClientMap.Count(op => op is SyncPed) > 0)
+            else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null &&
+                     NetEntityHandler.ClientMap.Count(op => op is SyncPed) > 0)
             {
                 CurrentSpectatingPlayer =
-                    NetEntityHandler.ClientMap.Where(op => op is SyncPed && !((SyncPed)op).IsSpectating)
+                    NetEntityHandler.ClientMap.Where(
+                        op =>
+                            op is SyncPed && !((SyncPed) op).IsSpectating &&
+                            (((SyncPed) op).Team == 0 || ((SyncPed) op).Team == Main.LocalTeam) &&
+                            (((SyncPed) op).Dimension == 0 || ((SyncPed) op).Dimension == Main.LocalDimension))
                         .ElementAt(_currentSpectatingPlayerIndex%
                                    NetEntityHandler.ClientMap.Count(
-                                       op => op is SyncPed && !((SyncPed)op).IsSpectating)) as SyncPed;
+                                       op =>
+                                           op is SyncPed && !((SyncPed) op).IsSpectating &&
+                                           (((SyncPed) op).Team == 0 || ((SyncPed) op).Team == Main.LocalTeam) &&
+                                           (((SyncPed) op).Dimension == 0 ||
+                                            ((SyncPed) op).Dimension == Main.LocalDimension))) as SyncPed;
             }
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer != null)
             {
