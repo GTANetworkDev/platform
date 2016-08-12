@@ -2807,7 +2807,9 @@ namespace GTANetwork
                 }
             }
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null &&
-                     NetEntityHandler.ClientMap.Count(op => op is SyncPed) > 0)
+                     NetEntityHandler.ClientMap.Count(op => op is SyncPed && !((SyncPed)op).IsSpectating &&
+                            (((SyncPed)op).Team == 0 || ((SyncPed)op).Team == Main.LocalTeam) &&
+                            (((SyncPed)op).Dimension == 0 || ((SyncPed)op).Dimension == Main.LocalDimension)) > 0)
             {
                 CurrentSpectatingPlayer =
                     NetEntityHandler.ClientMap.Where(
