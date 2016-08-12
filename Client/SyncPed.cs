@@ -1894,7 +1894,7 @@ namespace GTANetwork
             {
                 if (IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
-                float hRange = IsInVehicle ? 200f : 200f;
+                float hRange = IsInVehicle ? 175f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 

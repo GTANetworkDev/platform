@@ -406,7 +406,11 @@ public class RaceGamemode : Script
             {
                 API.deleteEntity(op.Vehicle);
             }
+
+            API.freezePlayer(op.Client, true);
         });
+
+
 
         foreach (var ent in Objects)
         {
@@ -424,6 +428,8 @@ public class RaceGamemode : Script
 
         for (int i = 0; i < clients.Count; i++)
         {
+            API.freezePlayer(clients[i], false);
+
             SetUpPlayerForRace(clients[i], CurrentRace, true, i);
         }
 

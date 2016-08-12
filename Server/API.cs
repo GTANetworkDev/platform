@@ -1562,10 +1562,8 @@ namespace GTANetworkServer
             {
                 Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CurrentVehicle.Value), freeze);
             }
-            else
-            {
-                Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CharacterHandle.Value), freeze);
-            }
+
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CharacterHandle.Value), freeze);
         }
 
 	    public void setEntityRotation(NetHandle netHandle, Vector3 newRotation)
