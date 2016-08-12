@@ -7,6 +7,8 @@ using GTANetworkShared;
 
 namespace GTANetworkServer
 {
+    public delegate object ArgumentConversionDelegate(Type conversionTarget, string argument);
+
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class CommandAttribute : System.Attribute
     {
@@ -16,6 +18,7 @@ namespace GTANetworkServer
         public bool SensitiveInfo { get; set; }
         public bool ACLRequired { get; set; }
         public string Alias { get; set; }
+        public string ArgumentConverter { get; set; }
 
         public CommandAttribute(string command)
         {
@@ -47,6 +50,7 @@ namespace GTANetworkServer
         public ParameterInfo[] Parameters;
         public bool Sensitive;
         public bool ACLRequired;
+        public ArgumentConversionDelegate CustomArgumentParser;
 
         public bool Parse(Client sender, string cmdRaw)
         {
@@ -100,6 +104,42 @@ namespace GTANetworkServer
 
             for (int i = 1; i < Parameters.Length; i++)
             {
+                if (CustomArgumentParser != null)
+                {
+                    try
+                    {
+                        var parsedObject = CustomArgumentParser.Invoke(Parameters[i].ParameterType, args[i]);
+
+                        if (parsedObject != null)
+                        {
+                            arguments[i] = parsedObject;
+                            continue;
+                        }
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        if (string.IsNullOrWhiteSpace(ex.Message))
+                        {
+                            Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, helpText);
+                        }
+                        else
+                        {
+                            Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, ex.Message);
+                        }
+
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.Output("UNHANDLED EXCEPTION WHEN PARSING COMMAND " + (Sensitive ? "[SENSITIVE INFO]" : cmdRaw) + " FROM PLAYER " + sender.SocialClubName);
+                        Program.Output(ex.ToString());
+
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, helpText);
+
+                        return true;
+                    }
+                }
+
                 if (Parameters[i].ParameterType == typeof(Client))
                 {
                     var cTarget = Program.ServerInstance.GetClientFromName(args[i]);
@@ -229,6 +269,14 @@ namespace GTANetworkServer
                     parser.Sensitive = cmd.SensitiveInfo;
                     parser.ACLRequired = cmd.ACLRequired;
                     parser.Helptext = cmd.CommandHelpText;
+
+                    if (!string.IsNullOrEmpty(cmd.ArgumentConverter))
+                    {
+                        var del = Delegate.CreateDelegate(typeof (ArgumentConversionDelegate), engine._compiledScript,
+                            engine._compiledScript.GetType().GetMethod(cmd.ArgumentConverter));
+                        parser.CustomArgumentParser = (ArgumentConversionDelegate)del;
+                    }
+                    
                     if (!string.IsNullOrEmpty(cmd.Alias)) parser.Aliases = cmd.Alias.Split(',').ToArray();
 
                     lock (ResourceCommands) ResourceCommands.Add(parser);

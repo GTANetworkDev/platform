@@ -26,9 +26,9 @@ namespace GTANetworkServer
         public List<Thread> ActiveThreads = new List<Thread>();
         public bool Async = false;
 
+        internal Script _compiledScript;
         private Thread _workerThread;
         private Thread _blockingThread;
-        private Script _compiledScript;
         private Queue _mainQueue;
         private Queue _secondaryQueue;
         public bool HasTerminated = false;
