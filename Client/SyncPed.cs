@@ -661,6 +661,15 @@ namespace GTANetwork
 
 				if (MainVehicle != null && MainVehicle.Handle != 0)
 				{
+				    if (VehicleSeat == -1)
+				    {
+				        MainVehicle.Position = VehiclePosition;
+				    }
+				    else
+				    {
+				        Character.PositionNoOffset = MainVehicle.Position;
+				    }
+
 					MainVehicle.EngineRunning = true;
 					MainVehicle.IsInvincible = true;
 					Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
