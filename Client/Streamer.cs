@@ -438,7 +438,8 @@ namespace GTANetwork
             {
                 var streamedItem = ClientMap.FirstOrDefault(item => item.RemoteHandle == netId && !item.LocalOnly && item.StreamedIn);
                 var handleable = streamedItem as ILocalHandleable;
-                if (streamedItem == null || handleable == null) return null;
+                if (streamedItem == null) return null;
+                if (handleable == null) return new Prop(netId);
                 if (handleable.LocalHandle == -2) return Game.Player.Character;
                 return new Prop(handleable.LocalHandle);
              }
@@ -492,7 +493,7 @@ namespace GTANetwork
                 var ourItem = ClientMap.FirstOrDefault(item =>
                     !item.LocalOnly && item.StreamedIn && item is ILocalHandleable &&
                     ((ILocalHandleable) item).LocalHandle == entityHandle);
-                return ourItem?.RemoteHandle ?? 0;
+                return ourItem?.RemoteHandle ?? entityHandle;
             }
         }
 

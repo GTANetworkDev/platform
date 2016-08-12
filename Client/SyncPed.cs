@@ -661,8 +661,6 @@ namespace GTANetwork
 
 				if (MainVehicle != null && MainVehicle.Handle != 0)
 				{
-					if (VehicleSeat == -1)
-						MainVehicle.Position = VehiclePosition;
 					MainVehicle.EngineRunning = true;
 					MainVehicle.IsInvincible = true;
 					Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
@@ -695,7 +693,6 @@ namespace GTANetwork
 					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
 					{
 					    MainVehicle.PositionNoOffset = Vector3.Lerp(lastPos, gPos, Math.Min(1f, delta / 1000f));
-
                         #if !DISABLE_ROTATION_SIM
                         if (_lastVehiclePos != null)
                             MainVehicle.Quaternion = Main.DirectionToRotation(_lastVehiclePos.Value - gPos).ToQuaternion();
