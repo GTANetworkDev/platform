@@ -598,16 +598,31 @@ namespace GTANetworkServer
         public void setPlayerToSpectator(Client player)
         {
             Program.ServerInstance.SetPlayerOnSpectate(player, true);
+            player.Properties.Flag |= (byte) EntityFlag.PlayerSpectating;
+
+            var delta = new Delta_PlayerProperties();
+            delta.Flag = player.Properties.Flag;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
         }
 
         public void setPlayerToSpectatePlayer(Client player, Client target)
         {
             Program.ServerInstance.SetPlayerOnSpectatePlayer(player, target);
+            player.Properties.Flag |= (byte)EntityFlag.PlayerSpectating;
+
+            var delta = new Delta_PlayerProperties();
+            delta.Flag = player.Properties.Flag;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
         }
 
         public void unspectatePlayer(Client player)
         {
             Program.ServerInstance.SetPlayerOnSpectate(player, false);
+            player.Properties.Flag = (byte)PacketOptimization.ResetBit(player.Properties.Flag, EntityFlag.PlayerSpectating);
+
+            var delta = new Delta_PlayerProperties();
+            delta.Flag = player.Properties.Flag;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
         }
 
         public void setVehicleLivery(NetHandle vehicle, int livery)

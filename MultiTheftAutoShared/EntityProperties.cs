@@ -23,6 +23,7 @@ namespace GTANetworkShared
         Collisionless = 1 << 0,
         EngineOff = 1 << 1,
         SpecialLight = 1 << 2,
+        PlayerSpectating = 1 << 3,
     }
 
     [ProtoContract]

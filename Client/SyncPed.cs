@@ -1886,7 +1886,7 @@ namespace GTANetwork
         {
             try
             {
-                if (IsSpectating || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
+                if (IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
                 float hRange = IsInVehicle ? 200f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
