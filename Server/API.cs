@@ -527,6 +527,12 @@ namespace GTANetworkServer
                     deltaBlip.Dimension = dimension;
                     Program.ServerInstance.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
                 }
+
+                if (Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Attachables != null)
+                    foreach (var attached in Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Attachables)
+                    {
+                        setEntityDimension(new NetHandle(attached), dimension);
+                    }
             }
         }
 
