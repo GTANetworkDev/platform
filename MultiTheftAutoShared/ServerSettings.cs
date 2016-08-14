@@ -24,8 +24,7 @@ namespace GTANetworkShared
 
         [XmlElement("announce")]
         public bool Announce { get; set; }
-
-
+        
         [XmlElement("upnp")]
         public bool UseUPnP { get; set; }
 
@@ -37,9 +36,6 @@ namespace GTANetworkShared
 
         [XmlElement("masterserver")]
         public string MasterServer { get; set; }
-
-        //public bool AllowDisplayNames { get; set; }
-        //public string Gamemode { get; set; }
 
         [XmlElement("resource")]
         public List<SettingsResFilepath> Resources { get; set; }
@@ -67,7 +63,7 @@ namespace GTANetworkShared
         {
             Port = 4499;
             MaxPlayers = 16;
-            Name = "Simple GTA Server";
+            Name = "Simple GTA Network Server";
             MinimumClientVersion = "0.0.0.0";
             Password = "";
             LogToFile = true;
@@ -75,7 +71,7 @@ namespace GTANetworkShared
             UseACL = true;
             AnnounceToLan = true;
             AutoUpdateMinClientVersion = true;
-            MasterServer = "http://46.101.1.92";
+            MasterServer = "http://master.gtanet.work";
             Resources = new List<SettingsResFilepath>();
             OnFootLagCompensation = true;
             VehicleLagCompensation = true;

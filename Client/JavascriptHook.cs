@@ -1263,6 +1263,7 @@ namespace GTANetwork
             var newM = new UIMenu("", subtitle, new Point((int)(offset.X), (int)(offset.Y)));
             newM.ScaleWithSafezone = false;
             newM.SetBannerType(new UIResRectangle());
+            newM.ControlDisablingEnabled = false;
             return newM;
         }
 
@@ -1294,9 +1295,19 @@ namespace GTANetwork
         public void drawMenu(UIMenu menu)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
-            menu.ProcessControl();
-            menu.ProcessMouse();
+            
+            if (!Main.Chat.IsFocused)
+            {
+                menu.ProcessControl();
+                menu.ProcessMouse();
+            }
+
             menu.Draw();
+
+            if (menu.Visible)
+            {
+                Game.DisableAllControlsThisFrame(0);
+            }
         }
 
         public void setMenuBannerSprite(UIMenu menu, string spritedict, string spritename)
