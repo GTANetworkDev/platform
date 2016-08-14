@@ -644,6 +644,57 @@ namespace GTANetwork
             if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
+        public void UpdateTextLabel(int netHandle, Delta_TextLabelProperties prop)
+        {
+            RemoteTextLabel veh = null;
+            if (prop == null || (veh = (NetToStreamedItem(netHandle) as RemoteTextLabel)) == null) return;
+
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.Text != null) veh.Text = prop.Text;
+            if (prop.Size != null) veh.Size = prop.Size.Value;
+            if (prop.EntitySeethrough != null) veh.EntitySeethrough = prop.EntitySeethrough.Value;
+            if (prop.Range != null) veh.Range = prop.Range.Value;
+            if (prop.Red != null) veh.Red = prop.Red.Value;
+            if (prop.Green != null) veh.Green = prop.Green.Value;
+            if (prop.Blue != null) veh.Blue = prop.Blue.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+            }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
+        }
+
         public void UpdatePed(int netHandle, Delta_PedProperties prop)
         {
             RemotePed veh = null;

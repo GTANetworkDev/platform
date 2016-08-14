@@ -528,7 +528,7 @@ namespace GTANetworkShared
         public float? Range { get; set; }
 
         [ProtoMember(7)]
-        public bool EntitySeethrough { get; set; }
+        public bool? EntitySeethrough { get; set; }
     }
 
     [ProtoContract]

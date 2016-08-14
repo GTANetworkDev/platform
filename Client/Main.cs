@@ -3370,6 +3370,9 @@ namespace GTANetwork
                                 case EntityType.Ped:
                                     NetEntityHandler.UpdatePed(data.NetHandle, data.Properties as Delta_PedProperties);
                                     break;
+                                case EntityType.TextLabel:
+                                    NetEntityHandler.UpdateTextLabel(data.NetHandle, data.Properties as Delta_TextLabelProperties);
+                                    break;
                                 case EntityType.World:
                                     NetEntityHandler.UpdateWorld(data.Properties);
                                     break;
