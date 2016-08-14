@@ -1803,7 +1803,7 @@ namespace GTANetwork
                 if (dictsplit.Length >= 2)
                 {
                     Function.Call(Hash.TASK_PLAY_ANIM, ped,
-                        Util.LoadDict(data.LoopingAnimation.Split()[0]), data.LoopingAnimation.Split()[1],
+                        Util.LoadAnimDictStreamer(data.LoopingAnimation.Split()[0]), data.LoopingAnimation.Split()[1],
                         8f, 10f, -1, 1, -8f, 1, 1, 1);
                 }
                 else

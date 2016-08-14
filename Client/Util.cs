@@ -247,6 +247,33 @@ namespace GTANetwork
             return dict;
         }
 
+        public static string LoadAnimDictStreamer(string dict)
+        {
+            LogManager.DebugLog("REQUESTING DICTIONARY " + dict);
+            Function.Call(Hash.REQUEST_ANIM_DICT, dict);
+
+            DateTime endtime = DateTime.UtcNow + new TimeSpan(0, 0, 0, 0, 1000);
+
+            ModelRequest = true;
+
+            while (!Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, dict))
+            {
+                LogManager.DebugLog("DICTIONARY HAS NOT BEEN LOADED. YIELDING...");
+                Script.Yield();
+                Function.Call(Hash.REQUEST_ANIM_DICT, dict);
+                if (DateTime.UtcNow >= endtime)
+                {
+                    break;
+                }
+            }
+
+            ModelRequest = false;
+
+            LogManager.DebugLog("DICTIONARY LOAD COMPLETE.");
+
+            return dict;
+        }
+
         public static Vector3 LinearVectorLerp(Vector3 start, Vector3 end, long currentTime, long duration)
         {
             return new Vector3()
