@@ -276,19 +276,14 @@ namespace GTANetworkServer
             return JsonConvert.SerializeObject(data);
         }
 
-        public object call(string resourceName, string scriptName, string methodName, params object[] arguments)
+        public object call(string className, string methodName, params object[] arguments)
         {
-            var ourResource = Program.ServerInstance.RunningResources.FirstOrDefault(k => k.DirectoryName == resourceName);
-            if (ourResource == null)
-            {
-                Program.Output("ERROR: call() - No resource named '" + resourceName + "' found.");
-                return null;
-            }
+            var ourResource = ResourceParent.ResourceParent;
 
-            var ourScriptName = ourResource.Engines.FirstOrDefault(en => en.Filename == scriptName);
+            var ourScriptName = ourResource.Engines.FirstOrDefault(en => en.Filename == className);
             if (ourScriptName == null)
             {
-                Program.Output("ERROR: call() - No script name named '" + scriptName + "' found.");
+                Program.Output("ERROR: call() - No class named '" + className + "' was found.");
                 return null;
             }
 
