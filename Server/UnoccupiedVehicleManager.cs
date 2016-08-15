@@ -114,6 +114,7 @@ namespace GTANetworkServer
         {
             var players =
                 Program.ServerInstance.PublicAPI.getAllPlayers()
+                    .Where(c => c.Properties.Dimension == prop.Dimension || prop.Dimension == 0)
                     .OrderBy(c => c.Position.DistanceToSquared(prop.Position));
 
             Client targetPlayer;
