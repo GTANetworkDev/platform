@@ -358,6 +358,11 @@ namespace GTANetwork
                     settings.DisplayName = string.IsNullOrWhiteSpace(GTA.Game.Player.Name) ? "Player" : GTA.Game.Player.Name;
                 }
 
+                if (settings.DisplayName.Length > 32)
+                {
+                    settings.DisplayName = settings.DisplayName.Substring(0, 32);
+                }
+
                 using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
             }
             else
@@ -365,7 +370,6 @@ namespace GTANetwork
                 using (var stream = File.OpenWrite(path))
                 {
                     ser.Serialize(stream, settings = new PlayerSettings());
-                    Util.SafeNotify("No settings! " + path);
                 }
             }
 
