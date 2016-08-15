@@ -15,6 +15,24 @@ namespace GTANetwork
 
         public static Dictionary<string, string> FileIntegrity = new Dictionary<string, string>();
 
+        private static string[] _allowedFiletypes = new[]
+        {
+            "audio/basic",
+            "audio/mid",
+            "audio/wav",
+            "image/gif",
+            "image/jpeg",
+            "image/pjpeg",
+            "image/png",
+            "image/x-png",
+            "image/tiff",
+            "image/bmp",
+            "video/avi",
+            "video/mpeg",
+            "audio/mpeg",
+            "text/plain",
+        };
+
         public static bool CheckFileIntegrity()
         {
             foreach (var pair in FileIntegrity)
@@ -131,9 +149,21 @@ namespace GTANetwork
                 }
                 else if (CurrentFile.Type == FileType.Script)
                 {
-                    var scriptText = Encoding.UTF8.GetString(CurrentFile.Data.ToArray());
-                    var newScript = LoadScript(CurrentFile.Filename, CurrentFile.Resource, scriptText);
-                    PendingScripts.ClientsideScripts.Add(newScript);
+                    try
+                    {
+                        var scriptText = Encoding.UTF8.GetString(CurrentFile.Data.ToArray());
+                        var newScript = LoadScript(CurrentFile.Filename, CurrentFile.Resource, scriptText);
+                        PendingScripts.ClientsideScripts.Add(newScript);
+                    }
+                    catch (ArgumentException)
+                    {
+                        CurrentFile.Dispose();
+                        if (File.Exists(CurrentFile.FilePath))
+                        {
+                            try { File.Delete(CurrentFile.FilePath); }
+                            catch { }
+                        }
+                    }
                 }
                 else if (CurrentFile.Type == FileType.EndOfTransfer)
                 {
@@ -154,6 +184,20 @@ namespace GTANetwork
             finally
             {
                 CurrentFile.Dispose();
+
+                if (CurrentFile.Type == FileType.Normal && File.Exists(CurrentFile.FilePath))
+                {
+                    var mime = MimeTypes.GetMimeType(File.ReadAllBytes(CurrentFile.FilePath), CurrentFile.FilePath);
+
+                    if (!_allowedFiletypes.Contains(mime))
+                    {
+                        try { File.Delete(CurrentFile.FilePath); }
+                        catch { }
+
+                        UI.Notify("Disallowed file type: " + mime + "~n~" + CurrentFile.Filename);
+                    }
+                }
+
                 CurrentFile = null;
             }
         }
@@ -171,6 +215,7 @@ namespace GTANetwork
         public int DataWritten { get; set; }
         public List<byte> Data { get; set; }
         public string Resource { get; set; }
+        public string FilePath { get; set; }
 
         public FileTransferId(int id, string name, FileType type, int len, string resource)
         {
@@ -180,7 +225,8 @@ namespace GTANetwork
             Length = len;
             Resource = resource;
 
-            
+            FilePath = _DOWNLOADFOLDER_ + name;
+
             if ((type == FileType.Normal || type == FileType.Script) && name != null)
             {
                 if (!Directory.Exists(_DOWNLOADFOLDER_ + name.Replace(Path.GetFileName(name), "")))
@@ -217,6 +263,8 @@ namespace GTANetwork
                 Stream.Close();
                 Stream.Dispose();
             }
+
+            Stream = null;
         }
     }
 }
