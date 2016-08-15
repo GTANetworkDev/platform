@@ -26,7 +26,7 @@ namespace GTANetworkShared
             }
 
             // Write the flag
-            byteArray.AddRange(GetBytes((short)data.Flag.Value));
+            byteArray.AddRange(GetBytes(data.Flag.Value));
 
             // Write player's position, rotation, and velocity
             byteArray.AddRange(GetBytes(data.Position.X));
@@ -348,7 +348,7 @@ namespace GTANetworkShared
             data.NetHandle = r.ReadInt32();
 
             // Read the flag
-            data.Flag = r.ReadInt16();
+            data.Flag = r.ReadInt32();
 
             // Read player position, rotation and velocity
             Vector3 position = new Vector3();

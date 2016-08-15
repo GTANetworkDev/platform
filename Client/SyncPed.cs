@@ -64,6 +64,7 @@ namespace GTANetwork
 	    public float SteeringScale;
         public bool EnteringVehicle;
         private bool _lastEnteringVehicle;
+        public bool IsOnFire;
 
         public bool ExitingVehicle;
         private bool _lastExitingVehicle;
@@ -1735,6 +1736,20 @@ namespace GTANetwork
 				//Character.FreezePosition = true;
 			}
 
+		    var isonfire = Function.Call<bool>(Hash.IS_ENTITY_ON_FIRE, Character);
+            
+            if (IsOnFire && !isonfire)
+            {
+                Character.IsInvincible = false;
+                Function.Call(Hash.START_ENTITY_FIRE, Character);
+            }
+            else if (!IsOnFire && isonfire)
+            {
+                Function.Call(Hash.STOP_ENTITY_FIRE, Character);
+                Character.IsInvincible = true;
+                if (Character.IsDead) Function.Call(Hash.RESURRECT_PED, Character);
+            }
+
 		    if (EnteringVehicle && !_lastEnteringVehicle)
 		    {
 		        Entity targetVeh = null;
@@ -2246,7 +2261,8 @@ namespace GTANetwork
                 CurrentWeapon == unchecked((int) WeaponHash.Musket) ||
                 CurrentWeapon == unchecked((int) WeaponHash.AssaultShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.BullpupShotgun) ||
-                CurrentWeapon == unchecked((int) WeaponHash.SawnOffShotgun))
+                CurrentWeapon == unchecked((int) WeaponHash.SawnOffShotgun) ||
+                CurrentWeapon == unchecked((int)WeaponHash.GrenadeLauncher))
                 return "move_weapon@rifle@generic";
             return null;
         }

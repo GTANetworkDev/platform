@@ -4367,6 +4367,7 @@ namespace GTANetwork
                 syncPed.IsOnLadder = (fullPacket.Flag.Value & (int) PedDataFlags.IsOnLadder) > 0;
                 syncPed.IsReloading = (fullPacket.Flag.Value & (int)PedDataFlags.IsReloading) > 0;
                 syncPed.IsVaulting = (fullPacket.Flag.Value & (int)PedDataFlags.IsVaulting) > 0;
+                syncPed.IsOnFire = (fullPacket.Flag.Value & (int)PedDataFlags.OnFire) != 0;
 
                 syncPed.EnteringVehicle = (fullPacket.Flag.Value & (int)PedDataFlags.EnteringVehicle) != 0;
 

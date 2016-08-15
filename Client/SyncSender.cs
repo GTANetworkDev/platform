@@ -337,7 +337,9 @@ namespace GTANetwork
                 if (player.IsSubtaskActive(ESubtask.USING_LADDER))
                     obj.Flag |= (int) PedDataFlags.IsOnLadder;
                 if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player) && !player.IsSubtaskActive(ESubtask.USING_LADDER))
-                    obj.Flag |= (int)PedDataFlags.IsVaulting;
+                    obj.Flag |= (int) PedDataFlags.IsVaulting;
+                if (Function.Call<bool>(Hash.IS_ENTITY_ON_FIRE, player))
+                    obj.Flag |= (int) PedDataFlags.OnFire;
 
                 if (player.IsSubtaskActive(168))
                 {

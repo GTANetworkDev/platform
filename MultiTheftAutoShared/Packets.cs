@@ -126,6 +126,7 @@ namespace GTANetworkShared
         IsVaulting = 1 << 13,
         EnteringVehicle = 1 << 14,
         ClosingVehicleDoor = 1 << 15,
+        OnFire = 1 << 16,
     }
 
     public enum ConnectionChannel
