@@ -141,6 +141,18 @@ namespace GTANetwork
             CrossReference.EntryPoint = this;
 
             PlayerSettings = Util.ReadSettings(GTANInstallDir + "\\settings.xml");
+
+            if (string.IsNullOrWhiteSpace(PlayerSettings.DisplayName))
+            {
+                PlayerSettings.DisplayName = Game.Player.Name;
+            }
+
+            if (PlayerSettings.DisplayName.Length > 32)
+            {
+                PlayerSettings.DisplayName = PlayerSettings.DisplayName.Substring(0, 32);
+            }
+
+            
             GameSettings = GTANetwork.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
 
@@ -889,7 +901,7 @@ namespace GTANetwork
                     nameItem.Activated += (sender, item) =>
                     {
                         if (IsOnServer()) return;
-                        var newName = InputboxThread.GetUserInput(PlayerSettings.DisplayName ?? "Enter new name", 40, TickSpinner);
+                        var newName = InputboxThread.GetUserInput(PlayerSettings.DisplayName ?? "Enter new name", 32, TickSpinner);
                         if (!string.IsNullOrWhiteSpace(newName))
                         {
                             PlayerSettings.DisplayName = newName;
