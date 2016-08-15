@@ -269,6 +269,71 @@ namespace GTANetworkShared
             return byteArray.ToArray();
         }
 
+        public static byte[] WriteUnOccupiedVehicleSync(VehicleData data)
+        {
+            List<byte> byteArray = new List<byte>();
+
+            // Write vehicle's nethandle.
+            byteArray.AddRange(GetBytes(data.VehicleHandle.Value));
+            
+            // Write vehicle position, rotation and velocity
+            byteArray.AddRange(GetBytes(data.Position.X));
+            byteArray.AddRange(GetBytes(data.Position.Y));
+            byteArray.AddRange(GetBytes(data.Position.Z));
+
+            byteArray.AddRange(GetBytes(data.Quaternion.X));
+            byteArray.AddRange(GetBytes(data.Quaternion.Y));
+            byteArray.AddRange(GetBytes(data.Quaternion.Z));
+
+            byteArray.AddRange(GetBytes(data.Velocity.X));
+            byteArray.AddRange(GetBytes(data.Velocity.Y));
+            byteArray.AddRange(GetBytes(data.Velocity.Z));
+
+            // Write vehicle health
+            byteArray.AddRange(GetBytes((short)((int)data.VehicleHealth.Value)));
+
+            // Set if whether its dead
+            if (CheckBit(data.Flag.Value, VehicleDataFlags.VehicleDead))
+            {
+                byteArray.Add(0x01);
+            }
+            else
+            {
+                byteArray.Add(0x00);
+            }
+            
+            return byteArray.ToArray();
+        }
+
+        public static byte[] WriteBasicUnOccupiedVehicleSync(VehicleData data)
+        {
+            List<byte> byteArray = new List<byte>();
+
+            // Write vehicle's nethandle.
+            byteArray.AddRange(GetBytes(data.VehicleHandle.Value));
+
+            // Write vehicle position and heading
+            byteArray.AddRange(GetBytes(data.Position.X));
+            byteArray.AddRange(GetBytes(data.Position.Y));
+            byteArray.AddRange(GetBytes(data.Position.Z));
+
+            byteArray.AddRange(GetBytes(data.Quaternion.Z));
+            
+            // Write vehicle health
+            byteArray.AddRange(GetBytes((short)((int)data.VehicleHealth.Value)));
+
+            // Set if whether its dead
+            if (CheckBit(data.Flag.Value, VehicleDataFlags.VehicleDead))
+            {
+                byteArray.Add(0x01);
+            }
+            else
+            {
+                byteArray.Add(0x00);
+            }
+
+            return byteArray.ToArray();
+        }
 
         #endregion
 
@@ -518,6 +583,77 @@ namespace GTANetworkShared
             return output;
         }
 
+        public static VehicleData ReadUnoccupiedVehicleSync(byte[] array)
+        {
+            var r = new BitReader(array);
+            var data = new VehicleData();
+
+            // Read vehicle's nethandle.
+            data.VehicleHandle = r.ReadInt32();
+
+            // Read position, rotation and velocity.
+            Vector3 position = new Vector3();
+            Vector3 rotation = new Vector3();
+            Vector3 velocity = new Vector3();
+
+            position.X = r.ReadSingle();
+            position.Y = r.ReadSingle();
+            position.Z = r.ReadSingle();
+
+            rotation.X = r.ReadSingle();
+            rotation.Y = r.ReadSingle();
+            rotation.Z = r.ReadSingle();
+
+            velocity.X = r.ReadSingle();
+            velocity.Y = r.ReadSingle();
+            velocity.Z = r.ReadSingle();
+
+            data.Position = position;
+            data.Quaternion = rotation;
+            data.Velocity = velocity;
+
+            // Read vehicle health
+            data.VehicleHealth = r.ReadInt16();
+
+            // Read is dead
+            if (r.ReadBoolean())
+                data.Flag |= (short) VehicleDataFlags.VehicleDead;
+            else
+                data.Flag = 0;
+
+            return data;
+        }
+
+        public static VehicleData ReadBasicUnoccupiedVehicleSync(byte[] array)
+        {
+            var r = new BitReader(array);
+            var data = new VehicleData();
+
+            // Read vehicle's nethandle.
+            data.VehicleHandle = r.ReadInt32();
+
+            // Read position and heading
+            Vector3 position = new Vector3();
+            Vector3 rotation = new Vector3();
+            
+            position.X = r.ReadSingle();
+            position.Y = r.ReadSingle();
+            position.Z = r.ReadSingle();
+
+            rotation.Z = r.ReadSingle();
+            
+            data.Position = position;
+            data.Quaternion = rotation;
+
+            // Read vehicle health
+            data.VehicleHealth = r.ReadSingle();
+
+            // Read is dead
+            if (r.ReadBoolean())
+                data.Flag |= (short)VehicleDataFlags.VehicleDead;
+
+            return data;
+        }
 
         #endregion
 
@@ -534,17 +670,17 @@ namespace GTANetworkShared
         
         public static bool CheckBit(int value, VehicleDataFlags flag)
         {
-            return (value & (int)flag) > 0;
+            return (value & (int)flag) != 0;
         }
 
         public static bool CheckBit(int value, PedDataFlags flag)
         {
-            return (value & (int)flag) > 0;
+            return (value & (int)flag) != 0;
         }
 
         public static bool CheckBit(int value, EntityFlag flag)
         {
-            return (value & (int)flag) > 0;
+            return (value & (int)flag) != 0;
         }
 
         public static int SetBit(int value, EntityFlag flag)

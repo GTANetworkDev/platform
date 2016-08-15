@@ -11,13 +11,13 @@ namespace GTANetwork
 {
     public static class SyncSender
     {
+        private const int LIGHT_SYNC_RATE = 1500;
+        private const int PURE_SYNC_RATE = 100;
+
         public static void MainLoop()
         {
             bool lastPedData = false;
             int lastLightSyncSent = 0;
-
-            int LIGHT_SYNC_RATE = 1500;
-            int PURE_SYNC_RATE = 100;
 
             while (true)
             {

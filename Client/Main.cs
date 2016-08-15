@@ -121,6 +121,7 @@ namespace GTANetwork
         
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
+        private UnoccupiedVehicleSync VehicleSyncManager;
 
         private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
 
@@ -148,6 +149,7 @@ namespace GTANetwork
             NetEntityHandler = new Streamer();
 
             Watcher = new SyncEventWatcher(this);
+            VehicleSyncManager = new UnoccupiedVehicleSync();
 
             Npcs = new Dictionary<string, SyncPed>();
             _tickNatives = new Dictionary<string, NativeData>();
@@ -2157,9 +2159,7 @@ namespace GTANetwork
         private int _bytesSentPerSecond;
         private int _bytesReceivedPerSecond;
         //
-
-        private CachedString _debugCachedString;
-
+        
         public void OnTick(object sender, EventArgs e)
         {
             Ped player = Game.Player.Character;
@@ -2575,6 +2575,20 @@ namespace GTANetwork
             Watcher.Tick();
             DEBUG_STEP = 10;
 
+            int netPlayerCar = 0;
+            if (playerCar != null && (netPlayerCar = NetEntityHandler.EntityToNet(playerCar.Handle)) != 0)
+            {
+                var item = NetEntityHandler.NetToStreamedItem(netPlayerCar) as RemoteVehicle;
+
+                if (item != null)
+                {
+                    item.Position = playerCar.Position.ToLVector();
+                    item.Rotation = playerCar.Rotation.ToLVector();
+                    item.Health = playerCar.EngineHealth;
+                    item.IsDead = playerCar.IsDead;
+                }
+            }
+
             if (playerCar != _lastPlayerCar)
             {
                 if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = true;
@@ -2675,6 +2689,7 @@ namespace GTANetwork
             Game.DisableControl(0, Control.CharacterWheel);
             Game.DisableControl(0, Control.Phone);
 
+            VehicleSyncManager.Pulse();
 
             if (StringCache != null)
             {
@@ -2954,8 +2969,8 @@ namespace GTANetwork
                             entity.Delete();
                             continue;
                         }
-                        veh.Position = entity.Position.ToLVector();
-                        veh.Rotation = entity.Rotation.ToLVector();
+                        //veh.Position = entity.Position.ToLVector();
+                        //veh.Rotation = entity.Rotation.ToLVector();
                     }
                 }
                 //else
@@ -3221,6 +3236,33 @@ namespace GTANetwork
                         HandleBulletPacket(nethandle, shooting, position.ToVector());
                     }
                     break;
+                case PacketType.UnoccupiedVehStartStopSync:
+                    {
+                        var veh = msg.ReadInt32();
+                        var startSyncing = msg.ReadBoolean();
+
+                        if (startSyncing)
+                        {
+                            VehicleSyncManager.StartSyncing(veh);
+                        }
+                        else
+                        {
+                            VehicleSyncManager.StopSyncing(veh);
+                        }
+                    }
+                    break;
+                case PacketType.UnoccupiedVehSync:
+                    {
+                        var len = msg.ReadInt32();
+                        var bin = msg.ReadBytes(len);
+                        var data = PacketOptimization.ReadUnoccupiedVehicleSync(bin);
+
+                        if (data != null)
+                        {
+                            HandleUnoccupiedVehicleSync(data);
+                        }
+                    }
+                    break;
                 case PacketType.NpcVehPositionData:
                     {
                         var len = msg.ReadInt32();
@@ -3410,6 +3452,7 @@ namespace GTANetwork
                             var streamItem = NetEntityHandler.NetToStreamedItem(data.NetHandle);
                             if (streamItem != null)
                             {
+                                VehicleSyncManager.StopSyncing(data.NetHandle);
                                 NetEntityHandler.Remove(streamItem);
                                 NetEntityHandler.StreamOut(streamItem);
                             }
@@ -4336,6 +4379,35 @@ namespace GTANetwork
             }
         }
 
+        public void HandleUnoccupiedVehicleSync(VehicleData data)
+        {
+            var car = NetEntityHandler.NetToStreamedItem(data.VehicleHandle.Value) as RemoteVehicle;
+
+            if (car != null)
+            {
+                car.Position = data.Position;
+                car.Rotation = data.Quaternion;
+                car.Health = data.VehicleHealth.Value;
+                car.IsDead = (data.Flag & (int) VehicleDataFlags.VehicleDead) != 0;
+
+                if (car.StreamedIn)
+                {
+                    var ent = NetEntityHandler.NetToEntity(data.VehicleHandle.Value);
+
+                    if (ent != null)
+                    {
+                        ent.PositionNoOffset = data.Position.ToVector();
+                        ent.Quaternion = data.Quaternion.ToVector().ToQuaternion();
+                        new Vehicle(ent.Handle).EngineHealth = car.Health;
+                        if (!ent.IsDead && car.IsDead)
+                        {
+                            new Vehicle(ent.Handle).Explode();
+                        } 
+                    }
+                }
+            }
+        }
+
 	    private void ClearLocalEntities()
 	    {
 			lock (EntityCleanup)
@@ -4442,6 +4514,7 @@ namespace GTANetwork
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
             DownloadManager.FileIntegrity.Clear();
+            VehicleSyncManager.StopAll();
 		    HasFinishedDownloading = false;
 		    ScriptChatVisible = true;
 			DEBUG_STEP = 52;

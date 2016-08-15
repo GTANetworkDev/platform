@@ -209,6 +209,7 @@
     <Compile Include="Subtask.cs" />
     <Compile Include="SyncEventWatcher.cs" />
     <Compile Include="SyncSender.cs" />
+    <Compile Include="UnoccupiedVehicleSync.cs" />
     <Compile Include="WeaponDataProvider.cs" />
     <Compile Include="SyncPed.cs" />
     <Compile Include="Util.cs" />

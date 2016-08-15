@@ -66,6 +66,7 @@ namespace GTANetworkServer
             FileHashes = new Dictionary<string, string>();
             ExportedFunctions = new System.Dynamic.ExpandoObject();
             PickupManager = new PickupManager();
+            UnoccupiedVehicleManager = new UnoccupiedVehicleManager();
 
             MaxPlayers = 32;
             Port = conf.Port;
@@ -147,6 +148,7 @@ namespace GTANetworkServer
 
         public List<Resource> RunningResources;
         public PickupManager PickupManager;
+        public UnoccupiedVehicleManager UnoccupiedVehicleManager;
         public Thread StreamerThread;
 
         private Dictionary<string, string> FileHashes { get; set; }
@@ -1017,6 +1019,31 @@ namespace GTANResource
             }
         }
 
+        private void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
+        {
+            byte[] full = new byte[0];
+
+            full = PacketOptimization.WriteUnOccupiedVehicleSync(fullPacket);
+
+            foreach (var client in exception.Streamer.GetNearClients())
+            {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+
+                NetOutgoingMessage msg = Server.CreateMessage();
+                if (client.Position == null) continue;
+                if (client.Position.DistanceToSquared(fullPacket.Position) < 10000) // 100 m
+                {
+                    msg.Write((byte)PacketType.UnoccupiedVehSync);
+                    msg.Write(full.Length);
+                    msg.Write(full);
+                    Server.SendMessage(msg, client.NetConnection,
+                        NetDeliveryMethod.UnreliableSequenced,
+                        (int)ConnectionChannel.UnoccupiedVeh);
+                }
+            }
+        }
+
         private void LogException(Exception ex, string resourceName)
         {
             Program.Output("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
@@ -1572,6 +1599,64 @@ namespace GTANResource
                                             { }
                                         }
                                         break;
+                                    case PacketType.UnoccupiedVehSync:
+                                        {
+                                            try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var bin = msg.ReadBytes(len);
+
+                                                for (int i = 0; i < bin[0]; i++)
+                                                {
+                                                    var cVehBin = bin.Skip(1 + 43*i).Take(43).ToArray();
+
+                                                    var fullPacket = PacketOptimization.ReadUnoccupiedVehicleSync(cVehBin);
+
+                                                    if (NetEntityHandler.ToDict()
+                                                        .ContainsKey(fullPacket.VehicleHandle.Value))
+                                                    {
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position
+                                                            = fullPacket.Position;
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation
+                                                            = fullPacket.Quaternion;
+
+                                                        if (fullPacket.Flag.HasValue)
+                                                        {
+                                                            var newDead = (fullPacket.Flag &
+                                                                           (byte) VehicleDataFlags.VehicleDead) > 0;
+                                                            if (!((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                                .IsDead && newDead)
+                                                            {
+                                                                lock (RunningResources)
+                                                                    RunningResources.ForEach(
+                                                                        fs => fs.Engines.ForEach(en =>
+                                                                        {
+                                                                            en.InvokeVehicleDeath(new NetHandle(fullPacket.VehicleHandle.Value));
+                                                                        }));
+                                                            }
+
+                                                            ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                                .IsDead = newDead;
+                                                        }
+
+                                                        if (fullPacket.VehicleHealth.HasValue)
+                                                            ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                                .Health = fullPacket.VehicleHealth.Value;
+                                                    }
+
+                                                    ResendUnoccupiedPacket(fullPacket, client);
+
+                                                    UpdateAttachables(fullPacket.VehicleHandle.Value);
+                                                }
+                                            }
+                                            catch (IndexOutOfRangeException)
+                                            {
+                                            }
+                                        }
+                                        break;
                                     case PacketType.NpcVehPositionData:
                                         {
                                             try
@@ -2018,6 +2103,8 @@ namespace GTANResource
             }
 
             PickupManager.Pulse();
+
+            UnoccupiedVehicleManager.Pulse();
 
             lock (RunningResources) RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
             {

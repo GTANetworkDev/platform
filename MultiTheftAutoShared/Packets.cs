@@ -36,13 +36,14 @@ namespace GTANetworkShared
         FileAcceptDeny = 27,
         ServerEvent = 28,
         Ack = 29,
-
         PedPureSync = 30,
         PedLightSync = 31,
         VehiclePureSync = 32,
         VehicleLightSync = 33,
         BasicSync = 34,
         BulletSync = 35,
+        UnoccupiedVehStartStopSync = 36,
+        UnoccupiedVehSync = 37,
     }
 
     public enum ScriptVersion
@@ -140,6 +141,7 @@ namespace GTANetworkShared
         LightSync = 8,
         BasicSync = 9,
         BulletSync = 10,
+        UnoccupiedVeh = 11,
     }
 
     public struct LocalHandle
