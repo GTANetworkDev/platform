@@ -2796,6 +2796,8 @@ namespace GTANetwork
                 Game.Player.IsInvincible = true;
                 Game.Player.Character.HasCollision = false;
 
+                Game.DisableAllControlsThisFrame(0);
+
                 var ent = NetEntityHandler.NetToEntity(SpectatingEntity);
 
                 if (ent != null)
@@ -2831,6 +2833,7 @@ namespace GTANetwork
                 Game.Player.Character.FreezePosition = true;
                 Game.Player.IsInvincible = true;
                 Game.Player.Character.HasCollision = false;
+                Game.DisableAllControlsThisFrame(0);
 
                 if (CurrentSpectatingPlayer.Character == null)
                     Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Position;
