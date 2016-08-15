@@ -255,8 +255,10 @@ namespace GTANetworkServer
                     if (Language == ScriptingEngineLanguage.compiled)
                         _compiledScript.API.invokeResourceStop();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Program.Output("Unhandled exception caught in " + Filename + " from resource " +
+                                   ResourceParent.DirectoryName + "\r\n" + ex.ToString());
                 }
             });
 
@@ -336,19 +338,22 @@ namespace GTANetworkServer
 
         public void InvokePlayerDisconnected(Client client, string reason)
         {
-            bool canContinue = false;
-
-            lock (_mainQueue.SyncRoot)
-            _mainQueue.Enqueue(new Action(() =>
+            Task shutdownTask = new Task(() =>
             {
-                if (Language == ScriptingEngineLanguage.compiled)
-                    _compiledScript.API.invokePlayerDisconnected(client, reason);
+                try
+                {
+                    if (Language == ScriptingEngineLanguage.compiled)
+                        _compiledScript.API.invokePlayerDisconnected(client, reason);
+                }
+                catch (Exception ex)
+                {
+                    Program.Output("Unhandled exception caught in " + Filename + " from resource " +
+                                   ResourceParent.DirectoryName + "\r\n" + ex.ToString());
+                }
+            });
 
-                canContinue = true;
-            }));
-
-            DateTime start = DateTime.Now;
-            while (!canContinue && DateTime.Now.Subtract(start).TotalMilliseconds < 10000) { Thread.Sleep(10); }
+            shutdownTask.Start();
+            shutdownTask.Wait(5000);
         }
 
         public void InvokePlayerDownloadFinished(Client client)
@@ -395,17 +400,24 @@ namespace GTANetworkServer
 
         public bool InvokeChatMessage(Client sender, string cmd)
         {
-            bool? passThroughMessage = null;
-            lock (_mainQueue.SyncRoot)
-            _mainQueue.Enqueue(new Action(() =>
+            Task<bool> shutdownTask = new Task<bool>(() =>
             {
-                if (Language == ScriptingEngineLanguage.compiled)
-                    passThroughMessage = _compiledScript.API.invokeChatMessage(sender, cmd);
-            }));
-            int counter = Environment.TickCount;
-            while (Environment.TickCount - counter < 5000 && !passThroughMessage.HasValue) { }
+                try
+                {
+                    if (Language == ScriptingEngineLanguage.compiled)
+                        return _compiledScript.API.invokeChatMessage(sender, cmd);
+                }
+                catch (Exception ex)
+                {
+                    Program.Output("Unhandled exception caught in " + Filename + " from resource " +
+                                   ResourceParent.DirectoryName + "\r\n" + ex.ToString());
+                }
+                return true;
+            });
 
-            return passThroughMessage ?? true;
+            shutdownTask.Start();
+            shutdownTask.Wait(5000);
+            return shutdownTask.Result;
         }
 
         public void InvokeClientEvent(Client sender, string eventName, object[] args)
