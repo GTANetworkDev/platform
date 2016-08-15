@@ -10,6 +10,11 @@ namespace GTANetworkServer
     public class UnoccupiedVehicleManager
     {
         private const int UPDATE_RATE = 500;
+        private const float SYNC_RANGE = 130;
+        private const float SYNC_RANGE_SQUARED = SYNC_RANGE*SYNC_RANGE;
+        private const float DROPOFF = 30;
+        private const float DROPOFF_SQUARED = DROPOFF*DROPOFF;
+
         private long _lastUpdate;
 
         private Dictionary<int, Client> Syncers = new Dictionary<int, Client>();
@@ -62,7 +67,7 @@ namespace GTANetworkServer
 
             if (Syncers.ContainsKey(handle)) // This vehicle already has a syncer
             {
-                if (Syncers[handle].Position.DistanceToSquared(prop.Position) > 100 || (Syncers[handle].Properties.Dimension != prop.Dimension && prop.Dimension != 0))
+                if (Syncers[handle].Position.DistanceToSquared(prop.Position) > SYNC_RANGE_SQUARED || (Syncers[handle].Properties.Dimension != prop.Dimension && prop.Dimension != 0))
                 {
                     StopSync(Syncers[handle], handle);
 
@@ -100,7 +105,7 @@ namespace GTANetworkServer
 
             Client targetPlayer;
 
-            if ((targetPlayer = players.FirstOrDefault()) != null && targetPlayer.Position.DistanceToSquared(prop.Position) < 70f)
+            if ((targetPlayer = players.FirstOrDefault()) != null && targetPlayer.Position.DistanceToSquared(prop.Position) < SYNC_RANGE_SQUARED - DROPOFF_SQUARED)
             {
                 StartSync(targetPlayer, handle);
             }

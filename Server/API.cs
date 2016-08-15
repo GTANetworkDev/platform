@@ -443,7 +443,7 @@ namespace GTANetworkServer
 
         public void logoutPlayer(Client player)
         {
-            Program.ServerInstance.ACL.LogOutClient(player);
+            Program.ServerInstance.ACL?.LogOutClient(player);
         }
 
         public bool doesPlayerHaveAccessToCommand(Client player, string cmd)

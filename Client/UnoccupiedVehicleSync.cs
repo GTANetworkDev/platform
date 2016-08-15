@@ -81,7 +81,7 @@ namespace GTANetwork
                                     data.Flag = 0;
 
                                 var bin = PacketOptimization.WriteUnOccupiedVehicleSync(data);
-                                //UI.Notify("Written " + bin.Length);
+                                
                                 buffer.AddRange(bin);
                                 vehicleCount++;
                             }
@@ -98,6 +98,9 @@ namespace GTANetwork
                         msg.Write(buffer.ToArray());
 
                         Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, (int) ConnectionChannel.UnoccupiedVeh);
+
+                        Main._bytesSent += buffer.Count;
+                        Main._messagesSent++;
                     }
                 }
             }
