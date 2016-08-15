@@ -17,11 +17,19 @@ namespace GTANetwork
         public void StartSyncing(int vehicle)
         {
             var veh = Main.NetEntityHandler.NetToStreamedItem(vehicle) as RemoteVehicle;
-            
+
             if (veh != null)
-            lock (SyncedVehicles)
             {
-                SyncedVehicles.Add(veh);
+                lock (SyncedVehicles)
+                {
+                    SyncedVehicles.Add(veh);
+                }
+
+                if (veh.StreamedIn)
+                {
+                    var ent = Main.NetEntityHandler.NetToEntity(veh);
+                    if (ent != null) ent.IsInvincible = false;
+                }
             }
         }
 
@@ -35,9 +43,17 @@ namespace GTANetwork
             var veh = Main.NetEntityHandler.NetToStreamedItem(vehicle) as RemoteVehicle;
 
             if (veh != null)
-            lock (SyncedVehicles)
             {
-                SyncedVehicles.Remove(veh);
+                lock (SyncedVehicles)
+                {
+                    SyncedVehicles.Remove(veh);
+                }
+
+                if (veh.StreamedIn)
+                {
+                    var ent = Main.NetEntityHandler.NetToEntity(veh);
+                    if (ent != null) ent.IsInvincible = true;
+                }
             }
         }
 

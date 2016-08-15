@@ -623,7 +623,7 @@ namespace GTANetwork
 				    }
 
 					MainVehicle.EngineRunning = true;
-					//MainVehicle.IsInvincible = true;
+					MainVehicle.IsInvincible = true;
 					Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
 					DEBUG_STEP = 12;
 				}
@@ -684,12 +684,12 @@ namespace GTANetwork
             MainVehicle.EngineHealth = VehicleHealth;
 			if (IsVehDead && !MainVehicle.IsDead)
 			{
-				//MainVehicle.IsInvincible = false;
+				MainVehicle.IsInvincible = false;
 				MainVehicle.Explode();
 			}
 			else if (!IsVehDead && MainVehicle.IsDead)
 			{
-				//MainVehicle.IsInvincible = true;
+				MainVehicle.IsInvincible = true;
 				if (MainVehicle.IsDead)
 					MainVehicle.Repair();
 			}
