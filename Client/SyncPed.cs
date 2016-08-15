@@ -350,6 +350,7 @@ namespace GTANetwork
         private bool _lastFreefall;
         private DateTime _lastRocketshot;
         private int _lastVehicleAimUpdate;
+        private int _scriptFire;
 
         public bool IsCustomScenarioPlaying;
         public bool HasCustomScenarioStarted;
@@ -1405,11 +1406,12 @@ namespace GTANetwork
 			}
 
 			DEBUG_STEP = 28;
-			if (currentTime >= 1f)
+			if (currentTime >= 0.95f)
 			{
 				lastMeleeAnim = null;
 			    meleeSwingDone = false;
 			}
+
 			if (currentTime >= meleeanimationend)
 			{
 				Character.Task.ClearAnimation(lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
@@ -1741,13 +1743,18 @@ namespace GTANetwork
             if (IsOnFire && !isonfire)
             {
                 Character.IsInvincible = false;
-                Function.Call(Hash.START_ENTITY_FIRE, Character);
+                if (_scriptFire != 0) Function.Call(Hash.REMOVE_SCRIPT_FIRE, _scriptFire);
+                _scriptFire = Function.Call<int>(Hash.START_ENTITY_FIRE, Character);
             }
             else if (!IsOnFire && isonfire)
             {
                 Function.Call(Hash.STOP_ENTITY_FIRE, Character);
                 Character.IsInvincible = true;
                 if (Character.IsDead) Function.Call(Hash.RESURRECT_PED, Character);
+
+                if (_scriptFire != 0) Function.Call(Hash.REMOVE_SCRIPT_FIRE, _scriptFire);
+
+                _scriptFire = 0;
             }
 
 		    if (EnteringVehicle && !_lastEnteringVehicle)
