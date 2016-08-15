@@ -65,6 +65,16 @@ namespace GTANetworkShared
                 byteArray.AddRange(GetBytes(data.AimCoords.Y));
                 byteArray.AddRange(GetBytes(data.AimCoords.Z));
             }
+
+            // Are we entering a car?
+            if (CheckBit(data.Flag.Value, PedDataFlags.EnteringVehicle))
+            {
+                // Add the car we are trying to enter
+                byteArray.AddRange(GetBytes(data.VehicleTryingToEnter.Value));
+
+                // Add the seat we are trying to enter
+                byteArray.Add((byte)data.SeatTryingToEnter.Value);
+            }
             
             return byteArray.ToArray();
         }
@@ -121,7 +131,7 @@ namespace GTANetworkShared
             byteArray.Add(data.PedArmor.Value);
 
             // Write the flag
-            byteArray.Add(data.Flag.Value);
+            byteArray.AddRange(GetBytes(data.Flag.Value));
 
             if (CheckBit(data.Flag.Value, VehicleDataFlags.Aiming) ||
                 CheckBit(data.Flag.Value, VehicleDataFlags.HasAimData) ||
@@ -324,6 +334,13 @@ namespace GTANetworkShared
                 data.AimCoords = aimPoint;
             }
 
+            if (CheckBit(data.Flag.Value, PedDataFlags.EnteringVehicle))
+            {
+                data.VehicleTryingToEnter = r.ReadInt32();
+
+                data.SeatTryingToEnter = (sbyte)r.ReadByte();
+            }
+
             return data;
         }
 
@@ -363,7 +380,7 @@ namespace GTANetworkShared
             data.PedArmor = r.ReadByte();
 
             // read flag
-            data.Flag = r.ReadByte();
+            data.Flag = r.ReadInt16();
 
             // If we're shooting/aiming, read gun stuff
             if (CheckBit(data.Flag.Value, VehicleDataFlags.Shooting) ||

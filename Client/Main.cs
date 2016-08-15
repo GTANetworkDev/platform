@@ -1934,6 +1934,17 @@ namespace GTANetwork
                     obj.Flag |= (int)PedDataFlags.IsOnLadder;
                 if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player))
                     obj.Flag |= (int)PedDataFlags.IsVaulting;
+                if (player.IsSubtaskActive(161) || player.IsSubtaskActive(162) || player.IsSubtaskActive(163) ||
+                    player.IsSubtaskActive(164))
+                {
+                    obj.Flag |= (int)PedDataFlags.EnteringVehicle;
+                    obj.VehicleTryingToEnter =
+                        NetEntityHandler.EntityToNet(Function.Call<int>(Hash.GET_VEHICLE_PED_IS_TRYING_TO_ENTER,
+                            Game.Player.Character));
+                    obj.SeatTryingToEnter = (sbyte)
+                        Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER,
+                            Game.Player.Character);
+                }
 
                 obj.Speed = GetPedWalkingSpeed(player);
                 return obj;
@@ -2838,7 +2849,8 @@ namespace GTANetwork
                 if (CurrentSpectatingPlayer.Character == null)
                     Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Position;
                 else if (CurrentSpectatingPlayer.IsInVehicle)
-                    Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position + new Vector3(0, 0, 1.3f);
+                    Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position +
+                                                             new Vector3(0, 0, 1.3f);
                 else
                     Game.Player.Character.PositionNoOffset = CurrentSpectatingPlayer.Character.Position;
 
@@ -4207,6 +4219,7 @@ namespace GTANetwork
             if (fullData.Latency != null) syncPed.Latency = fullData.Latency.Value;
             if (fullData.Steering != null) syncPed.SteeringScale = fullData.Steering.Value;
             if (fullData.Velocity != null) syncPed.Speed = fullData.Velocity.ToVector().Length();
+            
 
             if (fullData.Flag != null)
             {
@@ -4216,6 +4229,7 @@ namespace GTANetwork
                 syncPed.IsShooting = (fullData.Flag.Value & (short)VehicleDataFlags.Shooting) > 0;
                 syncPed.IsAiming = (fullData.Flag.Value & (short)VehicleDataFlags.Aiming) > 0;
                 syncPed.IsInBurnout = (fullData.Flag.Value & (short) VehicleDataFlags.BurnOut) > 0;
+                syncPed.ExitingVehicle = (fullData.Flag.Value & (short) VehicleDataFlags.ExitingVehicle) != 0;
             }
 
             if (fullData.WeaponHash != null)
@@ -4296,6 +4310,20 @@ namespace GTANetwork
                 syncPed.IsOnLadder = (fullPacket.Flag.Value & (int) PedDataFlags.IsOnLadder) > 0;
                 syncPed.IsReloading = (fullPacket.Flag.Value & (int)PedDataFlags.IsReloading) > 0;
                 syncPed.IsVaulting = (fullPacket.Flag.Value & (int)PedDataFlags.IsVaulting) > 0;
+
+                syncPed.EnteringVehicle = (fullPacket.Flag.Value & (int)PedDataFlags.EnteringVehicle) != 0;
+
+                if ((fullPacket.Flag.Value & (int) PedDataFlags.ClosingVehicleDoor) != 0 && syncPed.MainVehicle != null && syncPed.MainVehicle.Model.Hash != (int)VehicleHash.CargoPlane)
+                {
+                    UI.Notify("Closing door " + (syncPed.VehicleSeat + 1));
+                    syncPed.MainVehicle.CloseDoor((VehicleDoor)(syncPed.VehicleSeat + 1), true);
+                }
+
+                if (syncPed.EnteringVehicle)
+                {
+                    syncPed.VehicleNetHandle = fullPacket.VehicleTryingToEnter.Value;
+                    syncPed.VehicleSeat = fullPacket.SeatTryingToEnter.Value;
+                }
             }
 
             if (pure)
@@ -4471,6 +4499,7 @@ namespace GTANetwork
                 _debugSyncPed.Debug = true;
                 _debugSyncPed.StreamedIn = true;
                 _debugSyncPed.Name = "DEBUG";
+                _debugSyncPed.Alpha = 255;
             }
 
             if (Game.IsKeyPressed(Keys.NumPad1) && _debugInterval > 0)
@@ -4575,7 +4604,14 @@ namespace GTANetwork
                         _debugSyncPed.IsReloading = (data.Flag & (int) PedDataFlags.IsReloading) > 0;
                         _debugSyncPed.IsOnLadder = (data.Flag & (int)PedDataFlags.IsOnLadder) > 0;
                         _debugSyncPed.IsVaulting = (data.Flag & (int)PedDataFlags.IsVaulting) > 0;
+                        _debugSyncPed.EnteringVehicle = (data.Flag & (int)PedDataFlags.EnteringVehicle) != 0;
 
+                        if (_debugSyncPed.EnteringVehicle)
+                        {
+                            _debugSyncPed.VehicleNetHandle = data.VehicleTryingToEnter.Value;
+                            _debugSyncPed.VehicleSeat = data.SeatTryingToEnter.Value;
+                        }
+                        
                         _debugSyncPed.StartInterpolation();
                     }
                 }

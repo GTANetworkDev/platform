@@ -34,7 +34,7 @@ namespace GTANetworkShared
         [ProtoMember(14)]
         public float? RPM { get; set; }
         [ProtoMember(15)]
-        public byte? Flag { get; set; }
+        public short? Flag { get; set; }
         [ProtoMember(16)]
         public float? Steering { get; set; }
         [ProtoMember(17)]
@@ -68,6 +68,10 @@ namespace GTANetworkShared
         public int? Flag { get; set; }
         [ProtoMember(13)]
         public Vector3 Velocity { get; set; }
+        [ProtoMember(14)]
+        public int? VehicleTryingToEnter { get; set; }
+        [ProtoMember(15)]
+        public sbyte? SeatTryingToEnter { get; set; }
     }
 
 }

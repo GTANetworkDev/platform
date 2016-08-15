@@ -62,6 +62,11 @@ namespace GTANetwork
         private bool _lastBurnout;
         public float VehicleRPM;
 	    public float SteeringScale;
+        public bool EnteringVehicle;
+        private bool _lastEnteringVehicle;
+
+        public bool ExitingVehicle;
+        private bool _lastExitingVehicle;
 
         public int VehicleSeat;
         public int PedHealth;
@@ -1158,8 +1163,11 @@ namespace GTANetwork
 				{
 					//Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, 999, true, true);
 					//Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
-					Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
-				}
+					//Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
+				    //Character.Weapons.Select((WeaponHash) CurrentWeapon);
+                    Character.Weapons.RemoveAll();
+                    Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
+                }
 
 				if (IsShooting/* || IsAiming*/)
 				{
@@ -1211,6 +1219,17 @@ namespace GTANetwork
 	        {
 	            DisplayCustomAnimation();
 	        }
+
+	        if (ExitingVehicle && !_lastExitingVehicle)
+	        {
+	            Character.Task.ClearAll();
+                Character.Task.ClearSecondary();
+                Character.Task.LeaveVehicle(MainVehicle, false);
+	        }
+
+	        _lastExitingVehicle = ExitingVehicle;
+
+	        if (ExitingVehicle) return true;
             
 	        if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
                 Environment.TickCount - LastUpdateReceived < 10000)
@@ -1235,21 +1254,25 @@ namespace GTANetwork
 					Function.Call(Hash.SET_PED_COMPONENT_VARIATION, Character.Handle, id, PedProps[id], 0, 0);
 				}
 			}
-            */
 			_clothSwitch++;
 			if (_clothSwitch >= 750)
 				_clothSwitch = 0;
+            */
 		}
 
 	    void UpdateCurrentWeapon()
 	    {
             if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
 			{
-				//Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
-				//Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
+                //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
+                //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
 
-				Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
-			}
+                //Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
+                //Character.Weapons.Select((WeaponHash)CurrentWeapon);
+
+                Character.Weapons.RemoveAll();
+                Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
+            }
 
 	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
 	        {
@@ -1760,6 +1783,31 @@ namespace GTANetwork
 				//Character.FreezePosition = true;
 			}
 
+		    if (EnteringVehicle && !_lastEnteringVehicle)
+		    {
+		        Entity targetVeh = null;
+		        if (Debug)
+		        {
+		             targetVeh = World.GetAllVehicles().OrderBy(v => v.Position.DistanceToSquared(Position)).FirstOrDefault();
+		        }
+		        else
+		        {
+		            targetVeh = Main.NetEntityHandler.NetToEntity(VehicleNetHandle);
+		        }
+
+		        if (targetVeh != null)
+		        {
+                    Character.Task.ClearAll();
+                    Character.Task.ClearSecondary();
+		            Character.FreezePosition = false;
+		            Character.Task.EnterVehicle(new Vehicle(targetVeh.Handle), (GTA.VehicleSeat) VehicleSeat);
+		        }
+		    }
+
+		    _lastEnteringVehicle = EnteringVehicle;
+
+		    if (EnteringVehicle) return true;
+
             Character.CanBeTargetted = true;
 
             DEBUG_STEP = 24;
@@ -1985,6 +2033,7 @@ namespace GTANetwork
                 _lastShooting = IsShooting;
                 _lastAiming = IsAiming;
                 _lastVehicle = IsInVehicle;
+                _lastEnteringVehicle = EnteringVehicle;
                 DEBUG_STEP = 35;
             }
             catch (Exception ex)

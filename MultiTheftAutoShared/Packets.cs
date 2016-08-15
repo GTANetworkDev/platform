@@ -103,6 +103,7 @@ namespace GTANetworkShared
         Driver = 1 << 5,
         HasAimData = 1 << 6,
         BurnOut = 1 << 7,
+        ExitingVehicle = 1 << 8,
     }
     
     [Flags]
@@ -122,6 +123,8 @@ namespace GTANetworkShared
         HasAimData = 1 << 11,
         IsOnLadder = 1 << 12,
         IsVaulting = 1 << 13,
+        EnteringVehicle = 1 << 14,
+        ClosingVehicleDoor = 1 << 15,
     }
 
     public enum ConnectionChannel

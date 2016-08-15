@@ -226,6 +226,10 @@ namespace GTANetwork
                 if (ForceAimData)
                     obj.Flag |= (byte) VehicleDataFlags.HasAimData;
 
+                if (player.IsSubtaskActive(167) || player.IsSubtaskActive(168))
+                {
+                    obj.Flag |= (short) VehicleDataFlags.ExitingVehicle;
+                }
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
@@ -334,6 +338,25 @@ namespace GTANetwork
                     obj.Flag |= (int) PedDataFlags.IsOnLadder;
                 if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player) && !player.IsSubtaskActive(ESubtask.USING_LADDER))
                     obj.Flag |= (int)PedDataFlags.IsVaulting;
+
+                if (player.IsSubtaskActive(168))
+                {
+                    obj.Flag |= (int) PedDataFlags.ClosingVehicleDoor;
+                }
+
+                if (player.IsSubtaskActive(161) || player.IsSubtaskActive(162) || player.IsSubtaskActive(163) ||
+                    player.IsSubtaskActive(164))
+                {
+                    obj.Flag |= (int)PedDataFlags.EnteringVehicle;
+
+                    obj.VehicleTryingToEnter =
+                        Main.NetEntityHandler.EntityToNet(Function.Call<int>(Hash.GET_VEHICLE_PED_IS_TRYING_TO_ENTER,
+                            Game.Player.Character));
+                    
+                    obj.SeatTryingToEnter = (sbyte)
+                        Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER,
+                            Game.Player.Character);
+                }
 
                 obj.Speed = Main.GetPedWalkingSpeed(player);
 
