@@ -4315,7 +4315,6 @@ namespace GTANetwork
 
                 if ((fullPacket.Flag.Value & (int) PedDataFlags.ClosingVehicleDoor) != 0 && syncPed.MainVehicle != null && syncPed.MainVehicle.Model.Hash != (int)VehicleHash.CargoPlane)
                 {
-                    UI.Notify("Closing door " + (syncPed.VehicleSeat + 1));
                     syncPed.MainVehicle.CloseDoor((VehicleDoor)(syncPed.VehicleSeat + 1), true);
                 }
 
