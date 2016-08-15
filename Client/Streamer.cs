@@ -406,6 +406,11 @@ namespace GTANetwork
             ClientMap.RemoveAll(item => !(item is RemotePlayer) && item.LocalOnly && item.RemoteHandle == handle);
         }
 
+        public IStreamedItem EntityToStreamedItem(int gameHandle)
+        {
+            return NetToStreamedItem(gameHandle, useGameHandle: true);
+        }
+
         public IStreamedItem NetToStreamedItem(int netId, bool local = false, bool useGameHandle = false)
         {
             if (!useGameHandle)
@@ -601,6 +606,7 @@ namespace GTANetwork
             if (prop.Siren != null) veh.Siren = prop.Siren.Value;
             if (prop.Doors != null) veh.Doors = prop.Doors;
             if (prop.Trailer != null) veh.Trailer = prop.Trailer.Value;
+            if (prop.TraileredBy != null) veh.TraileredBy = prop.TraileredBy.Value;
             if (prop.Tires != null) veh.Tires = prop.Tires;
             if (prop.Livery != null) veh.Livery = prop.Livery.Value;
             if (prop.NumberPlate != null) veh.NumberPlate = prop.NumberPlate;
@@ -1099,6 +1105,7 @@ namespace GTANetwork
                     Siren = prop.Siren,
                     Doors = prop.Doors,
                     Trailer = prop.Trailer,
+                    TraileredBy = prop.TraileredBy,
                     Tires = prop.Tires,
                     Livery = prop.Livery,
                     NumberPlate = prop.NumberPlate,

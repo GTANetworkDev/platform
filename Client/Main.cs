@@ -2977,7 +2977,7 @@ namespace GTANetwork
                             continue;
                         }
 
-                        if (!VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
+                        if (entity.Occupants.Length == 0 && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
                         {
                             if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 3f)
                             {
@@ -3791,6 +3791,13 @@ namespace GTANetwork
                                         var newState = (bool)args[0];
                                         if (!newState)
                                         {
+                                            var vObj =
+                                                NetEntityHandler.NetToStreamedItem((int) args[1]) as RemoteVehicle;
+                                            var tObj = NetEntityHandler.NetToStreamedItem(vObj.Trailer) as RemoteVehicle;
+
+                                            vObj.Trailer = 0;
+                                            if (tObj != null) tObj.TraileredBy = 0;
+
                                             var car = NetEntityHandler.NetToEntity((int)args[1]);
                                             if (car != null)
                                             {
@@ -3818,6 +3825,13 @@ namespace GTANetwork
                                         }
                                         else
                                         {
+                                            var vObj =
+                                                NetEntityHandler.NetToStreamedItem((int)args[1]) as RemoteVehicle;
+                                            var tObj = NetEntityHandler.NetToStreamedItem((int)args[2]) as RemoteVehicle;
+
+                                            vObj.Trailer = (int)args[2];
+                                            if (tObj != null) tObj.TraileredBy = (int)args[1];
+
                                             var car = NetEntityHandler.NetToEntity((int)args[1]);
                                             var trailer = NetEntityHandler.NetToEntity((int)args[2]);
                                             if (car != null && trailer != null)

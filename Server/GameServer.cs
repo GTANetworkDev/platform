@@ -2170,12 +2170,25 @@ namespace GTANResource
                     if (!newState)
                     {
                         if (NetEntityHandler.ToDict().ContainsKey((int) args[1]))
+                        {
+                            if (
+                                NetEntityHandler.ToDict()
+                                    .ContainsKey((NetEntityHandler.NetToProp<VehicleProperties>((int) args[1])).Trailer))
+                                ((VehicleProperties)
+                                    NetEntityHandler.ToDict()[
+                                        NetEntityHandler.NetToProp<VehicleProperties>((int) args[1]).Trailer])
+                                    .TraileredBy = 0;
+
                             ((VehicleProperties) NetEntityHandler.ToDict()[(int) args[1]]).Trailer = 0;
+                        }
                     }
                     else
                     {
                         if (NetEntityHandler.ToDict().ContainsKey((int)args[1]))
                             ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[1]]).Trailer = (int)args[2];
+
+                        if (NetEntityHandler.ToDict().ContainsKey((int)args[2]))
+                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[2]]).TraileredBy = (int)args[1];
                     }
                     break;
                 }

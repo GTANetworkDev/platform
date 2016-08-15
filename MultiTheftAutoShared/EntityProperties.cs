@@ -157,6 +157,9 @@ namespace GTANetworkShared
 
         [ProtoMember(12)]
         public short VehicleComponents { get; set; }
+
+        [ProtoMember(13)]
+        public int TraileredBy { get; set; }
     }
 
     [ProtoContract]
@@ -416,8 +419,12 @@ namespace GTANetworkShared
 
         [ProtoMember(11)]
         public string NumberPlate { get; set; }
+
         [ProtoMember(12)]
         public short? VehicleComponents { get; set; }
+
+        [ProtoMember(13)]
+        public int? TraileredBy { get; set; }
     }
 
     [ProtoContract]

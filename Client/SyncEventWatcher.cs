@@ -95,11 +95,12 @@ namespace GTANetwork
 
             if (player.IsInVehicle() && Util.GetResponsiblePed(player.CurrentVehicle).Handle == Game.Player.Character.Handle)
             {
+                int carNetHandle = Main.NetEntityHandler.EntityToNet(car.Handle);
+
                 var lg = Function.Call<int>(Hash._GET_VEHICLE_LANDING_GEAR, car);
                 if (lg != _lastLandingGear)
                 {
-                    if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
-                        SendSyncEvent(SyncEventType.LandingGearChange, Main.NetEntityHandler.EntityToNet(car.Handle), lg);
+                    SendSyncEvent(SyncEventType.LandingGearChange, carNetHandle, lg);
                 }
                 _lastLandingGear = lg;
 
@@ -108,23 +109,20 @@ namespace GTANetwork
                     bool isOpen = false;
                     if ((isOpen = (Function.Call<float>(Hash.GET_VEHICLE_DOOR_ANGLE_RATIO, car.Handle, i) > 0.5f)) != _doors[i])
                     {
-                        if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
-                            SendSyncEvent(SyncEventType.DoorStateChange, Main.NetEntityHandler.EntityToNet(car.Handle), i, isOpen);
+                            SendSyncEvent(SyncEventType.DoorStateChange, carNetHandle, i, isOpen);
                     }
                     _doors[i] = isOpen;
                 }
 
                 if (car.HighBeamsOn != _highBeams)
                 {
-                    if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
-                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.Highbeams, car.HighBeamsOn);
+                    SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int)Lights.Highbeams, car.HighBeamsOn);
                 }
                 _highBeams = car.HighBeamsOn;
 
                 if (car.LightsOn != _lights)
                 {
-                    if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
-                        SendSyncEvent(SyncEventType.BooleanLights, Main.NetEntityHandler.EntityToNet(car.Handle), (int)Lights.NormalLights, car.LightsOn);
+                    SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int)Lights.NormalLights, car.LightsOn);
                 }
                 _lights = car.LightsOn;
 
@@ -145,13 +143,27 @@ namespace GTANetwork
                     if (trailer == null)
                     {
                         if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0)
-                            SendSyncEvent(SyncEventType.TrailerDeTach, false, Main.NetEntityHandler.EntityToNet(car.Handle));
+                        {
+                            SendSyncEvent(SyncEventType.TrailerDeTach, false, carNetHandle);
+
+                            ((RemoteVehicle) Main.NetEntityHandler.NetToStreamedItem(carNetHandle)).Trailer = 0;
+                            if (_lastTrailer != null)
+                            {
+                                var trailerH = (RemoteVehicle)Main.NetEntityHandler.EntityToStreamedItem(_lastTrailer.Handle);
+                                trailerH.TraileredBy = 0;
+                            }
+                        }
                     }
                     else
                     {
-                        if (Main.NetEntityHandler.EntityToNet(car.Handle) != 0 && Main.NetEntityHandler.EntityToNet(trailer.Handle) != 0)
-                        SendSyncEvent(SyncEventType.TrailerDeTach, true, Main.NetEntityHandler.EntityToNet(car.Handle),
+                        if (Main.NetEntityHandler.EntityToNet(trailer.Handle) != 0)
+                        {
+                            SendSyncEvent(SyncEventType.TrailerDeTach, true, carNetHandle,
                             Main.NetEntityHandler.EntityToNet(trailer.Handle));
+
+                            var trailerH = (RemoteVehicle)Main.NetEntityHandler.EntityToStreamedItem(trailer.Handle);
+                            trailerH.TraileredBy = carNetHandle;
+                        }
                     }
                 }
 
