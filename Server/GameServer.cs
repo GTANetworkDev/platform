@@ -1032,7 +1032,7 @@ namespace GTANResource
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (client.Position == null) continue;
-                if (client.Position.DistanceToSquared(fullPacket.Position) < 10000) // 100 m
+                if (client.Position.DistanceToSquared(fullPacket.Position) < 250000) // 500 m
                 {
                     msg.Write((byte)PacketType.UnoccupiedVehSync);
                     msg.Write(full.Length);
@@ -1218,6 +1218,8 @@ namespace GTANResource
                                                 {
                                                     en.InvokePlayerDisconnected(client, reason);
                                                 }));
+
+                                        UnoccupiedVehicleManager.UnsyncAllFrom(client);
 
                                         lock (Clients)
                                         {

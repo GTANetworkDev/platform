@@ -2591,11 +2591,11 @@ namespace GTANetwork
 
             if (playerCar != _lastPlayerCar)
             {
-                if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = true;
+                if (_lastPlayerCar != null) _lastPlayerCar.IsInvincible = false;
                 if (playerCar != null)
                 {
                     LastCarEnter = DateTime.Now;
-                    playerCar.IsInvincible = false;
+                    //playerCar.IsInvincible = false;
                     if (!NetEntityHandler.ContainsLocalHandle(playerCar.Handle))
                     {
                         playerCar.Delete();
@@ -2969,6 +2969,16 @@ namespace GTANetwork
                             entity.Delete();
                             continue;
                         }
+
+                        if (!VehicleSyncManager.IsSyncing(veh))
+                        {
+                            if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 3f)
+                            {
+                                entity.PositionNoOffset = veh.Position.ToVector();
+                                entity.Quaternion = veh.Rotation.ToVector().ToQuaternion();
+                            }
+                        }
+
                         //veh.Position = entity.Position.ToLVector();
                         //veh.Rotation = entity.Rotation.ToLVector();
                     }

@@ -1838,7 +1838,7 @@ namespace GTANetwork
             if (veh == null || !veh.Exists()) return;
 
             veh.Rotation = data.Rotation.ToVector();
-            veh.IsInvincible = true;
+            //veh.IsInvincible = true;
             data.LocalHandle = veh.Handle;
             veh.Livery = data.Livery;
 
@@ -1924,11 +1924,11 @@ namespace GTANetwork
 
             if (data.IsDead)
             {
-                veh.IsInvincible = false;
+                //veh.IsInvincible = false;
                 Function.Call(Hash.EXPLODE_VEHICLE, veh, false, true);
             }
-            else
-                veh.IsInvincible = true;
+            //else
+                //veh.IsInvincible = true;
 
             if (data.Alpha < 255) veh.Alpha = (int)data.Alpha;
             LogManager.DebugLog("ALPHA: " + veh.Alpha);

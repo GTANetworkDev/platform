@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GTA;
+using GTA.Native;
 using GTANetworkShared;
 using Lidgren.Network;
 
@@ -22,6 +23,11 @@ namespace GTANetwork
             {
                 SyncedVehicles.Add(veh);
             }
+        }
+
+        public bool IsSyncing(RemoteVehicle veh)
+        {
+            return SyncedVehicles.Contains(veh);
         }
 
         public void StopSyncing(int vehicle)
@@ -45,6 +51,22 @@ namespace GTANetwork
 
         public void Pulse()
         {
+            foreach (var v in SyncedVehicles)
+            {
+                var pos = Game.Player.Character.Position;
+
+                Function.Call(Hash.DRAW_LINE, pos.X, pos.Y, pos.Z, v.Position.X, v.Position.Y, v.Position.Z, 0, 0, 255, 255);
+                UI.ShowSubtitle("Drawing line");
+
+                if (Main.NetEntityHandler.NetToEntity(v) != null)
+                {
+                    var p = Main.NetEntityHandler.NetToEntity(v);
+
+                    Function.Call(Hash.DRAW_LINE, pos.X, pos.Y, pos.Z, p.Position.X, p.Position.Y, p.Position.Z, 255,
+                        0, 0, 255);
+                }
+            }
+
             if (Util.TickCount - _lastUpdate > UNOCCUPIED_VEH_RATE)
             {
                 _lastUpdate = Util.TickCount;
@@ -61,9 +83,9 @@ namespace GTANetwork
                             var ent = Main.NetEntityHandler.NetToEntity(vehicle);
 
                             if (ent != null &&
-                                (ent.Position.DistanceToSquared(vehicle.Position.ToVector()) > 1f ||
-                                 ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 1f ||
-                                 Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f))
+                                (ent.Position.DistanceToSquared(vehicle.Position.ToVector()) > 0.5f ||
+                                 ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 0.5f ||
+                                 Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 5f))
                             {
                                 vehicle.Position = ent.Position.ToLVector();
                                 vehicle.Rotation = ent.Rotation.ToLVector();

@@ -617,7 +617,7 @@ namespace GTANetworkShared
 
             // Read is dead
             if (r.ReadBoolean())
-                data.Flag |= (short) VehicleDataFlags.VehicleDead;
+                data.Flag = (short) VehicleDataFlags.VehicleDead;
             else
                 data.Flag = 0;
 

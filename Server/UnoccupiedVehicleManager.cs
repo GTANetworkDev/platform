@@ -33,6 +33,19 @@ namespace GTANetworkServer
         {
             return Syncers.Get(handle);
         }
+
+        public void UnsyncAllFrom(Client player)
+        {
+            for (int i = Syncers.Count - 1; i >= 0; i--)
+            {
+                var el = Syncers.ElementAt(i);
+
+                if (el.Value == player)
+                {
+                    Syncers.Remove(el.Key);
+                }
+            }
+        }
         
         public static bool IsVehicleUnoccupied(NetHandle vehicle)
         {
