@@ -3280,6 +3280,18 @@ namespace GTANetwork
                         }
                     }
                     break;
+                case PacketType.BasicUnoccupiedVehSync:
+                    {
+                        var len = msg.ReadInt32();
+                        var bin = msg.ReadBytes(len);
+                        var data = PacketOptimization.ReadBasicUnoccupiedVehicleSync(bin);
+
+                        if (data != null)
+                        {
+                            HandleUnoccupiedVehicleSync(data);
+                        }
+                    }
+                    break;
                 case PacketType.NpcVehPositionData:
                     {
                         var len = msg.ReadInt32();

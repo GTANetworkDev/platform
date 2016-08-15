@@ -1022,8 +1022,10 @@ namespace GTANResource
         private void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
         {
             byte[] full = new byte[0];
+            byte[] basic = new byte[0];
 
             full = PacketOptimization.WriteUnOccupiedVehicleSync(fullPacket);
+            basic = PacketOptimization.WriteBasicUnOccupiedVehicleSync(fullPacket);
 
             foreach (var client in exception.Streamer.GetNearClients())
             {
@@ -1041,6 +1043,27 @@ namespace GTANResource
                         NetDeliveryMethod.UnreliableSequenced,
                         (int)ConnectionChannel.UnoccupiedVeh);
                 }
+                else
+                {
+                    msg.Write((byte)PacketType.BasicUnoccupiedVehSync);
+                    msg.Write(basic.Length);
+                    msg.Write(basic);
+                    Server.SendMessage(msg, client.NetConnection,
+                        NetDeliveryMethod.UnreliableSequenced,
+                        (int)ConnectionChannel.UnoccupiedVeh);
+                }
+            }
+
+            foreach (var client in exception.Streamer.GetFarClients())
+            {
+                NetOutgoingMessage msg = Server.CreateMessage();
+
+                msg.Write((byte)PacketType.BasicUnoccupiedVehSync);
+                msg.Write(basic.Length);
+                msg.Write(basic);
+                Server.SendMessage(msg, client.NetConnection,
+                    NetDeliveryMethod.UnreliableSequenced,
+                    (int)ConnectionChannel.UnoccupiedVeh);
             }
         }
 
