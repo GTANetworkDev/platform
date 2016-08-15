@@ -839,7 +839,14 @@ namespace GTANetwork
                         forceMultiplier = 1;
                     }
 
-                    MainVehicle.Velocity = VehicleVelocity + forceMultiplier*(newPos - MainVehicle.Position);
+                    if (Game.Player.Character.IsInRangeOf(newPos, physicsRange))
+                    {
+                        MainVehicle.Velocity = VehicleVelocity + forceMultiplier*(newPos - MainVehicle.Position);
+                    }
+                    else
+                    {
+                        MainVehicle.PositionNoOffset = newPos;
+                    }
                 }
                 else
                 {
@@ -1881,13 +1888,15 @@ namespace GTANetwork
         private bool _initialized;
         private bool _isReloading;
 
+        private const float hRange = 1000f; // 1km
+        private const float physicsRange = 175f;
+
         public void DisplayLocally()
         {
             try
             {
                 if (IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
-                float hRange = IsInVehicle ? 175f : 200f;
                 var gPos = IsInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
@@ -2064,10 +2073,17 @@ namespace GTANetwork
 
             if (OnFootSpeed > 0 || IsAnimal(ModelHash))
             {
-                if (Main.OnFootLagCompensation)
-                    Character.Velocity = PedVelocity + 10 * (newPos - Character.Position);
+                if (Game.Player.Character.IsInRangeOf(newPos, physicsRange))
+                {
+                    if (Main.OnFootLagCompensation)
+                        Character.Velocity = PedVelocity + 10*(newPos - Character.Position);
+                    else
+                        Character.Velocity = velTarget + 2*(newPos - Character.Position);
+                }
                 else
-                    Character.Velocity = velTarget + 2 * (newPos - Character.Position);
+                {
+                    Character.PositionNoOffset = newPos;
+                }
 
 
                 _stopTime = DateTime.Now;

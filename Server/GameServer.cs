@@ -839,7 +839,7 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f) // 200f
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1km
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.Value);
 
@@ -911,7 +911,7 @@ namespace GTANResource
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
-                if (client.Position.DistanceToSquared(exception.Position) > 40000f) continue;
+                if (client.Position.DistanceToSquared(exception.Position) > 1000000f) continue; // 1km
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 msg.Write((byte)PacketType.BulletSync);
@@ -955,7 +955,7 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f) // 200f
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1 km
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.Value);
 
