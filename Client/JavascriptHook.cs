@@ -616,7 +616,7 @@ namespace GTANetwork
             Main.ResetEntityProperty(entity, key);
         }
 
-        public bool hasEntityProperty(LocalHandle entity, string key)
+        public bool hasEntityData(LocalHandle entity, string key)
         {
             return Main.HasEntityProperty(entity, key);
         }
@@ -636,7 +636,7 @@ namespace GTANetwork
             Main.ResetWorldData(key);
         }
 
-        public bool hasWorldProperty(string key)
+        public bool hasWorldData(string key)
         {
             return Main.HasWorldData(key);
         }
