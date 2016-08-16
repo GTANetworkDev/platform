@@ -198,6 +198,7 @@ namespace GTANetwork
             _config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             _config.Port = 8888;
             _config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
+            _config.ConnectionTimeout = 30f; // 30 second timeout
 
 
             #region Menu Set up
