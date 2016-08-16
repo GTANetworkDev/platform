@@ -2576,6 +2576,7 @@ namespace GTANetwork
             DEBUG_STEP = 10;
 
             int netPlayerCar = 0;
+            RemoteVehicle cc = null;
             if (playerCar != null && (netPlayerCar = NetEntityHandler.EntityToNet(playerCar.Handle)) != 0)
             {
                 var item = NetEntityHandler.NetToStreamedItem(netPlayerCar) as RemoteVehicle;
@@ -2587,20 +2588,21 @@ namespace GTANetwork
                     item.Health = playerCar.EngineHealth;
                     item.IsDead = playerCar.IsDead;
                 }
+
+                cc = item;
             }
 
-            var cc = NetEntityHandler.EntityToStreamedItem(playerCar.Handle) as RemoteVehicle;
 
             if (playerCar != _lastPlayerCar)
             {
                 if (_lastPlayerCar != null)
                 {
-                    var c = NetEntityHandler.NetToStreamedItem(NetEntityHandler.EntityToNet(_lastPlayerCar.Handle)) as
+                    var c = NetEntityHandler.EntityToStreamedItem(_lastPlayerCar.Handle) as
                                 RemoteVehicle;
 
                     if (VehicleSyncManager.IsSyncing(c))
                     {
-                        _lastPlayerCar.IsInvincible = c.IsInvincible;
+                        _lastPlayerCar.IsInvincible = c?.IsInvincible ?? false;
                     }
                     else
                     {
@@ -2610,7 +2612,6 @@ namespace GTANetwork
 
                 if (playerCar != null)
                 {
-
                     if (!NetEntityHandler.ContainsLocalHandle(playerCar.Handle))
                     {
                         playerCar.Delete();
@@ -2998,7 +2999,7 @@ namespace GTANetwork
                             continue;
                         }
 
-                        if (Util.IsVehicleEmpty(entity) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
+                        if (Util.IsVehicleEmpty(entity) && !VehicleSyncManager.IsInterpolating(entity.Handle) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
                         {
                             if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 3f)
                             {
@@ -4450,8 +4451,6 @@ namespace GTANetwork
 
             if (car != null)
             {
-                car.Position = data.Position;
-                car.Rotation = data.Quaternion;
                 car.Health = data.VehicleHealth.Value;
                 car.IsDead = (data.Flag & (int) VehicleDataFlags.VehicleDead) != 0;
 
@@ -4461,8 +4460,16 @@ namespace GTANetwork
 
                     if (ent != null)
                     {
-                        ent.PositionNoOffset = data.Position.ToVector();
-                        ent.Quaternion = data.Quaternion.ToVector().ToQuaternion();
+                        if (data.Velocity != null)
+                        {
+                            VehicleSyncManager.Interpolate(data.VehicleHandle.Value, ent.Handle, data.Position.ToVector(), data.Velocity, data.Quaternion.ToVector());
+                        }
+                        else
+                        {
+                            car.Position = data.Position;
+                            car.Rotation = data.Quaternion;
+                        }
+
                         new Vehicle(ent.Handle).EngineHealth = car.Health;
                         if (!ent.IsDead && car.IsDead)
                         {
@@ -4470,6 +4477,11 @@ namespace GTANetwork
                             new Vehicle(ent.Handle).Explode();
                         } 
                     }
+                }
+                else
+                {
+                    car.Position = data.Position;
+                    car.Rotation = data.Quaternion;
                 }
             }
         }

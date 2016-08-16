@@ -1178,7 +1178,15 @@ namespace GTANetwork
 	        {
 	            Character.Task.ClearAll();
                 Character.Task.ClearSecondary();
-                Character.Task.LeaveVehicle(MainVehicle, false);
+
+	            if (Speed < 1f)
+	            {
+	                Character.Task.LeaveVehicle(MainVehicle, false);
+	            }
+	            else
+	            {
+	                Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
+	            }
 	        }
 
 	        _lastExitingVehicle = ExitingVehicle;
