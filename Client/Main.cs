@@ -2977,7 +2977,7 @@ namespace GTANetwork
                             continue;
                         }
 
-                        if (entity.Occupants.Length == 0 && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
+                        if (Util.IsVehicleEmpty(entity) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
                         {
                             if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 3f)
                             {
