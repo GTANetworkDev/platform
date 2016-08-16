@@ -141,7 +141,6 @@ namespace GTANetwork
                                         tyreFlag |= (byte)(1 << i);
                                 }
 
-                                UI.ShowSubtitle("Sending tyres: " + tyreFlag, 400);
                                 data.PlayerHealth = tyreFlag;
 
                                 var bin = PacketOptimization.WriteUnOccupiedVehicleSync(data);
