@@ -2608,6 +2608,12 @@ namespace GTANetwork
                     {
                         _lastPlayerCar.IsInvincible = true;
                     }
+
+                    if (c != null)
+                    {
+                        Function.Call(Hash.SET_VEHICLE_ENGINE_ON, _lastPlayerCar,
+                            !PacketOptimization.CheckBit(c.Flag, EntityFlag.EngineOff), true, true);
+                    }
                 }
 
                 if (playerCar != null)

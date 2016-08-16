@@ -1996,7 +1996,6 @@ namespace GTANetwork
             {
                 if ((data.Doors & 1 << i) != 0)
                     veh.OpenDoor((VehicleDoor)i, false, true);
-                else veh.CloseDoor((VehicleDoor)i, true);
             }
 
             for (int i = 0; i < 8; i++)
