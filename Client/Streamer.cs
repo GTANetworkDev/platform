@@ -1845,7 +1845,6 @@ namespace GTANetwork
             if (veh == null || !veh.Exists()) return;
 
             veh.Rotation = data.Rotation.ToVector();
-            veh.IsInvincible = true;
             data.LocalHandle = veh.Handle;
             veh.Livery = data.Livery;
 
