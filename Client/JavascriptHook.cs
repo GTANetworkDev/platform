@@ -734,7 +734,9 @@ namespace GTANetwork
 
         public void setPlayerInvincible(bool invinc)
         {
-            Game.Player.IsInvincible = invinc;
+            var remotePlayer = Main.NetEntityHandler.EntityToStreamedItem(Game.Player.Character.Handle) as RemotePlayer;
+            if (remotePlayer != null)
+                remotePlayer.IsInvincible = invinc;
         }
 
         public void setPlayerWantedLevel(int wantedLevel)

@@ -2278,7 +2278,8 @@ namespace GTANetwork
                 CurrentWeapon == unchecked((int) WeaponHash.AssaultShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.BullpupShotgun) ||
                 CurrentWeapon == unchecked((int) WeaponHash.SawnOffShotgun) ||
-                CurrentWeapon == unchecked((int)WeaponHash.GrenadeLauncher))
+                CurrentWeapon == unchecked((int)WeaponHash.GrenadeLauncher) ||
+                CurrentWeapon == unchecked((int)WeaponHash.Railgun))
                 return "move_weapon@rifle@generic";
             return null;
         }

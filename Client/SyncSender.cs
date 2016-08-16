@@ -173,6 +173,7 @@ namespace GTANetwork
 
         private static bool _lastShooting;
         private static bool _lastBullet;
+        private static DateTime _lastShot;
 
         public SyncCollector()
         {
@@ -409,6 +410,9 @@ namespace GTANetwork
                 if (sendShootingPacket && !_lastShooting)
                 {
                     _lastShooting = true;
+
+                    _lastShot = DateTime.Now;
+
                     var bin = PacketOptimization.WriteBulletSync(0, true, aimCoord.ToLVector());
 
                     var msg = Main.Client.CreateMessage();
@@ -423,7 +427,7 @@ namespace GTANetwork
                     Main._messagesSent++;
                 }
 
-                if (!sendShootingPacket && _lastShooting)
+                else if (!sendShootingPacket && _lastShooting && DateTime.Now.Subtract(_lastShot).TotalMilliseconds > 50)
                 {
                     _lastShooting = false;
                     var bin = PacketOptimization.WriteBulletSync(0, false, aimCoord.ToLVector());
