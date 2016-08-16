@@ -1234,7 +1234,8 @@ namespace GTANetwork
 
                 Character.Weapons.RemoveAll();
                 Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
-            }
+			    Character.Weapons.Select((WeaponHash) CurrentWeapon);
+			}
 
 	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
 	        {

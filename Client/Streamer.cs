@@ -90,7 +90,9 @@ namespace GTANetwork
                 System.Threading.Thread.Sleep(1000);
             }
         }
-        
+
+        public static bool StreamInProgress { private set; get; }
+
         void StreamerTick(object sender, System.EventArgs e)
         {
             _playerPosition = Game.Player.Character.Position;
@@ -103,6 +105,8 @@ namespace GTANetwork
                 Function.Call((Hash)0x6C188BE134E074AA, "Streaming");
                 Function.Call(Hash._0xBD12F8228410D9B4, 5);
                 spinner = true;
+
+                StreamInProgress = true;
             }
             
             lock (_itemsToStreamOut)
@@ -132,6 +136,8 @@ namespace GTANetwork
             }
             if (spinner)
                 Function.Call((Hash)0x10D373323E5B9C0D);
+
+            StreamInProgress = false;
         }
     }
 
@@ -332,15 +338,10 @@ namespace GTANetwork
             // Uncomment to debug stuff
             /*
             
-            foreach (var p in ClientMap)
+            foreach (var p in ClientMap.OfType<RemoteVehicle>())
             {
                 if (p == null || p.Position == null) continue;
-                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nAttached: " + (p.AttachedTo != null);
-
-                if (p.AttachedTo != null)
-                {
-                    text += "\nTo:" + p.AttachedTo.NetHandle;
-                }
+                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nTyres: " + p.Tires;
 
                 DrawLabel3D(text, p.Position.ToVector(), 100f, 0.4f);
             }
@@ -609,10 +610,10 @@ namespace GTANetwork
             if (prop.IsDead != null) veh.IsDead = prop.IsDead.Value;
             if (prop.Mods != null) veh.Mods = prop.Mods;
             if (prop.Siren != null) veh.Siren = prop.Siren.Value;
-            if (prop.Doors != null) veh.Doors = prop.Doors;
+            if (prop.Doors != null) veh.Doors = prop.Doors.Value;
             if (prop.Trailer != null) veh.Trailer = prop.Trailer.Value;
             if (prop.TraileredBy != null) veh.TraileredBy = prop.TraileredBy.Value;
-            if (prop.Tires != null) veh.Tires = prop.Tires;
+            if (prop.Tires != null) veh.Tires = prop.Tires.Value;
             if (prop.Livery != null) veh.Livery = prop.Livery.Value;
             if (prop.NumberPlate != null) veh.NumberPlate = prop.NumberPlate;
             if (prop.Position != null) veh.Position = prop.Position;
@@ -1864,7 +1865,11 @@ namespace GTANetwork
             Function.Call((Hash)0x068F64F2470F9656, false);
             LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null));
 
-            if (veh == null || !veh.Exists()) return;
+            if (veh == null || !veh.Exists())
+            {
+                LogManager.LogException(new Exception("Vehicle was null"), "StreamInVehicle");
+                return;
+            }
 
             veh.Rotation = data.Rotation.ToVector();
             data.LocalHandle = veh.Handle;
@@ -1883,29 +1888,12 @@ namespace GTANetwork
             else
                 veh.SecondaryColor = (VehicleColor)data.SecondaryColor;
 
-
-
             veh.PearlescentColor = (VehicleColor)0;
             veh.RimColor = (VehicleColor)0;
             veh.EngineHealth = data.Health;
             veh.SirenActive = data.Siren;
             veh.NumberPlate = data.NumberPlate;
-
-            for (int i = 0; i < data.Doors.Length; i++)
-            {
-                if (data.Doors[i])
-                    veh.OpenDoor((VehicleDoor)i, false, true);
-                else veh.CloseDoor((VehicleDoor)i, true);
-            }
-
-            for (int i = 0; i < data.Tires.Length; i++)
-            {
-                if (data.Tires[i])
-                {
-                    veh.BurstTire(i);
-                }
-            }
-
+            
             if (data.Trailer != 0)
             {
                 var trailerId = NetToStreamedItem(data.Trailer);
@@ -2002,6 +1990,23 @@ namespace GTANetwork
                 veh.SearchLightOn = false;
                 veh.TaxiLightOn = false;
             }
+
+
+            for (int i = 0; i < 8; i++)
+            {
+                if ((data.Doors & 1 << i) != 0)
+                    veh.OpenDoor((VehicleDoor)i, false, true);
+                else veh.CloseDoor((VehicleDoor)i, true);
+            }
+
+            for (int i = 0; i < 8; i++)
+            {
+                if ((data.Tires & 1 << i) != 0)
+                {
+                    veh.BurstTire(i);
+                }
+            }
+
 
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;

@@ -111,11 +111,16 @@ namespace GTANetwork
                             if (ent != null &&
                                 (ent.Position.DistanceToSquared(vehicle.Position.ToVector()) > 6f ||
                                  ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 6f ||
-                                 Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f))
+                                 Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f ||
+                                 Util.BuildTyreFlag(new Vehicle(ent.Handle)) != vehicle.Tires))
                             {
+                                var veh = new Vehicle(ent.Handle);
+
                                 vehicle.Position = ent.Position.ToLVector();
                                 vehicle.Rotation = ent.Rotation.ToLVector();
-                                vehicle.Health = new Vehicle(ent.Handle).EngineHealth;
+                                vehicle.Health = veh.EngineHealth;
+                                vehicle.Tires = (byte)Util.BuildTyreFlag(veh);
+
 
                                 var data = new VehicleData();
                                 data.VehicleHandle = vehicle.RemoteHandle;
@@ -127,6 +132,17 @@ namespace GTANetwork
                                     data.Flag = (short) VehicleDataFlags.VehicleDead;
                                 else
                                     data.Flag = 0;
+
+                                byte tyreFlag = 0;
+
+                                for (int i = 0; i < 8; i++)
+                                {
+                                    if (veh.IsTireBurst(i))
+                                        tyreFlag |= (byte)(1 << i);
+                                }
+
+                                UI.ShowSubtitle("Sending tyres: " + tyreFlag, 400);
+                                data.PlayerHealth = tyreFlag;
 
                                 var bin = PacketOptimization.WriteUnOccupiedVehicleSync(data);
                                 
@@ -162,7 +178,6 @@ namespace GTANetwork
                 if (pair.Value.HasFinished)
                     Interpolations.Remove(pair.Key);
             }
-
         }
     }
 

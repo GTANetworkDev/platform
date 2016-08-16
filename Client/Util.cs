@@ -43,6 +43,32 @@ namespace GTANetwork
             get { return DateTime.Now.Ticks / 10000; }
         }
 
+        public static int BuildTyreFlag(Vehicle veh)
+        {
+            byte tyreFlag = 0;
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (veh.IsTireBurst(i))
+                    tyreFlag |= (byte)(1 << i);
+            }
+
+            return tyreFlag;
+        }
+
+        public static bool[] BuildTyreArray(Vehicle veh)
+        {
+            var flag = BuildTyreFlag(veh);
+            bool[] arr = new bool[8];
+
+            for (int i = 0; i < arr.Length; i++)
+            {
+                arr[i] = (flag & (1 << i)) != 0;
+            }
+
+            return arr;
+        }
+
         public static float Unlerp(double left, double center, double right)
         {
             return (float)((center - left) / (right - left));

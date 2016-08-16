@@ -301,6 +301,9 @@ namespace GTANetworkShared
             {
                 byteArray.Add(0x00);
             }
+
+            // Write the tyre state, using the playerhealth in VehicleData
+            byteArray.Add(data.PlayerHealth.Value);
             
             return byteArray.ToArray();
         }
@@ -331,6 +334,9 @@ namespace GTANetworkShared
             {
                 byteArray.Add(0x00);
             }
+
+            // Write the tyre state, using the playerhealth in VehicleData
+            byteArray.Add(data.PlayerHealth.Value);
 
             return byteArray.ToArray();
         }
@@ -621,6 +627,9 @@ namespace GTANetworkShared
             else
                 data.Flag = 0;
 
+            // Read tyre states
+            data.PlayerHealth = r.ReadByte();
+
             return data;
         }
 
@@ -653,6 +662,9 @@ namespace GTANetworkShared
                 data.Flag |= (short) VehicleDataFlags.VehicleDead;
             else
                 data.Flag = 0;
+
+            // Read tyre states.
+            data.PlayerHealth = r.ReadByte();
 
             return data;
         }

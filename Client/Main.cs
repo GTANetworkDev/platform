@@ -2449,7 +2449,7 @@ namespace GTANetwork
                 //}
                 //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
-
+            
             DEBUG_STEP = 4;
             if (_debugWindow)
             {
@@ -3794,6 +3794,15 @@ namespace GTANetwork
                                             new Vehicle(veh.Handle).OpenDoor((VehicleDoor)doorId, false, true);
                                         else
                                             new Vehicle(veh.Handle).CloseDoor((VehicleDoor)doorId, true);
+
+                                        var item = NetEntityHandler.NetToStreamedItem((int)args[0]) as RemoteVehicle;
+                                        if (item != null)
+                                        {
+                                            if (newFloat)
+                                                item.Tires |= (byte)(1 << doorId);
+                                            else
+                                                item.Tires &= (byte)~(1 << doorId);
+                                        }
                                     }
                                     break;
                                 case SyncEventType.BooleanLights:
@@ -3889,6 +3898,15 @@ namespace GTANetwork
                                             new Vehicle(veh.Handle).BurstTire(tireId);
                                         else
                                             new Vehicle(veh.Handle).FixTire(tireId);
+
+                                        var item = NetEntityHandler.NetToStreamedItem((int) args[0]) as RemoteVehicle;
+                                        if (item != null)
+                                        {
+                                            if (isBursted)
+                                                item.Tires |= (byte) (1 << tireId);
+                                            else
+                                                item.Tires &= (byte) ~(1 << tireId);
+                                        }
                                     }
                                     break;
                                 case SyncEventType.RadioChange:
@@ -4454,6 +4472,8 @@ namespace GTANetwork
                 car.Health = data.VehicleHealth.Value;
                 car.IsDead = (data.Flag & (int) VehicleDataFlags.VehicleDead) != 0;
 
+                car.Tires = data.PlayerHealth.Value;
+
                 if (car.StreamedIn)
                 {
                     var ent = NetEntityHandler.NetToEntity(data.VehicleHandle.Value);
@@ -4470,12 +4490,21 @@ namespace GTANetwork
                             car.Rotation = data.Quaternion;
                         }
 
-                        new Vehicle(ent.Handle).EngineHealth = car.Health;
+                        var veh = new Vehicle(ent.Handle);
+
+                        veh.EngineHealth = car.Health;
                         if (!ent.IsDead && car.IsDead)
                         {
                             ent.IsInvincible = false;
-                            new Vehicle(ent.Handle).Explode();
-                        } 
+                            veh.Explode();
+                        }
+
+                        for (int i = 0; i < 8; i++)
+                        {
+                            bool busted = (data.PlayerHealth.Value & (byte)(1 << i)) != 0;
+                            if (busted && !veh.IsTireBurst(i)) veh.BurstTire(i);
+                            else if (!busted && veh.IsTireBurst(i)) veh.FixTire(i);
+                        }
                     }
                 }
                 else

@@ -1633,7 +1633,7 @@ namespace GTANResource
 
                                                 for (int i = 0; i < bin[0]; i++)
                                                 {
-                                                    var cVehBin = bin.Skip(1 + 43*i).Take(43).ToArray();
+                                                    var cVehBin = bin.Skip(1 + 44*i).Take(44).ToArray();
 
                                                     var fullPacket = PacketOptimization.ReadUnoccupiedVehicleSync(cVehBin);
 
@@ -1644,6 +1644,10 @@ namespace GTANResource
                                                             = fullPacket.Position;
                                                         NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation
                                                             = fullPacket.Quaternion;
+                                                        
+                                                        ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .Tires = fullPacket.PlayerHealth.Value;
 
                                                         if (fullPacket.Flag.HasValue)
                                                         {
@@ -1677,8 +1681,9 @@ namespace GTANResource
                                                     UpdateAttachables(fullPacket.VehicleHandle.Value);
                                                 }
                                             }
-                                            catch (IndexOutOfRangeException)
+                                            catch (IndexOutOfRangeException ex)
                                             {
+                                                Program.Output(ex.ToString());
                                             }
                                         }
                                         break;
@@ -2161,7 +2166,12 @@ namespace GTANResource
                     var doorId = (int) args[1];
                     var newFloat = (bool) args[2];
                     if (NetEntityHandler.ToDict().ContainsKey((int) args[0]))
-                        ((VehicleProperties) NetEntityHandler.ToDict()[(int) args[0]]).Doors[doorId] = newFloat;
+                    {
+                        if (newFloat)
+                            ((VehicleProperties) NetEntityHandler.ToDict()[(int) args[0]]).Doors |= (byte)(1 << doorId);
+                        else
+                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[0]]).Doors &= (byte)(~(1 << doorId));
+                    }
                 }
                     break;
                 case SyncEventType.TrailerDeTach:
@@ -2198,7 +2208,12 @@ namespace GTANResource
                     var tireId = (int)args[1];
                     var isBursted = (bool)args[2];
                     if (NetEntityHandler.ToDict().ContainsKey(veh))
-                        ((VehicleProperties)NetEntityHandler.ToDict()[veh]).Tires[tireId] = isBursted;
+                    {
+                        if (isBursted)
+                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[0]]).Doors |= (byte)(1 << tireId);
+                        else
+                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[0]]).Doors &= (byte)(~(1 << tireId));
+                        }
                     break;
                 }
                 case SyncEventType.PickupPickedUp:

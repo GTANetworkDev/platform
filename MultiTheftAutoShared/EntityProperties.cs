@@ -114,10 +114,6 @@ namespace GTANetworkShared
         public VehicleProperties()
         {
             Mods = new Dictionary<int, int>();
-
-            Doors = new bool[7];
-            Tires = new bool[8];
-            
             EntityType = (byte)GTANetworkShared.EntityType.Vehicle;
         }
 
@@ -140,13 +136,13 @@ namespace GTANetworkShared
         public bool Siren { get; set; }
 
         [ProtoMember(7)]
-        public bool[] Doors { get; set; }
+        public byte Doors { get; set; }
 
         [ProtoMember(8)]
         public int Trailer { get; set; }
 
         [ProtoMember(9)]
-        public bool[] Tires { get; set; }
+        public byte Tires { get; set; }
 
         [ProtoMember(10)]
         public int Livery { get; set; }
@@ -408,13 +404,13 @@ namespace GTANetworkShared
         public bool? Siren { get; set; }
 
         [ProtoMember(7)]
-        public bool[] Doors { get; set; }
+        public byte? Doors { get; set; }
 
         [ProtoMember(8)]
         public int? Trailer { get; set; }
 
         [ProtoMember(9)]
-        public bool[] Tires { get; set; }
+        public byte? Tires { get; set; }
 
         [ProtoMember(10)]
         public int? Livery { get; set; }
