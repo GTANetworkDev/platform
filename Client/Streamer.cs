@@ -422,6 +422,11 @@ namespace GTANetwork
             }
             else
             {
+                if (netId == Game.Player.Character.Handle)
+                {
+                    return ClientMap.OfType<RemotePlayer>().FirstOrDefault(p => p.LocalHandle == -2);
+                }
+
                 lock (ClientMap)
                 {
                     return ClientMap.OfType<ILocalHandleable>().FirstOrDefault(item => item.LocalHandle == netId) as IStreamedItem;
@@ -617,6 +622,7 @@ namespace GTANetwork
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
             if (prop.VehicleComponents != null) veh.VehicleComponents = prop.VehicleComponents.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -668,6 +674,7 @@ namespace GTANetwork
             if (prop.Red != null) veh.Red = prop.Red.Value;
             if (prop.Green != null) veh.Green = prop.Green.Value;
             if (prop.Blue != null) veh.Blue = prop.Blue.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -713,6 +720,7 @@ namespace GTANetwork
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
             if (prop.LoopingAnimation != null) veh.LoopingAnimation = prop.LoopingAnimation;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -757,6 +765,7 @@ namespace GTANetwork
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -823,6 +832,7 @@ namespace GTANetwork
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
             if (prop.RangedBlip != null) veh.RangedBlip = prop.RangedBlip.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -873,6 +883,7 @@ namespace GTANetwork
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -925,6 +936,7 @@ namespace GTANetwork
             if (prop.BlipColor != null) veh.BlipColor = prop.BlipColor.Value;
             if (prop.BlipAlpha != null) veh.BlipAlpha = prop.BlipAlpha.Value;
             if (prop.Accessories != null) veh.Accessories = prop.Accessories;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
             if (prop.Name != null)
             {
                 veh.Name = prop.Name;
@@ -991,6 +1003,7 @@ namespace GTANetwork
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -1037,6 +1050,7 @@ namespace GTANetwork
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
 
             if (prop.Dimension != null)
             {
@@ -1118,6 +1132,7 @@ namespace GTANetwork
                     SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
+                    IsInvincible = prop.IsInvincible,
                     Flag = prop.Flag,
                     VehicleComponents = prop.VehicleComponents,
                     PositionMovement = prop.PositionMovement,
@@ -1149,6 +1164,7 @@ namespace GTANetwork
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     Flag = prop.Flag,
+                    IsInvincible = prop.IsInvincible,
                     PositionMovement = prop.PositionMovement,
                     RotationMovement = prop.RotationMovement,
 
@@ -1195,6 +1211,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = 2,
                     Alpha = prop.Alpha,
+                    IsInvincible = prop.IsInvincible,
                     SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
@@ -1246,6 +1263,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = (byte)EntityType.Blip,
                     Alpha = prop.Alpha,
+                    IsInvincible = prop.IsInvincible,
                     RangedBlip = prop.RangedBlip,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
@@ -1320,6 +1338,7 @@ namespace GTANetwork
                     ModelHash = prop.ModelHash,
                     EntityType = (byte)EntityType.Marker,
                     Alpha = prop.Alpha,
+                    IsInvincible = prop.IsInvincible,
                     SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
@@ -1354,6 +1373,7 @@ namespace GTANetwork
                     EntityType = (byte)EntityType.TextLabel,
                     Text = prop.Text,
                     Range = prop.Range,
+                    IsInvincible = prop.IsInvincible,
                     EntitySeethrough = prop.EntitySeethrough,
                     SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
@@ -1413,6 +1433,7 @@ namespace GTANetwork
             rem.Alpha = prop.Alpha;
             rem.Dimension = prop.Dimension;
             rem.RemoteHandle = netHandle;
+            rem.IsInvincible = prop.IsInvincible;
             rem.SyncedProperties = prop.SyncedProperties;
             rem.AttachedTo = prop.AttachedTo;
             rem.Attachables = prop.Attachables;
@@ -1468,6 +1489,7 @@ namespace GTANetwork
                     SyncedProperties = prop.SyncedProperties,
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
+                    IsInvincible = prop.IsInvincible,
 
                     PositionMovement = prop.PositionMovement,
                     RotationMovement = prop.RotationMovement,
@@ -1880,7 +1902,6 @@ namespace GTANetwork
             {
                 if (data.Tires[i])
                 {
-                    veh.IsInvincible = false;
                     veh.BurstTire(i);
                 }
             }
@@ -1934,7 +1955,7 @@ namespace GTANetwork
                 Function.Call(Hash.EXPLODE_VEHICLE, veh, false, true);
             }
             else
-                veh.IsInvincible = true;
+                veh.IsInvincible = data.IsInvincible;
 
             if (data.Alpha < 255) veh.Alpha = (int)data.Alpha;
             LogManager.DebugLog("ALPHA: " + veh.Alpha);

@@ -58,20 +58,16 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
-    [ProtoInclude(13, typeof(VehicleProperties))]
-    [ProtoInclude(14, typeof(BlipProperties))]
-    [ProtoInclude(15, typeof(MarkerProperties))]
-    [ProtoInclude(16, typeof(PickupProperties))]
-    [ProtoInclude(17, typeof(PlayerProperties))]
-    [ProtoInclude(18, typeof(TextLabelProperties))]
-    [ProtoInclude(19, typeof(WorldProperties))]
-    [ProtoInclude(20, typeof(PedProperties))]
+    [ProtoInclude(14, typeof(VehicleProperties))]
+    [ProtoInclude(15, typeof(BlipProperties))]
+    [ProtoInclude(16, typeof(MarkerProperties))]
+    [ProtoInclude(17, typeof(PickupProperties))]
+    [ProtoInclude(18, typeof(PlayerProperties))]
+    [ProtoInclude(19, typeof(TextLabelProperties))]
+    [ProtoInclude(20, typeof(WorldProperties))]
+    [ProtoInclude(21, typeof(PedProperties))]
     public class EntityProperties
     {
-        public EntityProperties()
-        {
-        }
-
         [ProtoMember(1)]
         public Vector3 Position { get; set; }
 
@@ -107,6 +103,9 @@ namespace GTANetworkShared
 
         [ProtoMember(12)]
         public Movement RotationMovement { get; set; }
+
+        [ProtoMember(13)]
+        public bool IsInvincible { get; set; }
     }
 
     [ProtoContract]
@@ -337,14 +336,14 @@ namespace GTANetworkShared
 
     #region DeltaCompressed
     [ProtoContract]
-    [ProtoInclude(13, typeof(Delta_VehicleProperties))]
-    [ProtoInclude(14, typeof(Delta_BlipProperties))]
-    [ProtoInclude(15, typeof(Delta_MarkerProperties))]
-    [ProtoInclude(16, typeof(Delta_PickupProperties))]
-    [ProtoInclude(17, typeof(Delta_PlayerProperties))]
-    [ProtoInclude(18, typeof(Delta_TextLabelProperties))]
-    [ProtoInclude(19, typeof(Delta_WorldProperties))]
-    [ProtoInclude(20, typeof(Delta_PedProperties))]
+    [ProtoInclude(14, typeof(Delta_VehicleProperties))]
+    [ProtoInclude(15, typeof(Delta_BlipProperties))]
+    [ProtoInclude(16, typeof(Delta_MarkerProperties))]
+    [ProtoInclude(17, typeof(Delta_PickupProperties))]
+    [ProtoInclude(18, typeof(Delta_PlayerProperties))]
+    [ProtoInclude(19, typeof(Delta_TextLabelProperties))]
+    [ProtoInclude(20, typeof(Delta_WorldProperties))]
+    [ProtoInclude(21, typeof(Delta_PedProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
@@ -382,6 +381,9 @@ namespace GTANetworkShared
 
         [ProtoMember(12)]
         public Movement RotationMovement { get; set; }
+
+        [ProtoMember(13)]
+        public bool? IsInvincible { get; set; }
     }
 
     [ProtoContract]

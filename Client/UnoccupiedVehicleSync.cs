@@ -28,7 +28,10 @@ namespace GTANetwork
                 if (veh.StreamedIn)
                 {
                     var ent = Main.NetEntityHandler.NetToEntity(veh);
-                    if (ent != null) ent.IsInvincible = false;
+                    if (ent != null)
+                    {
+                        ent.IsInvincible = veh.IsInvincible;
+                    }
                 }
             }
         }

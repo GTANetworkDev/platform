@@ -2589,22 +2589,36 @@ namespace GTANetwork
                 }
             }
 
+            var cc = NetEntityHandler.EntityToStreamedItem(playerCar.Handle) as RemoteVehicle;
+
             if (playerCar != _lastPlayerCar)
             {
                 if (_lastPlayerCar != null)
                 {
-                    if (VehicleSyncManager.IsSyncing(NetEntityHandler.NetToStreamedItem(NetEntityHandler.EntityToNet(_lastPlayerCar.Handle)) as RemoteVehicle))
-                        _lastPlayerCar.IsInvincible = false;
+                    var c = NetEntityHandler.NetToStreamedItem(NetEntityHandler.EntityToNet(_lastPlayerCar.Handle)) as
+                                RemoteVehicle;
+
+                    if (VehicleSyncManager.IsSyncing(c))
+                    {
+                        _lastPlayerCar.IsInvincible = c.IsInvincible;
+                    }
                     else
+                    {
                         _lastPlayerCar.IsInvincible = true;
+                    }
                 }
+
                 if (playerCar != null)
                 {
-                    playerCar.IsInvincible = false;
+
                     if (!NetEntityHandler.ContainsLocalHandle(playerCar.Handle))
                     {
                         playerCar.Delete();
                         playerCar = null;
+                    }
+                    else
+                    {
+                        playerCar.IsInvincible = cc?.IsInvincible ?? false;
                     }
                 }
 
@@ -2615,7 +2629,7 @@ namespace GTANetwork
             {
                 if (Util.GetResponsiblePed(playerCar).Handle == player.Handle)
                 {
-                    playerCar.IsInvincible = false;
+                    playerCar.IsInvincible = cc?.IsInvincible ?? false;
                 }
                 else
                 {
@@ -2624,6 +2638,13 @@ namespace GTANetwork
             }
 
             Game.Player.Character.MaxHealth = 200;
+
+            var playerObj = NetEntityHandler.EntityToStreamedItem(Game.Player.Character.Handle) as RemotePlayer;
+
+            if (playerObj != null)
+            {
+                Game.Player.IsInvincible = playerObj.IsInvincible;
+            }
 
             DEBUG_STEP = 11;
             _lastPlayerCar = playerCar;

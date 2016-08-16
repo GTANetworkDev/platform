@@ -541,6 +541,30 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public void setEntityInvincible(NetHandle entity, bool invincible)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            {
+                Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].IsInvincible = invincible;
+
+                var delta = new Delta_EntityProperties();
+                delta.IsInvincible = invincible;
+                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+
+                sendNativeToAllPlayers(0x3882114BDE571AD4, entity, invincible);
+            }
+        }
+
+        public bool getEntityInvincible(NetHandle entity)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            {
+                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].IsInvincible;
+            }
+
+            return false;
+        }
+
         public void playSpecialEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position, Vector3 rotation, float scale)
         {
             sendNativeToAllPlayers(0xB80D8756B4668AB6, ptfxLibrary);
@@ -554,16 +578,6 @@ namespace GTANetworkServer
         public void setCollisionBetweenEntities(NetHandle entity1, NetHandle entity2, bool collision)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0xA53ED5520C07654A, entity1, entity2, collision);
-        }
-
-        public void setPlayerInvincible(Client target, bool invincible)
-        {
-            sendNativeToPlayer(target, 0x239528EACDC3E7DE, new LocalGamePlayerArgument(), invincible);
-        }
-
-        public bool getPlayerInvincible(Client target)
-        {
-            return fetchNativeFromPlayer<bool>(target, 0xB721981B2B939E07, new LocalGamePlayerArgument());
         }
 
         public void setPlayerBlipColor(Client target, int newColor)
