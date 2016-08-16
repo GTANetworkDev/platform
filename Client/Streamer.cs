@@ -341,7 +341,7 @@ namespace GTANetwork
             foreach (var p in ClientMap.OfType<RemoteVehicle>())
             {
                 if (p == null || p.Position == null) continue;
-                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nTyres: " + p.Tires;
+                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nDoors: " + p.Doors;
 
                 DrawLabel3D(text, p.Position.ToVector(), 100f, 0.4f);
             }
@@ -1995,7 +1995,9 @@ namespace GTANetwork
             for (int i = 0; i < 8; i++)
             {
                 if ((data.Doors & 1 << i) != 0)
-                    veh.OpenDoor((VehicleDoor)i, false, true);
+                {
+                    veh.OpenDoor((VehicleDoor)i, false, false);
+                }
             }
 
             for (int i = 0; i < 8; i++)
