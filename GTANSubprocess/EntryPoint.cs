@@ -182,6 +182,10 @@ namespace GTANetwork
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
             }
 
+            GameSettings.SaveSettings(mySettings);
+
+            PatchStartup();
+
             splashScreen.SetPercent(65);
 
             MoveStuffIn();
@@ -257,6 +261,28 @@ namespace GTANetwork
 
         private List<string> OurFiles = new List<string>();
         private string InstallFolder;
+
+        public void PatchStartup()
+        {
+            var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
+                Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
+
+            var dirs = Directory.GetDirectories(filePath);
+
+            foreach (var dir in dirs)
+            {
+                var absPath = dir + "\\pc_settings.bin";
+
+                using (Stream stream = new FileStream(absPath, FileMode.Open))
+                {
+                    stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
+                    stream.Write(new byte[] { 0x00 }, 0, 1);
+
+                    stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
+                    stream.Write(new byte[] { 0x00 }, 0, 1);
+                }
+            }
+        }
 
         public void MoveStuffIn()
         {
