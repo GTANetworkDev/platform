@@ -1381,6 +1381,16 @@ namespace GTANetwork
             return Main.Chat.IsFocused;
         }
 
+        public void loadAnimationDict(string dict)
+        {
+            Util.LoadDict(dict);
+        }
+
+        public void loadModel(int model)
+        {
+            Util.LoadModel(new Model(model));
+        }
+
         public Scaleform requestScaleform(string scaleformName)
         {
             var sc = new Scaleform(0);
@@ -1396,6 +1406,11 @@ namespace GTANetwork
         public void setEntityTransparency(LocalHandle entity, int alpha)
         {
             new Prop(entity.Value).Alpha = alpha;
+        }
+
+        public int getEntityTransparency(LocalHandle entity)
+        {
+            return new Prop(entity.Value).Alpha;
         }
 
         public void setWeather(string weather)

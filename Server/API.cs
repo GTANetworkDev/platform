@@ -1211,7 +1211,11 @@ namespace GTANetworkServer
             }
         }
 
-        
+        public void clearPlayerTasks(Client player)
+        {
+            sendNativeToPlayer(player, 0xE1EF3C1216AFF2CD, player.CharacterHandle);
+            sendNativeToPlayer(player, 0x176CECF6F920D707, player.CharacterHandle);
+        }
 
         public int vehicleNameToModel(string modelName)
 		{
@@ -1295,6 +1299,11 @@ namespace GTANetworkServer
         public void setEntityPositionFrozen(Client player, NetHandle entity, bool frozen)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
+        }
+
+        public void setEntityPositionFrozen(NetHandle entity, bool frozen)
+        {
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
         }
 
         public void triggerClientEventForAll(string eventName, params object[] args)
