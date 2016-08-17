@@ -254,10 +254,10 @@ namespace GTANetwork
                         Game.IsEnabledControlPressed(0, Control.Attack) &&
                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
                         obj.Flag |= (byte)VehicleDataFlags.Shooting;
-                    if (player.IsSubtaskActive(200) && // or 290
-                        Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
+                    if ((player.IsSubtaskActive(200) && // or 290
+                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0) ||
+                        (Game.Player.Character.Weapons.Current?.Hash == WeaponHash.Unarmed && player.IsSubtaskActive(200)))
                         obj.Flag |= (byte)VehicleDataFlags.Aiming;
-                    //obj.IsShooting = Game.Player.Character.IsShooting;
                     obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
 
                     var outputArg = new OutputArgument();

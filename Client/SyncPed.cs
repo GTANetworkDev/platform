@@ -425,7 +425,7 @@ namespace GTANetwork
 				Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character); //BUG: <- Maybe causes crash?
 
                 Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, Character, false);
-
+                Function.Call(Hash.SET_PED_DROPS_WEAPONS_WHEN_DEAD, Character, false);
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, Character, true);
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, Character, Game.Player, true);
                 Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, Character, false);
@@ -1123,34 +1123,35 @@ namespace GTANetwork
                     Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
                 }
 
-				if (IsShooting/* || IsAiming*/)
+				if (IsShooting || IsAiming)
 				{
-					if (_lastShooting && Game.GameTime - _lastVehicleAimUpdate > 30)
-					{
-					    if (IsShooting)
-					    {
-					        Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
-					    }
-					    else if (IsAiming)
-					    {
-                            Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, false);
-                            Function.Call(Hash.SET_PED_AMMO, Character, CurrentWeapon, 0);
-                        }
+					if (!_lastDrivebyShooting)
+				    {
+                        Function.Call(Hash.SET_PED_CURRENT_WEAPON_VISIBLE, Character, false, false, false, false);
 
-					    Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z);
-					}
+                        Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
+				            0, 0, 0, unchecked((int) FiringPattern.SingleShot));
+				    }
+				    else
+				    {
+                        Function.Call(Hash.SET_PED_CURRENT_WEAPON_VISIBLE, Character, true, false, false, false);
 
-					if (!_lastShooting)
-					{
-						Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z,
-							0, 0, 0, unchecked((int)FiringPattern.FullAuto));
-					}
+                        Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z);
+				    }
 
-					_lastVehicleAimUpdate = Game.GameTime;
+                    if (IsShooting)
+                    {
+                        Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
+                        Function.Call(Hash.SET_PED_AMMO, Character, CurrentWeapon, 10);
+
+                        Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, Character, AimCoords.X, AimCoords.Y, AimCoords.Z, true);
+                    }
+
+                    _lastVehicleAimUpdate = Game.GameTime;
 					_lastDrivebyShooting = IsShooting || IsAiming;
 				}
 
-				if (!IsShooting && /*!IsAiming &&*/ _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
+				if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
 				{
 					Character.Task.ClearAll();
 					Character.Task.ClearSecondary();
