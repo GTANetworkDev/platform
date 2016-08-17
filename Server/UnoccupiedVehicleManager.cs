@@ -112,9 +112,11 @@ namespace GTANetworkServer
 
         public void FindSyncer(int handle, VehicleProperties prop)
         {
+            if (prop.Position == null) return;
+
             var players =
                 Program.ServerInstance.PublicAPI.getAllPlayers()
-                    .Where(c => c.Properties.Dimension == prop.Dimension || prop.Dimension == 0)
+                    .Where(c => (c.Properties.Dimension == prop.Dimension || prop.Dimension == 0) && c.Position != null)
                     .OrderBy(c => c.Position.DistanceToSquared(prop.Position));
 
             Client targetPlayer;
