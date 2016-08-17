@@ -174,7 +174,10 @@ namespace GTANetwork
 
             var mySettings = GameSettings.LoadGameSettings();
             if (mySettings.Video != null && mySettings.Video.PauseOnFocusLoss != null)
+            {
+                _pauseOnFocusLoss = mySettings.Video.PauseOnFocusLoss.Value;
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
+            }
             else
             {
                 mySettings.Video = new GameSettings.Video();
@@ -183,6 +186,8 @@ namespace GTANetwork
             }
 
             GameSettings.SaveSettings(mySettings);
+
+            ReadStartupSettings();
 
             PatchStartup();
 
@@ -242,6 +247,12 @@ namespace GTANetwork
 
             // Move everything back
 
+            PatchStartup(_startupFlow, _landingPage);
+
+            mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
+
+            GameSettings.SaveSettings(mySettings);
+
             MoveStuffOut();
         }
 
@@ -262,7 +273,11 @@ namespace GTANetwork
         private List<string> OurFiles = new List<string>();
         private string InstallFolder;
 
-        public void PatchStartup()
+        private byte _startupFlow;
+        private byte _landingPage;
+        private int _pauseOnFocusLoss;
+
+        public void ReadStartupSettings()
         {
             var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
                 Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
@@ -276,10 +291,32 @@ namespace GTANetwork
                 using (Stream stream = new FileStream(absPath, FileMode.Open))
                 {
                     stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
-                    stream.Write(new byte[] { 0x00 }, 0, 1);
+                    _startupFlow = (byte)stream.ReadByte();
 
                     stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
-                    stream.Write(new byte[] { 0x00 }, 0, 1);
+                    _landingPage = (byte)stream.ReadByte();
+                }
+            }
+        }
+
+        public void PatchStartup(byte startupFlow = 0x00, byte landingPage = 0x00)
+        {
+            var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
+                Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
+
+            var dirs = Directory.GetDirectories(filePath);
+
+            foreach (var dir in dirs)
+            {
+                var absPath = dir + "\\pc_settings.bin";
+
+                using (Stream stream = new FileStream(absPath, FileMode.Open))
+                {
+                    stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
+                    stream.Write(new byte[] { startupFlow }, 0, 1);
+
+                    stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
+                    stream.Write(new byte[] { landingPage }, 0, 1);
                 }
             }
         }
