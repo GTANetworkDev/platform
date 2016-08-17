@@ -195,6 +195,7 @@
     <Compile Include="MemoryScan.cs" />
     <Compile Include="MimeSniffer.cs" />
     <Compile Include="ModelSpoofer.cs" />
+    <Compile Include="StickyBombTracker.cs" />
     <Compile Include="Streamer.cs" />
     <Compile Include="PedThread.cs" />
     <Compile Include="Program.cs" />
