@@ -1941,13 +1941,8 @@ namespace GTANetwork
 			        DisplayCustomAnimation();
 			    }
 
-			    if (IsBeingControlledByScript)
-			    {
-			        UpdatePlayerPedPos();
-			    }
-
-				DEBUG_STEP = 32;
-				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying && !IsBeingControlledByScript)
+                DEBUG_STEP = 32;
+				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
 				{
 					UpdatePlayerPedPos();
 
@@ -2024,7 +2019,7 @@ namespace GTANetwork
 
                 DEBUG_STEP = 1;
                 
-                if (Character != null && Character.IsSubtaskActive(67))
+                if (Character != null && (Character.IsSubtaskActive(67) || IsBeingControlledByScript))
                 {
                     DrawNametag();
                     return;

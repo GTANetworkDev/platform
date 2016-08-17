@@ -328,6 +328,12 @@ namespace GTANetwork
 
         public static void StopAllScripts()
         {
+            lock (ScriptEngines)
+                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                {
+                    ScriptEngines[i].Engine.Script.API.isDisposing = true;
+                }
+
             ThreadJumper.Add(() =>
             {
                 lock (ScriptEngines)
@@ -360,6 +366,13 @@ namespace GTANetwork
 
         public static void StopScript(string resourceName)
         {
+            lock (ScriptEngines)
+                    for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                {
+                    if (ScriptEngines[i].ResourceParent != resourceName) continue;
+                    ScriptEngines[i].Engine.Script.API.isDisposing = true;
+                }
+
             ThreadJumper.Add(delegate
             {
                 lock (ScriptEngines)
@@ -402,7 +415,7 @@ namespace GTANetwork
         {
             Engine = engine;
         }
-
+        internal bool isDisposing;
         internal string ParentResourceName;
         internal V8ScriptEngine Engine;
 
@@ -1134,7 +1147,12 @@ namespace GTANetwork
 
         public void sleep(int ms)
         {
-            Script.Wait(ms);
+            var start = DateTime.Now;
+            while (DateTime.Now.Subtract(start).TotalMilliseconds < ms)
+            {
+                if (isDisposing) throw new Exception("resource is terminating");
+                Script.Wait(0);
+            }
         }
 
         public void startAudio(string path)
