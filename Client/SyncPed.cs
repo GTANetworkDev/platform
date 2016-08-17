@@ -66,6 +66,8 @@ namespace GTANetwork
         private bool _lastEnteringVehicle;
         public bool IsOnFire;
 
+        public bool IsBeingControlledByScript;
+
         public bool ExitingVehicle;
         private bool _lastExitingVehicle;
 
@@ -1139,12 +1141,48 @@ namespace GTANetwork
                         Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, AimCoords.X, AimCoords.Y, AimCoords.Z);
 				    }
 
+				    var rightSide = (VehicleSeat + 2)%2 == 0;
+
+				    if (WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
+				    {
+                        const string rightDict = "veh@driveby@first_person@passenger_right_handed@throw";
+				        const string leftDict = "veh@driveby@first_person@driver@throw";
+
+				        string drivebyDict = rightSide ? rightDict : leftDict;
+
+                        Function.Call(Hash.TASK_PLAY_ANIM_ADVANCED, Character, Util.LoadDict(drivebyDict),
+                            "sweep_low", Character.Position.X, Character.Position.Y, Character.Position.Z, Character.Rotation.X,
+                            Character.Rotation.Y, Character.Rotation.Z, -8f, -8f, -1, 0, rightSide ? 0.6f : 0.3f, 0, 0);
+                    }
+
                     if (IsShooting)
                     {
                         Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
                         Function.Call(Hash.SET_PED_AMMO, Character, CurrentWeapon, 10);
 
-                        Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, Character, AimCoords.X, AimCoords.Y, AimCoords.Z, true);
+                        if (!WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
+                        {
+                            Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, Character, AimCoords.X, AimCoords.Y, AimCoords.Z,
+                                true);
+                        }
+                        else if (DateTime.Now.Subtract(_lastRocketshot).TotalMilliseconds > 500)
+                        {
+                            _lastRocketshot = DateTime.Now;
+
+                            var damage = WeaponDataProvider.GetWeaponDamage((WeaponHash)CurrentWeapon);
+                            var speed = 0xbf800000;
+                            var weaponH = (WeaponHash)CurrentWeapon;
+
+                            if (IsFriend())
+                                damage = 0;
+
+                            var start = Character.GetBoneCoord(rightSide ? Bone.SKEL_R_Hand : Bone.SKEL_L_Hand);
+                            var end = AimCoords;
+
+                            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z,
+                                end.X,
+                                end.Y, end.Z, damage, true, (int)weaponH, Character, false, true, speed);
+                        }
                     }
 
                     _lastVehicleAimUpdate = Game.GameTime;
@@ -1903,8 +1941,13 @@ namespace GTANetwork
 			        DisplayCustomAnimation();
 			    }
 
+			    if (IsBeingControlledByScript)
+			    {
+			        UpdatePlayerPedPos();
+			    }
+
 				DEBUG_STEP = 32;
-				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
+				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying && !IsBeingControlledByScript)
 				{
 					UpdatePlayerPedPos();
 

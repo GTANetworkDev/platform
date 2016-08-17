@@ -250,19 +250,37 @@ namespace GTANetwork
                 }
                 else
                 {
-                    if (player.IsSubtaskActive(200) &&
+                    if ((player.IsSubtaskActive(200) || player.IsSubtaskActive(190)) &&
                         Game.IsEnabledControlPressed(0, Control.Attack) &&
                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
+                    {
                         obj.Flag |= (byte)VehicleDataFlags.Shooting;
-                    if ((player.IsSubtaskActive(200) && // or 290
+                    }
+
+                    if (((player.IsSubtaskActive(200) || player.IsSubtaskActive(190)) &&
                          Game.Player.Character.Weapons.Current?.AmmoInClip != 0) ||
-                        (Game.Player.Character.Weapons.Current?.Hash == WeaponHash.Unarmed && player.IsSubtaskActive(200)))
+                        (Game.Player.Character.Weapons.Current?.Hash == WeaponHash.Unarmed &&
+                         player.IsSubtaskActive(200)))
+                    {
                         obj.Flag |= (byte)VehicleDataFlags.Aiming;
-                    obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
+                    }
 
                     var outputArg = new OutputArgument();
                     Function.Call(Hash.GET_CURRENT_PED_WEAPON, Game.Player.Character, outputArg, true);
                     obj.WeaponHash = outputArg.GetResult<int>();
+
+                    lock (Lock)
+                    {
+                        if (LastSyncPacket != null && LastSyncPacket is VehicleData &&
+                            WeaponDataProvider.NeedsFakeBullets(obj.WeaponHash.Value) &&
+                            (((VehicleData) LastSyncPacket).Flag & (byte) VehicleDataFlags.Shooting) != 0)
+                        {
+                            obj.Flag |= (byte) VehicleDataFlags.Shooting;
+                        }
+                    }
+
+                    obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
+
                 }
 
                 Vehicle trailer;

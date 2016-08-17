@@ -452,6 +452,7 @@ namespace GTANetwork
                 if (streamedItem == null) return null;
                 if (handleable == null) return new Prop(netId);
                 if (handleable.LocalHandle == -2) return Game.Player.Character;
+                if (!streamedItem.StreamedIn) return null;
                 return new Prop(handleable.LocalHandle);
              }
         }

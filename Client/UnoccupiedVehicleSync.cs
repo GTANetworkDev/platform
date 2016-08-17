@@ -109,8 +109,8 @@ namespace GTANetwork
                             var ent = Main.NetEntityHandler.NetToEntity(vehicle);
 
                             if (ent != null &&
-                                (ent.Position.DistanceToSquared(vehicle.Position.ToVector()) > 6f ||
-                                 ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 6f ||
+                                (ent.Position.DistanceToSquared(vehicle.Position.ToVector()) > 2f ||
+                                 ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 2f ||
                                  Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f ||
                                  Util.BuildTyreFlag(new Vehicle(ent.Handle)) != vehicle.Tires))
                             {

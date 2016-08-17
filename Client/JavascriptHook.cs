@@ -900,6 +900,24 @@ namespace GTANetwork
             return Main.ScriptChatVisible;
         }
 
+        public void requestControlOfPlayer(LocalHandle player)
+        {
+            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            if (opp != null)
+            {
+                opp.IsBeingControlledByScript = true;
+            }
+        }
+
+        public void stopControlOfPlayer(LocalHandle player)
+        {
+            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            if (opp != null)
+            {
+                opp.IsBeingControlledByScript = false;
+            }
+        }
+
         public void setHudVisible(bool visible)
         {
             Function.Call(Hash.DISPLAY_RADAR, visible);

@@ -3008,7 +3008,7 @@ namespace GTANetwork
 
                         if (Util.IsVehicleEmpty(entity) && !VehicleSyncManager.IsInterpolating(entity.Handle) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
                         {
-                            if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 3f)
+                            if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)
                             {
                                 entity.PositionNoOffset = veh.Position.ToVector();
                                 entity.Quaternion = veh.Rotation.ToVector().ToQuaternion();
