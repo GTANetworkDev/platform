@@ -2008,7 +2008,7 @@ namespace GTANetwork
 
                 if (Character != null)
                 {
-                    Character.Health = (int)(Math.Max(2 * (PedHealth / 100f), 0f)) * Character.MaxHealth;
+                    Character.Health = PedHealth;
                     if (PedHealth == 0 && !Character.IsDead) Character.Kill();
                 }
 

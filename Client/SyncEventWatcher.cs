@@ -45,7 +45,7 @@ namespace GTANetwork
             return Function.Call<Vehicle>(Hash.GET_VEHICLE_ATTACHED_TO_CARGOBOB, tanker);
         }
 
-        private void SendSyncEvent(SyncEventType type, params object[] args)
+        public static void SendSyncEvent(SyncEventType type, params object[] args)
         {
             var convertedArgs = Main.ParseNativeArguments(args);
 

@@ -3943,6 +3943,17 @@ namespace GTANetwork
                                         }
                                     }
                                     break;
+                                case SyncEventType.StickyBombDetonation:
+                                    {
+                                        var playerId = (int) args[0];
+                                        var syncP = NetEntityHandler.NetToStreamedItem(playerId) as SyncPed;
+
+                                        if (syncP != null && syncP.StreamedIn && syncP.Character != null)
+                                        {
+                                            Function.Call(Hash.EXPLODE_PROJECTILES, syncP.Character, (int)WeaponHash.StickyBomb, true);
+                                        }
+                                    }
+                                    break;
                             }
                         }
                     }

@@ -74,6 +74,7 @@ namespace GTANetworkShared
         TireBurst = 4,
         RadioChange = 5,
         PickupPickedUp = 6,
+        StickyBombDetonation = 7,
     }
 
     public enum ServerEventType
