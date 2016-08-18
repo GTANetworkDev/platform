@@ -38,7 +38,7 @@ namespace GTANetwork
         public Vector3 _position;
         public int VehicleNetHandle;
         public Vector3 _rotation;
-        public bool IsInVehicle;
+        public bool _isInVehicle;
         public bool IsJumping;
         public Animation CurrentAnimation;
         public int ModelHash;
@@ -218,12 +218,12 @@ namespace GTANetwork
         private Vector3 _lastPosition;
         public new Vector3 Position
         {
-            get { return IsInVehicle ? _vehiclePosition : _position; }
+            get { return _isInVehicle ? _vehiclePosition : _position; }
             set
             {
                 _lastPosition = _position;
                 _position = value;
-                if (!IsInVehicle)
+                if (!_isInVehicle)
                     _lastVehiclePos = null;
             }
         }
@@ -278,6 +278,7 @@ namespace GTANetwork
         private bool _blip;
         private bool _justEnteredVeh;
         private DateTime _lastHornPress = DateTime.Now;
+        private DateTime? _spazzout_prevention;
         
         private DateTime _enterVehicleStarted;
         private Vector3 _vehiclePosition;
@@ -332,6 +333,21 @@ namespace GTANetwork
             set { }
         }
 
+        public bool IsInVehicle
+        {
+            get { return _isInVehicle; }
+            set
+            {
+                if (value ^ _isInVehicle)
+                {
+                    _spazzout_prevention = DateTime.Now;
+                }
+
+
+                _isInVehicle = value; 
+            }
+        }
+
         public void SetBlipNameFromTextFile(Blip blip, string text)
         {
             Function.Call(Hash._0xF9113A30DE5C6670, "STRING");
@@ -366,8 +382,8 @@ namespace GTANetwork
 
         public bool CreateCharacter()
         {
-            float hRange = IsInVehicle ? 150f : 200f;
-            var gPos = IsInVehicle ? VehiclePosition : _position;
+            float hRange = _isInVehicle ? 150f : 200f;
+            var gPos = _isInVehicle ? VehiclePosition : _position;
             var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
             return CreateCharacter(gPos, hRange);
@@ -564,7 +580,7 @@ namespace GTANetwork
         public int _debugVehicleHash;
 	    bool CreateVehicle()
 	    {
-	        if (IsInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 &&
+	        if (_isInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 &&
 	            Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER, Game.Player.Character) == -1 &&
 	            Util.GetPedSeat(Game.Player.Character) == 0)
 	        {
@@ -575,8 +591,8 @@ namespace GTANetwork
 	            return true;
 	        }
 
-			if ((!_lastVehicle && IsInVehicle) ||
-					(_lastVehicle && IsInVehicle &&
+			if ((!_lastVehicle && _isInVehicle) ||
+					(_lastVehicle && _isInVehicle &&
 					 (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle) ||
 					  Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
 					  (VehicleSeat != Util.GetPedSeat(Character) && Game.Player.Character.GetVehicleIsTryingToEnter() != MainVehicle))))
@@ -645,11 +661,11 @@ namespace GTANetwork
 			    var delta = Util.TickCount - LastUpdateReceived;
                 if (Character != null && delta < 10000)
 				{
-				    Vector3 lastPos = IsInVehicle
+				    Vector3 lastPos = _isInVehicle
 				        ? _lastVehiclePos == null ? VehiclePosition : _lastVehiclePos.Value
 				        : _lastPosition == null ? Position : _lastPosition;
 
-				    if (!IsInVehicle)
+				    if (!_isInVehicle)
 				    {
 				        Character.PositionNoOffset = Vector3.Lerp(lastPos, gPos, Math.Min(1f, delta / 1000f));
 				    }
@@ -669,7 +685,7 @@ namespace GTANetwork
 
 	    void WorkaroundBlip()
 	    {
-            if (IsInVehicle && MainVehicle != null && (Character.CurrentBlip == null || (Character.CurrentBlip.Position - MainVehicle.Position).Length() > 70f) && _blip)
+            if (_isInVehicle && MainVehicle != null && (Character.CurrentBlip == null || (Character.CurrentBlip.Position - MainVehicle.Position).Length() > 70f) && _blip)
 			{
 				LogManager.DebugLog("Blip was too far away -- deleting");
 				Character.Delete();
@@ -678,7 +694,7 @@ namespace GTANetwork
 
 	    bool UpdatePosition()
 	    {
-            return IsInVehicle ? UpdateVehiclePosition() : UpdateOnFootPosition();
+            return _isInVehicle ? UpdateVehiclePosition() : UpdateOnFootPosition();
 	    }
 
 	    void UpdateVehicleInternalInfo()
@@ -773,7 +789,7 @@ namespace GTANetwork
         {
             currentInterop = new interpolation();
 
-            if (IsInVehicle)
+            if (_isInVehicle)
             {
                 if (_lastVehiclePos == null) return;
                 if (Main.VehicleLagCompensation)
@@ -824,7 +840,10 @@ namespace GTANetwork
         private int m_uiForceLocalZCounter;
         void DisplayVehiclePosition()
         {
-            if ((Speed > 0.2f || IsInBurnout) && currentInterop.FinishTime > 0 && _lastVehiclePos != null)
+            var spazzout = (_spazzout_prevention != null &&
+                            DateTime.Now.Subtract(_spazzout_prevention.Value).TotalMilliseconds > 1000);
+
+            if ((Speed > 0.2f || IsInBurnout) && currentInterop.FinishTime > 0 && _lastVehiclePos != null && spazzout)
             {
                 Vector3 newPos;
 
@@ -937,7 +956,7 @@ namespace GTANetwork
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = MainVehicle.Position;
             }
-            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && _lastVehiclePos != null)
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && _lastVehiclePos != null && spazzout)
             {
                 var dir = VehiclePosition - _lastVehiclePos.Value;
                 var posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
@@ -953,7 +972,7 @@ namespace GTANetwork
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
 
-            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f)
+            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f && spazzout)
             {
                 MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
                     _vehicleRotation.ToQuaternion(),
@@ -1967,7 +1986,7 @@ namespace GTANetwork
             {
                 if (IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
-                var gPos = IsInVehicle ? VehiclePosition : _position;
+                var gPos = _isInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
 
                 if (!StreamedIn)
@@ -1997,7 +2016,7 @@ namespace GTANetwork
                     _mainBlip.Scale = 0.8f;
                     _mainBlip.Alpha = BlipAlpha;
 
-                    Vector3 lastPos = IsInVehicle
+                    Vector3 lastPos = _isInVehicle
                         ? _lastVehiclePos == null ? VehiclePosition : _lastVehiclePos.Value
                         : _lastPosition == null ? Position : _lastPosition;
                     var delta = Util.TickCount - LastUpdateReceived;
@@ -2057,7 +2076,7 @@ namespace GTANetwork
                 _lastFreefall = IsFreefallingWithParachute;
                 _lastShooting = IsShooting;
                 _lastAiming = IsAiming;
-                _lastVehicle = IsInVehicle;
+                _lastVehicle = _isInVehicle;
                 _lastEnteringVehicle = EnteringVehicle;
                 DEBUG_STEP = 35;
             }
