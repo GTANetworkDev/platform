@@ -1148,11 +1148,11 @@ namespace GTANetwork
         public void sleep(int ms)
         {
             var start = DateTime.Now;
-            while (DateTime.Now.Subtract(start).TotalMilliseconds < ms)
+            do
             {
                 if (isDisposing) throw new Exception("resource is terminating");
                 Script.Wait(0);
-            }
+            } while (DateTime.Now.Subtract(start).TotalMilliseconds < ms);
         }
 
         public void startAudio(string path)

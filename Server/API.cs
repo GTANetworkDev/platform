@@ -390,11 +390,11 @@ namespace GTANetworkServer
             }
 
             var start = DateTime.Now;
-            while (DateTime.Now.Subtract(start).TotalMilliseconds < ms)
+            do
             {
                 if (ResourceParent?.HasTerminated == true) throw new ResourceAbortedException();
                 Thread.Sleep(10);
-            }
+            } while (DateTime.Now.Subtract(start).TotalMilliseconds < ms);
         }
 
         /// <summary>
