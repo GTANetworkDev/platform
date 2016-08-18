@@ -1,0 +1,5 @@
+<meta>
+	<info name="Heist test" async="true"/>
+	<script src="heist.cs" type="server" lang="csharp" />
+	<script src="heist_local.js" type="client" lang="javascript" />
+</meta>
