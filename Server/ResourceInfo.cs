@@ -543,6 +543,9 @@ namespace GTANetworkServer
 
         [XmlAttribute("function")]
         public string Name { get; set; }
+
+        [XmlAttribute("event")]
+        public string EventName { get; set; }
     }
 
     [XmlRoot("map")]

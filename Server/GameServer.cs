@@ -146,6 +146,7 @@ namespace GTANetworkServer
         public CommandHandler CommandHandler;
         public dynamic ExportedFunctions;
         public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
+        public delegate void ExportedEventDelegate(dynamic[] parameters);
 
         public List<Resource> RunningResources;
         public PickupManager PickupManager;
@@ -516,8 +517,31 @@ namespace GTANetworkServer
                             engine = ourResource.Engines.FirstOrDefault(en => en.Filename == func.Path);
 
                         if (engine == null) continue;
-                        ExportedFunctionDelegate punchthrough = parameters => engine.InvokeMethod(func.Name, parameters);
-                        resPoolDict.Add(func.Name, punchthrough);
+
+                        if (string.IsNullOrWhiteSpace(func.EventName))
+                        {
+                            ExportedFunctionDelegate punchthrough =
+                                parameters => engine.InvokeMethod(func.Name, parameters);
+                            resPoolDict.Add(func.Name, punchthrough);
+                        }
+                        else
+                        {
+                            var eventInfo = engine._compiledScript.GetType().GetEvent(func.EventName);
+
+                            resPoolDict.Add(func.EventName, null);
+
+                            ExportedEventDelegate punchthrough = parameters =>
+                            {
+                                ExportedEventDelegate e = resPoolDict[func.EventName] as ExportedEventDelegate;
+
+                                if (e != null)
+                                {
+                                    e.Invoke(parameters);
+                                }
+                            };
+
+                            eventInfo.AddEventHandler(engine._compiledScript, punchthrough);
+                        }
                     }
 
                     gPool.Add(ourResource.DirectoryName, resPool);
