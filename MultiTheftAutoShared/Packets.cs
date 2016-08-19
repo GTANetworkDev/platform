@@ -63,6 +63,7 @@ namespace GTANetworkShared
         Map = 1,
         Script = 2,
         EndOfTransfer = 3,
+        CustomData = 4,
     }
 
     public enum SyncEventType

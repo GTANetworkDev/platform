@@ -71,6 +71,7 @@ namespace GTANetworkServer
         public delegate void GlobalColShapeEvent(ColShape colshape, NetHandle entity);
         public delegate void EntityDataChangedEvent(NetHandle entity, string key, object oldValue);
         public delegate void ResourceEvent(string resourceName);
+        public delegate void DataReceivedEvent(string data);
         #endregion
 
         #region Events
@@ -97,6 +98,7 @@ namespace GTANetworkServer
         public event EntityDataChangedEvent onEntityDataChange;
         public event ResourceEvent onServerResourceStart;
         public event ResourceEvent onServerResourceStop;
+        //public event DataReceivedEvent onCustomDataReceived;
 
         internal void invokeOnEntityDataChange(NetHandle entity, string key, object oldValue)
         {
@@ -161,6 +163,11 @@ namespace GTANetworkServer
         internal void invokeServerResourceStart(string resource)
         {
             onServerResourceStart?.Invoke(resource);
+        }
+
+        internal void invokeCustomDataReceive(string data)
+        {
+            //onCustomDataReceived?.Invoke(data);
         }
 
         internal void invokeServerResourceStop(string resource)
@@ -486,6 +493,12 @@ namespace GTANetworkServer
         public void consoleOutput(string text)
         {
             Program.Output(text);
+        }
+
+        public void sendCustomData(Client target, string data)
+        {
+            if (ResourceParent == null || ResourceParent.ResourceParent == null) throw new NullReferenceException("Illegal call to sendCustomData inside constructor!");
+            Program.ServerInstance.TransferLargeString(target, data, ResourceParent.ResourceParent.DirectoryName);
         }
 
         public bool doesEntityExistForPlayer(Client player, NetHandle entity)

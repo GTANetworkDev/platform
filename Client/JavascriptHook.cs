@@ -190,6 +190,18 @@ namespace GTANetwork
             });
         }
 
+        public static void InvokeCustomDataReceived(string resource, string data)
+        {
+            ThreadJumper.Add(() =>
+            {
+                lock (ScriptEngines)
+                {
+                    foreach (var res in ScriptEngines.Where(en => en.ResourceParent == resource))
+                        res.Engine.Script.API.invokeCustomDataReceived(data);
+                }
+            });
+        }
+
         public void OnTick(object sender, EventArgs e)
         {
             var tmpList = new List<Action>(ThreadJumper);
@@ -1219,6 +1231,7 @@ namespace GTANetwork
         public delegate void ChatEvent(string msg);
         public delegate void StreamEvent(LocalHandle item, int entityType);
         public delegate void DataChangedEvent(LocalHandle entity, string key, object oldValue);
+        public delegate void CustomDataReceived(string data);
 
         public event EventHandler onResourceStart;
         public event EventHandler onResourceStop;
@@ -1231,10 +1244,16 @@ namespace GTANetwork
         public event StreamEvent onEntityStreamIn;
         public event StreamEvent onEntityStreamOut;
         public event DataChangedEvent onEntityDataChange;
+        public event CustomDataReceived onCustomDataReceived;
 
         internal void invokeEntityStreamIn(LocalHandle item, int type)
         {
             onEntityStreamIn?.Invoke(item, type);
+        }
+
+        internal void invokeCustomDataReceived(string data)
+        {
+            onCustomDataReceived?.Invoke(data);
         }
 
         internal void invokeEntityDataChange(LocalHandle item, string key, object oldValue)

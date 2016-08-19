@@ -180,6 +180,12 @@ namespace GTANetwork
 
                     Main.InvokeFinishedDownload();
                 }
+                else if (CurrentFile.Type == FileType.CustomData)
+                {
+                    string data = Encoding.UTF8.GetString(CurrentFile.Data.ToArray());
+
+                    JavascriptHook.InvokeCustomDataReceived(CurrentFile.Resource, data);
+                }
             }
             finally
             {

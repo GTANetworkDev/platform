@@ -2784,6 +2784,26 @@ namespace GTANResource
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
         }
 
+        public void TransferLargeString(Client target, string data, string resourceSource)
+        {
+            if (target == null || string.IsNullOrEmpty(data)) return;
+            var bytes = Encoding.UTF8.GetBytes(data);
+
+            var r = new Random();
+
+            var mapData = new StreamedData();
+            mapData.Id = r.Next(int.MaxValue);
+            mapData.Data = bytes;
+            mapData.Type = FileType.CustomData;
+            mapData.Resource = resourceSource;
+            mapData.Name = "data";
+
+            var downloader = new StreamingClient(target);
+            downloader.Files.Add(mapData);
+            
+            Downloads.Add(downloader);
+        }
+
         public void CreatePositionInterpolation(int entity, Vector3 target, int duration)
         {
             var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
