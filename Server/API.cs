@@ -56,6 +56,7 @@ namespace GTANetworkServer
         #endregion
 
         #region Delegates
+        public delegate void EmptyEvent();
         public delegate void CommandEvent(Client sender, string command);
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
@@ -69,12 +70,13 @@ namespace GTANetworkServer
         public delegate void VehicleChangeEvent(Client player, NetHandle vehicle);
         public delegate void GlobalColShapeEvent(ColShape colshape, NetHandle entity);
         public delegate void EntityDataChangedEvent(NetHandle entity, string key, object oldValue);
+        public delegate void ResourceEvent(string resourceName);
         #endregion
 
         #region Events
-        public event EventHandler onResourceStart;
-        public event EventHandler onResourceStop;
-        public event EventHandler onUpdate;
+        public event EmptyEvent onResourceStart;
+        public event EmptyEvent onResourceStop;
+        public event EmptyEvent onUpdate;
         public event ChatEvent onChatMessage;
         public event CommandEvent onChatCommand;
         public event PlayerConnectingEvent onPlayerBeginConnect;
@@ -93,6 +95,8 @@ namespace GTANetworkServer
         public event GlobalColShapeEvent onEntityEnterColShape;
         public event GlobalColShapeEvent onEntityExitColShape;
         public event EntityDataChangedEvent onEntityDataChange;
+        public event ResourceEvent onServerResourceStart;
+        public event ResourceEvent onServerResourceStop;
 
         internal void invokeOnEntityDataChange(NetHandle entity, string key, object oldValue)
         {
@@ -146,17 +150,27 @@ namespace GTANetworkServer
 
         internal void invokeResourceStart()
         {
-            onResourceStart?.Invoke(this, EventArgs.Empty);
+            onResourceStart?.Invoke();
         }
 
         internal void invokeUpdate()
         {
-            onUpdate?.Invoke(this, EventArgs.Empty);
+            onUpdate?.Invoke();
+        }
+
+        internal void invokeServerResourceStart(string resource)
+        {
+            onServerResourceStart?.Invoke(resource);
+        }
+
+        internal void invokeServerResourceStop(string resource)
+        {
+            onServerResourceStop?.Invoke(resource);
         }
 
         internal void invokeResourceStop()
         {
-            onResourceStop?.Invoke(this, EventArgs.Empty);
+            onResourceStop?.Invoke();
 
             lock (ResourceEntities)
             {

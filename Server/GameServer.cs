@@ -413,12 +413,7 @@ namespace GTANetworkServer
                 }
 
                 CommandHandler.Register(ourResource);
-
-                foreach (var engine in ourResource.Engines)
-                {
-                    engine.InvokeResourceStart();
-                }
-
+                
                 var randGen = new Random();
                 
                 if (ourResource.ClientsideScripts.Count > 0 || currentResInfo.Files.Count > 0)
@@ -546,8 +541,20 @@ namespace GTANetworkServer
 
                     gPool.Add(ourResource.DirectoryName, resPool);
                 }
+                
+                foreach (var engine in ourResource.Engines)
+                {
+                    engine.InvokeResourceStart();
+                }
 
+                var oldRes = new List<Resource>(RunningResources);
                 lock (RunningResources) RunningResources.Add(ourResource);
+
+                foreach (var resource in oldRes)
+                {
+                    resource.Engines.ForEach(en => en.InvokeServerResourceStart(ourResource.DirectoryName));
+                }
+
                 Program.Output("Resource " + ourResource.DirectoryName + " started!");
                 return true;
             }
@@ -609,7 +616,11 @@ namespace GTANetworkServer
             var gPool = ExportedFunctions as IDictionary<string, object>;
             if (gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
             CommandHandler.Unregister(ourRes.DirectoryName);
-                
+
+            foreach (var resource in RunningResources)
+            {
+                resource.Engines.ForEach(en => en.InvokeServerResourceStop(ourRes.DirectoryName));
+            }
 
             Program.Output("Stopped " + resourceName + "!");
             return true;

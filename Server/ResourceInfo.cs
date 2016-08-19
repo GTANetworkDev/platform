@@ -286,6 +286,26 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokeServerResourceStart(string resource)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeServerResourceStart(resource);
+            }));
+        }
+
+        public void InvokeServerResourceStop(string resource)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeServerResourceStop(resource);
+            }));
+        }
+
         public void InvokePlayerExitVehicle(Client client, NetHandle veh)
         {
             lock (_mainQueue.SyncRoot)
