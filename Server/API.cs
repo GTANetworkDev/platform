@@ -495,7 +495,7 @@ namespace GTANetworkServer
             Program.Output(text);
         }
 
-        public void sendCustomData(Client target, string data)
+        public void downloadData(Client target, string data)
         {
             if (ResourceParent == null || ResourceParent.ResourceParent == null) throw new NullReferenceException("Illegal call to sendCustomData inside constructor!");
             Program.ServerInstance.TransferLargeString(target, data, ResourceParent.ResourceParent.DirectoryName);
