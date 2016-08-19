@@ -19,6 +19,9 @@ namespace GTANetworkServer
         public bool ACLRequired { get; set; }
         public string Alias { get; set; }
         public string ArgumentConverter { get; set; }
+        public bool AddToHelpmanager { get; set; }
+        public string Description { get; set; }
+        public string Group { get; set; }
 
         public CommandAttribute(string command)
         {
@@ -42,7 +45,7 @@ namespace GTANetworkServer
     public class CommandParser
     {
         public string Command;
-        public string Helptext;
+        public string Usage;
         public string[] Aliases;
         public bool Greedy;
         public ScriptingEngine Engine;
@@ -51,6 +54,9 @@ namespace GTANetworkServer
         public bool Sensitive;
         public bool ACLRequired;
         public ArgumentConversionDelegate CustomArgumentParser;
+        public bool AddToHelpmanager;
+        public string Description;
+        public string Group;
 
         public bool Parse(Client sender, string cmdRaw)
         {
@@ -84,8 +90,8 @@ namespace GTANetworkServer
                 helpText = "~y~USAGE: ~w~/" + commandUsed;
             }
 
-            if (!string.IsNullOrEmpty(Helptext))
-                helpText = Helptext;
+            if (!string.IsNullOrEmpty(Usage))
+                helpText = Usage;
 
             if (args.Length < Parameters.Length || (args.Length > Parameters.Length && !Greedy))
             {
@@ -268,7 +274,10 @@ namespace GTANetworkServer
                     parser.Method = method;
                     parser.Sensitive = cmd.SensitiveInfo;
                     parser.ACLRequired = cmd.ACLRequired;
-                    parser.Helptext = cmd.CommandHelpText;
+                    parser.Usage = cmd.CommandHelpText;
+                    parser.AddToHelpmanager = cmd.AddToHelpmanager;
+                    parser.Description = cmd.Description;
+                    parser.Group = cmd.Group;
 
                     if (!string.IsNullOrEmpty(cmd.ArgumentConverter))
                     {
