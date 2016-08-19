@@ -1232,10 +1232,11 @@ namespace GTANetwork
         public delegate void StreamEvent(LocalHandle item, int entityType);
         public delegate void DataChangedEvent(LocalHandle entity, string key, object oldValue);
         public delegate void CustomDataReceived(string data);
+        public delegate void EmptyEvent();
 
-        public event EventHandler onResourceStart;
-        public event EventHandler onResourceStop;
-        public event EventHandler onUpdate;
+        public event EmptyEvent onResourceStart;
+        public event EmptyEvent onResourceStop;
+        public event EmptyEvent onUpdate;
         public event KeyEventHandler onKeyDown;
         public event KeyEventHandler onKeyUp;
         public event ServerEventTrigger onServerEventTrigger;
@@ -1283,17 +1284,17 @@ namespace GTANetwork
 
         internal void invokeResourceStart()
         {
-            onResourceStart?.Invoke(this, EventArgs.Empty);
+            onResourceStart?.Invoke();
         }
 
         internal void invokeUpdate()
         {
-            onUpdate?.Invoke(this, EventArgs.Empty);
+            onUpdate?.Invoke();
         }
 
         internal void invokeResourceStop()
         {
-            onResourceStop?.Invoke(this, EventArgs.Empty);
+            onResourceStop?.Invoke();
         }
 
         internal void invokeKeyDown(object sender, KeyEventArgs e)
