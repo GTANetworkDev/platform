@@ -23,6 +23,63 @@ namespace GTANetwork
             return value;
         }
 
+        public static void SetNonStandardVehicleMod(Vehicle veh, int slot, int value)
+        {
+            var eSlot = (NonStandardVehicleMod) slot;
+
+            switch (eSlot)
+            {
+                case NonStandardVehicleMod.BulletproofTyres:
+                    Function.Call(Hash.SET_VEHICLE_TYRES_CAN_BURST, veh, value != 0);
+                    break;
+                case NonStandardVehicleMod.NumberPlateStyle:
+                    Function.Call(Hash.SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX, veh, value);
+                    break;
+                case NonStandardVehicleMod.PearlescentColor:
+                    veh.PearlescentColor = (VehicleColor)value;
+                    break;
+                case NonStandardVehicleMod.WheelColor:
+                    veh.RimColor = (VehicleColor) value;
+                    break;
+                case NonStandardVehicleMod.WheelType:
+                    veh.WheelType = (VehicleWheelType) value;
+                    break;
+                case NonStandardVehicleMod.ModColor1:
+                    Function.Call(Hash.SET_VEHICLE_MOD_COLOR_1, veh, (value & 0xFF00) >> 8, (value & 0xFF));
+                    break;
+                case NonStandardVehicleMod.ModColor2:
+                    Function.Call(Hash.SET_VEHICLE_MOD_COLOR_2, veh, (value & 0xFF00) >> 8, (value & 0xFF));
+                    break;
+                case NonStandardVehicleMod.TyreSmokeColor:
+                    Function.Call(Hash.SET_VEHICLE_TYRE_SMOKE_COLOR, veh, (value & 0xFF0000) >> 16, (value & 0xFF00) >> 8, (value & 0xFF));
+                    break;
+                case NonStandardVehicleMod.WindowTint:
+                    Function.Call(Hash.SET_VEHICLE_WINDOW_TINT, veh, value);
+                    break;
+                case NonStandardVehicleMod.EnginePowerMultiplier:
+                    Function.Call(Hash._SET_VEHICLE_ENGINE_POWER_MULTIPLIER, veh, value);
+                    break;
+                case NonStandardVehicleMod.EngineTorqueMultiplier:
+                    Function.Call(Hash._SET_VEHICLE_ENGINE_TORQUE_MULTIPLIER, veh, value);
+                    break;
+                case NonStandardVehicleMod.NeonLightPos:
+                    for (int i = 0; i < 8; i++)
+                    {
+                        Function.Call(Hash._SET_VEHICLE_NEON_LIGHT_ENABLED, veh, i, (value & 1 << i) != 0);
+                    }
+                    break;
+                case NonStandardVehicleMod.NeonLightColor:
+                    Function.Call(Hash._SET_VEHICLE_NEON_LIGHTS_COLOUR, veh, (value & 0xFF0000) >> 16, (value & 0xFF00) >> 8, (value & 0xFF));
+                    break;
+                case NonStandardVehicleMod.DashboardColor:
+                    Function.Call((Hash)6956317558672667244uL, veh, value);
+                    break;
+                case NonStandardVehicleMod.TrimColor:
+                    Function.Call((Hash)17585947422526242585uL, veh, value);
+                    break;
+            }
+        }
+
         public static bool ModelRequest;
         public static void LoadModel(Model model)
         {

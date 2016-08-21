@@ -50,6 +50,7 @@
     <Compile Include="BitReader.cs" />
     <Compile Include="EntityProperties.cs" />
     <Compile Include="NativeData.cs" />
+    <Compile Include="NonStandardVehicleMods.cs" />
     <Compile Include="PacketOptimization.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Packets.cs" />

@@ -609,7 +609,38 @@ namespace GTANetwork
             if (prop.SecondaryColor != null) veh.SecondaryColor = prop.SecondaryColor.Value;
             if (prop.Health != null) veh.Health = prop.Health.Value;
             if (prop.IsDead != null) veh.IsDead = prop.IsDead.Value;
-            if (prop.Mods != null) veh.Mods = prop.Mods;
+            if (prop.Mods != null)
+            {
+                var oldMods = prop.Mods;
+                veh.Mods = prop.Mods;
+                if (veh.StreamedIn)
+                {
+                    var car = new Vehicle(NetToEntity(veh)?.Handle ?? 0);
+
+                    if (car.Handle != 0)
+                    foreach (var pair in oldMods.Except(prop.Mods))
+                    {
+                        if (pair.Key <= 50)
+                        {
+                            if (prop.Mods.ContainsKey(pair.Key))
+                            {
+                                if (pair.Key >= 17 && pair.Key <= 22)
+                                    car.ToggleMod((VehicleToggleMod)pair.Key, pair.Value != 0);
+                                else
+                                    car.SetMod((VehicleMod)pair.Key, pair.Value, false);
+                            }
+                            else
+                            {
+                                Function.Call(Hash.REMOVE_VEHICLE_MOD, car, pair.Key);
+                            }
+                        }
+                        else
+                        {
+                            Util.SetNonStandardVehicleMod(car, pair.Key, pair.Value);
+                        }
+                    }
+                }
+            }
             if (prop.Siren != null) veh.Siren = prop.Siren.Value;
             if (prop.Doors != null) veh.Doors = prop.Doors.Value;
             if (prop.Trailer != null) veh.Trailer = prop.Trailer.Value;
@@ -1894,7 +1925,10 @@ namespace GTANetwork
             veh.EngineHealth = data.Health;
             veh.SirenActive = data.Siren;
             veh.NumberPlate = data.NumberPlate;
-            
+            veh.WheelType = 0;
+            Function.Call(Hash.SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX, veh, 0);
+            Function.Call(Hash.SET_VEHICLE_WINDOW_TINT, veh, 0);
+
             if (data.Trailer != 0)
             {
                 var trailerId = NetToStreamedItem(data.Trailer);
@@ -1923,20 +1957,33 @@ namespace GTANetwork
                 }
             }
 
+
             Function.Call(Hash.SET_VEHICLE_MOD_KIT, veh, 0);
 
             if (data.Mods != null)
-                for (int i = 0; i < 50; i++)
+            {
+                for (int i = 0; i <= 100; i++)
                 {
-                    if (data.Mods.ContainsKey(i))
+                    if (i <= 50)
                     {
-                        veh.SetMod((VehicleMod)i, data.Mods[i], false);
+                        if (data.Mods.ContainsKey((byte)i))
+                        {
+                            if (i >= 17 && i <= 22)
+                                veh.ToggleMod((VehicleToggleMod) i, data.Mods[(byte)i] != 0);
+                            else
+                                veh.SetMod((VehicleMod) i, data.Mods[(byte)i], false);
+                        }
+                        else
+                        {
+                            Function.Call(Hash.REMOVE_VEHICLE_MOD, veh, i);
+                        }
                     }
                     else
                     {
-                        Function.Call(Hash.REMOVE_VEHICLE_MOD, veh, i);
+                        if (data.Mods.ContainsKey((byte)i)) Util.SetNonStandardVehicleMod(veh, i, data.Mods[(byte)i]);
                     }
                 }
+            }
 
             if (data.IsDead)
             {

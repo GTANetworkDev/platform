@@ -113,7 +113,7 @@ namespace GTANetworkShared
     {
         public VehicleProperties()
         {
-            Mods = new Dictionary<int, int>();
+            Mods = new Dictionary<byte, int>();
             EntityType = (byte)GTANetworkShared.EntityType.Vehicle;
         }
 
@@ -130,7 +130,7 @@ namespace GTANetworkShared
         public bool IsDead { get; set; }
 
         [ProtoMember(5)]
-        public Dictionary<int, int> Mods { get; set; }
+        public Dictionary<byte, int> Mods { get; set; }
 
         [ProtoMember(6)]
         public bool Siren { get; set; }
@@ -398,7 +398,7 @@ namespace GTANetworkShared
         public bool? IsDead { get; set; }
 
         [ProtoMember(5)]
-        public Dictionary<int, int> Mods { get; set; }
+        public Dictionary<byte, int> Mods { get; set; }
 
         [ProtoMember(6)]
         public bool? Siren { get; set; }
