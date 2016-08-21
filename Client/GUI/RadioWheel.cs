@@ -173,10 +173,6 @@ namespace GTANetwork.GUI
         
         public void OnTick(object sender, EventArgs e)
         {
-            if (!Game.Player.Character.IsInVehicle() || Main.Chat.IsFocused) return;
-
-            if (_disable)
-                Game.DisableControl(0, Control.VehicleRadioWheel);
 
             var radios = _radioNames;
 
@@ -189,21 +185,6 @@ namespace GTANetwork.GUI
                 currentRadio = radioOff;
             else
                 currentRadio = Array.IndexOf(radios, radioName);
-
-            if (Game.IsControlJustPressed(0, Control.VehicleRadioWheel))
-            {
-                _lastPress = DateTime.Now;
-            }
-
-            if (Game.IsControlPressed(0, Control.VehicleRadioWheel) && !_disable &&
-                DateTime.Now.Subtract(_lastPress).TotalMilliseconds > 100)
-            {
-                _disable = true;
-                Function.Call(Hash.SET_AUDIO_FLAG, "ActivateSwitchWheelAudio", 1);
-                Function.Call(Hash._START_SCREEN_EFFECT, "SwitchHUDIn", 0, 0);
-
-                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_In", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
-            }
 
             if (Game.IsControlJustReleased(0, Control.VehicleRadioWheel))
             {
@@ -219,6 +200,26 @@ namespace GTANetwork.GUI
                 Function.Call(Hash._STOP_SCREEN_EFFECT, "SwitchHUDIn");
                 Function.Call(Hash._START_SCREEN_EFFECT, "SwitchHUDOut", 0, 0);
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_Out", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
+            }
+
+            if (!Game.Player.Character.IsInVehicle() || Main.Chat.IsFocused) return;
+
+            if (_disable)
+                Game.DisableControl(0, Control.VehicleRadioWheel);
+            
+            if (Game.IsControlJustPressed(0, Control.VehicleRadioWheel))
+            {
+                _lastPress = DateTime.Now;
+            }
+
+            if (Game.IsControlPressed(0, Control.VehicleRadioWheel) && !_disable &&
+                DateTime.Now.Subtract(_lastPress).TotalMilliseconds > 100)
+            {
+                _disable = true;
+                Function.Call(Hash.SET_AUDIO_FLAG, "ActivateSwitchWheelAudio", 1);
+                Function.Call(Hash._START_SCREEN_EFFECT, "SwitchHUDIn", 0, 0);
+
+                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_In", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
             }
 
             if (DateTime.Now.Subtract(_lastPress).TotalMilliseconds <= 100 || !Game.IsDisabledControlPressed(0, Control.VehicleRadioWheel)) return;
