@@ -288,6 +288,8 @@ namespace GTANetwork
             {
                 var absPath = dir + "\\pc_settings.bin";
 
+                if (!File.Exists(absPath)) continue;
+
                 using (Stream stream = new FileStream(absPath, FileMode.Open))
                 {
                     stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
@@ -309,6 +311,8 @@ namespace GTANetwork
             foreach (var dir in dirs)
             {
                 var absPath = dir + "\\pc_settings.bin";
+
+                if (!File.Exists(absPath)) continue;
 
                 using (Stream stream = new FileStream(absPath, FileMode.Open))
                 {
