@@ -38,7 +38,7 @@ namespace GTANetwork
 
     public static class AudioThread
     {
-        public static void StartAudio(string path)
+        public static void StartAudio(string path, bool looped)
         {
             try
             {
@@ -46,7 +46,20 @@ namespace GTANetwork
                 JavascriptHook.AudioDevice?.Dispose();
                 JavascriptHook.AudioReader?.Dispose();
 
-                JavascriptHook.AudioReader = new Mp3FileReader(path);
+                if (path.EndsWith(".wav"))
+                {
+                    JavascriptHook.AudioReader = new WaveFileReader(path);
+                }
+                else
+                {
+                    JavascriptHook.AudioReader = new Mp3FileReader(path);
+                }
+
+                if (looped)
+                {
+                    JavascriptHook.AudioReader = new LoopStream(JavascriptHook.AudioReader);
+                }
+
                 JavascriptHook.AudioDevice = new WaveOutEvent();
                 JavascriptHook.AudioDevice.Init(JavascriptHook.AudioReader);
                 JavascriptHook.AudioDevice.Play();
@@ -125,7 +138,7 @@ namespace GTANetwork
         public static List<Action> ThreadJumper;
 
         public static WaveOutEvent AudioDevice { get; set; }
-        public static Mp3FileReader AudioReader { get; set; }
+        public static WaveStream AudioReader { get; set; }
 
         public static void InvokeServerEvent(string eventName, object[] arguments)
         {
@@ -483,9 +496,9 @@ namespace GTANetwork
             return Main.CanOpenChatbox;
         }
 
-        public Browser createCefBrowser(double width, double height)
+        public Browser createCefBrowser(double width, double height, bool local = true)
         {
-            var newBrowser = new Browser(Engine, new Size((int)width, (int)height));
+            var newBrowser = new Browser(Engine, new Size((int)width, (int)height), local);
             CEFManager.Browsers.Add(newBrowser);
             return newBrowser;
         }
@@ -558,18 +571,29 @@ namespace GTANetwork
 
         public void loadPageCefBrowser(Browser browser, string uri)
         {
-            checkPathSafe(uri);
+            if (browser == null) return;
 
-            if (!DownloadManager.CheckFileIntegrity())
+            if (browser._localMode)
             {
-                Main.Client.Disconnect("Quit");
-                DownloadManager.FileIntegrity.Clear();
-                return;
+                checkPathSafe(uri);
+
+                if (!DownloadManager.CheckFileIntegrity())
+                {
+                    Main.Client.Disconnect("Quit");
+                    DownloadManager.FileIntegrity.Clear();
+                    return;
+                }
+
+                string fullUri = "http://" + ParentResourceName + "/" + uri.TrimStart('/');
+
+                browser.GoToPage(fullUri);
             }
+            else
+            {
+                // TODO: Check whitelist domains
 
-            string fullUri = "http://" + ParentResourceName + "/" + uri.TrimStart('/');
-
-            browser.GoToPage(fullUri);
+                browser.GoToPage(uri);
+            }
         }
 
         public bool isCefBrowserLoading(Browser browser)
@@ -1167,11 +1191,11 @@ namespace GTANetwork
             } while (DateTime.Now.Subtract(start).TotalMilliseconds < ms);
         }
 
-        public void startAudio(string path)
+        public void startAudio(string path, bool looped)
         {
-            if (path.StartsWith("http")) return;
+            //if (path.StartsWith("http")) return;
             path = getResourceFilePath(path);
-            AudioThread.StartAudio(path);
+            AudioThread.StartAudio(path, looped);
         }
 
         public void pauseAudio()

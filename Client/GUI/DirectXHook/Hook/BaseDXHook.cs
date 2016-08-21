@@ -8,42 +8,19 @@ using System.Runtime.InteropServices;
 using System.Runtime.Remoting;
 using System.Threading;
 using EasyHook;
-using GTANetwork.GUI.DirectXHook.Interface;
-using ImageFormat = GTANetwork.GUI.DirectXHook.Interface.ImageFormat;
 
 namespace GTANetwork.GUI.DirectXHook.Hook
 {
     internal abstract class BaseDXHook: SharpDX.Component, IDXHook
     {
-        protected readonly ClientCaptureInterfaceEventProxy InterfaceEventProxy = new ClientCaptureInterfaceEventProxy();
-
         public BaseDXHook()
         {
             this.Timer = new Stopwatch();
             this.Timer.Start();
-            this.FPS = new FramesPerSecond();
-
-            InterfaceEventProxy.ScreenshotRequested += new ScreenshotRequestedEvent(InterfaceEventProxy_ScreenshotRequested);
-            InterfaceEventProxy.DisplayText += new DisplayTextEvent(InterfaceEventProxy_DisplayText);
         }
         ~BaseDXHook()
         {
             Dispose(false);
-        }
-
-        void InterfaceEventProxy_DisplayText(DisplayTextEventArgs args)
-        {
-            TextDisplay = new TextDisplay()
-            {
-                Text = args.Text,
-                Duration = args.Duration
-            };
-        }
-
-        protected virtual void InterfaceEventProxy_ScreenshotRequested(ScreenshotRequest request)
-        {
-            
-            this.Request = request;
         }
 
         protected Stopwatch Timer { get; set; }
@@ -51,10 +28,6 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         /// <summary>
         /// Frames Per second counter, FPS.Frame() must be called each frame
         /// </summary>
-        protected FramesPerSecond FPS { get; set; }
-
-        protected TextDisplay TextDisplay { get; set; }
-
         int _processId = 0;
         protected int ProcessId
         {
@@ -74,13 +47,6 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             {
                 return "BaseDXHook";
             }
-        }
-
-        protected void Frame()
-        {
-            FPS.Frame();
-            if (TextDisplay != null && TextDisplay.Display) 
-                TextDisplay.Frame();
         }
 
         protected void DebugMessage(string message)
@@ -157,7 +123,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 }
             }
         }
-
+        /*
         /// <summary>
         /// Process the capture based on the requested format.
         /// </summary>
@@ -227,26 +193,6 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             SendResponse(response);
         }
 
-        protected void SendResponse(Interface.Screenshot response)
-        {
-            System.Threading.Tasks.Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    LastCaptureTime = Timer.Elapsed;
-                }
-                catch (RemotingException)
-                {
-                    // Ignore remoting exceptions
-                    // .NET Remoting will throw an exception if the host application is unreachable
-                }
-                catch (Exception e)
-                {
-                    DebugMessage(e.ToString());
-                }
-            });
-        }
-
         protected void ProcessCapture(Stream stream, ScreenshotRequest request)
         {
             ProcessCapture(ReadFullStream(stream), request);
@@ -272,7 +218,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             }
         }
 
-
+        */
         private ImageCodecInfo GetEncoder(System.Drawing.Imaging.ImageFormat format)
         {
             ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
@@ -305,30 +251,12 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         {
             get
             {
-                return ((Timer.Elapsed - LastCaptureTime) > CaptureDelay) || Request != null;
+                return ((Timer.Elapsed - LastCaptureTime) > CaptureDelay);
             }
         }
         protected TimeSpan CaptureDelay { get; set; }
 
         #region IDXHook Members
-
-        private CaptureConfig _config;
-        public CaptureConfig Config
-        {
-            get { return _config; }
-            set
-            {
-                _config = value;
-                CaptureDelay = new TimeSpan(0, 0, 0, 0, (int)((1.0 / (double)_config.TargetFramesPerSecond) * 1000.0));
-            }
-        }
-
-        private ScreenshotRequest _request;
-        public ScreenshotRequest Request
-        {
-            get { return _request; }
-            set { Interlocked.Exchange(ref _request, value);  }
-        }
 
         protected List<Hook> Hooks = new List<Hook>();
         public abstract void Hook();

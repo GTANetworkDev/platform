@@ -155,9 +155,13 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                     }
                     else if (imageElement != null)
                     {
-                        DXImage image = GetImageForImageElement(imageElement);
-                        if (image != null)
-                            _spriteEngine.DrawImage(imageElement.Location.X, imageElement.Location.Y, imageElement.Scale, imageElement.Angle, imageElement.Tint, image);
+                        lock (_imageCache)
+                        {
+                            DXImage image = GetImageForImageElement(imageElement);
+                            if (image != null)
+                                _spriteEngine.DrawImage(imageElement.Location.X, imageElement.Location.Y,
+                                    imageElement.Scale, imageElement.Angle, imageElement.Tint, image);
+                        }
                     }
                 }
             }
@@ -199,7 +203,6 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                 foreach (var dxImage in _imageCache)
                 {
                     dxImage.Value?.Dispose();
-                    //((ImageElement)dxImage.Key).Dispose();
                 }
 
                 _imageCache.Clear();
@@ -216,17 +219,15 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
         DXImage GetImageForImageElement(ImageElement element)
         {
             DXImage result = null;
-
-            lock (_imageCache)
+            
+            if (!_imageCache.TryGetValue(element, out result))
             {
-                if (!_imageCache.TryGetValue(element, out result))
-                {
-                    //result = new DXImage(_device, _deviceContext);
-                    result = ToDispose(new DXImage(_device, _deviceContext));
-                    result.Initialise(element.Bitmap);
-                    _imageCache[element] = result;
-                }
+                //result = new DXImage(_device, _deviceContext);
+                result = ToDispose(new DXImage(_device, _deviceContext));
+                result.Initialise(element.Bitmap);
+                _imageCache[element] = result;
             }
+
             Disposable = false;
             return result;
         }

@@ -216,11 +216,18 @@ technique11 SpriteTech {
             {
                 _deviceContext.OutputMerger.SetBlendState(_transparentBS, blendFactor);
 
-                BeginBatch(image.GetSRV());
+                try
+                {
+                    BeginBatch(image.GetSRV());
 
-                Draw(new Rectangle(x, y, (int)(scale * image.Width), (int)(scale * image.Height)), new Rectangle(0, 0, image.Width, image.Height), color.HasValue ? ToColor4(color.Value) : Color4.White, 1.0f, angle);
-
-                EndBatch();
+                    Draw(new Rectangle(x, y, (int) (scale*image.Width), (int) (scale*image.Height)),
+                        new Rectangle(0, 0, image.Width, image.Height),
+                        color.HasValue ? ToColor4(color.Value) : Color4.White, 1.0f, angle);
+                }
+                finally
+                {
+                    EndBatch();
+                }
                 _deviceContext.OutputMerger.SetBlendState(backupBlendState, backupBlendFactor, backupMask);
             }
         }
@@ -283,7 +290,6 @@ technique11 SpriteTech {
 
             Texture2D tex = _batchTexSRV.ResourceAs<Texture2D>();
             {
-
                 Texture2DDescription texDesc = tex.Description;
                 _texWidth = texDesc.Width;
                 _texHeight = texDesc.Height;

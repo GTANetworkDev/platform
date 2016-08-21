@@ -202,7 +202,9 @@ namespace GTANetwork.GUI
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_Out", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
             }
 
-            if (!Game.Player.Character.IsInVehicle() || Main.Chat.IsFocused) return;
+            if (!Game.Player.Character.IsInVehicle() || Main.Chat.IsFocused ||
+                Util.GetResponsiblePed(Game.Player.Character.CurrentVehicle).Handle != Game.Player.Character.Handle)
+                return;
 
             if (_disable)
                 Game.DisableControl(0, Control.VehicleRadioWheel);

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using GTANetwork.GUI.DirectXHook.Interface;
 using SharpDX;
 using SharpDX.Direct3D10;
 using SharpDX.DXGI;
@@ -126,7 +125,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
     {
         const int D3D10_DEVICE_METHOD_COUNT = 98;
 
-        public DXHookD3D10(CaptureInterface ssInterface)
+        public DXHookD3D10()
             : base()
         {
             this.DebugMessage("Create");
@@ -252,7 +251,6 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         /// <returns>The HRESULT of the original method</returns>
         int PresentHook(IntPtr swapChainPtr, int syncInterval, PresentFlags flags)
         {
-            this.Frame();
             SwapChain swapChain = (SharpDX.DXGI.SwapChain)swapChainPtr;
             
             try

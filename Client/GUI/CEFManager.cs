@@ -1,5 +1,5 @@
-﻿#define DISABLE_HOOK
-#define DISABLE_CEF
+﻿//#define DISABLE_HOOK
+//#define DISABLE_CEF
 
 #if true
 using System;
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using CefSharp;
@@ -378,33 +379,44 @@ namespace GTANetwork.GUI
     {
         public IResourceHandler Create(IBrowser browser, IFrame frame, string schemeName, IRequest request)
         {
-            var uri = new Uri(request.Url);
-            var path = Main.GTANInstallDir + "\\resources\\";
+            var browserWrapper = CEFManager.Browsers.FirstOrDefault(b => b._browser?.GetBrowser() == browser);
 
-            var requestedFile = path + uri.Host + uri.LocalPath;
-
-            if (!File.Exists(requestedFile))
+            if (browserWrapper == null || browserWrapper._localMode)
             {
-                return ResourceHandler.FromString(@"<!DOCTYPE html><html><body><h1>404</h1></body></html>", ".html");
+                var uri = new Uri(request.Url);
+                var path = Main.GTANInstallDir + "\\resources\\";
+
+                var requestedFile = path + uri.Host + uri.LocalPath;
+
+                if (!File.Exists(requestedFile))
+                {
+                    return ResourceHandler.FromString(@"<!DOCTYPE html><html><body><h1>404</h1></body></html>", ".html");
+                }
+
+                return ResourceHandler.FromFileName(requestedFile, Path.GetExtension(requestedFile));
             }
 
-            return ResourceHandler.FromFileName(requestedFile, Path.GetExtension(requestedFile));
+            return null;
         }
     }
 
     public class BrowserJavascriptCallback
     {
         private V8ScriptEngine _parent;
+        private Browser _wrapper;
 
-        public BrowserJavascriptCallback(V8ScriptEngine parent)
+        public BrowserJavascriptCallback(V8ScriptEngine parent, Browser wrapper)
         {
             _parent = parent;
+            _wrapper = wrapper;
         }
 
         public BrowserJavascriptCallback() { }
 
         public object call(string functionName, params object[] arguments)
         {
+            if (!_wrapper._localMode) return null;
+
             object objToReturn = null;
             bool hasValue = false;
 
@@ -449,6 +461,8 @@ namespace GTANetwork.GUI
 
         public object eval(string code)
         {
+            if (!_wrapper._localMode) return null;
+
             object objToReturn = null;
             bool hasValue = false;
 
@@ -472,6 +486,7 @@ namespace GTANetwork.GUI
 
         public void addEventHandler(string eventName, Action<object[]> action)
         {
+            if (!_wrapper._localMode) return;
             _eventHandlers.Add(new Tuple<string, Action<object[]>>(eventName, action));
         }
 
@@ -490,11 +505,12 @@ namespace GTANetwork.GUI
     public class Browser : IDisposable
     {
         internal ChromiumWebBrowser _browser;
+        internal readonly bool _localMode;
 
         public bool Headless = false;
 
         public Point Position { get; set; }
-
+        
         private Size _size;
         public Size Size
         {
@@ -510,6 +526,8 @@ namespace GTANetwork.GUI
 
         public object eval(string code)
         {
+            if (!_localMode) return null;
+
             var task = _browser.EvaluateScriptAsync(code);
 
             task.Wait();
@@ -521,6 +539,8 @@ namespace GTANetwork.GUI
 
         public object call(string method, params object[] arguments)
         {
+            if (!_localMode) return null;
+
             string callString = method + "(";
 
             for (int i = 0; i < arguments.Length; i++)
@@ -551,31 +571,26 @@ namespace GTANetwork.GUI
             return null;
         }
 
-        internal Browser(V8ScriptEngine father, Size browserSize)
+        internal Browser(V8ScriptEngine father, Size browserSize, bool localMode)
         {
             Father = father;
 
             var settings = new BrowserSettings();
             settings.LocalStorage = CefState.Disabled;
             settings.OffScreenTransparentBackground = true;
+
+            if (!localMode)
+            {
+                settings.Javascript = CefState.Disabled;
+            }
             
             _browser = new ChromiumWebBrowser(browserSettings: settings);
-            _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father), false);
+            _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father, this), false);
             Size = browserSize;
+
+            _localMode = localMode;
         }
-
-        internal Browser(V8ScriptEngine father, string uri, Size browserSize)
-        {
-            Father = father;
-
-            var settings = new BrowserSettings();
-            settings.LocalStorage = CefState.Disabled;
-            settings.OffScreenTransparentBackground = true;
-
-            _browser = new ChromiumWebBrowser(uri, browserSettings: settings);
-            Size = browserSize;
-        }
-
+        
         internal void GoToPage(string page)
         {
             //if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
