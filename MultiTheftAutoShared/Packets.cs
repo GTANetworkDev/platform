@@ -108,6 +108,7 @@ namespace GTANetworkShared
         HasAimData = 1 << 6,
         BurnOut = 1 << 7,
         ExitingVehicle = 1 << 8,
+        PlayerDead = 1 << 9,
     }
     
     [Flags]
@@ -130,6 +131,7 @@ namespace GTANetworkShared
         EnteringVehicle = 1 << 14,
         ClosingVehicleDoor = 1 << 15,
         OnFire = 1 << 16,
+        PlayerDead = 1 << 17,
     }
 
     public enum ConnectionChannel

@@ -1,5 +1,4 @@
 var mainWindow = null;
-var invincible = false;
 
 API.onResourceStart.connect(function (sender, e) {
 	mainWindow = API.createMenu("PLAYER", 0, 0, 6);
@@ -12,9 +11,8 @@ API.onResourceStart.connect(function (sender, e) {
 	var invin = API.createCheckboxItem("Invincibility", "", false);
 
 	invin.CheckboxEvent.connect(function (item, newChecked) {
-		API.callNative("SET_PLAYER_INVINCIBLE", API.getGamePlayer(), newChecked);
+		API.setPlayerInvincible(newChecked);
 		API.sendNotification("Invincibility " + (newChecked ? "~g~on" : "~r~off"));
-		invincible = newChecked;
 	});
 
 	mainWindow.AddItem(invin);
@@ -55,10 +53,3 @@ API.onResourceStart.connect(function (sender, e) {
 
 	mainWindow.AddItem(suicide);
 });
-
-
-API.onUpdate.connect(function (s, e) {
-	if (invincible) {
-		API.callNative("SET_PLAYER_INVINCIBLE", API.getGamePlayer(), true);
-	}
-})

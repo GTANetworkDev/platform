@@ -217,6 +217,8 @@ namespace GTANetwork
                     obj.Flag |= (byte)VehicleDataFlags.SirenActive;
                 if (vehdead)
                     obj.Flag |= (byte)VehicleDataFlags.VehicleDead;
+                if (player.IsDead)
+                    obj.Flag |= (short) VehicleDataFlags.PlayerDead;
 
                 if (Util.GetResponsiblePed(veh).Handle == player.Handle)
                     obj.Flag |= (byte)VehicleDataFlags.Driver;
@@ -359,6 +361,8 @@ namespace GTANetwork
                     obj.Flag |= (int) PedDataFlags.IsVaulting;
                 if (Function.Call<bool>(Hash.IS_ENTITY_ON_FIRE, player))
                     obj.Flag |= (int) PedDataFlags.OnFire;
+                if (player.IsDead)
+                    obj.Flag |= (int)PedDataFlags.PlayerDead;
 
                 if (player.IsSubtaskActive(168))
                 {

@@ -92,6 +92,7 @@ namespace GTANetwork
         public bool Siren;
         public int PedArmor;
         public bool IsVehDead;
+        public bool IsPlayerDead;
 
         private object _secondSnapshot;
         private object _firstSnapshot;
@@ -444,12 +445,13 @@ namespace GTANetwork
 
                 Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, Character, false);
                 Function.Call(Hash.SET_PED_DROPS_WEAPONS_WHEN_DEAD, Character, false);
+                
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, Character, true);
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, Character, Game.Player, true);
                 Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, Character, false);
                 Function.Call(Hash.SET_PED_AS_ENEMY, Character, false);
-                Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Character, true, false);
-
+                Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Character, true, true);
+                
 			    if (Alpha < 255) Character.Alpha = Alpha;
 
                 LogManager.DebugLog("SETTING CLOTHES FOR " + Name);
@@ -1533,6 +1535,7 @@ namespace GTANetwork
                 return;
 	        }
 
+	        
 #if !CRASHTEST
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
@@ -1555,36 +1558,35 @@ namespace GTANetwork
             {
                 Character.Task.ClearSecondary();
 
-                if (Game.GameTime - _lastVehicleAimUpdate > 40)
+                var latency = DataLatency + TicksSinceLastUpdate;
+                var dir = Position - _lastPosition;
+                var posTarget = Vector3.Lerp(Position, Position + dir,
+                    latency / ((float)AverageLatency));
+
+                var ndir = posTarget - Character.Position;
+                
+                if (ndir.LengthSquared() > 1e-3)
                 {
-                    //Character.Task.AimAt(AimCoords, -1);
-                    var latency = DataLatency + TicksSinceLastUpdate;
-                    var dir = Position - _lastPosition;
-                    var posTarget = Vector3.Lerp(Position, Position + dir,
-                        latency / ((float)AverageLatency));
+                    if (Game.GameTime - _lastVehicleAimUpdate > 40)
+                    {
+                        ndir.Normalize();
 
-                    var ndir = posTarget - Character.Position;
-                    ndir.Normalize();
+                        var target = Character.Position + ndir*20f;
 
-                    var target = Character.Position + ndir * 20f;
+                        Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character, target.X, target.Y,
+                            target.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 3f, false, 2f, 2f, true, 512, false,
+                            unchecked ((int) FiringPattern.FullAuto));
 
-                    Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character, target.X, target.Y,
-                        target.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 3f, false, 2f, 2f, true, 512, false,
-                        unchecked ((int) FiringPattern.FullAuto));
-                    _lastVehicleAimUpdate = Game.GameTime;
+                        _lastVehicleAimUpdate = Game.GameTime;
+                    }
+                }
+                else
+                {
+                    Character.Task.AimAt(AimCoords, 100);
                 }
 			}
 
             UpdatePlayerPedPos();
-            /*
-			var dirVector = Position - _lastPosition;
-
-			var target = Util.LinearVectorLerp(Position,
-				(Position) + dirVector,
-                Environment.TickCount - LastUpdateReceived, (int)AverageLatency);
-			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0,
-				0, 0, 0);
-                */
         }
 
 	    void DisplayMeleeAnimation(int hands)
@@ -1871,15 +1873,17 @@ namespace GTANetwork
 				}
 				DEBUG_STEP = 27;
 
-			    if (IsRagdoll)
+			    bool ragdoll = IsRagdoll;
+
+			    if (IsPlayerDead) ragdoll = true;
+
+			    if (ragdoll)
 			    {
 			        if (!Character.IsRagdoll)
 			        {
 			            Character.CanRagdoll = true;
                         Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 50000, 60000, 0, 1, 1, 1);
 			        }
-
-                    
 
                     var dir = Position - _lastPosition;
                     var vdir = PedVelocity - _lastPedVel;
@@ -1897,13 +1901,13 @@ namespace GTANetwork
                     
                     return true;
 			    }
-                else if (!IsRagdoll && Character.IsRagdoll)
+                else if (!ragdoll && Character.IsRagdoll)
                 {
                     Character.CanRagdoll = false;
                     Character.Task.ClearAllImmediately();
                     Character.PositionNoOffset = Position;
 
-                    if (PedHealth > 0)
+                    if (!IsPlayerDead)
                     {
                         Function.Call(Hash.TASK_PLAY_ANIM, Character,
                             Util.LoadDict("get_up@standard"), "back",
@@ -2066,7 +2070,12 @@ namespace GTANetwork
                 if (Character != null)
                 {
                     Character.Health = PedHealth;
-                    if (PedHealth == 0 && !Character.IsDead) Character.Kill();
+                    if (IsPlayerDead && !Character.IsDead)
+                    {
+                        Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
+                        Character.IsInvincible = false;
+                        Character.Kill();
+                    }
                 }
 
                 if (UpdatePosition()) return;
@@ -2373,7 +2382,8 @@ namespace GTANetwork
                 weapon == unchecked((int)WeaponHash.Musket) ||
                 weapon == unchecked((int)WeaponHash.AssaultShotgun) ||
                 weapon == unchecked((int)WeaponHash.BullpupShotgun) ||
-                weapon == unchecked((int)WeaponHash.SawnOffShotgun))
+                weapon == unchecked((int)WeaponHash.SawnOffShotgun) ||
+                weapon == unchecked((int)WeaponHash.CompactRifle))
                 return 2;
             return 1;
         }

@@ -211,14 +211,16 @@ namespace GTANetwork
             Function.Call((Hash)0x0888C3502DBBEEF5); // _LOAD_MP_DLC_MAPS
             Function.Call((Hash)0x9BAE5AD2508DF078, true); // _ENABLE_MP_DLC_MAPS
             
+            World.DestroyAllCameras();
+
             MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(),
                 GameplayCamera.FieldOfView);
             MainMenuCamera.PointAt(new Vector3(707.86f, 1228.09f, 333.66f));
 
             RelGroup = World.AddRelationshipGroup("SYNCPED");
             FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, RelGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Neutral, Game.Player.Character.RelationshipGroup, RelGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, RelGroup, Game.Player.Character.RelationshipGroup);
+            World.SetRelationshipBetweenGroups(Relationship.Hate, Game.Player.Character.RelationshipGroup, RelGroup);
 
             World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
             World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
@@ -2952,6 +2954,7 @@ namespace GTANetwork
             Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
             Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, Game.Player.Character, true, true);
+            Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, Game.Player.Character, true);
             Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
             Function.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
             Function.Call((Hash)0xD2B315B6689D537D, Game.Player, false);
@@ -4378,6 +4381,7 @@ namespace GTANetwork
                 syncPed.IsAiming = (fullData.Flag.Value & (short)VehicleDataFlags.Aiming) > 0;
                 syncPed.IsInBurnout = (fullData.Flag.Value & (short) VehicleDataFlags.BurnOut) > 0;
                 syncPed.ExitingVehicle = (fullData.Flag.Value & (short) VehicleDataFlags.ExitingVehicle) != 0;
+                syncPed.IsPlayerDead = (fullData.Flag.Value & (int)VehicleDataFlags.PlayerDead) != 0;
             }
 
             if (fullData.WeaponHash != null)
@@ -4459,6 +4463,7 @@ namespace GTANetwork
                 syncPed.IsReloading = (fullPacket.Flag.Value & (int)PedDataFlags.IsReloading) > 0;
                 syncPed.IsVaulting = (fullPacket.Flag.Value & (int)PedDataFlags.IsVaulting) > 0;
                 syncPed.IsOnFire = (fullPacket.Flag.Value & (int)PedDataFlags.OnFire) != 0;
+                syncPed.IsPlayerDead = (fullPacket.Flag.Value & (int)PedDataFlags.PlayerDead) != 0;
 
                 syncPed.EnteringVehicle = (fullPacket.Flag.Value & (int)PedDataFlags.EnteringVehicle) != 0;
 
