@@ -259,6 +259,72 @@ namespace GTANetworkServer
             return Path.GetFullPath("resources\\" + ResourceParent.ResourceParent.DirectoryName);
         }
 
+        public string getResourceName(string resource)
+        {
+            if (doesResourceExist(resource))
+            {
+                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Name;
+            }
+
+            return null;
+        }
+
+        public string getResourceDescription(string resource)
+        {
+            if (doesResourceExist(resource))
+            {
+                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Description;
+            }
+
+            return null;
+        }
+
+        public string getResourceAuthor(string resource)
+        {
+            if (doesResourceExist(resource))
+            {
+                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Author;
+            }
+
+            return null;
+        }
+
+        public string getResourceVersion(string resource)
+        {
+            if (doesResourceExist(resource))
+            {
+                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Version;
+            }
+
+            return null;
+        }
+
+        public ResourceType getResourceType(string resource)
+        {
+            if (doesResourceExist(resource))
+            {
+                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Type ?? ResourceType.script;
+            }
+
+            return ResourceType.script;
+        }
+
+        public string[] getMapGamemodes(string resource)
+        {
+            if (doesResourceExist(resource))
+            {
+                var gms = Program.ServerInstance.GetResourceInfo(resource)?.Info;
+
+                if (gms == null || gms.Type != ResourceType.map) return null;
+
+                if (string.IsNullOrEmpty(gms.Gamemodes)) return new string[0];
+
+                return gms.Gamemodes.Split(',');
+            }
+
+            return null;
+        }
+
         public string getCurrentGamemode()
         {
             return Program.ServerInstance.RunningResources.FirstOrDefault(res => res.Info.Info.Type == ResourceType.gamemode)?.DirectoryName;
@@ -1244,24 +1310,24 @@ namespace GTANetworkServer
             sendNativeToPlayer(player, 0x176CECF6F920D707, player.CharacterHandle);
         }
 
-        public int vehicleNameToModel(string modelName)
+        public VehicleHash vehicleNameToModel(string modelName)
 		{
-			return (from object value in Enum.GetValues(typeof (VehicleHash)) where modelName.ToLower() == ((VehicleHash) value).ToString().ToLower() select (int) ((VehicleHash) value)).FirstOrDefault();
+			return (from object value in Enum.GetValues(typeof (VehicleHash)) where modelName.ToLower() == ((VehicleHash) value).ToString().ToLower() select ((VehicleHash) value)).FirstOrDefault();
 		}
 
-	    public int pedNameToModel(string modelName)
+	    public PedHash pedNameToModel(string modelName)
         {
-			return (from object value in Enum.GetValues(typeof(PedHash)) where modelName.ToLower() == ((PedHash)value).ToString().ToLower() select (int)((PedHash)value)).FirstOrDefault();
+			return (from object value in Enum.GetValues(typeof(PedHash)) where modelName.ToLower() == ((PedHash)value).ToString().ToLower() select ((PedHash)value)).FirstOrDefault();
 		}
 
-        public int pickupNameToModel(string modelName)
+        public PickupHash pickupNameToModel(string modelName)
         {
-			return (from object value in Enum.GetValues(typeof(PickupHash)) where modelName.ToLower() == ((PickupHash)value).ToString().ToLower() select (int)((PickupHash)value)).FirstOrDefault();
+			return (from object value in Enum.GetValues(typeof(PickupHash)) where modelName.ToLower() == ((PickupHash)value).ToString().ToLower() select ((PickupHash)value)).FirstOrDefault();
 		}
 
-        public int weaponNameToModel(string modelName)
+        public WeaponHash weaponNameToModel(string modelName)
         {
-			return (from object value in Enum.GetValues(typeof(WeaponHash)) where modelName.ToLower() == ((WeaponHash)value).ToString().ToLower() select (int)((WeaponHash)value)).FirstOrDefault();
+			return (from object value in Enum.GetValues(typeof(WeaponHash)) where modelName.ToLower() == ((WeaponHash)value).ToString().ToLower() select ((WeaponHash)value)).FirstOrDefault();
 		}
 
         public List<Client> getAllPlayers()
@@ -1457,9 +1523,9 @@ namespace GTANetworkServer
                 returnType, args);
         }
 
-        public  void givePlayerWeapon(Client player, int weaponHash, int ammo, bool equipNow, bool ammoLoaded)
+        public void givePlayerWeapon(Client player, WeaponHash weaponHash, int ammo, bool equipNow, bool ammoLoaded)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), weaponHash, ammo, equipNow, ammo);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, ammo, equipNow, ammo);
         }
 
         public string getPlayerAddress(Client player)

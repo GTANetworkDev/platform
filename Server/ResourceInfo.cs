@@ -543,7 +543,7 @@ namespace GTANetworkServer
         public List<FilePath> Files { get; set; }
 
         [XmlElement("assembly")]
-        public List<AssemblyReferences> Referenceses { get; set; }
+        public List<AssemblyReferences> References { get; set; }
 
         [XmlElement("include")]
         public List<RequiredResource> Includes { get; set; }

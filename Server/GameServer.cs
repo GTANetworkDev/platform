@@ -273,6 +273,41 @@ namespace GTANetworkServer
             return allScripts;
         }
 
+        public static ResourceInfo GetStoppedResourceInfo(string resourceName)
+        {
+            if (!Directory.Exists("resources" + Path.DirectorySeparatorChar + resourceName))
+                throw new FileNotFoundException("Resource does not exist.");
+
+            var baseDir = "resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar;
+
+            if (!File.Exists(baseDir + "meta.xml"))
+                throw new FileNotFoundException("meta.xml has not been found.");
+
+            var xmlSer = new XmlSerializer(typeof(ResourceInfo));
+            ResourceInfo currentResInfo;
+            using (var str = File.OpenRead(baseDir + "meta.xml"))
+                currentResInfo = (ResourceInfo)xmlSer.Deserialize(str);
+
+            return currentResInfo;
+        }
+
+        public ResourceInfo GetResourceInfo(string resourceName)
+        {
+            lock (RunningResources)
+            {
+                Resource runningResource;
+
+                if ((runningResource = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName)) != null)
+                {
+                    return runningResource.Info;
+                }
+                else
+                {
+                    return GetStoppedResourceInfo(resourceName);
+                }
+            }
+        }
+
         public bool StartResource(string resourceName, string father = null)
         {
             try
