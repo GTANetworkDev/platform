@@ -84,6 +84,7 @@
     <Compile Include="ChatData.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="ColShape.cs" />
+    <Compile Include="ConstantVehicleData.cs" />
     <Compile Include="DeltaCompressor.cs" />
     <Compile Include="GameServer.cs" />
     <Compile Include="CommandHandler.cs" />

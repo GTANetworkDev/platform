@@ -1185,6 +1185,48 @@ namespace GTANetworkServer
             return getVehicleMod(vehicle, 65);
         }
 
+        public string getVehicleDisplayName(VehicleHash model)
+        {
+            return ConstantVehicleDataOrganizer.Get(model).DisplayName;
+        }
+
+        public float getVehicleMaxSpeed(VehicleHash model)
+        {
+            return ConstantVehicleDataOrganizer.Get(model).MaxSpeed;
+        }
+
+        public float getVehicleMaxBraking(VehicleHash model)
+        {
+            return ConstantVehicleDataOrganizer.Get(model).MaxBraking;
+        }
+
+        public float getVehicleMaxTraction(VehicleHash model)
+        {
+            return ConstantVehicleDataOrganizer.Get(model).MaxTraction;
+        }
+
+        public float getVehicleMaxAcceleration(VehicleHash model)
+        {
+            return ConstantVehicleDataOrganizer.Get(model).MaxAcceleration;
+        }
+
+        public float getVehicleMaxOccupants(VehicleHash model)
+        {
+            return ConstantVehicleDataOrganizer.Get(model).MaxNumberOfPassengers;
+        }
+
+        public int getVehiclClass(VehicleHash model)
+        {
+            return ConstantVehicleDataOrganizer.Get(model).VehicleClass;
+        }
+
+        public string getVehicleClassName(int classId)
+        {
+            if (classId < 0 || classId >= ConstantVehicleDataOrganizer.VehicleClasses.Length) return "";
+
+            return ConstantVehicleDataOrganizer.VehicleClasses[classId];
+        }
+
         public void setPlayerSkin(Client player, PedHash modelHash)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), (int)modelHash);
