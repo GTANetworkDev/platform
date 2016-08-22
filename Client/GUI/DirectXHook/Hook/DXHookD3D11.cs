@@ -228,6 +228,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         public void SetBitmap(Bitmap bt)
         {
+            if (OverlayEngine.Overlays == null) return;
+
             if (OverlayEngine.Overlays.Count == 0)
                 OverlayEngine.Overlays.Add(new Overlay());
 

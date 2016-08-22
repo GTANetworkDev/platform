@@ -620,7 +620,7 @@ namespace GTANetwork
                     if (car.Handle != 0)
                     foreach (var pair in oldMods.Except(prop.Mods))
                     {
-                        if (pair.Key <= 50)
+                        if (pair.Key <= 60)
                         {
                             if (prop.Mods.ContainsKey(pair.Key))
                             {
@@ -1964,7 +1964,7 @@ namespace GTANetwork
             {
                 for (int i = 0; i <= 100; i++)
                 {
-                    if (i <= 50)
+                    if (i <= 60)
                     {
                         if (data.Mods.ContainsKey((byte)i))
                         {

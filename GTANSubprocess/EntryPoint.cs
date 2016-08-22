@@ -397,23 +397,26 @@ namespace GTANetwork
                 { }
             }
 
-            foreach (var path in Directory.GetFiles("tempstorage"))
+            if (Directory.Exists("tempstorage"))
             {
-                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
-            }
-
-            if (Directory.Exists("tempstorage\\scripts"))
-            {
-                if (!Directory.Exists(InstallFolder + "\\scripts"))
-                    Directory.CreateDirectory(InstallFolder + "\\scripts");
-
-                foreach (var path in Directory.GetFiles("tempstorage\\scripts"))
+                foreach (var path in Directory.GetFiles("tempstorage"))
                 {
-                    File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
+                    File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
                 }
-            }
 
-            DeleteDirectory("tempstorage");
+                if (Directory.Exists("tempstorage\\scripts"))
+                {
+                    if (!Directory.Exists(InstallFolder + "\\scripts"))
+                        Directory.CreateDirectory(InstallFolder + "\\scripts");
+
+                    foreach (var path in Directory.GetFiles("tempstorage\\scripts"))
+                    {
+                        File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
+                    }
+                }
+
+                DeleteDirectory("tempstorage");
+            }
         }
 
         public static void SaveSettings(string path, PlayerSettings set)

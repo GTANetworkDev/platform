@@ -1024,165 +1024,165 @@ namespace GTANetworkServer
 
         public void setVehicleBulletproofTyres(NetHandle vehicle, bool bulletproof)
         {
-            setVehicleMod(vehicle, 51, bulletproof ? 0x01 : 0x00);
+            setVehicleMod(vehicle, 61, bulletproof ? 0x01 : 0x00);
         }
 
         public bool getVehicleBulletproofTyres(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 51) != 0;
+            return getVehicleMod(vehicle, 61) != 0;
         }
 
         public void setVehicleNumberPlateStyle(NetHandle vehicle, int style)
         {
-            setVehicleMod(vehicle, 52, style);
+            setVehicleMod(vehicle, 62, style);
         }
 
         public int getVehicleNumberPlateStyle(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 52);
+            return getVehicleMod(vehicle, 62);
         }
 
         public void setVehiclePearlescentColor(NetHandle vehicle, int color)
         {
-            setVehicleMod(vehicle, 53, color);
+            setVehicleMod(vehicle, 63, color);
         }
 
         public int getVehiclePearlescentColor(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 53);
+            return getVehicleMod(vehicle, 63);
         }
 
         public void setVehicleWheelColor(NetHandle vehicle, int color)
         {
-            setVehicleMod(vehicle, 54, color);
+            setVehicleMod(vehicle, 64, color);
         }
 
         public int getVehicleWheelColor(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 54);
+            return getVehicleMod(vehicle, 64);
         }
 
         public void setVehicleWheelType(NetHandle vehicle, int type)
         {
-            setVehicleMod(vehicle, 55, type);
+            setVehicleMod(vehicle, 65, type);
         }
 
         public int getVehicleWheelType(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 55);
+            return getVehicleMod(vehicle, 65);
         }
 
         public void setVehicleModColor1(NetHandle vehicle, int r, int g, int b)
         {
-            setVehicleMod(vehicle, 56, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
+            setVehicleMod(vehicle, 66, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
         public void getVehicleModColor1(NetHandle vehicle, out byte red, out byte green, out byte blue)
         {
-            var val = getVehicleMod(vehicle, 56);
+            var val = getVehicleMod(vehicle, 66);
             byte a;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
         }
 
         public void setVehicleModColor2(NetHandle vehicle, int r, int g, int b)
         {
-            setVehicleMod(vehicle, 57, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
+            setVehicleMod(vehicle, 67, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
         public void getVehicleModColor2(NetHandle vehicle, out byte red, out byte green, out byte blue)
         {
-            var val = getVehicleMod(vehicle, 57);
+            var val = getVehicleMod(vehicle, 67);
             byte a;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
         }
 
         public void setVehicleTyreSmokeColor(NetHandle vehicle, int r, int g, int b)
         {
-            setVehicleMod(vehicle, 58, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
+            setVehicleMod(vehicle, 68, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
         public void getVehicleTyreSmokeColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
         {
-            var val = getVehicleMod(vehicle, 58);
+            var val = getVehicleMod(vehicle, 68);
             byte a;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
         }
 
         public void setVehicleWindowTint(NetHandle vehicle, int type)
         {
-            setVehicleMod(vehicle, 59, type);
+            setVehicleMod(vehicle, 69, type);
         }
 
         public int getVehicleWindowTint(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 59);
+            return getVehicleMod(vehicle, 69);
         }
 
         public void setVehicleEnginePowerMultiplier(NetHandle vehicle, float mult)
         {
-            setVehicleMod(vehicle, 60, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
+            setVehicleMod(vehicle, 70, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
         }
 
         public float getVehicleEnginePowerMultiplier(NetHandle vehicle)
         {
-            return BitConverter.ToSingle(BitConverter.GetBytes(getVehicleMod(vehicle, 60)), 0);
+            return BitConverter.ToSingle(BitConverter.GetBytes(getVehicleMod(vehicle, 70)), 0);
         }
 
         public void setVehicleEngineTorqueMultiplier(NetHandle vehicle, float mult)
         {
-            setVehicleMod(vehicle, 61, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
+            setVehicleMod(vehicle, 71, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
         }
 
         public float getVehicleEngineTorqueMultiplier(NetHandle vehicle)
         {
-            return BitConverter.ToSingle(BitConverter.GetBytes(getVehicleMod(vehicle, 61)), 0);
+            return BitConverter.ToSingle(BitConverter.GetBytes(getVehicleMod(vehicle, 71)), 0);
         }
 
         public void setVehicleNeonState(NetHandle vehicle, int slot, bool turnedOn)
         {
-            var currentState = getVehicleMod(vehicle, 62);
+            var currentState = getVehicleMod(vehicle, 72);
 
             if (turnedOn)
-                setVehicleMod(vehicle, 62, currentState | 1 << slot);
+                setVehicleMod(vehicle, 72, currentState | 1 << slot);
             else
-                setVehicleMod(vehicle, 62, currentState & ~(1 << slot));
+                setVehicleMod(vehicle, 72, currentState & ~(1 << slot));
         }
 
         public bool getVehicleNeonState(NetHandle vehicle, int slot)
         {
-            return (getVehicleMod(vehicle, 62) & (1 << slot)) != 0;
+            return (getVehicleMod(vehicle, 72) & (1 << slot)) != 0;
         }
 
         public void setVehicleNeonColor(NetHandle vehicle, int r, int g, int b)
         {
-            setVehicleMod(vehicle, 63, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
+            setVehicleMod(vehicle, 73, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
         public void getVehicleNeonColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
         {
-            var val = getVehicleMod(vehicle, 63);
+            var val = getVehicleMod(vehicle, 73);
             byte a;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
         }
 
         public void setVehicleDashboardColor(NetHandle vehicle, int type)
         {
-            setVehicleMod(vehicle, 64, type);
+            setVehicleMod(vehicle, 74, type);
         }
 
         public int getVehicleDashboardColor(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 64);
+            return getVehicleMod(vehicle, 74);
         }
 
         public void setVehicleTrimColor(NetHandle vehicle, int type)
         {
-            setVehicleMod(vehicle, 65, type);
+            setVehicleMod(vehicle, 75, type);
         }
 
         public int getVehicleTrimColor(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 65);
+            return getVehicleMod(vehicle, 75);
         }
 
         public string getVehicleDisplayName(VehicleHash model)

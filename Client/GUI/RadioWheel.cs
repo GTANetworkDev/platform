@@ -186,7 +186,7 @@ namespace GTANetwork.GUI
             else
                 currentRadio = Array.IndexOf(radios, radioName);
 
-            if (Game.IsControlJustReleased(0, Control.VehicleRadioWheel))
+            if (Game.IsControlJustReleased(0, Control.VehicleRadioWheel) && _disable)
             {
                 if (_lastRadio != -1 && _lastRadio != currentRadio)
                 {
