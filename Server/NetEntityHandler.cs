@@ -28,40 +28,37 @@ namespace GTANetworkServer
 
         public void UpdateMovements()
         {
-            lock (ServerEntities)
+            var copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities
+                .Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null));
+            // Get all entities who are interpolating
+            foreach (var pair in copy)
             {
-                var copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities
-                    .Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null));
-                // Get all entities who are interpolating
-                foreach (var pair in copy)
+                var currentTime = Program.GetTicks();
+
+                if (pair.Value.PositionMovement != null)
                 {
-                    var currentTime = Program.GetTicks();
+                    var delta = currentTime - pair.Value.PositionMovement.ServerStartTime;
+                    pair.Value.PositionMovement.Start = delta;
 
-                    if (pair.Value.PositionMovement != null)
-                    {
-                        var delta = currentTime - pair.Value.PositionMovement.ServerStartTime;
-                        pair.Value.PositionMovement.Start = delta;
+                    pair.Value.Position = Vector3.Lerp(pair.Value.PositionMovement.StartVector,
+                        pair.Value.PositionMovement.EndVector,
+                        Math.Min(((float) delta) / pair.Value.PositionMovement.Duration, 1f));
 
-                        pair.Value.Position = Vector3.Lerp(pair.Value.PositionMovement.StartVector,
-                            pair.Value.PositionMovement.EndVector,
-                            Math.Min(((float) delta) / pair.Value.PositionMovement.Duration, 1f));
+                    if (delta >= pair.Value.PositionMovement.Duration)
+                        pair.Value.PositionMovement = null;
+                }
 
-                        if (delta >= pair.Value.PositionMovement.Duration)
-                            pair.Value.PositionMovement = null;
-                    }
+                if (pair.Value.RotationMovement != null)
+                {
+                    var delta = currentTime - pair.Value.RotationMovement.ServerStartTime;
+                    pair.Value.RotationMovement.Start = delta;
 
-                    if (pair.Value.RotationMovement != null)
-                    {
-                        var delta = currentTime - pair.Value.RotationMovement.ServerStartTime;
-                        pair.Value.RotationMovement.Start = delta;
+                    pair.Value.Rotation = Vector3.Lerp(pair.Value.RotationMovement.StartVector,
+                        pair.Value.RotationMovement.EndVector,
+                        Math.Min(((float)delta) / pair.Value.RotationMovement.Duration, 1f));
 
-                        pair.Value.Rotation = Vector3.Lerp(pair.Value.RotationMovement.StartVector,
-                            pair.Value.RotationMovement.EndVector,
-                            Math.Min(((float)delta) / pair.Value.RotationMovement.Duration, 1f));
-
-                        if (delta >= pair.Value.RotationMovement.Duration)
-                            pair.Value.RotationMovement = null;
-                    }
+                    if (delta >= pair.Value.RotationMovement.Duration)
+                        pair.Value.RotationMovement = null;
                 }
             }
         }
