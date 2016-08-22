@@ -30,9 +30,10 @@ namespace GTANetworkServer
         {
             lock (ServerEntities)
             {
+                var copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities
+                    .Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null));
                 // Get all entities who are interpolating
-                foreach (var pair in ServerEntities
-                    .Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null))
+                foreach (var pair in copy)
                 {
                     var currentTime = Program.GetTicks();
 

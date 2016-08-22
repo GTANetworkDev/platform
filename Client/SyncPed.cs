@@ -2070,7 +2070,7 @@ namespace GTANetwork
                 if (Character != null)
                 {
                     Character.Health = PedHealth;
-                    if (IsPlayerDead && !Character.IsDead)
+                    if (IsPlayerDead && !Character.IsDead && IsInVehicle)
                     {
                         Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
                         Character.IsInvincible = false;
