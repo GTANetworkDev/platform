@@ -28,10 +28,9 @@ namespace GTANetworkServer
 
         public void UpdateMovements()
         {
-            var copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities
-                .Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null));
+            var copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities);
             // Get all entities who are interpolating
-            foreach (var pair in copy)
+            foreach (var pair in copy.Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null))
             {
                 var currentTime = Program.GetTicks();
 

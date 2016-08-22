@@ -843,7 +843,7 @@ namespace GTANetwork
         void DisplayVehiclePosition()
         {
             var spazzout = (_spazzout_prevention != null &&
-                            DateTime.Now.Subtract(_spazzout_prevention.Value).TotalMilliseconds > 1000);
+                            DateTime.Now.Subtract(_spazzout_prevention.Value).TotalMilliseconds > 200);
 
             if ((Speed > 0.2f || IsInBurnout) && currentInterop.FinishTime > 0 && _lastVehiclePos != null && spazzout)
             {
