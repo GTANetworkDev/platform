@@ -1,0 +1,9 @@
+<meta>
+	<info name="Speedometer" description="A vehicle speedometer powered by CEF" author= "Guadmaz" version="1.0" />
+
+	<script src="speedometer.js" type="client" lang="javascript" />
+
+	<file src="main.html" />
+	<file src="d3.v2.js" />
+	<file src="gauge.js" />
+</meta>
