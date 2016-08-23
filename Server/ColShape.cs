@@ -16,9 +16,36 @@ namespace GTANetworkServer
         public event ColShapeEvent onEntityExitColShape;
         public int handle;
 
+        private Dictionary<string, object> _data = new Dictionary<string, object>();
+
         public bool containsEntity(NetHandle ent)
         {
             return EntitiesInContact.Contains(ent.Value);
+        }
+
+        public void setData(string key, object data)
+        {
+            _data.Set(key, data);
+        }
+
+        public dynamic getData(string key)
+        {
+            return _data.Get(key);
+        }
+
+        public bool hasData(string key)
+        {
+            return _data.ContainsKey(key);
+        }
+
+        public void resetData(string key)
+        {
+            _data.Remove(key);
+        }
+
+        public IEnumerable<NetHandle> getAllEntities()
+        {
+            return EntitiesInContact.Select(i => new NetHandle(i));
         }
 
         internal void InvokeEnterColshape(NetHandle ent)
