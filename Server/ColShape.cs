@@ -45,7 +45,7 @@ namespace GTANetworkServer
 
         public IEnumerable<NetHandle> getAllEntities()
         {
-            return EntitiesInContact.Select(i => new NetHandle(i));
+            return new List<NetHandle>(EntitiesInContact.Select(i => new NetHandle(i)));
         }
 
         internal void InvokeEnterColshape(NetHandle ent)

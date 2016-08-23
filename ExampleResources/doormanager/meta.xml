@@ -10,6 +10,7 @@
 	<export function="getCloseDoor" class="DoorManager" />
 	<export function="getAllCloseDoors" class="DoorManager" />
 	<export function="refreshDoorState" class="DoorManager" />
+	<export function="transitionDoor" class="DoorManager" />
 
 	<export function="setDebug" class="DoorManager" />
 </meta>

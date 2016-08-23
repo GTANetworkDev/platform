@@ -739,6 +739,8 @@ namespace GTANetwork
             {
                 if (o is LocalHandle)
                     return new InputArgument(((LocalHandle) o).Value);
+                else if (o is fArg)
+                    return new InputArgument(((fArg) o).Value);
                 return new InputArgument(o);
             }).ToArray());
         }
@@ -752,6 +754,8 @@ namespace GTANetwork
             {
                 if (o is LocalHandle)
                     return new InputArgument(((LocalHandle) o).Value);
+                else if (o is fArg)
+                    return new InputArgument(((fArg)o).Value);
                 return new InputArgument(o);
             }).ToArray();
             switch ((ReturnType)returnType)
@@ -1314,6 +1318,21 @@ namespace GTANetwork
         public float toFloat(double d)
         {
             return (float) d;
+        }
+
+        public struct fArg
+        {
+            public float Value;
+
+            public fArg(double f)
+            {
+                Value = (float) f;
+            }
+        }
+
+        public fArg f(double value)
+        {
+            return new fArg(value);
         }
 
         public void sleep(int ms)

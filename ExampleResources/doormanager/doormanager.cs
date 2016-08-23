@@ -19,7 +19,7 @@ public class DoorManager : Script
 	private int _doorCounter;
 	private Dictionary<int, ColShape> _doorColShapes = new Dictionary<int, ColShape>();
 
-	private bool _debugStatus = false;
+	private bool _debugStatus = true;
 
 	public const ulong SET_STATE_OF_CLOSEST_DOOR_OF_TYPE = 0xF82D8F1926A02C3D;
 
@@ -96,6 +96,12 @@ public class DoorManager : Script
 		API.triggerClientEvent(sender, "doormanager_finddoor", model, pos);
 	}
 
+	[Command("transition")]
+	public void Debug_TransitionDoorCMD(Client sender, int doorid, float target, int time)
+	{
+		transitionDoor(doorid, target, time);
+	}
+
 	private void ClientEventTrigger(Client sender, string eventName, object[] args)
 	{
 		if (eventName == "doormanager_debug_createdoor")
@@ -142,6 +148,7 @@ public class DoorManager : Script
 		info.Position = position;
 		info.Locked = false; // Open by default;
 		info.Id = colShapeId;
+		info.State = 0;
 
 		var colShape = API.createSphereColShape(position, 35f);		
 		colShape.setData("DOOR_INFO", info);
@@ -153,17 +160,37 @@ public class DoorManager : Script
 		return colShapeId;
 	}
 
+	public void transitionDoor(int doorId, float finish, int ms)
+	{
+		if (_doorColShapes.ContainsKey(doorId))
+		{
+			var info = _doorColShapes[doorId].getData("DOOR_INFO");
+
+			info.Locked = true;
+			
+			foreach (var entity in _doorColShapes[doorId].getAllEntities())
+			{
+				var player = API.getPlayerFromHandle(entity);
+
+				if (player == null) continue;
+
+				API.triggerClientEvent(player, "doormanager_transitiondoor",
+					info.Hash, info.Position, info.State, finish, ms);
+			}
+
+			info.State = finish;
+		}
+	}
+
 	public void refreshDoorState(int doorId)
 	{
 		if (_doorColShapes.ContainsKey(doorId))
 		{
 			var info = _doorColShapes[doorId].getData("DOOR_INFO");
 
-			float heading = 0f;
+			float heading = info.State;
 
-			if (info.State != null) heading = info.State;
-
-			foreach (var entity in door.getAllEntities())
+			foreach (var entity in _doorColShapes[doorId].getAllEntities())
 			{
 				var player = API.getPlayerFromHandle(entity);
 
@@ -185,7 +212,7 @@ public class DoorManager : Script
 		}
 	}
 
-	public void setDoorState(int doorId, bool locked, float? heading)
+	public void setDoorState(int doorId, bool locked, float heading)
 	{
 		if (_doorColShapes.ContainsKey(doorId))
 		{
@@ -202,9 +229,7 @@ public class DoorManager : Script
 
 				if (player == null) continue;
 
-				float cH = 0f;
-
-				if (data.State != null) cH = data.State;
+				float cH = data.State;
 
 				API.sendNativeToPlayer(player, SET_STATE_OF_CLOSEST_DOOR_OF_TYPE,
 					data.Hash, data.Position.X, data.Position.Y, data.Position.Z,
@@ -245,5 +270,5 @@ public struct DoorInfo
 	public int Id;
 
 	public bool Locked;
-	public float? State;
+	public float State;
 }

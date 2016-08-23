@@ -2,6 +2,8 @@ var selectingDoor = false;
 var lastDoor = null;
 var lastDoorV = 0;
 
+var currentTransitions = [];
+
 API.onServerEventTrigger.connect(function(eventName, args) {
 	if (eventName == "doormanager_debug") {
 		selectingDoor = true;
@@ -31,9 +33,55 @@ API.onServerEventTrigger.connect(function(eventName, args) {
 				API.getEntityModel(handle), API.getEntityPosition(handle));
 		}
 	}
+	else if (eventName == "doormanager_transitiondoor") {
+		var model = args[0];
+		var pos = args[1];
+		var start = args[2];
+		var end = args[3];
+		var duration = args[4];
+
+		currentTransitions.push({
+			'model' : model,
+			'pos' : pos,
+			'start' : start,
+			'end' : end,
+			'duration' : duration,
+			'startTime' : API.getGlobalTime(),
+		})
+	}
 });
 
 API.onUpdate.connect(function() {
+	if (currentTransitions.length > 0) {
+		for (var i = currentTransitions.length - 1; i >= 0; i--) {
+			var delta = API.getGlobalTime() - currentTransitions[i].startTime;
+			if (delta > currentTransitions[i].duration) {
+				API.callNative("SET_STATE_OF_CLOSEST_DOOR_OF_TYPE",
+					currentTransitions[i].model,
+					currentTransitions[i].pos.X,
+					currentTransitions[i].pos.Y,
+					currentTransitions[i].pos.Z,
+					true,
+					API.f(currentTransitions[i].end),
+					false);
+
+				currentTransitions.splice(i, 1);
+			} else {				
+				API.callNative("SET_STATE_OF_CLOSEST_DOOR_OF_TYPE",
+					currentTransitions[i].model,
+					currentTransitions[i].pos.X,
+					currentTransitions[i].pos.Y,
+					currentTransitions[i].pos.Z,
+					true,
+					API.f(API.lerpFloat(currentTransitions[i].start,
+						currentTransitions[i].end, delta,
+						currentTransitions[i].duration)),
+					false);
+			}
+		};
+	}
+
+
 	if (selectingDoor) {
 		var cursOp = API.getCursorPositionMantainRatio();
 		var s2w = API.screenToWorldMantainRatio(cursOp);
