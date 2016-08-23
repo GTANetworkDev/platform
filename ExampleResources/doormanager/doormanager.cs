@@ -196,6 +196,19 @@ public class DoorManager : Script
 		return localCopy.FirstOrDefault(pair => pair.Value.containsEntity(player)).Key;
 	}
 
+	public int[] getAllCloseDoors(Client player)
+	{
+		var localCopy = new Dictionary<int, ColShape>(_doorColShapes);
+		var list = new List<int>();
+		foreach (var sh in localCopy)
+		{
+			if (sh.Value.containsEntity(player))
+				list.Add(sh.Key);
+		}
+
+		return list.ToArray();
+	}
+
 	public void setDebug(bool status)
 	{
 		_debugStatus = status;
