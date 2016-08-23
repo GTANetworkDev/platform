@@ -41,6 +41,7 @@ namespace GTANetwork.GUI
                 if (ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
+                    Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
                 }
                 else
                 {

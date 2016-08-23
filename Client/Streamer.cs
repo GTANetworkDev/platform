@@ -359,12 +359,12 @@ namespace GTANetwork
             }
         }
 
-        private void DrawLabel3D(string text, Vector3 position, float range, float size)
+        internal void DrawLabel3D(string text, Vector3 position, float range, float size)
         {
             DrawLabel3D(text, position, range, size, Color.White, true);
         }
 
-        private void DrawLabel3D(string text, Vector3 position, float range, float size, Color col, bool entitySeethrough)
+        internal void DrawLabel3D(string text, Vector3 position, float range, float size, Color col, bool entitySeethrough)
         {
             Vector3 origin = GameplayCamera.Position;
             float distanceSquared = position.DistanceToSquared(origin);

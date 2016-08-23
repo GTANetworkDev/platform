@@ -157,12 +157,14 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 new DXGISwapChain_PresentDelegate(PresentHook),
                 this);
             
+            /*
+
             // We will capture target/window resizes here
             DXGISwapChain_ResizeTargetHook = new Hook<DXGISwapChain_ResizeTargetDelegate>(
                 _dxgiSwapChainVTblAddresses[(int)DXGI.DXGISwapChainVTbl.ResizeTarget],
                 new DXGISwapChain_ResizeTargetDelegate(ResizeTargetHook),
                 this);
-
+                */
             /*
              * Don't forget that all hooks will start deactivated...
              * The following ensures that all threads are intercepted:
@@ -170,10 +172,10 @@ namespace GTANetwork.GUI.DirectXHook.Hook
              */
             DXGISwapChain_PresentHook.Activate();
             
-            DXGISwapChain_ResizeTargetHook.Activate();
+            //DXGISwapChain_ResizeTargetHook.Activate();
 
             Hooks.Add(DXGISwapChain_PresentHook);
-            Hooks.Add(DXGISwapChain_ResizeTargetHook);
+            //Hooks.Add(DXGISwapChain_ResizeTargetHook);
         }
 
         public override void Cleanup()
@@ -265,46 +267,60 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         {
             SwapChain swapChain = (SharpDX.DXGI.SwapChain)swapChainPtr;
 
-            try
+            if (swapChainPtr != IntPtr.Zero)
             {
-                #region Draw overlay (after screenshot so we don't capture overlay as well)
-                // Initialise Overlay Engine
-                if (_swapChainPointer != swapChain.NativePointer || OverlayEngine == null)
+                try
                 {
-                    NewSwapchain = true;
+                    #region Draw overlay (after screenshot so we don't capture overlay as well)
+
+                    // Initialise Overlay Engine
+                    if (_swapChainPointer != swapChain.NativePointer || OverlayEngine == null)
+                    {
+                        NewSwapchain = true;
+
+                        if (OverlayEngine != null)
+                            OverlayEngine.Dispose();
+                        OverlayEngine = new DX11.DXOverlayEngine();
+                        OverlayEngine.Overlays.Add(new DirectXHook.Hook.Common.Overlay
+                        {
+                            Elements =
+                            {
+                                new Common.TextElement(new System.Drawing.Font("Times New Roman", 22))
+                                {
+                                    Text = "*",
+                                    Location = new System.Drawing.Point(0, 0),
+                                    Color = System.Drawing.Color.Red,
+                                    AntiAliased = false
+                                },
+                                new Common.ImageElement(new Bitmap(Width, Height))
+                                {
+                                    Location = new System.Drawing.Point(0, 0)
+                                },
+                            }
+                        });
+                        OverlayEngine.Initialise(swapChain);
+
+                        _swapChainPointer = swapChain.NativePointer;
+                    }
+
+                    // Draw Overlay(s)
 
                     if (OverlayEngine != null)
-                        OverlayEngine.Dispose();
-                    OverlayEngine = new DX11.DXOverlayEngine();
-                    OverlayEngine.Overlays.Add(new DirectXHook.Hook.Common.Overlay
                     {
-                        Elements =
-                        {
-                            new Common.TextElement(new System.Drawing.Font("Times New Roman", 22)) { Text = "*", Location = new System.Drawing.Point(0, 0), Color = System.Drawing.Color.Red, AntiAliased = false},
-                            new Common.ImageElement(new Bitmap(Width, Height)) { Location = new System.Drawing.Point(0, 0) },
-                        }
-                    });
-                    OverlayEngine.Initialise(swapChain);
+                        foreach (var overlay in OverlayEngine.Overlays)
+                            overlay.Frame();
+                        OverlayEngine.Draw();
+                    }
 
-                    _swapChainPointer = swapChain.NativePointer;
+                    #endregion
                 }
-
-                // Draw Overlay(s)
-
-                if (OverlayEngine != null)
+                catch (Exception e)
                 {
-                    foreach (var overlay in OverlayEngine.Overlays)
-                        overlay.Frame();
-                    OverlayEngine.Draw();
+                    // If there is an error we do not want to crash the hooked application, so swallow the exception
+                    LogManager.DebugLog("PresentHook: Exeception: " + e.GetType().FullName + ": " + e.ToString());
+                    LogManager.LogException(e, "PresentHook");
+                    //return unchecked((int)0x8000FFFF); //E_UNEXPECTED
                 }
-                #endregion
-            }
-            catch (Exception e)
-            {
-                // If there is an error we do not want to crash the hooked application, so swallow the exception
-                LogManager.DebugLog("PresentHook: Exeception: " + e.GetType().FullName + ": " + e.ToString());
-                LogManager.LogException(e, "PresentHook");
-                //return unchecked((int)0x8000FFFF); //E_UNEXPECTED
             }
 
             // As always we need to call the original method, note that EasyHook will automatically skip the hook and call the original method

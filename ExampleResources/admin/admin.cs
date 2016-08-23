@@ -132,7 +132,7 @@ public class AdminScript : Script
     #endregion
     
 
-	private void onResStart(object e, EventArgs ob)
+	private void onResStart()
 	{
 		
 	}
@@ -142,7 +142,7 @@ public class AdminScript : Script
 		API.logoutPlayer(player);
 	}
 
-	public void onUpdate(object sender, EventArgs e)
+	public void onUpdate()
 	{
 		
 	}

@@ -2452,7 +2452,7 @@ namespace GTANetwork
                 //}
                 //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
-
+            
             DEBUG_STEP = 4;
             if (_debugWindow)
             {
@@ -5003,6 +5003,16 @@ namespace GTANetwork
                 {
                     list.Add(new BooleanArgument() { Data = ((bool)o) });
                 }
+                else if (o is GTANetworkShared.Vector3)
+                {
+                    var tmp = (GTANetworkShared.Vector3)o;
+                    list.Add(new Vector3Argument()
+                    {
+                        X = tmp.X,
+                        Y = tmp.Y,
+                        Z = tmp.Z,
+                    });
+                }
                 else if (o is Vector3)
                 {
                     var tmp = (Vector3)o;
@@ -5355,6 +5365,18 @@ namespace GTANetwork
             return true;
         }
 
+        public static PointF WorldToScreen(Vector3 worldCoords)
+        {
+            var num1 = new OutputArgument();
+            var num2 = new OutputArgument();
+
+            if (!Function.Call<bool>(Hash._WORLD3D_TO_SCREEN2D, worldCoords.X, worldCoords.Y, worldCoords.Z, num1, num2))
+            {
+                return new PointF();
+            }
+            return new PointF(num1.GetResult<float>(), num2.GetResult<float>());
+        }
+
         public static Vector3 ScreenRelToWorld(Vector3 camPos, Vector3 camRot, Vector2 coord)
         {
             var camForward = RotationToDirection(camRot);
@@ -5437,6 +5459,35 @@ namespace GTANetwork
         {
             var camPos = GameplayCamera.Position;
             var camRot = GameplayCamera.Rotation;
+            const float raycastToDist = 100.0f;
+            const float raycastFromDist = 1f;
+
+            var target3D = ScreenRelToWorld(camPos, camRot, screenCoord);
+            var source3D = camPos;
+
+            Entity ignoreEntity = Game.Player.Character;
+            if (Game.Player.Character.IsInVehicle())
+            {
+                ignoreEntity = Game.Player.Character.CurrentVehicle;
+            }
+
+            var dir = (target3D - source3D);
+            dir.Normalize();
+            var raycastResults = World.Raycast(source3D + dir * raycastFromDist,
+                source3D + dir * raycastToDist,
+                (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
+                , ignoreEntity);
+
+            if (raycastResults.DitHitAnything)
+            {
+                return raycastResults.HitCoords;
+            }
+
+            return camPos + dir * raycastToDist;
+        }
+
+        public static Vector3 RaycastEverything(Vector2 screenCoord, Vector3 camPos, Vector3 camRot)
+        {
             const float raycastToDist = 100.0f;
             const float raycastFromDist = 1f;
 

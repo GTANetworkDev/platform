@@ -474,6 +474,7 @@ namespace GTANetwork
             Vector2 = 6,
             Float = 7,
             Bool = 8,
+            Handle = 9,
         }
         
         public void showCursor(bool show)
@@ -484,6 +485,134 @@ namespace GTANetwork
         public bool isCursorShown()
         {
             return CefController.ShowCursor;
+        }
+
+        public PointF getCursorPosition()
+        {
+            return CefController._lastMousePoint;
+        }
+
+        public PointF getCursorPositionMantainRatio()
+        {
+            var res = getScreenResolutionMantainRatio();
+
+            var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
+            var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
+
+            return new PointF(mouseX, mouseY);
+        }
+
+        public PointF worldToScreen(Vector3 pos)
+        {
+            var p = Main.WorldToScreen(pos.ToVector());
+            var res = getScreenResolution();
+
+            return new PointF(p.X * res.Width, p.Y * res.Height);
+        }
+
+        public PointF worldToScreenMantainRatio(Vector3 pos)
+        {
+            var p = Main.WorldToScreen(pos.ToVector());
+            var res = getScreenResolutionMantainRatio();
+
+            return new PointF(p.X*res.Width, p.Y*res.Height);
+        }
+
+        public Vector3 screenToWorld(PointF pos)
+        {
+            var res = getScreenResolution();
+            var norm = new Vector2(pos.X / res.Width, pos.Y / res.Height);
+            var norm2 = new Vector2((norm.X - 0.5f) * 2f, (norm.Y - 0.5f) * 2f);
+
+            var p = Main.RaycastEverything(norm2);
+
+            return p.ToLVector();
+        }
+
+        public Vector3 screenToWorldMantainRatio(PointF pos)
+        {
+            var res = getScreenResolutionMantainRatio();
+            var norm = new Vector2(pos.X / res.Width, pos.Y / res.Height);
+            var norm2 = new Vector2((norm.X - 0.5f) * 2f, (norm.Y - 0.5f) * 2f);
+
+            var p = Main.RaycastEverything(norm2);
+
+            return p.ToLVector();
+        }
+
+        public Vector3 screenToWorld(PointF pos, Vector3 camPos, Vector3 camRot) // TODO: replace this with a camera object
+        {
+            var res = getScreenResolution();
+            var norm = new Vector2(pos.X / res.Width, pos.Y / res.Height);
+            var norm2 = new Vector2((norm.X - 0.5f) * 2f, (norm.Y - 0.5f) * 2f);
+
+            var p = Main.RaycastEverything(norm2, camPos.ToVector(), camRot.ToVector());
+
+            return p.ToLVector();
+        }
+
+        public Vector3 screenToWorldMantainRatio(PointF pos, Vector3 camPos, Vector3 camrot) // TODO: replace this with a camera object
+        {
+            var res = getScreenResolutionMantainRatio();
+            var norm = new Vector2(pos.X / res.Width, pos.Y / res.Height);
+            var norm2 = new Vector2((norm.X - 0.5f) * 2f, (norm.Y - 0.5f) * 2f);
+
+            var p = Main.RaycastEverything(norm2, camPos.ToVector(), camrot.ToVector());
+
+            return p.ToLVector();
+        }
+
+        public class Raycast
+        {
+            internal Raycast(RaycastResult res)
+            {
+                wrapper = res;
+            }
+
+            private RaycastResult wrapper;
+
+            public bool didHitAnything
+            {
+                get { return wrapper.DitHitAnything; }
+            }
+
+            public bool didHitEntity
+            {
+                get { return wrapper.DitHitEntity; }
+            }
+
+            public LocalHandle hitEntity
+            {
+                get { return new LocalHandle(wrapper.HitEntity?.Handle ?? 0); }
+            }
+
+            public Vector3 hitCoords
+            {
+                get { return wrapper.HitCoords.ToLVector(); }
+            }
+        }
+
+        public Raycast createRaycast(Vector3 start, Vector3 end, int flag, LocalHandle? ignoreEntity)
+        {
+            if (ignoreEntity != null)
+                return new Raycast(World.Raycast(start.ToVector(), end.ToVector(), (IntersectOptions) flag, new Prop(ignoreEntity.Value.Value)));
+            else
+                return new Raycast(World.Raycast(start.ToVector(), end.ToVector(), (IntersectOptions)flag));
+        }
+
+        public Vector3 getGameplayCamPos()
+        {
+            return GameplayCamera.Position.ToLVector();
+        }
+
+        public Vector3 getGameplayCamRot()
+        {
+            return GameplayCamera.Rotation.ToLVector();
+        }
+
+        public Vector3 getGameplayCamDir()
+        {
+            return GameplayCamera.Direction.ToLVector();
         }
 
         public void setCanOpenChat(bool show)
@@ -645,6 +774,8 @@ namespace GTANetwork
                     return Function.Call<float>(ourHash, fArgs);
                 case ReturnType.Bool:
                     return Function.Call<bool>(ourHash, fArgs);
+                case ReturnType.Handle:
+                    return new LocalHandle(Function.Call<int>(ourHash, fArgs));
                 default:
                     return null;
             }
@@ -1427,6 +1558,21 @@ namespace GTANetwork
             return Game.IsControlPressed(0, (GTA.Control)control);
         }
 
+        public bool isDisabledControlJustReleased(int control)
+        {
+            return Game.IsDisabledControlJustReleased(0, (GTA.Control)control);
+        }
+
+        public bool isDisabledControlJustPressed(int control)
+        {
+            return Game.IsDisabledControlJustPressed(0, (GTA.Control)control);
+        }
+
+        public bool isDisabledControlPressed(int control)
+        {
+            return Game.IsControlPressed(0, (GTA.Control)control);
+        }
+
         public bool isControlJustReleased(int control)
         {
             return Game.IsControlJustReleased(0, (GTA.Control)control);
@@ -1471,12 +1617,23 @@ namespace GTANetwork
 
         public void setEntityTransparency(LocalHandle entity, int alpha)
         {
+            if (alpha == 255)
+            {
+                Function.Call(Hash.RESET_ENTITY_ALPHA, entity.Value);
+                return;
+            }
+
             new Prop(entity.Value).Alpha = alpha;
         }
 
         public int getEntityTransparency(LocalHandle entity)
         {
             return new Prop(entity.Value).Alpha;
+        }
+
+        public int getEntityModel(LocalHandle entity)
+        {
+            return new Prop(entity.Value).Model.Hash;
         }
 
         public void setWeather(string weather)
