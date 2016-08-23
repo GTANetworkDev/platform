@@ -153,6 +153,29 @@ public class DoorManager : Script
 		return colShapeId;
 	}
 
+	public void refreshDoorState(int doorId)
+	{
+		if (_doorColShapes.ContainsKey(doorId))
+		{
+			var info = _doorColShapes[doorId].getData("DOOR_INFO");
+
+			float heading = 0f;
+
+			if (info.State != null) heading = info.State;
+
+			foreach (var entity in door.getAllEntities())
+			{
+				var player = API.getPlayerFromHandle(entity);
+
+				if (player == null) continue;
+
+				API.sendNativeToPlayer(player, SET_STATE_OF_CLOSEST_DOOR_OF_TYPE,
+					info.Hash, info.Position.X, info.Position.Y, info.Position.Z,
+					info.Locked, heading, false);
+			}
+		}
+	}
+
 	public void removeDoor(int id)
 	{
 		if (_doorColShapes.ContainsKey(id))
