@@ -845,6 +845,21 @@ namespace GTANetwork
             return new Prop(entity.Value).Position.ToLVector();
         }
 
+        public Vector3 getEntityRotation(LocalHandle entity)
+        {
+            return new Prop(entity.Value).Rotation.ToLVector();
+        }
+
+        public Vector3 getEntityVelocity(LocalHandle entity)
+        {
+            return new Prop(entity.Value).Position.ToLVector();
+        }
+
+        public float getVehicleHealth(LocalHandle entity)
+        {
+            return new Vehicle(entity.Value).EngineHealth;
+        }
+
         public bool isPlayerInAnyVehicle(LocalHandle player)
         {
             return new Ped(player.Value).IsInVehicle();
