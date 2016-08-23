@@ -157,14 +157,13 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 new DXGISwapChain_PresentDelegate(PresentHook),
                 this);
             
-            /*
-
+            
             // We will capture target/window resizes here
             DXGISwapChain_ResizeTargetHook = new Hook<DXGISwapChain_ResizeTargetDelegate>(
                 _dxgiSwapChainVTblAddresses[(int)DXGI.DXGISwapChainVTbl.ResizeTarget],
                 new DXGISwapChain_ResizeTargetDelegate(ResizeTargetHook),
                 this);
-                */
+                
             /*
              * Don't forget that all hooks will start deactivated...
              * The following ensures that all threads are intercepted:
@@ -172,10 +171,10 @@ namespace GTANetwork.GUI.DirectXHook.Hook
              */
             DXGISwapChain_PresentHook.Activate();
             
-            //DXGISwapChain_ResizeTargetHook.Activate();
+            DXGISwapChain_ResizeTargetHook.Activate();
 
             Hooks.Add(DXGISwapChain_PresentHook);
-            //Hooks.Add(DXGISwapChain_ResizeTargetHook);
+            Hooks.Add(DXGISwapChain_ResizeTargetHook);
         }
 
         public override void Cleanup()

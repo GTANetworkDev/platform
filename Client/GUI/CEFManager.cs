@@ -219,49 +219,12 @@ namespace GTANetwork.GUI
     
     public static class CEFManager
     {
-        public static void Initialize(Size screenSize)
+        public static void InitializeCef()
         {
-            ScreenSize = screenSize;
-#if !DISABLE_HOOK
-            SharpDX.Configuration.EnableObjectTracking = true;
-            Configuration.EnableReleaseOnFinalizer = true;
-            Configuration.EnableTrackingReleaseOnFinalizer = true;
-
-            try
-            {
-                DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
-                DirectXHook.Hook();
-            }
-            catch (Exception ex)
-            {
-                LogManager.LogException(ex, "DIRECTX START");
-            }
-#endif
-
-            RenderThread = new Thread(RenderLoop);
-            RenderThread.IsBackground = true;
-            RenderThread.Start();
-        }
-
-        public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 30;
-        public static Thread RenderThread;
-        public static bool StopRender;
-        public static Size ScreenSize;
-        public static bool Disposed;
-
-        internal static DXHookD3D11 DirectXHook;
-        
-
-        public static void RenderLoop()
-        {
-            Application.ThreadException += ApplicationOnThreadException;
-            AppDomain.CurrentDomain.UnhandledException += AppDomainException;
-
 #if !DISABLE_CEF
             var settings = new CefSharp.CefSettings();
             settings.SetOffScreenRenderingBestPerformanceArgs();
-            
+
             settings.RegisterScheme(new CefCustomScheme()
             {
                 SchemeHandlerFactory = new ResourceFilePathHandler(),
@@ -292,9 +255,56 @@ namespace GTANetwork.GUI
                     return;
                 }
             }
+#endif
+        }
 
+        public static void DisposeCef()
+        {
+#if !DISABLE_CEF
+            Cef.Shutdown();
+#endif
+        }
+
+        public static void Initialize(Size screenSize)
+        {
+            ScreenSize = screenSize;
+#if !DISABLE_HOOK
+            SharpDX.Configuration.EnableObjectTracking = true;
+            Configuration.EnableReleaseOnFinalizer = true;
+            Configuration.EnableTrackingReleaseOnFinalizer = true;
+            StopRender = false;
+            Disposed = false;
+
+            try
+            {
+                DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
+                DirectXHook.Hook();
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "DIRECTX START");
+            }
 #endif
 
+            RenderThread = new Thread(RenderLoop);
+            RenderThread.IsBackground = true;
+            RenderThread.Start();
+        }
+
+        public static List<Browser> Browsers = new List<Browser>();
+        public static int FPS = 30;
+        public static Thread RenderThread;
+        public static bool StopRender;
+        public static Size ScreenSize;
+        public static bool Disposed;
+
+        internal static DXHookD3D11 DirectXHook;
+        
+        public static void RenderLoop()
+        {
+            Application.ThreadException += ApplicationOnThreadException;
+            AppDomain.CurrentDomain.UnhandledException += AppDomainException;
+            
             LogManager.DebugLog("STARTING MAIN LOOP");
 
 
@@ -307,8 +317,6 @@ namespace GTANetwork.GUI
             {
                 try
                 {
-
-                //*
                     using (
                         Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
                             PixelFormat.Format32bppArgb))
@@ -336,8 +344,6 @@ namespace GTANetwork.GUI
 
                         DirectXHook.SetBitmap(doubleBuffer);
                     }
-                    
-                    //*/
                 }
                 catch (Exception ex)
                 {
@@ -357,11 +363,19 @@ namespace GTANetwork.GUI
                 browser.Dispose();
             }
 
-            DirectXHook.Dispose();
-#if !DISABLE_CEF
-            Cef.Shutdown();
+            try
+            {
+                DirectXHook.Dispose();
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "DIRECTX DISPOSAL");
+            }
 #endif
-#endif
+
+            Application.ThreadException -= ApplicationOnThreadException;
+            AppDomain.CurrentDomain.UnhandledException -= AppDomainException;
+
             Disposed = true;
         }
 

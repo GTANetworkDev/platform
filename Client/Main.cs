@@ -231,7 +231,7 @@ namespace GTANetwork
 
             UpdateSocialClubAvatar();
 
-            CEFManager.Initialize(Game.ScreenResolution);
+            CEFManager.InitializeCef();
         }
 
         public static int RelGroup;
@@ -1336,6 +1336,7 @@ namespace GTANetwork
                 {
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
                     CEFManager.StopRender = true;
+                    CEFManager.DisposeCef();
 
                     while (!CEFManager.Disposed)
                     {
@@ -4099,6 +4100,7 @@ namespace GTANetwork
                             Game.Player.Character.Weapons.RemoveAll();
                             Game.Player.Character.Health = Game.Player.Character.MaxHealth;
                             Game.Player.Character.Armor = 0;
+                            CEFManager.Initialize(Game.ScreenResolution);
 
                             if (StringCache != null) StringCache.Dispose();
 
@@ -4648,6 +4650,8 @@ namespace GTANetwork
 		    HasFinishedDownloading = false;
 		    ScriptChatVisible = true;
 			DEBUG_STEP = 52;
+
+		    CEFManager.StopRender = true;
 
             lock (CEFManager.Browsers)
                 CEFManager.Browsers.Clear();
