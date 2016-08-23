@@ -19,7 +19,7 @@ public class DoorManager : Script
 	private int _doorCounter;
 	private Dictionary<int, ColShape> _doorColShapes = new Dictionary<int, ColShape>();
 
-	private bool _debugStatus = true;
+	private bool _debugStatus = false;
 
 	public const ulong SET_STATE_OF_CLOSEST_DOOR_OF_TYPE = 0xF82D8F1926A02C3D;
 
