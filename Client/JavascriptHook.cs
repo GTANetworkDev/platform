@@ -852,7 +852,7 @@ namespace GTANetwork
 
         public Vector3 getEntityVelocity(LocalHandle entity)
         {
-            return new Prop(entity.Value).Position.ToLVector();
+            return new Prop(entity.Value).Velocity.ToLVector();
         }
 
         public float getVehicleHealth(LocalHandle entity)
