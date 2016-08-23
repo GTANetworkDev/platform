@@ -143,7 +143,7 @@ public class DoorManager : Script
 		info.Locked = false; // Open by default;
 		info.Id = colShapeId;
 
-		var colShape = API.createSphereColShape(position, 10f);		
+		var colShape = API.createSphereColShape(position, 35f);		
 		colShape.setData("DOOR_INFO", info);
 		colShape.setData("DOOR_ID", colShapeId);
 		colShape.setData("IS_DOOR_TRIGGER", true);
