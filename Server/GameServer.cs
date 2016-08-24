@@ -200,6 +200,9 @@ namespace GTANetworkServer
                 AvailableMaps.Add(res);
              }
 
+            NetEntityHandler.CreateWorld();
+            ColShapeManager = new ColShapeManager();
+
             Program.Output("Loading resources...");
             foreach (var path in filterscripts)
             {
@@ -215,8 +218,6 @@ namespace GTANetworkServer
                 }
             }
 
-            NetEntityHandler.CreateWorld();
-            ColShapeManager = new ColShapeManager();
             StreamerThread = new Thread(Streamer.MainThread);
             StreamerThread.IsBackground = true;
             StreamerThread.Start();
