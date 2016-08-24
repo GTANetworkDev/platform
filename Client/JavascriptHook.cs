@@ -860,6 +860,11 @@ namespace GTANetwork
             return new Vehicle(entity.Value).EngineHealth;
         }
 
+        public float getVehicleRPM(LocalHandle entity)
+        {
+            return new Vehicle(entity.Value).CurrentRPM;
+        }
+
         public bool isPlayerInAnyVehicle(LocalHandle player)
         {
             return new Ped(player.Value).IsInVehicle();
