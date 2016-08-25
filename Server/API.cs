@@ -1990,7 +1990,7 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0x953DA1E1B12C0491, vehicle);
         }
 
-        public void setPlayerHealth(Client player, float health)
+        public void setPlayerHealth(Client player, int health)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
         }

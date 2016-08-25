@@ -80,6 +80,20 @@ function Gauge(placeholderName, configuration)
 						.style("fill", "#333")
 						.style("stroke-width", "0px");
 		}
+
+		if (undefined != this.config.sublabel)
+		{
+			var fontSize = Math.round(this.config.size / 9);
+			this.body.append("svg:text")
+						.attr("x", this.config.cx)
+						.attr("y", this.config.cy / 2 + fontSize)
+						.attr("dy", fontSize / 2)
+						.attr("text-anchor", "middle")
+						.text(this.config.sublabel)
+						.style("font-size", fontSize / 2 + "px")
+						.style("fill", "#333")
+						.style("stroke-width", "0px");
+		}
 		
 		var fontSize = Math.round(this.config.size / 16);
 		var majorDelta = this.config.range / (this.config.majorTicks - 1);

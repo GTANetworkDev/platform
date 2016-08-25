@@ -24,12 +24,13 @@
 				
 			var gauges = [];
 			
-			function createGauge(name, label, gSize, min, max, yellowZ, redZ)
+			function createGauge(name, label, gSize, min, max, yellowZ, redZ, sublabel)
 			{
 				var config = 
 				{
 					size: gSize,
 					label: label,
+					sublabel: sublabel,
 					min: undefined != min ? min : 0,
 					max: undefined != max ? max : 100,
 					minorTicks: 5
@@ -45,8 +46,9 @@
 			
 			function createGauges()
 			{
-				createGauge("health", "Health", 150, 0, 1000, [{ from: 100, to: 400 }], [{ from: 0, to: 100 }]);
+				createGauge("health", "Health", 120, 0, 1000, [{ from: 100, to: 400 }], [{ from: 0, to: 100 }]);
 				createGauge("speed", "KM/H", 300, 0, 300, [{ from: 210, to: 270 }], [{ from: 270, to: 300 }]);
+				createGauge("rpm", "RPM", 150, 0, 10, [{ from: 7.5, to: 9 }], [{ from: 9, to: 10 }], "x 1000");
 			}
 
 			function updateSpeed(newSpeed)
@@ -57,6 +59,11 @@
 			function updateHealth(newHealth)
 			{
 				gauges["health"].redraw(newHealth);
+			}
+
+			function updateRpm(newRpm)
+			{
+				gauges["rpm"].redraw(newRpm);
 			}
 						
 			function initialize()
@@ -69,8 +76,9 @@
 		
 	</head>
 	
-	<body onload="initialize()">
+	<body onload="initialize()">		
 		<span id="healthGaugeContainer"></span>
+		<span id="rpmGaugeContainer"></span>
 		<span id="speedGaugeContainer"></span>
 	</body>
 	
