@@ -246,16 +246,13 @@ namespace GTANetwork.GUI
             });
 
             LogManager.DebugLog("WAITING FOR INITIALIZATION...");
-            if (!Cef.IsInitialized)
+            try
             {
-                try
-                {
-                    Cef.Initialize(settings, true, false);
-                }
-                catch
-                {
-                    return;
-                }
+                Cef.Initialize(settings);
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "CEF INIT");
             }
 #endif
         }
