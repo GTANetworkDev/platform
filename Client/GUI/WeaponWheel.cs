@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using GTA;
 using GTA.Native;
+using GTANetworkShared;
 using NativeUI;
 using Control = GTA.Control;
 using Font = GTA.Font;
@@ -31,6 +32,8 @@ namespace GTANetwork.GUI
         private bool _disable;
         private DateTime _lastPress;
         private WeaponHash _hiddenWeapon;
+        public static Dictionary<WeaponHash, Tuple<int, int>> Magazines = new Dictionary<WeaponHash, Tuple<int, int>>(); 
+
         /*
         private float posX;
         private float posY;
@@ -60,7 +63,13 @@ namespace GTANetwork.GUI
 
                 if (Game.Player.Character.Weapons.Current.Hash != currentGun)
                 {
+                    Magazines.Set(Game.Player.Character.Weapons.Current.Hash, new Tuple<int, int>(Game.Player.Character.Weapons.Current.Ammo, Game.Player.Character.Weapons.Current.AmmoInClip));
                     Game.Player.Character.Weapons.Select(currentGun);
+                    if (Magazines.ContainsKey(currentGun))
+                    {
+                        Game.Player.Character.Weapons.Current.AmmoInClip = Magazines[currentGun].Item2;
+                        Game.Player.Character.Weapons.Current.Ammo = Magazines[currentGun].Item1;
+                    }
                 }
             }
             else if (Game.IsControlJustReleased(0, Control.SelectWeapon) && !_disable)
@@ -72,6 +81,11 @@ namespace GTANetwork.GUI
                     if (Game.Player.Character.Weapons.HasWeapon(_hiddenWeapon))
                     {
                         Game.Player.Character.Weapons.Select(_hiddenWeapon);
+                        if (Magazines.ContainsKey(_hiddenWeapon))
+                        {
+                            Game.Player.Character.Weapons.Current.AmmoInClip = Magazines[_hiddenWeapon].Item2;
+                            Game.Player.Character.Weapons.Current.Ammo = Magazines[_hiddenWeapon].Item1;
+                        }
                     }
 
                     _hiddenWeapon = default(WeaponHash);
@@ -79,6 +93,7 @@ namespace GTANetwork.GUI
                 else if (current != null && current.Hash != WeaponHash.Unarmed)
                 {
                     _hiddenWeapon = Game.Player.Character.Weapons.Current.Hash;
+                    Magazines.Set(Game.Player.Character.Weapons.Current.Hash, new Tuple<int, int>(Game.Player.Character.Weapons.Current.Ammo, Game.Player.Character.Weapons.Current.AmmoInClip));
                     Game.Player.Character.Weapons.Select(WeaponHash.Unarmed);
                 }
             }

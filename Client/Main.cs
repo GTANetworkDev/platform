@@ -4690,6 +4690,7 @@ namespace GTANetwork
 			JavascriptHook.StopAllScripts();
             JavascriptHook.TextElements.Clear();
 		    SyncCollector.ForceAimData = false;
+            WeaponWheel.Magazines.Clear();
             StringCache.Dispose();
 		    StringCache = null;
 		    CefController.ShowCursor = false;
