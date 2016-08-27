@@ -785,6 +785,11 @@ namespace GTANetwork
             }
         }
 
+        public void setUiColor(int r, int g, int b)
+        {
+            Main.UIColor = Color.FromArgb(r, g, b);
+        }
+
         public int getHashKey(string input)
         {
             return Game.GenerateHash(input);

@@ -209,7 +209,7 @@ namespace GTANetwork
             return Function.Call<string>(Hash.GET_RADIO_STATION_NAME, id);
         }
         
-        public static void DxDrawTexture(int idx, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a)
+        public static void DxDrawTexture(int idx, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a, bool centered = false)
         {
             int screenw = Game.ScreenResolution.Width;
             int screenh = Game.ScreenResolution.Height;
@@ -218,19 +218,24 @@ namespace GTANetwork
             float ratio = (float)screenw / screenh;
             float width = height * ratio;
 
-            float reduceX = UI.WIDTH / width;
-            float reduceY = UI.HEIGHT / height;
+            float reduceX = xPos / width;
+            float reduceY = yPos / height;
 
+            float scaleX = txdWidth/width;
+            float scaleY = txdHeight/height;
 
-            Point extra = new Point(0, 0);
-            if (screenw == 1914 && screenh == 1052)
-                extra = new Point(15, 0);
+            if (!centered)
+            {
+                reduceX += scaleX*0.5f;
+                reduceY += scaleY*0.5f;
+            }
 
-            UI.DrawTexture(filename, idx, 1, 60,
-                new PointF(xPos * reduceX + extra.X, yPos * reduceY + extra.Y),
-                new PointF(0f, 0f),
-                new SizeF(txdWidth * reduceX, txdHeight * reduceY),
-                rot, Color.FromArgb(a, r, g, b), 1f);
+            UI.RawDrawTexture(filename, idx, 1, 100,
+                reduceX, reduceY,
+                scaleX, scaleY / ratio,
+                new PointF(0.5f, 0.5f),
+                new SizeF(0, 0),
+                rot, Color.FromArgb(a, r, g, b), ratio);
         }
 
         public static Vector3 ToEuler(this Quaternion q)

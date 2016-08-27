@@ -296,7 +296,7 @@ namespace GTANetwork.GUI
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
-        public static bool Disposed;
+        public static bool Disposed = true;
 
         internal static DXHookD3D11 DirectXHook;
         

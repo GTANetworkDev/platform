@@ -318,7 +318,7 @@ namespace GTANetwork.GUI
                 _loc8_ = (-Math.Cos(_loc3_*_loc7_))*_loc5_;
                 Util.DxDrawTexture(currentRadio, RADIO_SPRITE_PATH + "selected.png",
                     ((float) _loc9_) + center.X - _loc4_/2 - 5, ((float) _loc8_) + center.Y - _loc4_/2 - 5, _loc4_ + 10, _loc4_ + 10, 0,
-                    38, 154, 255, 255);
+                    Main.UIColor.R, Main.UIColor.G, Main.UIColor.B, 255); // 38, 154, 255
 
                 var currentSong = Function.Call<int>(Hash.GET_AUDIBLE_MUSIC_TRACK_TEXT_ID);
 

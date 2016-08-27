@@ -104,6 +104,7 @@ namespace GTANetwork
         public static bool CanOpenChatbox = true;
         public static bool ScriptChatVisible = true;
         public static bool UIVisible = true;
+        public static Color UIColor = Color.White;
 
         public static StringCache StringCache;
 
@@ -2453,6 +2454,30 @@ namespace GTANetwork
                 //}
                 //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
+            /*
+            var wList = Enum.GetValues(typeof (WeaponHash)).Cast<WeaponHash>();
+            Dictionary<int, List<string>> slots = new Dictionary<int, List<string>>();
+
+            foreach (var hash in wList)
+            {
+                var slot = Function.Call<int>(Hash.GET_WEAPONTYPE_GROUP, unchecked((int) hash));
+
+                if (!slots.ContainsKey(slot)) slots.Add(slot, new List<string>());
+
+                slots[slot].Add(hash.ToString());
+            }
+
+            int counter = 0;
+            foreach(var pair in slots)
+            {
+                var str = pair.Key + ": " + pair.Value.Aggregate((prev, next) => prev + ", " + next);
+                if (str.Length > 90) str = str.Substring(0, 90);
+                new UIResText(str,new Point(10, 40 * counter++), 0.3f).Draw();
+            }
+
+            UI.ShowSubtitle(slots.Count.ToString());
+                */
+
             
             DEBUG_STEP = 4;
             if (_debugWindow)
@@ -2865,7 +2890,28 @@ namespace GTANetwork
                 Game.Player.IsInvincible = true;
                 Game.Player.Character.HasCollision = false;
 
+                Control[] exceptions = new[]
+                {
+                    Control.LookLeftRight,
+                    Control.LookUpDown,
+                    Control.LookLeft,
+                    Control.LookRight,
+                    Control.LookUp,
+                    Control.LookDown,
+                };
+                /*
+                foreach (var control in Enum.GetValues(typeof (Control)).Cast<Control>())
+                {
+                    if (Array.IndexOf(exceptions, control) != -1) continue;
+                    Game.DisableControlThisFrame(0, control);
+                }*/
+
                 Game.DisableAllControlsThisFrame(0);
+
+                foreach (var c in exceptions)
+                {
+                    Game.EnableControlThisFrame(0, c);
+                }
 
                 var ent = NetEntityHandler.NetToEntity(SpectatingEntity);
 
@@ -4649,6 +4695,9 @@ namespace GTANetwork
             VehicleSyncManager.StopAll();
 		    HasFinishedDownloading = false;
 		    ScriptChatVisible = true;
+
+            Main.UIColor = Color.White;
+		    
 			DEBUG_STEP = 52;
 
 		    CEFManager.StopRender = true;
