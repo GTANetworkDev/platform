@@ -182,8 +182,6 @@ namespace GTANetwork.GUI
             var chuteHash = Game.GenerateHash("GADGET_PARACHUTE");
             if (Game.Player.Character.Weapons.HasWeapon((WeaponHash) chuteHash))
             {
-                UI.ShowSubtitle("chuute");
-
                 Util.DxDrawTexture(69, WeaponWheel.WEAPON_SPRITE_PATH + "parachute_bg.png",
                     res.Width/2 + 250, res.Height/2 + 170,
                     100, 100, 0, 255, 255, 255, 255, true);
