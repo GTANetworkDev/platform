@@ -312,7 +312,14 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 }
             }
 
-            base.Dispose(disposeManagedResources);
+            try
+            {
+                base.Dispose(disposeManagedResources);
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "DIRECTX DISPOSE");
+            }
         }
 
         #endregion

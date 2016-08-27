@@ -1337,12 +1337,14 @@ namespace GTANetwork
                 {
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
                     CEFManager.StopRender = true;
-                    CEFManager.DisposeCef();
 
                     while (!CEFManager.Disposed)
                     {
                         Script.Yield();
                     }
+
+                    //CEFManager.DisposeCef();
+                    //Script.Wait(1000);
                     Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);
@@ -4702,8 +4704,15 @@ namespace GTANetwork
 
 		    CEFManager.StopRender = true;
 
-            lock (CEFManager.Browsers)
-                CEFManager.Browsers.Clear();
+		    lock (CEFManager.Browsers)
+		    {
+		        foreach (var browser in CEFManager.Browsers)
+		        {
+		            browser.Dispose();
+		        }
+
+		        CEFManager.Browsers.Clear();
+		    }
 
             ClearStats();
 

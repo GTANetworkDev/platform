@@ -174,14 +174,16 @@ namespace GTANetwork.GUI
 
                     if (keyChar[0] == (char)8)
                     {
-                        charEvent.WindowsKeyCode = (int) args.KeyCode;
+                        //charEvent.WindowsKeyCode = (int) args.KeyCode;
+                        charEvent.WindowsKeyCode = 8;
                         charEvent.Modifiers = mod;
                         browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
                         return;
                     }
                     if (keyChar[0] == (char)13)
                     {
-                        charEvent.WindowsKeyCode = (int)args.KeyCode;
+                        //charEvent.WindowsKeyCode = (int)args.KeyCode;
+                        charEvent.WindowsKeyCode = 13;
                         charEvent.Modifiers = mod;
                         browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
                         return;
@@ -248,7 +250,7 @@ namespace GTANetwork.GUI
             {
                 try
                 {
-                    Cef.Initialize(settings, true, false);
+                    Cef.Initialize(settings);
                 }
                 catch
                 {
@@ -358,11 +360,16 @@ namespace GTANetwork.GUI
             cursor.Dispose();
 
             lock (Browsers)
-            foreach (var browser in Browsers)
             {
-                browser.Dispose();
+                foreach (var browser in Browsers)
+                {
+                    browser.Dispose();
+                }
+
+                Browsers.Clear();
             }
 
+            
             try
             {
                 DirectXHook.Dispose();
@@ -389,13 +396,13 @@ namespace GTANetwork.GUI
             LogManager.LogException(threadExceptionEventArgs.ExceptionObject as Exception, "APPTHREAD");
         }
     }
-
+    
     public class ResourceFilePathHandler : ISchemeHandlerFactory
     {
         public IResourceHandler Create(IBrowser browser, IFrame frame, string schemeName, IRequest request)
         {
-            var browserWrapper = CEFManager.Browsers.FirstOrDefault(b => b._browser?.GetBrowser() == browser);
-
+            var browserWrapper = CEFManager.Browsers.FirstOrDefault(b => b._browser?.GetBrowser().Identifier == browser.Identifier);
+            
             if (browserWrapper == null || browserWrapper._localMode)
             {
                 var uri = new Uri(request.Url);
@@ -405,6 +412,7 @@ namespace GTANetwork.GUI
 
                 if (!File.Exists(requestedFile))
                 {
+                    browser.StopLoad();
                     return ResourceHandler.FromString(@"<!DOCTYPE html><html><body><h1>404</h1></body></html>", ".html");
                 }
 
@@ -412,6 +420,76 @@ namespace GTANetwork.GUI
             }
 
             return null;
+        }
+    }
+
+    public class GoBackForwardCanceller : IRequestHandler
+    {
+        bool IRequestHandler.OnResourceResponse(IWebBrowser browser, IBrowser b, IFrame frame, IRequest req, IResponse resp)
+        {
+            return false;
+        }
+
+        void IRequestHandler.OnResourceLoadComplete(IWebBrowser browser, IBrowser b, IFrame frame, IRequest req,
+            IResponse resp, UrlRequestStatus status, long unk)
+        {
+        }
+
+        bool IRequestHandler.OnBeforeBrowse(IWebBrowser browserControl, IBrowser browser, IFrame frame, IRequest request, bool isRedirect)
+        {
+            if ((request.TransitionType & TransitionType.ForwardBack) != 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+        bool IRequestHandler.OnOpenUrlFromTab(IWebBrowser browserControl, IBrowser browser, IFrame frame, string targetUrl, WindowOpenDisposition targetDisposition, bool userGesture)
+        {
+            return false;
+        }
+        bool IRequestHandler.OnCertificateError(IWebBrowser browserControl, IBrowser browser, CefErrorCode errorCode, string requestUrl, ISslInfo sslInfo, IRequestCallback callback)
+        {
+            return false;
+        }
+        void IRequestHandler.OnPluginCrashed(IWebBrowser browserControl, IBrowser browser, string pluginPath)
+        {
+        }
+        CefReturnValue IRequestHandler.OnBeforeResourceLoad(IWebBrowser browserControl, IBrowser browser, IFrame frame, IRequest request, IRequestCallback callback)
+        {
+            return CefReturnValue.Continue;
+        }
+
+        bool IRequestHandler.GetAuthCredentials(IWebBrowser browserControl, IBrowser browser, IFrame frame, bool isProxy, string host, int port, string realm, string scheme, IAuthCallback callback)
+        {
+            //NOTE: If you do not wish to implement this method returning false is the default behaviour
+            // We also suggest you explicitly Dispose of the callback as it wraps an unmanaged resource.
+
+            callback.Dispose();
+            return false;
+        }
+
+        void IRequestHandler.OnRenderProcessTerminated(IWebBrowser browserControl, IBrowser browser, CefTerminationStatus status)
+        {
+        }
+
+        bool IRequestHandler.OnQuotaRequest(IWebBrowser browserControl, IBrowser browser, string originUrl, long newSize, IRequestCallback callback)
+        {
+            return false;
+        }
+
+        void IRequestHandler.OnResourceRedirect(IWebBrowser browserControl, IBrowser browser, IFrame frame, IRequest request, ref string newUrl)
+        {
+        }
+
+        bool IRequestHandler.OnProtocolExecution(IWebBrowser browserControl, IBrowser browser, string url)
+        {
+            return false;
+        }
+
+        void IRequestHandler.OnRenderViewReady(IWebBrowser browserControl, IBrowser browser)
+        {
+
         }
     }
 
@@ -593,14 +671,12 @@ namespace GTANetwork.GUI
             var settings = new BrowserSettings();
             settings.LocalStorage = CefState.Disabled;
             settings.OffScreenTransparentBackground = true;
-
-            if (!localMode)
-            {
-                settings.Javascript = CefState.Disabled;
-            }
+            settings.JavascriptAccessClipboard = CefState.Disabled;
+            settings.JavascriptOpenWindows = CefState.Disabled;
             
             _browser = new ChromiumWebBrowser(browserSettings: settings);
             _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father, this), false);
+            //_browser.RequestHandler = new GoBackForwardCanceller(); // disabled for now, giving problems
             Size = browserSize;
 
             _localMode = localMode;
