@@ -250,7 +250,7 @@ namespace GTANetwork.GUI
             {
                 try
                 {
-                    Cef.Initialize(settings);
+                    Cef.Initialize(settings, true, false);
                 }
                 catch
                 {

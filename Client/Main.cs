@@ -1343,8 +1343,9 @@ namespace GTANetwork
                         Script.Yield();
                     }
 
-                    //CEFManager.DisposeCef();
-                    //Script.Wait(1000);
+                    Script.Wait(1000);
+                    CEFManager.DisposeCef();
+                    Script.Wait(1000);
                     Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);
