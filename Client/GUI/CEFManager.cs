@@ -361,6 +361,11 @@ namespace GTANetwork.GUI
 
             lock (Browsers)
             {
+                foreach (var browser in CEFManager.Browsers)
+                {
+                    browser.Dispose();
+                }
+
                 Browsers.Clear();
             }
 
