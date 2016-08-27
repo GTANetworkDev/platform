@@ -527,8 +527,16 @@ namespace GTANetwork
 				if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17) || isAiming)
 				{
 					var oldPos = UI.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
-					var targetPos = Character.CurrentBlip.Position + new Vector3(0, 0, 1.2f);
-					if (oldPos.X != 0 && oldPos.Y != 0)
+
+				    Vector3 targetPos;
+
+				    if (!IsInVehicle && Character.HasBone("IK_Head"))
+				        targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
+                    else
+                        targetPos = Character.CurrentBlip.Position + new Vector3(0, 0, 1.2f);
+                    
+
+                    if (oldPos.X != 0 && oldPos.Y != 0)
 					{
 						Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
 						DEBUG_STEP = 6;
