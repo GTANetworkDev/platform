@@ -361,11 +361,6 @@ namespace GTANetwork.GUI
 
             lock (Browsers)
             {
-                foreach (var browser in Browsers)
-                {
-                    browser.Dispose();
-                }
-
                 Browsers.Clear();
             }
 
@@ -737,7 +732,6 @@ namespace GTANetwork.GUI
 
         public void Dispose()
         {
-            _browser?.Dispose();
             _browser = null;
         }
     }

@@ -4706,11 +4706,6 @@ namespace GTANetwork
 
 		    lock (CEFManager.Browsers)
 		    {
-		        foreach (var browser in CEFManager.Browsers)
-		        {
-		            browser.Dispose();
-		        }
-
 		        CEFManager.Browsers.Clear();
 		    }
 

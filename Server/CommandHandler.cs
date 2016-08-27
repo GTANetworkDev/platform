@@ -281,8 +281,22 @@ namespace GTANetworkServer
 
                     if (!string.IsNullOrEmpty(cmd.ArgumentConverter))
                     {
-                        var del = Delegate.CreateDelegate(typeof (ArgumentConversionDelegate), engine._compiledScript,
-                            engine._compiledScript.GetType().GetMethod(cmd.ArgumentConverter));
+                        Script eng = engine._compiledScript;
+
+                        if (cmd.ArgumentConverter.IndexOf('.') != -1)
+                        {
+                            var spl = cmd.ArgumentConverter.Split('.');
+
+                            var ourEng = Resource.Engines.FirstOrDefault(r => r.Filename == spl[0]);
+
+                            if (ourEng != null)
+                            {
+                                eng = ourEng._compiledScript;
+                            }
+                        }
+
+                        var del = Delegate.CreateDelegate(typeof (ArgumentConversionDelegate), eng,
+                            eng.GetType().GetMethod(cmd.ArgumentConverter));
                         parser.CustomArgumentParser = (ArgumentConversionDelegate)del;
                     }
                     
