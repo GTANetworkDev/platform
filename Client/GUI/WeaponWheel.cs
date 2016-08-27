@@ -30,6 +30,7 @@ namespace GTANetwork.GUI
         
         private bool _disable;
         private DateTime _lastPress;
+        private WeaponHash _hiddenWeapon;
         /*
         private float posX;
         private float posY;
@@ -62,6 +63,26 @@ namespace GTANetwork.GUI
                     Game.Player.Character.Weapons.Select(currentGun);
                 }
             }
+            else if (Game.IsControlJustReleased(0, Control.SelectWeapon) && !_disable)
+            {
+                var current = Game.Player.Character.Weapons.Current;
+
+                if ((current == null || current.Hash == WeaponHash.Unarmed) && _hiddenWeapon != default(WeaponHash))
+                {
+                    if (Game.Player.Character.Weapons.HasWeapon(_hiddenWeapon))
+                    {
+                        Game.Player.Character.Weapons.Select(_hiddenWeapon);
+                    }
+
+                    _hiddenWeapon = default(WeaponHash);
+                }
+                else if (current != null && current.Hash != WeaponHash.Unarmed)
+                {
+                    _hiddenWeapon = Game.Player.Character.Weapons.Current.Hash;
+                    Game.Player.Character.Weapons.Select(WeaponHash.Unarmed);
+                }
+            }
+
 
             if (Game.Player.Character.IsInVehicle() || Main.Chat.IsFocused)
                 return;
@@ -306,26 +327,6 @@ namespace GTANetwork.GUI
             }
 
             return "UNDEFINED";
-
-            /*
-            IntPtr data = Marshal.AllocCoTaskMem(39 * 8);
-            string result = string.Empty;
-
-            for (int i = 0, count = Function.Call<int>(Hash.GET_NUM_DLC_WEAPONS); i < count; i++)
-            {
-                if (Function.Call<bool>(Hash.GET_DLC_WEAPON_DATA, i, data))
-                {
-                    if (MemoryAccess.ReadInt(data + 8) == (int)hash)
-                    {
-                        result = MemoryAccess.ReadString(data + 23 * 8);
-                        break;
-                    }
-                }
-            }
-
-            Marshal.FreeCoTaskMem(data);
-
-            return result;*/
         }
 
         private static string GetManualTextFromHash(WeaponHash hash)
@@ -490,12 +491,12 @@ namespace GTANetwork.GUI
                 alpha = 255;
             }
 
-            Util.DxDrawTexture(_slot, WeaponWheel.WEAPON_SPRITE_PATH + "bg_" + (highlighted ? "white" : "black") + ".png",
+            Util.DxDrawTexture(10, WeaponWheel.WEAPON_SPRITE_PATH + "bg_" + (highlighted ? "white" : "black") + ".png",
                 (float) posX, (float) posY, (float)scaleX, (float)scaleY,
                 angleNorm,
                 Main.UIColor.R, Main.UIColor.G, Main.UIColor.B, 255);
 
-            Util.DxDrawTexture(_slot, WeaponWheel.WEAPON_SPRITE_PATH + "arc_" + im + ".png",
+            Util.DxDrawTexture(10, WeaponWheel.WEAPON_SPRITE_PATH + "arc_" + im + ".png",
                 (float)posXArc, (float)posYArc, scaleXArc, scaleYArc,
                 angleNorm,
                 Main.UIColor.R, Main.UIColor.G, Main.UIColor.B, alpha);
@@ -521,7 +522,7 @@ namespace GTANetwork.GUI
                 xGun += centerX;
                 yGun += centerY;
 
-                Util.DxDrawTexture(_slot, filename,
+                Util.DxDrawTexture(20, filename,
                     xGun, yGun, width, height,
                     0,
                     255, 255, 255, 255, true);

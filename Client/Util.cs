@@ -240,7 +240,7 @@ namespace GTANetwork
                 _lastframe = cF;
             }
 
-            UI.RawDrawTexture(filename, _idX++, 1, 100,
+            UI.RawDrawTexture(filename, _idX++, idx, 70,
                 reduceX, reduceY,
                 scaleX, scaleY / ratio,
                 new PointF(0.5f, 0.5f),
