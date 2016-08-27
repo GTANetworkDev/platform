@@ -208,7 +208,9 @@ namespace GTANetwork
         {
             return Function.Call<string>(Hash.GET_RADIO_STATION_NAME, id);
         }
-        
+
+        private static int _idX;
+        private static int _lastframe;
         public static void DxDrawTexture(int idx, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a, bool centered = false)
         {
             int screenw = Game.ScreenResolution.Width;
@@ -230,7 +232,15 @@ namespace GTANetwork
                 reduceY += scaleY*0.5f;
             }
 
-            UI.RawDrawTexture(filename, idx, 1, 100,
+            var cF = Function.Call<int>(Hash.GET_FRAME_COUNT);
+
+            if (cF != _lastframe)
+            {
+                _idX = 0;
+                _lastframe = cF;
+            }
+
+            UI.RawDrawTexture(filename, _idX++, 1, 100,
                 reduceX, reduceY,
                 scaleX, scaleY / ratio,
                 new PointF(0.5f, 0.5f),

@@ -166,7 +166,7 @@ namespace GTANetwork.GUI
                     {
                         Outline = true,
                     }.Draw();
-
+                    
                     new Sprite("commonmenu", "arrowleft",
                         new Point((int) (res.Width/2) - 78, (int) (res.Height/2) - 175), new Size(48, 48), 0f, Main.UIColor).Draw();
                     new Sprite("commonmenu", "arrowright",
@@ -177,6 +177,19 @@ namespace GTANetwork.GUI
             for (int i = 0; i < 8; i++)
             {
                 _slots[i].Draw(_currentIndex == i, cSlot == i);
+            }
+
+            var chuteHash = Game.GenerateHash("GADGET_PARACHUTE");
+            if (Game.Player.Character.Weapons.HasWeapon((WeaponHash) chuteHash))
+            {
+                UI.ShowSubtitle("chuute");
+
+                Util.DxDrawTexture(69, WeaponWheel.WEAPON_SPRITE_PATH + "parachute_bg.png",
+                    res.Width/2 + 250, res.Height/2 + 170,
+                    100, 100, 0, 255, 255, 255, 255, true);
+                Util.DxDrawTexture(70, WeaponWheel.WEAPON_SPRITE_PATH + "parachute.png",
+                    res.Width / 2 + 250, res.Height / 2 + 170,
+                    57, 57, 0, 255, 255, 255, 255, true);
             }
         }
     }
