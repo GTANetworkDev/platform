@@ -105,9 +105,9 @@ namespace GTANetwork
             }
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
-            var steamDictPath = @"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 271590";
+            var steamDictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\GTAV";
             var keyName = "InstallFolder";
-
+            var keyNameSteam = "InstallFolderSteam";
 
 
 
@@ -115,7 +115,7 @@ namespace GTANetwork
 
             if (string.IsNullOrEmpty(InstallFolder))
             {
-                InstallFolder = (string) Registry.GetValue(steamDictPath, keyName, null);
+                InstallFolder = (string) Registry.GetValue(steamDictPath, keyNameSteam, null);
                 settings.SteamPowered = true;
 
                 try
@@ -143,13 +143,18 @@ namespace GTANetwork
                         {
                             Registry.SetValue(dictPath, keyName, InstallFolder);
                         }
-                        catch(UnauthorizedAccessException)
-                        { }
+                        catch (UnauthorizedAccessException)
+                        {
+                        }
                     }
                     else
                     {
                         return;
                     }
+                }
+                else
+                {
+                    InstallFolder = InstallFolder.Replace("Grand Theft Auto V\\GTAV", "Grand Theft Auto V");
                 }
             }
 
@@ -172,17 +177,30 @@ namespace GTANetwork
             splashScreen.SetPercent(60);
 
             var mySettings = GameSettings.LoadGameSettings();
-            if (mySettings.Video != null && mySettings.Video.PauseOnFocusLoss != null)
+            if (mySettings.Video != null)
             {
-                _pauseOnFocusLoss = mySettings.Video.PauseOnFocusLoss.Value;
-                mySettings.Video.PauseOnFocusLoss.Value = 0;
+                if (mySettings.Video.PauseOnFocusLoss != null)
+                {
+                    _pauseOnFocusLoss = mySettings.Video.PauseOnFocusLoss.Value;
+                    mySettings.Video.PauseOnFocusLoss.Value = 0;
+                }
+
+                if (mySettings.Video.Windowed != null)
+                {
+                    _windowedMode = mySettings.Video.Windowed.Value;
+                    mySettings.Video.Windowed.Value = 2;
+                }
             }
             else
             {
                 mySettings.Video = new GameSettings.Video();
                 mySettings.Video.PauseOnFocusLoss = new GameSettings.PauseOnFocusLoss();
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
+                mySettings.Video.Windowed = new GameSettings.Windowed();
+                mySettings.Video.Windowed.Value = 2;
             }
+
+            
 
             GameSettings.SaveSettings(mySettings);
 
@@ -249,6 +267,7 @@ namespace GTANetwork
             PatchStartup(_startupFlow, _landingPage);
 
             mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
+            mySettings.Video.Windowed.Value = _windowedMode;
 
             GameSettings.SaveSettings(mySettings);
 
@@ -275,6 +294,7 @@ namespace GTANetwork
         private byte _startupFlow;
         private byte _landingPage;
         private int _pauseOnFocusLoss;
+        private int _windowedMode;
 
         public void ReadStartupSettings()
         {
