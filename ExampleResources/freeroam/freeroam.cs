@@ -348,24 +348,15 @@ public class FreeroamScript : Script
     }
 
     [Command("weaponcomponent", Alias = "wcomp,wc")]
-    public void GiveWeaponComponentCmd(Client sender, string component)
-    {
-        WeaponComponent hashOut;
-        if (!Enum.TryParse(component, out hashOut))
-        {
-            API.sendChatMessageToPlayer(sender, "Wrong component!");
-            return;
-        }
-
+    public void GiveWeaponComponentCmd(Client sender, WeaponComponent component)
+    {        
         API.givePlayerWeaponComponent(sender, API.getPlayerCurrentWeapon(sender), hashOut);
     }
 
 
     [Command("weapontint", Alias = "wtint")]
-    public void SetWeaponTintCmd(Client sender, int tint)
+    public void SetWeaponTintCmd(Client sender, WeaponTint tint)
     {
-        WeaponTint ourTint = (WeaponTint) tint;
-
-        API.setPlayerWeaponTint(sender, API.getPlayerCurrentWeapon(sender), ourTint);
+        API.setPlayerWeaponTint(sender, API.getPlayerCurrentWeapon(sender), tint);
     }
 }

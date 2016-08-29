@@ -209,7 +209,7 @@ namespace GTANetworkServer
 
                     try
                     {
-                        enumOut = Enum.Parse(Parameters[i].ParameterType, args[i]);
+                        enumOut = Enum.Parse(Parameters[i].ParameterType, args[i], true);
                     }
                     catch(ArgumentException)
                     {
