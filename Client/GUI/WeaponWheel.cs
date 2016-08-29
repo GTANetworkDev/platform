@@ -47,6 +47,23 @@ namespace GTANetwork.GUI
 
         public void OnTick(object sender, EventArgs e)
         {
+            var dontShow = !Main.UIVisible || CefController.ShowCursor;
+
+            if (dontShow && _disable)
+            {
+                _disable = false;
+
+                Function.Call(Hash.SET_AUDIO_FLAG, "ActivateSwitchWheelAudio", 0);
+                Function.Call(Hash._STOP_SCREEN_EFFECT, "SwitchHUDIn");
+                Function.Call(Hash._START_SCREEN_EFFECT, "SwitchHUDOut", 0, 0);
+                Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_Out", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
+            }
+
+            if (dontShow)
+            {
+                return;
+            }
+
             if (Game.IsControlJustReleased(0, Control.SelectWeapon) && _disable)
             {
                 _disable = false;
