@@ -350,7 +350,7 @@ public class FreeroamScript : Script
     [Command("weaponcomponent", Alias = "wcomp,wc")]
     public void GiveWeaponComponentCmd(Client sender, WeaponComponent component)
     {        
-        API.givePlayerWeaponComponent(sender, API.getPlayerCurrentWeapon(sender), hashOut);
+        API.givePlayerWeaponComponent(sender, API.getPlayerCurrentWeapon(sender), component);
     }
 
 
