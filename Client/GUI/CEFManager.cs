@@ -28,6 +28,17 @@ namespace GTANetwork.GUI
         public static bool ShowCursor;
         public static PointF _lastMousePoint;
         private Keys _lastKey;
+
+        public static CefEventFlags GetMouseModifiers(bool leftbutton, bool rightButton)
+        {
+            CefEventFlags mod = CefEventFlags.None;
+
+            if (leftbutton) mod |= CefEventFlags.LeftMouseButton;
+            if (rightButton) mod |= CefEventFlags.RightMouseButton;
+
+            return mod;
+        }
+
         public CefController()
         {
             Tick += (sender, args) =>
@@ -41,7 +52,8 @@ namespace GTANetwork.GUI
                 if (ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
-                    Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
+                    if (CEFManager.D3D11_DISABLED)
+                        Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
                 }
                 else
                 {
@@ -55,9 +67,11 @@ namespace GTANetwork.GUI
                 _lastMousePoint = new PointF(mouseX, mouseY);
 
                 var mouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorAccept);
+                var mouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorAccept);
                 var mouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorAccept);
 
                 var rmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorCancel);
+                var rmouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorCancel);
                 var rmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorCancel);
 
                 var wumouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollUp);
@@ -72,55 +86,57 @@ namespace GTANetwork.GUI
                 {
                     if (!browser.IsInitialized()) continue;
 
+                    if (!browser._hasFocused)
+                    {
+                        browser._browser.GetBrowser().GetHost().SetFocus(true);
+                        browser._browser.GetBrowser().GetHost().SendFocusEvent(true);
+                        browser._hasFocused = true;
+                    }
+
                     if (mouseX > browser.Position.X && mouseY > browser.Position.Y &&
                         mouseX < browser.Position.X + browser.Size.Width &&
                         mouseY < browser.Position.Y + browser.Size.Height)
                     {
-                        browser._browser.GetBrowser().GetHost().SetFocus(true);
                         browser._browser.GetBrowser()
                             .GetHost()
                             .SendMouseMoveEvent((int)(mouseX - browser.Position.X), (int)(mouseY - browser.Position.Y),
-                                false, CefEventFlags.None);
+                                false, GetMouseModifiers(mouseDownRN, rmouseDownRN));
 
                         if (mouseDown)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, false, 1, CefEventFlags.None);
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, false, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
 
                         if (mouseUp)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, true, 1, CefEventFlags.None);
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, true, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
 
                         if (rmouseDown)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, false, 1, CefEventFlags.None);
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, false, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
 
                         if (rmouseUp)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, true, 1, CefEventFlags.None);
+                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, true, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
 
                         if (wdmouseDown)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseWheelEvent((int) (mouseX - browser.Position.X),
-                                    (int) (mouseY - browser.Position.Y), 0, -30, CefEventFlags.None);
+                                    (int) (mouseY - browser.Position.Y), 0, -30, GetMouseModifiers(mouseDownRN, rmouseDownRN));
 
                         if (wumouseDown)
                             browser._browser.GetBrowser()
                                 .GetHost()
                                 .SendMouseWheelEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), 0, 30, CefEventFlags.None);
-                    }
-                    else
-                    {
-                        browser._browser.GetBrowser().GetHost().SetFocus(false);
+                                    (int)(mouseY - browser.Position.Y), 0, 30, GetMouseModifiers(mouseDownRN, rmouseDownRN));
                     }
                 }
 
@@ -221,6 +237,13 @@ namespace GTANetwork.GUI
     
     public static class CEFManager
     {
+        #if DISABLE_HOOK
+        public const bool D3D11_DISABLED = true;
+        #else
+        public const bool D3D11_DISABLED = false;
+        #endif
+
+
         public static void InitializeCef()
         {
 #if !DISABLE_CEF
@@ -596,6 +619,7 @@ namespace GTANetwork.GUI
     {
         internal ChromiumWebBrowser _browser;
         internal readonly bool _localMode;
+        internal bool _hasFocused;
 
         public bool Headless = false;
 

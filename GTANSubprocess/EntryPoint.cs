@@ -105,8 +105,7 @@ namespace GTANetwork
             }
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
-            var steamDictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\GTAV";
-            var steamKeyName = "InstallFolderSteam";
+            var steamDictPath = @"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 271590";
             var keyName = "InstallFolder";
 
 
@@ -116,7 +115,7 @@ namespace GTANetwork
 
             if (string.IsNullOrEmpty(InstallFolder))
             {
-                InstallFolder = (string) Registry.GetValue(steamDictPath, steamKeyName, null);
+                InstallFolder = (string) Registry.GetValue(steamDictPath, keyName, null);
                 settings.SteamPowered = true;
 
                 try
