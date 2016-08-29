@@ -69,5 +69,6 @@
         Hatchet = -102973651,
         Bottle = -102323637,
         SmokeGrenade = -37975472,
+        Parachute = -72657034,
     }
 }

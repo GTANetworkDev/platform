@@ -970,6 +970,8 @@ namespace GTANetwork
             if (prop.BlipAlpha != null) veh.BlipAlpha = prop.BlipAlpha.Value;
             if (prop.Accessories != null) veh.Accessories = prop.Accessories;
             if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
+            if (prop.WeaponTints != null) veh.WeaponTints = prop.WeaponTints;
+            if (prop.WeaponComponents != null) veh.WeaponComponents = prop.WeaponComponents;
             if (prop.Name != null)
             {
                 veh.Name = prop.Name;
@@ -1032,6 +1034,8 @@ namespace GTANetwork
             }
             if (prop.Position != null) veh.Position = prop.Position;
             if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.WeaponTints != null) veh.WeaponTints = prop.WeaponTints;
+            if (prop.WeaponComponents != null) veh.WeaponComponents = prop.WeaponComponents;
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
             if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
@@ -1473,6 +1477,8 @@ namespace GTANetwork
             rem.Flag = prop.Flag;
             rem.PositionMovement = prop.PositionMovement;
             rem.RotationMovement = prop.RotationMovement;
+            rem.WeaponTints = prop.WeaponTints;
+            rem.WeaponComponents = prop.WeaponComponents;
 
             if (rem is SyncPed)
             {

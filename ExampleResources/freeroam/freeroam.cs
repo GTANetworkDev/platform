@@ -340,4 +340,32 @@ public class FreeroamScript : Script
 
         API.setEntityPosition(sender.CharacterHandle, API.getEntityPosition(target.CharacterHandle));
     }
+
+    [Command("weapon", Alias="w,gun")]
+    public void GiveWeaponCommand(Client sender, WeaponHash weapon)
+    {
+        API.givePlayerWeapon(sender, weapon, 9999, true, true);
+    }
+
+    [Command("weaponcomponent", Alias = "wcomp,wc")]
+    public void GiveWeaponComponentCmd(Client sender, string component)
+    {
+        WeaponComponent hashOut;
+        if (!Enum.TryParse(component, out hashOut))
+        {
+            API.sendChatMessageToPlayer(sender, "Wrong component!");
+            return;
+        }
+
+        API.givePlayerWeaponComponent(sender, API.getPlayerCurrentWeapon(sender), hashOut);
+    }
+
+
+    [Command("weapontint", Alias = "wtint")]
+    public void SetWeaponTintCmd(Client sender, int tint)
+    {
+        WeaponTint ourTint = (WeaponTint) tint;
+
+        API.setPlayerWeaponTint(sender, API.getPlayerCurrentWeapon(sender), ourTint);
+    }
 }

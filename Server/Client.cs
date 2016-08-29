@@ -20,6 +20,8 @@ namespace GTANetworkServer
         public float Latency { get; set; }
         public ParseableVersion RemoteScriptVersion { get; set; }
         public int GameVersion { get; set; }
+        public List<WeaponHash> Weapons = new List<WeaponHash>();
+        public WeaponHash CurrentWeapon { get; set; }
 
         public NetHandle CurrentVehicle { get; set; }
         public Vector3 Position { get; internal set; }

@@ -203,58 +203,24 @@ namespace GTANetworkServer
                     arguments[i] = cTarget;
                     continue;
                 }
-                else if (Parameters[i].ParameterType == typeof (VehicleHash))
+                else if (Parameters[i].ParameterType.IsEnum)
                 {
-                    var model = Program.ServerInstance.PublicAPI.vehicleNameToModel(args[i]);
+                    object enumOut;
 
-                    if (model == 0)
+                    try
                     {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No vehicle model named \"" + args[i] + "\" has been found for argument \"" + Parameters[i].Name + "\"!");
+                        enumOut = Enum.Parse(Parameters[i].ParameterType, args[i]);
+                    }
+                    catch(ArgumentException)
+                    {
+                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No value named \"" + args[i] + "\" has been found for argument \"" + Parameters[i].Name + "\"!");
                         return true;
                     }
 
-                    arguments[i] = (VehicleHash) model;
+                    arguments[i] = enumOut;
                     continue;
                 }
-                else if (Parameters[i].ParameterType == typeof(PedHash))
-                {
-                    var model = Program.ServerInstance.PublicAPI.pedNameToModel(args[i]);
-
-                    if (model == 0)
-                    {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No player model named \"" + args[i] + "\" has been found for argument \"" + Parameters[i].Name + "\"!");
-                        return true;
-                    }
-
-                    arguments[i] = (PedHash)model;
-                    continue;
-                }
-                else if (Parameters[i].ParameterType == typeof(PickupHash))
-                {
-                    var model = Program.ServerInstance.PublicAPI.pickupNameToModel(args[i]);
-
-                    if (model == 0)
-                    {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No pickup model named \"" + args[i] + "\" has been found for argument \"" + Parameters[i].Name + "\"!");
-                        return true;
-                    }
-
-                    arguments[i] = (PickupHash)model;
-                    continue;
-                }
-                else if (Parameters[i].ParameterType == typeof(WeaponHash))
-                {
-                    var model = Program.ServerInstance.PublicAPI.weaponNameToModel(args[i]);
-
-                    if (model == 0)
-                    {
-                        Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~ No weapon model named \"" + args[i] + "\" has been found for argument \"" + Parameters[i].Name + "\"!");
-                        return true;
-                    }
-
-                    arguments[i] = (WeaponHash)model;
-                    continue;
-                }
+                
 
                 if (i == Parameters.Length - 1 && Greedy)
                 {

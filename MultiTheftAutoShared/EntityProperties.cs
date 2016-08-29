@@ -238,6 +238,8 @@ namespace GTANetworkShared
             Textures = new Dictionary<byte, byte>();
             Accessories = new Dictionary<byte, Tuple<byte, byte>>();
             EntityType = (byte)GTANetworkShared.EntityType.Player;
+            WeaponTints = new Dictionary<int, byte>();
+            WeaponComponents = new Dictionary<int, List<int>>();
         }
 
         [ProtoMember(1)]
@@ -263,6 +265,12 @@ namespace GTANetworkShared
 
         [ProtoMember(8)]
         public string Name { get; set; }
+
+        [ProtoMember(9)]
+        public Dictionary<int, byte> WeaponTints { get; set; }
+
+        [ProtoMember(10)]
+        public Dictionary<int, List<int>> WeaponComponents { get; set; } 
     }
 
     [ProtoContract]
@@ -509,6 +517,12 @@ namespace GTANetworkShared
 
         [ProtoMember(8)]
         public string Name { get; set; }
+
+        [ProtoMember(9)]
+        public Dictionary<int, byte> WeaponTints { get; set; }
+
+        [ProtoMember(10)]
+        public Dictionary<int, List<int>> WeaponComponents { get; set; }
     }
 
     [ProtoContract]

@@ -196,6 +196,7 @@
     <Compile Include="WeaponDataProvider.cs" />
     <Compile Include="SyncPed.cs" />
     <Compile Include="Util.cs" />
+    <Compile Include="WeaponManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

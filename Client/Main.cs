@@ -123,6 +123,7 @@ namespace GTANetwork
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
         private UnoccupiedVehicleSync VehicleSyncManager;
+        private WeaponManager WeaponInventoryManager;
 
         private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
 
@@ -153,6 +154,7 @@ namespace GTANetwork
 
             Watcher = new SyncEventWatcher(this);
             VehicleSyncManager = new UnoccupiedVehicleSync();
+            WeaponInventoryManager = new WeaponManager();
 
             Npcs = new Dictionary<string, SyncPed>();
             _tickNatives = new Dictionary<string, NativeData>();
@@ -3098,6 +3100,8 @@ namespace GTANetwork
             NetEntityHandler.UpdateMisc();
             NetEntityHandler.UpdateInterpolations();
 
+            WeaponInventoryManager.Update();
+
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
                 */
@@ -3820,6 +3824,24 @@ namespace GTANetwork
                                     var netHandle = (int) args[0];
                                     bool col = (bool) args[1];
                                     NetEntityHandler.DetachEntity(NetEntityHandler.NetToStreamedItem(netHandle), col);
+                                }
+                                    break;
+                                case ServerEventType.WeaponPermissionChange:
+                                {
+                                    var isSingleWeaponChange = (bool) args[0];
+
+                                    if (isSingleWeaponChange)
+                                    {
+                                        var hash = (int) args[1];
+                                        var hasPermission = (bool) args[2];
+                                        
+                                        if (hasPermission) WeaponInventoryManager.Allow((WeaponHash) hash);
+                                        else WeaponInventoryManager.Deny((WeaponHash)hash);
+                                    }
+                                    else
+                                    {
+                                        WeaponInventoryManager.Clear();
+                                    }
                                 }
                                     break;
                             }
@@ -4697,6 +4719,7 @@ namespace GTANetwork
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
             DownloadManager.FileIntegrity.Clear();
+            WeaponInventoryManager.Clear();
             VehicleSyncManager.StopAll();
 		    HasFinishedDownloading = false;
 		    ScriptChatVisible = true;

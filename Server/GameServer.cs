@@ -1458,6 +1458,8 @@ namespace GTANResource
                                                 client.Health = fullPacket.PlayerHealth.Value;
                                                 client.Armor = fullPacket.PedArmor.Value;
                                                 client.LastUpdate = DateTime.Now;
+                                                if (fullPacket.WeaponHash != null)
+                                                    client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
 
                                                 if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
                                                     VehicleDataFlags.Driver))
@@ -1620,6 +1622,7 @@ namespace GTANResource
                                                 client.LastUpdate = DateTime.Now;
                                                 client.Rotation = fullPacket.Quaternion;
                                                 client.Velocity = fullPacket.Velocity;
+                                                client.CurrentWeapon = (WeaponHash) fullPacket.WeaponHash.Value;
 
                                                 if (client.IsInVehicleInternal && !client.CurrentVehicle.IsNull)
                                                 {
@@ -3027,6 +3030,15 @@ namespace GTANResource
             obj.Arguments = ParseNativeArguments(target.CharacterHandle.Value, newAlpha);
 
             SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
+
+        public void SendServerEvent(ServerEventType type, params object[] arg)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)type;
+            obj.Arguments = ParseNativeArguments(arg);
+
+            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void DetachEntity(int nethandle, bool collision)

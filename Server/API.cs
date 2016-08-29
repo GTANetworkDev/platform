@@ -1770,7 +1770,109 @@ namespace GTANetworkServer
 
         public void givePlayerWeapon(Client player, WeaponHash weaponHash, int ammo, bool equipNow, bool ammoLoaded)
         {
+            if (!player.Weapons.Contains(weaponHash)) player.Weapons.Add(weaponHash);
+
+            Program.ServerInstance.SendServerEvent(ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
+
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, ammo, equipNow, ammo);
+        }
+
+        public void removePlayerWeapon(Client player, WeaponHash weapon)
+        {
+            player.Weapons.Remove(weapon);
+            player.Properties.WeaponComponents.Remove((int) weapon);
+            player.Properties.WeaponTints.Remove((int) weapon);
+
+            Program.ServerInstance.SendServerEvent(ServerEventType.WeaponPermissionChange, true, (int)weapon, false);
+
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x4899CB088EDF59B8, new LocalPlayerArgument(), (int)weapon);
+
+            var delta = new Delta_PlayerProperties();
+            delta.WeaponTints = player.Properties.WeaponTints;
+            delta.WeaponComponents = player.Properties.WeaponComponents;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+        }
+
+        public void removeAllPlayerWeapons(Client player)
+        {
+            player.Weapons.Clear();
+            player.Properties.WeaponTints.Clear();
+            player.Properties.WeaponComponents.Clear();
+
+            Program.ServerInstance.SendServerEvent(ServerEventType.WeaponPermissionChange, false);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF25DF915FA38C5F3, new LocalPlayerArgument(), true);
+
+            var delta = new Delta_PlayerProperties();
+            delta.WeaponTints = player.Properties.WeaponTints;
+            delta.WeaponComponents = player.Properties.WeaponComponents;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+        }
+
+        public void setPlayerWeaponTint(Client player, WeaponHash weapon, WeaponTint tint)
+        {
+            player.Properties.WeaponTints.Set((int) weapon, (byte) tint);
+
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x50969B9B89ED5738, player.CharacterHandle, (int) weapon, (int) tint);
+
+            var delta = new Delta_PlayerProperties();
+            delta.WeaponTints = player.Properties.WeaponTints;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+        }
+
+        public WeaponTint getPlayerWeaponTint(Client player, WeaponHash weapon)
+        {
+            return (WeaponTint) player.Properties.WeaponTints.Get((int) weapon);
+        }
+
+        public void givePlayerWeaponComponent(Client player, WeaponHash weapon, WeaponComponent component)
+        {
+            if (player.Properties.WeaponComponents.ContainsKey((int) weapon))
+            {
+                if (!player.Properties.WeaponComponents[(int) weapon].Contains((int) component))
+                {
+                    player.Properties.WeaponComponents[(int) weapon].Add((int) component);
+                }
+            }
+            else
+            {
+                player.Properties.WeaponComponents.Add((int)weapon, new List<int> {(int)component});
+            }
+
+            Program.ServerInstance.SendNativeCallToAllPlayers(0xD966D51AA5B28BB9, player.CharacterHandle, (int)weapon, (int)component);
+
+            var delta = new Delta_PlayerProperties();
+            delta.WeaponComponents = player.Properties.WeaponComponents;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+        }
+
+        public void removePlayerWeaponComponent(Client player, WeaponHash weapon, WeaponComponent component)
+        {
+            if (player.Properties.WeaponComponents.ContainsKey((int)weapon))
+            {
+                player.Properties.WeaponComponents[(int) weapon].Remove((int) component);
+            }
+            
+            Program.ServerInstance.SendNativeCallToAllPlayers(0x1E8BE90C74FB4C09, player.CharacterHandle, (int)weapon, (int)component);
+
+            var delta = new Delta_PlayerProperties();
+            delta.WeaponComponents = player.Properties.WeaponComponents;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+        }
+
+        public bool hasPlayerGotWeaponComponent(Client player, WeaponHash weapon, WeaponComponent component)
+        {
+            return player.Properties.WeaponComponents.ContainsKey((int) weapon) &&
+                   player.Properties.WeaponComponents[(int) weapon].Contains((int) component);
+        }
+
+        public WeaponHash[] getPlayerWeapons(Client player)
+        {
+            return player.Weapons.ToArray();
+        }
+
+        public WeaponHash getPlayerCurrentWeapon(Client player)
+        {
+            return player.CurrentWeapon;
         }
 
         public string getPlayerAddress(Client player)

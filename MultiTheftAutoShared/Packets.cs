@@ -88,6 +88,7 @@ namespace GTANetworkShared
         PlayerAnimationStart = 5,
         PlayerAnimationStop = 6,
         EntityDetachment = 7,
+        WeaponPermissionChange = 8,
     }
 
     public enum Lights

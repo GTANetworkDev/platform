@@ -1303,6 +1303,21 @@ namespace GTANetwork
                 Character.Weapons.RemoveAll();
                 Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
 			    Character.Weapons.Select((WeaponHash) CurrentWeapon);
+
+			    if (WeaponTints != null && WeaponTints.ContainsKey(CurrentWeapon))
+			    {
+			        var bitmap = WeaponTints[CurrentWeapon];
+
+                    Function.Call(Hash.SET_PED_WEAPON_TINT_INDEX, Character, CurrentWeapon, bitmap);
+			    }
+
+			    if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon))
+			    {
+			        foreach (var comp in WeaponComponents[CurrentWeapon])
+			        {
+			            Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_PED, Character, CurrentWeapon, comp);
+			        }
+			    }
 			}
 
 	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
