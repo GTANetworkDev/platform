@@ -144,6 +144,9 @@ namespace GTANetwork.GUI
                 Function.Call(Hash._START_SCREEN_EFFECT, "SwitchHUDIn", 0, 0);
 
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "Short_Transition_In", "PLAYER_SWITCH_CUSTOM_SOUNDSET", 1);
+
+                _currentIndex =
+                    WeaponSlot.GetWeaponSlot(Game.Player.Character.Weapons.Current?.Hash ?? WeaponHash.Unarmed);
             }
 
             if (DateTime.Now.Subtract(_lastPress).TotalMilliseconds <= 50 ||

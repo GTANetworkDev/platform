@@ -1859,6 +1859,266 @@ namespace GTANetworkServer
             Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
         }
 
+        public WeaponComponent[] getAllWeaponComponents(WeaponHash weapon)
+        {
+            switch (weapon)
+            {
+                default:
+                    return new WeaponComponent[0];
+                case WeaponHash.Pistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.PistolClip01,
+                        WeaponComponent.PistolClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtPiSupp02,
+                        WeaponComponent.PistolVarmodLuxe,
+                    };
+                case WeaponHash.CombatPistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CombatPistolClip01,
+                        WeaponComponent.CombatPistolClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtPiSupp,
+                        WeaponComponent.CombatPistolVarmodLowrider,
+                    };
+                case WeaponHash.APPistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.APPistolClip01,
+                        WeaponComponent.APPistolClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtPiSupp,
+                        WeaponComponent.APPistolVarmodLuxe,
+                    };
+                case WeaponHash.MicroSMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MicroSMGClip01,
+                        WeaponComponent.MicroSMGClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtScopeMacro,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.MicroSMGVarmodLuxe,
+                    };
+                case WeaponHash.SMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SMGClip01,
+                        WeaponComponent.SMGClip02,
+                        WeaponComponent.SMGClip03,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtPiSupp,
+                        WeaponComponent.AtScopeMacro02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.SMGVarmodLuxe,
+                    };
+                case WeaponHash.AssaultRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AssaultRifleClip01,
+                        WeaponComponent.AssaultRifleClip02,
+                        WeaponComponent.AssaultRifleClip03,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMacro,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.AssaultRifleVarmodLuxe,
+                    };
+                case WeaponHash.CarbineRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CarbineRifleClip01,
+                        WeaponComponent.CarbineRifleClip02,
+                        WeaponComponent.CarbineRifleClip03,
+                        WeaponComponent.AtRailCover01,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMedium,
+                        WeaponComponent.AtArSupp,
+                        WeaponComponent.CarbineRifleVarmodLuxe,
+                    };
+                case WeaponHash.AdvancedRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AdvancedRifleClip01,
+                        WeaponComponent.AdvancedRifleClip02,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                        WeaponComponent.AtArSupp,
+                        WeaponComponent.AdvancedRifleVarmodLuxe,
+                    };
+                case WeaponHash.MG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MGClip01,
+                        WeaponComponent.MGClip02,
+                        WeaponComponent.AtScopeSmall02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.MGVarmodLowrider,
+                    };
+                case WeaponHash.CombatMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CombatMGClip01,
+                        WeaponComponent.CombatMGClip02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtScopeMedium,
+                        WeaponComponent.CombatMGVarmodLowrider,
+                    };
+                case WeaponHash.PumpShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AtSrSupp,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.PumpShotgunVarmodLowrider,
+                    };
+                case WeaponHash.AssaultShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AssaultShotgunClip01,
+                        WeaponComponent.AssaultShotgunClip02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtArSupp,
+                    };
+                case WeaponHash.SniperRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SniperRifleClip01,
+                        WeaponComponent.AtScopeLarge,
+                        WeaponComponent.AtScopeMax,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.SniperRifleVarmodLuxe,
+                    };
+                case WeaponHash.HeavySniper:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.HeavySniperClip01,
+                        WeaponComponent.AtScopeLarge,
+                        WeaponComponent.AtScopeMax,
+                    };
+                case WeaponHash.GrenadeLauncher:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                    };
+                case WeaponHash.Minigun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MinigunClip01,
+                    };
+                case WeaponHash.AssaultSMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AssaultSMGClip01,
+                        WeaponComponent.AssaultSMGClip02,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMacro,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.AssaultSMGVarmodLowrider,
+                    };
+                case WeaponHash.BullpupShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtArSupp02,
+                    };
+                case WeaponHash.Pistol50:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.Pistol50Clip01,
+                        WeaponComponent.Pistol50Clip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.Pistol50VarmodLuxe,
+                    };
+                case WeaponHash.CombatPDW:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CombatPDWClip01,
+                        WeaponComponent.CombatPDWClip02,
+                        WeaponComponent.CombatPDWClip03,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                        WeaponComponent.AtArAfGrip,
+                    };
+                case WeaponHash.SawnOffShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SawnoffShotgunVarmodLuxe,
+                    };
+                case WeaponHash.BullpupRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.BullpupRifleClip01,
+                        WeaponComponent.BullpupRifleClip02,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                        WeaponComponent.AtArSupp,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.BullpupRifleVarmodLow,
+                    };
+                case WeaponHash.SNSPistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SNSPistolClip01,
+                        WeaponComponent.SNSPistolClip02,
+                        WeaponComponent.SNSPistolVarmodLowrider,
+                    };
+                case WeaponHash.SpecialCarbine:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SpecialCarbineClip01,
+                        WeaponComponent.SpecialCarbineClip02,
+                        WeaponComponent.SpecialCarbineClip03,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMedium,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.SpecialCarbineVarmodLowrider,
+                    };
+                case WeaponHash.KnuckleDuster:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.KnuckleVarmodPimp,
+                        WeaponComponent.KnuckleVarmodBallas,
+                        WeaponComponent.KnuckleVarmodDollar,
+                        WeaponComponent.KnuckleVarmodDiamond,
+                        WeaponComponent.KnuckleVarmodHate,
+                        WeaponComponent.KnuckleVarmodLove,
+                        WeaponComponent.KnuckleVarmodPlayer,
+                        WeaponComponent.KnuckleVarmodKing,
+                        WeaponComponent.KnuckleVarmodVagos,
+                    };
+                case WeaponHash.MachinePistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MachinePistolClip01,
+                        WeaponComponent.MachinePistolClip02,
+                        WeaponComponent.MachinePistolClip03,
+                        WeaponComponent.AtPiSupp,
+                    };
+                case WeaponHash.SwitchBlade:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SwitchbladeVarmodVar1,
+                        WeaponComponent.SwitchbladeVarmodVar2,
+                    };
+                case WeaponHash.Revolver:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.RevolverClip01,
+                        WeaponComponent.RevolverVarmodBoss,
+                        WeaponComponent.RevolverVarmodGoon,
+                    };
+            }
+        }
+
         public bool hasPlayerGotWeaponComponent(Client player, WeaponHash weapon, WeaponComponent component)
         {
             return player.Properties.WeaponComponents.ContainsKey((int) weapon) &&

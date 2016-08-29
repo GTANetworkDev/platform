@@ -1082,6 +1082,36 @@ namespace GTANetwork
             }
         }
 
+        public void setBlipColor(LocalHandle blip, int color)
+        {
+            var ourBlip = new Blip(blip.Value);
+
+            if (ourBlip.Exists())
+            {
+                ourBlip.Color = (BlipColor) color;
+            }
+        }
+
+        public void setBlipSprite(LocalHandle blip, int sprite)
+        {
+            var ourBlip = new Blip(blip.Value);
+
+            if (ourBlip.Exists())
+            {
+                ourBlip.Sprite = (BlipSprite)sprite;
+            }
+        }
+
+        public void setBlipShortRange(LocalHandle blip, bool shortRange)
+        {
+            var ourBlip = new Blip(blip.Value);
+
+            if (ourBlip.Exists())
+            {
+                ourBlip.IsShortRange = shortRange;
+            }
+        }
+
         public void removeBlip(LocalHandle blip)
         {
             if (new Blip(blip.Value).Exists())
