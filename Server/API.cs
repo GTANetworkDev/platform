@@ -309,6 +309,36 @@ namespace GTANetworkServer
             return ResourceType.script;
         }
 
+        public string[] getResourceCommands(string resource)
+        {
+            if (isResourceRunning(resource))
+            {
+                return Program.ServerInstance.CommandHandler.GetResourceCommands(resource);
+            }
+
+            return new string[0];
+        }
+
+        public CommandInfo[] getResourceCommandInfos(string resource)
+        {
+            if (isResourceRunning(resource))
+            {
+                return Program.ServerInstance.CommandHandler.GetResourceCommandInfos(resource);
+            }
+
+            return new CommandInfo[0];
+        }
+
+        public CommandInfo getResourceCommandInfo(string resource, string command)
+        {
+            if (isResourceRunning(resource))
+            {
+                return Program.ServerInstance.CommandHandler.GetCommandInfo(resource, command);
+            }
+
+            return default(CommandInfo);
+        }
+
         public string[] getMapGamemodes(string resource)
         {
             if (doesResourceExist(resource))
@@ -1215,7 +1245,7 @@ namespace GTANetworkServer
             return ConstantVehicleDataOrganizer.Get(model).MaxNumberOfPassengers;
         }
 
-        public int getVehiclClass(VehicleHash model)
+        public int getVehicleClass(VehicleHash model)
         {
             return ConstantVehicleDataOrganizer.Get(model).VehicleClass;
         }

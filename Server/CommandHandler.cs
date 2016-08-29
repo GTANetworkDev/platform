@@ -42,6 +42,49 @@ namespace GTANetworkServer
         }
     }
 
+    public struct CommandInfo
+    {
+        public CommandInfo(string cmd, ParameterInfo[] param, CommandAttribute from)
+        {
+            Command = cmd;
+            CustomUsage = from.CommandHelpText;
+            Parameters = param;
+            Aliases = string.IsNullOrEmpty(from.Alias) ? new string[0] : from.Alias.Split(',');
+            Greedy = from.GreedyArg;
+            Sensitive = from.SensitiveInfo;
+            ACLRequired = from.ACLRequired;
+            AddToHelpmanager = from.AddToHelpmanager;
+            Description = from.Description;
+            Group = from.Group;
+
+            if (Parameters.Length > 1)
+            {
+                int paramCounter = 0;
+                Usage = "/" + cmd + " [" +
+                           Parameters.Skip(1)
+                               .Select(par => par.Name)
+                               .Aggregate((prev, next) => prev + (paramCounter++ == 0 ? "]" : "") + " [" + next + "]") +
+                           (Parameters.Length == 2 ? "]" : "");
+            }
+            else
+            {
+                Usage = "/" + cmd;
+            }
+        }
+
+        public string Command;
+        public string CustomUsage;
+        public string Usage;
+        public string[] Aliases;
+        public bool Greedy;
+        public ParameterInfo[] Parameters;
+        public bool Sensitive;
+        public bool ACLRequired;
+        public bool AddToHelpmanager;
+        public string Description;
+        public string Group;
+    }
+
     public class CommandParser
     {
         public string Command;
@@ -57,6 +100,7 @@ namespace GTANetworkServer
         public bool AddToHelpmanager;
         public string Description;
         public string Group;
+        public CommandInfo PublicInfo;
 
         public bool Parse(Client sender, string cmdRaw)
         {
@@ -279,6 +323,8 @@ namespace GTANetworkServer
                     parser.Description = cmd.Description;
                     parser.Group = cmd.Group;
 
+                    parser.PublicInfo = new CommandInfo(parser.Command, args, cmd);
+
                     if (!string.IsNullOrEmpty(cmd.ArgumentConverter))
                     {
                         Script eng = engine._compiledScript;
@@ -343,6 +389,36 @@ namespace GTANetworkServer
         public void Unregister(string resource)
         {
             lock (Commands) Commands.Remove(resource);
+        }
+
+        public string[] GetResourceCommands(string resource)
+        {
+            if (Commands.ContainsKey(resource))
+            {
+                return Commands[resource].ResourceCommands.Select(cmds => cmds.Command.ToLower()).ToArray();
+            }
+            return new string[0];
+        }
+
+        public CommandInfo[] GetResourceCommandInfos(string resource)
+        {
+            if (Commands.ContainsKey(resource))
+            {
+                return Commands[resource].ResourceCommands.Select(cmds => cmds.PublicInfo).ToArray();
+            }
+            return new CommandInfo[0];
+        }
+
+        public CommandInfo GetCommandInfo(string resource, string command)
+        {
+            if (Commands.ContainsKey(resource))
+            {
+                return
+                    Commands[resource].ResourceCommands.FirstOrDefault(
+                        cmds => cmds.Command.ToLower() == command.ToLower())?.PublicInfo ?? new CommandInfo();
+            }
+
+            return default(CommandInfo);
         }
 
         public bool Parse(Client sender, string rawCommand)
