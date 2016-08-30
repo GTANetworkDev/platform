@@ -25,7 +25,20 @@ namespace GTANetwork.GUI
 {
     public class CefController : Script
     {
-        public static bool ShowCursor;
+        private static bool _showCursor;
+
+        public static bool ShowCursor
+        {
+            get { return _showCursor; }
+            set
+            {
+                if (!_showCursor && value)
+                    _justShownCursor = true;
+                _showCursor = value;
+            }
+        }
+
+        private static bool _justShownCursor;
         public static PointF _lastMousePoint;
         private Keys _lastKey;
 
@@ -147,6 +160,12 @@ namespace GTANetwork.GUI
             {
                 if (!ShowCursor) return;
 
+                if (_justShownCursor)
+                {
+                    _justShownCursor = false;
+                    return;
+                }
+
                 #if !DISABLE_CEF
 
                 foreach (var browser in CEFManager.Browsers)
@@ -267,6 +286,8 @@ namespace GTANetwork.GUI
                 SchemeHandlerFactory = new ResourceFilePathHandler(),
                 SchemeName = "resource",
             });
+
+            settings.CefCommandLineArgs.Add("--off-screen-frame-rate", "60");
 
             LogManager.DebugLog("WAITING FOR INITIALIZATION...");
             try
@@ -620,7 +641,7 @@ namespace GTANetwork.GUI
         internal ChromiumWebBrowser _browser;
         internal readonly bool _localMode;
         internal bool _hasFocused;
-
+        
         public bool Headless = false;
 
         public Point Position { get; set; }
@@ -648,6 +669,7 @@ namespace GTANetwork.GUI
 
             if (task.Result.Success)
                 return task.Result.Result;
+            LogManager.LogException(new Exception(task.Result.Message), "CLIENTSIDESCRIPT -> CEF COMMUNICATION");
             return null;
         }
 
@@ -669,6 +691,10 @@ namespace GTANetwork.GUI
                     var escaped = System.Web.HttpUtility.JavaScriptStringEncode(arguments[i].ToString(), true);
                     callString += escaped + comma;
                 }
+                else if (arguments[i] is bool)
+                {
+                    callString += arguments[i].ToString().ToLower() + comma;
+                }
                 else
                 {
                     callString += arguments[i] + comma;
@@ -683,6 +709,8 @@ namespace GTANetwork.GUI
 
             if (task.Result.Success)
                 return task.Result.Result;
+
+            LogManager.LogException(new Exception(task.Result.Message), "CLIENTSIDESCRIPT -> CEF COMMUNICATION");
             return null;
         }
 

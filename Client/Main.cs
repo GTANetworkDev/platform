@@ -89,7 +89,8 @@ namespace GTANetwork
         private UIResText _verionLabel = new UIResText("GTAN " + CurrentVersion.ToString(), new Point(), 0.35f, Color.FromArgb(100, 200, 200, 200));
 
         private string _clientIp;
-        public static ClassicChat Chat;
+        public static IChat Chat;
+        private static ClassicChat _backupChat;
 
         public static NetClient Client;
         private static NetPeerConfiguration _config;
@@ -167,27 +168,9 @@ namespace GTANetwork
             for (int i = 0; i < 50; i++) _emptyVehicleMods.Add(i, 0);
 
             Chat = new ClassicChat();
-            Chat.OnComplete += (sender, args) =>
-            {
-                var message = GTANetwork.Chat.SanitizeString(Chat.CurrentInput);
-                if (!string.IsNullOrWhiteSpace(message))
-                {
-                    JavascriptHook.InvokeMessageEvent(message);
+            Chat.OnComplete += ChatOnComplete;
 
-                    var obj = new ChatData()
-                    {
-                        Message = message,
-                    };
-                    var data = SerializeBinary(obj);
-
-                    var msg = Client.CreateMessage();
-                    msg.Write((byte)PacketType.ChatData);
-                    msg.Write(data.Length);
-                    msg.Write(data);
-                    Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int) ConnectionChannel.Chat);
-                }
-                Chat.IsFocused = false;
-            };
+            _backupChat = Chat as ClassicChat;
 
             Tick += OnTick;
             KeyDown += OnKeyDown;
@@ -237,7 +220,30 @@ namespace GTANetwork
             CEFManager.InitializeCef();
         }
 
-        public static int RelGroup;
+        public static void ChatOnComplete(object sender,EventArgs args)
+        {
+            var message = GUI.Chat.SanitizeString(Chat.CurrentInput);
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                JavascriptHook.InvokeMessageEvent(message);
+
+                var obj = new ChatData()
+                {
+                    Message = message,
+                };
+                var data = SerializeBinary(obj);
+
+                var msg = Client.CreateMessage();
+                msg.Write((byte)PacketType.ChatData);
+                            msg.Write(data.Length);
+                            msg.Write(data);
+                            Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int) ConnectionChannel.Chat);
+            }
+
+            Chat.IsFocused = false;
+        }
+
+public static int RelGroup;
         public static int FriendRelGroup;
         public static bool HasFinishedDownloading;
 
@@ -4705,7 +4711,6 @@ namespace GTANetwork
 
 			DEBUG_STEP = 48;
 
-			Chat.Clear();
 			DEBUG_STEP = 49;
 
 			NetEntityHandler.ClearAll();
@@ -4720,6 +4725,8 @@ namespace GTANetwork
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();
             DownloadManager.FileIntegrity.Clear();
+		    Chat = _backupChat;
+            Chat.Clear();
             WeaponInventoryManager.Clear();
             VehicleSyncManager.StopAll();
 		    HasFinishedDownloading = false;

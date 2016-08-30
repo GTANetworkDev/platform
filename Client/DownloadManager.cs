@@ -31,6 +31,7 @@ namespace GTANetwork
             "video/mpeg",
             "audio/mpeg",
             "text/plain",
+            "application/x-font-ttf",
         };
 
         public static bool CheckFileIntegrity()

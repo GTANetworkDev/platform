@@ -129,8 +129,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BiDictionarity.cs" />
-    <Compile Include="ClassicChat.cs" />
-    <Compile Include="Chat.cs" />
+    <Compile Include="GUI\ClassicChat.cs" />
+    <Compile Include="GUI\Chat.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="DataCollector.cs" />
     <Compile Include="DeltaCompressor.cs" />
@@ -169,8 +169,10 @@
     <Compile Include="GUI\TabQuickConnectItem.cs" />
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />
     <Compile Include="GUI\WeaponWheel.cs" />
+    <Compile Include="GUI\IChat.cs" />
     <Compile Include="InputboxThread.cs" />
     <Compile Include="Interpolator.cs" />
+    <Compile Include="JavascriptChat.cs" />
     <Compile Include="JavascriptHook.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="LoopAudioStream.cs" />

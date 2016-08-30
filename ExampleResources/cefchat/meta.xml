@@ -1,0 +1,11 @@
+<meta>
+	<info name="CEF Chat" description="Classic chat replacement made with CEF" author="Guadmaz" />
+
+	<script src="chatcontroller.js" type="client" lang="javascript" />
+
+	<file src="chat.html" />
+	<file src="chat.js" />
+	<file src="jquery.js" />
+	<file src="Roboto-Regular.ttf" />
+	<file src="Roboto-Thin.ttf" />
+</meta>

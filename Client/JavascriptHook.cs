@@ -487,6 +487,14 @@ namespace GTANetwork
             return CefController.ShowCursor;
         }
 
+        public JavascriptChat registerChatOverride()
+        {
+            var c = new JavascriptChat();
+            Main.Chat = c;
+            c.OnComplete += Main.ChatOnComplete;
+            return c;
+        }
+
         public PointF getCursorPosition()
         {
             return CefController._lastMousePoint;
@@ -728,6 +736,16 @@ namespace GTANetwork
         public bool isCefBrowserLoading(Browser browser)
         {
             return browser.IsLoading();
+        }
+
+        public void openCefDevTools(Browser browser)
+        {
+            browser._browser.ShowDevTools();
+        }
+
+        public void closeCefDevTools(Browser browser)
+        {
+            browser._browser.CloseDevTools();
         }
 
         public void callNative(string hash, params object[] args)
