@@ -161,14 +161,12 @@
     <Compile Include="GUI\DirectXHook\Hook\IDXHook.cs" />
     <Compile Include="GUI\DirectXHook\Hook\SafeHGlobal.cs" />
     <Compile Include="GUI\DirectXHook\NativeMethods.cs" />
-    <Compile Include="GUI\RadioWheel.cs" />
     <Compile Include="DebugWindow.cs" />
     <Compile Include="DownloadManager.cs" />
     <Compile Include="GameSettings.cs" />
     <Compile Include="GUI\TabMapItem.cs" />
     <Compile Include="GUI\TabQuickConnectItem.cs" />
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />
-    <Compile Include="GUI\WeaponWheel.cs" />
     <Compile Include="GUI\IChat.cs" />
     <Compile Include="InputboxThread.cs" />
     <Compile Include="Interpolator.cs" />
