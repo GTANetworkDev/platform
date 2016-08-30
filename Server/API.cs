@@ -1838,7 +1838,7 @@ namespace GTANetworkServer
                 player.Properties.WeaponComponents.Add((int)weapon, new List<int> {(int)component});
             }
 
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xD966D51AA5B28BB9, player.CharacterHandle, (int)weapon, (int)component);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xD966D51AA5B28BB9, player.CharacterHandle, (int)weapon, (int)component);
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;
@@ -1852,7 +1852,7 @@ namespace GTANetworkServer
                 player.Properties.WeaponComponents[(int) weapon].Remove((int) component);
             }
             
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x1E8BE90C74FB4C09, player.CharacterHandle, (int)weapon, (int)component);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1E8BE90C74FB4C09, player.CharacterHandle, (int)weapon, (int)component);
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;

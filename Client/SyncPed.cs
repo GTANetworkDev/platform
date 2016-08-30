@@ -93,6 +93,7 @@ namespace GTANetwork
         public int PedArmor;
         public bool IsVehDead;
         public bool IsPlayerDead;
+        public bool DirtyWeapons;
 
         private object _secondSnapshot;
         private object _firstSnapshot;
@@ -1292,7 +1293,7 @@ namespace GTANetwork
 
 	    void UpdateCurrentWeapon()
 	    {
-            if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon)
+            if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon || DirtyWeapons)
 			{
                 //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
                 //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
@@ -1301,23 +1302,37 @@ namespace GTANetwork
                 //Character.Weapons.Select((WeaponHash)CurrentWeapon);
 
                 Character.Weapons.RemoveAll();
-                Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
-			    Character.Weapons.Select((WeaponHash) CurrentWeapon);
+                //Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
+			    //Character.Weapons.Select((WeaponHash) CurrentWeapon);
 
-			    if (WeaponTints != null && WeaponTints.ContainsKey(CurrentWeapon))
+			    var p = IsInVehicle ? VehiclePosition : Position;
+
+			    var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, CurrentWeapon, 999, p.X, p.Y, p.Z, false, 0, 0);
+                
+                if (WeaponTints != null && WeaponTints.ContainsKey(CurrentWeapon))
 			    {
 			        var bitmap = WeaponTints[CurrentWeapon];
 
-                    Function.Call(Hash.SET_PED_WEAPON_TINT_INDEX, Character, CurrentWeapon, bitmap);
+                    //Function.Call(Hash.SET_PED_WEAPON_TINT_INDEX, Character, CurrentWeapon, bitmap);
+                    Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
 			    }
 
 			    if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon))
 			    {
 			        foreach (var comp in WeaponComponents[CurrentWeapon])
 			        {
-			            Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_PED, Character, CurrentWeapon, comp);
-			        }
+                        //Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_PED, Character, CurrentWeapon, comp);
+                        Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_WEAPON_OBJECT, wObj, comp);
+                    }
 			    }
+
+                Function.Call(Hash.GIVE_WEAPON_OBJECT_TO_PED, wObj, Character);
+
+			    DirtyWeapons = false;
+                /*
+			    UI.Notify("Updating weapons for " + Name);
+                UI.ShowSubtitle("Updating weapons for " + Name, 500);
+                */
 			}
 
 	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
