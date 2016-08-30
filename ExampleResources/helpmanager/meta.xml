@@ -1,0 +1,11 @@
+<meta>
+	<info name="Help manager" author="Guadmaz" type="script" description="This resource displays a window that contains helpful information about all resources." />
+
+	<script src="helpmanager.cs" type="server" lang="csharp" />
+	<script src="helpmanager.js" type="client" lang="javascript" />
+
+	<file src="main.html" />
+	<file src="bootstrap.css" />
+	<file src="bootstrap.js" />
+	<file src="jquery.js" />
+</meta>

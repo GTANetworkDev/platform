@@ -9,7 +9,7 @@ API.onChatCommand.connect(function(msg) {
 		if (mainBrowser == null) {
 			API.sendNotification("Creating new browser...");
 			var res = API.getScreenResolution();
-			mainBrowser = API.createCefBrowser(500, 282);
+			mainBrowser = API.createCefBrowser(500, 282, false);
 			API.waitUntilCefBrowserInitalization(mainBrowser);
 			API.setCefBrowserPosition(mainBrowser, res.Width - 505, 0);
 			API.sendNotification("Browser created!");
@@ -23,6 +23,14 @@ API.onChatCommand.connect(function(msg) {
 			API.destroyCefBrowser(mainBrowser);
 			mainBrowser = null;
 		}
+	}
+
+	if (msg == "/mouseon") {
+		API.showCursor(true);
+	}
+
+	if (msg == "/mouseoff") {
+		API.showCursor(false);
 	}
 });
 
