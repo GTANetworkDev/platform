@@ -2025,6 +2025,8 @@ namespace GTANResource
                                         break;
                                     case PacketType.PlayerRespawned:
                                         {
+                                            PublicAPI.removeAllPlayerWeapons(client);
+
                                             lock (RunningResources)
                                                 RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                 {

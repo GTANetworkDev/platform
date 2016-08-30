@@ -2758,6 +2758,7 @@ namespace GTANetwork
             Game.DisableControl(0, Control.SpecialAbilitySecondary);
             Game.DisableControl(0, Control.CharacterWheel);
             Game.DisableControl(0, Control.Phone);
+            Game.DisableControl(0, Control.Duck);
 
             VehicleSyncManager.Pulse();
 
