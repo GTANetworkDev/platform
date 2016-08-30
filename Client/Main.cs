@@ -1351,9 +1351,11 @@ namespace GTANetwork
 
                     Script.Wait(1000);
                     CEFManager.DisposeCef();
-                    Script.Wait(1000);
+                    Script.Wait(5000);
                     Process.GetProcessesByName("GTAVLauncher")[0].Kill();
                     Process.GetCurrentProcess().Kill();
+
+                    Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);
             }
@@ -2142,15 +2144,15 @@ namespace GTANetwork
         private bool _hasInitialized;
         private bool _hasPlayerSpawned;
 
-        private int _debugStep;
+        private static int _debugStep;
 
-        private int DEBUG_STEP
+        public static int DEBUG_STEP
         {
             get { return _debugStep; }
             set
             {
                 _debugStep = value;
-                //LogManager.DebugLog(value.ToString());
+                LogManager.DebugLog(value.ToString());
             }
         }
 
@@ -2204,16 +2206,12 @@ namespace GTANetwork
             {
                 GTA.UI.Screen.FadeOut(1);
                 
-                Game.Player.Character.Position = _vinewoodSign;
-                Script.Wait(500);
-                Util.SetPlayerSkin(PedHash.Clown01SMY);
-                Game.Player.Character.SetDefaultClothes();
+                ResetPlayer();
+                
+                MainMenu.RefreshIndex();
+                _hasPlayerSpawned = true;
                 MainMenu.Visible = true;
                 World.RenderingCamera = MainMenuCamera;
-                MainMenu.RefreshIndex();
-                Game.Player.Character.MaxHealth = 200;
-                Game.Player.Character.Health = 200;
-                _hasPlayerSpawned = true;
 
                 var address = Util.FindPattern("\x32\xc0\xf3\x0f\x11\x09", "xxxxxx");
 
@@ -2649,6 +2647,8 @@ namespace GTANetwork
 
             if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected ||
                 Client.ConnectionStatus == NetConnectionStatus.None) return;
+            // BELOW ONLY ON SERVER
+
             _verionLabel.Position = new Point((int) (res.Width/2), 0);
             _verionLabel.TextAlignment = UIResText.Alignment.Centered;
             _verionLabel.Draw();
@@ -2678,6 +2678,7 @@ namespace GTANetwork
                 cc = item;
             }
 
+            DEBUG_STEP = 11;
 
             if (playerCar != _lastPlayerCar)
             {
@@ -2718,6 +2719,8 @@ namespace GTANetwork
                 LastCarEnter = DateTime.Now;
             }
 
+            DEBUG_STEP = 12;
+
             if (playerCar != null)
             {
                 if (Util.GetResponsiblePed(playerCar).Handle == player.Handle)
@@ -2739,7 +2742,7 @@ namespace GTANetwork
                 Game.Player.IsInvincible = playerObj.IsInvincible;
             }
 
-            DEBUG_STEP = 11;
+            DEBUG_STEP = 13;
             _lastPlayerCar = playerCar;
 
 
@@ -2804,6 +2807,8 @@ namespace GTANetwork
                 }
             }
 
+            DEBUG_STEP = 14;
+
             Game.DisableControlThisFrame(0, Control.SpecialAbility);
             Game.DisableControlThisFrame(0, Control.SpecialAbilityPC);
             Game.DisableControlThisFrame(0, Control.SpecialAbilitySecondary);
@@ -2811,12 +2816,18 @@ namespace GTANetwork
             Game.DisableControlThisFrame(0, Control.Phone);
             Game.DisableControlThisFrame(0, Control.Duck);
 
+            DEBUG_STEP = 15;
+
             VehicleSyncManager.Pulse();
+
+            DEBUG_STEP = 16;
 
             if (StringCache != null)
             {
                 StringCache.Pulse();
             }
+
+            DEBUG_STEP = 17;
 
             double aver = 0;
             lock (_averagePacketSize)
@@ -2830,18 +2841,19 @@ namespace GTANetwork
                     _bytesReceivedPerSecond);
 
 
-            DEBUG_STEP = 12;
+
+            DEBUG_STEP = 18;
             if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() &&
                 Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
             {
                 Game.DisableControlThisFrame(0, Control.Jump);
             }
-            DEBUG_STEP = 13;
+            DEBUG_STEP = 19;
             Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f);
-            DEBUG_STEP = 14;
+            DEBUG_STEP = 20;
             Game.MaxWantedLevel = 0;
             Game.Player.WantedLevel = 0;
-            DEBUG_STEP = 15;
+            DEBUG_STEP = 21;
             lock (_localMarkers)
             {
                 foreach (var marker in _localMarkers)
@@ -2853,7 +2865,7 @@ namespace GTANetwork
                 }
             }
 
-            DEBUG_STEP = 16;
+            DEBUG_STEP = 22;
             var hasRespawned = (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1 &&
                                 Game.Player.CanControlCharacter);
@@ -2873,11 +2885,11 @@ namespace GTANetwork
 
                 Function.Call(Hash.PAUSE_CLOCK, true);
             }
-            DEBUG_STEP = 17;
+            DEBUG_STEP = 23;
             _lastDead = hasRespawned;
-            DEBUG_STEP = 18;
+            DEBUG_STEP = 24;
             var killed = Game.Player.Character.IsDead;
-            DEBUG_STEP = 19;
+            DEBUG_STEP = 25;
             if (killed && !_lastKilled)
             {
 
@@ -2911,7 +2923,7 @@ namespace GTANetwork
                 Function.Call(Hash.REQUEST_SCRIPT_AUDIO_BANK, "HUD_MINI_GAME_SOUNDSET", true);
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
             }
-            DEBUG_STEP = 20;
+            DEBUG_STEP = 27;
             /*
             if (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                 Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1)
@@ -2926,7 +2938,7 @@ namespace GTANetwork
             */
 
             
-            DEBUG_STEP = 21;
+            DEBUG_STEP = 28;
 
             
             if (!IsSpectating && _lastSpectating)
@@ -3048,7 +3060,7 @@ namespace GTANetwork
             _lastKilled = killed;
 
             Function.Call(Hash.SET_RANDOM_TRAINS, 0);
-            DEBUG_STEP = 22;
+            DEBUG_STEP = 29;
             Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
             Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
@@ -3063,6 +3075,8 @@ namespace GTANetwork
             Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
             Function.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
             Function.Call((Hash)0xD2B315B6689D537D, Game.Player, false);
+
+            DEBUG_STEP = 30;
 
             GameScript.Pulse();
 
@@ -3082,13 +3096,13 @@ namespace GTANetwork
             if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS))
                 Function.Call(Hash.CANCEL_STUNT_JUMP);
             
-            DEBUG_STEP = 23;
+            DEBUG_STEP = 31;
             if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character) == 2)
             {
                 Game.DisableControlThisFrame(0, Control.Aim);
                 Game.DisableControlThisFrame(0, Control.Attack);
             }
-            DEBUG_STEP = 24;
+            DEBUG_STEP = 32;
             if (RemoveGameEntities)
             {
                 //if (_whoseturnisitanyways)
@@ -3143,7 +3157,7 @@ namespace GTANetwork
                     }*/
                 }
             }
-            DEBUG_STEP = 25;
+            DEBUG_STEP = 34;
             _whoseturnisitanyways = !_whoseturnisitanyways;
 
             NetEntityHandler.UpdateAttachments();
@@ -3151,9 +3165,9 @@ namespace GTANetwork
             NetEntityHandler.DrawLabels();
             NetEntityHandler.UpdateMisc();
             NetEntityHandler.UpdateInterpolations();
-
+            DEBUG_STEP = 35;
             WeaponInventoryManager.Update();
-
+            DEBUG_STEP = 36;
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
                 */
@@ -3170,7 +3184,7 @@ namespace GTANetwork
                     if (action != null) action.Invoke();
                 }
             }
-            DEBUG_STEP = 28;
+            DEBUG_STEP = 37;
         }
 
         public static bool IsOnServer()
@@ -4217,12 +4231,11 @@ namespace GTANetwork
                     switch (newStatus)
                     {
                         case NetConnectionStatus.InitiatedConnect:
+                            World.RenderingCamera = null;
                             Util.SafeNotify("Connecting...");
                             LocalTeam = -1;
                             LocalDimension = 0;
-                            Game.Player.Character.Weapons.RemoveAll();
-                            Game.Player.Character.Health = Game.Player.Character.MaxHealth;
-                            Game.Player.Character.Armor = 0;
+                            ResetPlayer();
                             CEFManager.Initialize(GTA.UI.Screen.Resolution);
 
                             if (StringCache != null) StringCache.Dispose();
@@ -4711,11 +4724,12 @@ namespace GTANetwork
         {
             Game.Player.Character.Position = _vinewoodSign;
             Game.Player.Character.IsPositionFrozen = false;
-
+            
             Util.SetPlayerSkin(PedHash.Clown01SMY);
 
             Game.Player.Character.MaxHealth = 200;
             Game.Player.Character.Health = 200;
+            Game.Player.Character.SetDefaultClothes();
 
             Game.Player.Character.IsPositionFrozen = false;
             Game.Player.IsInvincible = false;
