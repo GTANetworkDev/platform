@@ -549,7 +549,7 @@ namespace GTANetwork.GUI
 
                         if (arguments[i] is string)
                         {
-                            callString += "\"" + arguments[i] + "\"" + comma;
+                            callString += System.Web.HttpUtility.JavaScriptStringEncode(arguments[i].ToString(), true) + comma;
                         }
                         else
                         {
@@ -666,7 +666,8 @@ namespace GTANetwork.GUI
 
                 if (arguments[i] is string)
                 {
-                    callString += "\"" + arguments[i] + "\"" + comma;
+                    var escaped = System.Web.HttpUtility.JavaScriptStringEncode(arguments[i].ToString(), true);
+                    callString += escaped + comma;
                 }
                 else
                 {

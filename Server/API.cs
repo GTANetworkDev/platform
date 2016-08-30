@@ -433,6 +433,11 @@ namespace GTANetworkServer
             return Directory.Exists("resources" + Path.DirectorySeparatorChar + resource);
         }
 
+        public string[] getRunningResources()
+        {
+            return Program.ServerInstance.RunningResources.Select(r => r.DirectoryName).ToArray();
+        }
+
         public void playSoundFrontEnd(Client target, string audioLib, string audioName)
         {
             Program.ServerInstance.SendNativeCallToPlayer(target, 0x2F844A8B08D76685, audioLib, true);

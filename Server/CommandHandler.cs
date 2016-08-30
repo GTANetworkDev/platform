@@ -60,7 +60,7 @@ namespace GTANetworkServer
             if (Parameters.Length > 1)
             {
                 int paramCounter = 0;
-                Usage = "/" + cmd + " [" +
+                Usage = " [" +
                            Parameters.Skip(1)
                                .Select(par => par.Name)
                                .Aggregate((prev, next) => prev + (paramCounter++ == 0 ? "]" : "") + " [" + next + "]") +
@@ -68,7 +68,7 @@ namespace GTANetworkServer
             }
             else
             {
-                Usage = "/" + cmd;
+                Usage = "";
             }
         }
 

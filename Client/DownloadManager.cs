@@ -60,6 +60,7 @@ namespace GTANetwork
         {
             if (CurrentFile != null)
             {
+                LogManager.DebugLog("CurrentFile isn't null -- " + CurrentFile.Type + " " + CurrentFile.Filename);
                 return false;
             }
 

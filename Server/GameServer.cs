@@ -2839,10 +2839,21 @@ namespace GTANResource
             mapData.Resource = resourceSource;
             mapData.Name = "data";
 
-            var downloader = new StreamingClient(target);
-            downloader.Files.Add(mapData);
-            
-            Downloads.Add(downloader);
+            lock (Downloads)
+            {
+                StreamingClient cl;
+                if ((cl = Downloads.FirstOrDefault(c => c.Parent == target)) != null)
+                {
+                    cl.Files.Add(mapData);
+                }
+                else
+                {
+                    var downloader = new StreamingClient(target);
+                    downloader.Files.Add(mapData);
+
+                    Downloads.Add(downloader);
+                }
+            }
         }
 
         public void CreatePositionInterpolation(int entity, Vector3 target, int duration)
