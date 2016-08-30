@@ -205,29 +205,8 @@ namespace GTANetwork.GUI
 
                     var keyChar = ClassicChat.GetCharFromKey(key, Game.IsKeyPressed(Keys.ShiftKey), false);
 
-                    if (keyChar.Length == 0) return;
-
-                    if (keyChar[0] == (char)8)
-                    {
-                        //charEvent.WindowsKeyCode = (int) args.KeyCode;
-                        charEvent.WindowsKeyCode = 8;
-                        charEvent.Modifiers = mod;
-                        browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
-                        return;
-                    }
-                    if (keyChar[0] == (char)13)
-                    {
-                        //charEvent.WindowsKeyCode = (int)args.KeyCode;
-                        charEvent.WindowsKeyCode = 13;
-                        charEvent.Modifiers = mod;
-                        browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
-                        return;
-                    }
-                    else if (keyChar[0] == 27)
-                    {
-                        return;
-                    }
-
+                    if (keyChar.Length == 0 || keyChar[0] == 27) return;
+                    
                     charEvent.WindowsKeyCode = keyChar[0];
                     charEvent.Modifiers = mod;
                     browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
