@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using GTA;
+using GTA.UI;
 using GTANetworkShared;
 
 namespace GTANetwork
@@ -120,7 +121,7 @@ namespace GTANetwork
             }
             
             CurrentFile.Write(bytes);
-            UI.ShowSubtitle("Downloading " +
+            Screen.ShowSubtitle("Downloading " +
                             ((CurrentFile.Type == FileType.Normal || CurrentFile.Type == FileType.Script)
                                 ? CurrentFile.Filename
                                 : CurrentFile.Type.ToString()) + ": " +
@@ -202,7 +203,7 @@ namespace GTANetwork
                         try { File.Delete(CurrentFile.FilePath); }
                         catch { }
 
-                        UI.Notify("Disallowed file type: " + mime + "~n~" + CurrentFile.Filename);
+                        Screen.ShowNotification("Disallowed file type: " + mime + "~n~" + CurrentFile.Filename);
                     }
                 }
 

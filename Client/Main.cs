@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -23,7 +24,6 @@ using NativeUI.PauseMenu;
 using Newtonsoft.Json;
 using ProtoBuf;
 using Control = GTA.Control;
-using Font = GTA.Font;
 using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
@@ -163,7 +163,7 @@ namespace GTANetwork
 
             EntityCleanup = new List<int>();
             BlipCleanup = new List<int>();
-            
+
             _emptyVehicleMods = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++) _emptyVehicleMods.Add(i, 0);
 
@@ -205,11 +205,9 @@ namespace GTANetwork
 
             RelGroup = World.AddRelationshipGroup("SYNCPED");
             FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
-            World.SetRelationshipBetweenGroups(Relationship.Hate, RelGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Hate, Game.Player.Character.RelationshipGroup, RelGroup);
+            RelGroup.SetRelationshipBetweenGroups(Game.Player.Character.RelationshipGroup, Relationship.Hate, true);
 
-            World.SetRelationshipBetweenGroups(Relationship.Companion, FriendRelGroup, Game.Player.Character.RelationshipGroup);
-            World.SetRelationshipBetweenGroups(Relationship.Companion, Game.Player.Character.RelationshipGroup, FriendRelGroup);
+            FriendRelGroup.SetRelationshipBetweenGroups(Game.Player.Character.RelationshipGroup, Relationship.Companion, true);
 
             //Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
 
@@ -243,8 +241,8 @@ namespace GTANetwork
             Chat.IsFocused = false;
         }
 
-public static int RelGroup;
-        public static int FriendRelGroup;
+        public static RelationshipGroup RelGroup;
+        public static RelationshipGroup FriendRelGroup;
         public static bool HasFinishedDownloading;
 
         // Debug stuff
@@ -1179,11 +1177,11 @@ public static int RelGroup;
                 {
                     if (IsOnServer() || _serverProcess != null)
                     {
-                        UI.Notify("~b~~h~GTA Network~h~~w~~n~Leave the current server first!");
+                        GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Leave the current server first!");
                         return;
                     }
 
-                    UI.Notify("~b~~h~GTA Network~h~~w~~n~Starting server...");
+                    GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Starting server...");
                     var startSettings = new ProcessStartInfo(GTANInstallDir + "\\server\\GTANetworkServer.exe");
                     startSettings.CreateNoWindow = true;
                     startSettings.RedirectStandardOutput = true;
@@ -1207,7 +1205,7 @@ public static int RelGroup;
                         var newName = InputboxThread.GetUserInput(settingsFile.Name, 40, TickSpinner);
                         if (string.IsNullOrWhiteSpace(newName))
                         {
-                            UI.Notify("~b~~h~GTA Network~h~~w~~n~Server name must not be empty!");
+                            GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Server name must not be empty!");
                             return;
                         }
                         serverName.SetRightLabel(newName);
@@ -1239,7 +1237,7 @@ public static int RelGroup;
                         int newLimit;
                         if (string.IsNullOrWhiteSpace(newName) || !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit))
                         {
-                            UI.Notify("~b~~h~GTA Network~h~~w~~n~Invalid input for player limit!");
+                            GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Invalid input for player limit!");
                             return;
                         }
 
@@ -1259,7 +1257,7 @@ public static int RelGroup;
                         int newLimit;
                         if (string.IsNullOrWhiteSpace(newName) || !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit) || newLimit < 1024)
                         {
-                            UI.Notify("~b~~h~GTA Network~h~~w~~n~Invalid input for server port!");
+                            GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Invalid input for server port!");
                             return;
                         }
 
@@ -1446,7 +1444,7 @@ public static int RelGroup;
         {
             //File.WriteAllText(GTANInstallDir + "\\logs\\map.json", JsonConvert.SerializeObject(map));
 
-            UI.ShowSubtitle("Downloading Map...", 500000);
+            GTA.UI.Screen.ShowSubtitle("Downloading Map...", 500000);
 
             try
             {
@@ -1468,14 +1466,14 @@ public static int RelGroup;
                     foreach (var pair in map.Objects)
                     {
                         NetEntityHandler.CreateObject(pair.Key, pair.Value);
-                        UI.ShowSubtitle("Creating object...", 500000);
+                        GTA.UI.Screen.ShowSubtitle("Creating object...", 500000);
                     }
 
                 if (map.Vehicles != null)
                     foreach (var pair in map.Vehicles)
                     {
                         NetEntityHandler.CreateVehicle(pair.Key, pair.Value);
-                        UI.ShowSubtitle("Creating vehicle...", 500000);
+                        GTA.UI.Screen.ShowSubtitle("Creating vehicle...", 500000);
                     }
 
                 if (map.Blips != null)
@@ -1548,13 +1546,13 @@ public static int RelGroup;
                                         pair.Value.Textures.Get((byte)i), 2);
                                 }
 
-                                ourSyncPed.Character.Alpha = pair.Value.Alpha;
+                                ourSyncPed.Character.Opacity = pair.Value.Alpha;
 
-                                if (ourSyncPed.Character.CurrentBlip != null)
+                                if (ourSyncPed.Character.AttachedBlip != null)
                                 {
-                                    ourSyncPed.Character.CurrentBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
-                                    ourSyncPed.Character.CurrentBlip.Color = (BlipColor)pair.Value.BlipColor;
-                                    ourSyncPed.Character.CurrentBlip.Alpha = pair.Value.BlipAlpha;
+                                    ourSyncPed.Character.AttachedBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
+                                    ourSyncPed.Character.AttachedBlip.Color = (BlipColor)pair.Value.BlipColor;
+                                    ourSyncPed.Character.AttachedBlip.Alpha = pair.Value.BlipAlpha;
                                 }
 
                                 NetEntityHandler.ReattachAllEntities(ourSyncPed, false);
@@ -1566,8 +1564,8 @@ public static int RelGroup;
             }
             catch(Exception ex)
             {
-                UI.Notify("FATAL ERROR WHEN PARSING MAP");
-                UI.Notify(ex.Message);
+                GTA.UI.Screen.ShowNotification("FATAL ERROR WHEN PARSING MAP");
+                GTA.UI.Screen.ShowNotification(ex.Message);
                 Client.Disconnect("Map Parse Error");
 
                 LogManager.LogException(ex, "MAP PARSE");
@@ -1597,7 +1595,7 @@ public static int RelGroup;
             if (_modSwitch % 30 == 0)
             {
                 var id = _modSwitch/30;
-                var mod = Game.Player.Character.CurrentVehicle.GetMod((VehicleMod) id);
+                var mod = Game.Player.Character.CurrentVehicle.Mods[(VehicleModType) id].Index;
                 if (mod != -1)
                 {
                     lock (_vehMods)
@@ -2013,7 +2011,7 @@ public static int RelGroup;
                 if (vehdead)
                     obj.Flag |= (byte)VehicleDataFlags.VehicleDead;
 
-                if (veh.IsInBurnout())
+                if (veh.IsInBurnout)
                     obj.Flag |= (byte)VehicleDataFlags.BurnOut;
 
                 if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
@@ -2204,7 +2202,7 @@ public static int RelGroup;
 
             if (!_hasPlayerSpawned && player != null && player.Handle != 0 && !Game.IsLoading)
             {
-                Game.FadeScreenOut(1);
+                GTA.UI.Screen.FadeOut(1);
                 
                 Game.Player.Character.Position = _vinewoodSign;
                 Script.Wait(500);
@@ -2217,20 +2215,32 @@ public static int RelGroup;
                 Game.Player.Character.Health = 200;
                 _hasPlayerSpawned = true;
 
-                Game.FadeScreenIn(1000);
+                var address = Util.FindPattern("\x32\xc0\xf3\x0f\x11\x09", "xxxxxx");
+
+                if (address != IntPtr.Zero)
+                {
+                    MemoryAccess.WriteByte(address, 0x90);
+                    MemoryAccess.WriteByte(address + 1, 0x90);
+                    MemoryAccess.WriteByte(address + 2, 0x90);
+                    MemoryAccess.WriteByte(address + 3, 0x90);
+                    MemoryAccess.WriteByte(address + 4, 0x90);
+                    MemoryAccess.WriteByte(address + 5, 0x90);
+                }
+
+                GTA.UI.Screen.FadeIn(1000);
             }
 
             DEBUG_STEP = 0;
-            Game.DisableControl(0, Control.EnterCheatCode);
-            Game.DisableControl(0, Control.FrontendPause);
-            Game.DisableControl(0, Control.FrontendPauseAlternate);
-            Game.DisableControl(0, Control.FrontendSocialClub);
-            Game.DisableControl(0, Control.FrontendSocialClubSecondary);
+            Game.DisableControlThisFrame(0, Control.EnterCheatCode);
+            Game.DisableControlThisFrame(0, Control.FrontendPause);
+            Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
+            Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
+            Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
 
             if (Game.Player.Character.IsRagdoll)
             {
-                Game.DisableControl(0, Control.Attack);
-                Game.DisableControl(0, Control.Attack2);
+                Game.DisableControlThisFrame(0, Control.Attack);
+                Game.DisableControlThisFrame(0, Control.Attack2);
             }
 
             if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
@@ -2278,7 +2288,7 @@ public static int RelGroup;
             if (Game.Player.Character.IsInVehicle())
             {
                 var pos = Game.Player.Character.CurrentVehicle.GetOffsetInWorldCoords(offset);
-                UI.ShowSubtitle(offset.ToString());
+                GTA.UI.Screen.ShowSubtitle(offset.ToString());
                 World.DrawMarker(MarkerType.DebugSphere, pos, new Vector3(), new Vector3(), new Vector3(0.2f, 0.2f, 0.2f), Color.Red);
             }*/
             /*
@@ -2330,7 +2340,7 @@ public static int RelGroup;
                 var obj = Function.Call<int>(Hash.GET_PICKUP_OBJECT, _debugPickup);
                 new Prop(obj).FreezePosition = true;
                 var exist = Function.Call<bool>(Hash.DOES_PICKUP_EXIST, _debugPickup);
-                UI.ShowSubtitle(_debugPickup + " (exists? " + exist + ") picked up obj (" + obj + "): " + Function.Call<bool>(Hash.HAS_PICKUP_BEEN_COLLECTED, obj));
+                GTA.UI.Screen.ShowSubtitle(_debugPickup + " (exists? " + exist + ") picked up obj (" + obj + "): " + Function.Call<bool>(Hash.HAS_PICKUP_BEEN_COLLECTED, obj));
             }
 
             if (Game.IsControlJustPressed(0, Control.LookBehind) && _debugPickup != 0)
@@ -2341,10 +2351,10 @@ public static int RelGroup;
             if (Game.IsControlJustPressed(0, Control.VehicleDuck))
             {
                 _debugmask++;
-                UI.Notify("new bit pos: " + _debugmask);
+                GTA.UI.Screen.ShowNotification("new bit pos: " + _debugmask);
             }
 
-            UI.ShowSubtitle(Game.Player.Character.Weapons.Current.Hash.ToString());
+            GTA.UI.Screen.ShowSubtitle(Game.Player.Character.Weapons.Current.Hash.ToString());
             new UIResText(Game.Player.Character.Health + "/" + Game.Player.Character.MaxHealth, new Point(), 0.5f).Draw();
 
             
@@ -2355,7 +2365,7 @@ public static int RelGroup;
                 {
                     if (_debugSettings[i] != val)
                     {
-                        UI.Notify("SETTINGS ID " + i + " CHANGED TO " + val);
+                        GTA.UI.Screen.ShowNotification("SETTINGS ID " + i + " CHANGED TO " + val);
                     }
                     _debugSettings[i] = val;
                 }
@@ -2380,10 +2390,10 @@ public static int RelGroup;
                 Function.Call(Hash.START_PARTICLE_FX_NON_LOOPED_AT_COORD, "scr_clown_appears", pos.X, pos.Y, pos.Z, 0, 0, 0, 2f, 0, 0, 0);
             }
             
-            if (player.IsInVehicle()) UI.ShowSubtitle(""+ player.CurrentVehicle.Velocity);
-            else UI.ShowSubtitle(""+ player.Velocity);
+            if (player.IsInVehicle()) GTA.UI.Screen.ShowSubtitle(""+ player.CurrentVehicle.Velocity);
+            else GTA.UI.Screen.ShowSubtitle(""+ player.Velocity);
 
-            if (player.IsInVehicle()) UI.ShowSubtitle("" + player.CurrentVehicle.IsInBurnout());
+            if (player.IsInVehicle()) GTA.UI.Screen.ShowSubtitle("" + player.CurrentVehicle.IsInBurnout());
 
             if (false)
             {
@@ -2421,7 +2431,7 @@ public static int RelGroup;
 
             if (cveh != null)
             {
-                UI.ShowSubtitle(cveh.GetOffsetFromWorldCoords(Game.Player.Character.Position)+"");
+                GTA.UI.Screen.ShowSubtitle(cveh.GetOffsetFromWorldCoords(Game.Player.Character.Position)+"");
             }
 
 
@@ -2445,7 +2455,7 @@ public static int RelGroup;
                 Function.Call((Hash)0x1913FE4CBF41C463, Game.Player.Character, 32, false);
             }
 
-            UI.ShowSubtitle(""+ Function.Call<bool>((Hash)0x7EE53118C892B513, Game.Player.Character, 32, true));
+            GTA.UI.Screen.ShowSubtitle(""+ Function.Call<bool>((Hash)0x7EE53118C892B513, Game.Player.Character, 32, true));
 
             if (Game.IsControlJustPressed(0, Control.LookBehind))
             {
@@ -2454,15 +2464,50 @@ public static int RelGroup;
                 //Function.Call(Hash.SET_VEHICLE_UNDRIVEABLE, Game.Player.Character.CurrentVehicle, false);
                 //SET_VEHICLE_UNDRIVEABLE
             }
-            UI.ShowSubtitle(Function.Call<int>(Hash.GET_PED_TYPE, Game.Player.Character)+"");
+            GTA.UI.Screen.ShowSubtitle(Function.Call<int>(Hash.GET_PED_TYPE, Game.Player.Character)+"");
             */
+            /*
+            var iActive = Function.Call<bool>(Hash.IS_PED_WEAPON_COMPONENT_ACTIVE, Game.Player.Character, (int)WeaponHash.Pistol, 899381934);
+            GTA.UI.Screen.ShowSubtitle("" + iActive);
+
+            if (Game.IsControlJustPressed(0, Control.Context))
+            {
+                var p = World.CreateRandomPed(
+                        Game.Player.Character.GetOffsetInWorldCoords(
+                            new Vector3(0, 5f, 0f)));
+                //p.IsPersistent = false;
+                p.BlockPermanentEvents = true;
+
+
+                var hasGot = Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON_COMPONENT, p, (int)WeaponHash.PumpShotgun, -435637410);
+
+                GTA.UI.Screen.ShowNotification("1st Got: " + hasGot);
+                
+                //p.Weapons.Give(WeaponHash.PumpShotgun, 99, true, true);
+                //Script.Wait(2000);
+                //Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_PED, p,
+                    //(int)WeaponHash.PumpShotgun,
+                    //-435637410); // AtSrSupp
+
+                var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, (int) WeaponHash.PumpShotgun, 999, p.Position.X,
+                    p.Position.Y, p.Position.Z, false, 0f, 0);
+                Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_WEAPON_OBJECT, wObj, -435637410);
+                Function.Call(Hash.GIVE_WEAPON_OBJECT_TO_PED, wObj, p);
+
+                Script.Wait(1000);
+
+                hasGot = Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON_COMPONENT, p, (int) WeaponHash.PumpShotgun, -435637410);
+
+                GTA.UI.Screen.ShowNotification("2nd Got: " + hasGot);
+            }
+        */
 
             if (display)
             {
                 Debug();
                 //unsafe
                 //{
-                //UI.ShowSubtitle(new IntPtr(Game.Player.Character.MemoryAddress).ToInt64().ToString("X"));
+                //GTA.UI.Screen.ShowSubtitle(new IntPtr(Game.Player.Character.MemoryAddress).ToInt64().ToString("X"));
                 //}
                 //Game.Player.Character.Task.AimAt(Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), -1);
             }
@@ -2487,7 +2532,7 @@ public static int RelGroup;
                 new UIResText(str,new Point(10, 40 * counter++), 0.3f).Draw();
             }
 
-            UI.ShowSubtitle(slots.Count.ToString());
+            GTA.UI.Screen.ShowSubtitle(slots.Count.ToString());
                 */
 
             
@@ -2511,13 +2556,13 @@ public static int RelGroup;
             new UIResText(sb.ToString(), new Point(10, 10), 0.3f).Draw();
             */
             /*
-            UI.ShowSubtitle(Game.Player.Character.RelationshipGroup.ToString());
+            GTA.UI.Screen.ShowSubtitle(Game.Player.Character.RelationshipGroup.ToString());
             if (Game.Player.Character.LastVehicle != null)
             {
                 unsafe
                 {
                     var address = new IntPtr(Game.Player.Character.LastVehicle.MemoryAddress);
-                    UI.ShowSubtitle(address + " (" + address.ToInt64() + ")\n" + Game.Player.Character.LastVehicle.SteeringScale);
+                    GTA.UI.Screen.ShowSubtitle(address + " (" + address.ToInt64() + ")\n" + Game.Player.Character.LastVehicle.SteeringScale);
                 }
             }
 
@@ -2532,7 +2577,7 @@ public static int RelGroup;
 	        {
 				var start = gunEnt.GetOffsetInWorldCoords(offset);
 				World.DrawMarker(MarkerType.DebugSphere, start, new Vector3(), new Vector3(), new Vector3(0.01f, 0.01f, 0.01f), Color.Red);
-				UI.ShowSubtitle(offset.ToString());
+				GTA.UI.Screen.ShowSubtitle(offset.ToString());
 				if (Game.IsKeyPressed(Keys.NumPad3))
 		        {
 			        var end = Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0f));
@@ -2541,7 +2586,7 @@ public static int RelGroup;
 				        end.X,
 				        end.Y, end.Z, 100, true, (int) WeaponHash.APPistol, Game.Player.Character, true, false, 100);
 					Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
-			        UI.ShowSubtitle("Bullet!");
+			        GTA.UI.Screen.ShowSubtitle("Bullet!");
 		        }
 	        }*/
 
@@ -2595,7 +2640,7 @@ public static int RelGroup;
 
             if (Game.Player.Character.IsInVehicle())
             {
-                UI.ShowSubtitle("RPM: " + Game.Player.Character.CurrentVehicle.CurrentRPM + " AC: " + Game.Player.Character.CurrentVehicle.Acceleration);
+                GTA.UI.Screen.ShowSubtitle("RPM: " + Game.Player.Character.CurrentVehicle.CurrentRPM + " AC: " + Game.Player.Character.CurrentVehicle.Acceleration);
             }*/
 #endif
             DEBUG_STEP = 5;
@@ -2609,7 +2654,7 @@ public static int RelGroup;
             _verionLabel.Draw();
             DEBUG_STEP = 7;
             if (_wasTyping)
-                Game.DisableControl(0, Control.FrontendPauseAlternate);
+                Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
             DEBUG_STEP = 8;
             var playerCar = Game.Player.Character.CurrentVehicle;
             DEBUG_STEP = 9;
@@ -2723,13 +2768,13 @@ public static int RelGroup;
                         seat = VehicleSeat.RightRear;
                     }
 
-                    if (vehs[0].PassengerSeats == 1) seat = VehicleSeat.Passenger;
+                    if (vehs[0].PassengerCapacity == 1) seat = VehicleSeat.Passenger;
 
-                    if (vehs[0].PassengerSeats > 3 && vehs[0].GetPedOnSeat(seat).Handle != 0)
+                    if (vehs[0].PassengerCapacity > 3 && vehs[0].GetPedOnSeat(seat).Handle != 0)
                     {
                         if (seat == VehicleSeat.LeftRear)
                         {
-                            for (int i = 3; i < vehs[0].PassengerSeats; i += 2)
+                            for (int i = 3; i < vehs[0].PassengerCapacity; i += 2)
                             {
                                 if (vehs[0].GetPedOnSeat((VehicleSeat)i).Handle == 0)
                                 {
@@ -2740,7 +2785,7 @@ public static int RelGroup;
                         }
                         else if (seat == VehicleSeat.RightRear)
                         {
-                            for (int i = 4; i < vehs[0].PassengerSeats; i += 2)
+                            for (int i = 4; i < vehs[0].PassengerCapacity; i += 2)
                             {
                                 if (vehs[0].GetPedOnSeat((VehicleSeat)i).Handle == 0)
                                 {
@@ -2759,12 +2804,12 @@ public static int RelGroup;
                 }
             }
 
-            Game.DisableControl(0, Control.SpecialAbility);
-            Game.DisableControl(0, Control.SpecialAbilityPC);
-            Game.DisableControl(0, Control.SpecialAbilitySecondary);
-            Game.DisableControl(0, Control.CharacterWheel);
-            Game.DisableControl(0, Control.Phone);
-            Game.DisableControl(0, Control.Duck);
+            Game.DisableControlThisFrame(0, Control.SpecialAbility);
+            Game.DisableControlThisFrame(0, Control.SpecialAbilityPC);
+            Game.DisableControlThisFrame(0, Control.SpecialAbilitySecondary);
+            Game.DisableControlThisFrame(0, Control.CharacterWheel);
+            Game.DisableControlThisFrame(0, Control.Phone);
+            Game.DisableControlThisFrame(0, Control.Duck);
 
             VehicleSyncManager.Pulse();
 
@@ -2789,7 +2834,7 @@ public static int RelGroup;
             if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() &&
                 Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
             {
-                Game.DisableControl(0, Control.Jump);
+                Game.DisableControlThisFrame(0, Control.Jump);
             }
             DEBUG_STEP = 13;
             Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f);
@@ -2886,10 +2931,10 @@ public static int RelGroup;
             
             if (!IsSpectating && _lastSpectating)
             {
-                Game.Player.Character.Alpha = 255;
-                Game.Player.Character.FreezePosition = false;
+                Game.Player.Character.Opacity = 255;
+                Game.Player.Character.IsPositionFrozen = false;
                 Game.Player.IsInvincible = false;
-                Game.Player.Character.HasCollision = true;
+                Game.Player.Character.IsCollisionEnabled = true;
                 SpectatingEntity = 0;
                 CurrentSpectatingPlayer = null;
                 _currentSpectatingPlayerIndex = 100000;
@@ -2898,10 +2943,10 @@ public static int RelGroup;
 
             if (IsSpectating && SpectatingEntity != 0)
             {
-                Game.Player.Character.Alpha = 0;
-                Game.Player.Character.FreezePosition = true;
+                Game.Player.Character.Opacity = 0;
+                Game.Player.Character.IsPositionFrozen = true;
                 Game.Player.IsInvincible = true;
-                Game.Player.Character.HasCollision = false;
+                Game.Player.Character.IsCollisionEnabled = false;
 
                 Control[] exceptions = new[]
                 {
@@ -2957,10 +3002,10 @@ public static int RelGroup;
             }
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer != null)
             {
-                Game.Player.Character.Alpha = 0;
-                Game.Player.Character.FreezePosition = true;
+                Game.Player.Character.Opacity = 0;
+                Game.Player.Character.IsPositionFrozen = true;
                 Game.Player.IsInvincible = true;
-                Game.Player.Character.HasCollision = false;
+                Game.Player.Character.IsCollisionEnabled = false;
                 Game.DisableAllControlsThisFrame(0);
 
                 if (CurrentSpectatingPlayer.Character == null)
@@ -2987,7 +3032,7 @@ public static int RelGroup;
                     var center = new Point((int) (res.Width/2), (int) (res.Height/2));
 
                     new UIResText("Now spectating:~n~" + CurrentSpectatingPlayer.Name,
-                        new Point(center.X, (int) (res.Height - 200)), 0.4f, Color.White, Font.ChaletLondon,
+                        new Point(center.X, (int) (res.Height - 200)), 0.4f, Color.White, GTA.UI.Font.ChaletLondon,
                         UIResText.Alignment.Centered)
                     {
                         Outline = true,
@@ -3040,8 +3085,8 @@ public static int RelGroup;
             DEBUG_STEP = 23;
             if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, Game.Player.Character) == 2)
             {
-                Game.DisableControl(0, Control.Aim);
-                Game.DisableControl(0, Control.Attack);
+                Game.DisableControlThisFrame(0, Control.Aim);
+                Game.DisableControlThisFrame(0, Control.Attack);
             }
             DEBUG_STEP = 24;
             if (RemoveGameEntities)
@@ -3112,7 +3157,7 @@ public static int RelGroup;
             /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                 _bytesSent / 1000, _messagesReceived, _messagesSent);
                 */
-            //UI.ShowSubtitle(stats);
+            //GTA.UI.Screen.ShowSubtitle(stats);
 
             if (!Multithreading)
                 PedThread.OnTick("thisaintnullnigga", e);
@@ -3202,8 +3247,7 @@ public static int RelGroup;
 
             if (!_minimapSet)
             {
-                var scal = new Scaleform(0);
-                scal.Load("minimap");
+                var scal = new Scaleform("minimap");
                 scal.CallFunction("MULTIPLAYER_IS_ACTIVE", true, false);
 
                 Function.Call(Hash._SET_RADAR_BIGMAP_ENABLED, true, false);
@@ -3273,7 +3317,7 @@ public static int RelGroup;
         {
             if (type == PacketType.CreateEntity ||
                 type == PacketType.DeleteEntity ||
-                type == PacketType.FileTransferTick || // TODO: Make this threadsafe (remove UI.ShowSubtitle)
+                type == PacketType.FileTransferTick || // TODO: Make this threadsafe (remove GTA.UI.Screen.ShowSubtitle)
                 type == PacketType.FileTransferComplete || 
                 type == PacketType.ServerEvent ||
                 type == PacketType.SyncEvent ||
@@ -3684,9 +3728,9 @@ public static int RelGroup;
                                             {
                                                 pair.BlipColor = newColor;
                                                 if (pair.Character != null &&
-                                                    pair.Character.CurrentBlip != null)
+                                                    pair.Character.AttachedBlip != null)
                                                 {
-                                                    pair.Character.CurrentBlip.Color = (BlipColor)newColor;
+                                                    pair.Character.AttachedBlip.Color = (BlipColor)newColor;
                                                 }
                                             }
                                         }
@@ -3703,8 +3747,8 @@ public static int RelGroup;
                                             if (pair != null)
                                             {
                                                 pair.BlipSprite = newSprite;
-                                                if (pair.Character != null && pair.Character.CurrentBlip != null)
-                                                    pair.Character.CurrentBlip.Sprite =
+                                                if (pair.Character != null && pair.Character.AttachedBlip != null)
+                                                    pair.Character.AttachedBlip.Sprite =
                                                         (BlipSprite)newSprite;
                                             }
                                         }
@@ -3719,8 +3763,8 @@ public static int RelGroup;
                                         {
                                             pair.BlipAlpha = (byte)newAlpha;
                                             if (pair.Character != null &&
-                                                pair.Character.CurrentBlip != null)
-                                                pair.Character.CurrentBlip.Alpha = newAlpha;
+                                                pair.Character.AttachedBlip != null)
+                                                pair.Character.AttachedBlip.Alpha = newAlpha;
                                         }
                                     }
                                     break;
@@ -3881,9 +3925,9 @@ public static int RelGroup;
                                         var newFloat = (bool)args[2];
                                         if (veh == null) return;
                                         if (newFloat)
-                                            new Vehicle(veh.Handle).OpenDoor((VehicleDoor)doorId, false, true);
+                                            new Vehicle(veh.Handle).Doors[(VehicleDoorIndex)doorId].Open(false, true);
                                         else
-                                            new Vehicle(veh.Handle).CloseDoor((VehicleDoor)doorId, true);
+                                            new Vehicle(veh.Handle).Doors[(VehicleDoorIndex)doorId].Close(true);
 
                                         var item = NetEntityHandler.NetToStreamedItem((int)args[0]) as RemoteVehicle;
                                         if (item != null)
@@ -3985,9 +4029,9 @@ public static int RelGroup;
                                         var isBursted = (bool)args[2];
                                         if (veh == null) return;
                                         if (isBursted)
-                                            new Vehicle(veh.Handle).BurstTire(tireId);
+                                            new Vehicle(veh.Handle).Wheels[tireId].Burst();
                                         else
-                                            new Vehicle(veh.Handle).FixTire(tireId);
+                                            new Vehicle(veh.Handle).Wheels[tireId].Fix();
 
                                         var item = NetEntityHandler.NetToStreamedItem((int) args[0]) as RemoteVehicle;
                                         if (item != null)
@@ -4179,7 +4223,7 @@ public static int RelGroup;
                             Game.Player.Character.Weapons.RemoveAll();
                             Game.Player.Character.Health = Game.Player.Character.MaxHealth;
                             Game.Player.Character.Armor = 0;
-                            CEFManager.Initialize(Game.ScreenResolution);
+                            CEFManager.Initialize(GTA.UI.Screen.Resolution);
 
                             if (StringCache != null) StringCache.Dispose();
 
@@ -4550,7 +4594,7 @@ public static int RelGroup;
 
                 if ((fullPacket.Flag.Value & (int) PedDataFlags.ClosingVehicleDoor) != 0 && syncPed.MainVehicle != null && syncPed.MainVehicle.Model.Hash != (int)VehicleHash.CargoPlane)
                 {
-                    syncPed.MainVehicle.CloseDoor((VehicleDoor)(syncPed.VehicleSeat + 1), true);
+                    syncPed.MainVehicle.Doors[(VehicleDoorIndex) syncPed.VehicleSeat + 1].Close(true);
                 }
 
                 if (syncPed.EnteringVehicle)
@@ -4606,8 +4650,8 @@ public static int RelGroup;
                         for (int i = 0; i < 8; i++)
                         {
                             bool busted = (data.PlayerHealth.Value & (byte)(1 << i)) != 0;
-                            if (busted && !veh.IsTireBurst(i)) veh.BurstTire(i);
-                            else if (!busted && veh.IsTireBurst(i)) veh.FixTire(i);
+                            if (busted && !veh.IsTireBurst(i)) veh.Wheels[i].Burst();
+                            else if (!busted && veh.IsTireBurst(i)) veh.Wheels[i].Fix();
                         }
                     }
                 }
@@ -4666,17 +4710,17 @@ public static int RelGroup;
         private void ResetPlayer()
         {
             Game.Player.Character.Position = _vinewoodSign;
-            Game.Player.Character.FreezePosition = false;
+            Game.Player.Character.IsPositionFrozen = false;
 
             Util.SetPlayerSkin(PedHash.Clown01SMY);
 
             Game.Player.Character.MaxHealth = 200;
             Game.Player.Character.Health = 200;
 
-            Game.Player.Character.FreezePosition = false;
+            Game.Player.Character.IsPositionFrozen = false;
             Game.Player.IsInvincible = false;
-            Game.Player.Character.HasCollision = true;
-            Game.Player.Character.Alpha = 255;
+            Game.Player.Character.IsCollisionEnabled = true;
+            Game.Player.Character.Opacity = 255;
             Game.Player.Character.IsInvincible = false;
             Game.Player.Character.Weapons.RemoveAll();
             Function.Call(Hash.DETACH_ENTITY, Game.Player.Character.Handle, true, true);
@@ -4718,7 +4762,6 @@ public static int RelGroup;
 			JavascriptHook.StopAllScripts();
             JavascriptHook.TextElements.Clear();
 		    SyncCollector.ForceAimData = false;
-            WeaponWheel.Magazines.Clear();
             StringCache.Dispose();
 		    StringCache = null;
 		    CefController.ShowCursor = false;
@@ -4760,7 +4803,7 @@ public static int RelGroup;
 
             if (_serverProcess != null)
             {
-                UI.Notify("~b~~h~GTA Network~h~~w~~n~Shutting down server...");
+                GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Shutting down server...");
 		        _serverProcess.Kill();
                 _serverProcess.Dispose();
 		        _serverProcess = null;
@@ -4807,12 +4850,12 @@ public static int RelGroup;
             if (Game.IsKeyPressed(Keys.NumPad1) && _debugInterval > 0)
             {
                 _debugInterval--;
-                UI.ShowSubtitle("SIMULATED PING: " + _debugInterval, 5000);
+                GTA.UI.Screen.ShowSubtitle("SIMULATED PING: " + _debugInterval, 5000);
             }
             else if (Game.IsKeyPressed(Keys.NumPad2))
             {
                 _debugInterval++;
-                UI.ShowSubtitle("SIMULATED PING: " + _debugInterval, 5000);
+                GTA.UI.Screen.ShowSubtitle("SIMULATED PING: " + _debugInterval, 5000);
             }
 
             if (Util.TickCount - _debugLastSync > _debugSyncrate)
@@ -4836,7 +4879,7 @@ public static int RelGroup;
                     if (ourData is VehicleData)
                     {
                         if (player.IsInVehicle())
-                            player.CurrentVehicle.Alpha = 50;
+                            player.CurrentVehicle.Opacity = 50;
 
                         var data = (VehicleData) ourData;
                         _debugSyncPed.LastUpdateReceived = Util.TickCount;
@@ -5204,7 +5247,7 @@ public static int RelGroup;
                 int interior;
                 if ((interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, x, y, z)) != 0)
                 {
-                    Function.Call(Hash._0x2CA429C029CCF247, interior); // LOAD_INTERIOR
+                    Function.Call((Hash)0x2CA429C029CCF247, interior); // LOAD_INTERIOR
                     Function.Call(Hash.SET_INTERIOR_ACTIVE, interior, true);
                     Function.Call(Hash.DISABLE_INTERIOR, interior, false);
                     if (Function.Call<bool>(Hash.IS_INTERIOR_CAPPED, interior))
@@ -5574,9 +5617,9 @@ public static int RelGroup;
                 (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
                 , ignoreEntity);
 
-            if (raycastResults.DitHitAnything)
+            if (raycastResults.DitHit)
             {
-                return raycastResults.HitCoords;
+                return raycastResults.HitPosition;
             }
 
             return camPos + dir * raycastToDist;
@@ -5603,9 +5646,9 @@ public static int RelGroup;
                 (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
                 , ignoreEntity);
 
-            if (raycastResults.DitHitAnything)
+            if (raycastResults.DitHit)
             {
-                return raycastResults.HitCoords;
+                return raycastResults.HitPosition;
             }
 
             return camPos + dir * raycastToDist;

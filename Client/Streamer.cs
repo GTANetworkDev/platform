@@ -101,9 +101,9 @@ namespace GTANetwork
 
             if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
             {
-                Function.Call(Hash._0xABA17D7CE615ADBF, "STRING");
+                Function.Call((Hash)0xABA17D7CE615ADBF, "STRING");
                 Function.Call((Hash)0x6C188BE134E074AA, "Streaming");
-                Function.Call(Hash._0xBD12F8228410D9B4, 5);
+                Function.Call((Hash)0xBD12F8228410D9B4, 5);
                 spinner = true;
 
                 StreamInProgress = true;
@@ -384,7 +384,7 @@ namespace GTANetwork
                 distance,
                 flags, Game.Player.Character);
 
-            if (ray.HitCoords.DistanceTo(origin) >=
+            if (ray.HitPosition.DistanceTo(origin) >=
                     distance)
             {
                 var scale = Math.Max(0.3f, 1f - (distance/range));
@@ -625,9 +625,9 @@ namespace GTANetwork
                             if (prop.Mods.ContainsKey(pair.Key))
                             {
                                 if (pair.Key >= 17 && pair.Key <= 22)
-                                    car.ToggleMod((VehicleToggleMod)pair.Key, pair.Value != 0);
+                                    car.Mods[(VehicleToggleModType)pair.Key].IsInstalled = pair.Value != 0;
                                 else
-                                    car.SetMod((VehicleMod)pair.Key, pair.Value, false);
+                                    car.SetMod(pair.Key, pair.Value, false);
                             }
                             else
                             {
@@ -1820,7 +1820,7 @@ namespace GTANetwork
             {
                 var entAtt = NetToStreamedItem(item.AttachedNetEntity, item.LocalOnly);
                 StreamIn(entAtt);
-                ourBlip = NetToEntity(item.AttachedNetEntity).AddBlip();
+                ourBlip = NetToEntity(item.AttachedNetEntity).AttachBlip();
             }
             else if (item.RangedBlip != 0)
             {
@@ -1873,7 +1873,7 @@ namespace GTANetwork
             Function.Call(Hash.SET_PED_AS_ENEMY, ped, false);
             Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ped, true, false);
 
-            ped.FreezePosition = true;
+            ped.IsPositionFrozen = true;
 
             if (!string.IsNullOrEmpty(data.LoopingAnimation))
             {
@@ -1921,27 +1921,27 @@ namespace GTANetwork
 
             veh.Rotation = data.Rotation.ToVector();
             data.LocalHandle = veh.Handle;
-            veh.Livery = data.Livery;
+            veh.Mods.Livery = data.Livery;
 
             LogManager.DebugLog("LOCAL HANDLE: " + veh.Handle);
             LogManager.DebugLog("POS: " + veh.Position);
 
             if ((data.PrimaryColor & 0xFF000000) > 0)
-                veh.CustomPrimaryColor = Color.FromArgb(data.PrimaryColor);
+                veh.Mods.CustomPrimaryColor = Color.FromArgb(data.PrimaryColor);
             else
-                veh.PrimaryColor = (VehicleColor)data.PrimaryColor;
+                veh.Mods.PrimaryColor = (VehicleColor)data.PrimaryColor;
 
             if ((data.SecondaryColor & 0xFF000000) > 0)
-                veh.CustomSecondaryColor = Color.FromArgb(data.SecondaryColor);
+                veh.Mods.CustomSecondaryColor = Color.FromArgb(data.SecondaryColor);
             else
-                veh.SecondaryColor = (VehicleColor)data.SecondaryColor;
+                veh.Mods.SecondaryColor = (VehicleColor)data.SecondaryColor;
 
-            veh.PearlescentColor = (VehicleColor)0;
-            veh.RimColor = (VehicleColor)0;
+            veh.Mods.PearlescentColor = (VehicleColor)0;
+            veh.Mods.RimColor = (VehicleColor)0;
             veh.EngineHealth = data.Health;
             veh.SirenActive = data.Siren;
-            veh.NumberPlate = data.NumberPlate;
-            veh.WheelType = 0;
+            veh.Mods.LicensePlate = data.NumberPlate;
+            veh.Mods.WheelType = 0;
             Function.Call(Hash.SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX, veh, 0);
             Function.Call(Hash.SET_VEHICLE_WINDOW_TINT, veh, 0);
 
@@ -1985,9 +1985,9 @@ namespace GTANetwork
                         if (data.Mods.ContainsKey((byte)i))
                         {
                             if (i >= 17 && i <= 22)
-                                veh.ToggleMod((VehicleToggleMod) i, data.Mods[(byte)i] != 0);
+                                veh.Mods[(VehicleToggleModType) i].IsInstalled = data.Mods[(byte)i] != 0;
                             else
-                                veh.SetMod((VehicleMod) i, data.Mods[(byte)i], false);
+                                veh.Mods[(VehicleModType) i].Index = data.Mods[(byte)i];
                         }
                         else
                         {
@@ -2009,15 +2009,15 @@ namespace GTANetwork
             else
                 veh.IsInvincible = data.IsInvincible;
 
-            if (data.Alpha < 255) veh.Alpha = (int)data.Alpha;
-            LogManager.DebugLog("ALPHA: " + veh.Alpha);
+            if (data.Alpha < 255) veh.Opacity = (int)data.Alpha;
+            LogManager.DebugLog("ALPHA: " + veh.Opacity);
 
 
             Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
 
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless))
             {
-                veh.HasCollision = false;
+                veh.IsCollisionEnabled = false;
             }
 
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.EngineOff))
@@ -2060,7 +2060,7 @@ namespace GTANetwork
             {
                 if ((data.Doors & 1 << i) != 0)
                 {
-                    veh.OpenDoor((VehicleDoor)i, false, false);
+                    veh.Doors[(VehicleDoorIndex)i].Open(false, false);
                 }
             }
 
@@ -2068,7 +2068,7 @@ namespace GTANetwork
             {
                 if ((data.Tires & 1 << i) != 0)
                 {
-                    veh.BurstTire(i);
+                    veh.Wheels[i].Burst();
                 }
             }
 
@@ -2110,13 +2110,13 @@ namespace GTANetwork
 
             LogManager.DebugLog("SETTING MISC PROPERTIES");
 
-            if (data.Alpha < 255) ourVeh.Alpha = (int)data.Alpha;
-            ourVeh.FreezePosition = true;
+            if (data.Alpha < 255) ourVeh.Opacity = (int)data.Alpha;
+            ourVeh.IsPositionFrozen = true;
             ourVeh.LodDistance = 3000;
 
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless))
             {
-                ourVeh.HasCollision = false;
+                ourVeh.IsCollisionEnabled = false;
             }
 
             data.StreamedIn = true;
@@ -2142,7 +2142,7 @@ namespace GTANetwork
                 Script.Yield();
             }
 
-            new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).FreezePosition = true;
+            new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).IsPositionFrozen = true;
             new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).IsPersistent = true;
 
             pickup.StreamedIn = true;

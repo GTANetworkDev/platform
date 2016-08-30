@@ -51,13 +51,13 @@ namespace GTANetwork
                 if (Game.IsKeyPressed(Keys.Left) && _lightIndex > 0)
                 {
                     _lightIndex--;
-                    UI.ShowSubtitle("LightIndex: " + _lightIndex, 2000);
+                    GTA.UI.Screen.ShowSubtitle("LightIndex: " + _lightIndex, 2000);
                 }
 
                 if (Game.IsKeyPressed(Keys.Right))
                 {
                     _lightIndex++;
-                    UI.ShowSubtitle("LightIndex: " + _lightIndex, 2000);
+                    GTA.UI.Screen.ShowSubtitle("LightIndex: " + _lightIndex, 2000);
                 }
 
                 if (Game.IsKeyPressed(Keys.NumPad0))
@@ -72,7 +72,7 @@ namespace GTANetwork
                     //var component = (ulong)VehicleComponents.All;
                     var component = (ulong)(1 << _lightIndex);
 
-                    UI.ShowSubtitle("LightIndex: " + _lightIndex + " Activated: " + !((oldComponentDamages & component) > 0), 2000);
+                    GTA.UI.Screen.ShowSubtitle("LightIndex: " + _lightIndex + " Activated: " + !((oldComponentDamages & component) > 0), 2000);
 
                     var newValue = oldComponentDamages ^ component;
 
@@ -181,7 +181,7 @@ namespace GTANetwork
                     }
 
                     File.WriteAllText("memorymap.txt", sb3.ToString());
-                    UI.Notify("Written mem map!");
+                    GTA.UI.Screen.ShowNotification("Written mem map!");
                 }
 
                 if (Game.IsControlPressed(0, Control.PhoneDown) && _startIndex < LastEntityMemory.Length - 4)
@@ -291,7 +291,7 @@ namespace GTANetwork
 
                 VirtualQueryEx(processHandle, address, out mem_basic_info, 28);
 
-                UI.ShowSubtitle(address + " / " + (startPoint + len) + " (" + ((long)address / (startPoint + len)).ToString("P1") + ") -- sizeof: " + mem_basic_info.RegionSize, 1000);
+                GTA.UI.Screen.ShowSubtitle(address + " / " + (startPoint + len) + " (" + ((long)address / (startPoint + len)).ToString("P1") + ") -- sizeof: " + mem_basic_info.RegionSize, 1000);
                 Script.Yield();
 
                 byte[] buffer = new byte[(uint)mem_basic_info.RegionSize];
@@ -309,7 +309,7 @@ namespace GTANetwork
 
         public unsafe void OnVehicleChange(Entity newVehicle)
         {
-            UI.Notify("ADD: " + new IntPtr(newVehicle.MemoryAddress));
+            GTA.UI.Screen.ShowNotification("ADD: " + new IntPtr(newVehicle.MemoryAddress));
 
             var scan = new SigScan(Process.GetProcessesByName("GTA5")[0], new IntPtr(newVehicle.MemoryAddress), MAX_VEHICLE_LEN);
 
@@ -457,7 +457,7 @@ namespace GTANetwork
                 if (Game.IsControlJustPressed(0, Control.InteractionMenu))
                 {
                     File.WriteAllText("memorymap.txt", sb2.ToString());
-                    UI.Notify("Written mem map!");
+                    GTA.UI.Screen.ShowNotification("Written mem map!");
                 }
 
                 if (Game.IsControlPressed(0, Control.PhoneDown) && _startIndex < LastEntityMemory.Length - 4)
@@ -567,7 +567,7 @@ namespace GTANetwork
 
                 VirtualQueryEx(processHandle, address, out mem_basic_info, 28);
 
-                UI.ShowSubtitle(address + " / " + (startPoint + len) + " (" + ((long)address / (startPoint + len)).ToString("P1") + ") -- sizeof: " + mem_basic_info.RegionSize, 1000);
+                GTA.UI.Screen.ShowSubtitle(address + " / " + (startPoint + len) + " (" + ((long)address / (startPoint + len)).ToString("P1") + ") -- sizeof: " + mem_basic_info.RegionSize, 1000);
                 Script.Yield();
 
                 byte[] buffer = new byte[(uint)mem_basic_info.RegionSize];
@@ -585,7 +585,7 @@ namespace GTANetwork
 
         public unsafe void OnVehicleChange(Entity newVehicle)
         {
-            UI.Notify("ADD: " + new IntPtr(newVehicle.MemoryAddress));
+            GTA.UI.Screen.ShowNotification("ADD: " + new IntPtr(newVehicle.MemoryAddress));
 
             var scan = new SigScan(Process.GetProcessesByName("GTA5")[0], new IntPtr(newVehicle.MemoryAddress), MAX_VEHICLE_LEN);
 

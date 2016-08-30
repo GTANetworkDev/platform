@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI;
@@ -20,7 +22,7 @@ namespace GTANetwork
 
         public void Update()
         {
-            var weapons = WeaponSlot.GetAllWeapons();
+            var weapons = Enum.GetValues(typeof (WeaponHash)).Cast<WeaponHash>();
 
             foreach (var hash in weapons)
             {

@@ -223,7 +223,7 @@ namespace GTANetwork
                 if (Util.GetResponsiblePed(veh).Handle == player.Handle)
                     obj.Flag |= (byte)VehicleDataFlags.Driver;
 
-                if (veh.IsInBurnout())
+                if (veh.IsInBurnout)
                     obj.Flag |= (byte)VehicleDataFlags.BurnOut;
 
                 if (ForceAimData)

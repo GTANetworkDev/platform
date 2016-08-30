@@ -15,6 +15,8 @@ namespace GTANetwork
 {
     public static class Util
     {
+        //public static Vector3 
+
         public static T Clamp<T>(T min, T value, T max) where T : IComparable
         {
             if (value.CompareTo(min) < 0) return min;
@@ -36,13 +38,13 @@ namespace GTANetwork
                     Function.Call(Hash.SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX, veh, value);
                     break;
                 case NonStandardVehicleMod.PearlescentColor:
-                    veh.PearlescentColor = (VehicleColor)value;
+                    veh.Mods.PearlescentColor = (VehicleColor)value;
                     break;
                 case NonStandardVehicleMod.WheelColor:
-                    veh.RimColor = (VehicleColor) value;
+                    veh.Mods.RimColor = (VehicleColor) value;
                     break;
                 case NonStandardVehicleMod.WheelType:
-                    veh.WheelType = (VehicleWheelType) value;
+                    veh.Mods.WheelType = (VehicleWheelType) value;
                     break;
                 case NonStandardVehicleMod.ModColor1:
                     Function.Call(Hash.SET_VEHICLE_MOD_COLOR_1, veh, (value & 0xFF00) >> 8, (value & 0xFF));
@@ -198,7 +200,7 @@ namespace GTANetwork
             {
                 try
                 {
-                    UI.Notify(msg);
+                    GTA.UI.Screen.ShowNotification(msg);
                 }
                 catch (Exception) { }
             }
@@ -209,12 +211,49 @@ namespace GTANetwork
             return Function.Call<string>(Hash.GET_RADIO_STATION_NAME, id);
         }
 
+        public static int GetMod(this Vehicle veh, int id)
+        {
+            return veh.Mods[(VehicleModType) id].Index;
+        }
+
+        public static int SetMod(this Vehicle veh, int id, int var, bool useless)
+        {
+            return veh.Mods[(VehicleModType)id].Index = var;
+        }
+
+        public static unsafe IntPtr FindPattern(string bytes, string mask)
+        {
+            var patternPtr = Marshal.StringToHGlobalAnsi(bytes);
+            var maskPtr = Marshal.StringToHGlobalAnsi(bytes);
+
+            IntPtr output = IntPtr.Zero;
+
+            try
+            {
+                output =
+                    new IntPtr(
+                        unchecked(
+                            (long)
+                                MemoryAccess.FindPattern(
+                                    (sbyte*) (patternPtr.ToPointer()),
+                                    (sbyte*) (patternPtr.ToPointer())
+                                    )));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(patternPtr);
+                Marshal.FreeHGlobal(maskPtr);
+            }
+
+            return output;
+        }
+
         private static int _idX;
         private static int _lastframe;
         public static void DxDrawTexture(int idx, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a, bool centered = false)
         {
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
 
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
@@ -239,13 +278,12 @@ namespace GTANetwork
                 _idX = 0;
                 _lastframe = cF;
             }
-
-            UI.RawDrawTexture(filename, _idX++, idx, 70,
-                reduceX, reduceY,
-                scaleX, scaleY / ratio,
+            
+            GTA.UI.CustomSprite.RawDraw(filename, 70,
+                new PointF(reduceX, reduceY),
+                new SizeF(scaleX, scaleY / ratio),
                 new PointF(0.5f, 0.5f),
-                new SizeF(0, 0),
-                rot, Color.FromArgb(a, r, g, b), ratio);
+                rot, Color.FromArgb(a, r, g, b));
         }
 
         public static Vector3 ToEuler(this Quaternion q)
@@ -268,7 +306,7 @@ namespace GTANetwork
         {
             if (veh.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle != 0) return veh.GetPedOnSeat(GTA.VehicleSeat.Driver);
 
-            for (int i = 0; i < veh.PassengerSeats; i++)
+            for (int i = 0; i < veh.PassengerCapacity; i++)
             {
                 if (veh.GetPedOnSeat((VehicleSeat)i).Handle != 0) return veh.GetPedOnSeat((VehicleSeat)i);
             }
@@ -314,7 +352,7 @@ namespace GTANetwork
         {
             if (veh == null) return true;
             if (!veh.IsSeatFree(VehicleSeat.Driver)) return false;
-            for (int i = 0; i < veh.PassengerSeats; i++)
+            for (int i = 0; i < veh.PassengerCapacity; i++)
             {
                 if (!veh.IsSeatFree((VehicleSeat)i))
                     return false;
@@ -393,7 +431,7 @@ namespace GTANetwork
             var dict = new Dictionary<int, int>();
             for (int i = 0; i < 50; i++)
             {
-                dict.Add(i, veh.GetMod((VehicleMod)i));
+                dict.Add(i, veh.GetMod(i));
             }
             return dict;
         }
@@ -412,7 +450,7 @@ namespace GTANetwork
 
         public static unsafe void SetVehicleSteeringAngle(this Vehicle veh, float angle)
         {
-            var address = new IntPtr(veh.MemoryAddress + 0x8AC);
+            var address = veh.MemoryAddress + 0x8AC;
             var bytes = BitConverter.GetBytes(angle);
             Marshal.Copy(bytes, 0, address, bytes.Length);
         }
@@ -421,7 +459,7 @@ namespace GTANetwork
         {
             if (ped == null || !ped.IsInVehicle()) return -3;
             if (ped.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver) == ped) return (int)VehicleSeat.Driver;
-            for (int i = 0; i < ped.CurrentVehicle.PassengerSeats; i++)
+            for (int i = 0; i < ped.CurrentVehicle.PassengerCapacity; i++)
             {
                 if (ped.CurrentVehicle.GetPedOnSeat((VehicleSeat)i) == ped)
                     return i;
@@ -429,10 +467,25 @@ namespace GTANetwork
             return -3;
         }
 
+        public static Vector3 GetOffsetInWorldCoords(this Entity ent, Vector3 offset)
+        {
+            return ent.GetOffsetPosition(offset);
+        }
+
+        public static Vector3 GetOffsetFromWorldCoords(this Entity ent, Vector3 pos)
+        {
+            return ent.GetPositionOffset(pos);
+        }
+
+        public static bool IsTireBurst(this Vehicle veh, int wheel)
+        {
+            return Function.Call<bool>(Hash.IS_VEHICLE_TYRE_BURST, veh, wheel, false);
+        }
+
         public static int GetFreePassengerSeat(Vehicle veh)
         {
             if (veh == null) return -3;
-            for (int i = 0; i < veh.PassengerSeats; i++)
+            for (int i = 0; i < veh.PassengerCapacity; i++)
             {
                 if (veh.IsSeatFree((VehicleSeat)i))
                     return i;

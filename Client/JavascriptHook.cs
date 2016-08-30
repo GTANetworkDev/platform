@@ -581,7 +581,7 @@ namespace GTANetwork
 
             public bool didHitAnything
             {
-                get { return wrapper.DitHitAnything; }
+                get { return wrapper.DitHit; }
             }
 
             public bool didHitEntity
@@ -596,7 +596,7 @@ namespace GTANetwork
 
             public Vector3 hitCoords
             {
-                get { return wrapper.HitCoords.ToLVector(); }
+                get { return wrapper.HitPosition.ToLVector(); }
             }
         }
 
@@ -936,7 +936,7 @@ namespace GTANetwork
 
         public Size getScreenResolution()
         {
-            return Game.ScreenResolution;
+            return GTA.UI.Screen.Resolution;
         }
 
         public void sendNotification(string text)
@@ -946,12 +946,12 @@ namespace GTANetwork
 
         public void displaySubtitle(string text)
         {
-            UI.ShowSubtitle(text);
+            GTA.UI.Screen.ShowSubtitle(text);
         }
 
         public void displaySubtitle(string text, double duration)
         {
-            UI.ShowSubtitle(text, (int) duration);
+            GTA.UI.Screen.ShowSubtitle(text, (int) duration);
         }
 
         public string formatTime(double ms, string format)
@@ -1262,8 +1262,8 @@ namespace GTANetwork
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
             const float hh = 1080f;
             float ratio = (float)screenw / screenh;
             var ww = hh * ratio;
@@ -1280,8 +1280,8 @@ namespace GTANetwork
         public void drawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height*ratio;
@@ -1298,8 +1298,8 @@ namespace GTANetwork
             int justify, bool shadow, bool outline, int wordWrap)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;
@@ -1352,7 +1352,7 @@ namespace GTANetwork
         public UIResText addTextElement(string caption, double x, double y, double scale, int r, int g, int b, int a, int font, int alignment)
         {
             var txt = new UIResText(caption, new Point((int) x, (int) y), (float) scale, Color.FromArgb(a, r, g, b),
-                (GTA.Font) font, (UIResText.Alignment) alignment);
+                (GTA.UI.Font) font, (UIResText.Alignment) alignment);
             JavascriptHook.TextElements.Add(txt);
             
             return txt;
@@ -1697,8 +1697,7 @@ namespace GTANetwork
 
         public Scaleform requestScaleform(string scaleformName)
         {
-            var sc = new Scaleform(0);
-            sc.Load(scaleformName);
+            var sc = new Scaleform(scaleformName);
             return sc;
         }
 
@@ -1715,12 +1714,12 @@ namespace GTANetwork
                 return;
             }
 
-            new Prop(entity.Value).Alpha = alpha;
+            new Prop(entity.Value).Opacity = alpha;
         }
 
         public int getEntityTransparency(LocalHandle entity)
         {
-            return new Prop(entity.Value).Alpha;
+            return new Prop(entity.Value).Opacity;
         }
 
         public int getEntityModel(LocalHandle entity)

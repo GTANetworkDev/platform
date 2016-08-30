@@ -112,8 +112,8 @@ namespace GTANetwork.GUI
             }
             else
             {
-                Game.EnableControl(0, Control.CursorX);
-                Game.EnableControl(0, Control.CursorY);
+                Game.EnableControlThisFrame(0, Control.CursorX);
+                Game.EnableControlThisFrame(0, Control.CursorY);
                 var res = UIMenu.GetScreenResolutionMantainRatio();
                 var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.CursorX) * res.Width;
                 var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.CursorY) * res.Height;
@@ -228,9 +228,9 @@ namespace GTANetwork.GUI
                 if (!Main.PlayerSettings.HideNametagsWhenZoomedOutMap || Zoom > 1f)
                 foreach (var opp in Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>())
                 {
-                    if (opp.Character?.CurrentBlip == null || string.IsNullOrWhiteSpace(opp.Name) || opp.Character.CurrentBlip.Alpha == 0) continue;
+                    if (opp.Character?.AttachedBlip == null || string.IsNullOrWhiteSpace(opp.Name) || opp.Character.AttachedBlip.Alpha == 0) continue;
 
-                    var blip = opp.Character.CurrentBlip;
+                    var blip = opp.Character.AttachedBlip;
                     
                     var pos = newPos + World3DToMap2D(blip.Position) - new Size(-32, 14);
 
@@ -420,8 +420,8 @@ namespace GTANetwork.GUI
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;
@@ -440,8 +440,8 @@ namespace GTANetwork.GUI
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = Game.ScreenResolution.Width;
-            int screenh = Game.ScreenResolution.Height;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;

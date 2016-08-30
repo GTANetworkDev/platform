@@ -23,7 +23,7 @@ namespace GTANetwork
         {
             if (_entityToSpoof == null || _modelToSpoof == 0) return;
 
-            var modelPointer = new IntPtr(_entityToSpoof.MemoryAddress) + modelOffset;
+            var modelPointer = _entityToSpoof.MemoryAddress + modelOffset;
             int model = Marshal.ReadInt32(modelPointer, 0);
 
             if (model != _modelToSpoof)
@@ -37,7 +37,7 @@ namespace GTANetwork
         {
             if (ent == null || model == 0) return;
 
-            var modelPointer = new IntPtr(ent.MemoryAddress) + modelOffset;
+            var modelPointer = ent.MemoryAddress + modelOffset;
             var bytes = BitConverter.GetBytes(model);
             Marshal.Copy(bytes, 0, modelPointer, bytes.Length);
         }

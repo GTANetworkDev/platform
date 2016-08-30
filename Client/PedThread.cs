@@ -17,7 +17,7 @@ namespace GTANetwork
             if (!Main.IsOnServer()) return;
             if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
 
-            //UI.ShowSubtitle("MT: " + Main.Multithreading + " sender: " + sender.GetType());
+            //GTA.UI.Screen.ShowSubtitle("MT: " + Main.Multithreading + " sender: " + sender.GetType());
 
             const int npcThreshold = 5000; // 5 second timeout
             const int playerThreshold = 60000 * 5; // 60 second timeout

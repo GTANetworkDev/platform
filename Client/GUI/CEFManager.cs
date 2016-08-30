@@ -73,7 +73,7 @@ namespace GTANetwork.GUI
                     return;
                 }
                 
-                var res = Game.ScreenResolution;
+                var res = GTA.UI.Screen.Resolution;
                 var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
                 var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
 

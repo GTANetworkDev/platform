@@ -39,8 +39,7 @@ namespace GTANetwork.GUI
         public ClassicChat()
         {
             CurrentInput = "";
-            _mainScaleform = new Scaleform(0);
-            _mainScaleform.Load("multiplayer_chat");
+            _mainScaleform = new Scaleform("multiplayer_chat");
             _messages = new List<Tuple<string, Color>>();
         }
 
@@ -96,7 +95,7 @@ namespace GTANetwork.GUI
         
         private PointF GetInputboxPos(bool scaleWithSafezone)
         {
-            var aspectRatio = (Game.ScreenResolution.Width/(float) Game.ScreenResolution.Height);
+            var aspectRatio = (GTA.UI.Screen.Resolution.Width/(float) GTA.UI.Screen.Resolution.Height);
             var res = UIMenu.GetScreenResolutionMantainRatio();
             var safezone = UIMenu.GetSafezoneBounds();
             PointF offset = new PointF(0, 0);
@@ -106,38 +105,38 @@ namespace GTANetwork.GUI
 
             if (Math.Abs(aspectRatio - 1.777778f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.6f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1122 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1122 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.481481f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1054 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1054 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.5625f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1100 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 781 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1100 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.770833f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1216 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1216 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.25f) < 0.001f)
             {
-                return new PointF(((safezone.X - 857 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 857 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.33333f) < 0.001f)
             {
-                return new PointF(((safezone.X - 915 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 915 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.66666f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 778 + offset.Y) / res.Height) * UI.HEIGHT);
+                return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
 
-            return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * UI.WIDTH, ((safezone.Y - 774 + offset.Y) / res.Height) * UI.HEIGHT);
+            return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
         }
         
         public void Tick()
@@ -154,7 +153,7 @@ namespace GTANetwork.GUI
             
             
             var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
-            _mainScaleform.Render2DScreenSpace(new PointF(pos.X, pos.Y), new PointF(UI.WIDTH, UI.HEIGHT));
+            _mainScaleform.Render2DScreenSpace(new PointF(pos.X, pos.Y), new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;
