@@ -127,7 +127,7 @@ namespace GTANetwork
                 }
                 Main.DEBUG_STEP = 912;
 
-                if (car.MemoryAddress != IntPtr.Zero) // crash
+                if (false/*car.MemoryAddress != IntPtr.Zero*/) // crash
                 {
                     if (car.HighBeamsOn != _highBeams)
                     {
