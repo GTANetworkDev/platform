@@ -1514,7 +1514,15 @@ namespace GTANetwork
                 {
                     foreach (var ped in map.Peds)
                     {
-                        NetEntityHandler.CreatePed(ped.Key, ped.Value as PedProperties);
+                        NetEntityHandler.CreatePed(ped.Key, ped.Value);
+                    }
+                }
+
+                if (map.Particles != null)
+                {
+                    foreach (var ped in map.Particles)
+                    {
+                        NetEntityHandler.CreateParticle(ped.Key, ped.Value);
                     }
                 }
 
@@ -2152,7 +2160,7 @@ namespace GTANetwork
             set
             {
                 _debugStep = value;
-                LogManager.DebugLog(value.ToString());
+                //LogManager.DebugLog(value.ToString());
             }
         }
 
@@ -3581,6 +3589,12 @@ namespace GTANetwork
                                 if (NetEntityHandler.Count(typeof (RemotePed)) < StreamerThread.MAX_PEDS)
                                     NetEntityHandler.StreamIn(ped);
                             }
+                            else if (data.EntityType == (byte)EntityType.Particle)
+                            {
+                                var ped = NetEntityHandler.CreateParticle(data.NetHandle, data.Properties as ParticleProperties);
+                                if (NetEntityHandler.Count(typeof(RemoteParticle)) < StreamerThread.MAX_PARTICLES)
+                                    NetEntityHandler.StreamIn(ped);
+                            }
                         }
                     }
                     break;
@@ -3615,6 +3629,9 @@ namespace GTANetwork
                                     break;
                                 case EntityType.TextLabel:
                                     NetEntityHandler.UpdateTextLabel(data.NetHandle, data.Properties as Delta_TextLabelProperties);
+                                    break;
+                                case EntityType.Particle:
+                                    NetEntityHandler.UpdateParticle(data.NetHandle, data.Properties as Delta_ParticleProperties);
                                     break;
                                 case EntityType.World:
                                     NetEntityHandler.UpdateWorld(data.Properties);
@@ -5321,6 +5338,16 @@ namespace GTANetwork
                 Util.LoadDict(animDict);
             }
 
+            if (((int)nativeType & (int)NativeType.PtfxAssetRequest) != 0)
+            {
+                var animDict = ((StringArgument)obj.Arguments[0]).Data;
+
+                Util.LoadPtfxAsset(animDict);
+                Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, animDict);
+                
+                list.RemoveAt(0);
+            }
+
             if (((int)nativeType & (int)NativeType.ReturnsEntity) > 0)
             {
                 var entId = Function.Call<int>((Hash) obj.Hash, list.ToArray());
@@ -5450,6 +5477,7 @@ namespace GTANetwork
             VehicleWarp = 1 << 9,
             EntityWarp = 1 << 10,
             NeedsAnimDict = 1 << 11,
+            PtfxAssetRequest = 1 << 12,
         }
 
         private NativeType CheckNativeHash(ulong hash)
@@ -5488,6 +5516,13 @@ namespace GTANetwork
                     return NativeType.EntityWarp;
                 case 0xEA47FE3719165B94:
                     return NativeType.NeedsAnimDict;
+                case 0x25129531F77B9ED3:
+                case 0x0E7E72961BA18619:
+                case 0xF56B8137DF10135D:
+                case 0xA41B6A43642AC2CF:
+                case 0x0D53A3B8DA0809D2:
+                case 0xC95EB1DB6E92113D:
+                    return NativeType.PtfxAssetRequest;
             }
         }
 

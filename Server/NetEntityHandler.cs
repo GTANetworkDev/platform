@@ -337,6 +337,33 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
+        public int CreateParticleEffect(string lib, string name, Vector3 pos, Vector3 rot, float scale, int attachedEntity = 0, int boneId = 0, int dimension = 0)
+        {
+            int localEntityHash = ++EntityCounter;
+            var obj = new ParticleProperties();
+            obj.EntityType = (byte)EntityType.Particle;
+            obj.Position = pos;
+            obj.Rotation = rot;
+            obj.Alpha = 255;
+            obj.Library = lib;
+            obj.Name = name;
+            obj.Scale = scale;
+            obj.EntityAttached = attachedEntity;
+            obj.BoneAttached = boneId;
+            obj.Dimension = dimension;
+
+            lock (ServerEntities) ServerEntities.Add(localEntityHash, obj);
+
+            var packet = new CreateEntity();
+            packet.EntityType = (byte)EntityType.Particle;
+            packet.Properties = obj;
+            packet.NetHandle = localEntityHash;
+
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+
+            return localEntityHash;
+        }
+
         public void DeleteEntity(int netId)
         {
             if (!ServerEntities.ContainsKey(netId)) return;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Drawing;
 using GTA;
 using GTA.Native;
+using GTA.UI;
 using GTANetworkShared;
 using NativeUI;
 using Vector3 = GTA.Math.Vector3;
@@ -36,6 +37,7 @@ namespace GTANetwork
         public static int MAX_PEDS = 10;
         public static int MAX_MARKERS = 100;
         public static int MAX_LABELS = 20;
+        public static int MAX_PARTICLES = 50;
 
         void StreamerCalculationsThread()
         {
@@ -57,6 +59,7 @@ namespace GTANetwork
                 var streamedMarkers = streamedItems.OfType<RemoteMarker>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
                 var streamedLabels = streamedItems.OfType<RemoteTextLabel>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
                 var streamedPeds = streamedItems.OfType<RemotePed>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
+                var streamedParticles = streamedItems.OfType<RemoteParticle>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
 
                 var dimensionLeftovers = streamedItems.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
 
@@ -70,6 +73,7 @@ namespace GTANetwork
                     _itemsToStreamOut.AddRange(streamedMarkers.Skip(MAX_MARKERS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedLabels.Skip(MAX_LABELS).Where(item => item.StreamedIn));
                     _itemsToStreamOut.AddRange(streamedPeds.Skip(MAX_PEDS).Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedParticles.Skip(MAX_PARTICLES).Where(item => item.StreamedIn));
 
                     _itemsToStreamOut.AddRange(dimensionLeftovers);
                 }
@@ -84,6 +88,7 @@ namespace GTANetwork
                     _itemsToStreamIn.AddRange(streamedMarkers.Take(MAX_MARKERS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedLabels.Take(MAX_LABELS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedPeds.Take(MAX_PEDS).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedParticles.Take(MAX_PARTICLES).Where(item => !item.StreamedIn));
                 }
 
                 endTick:
@@ -958,6 +963,56 @@ namespace GTANetwork
             if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
+        public void UpdateParticle(int netHandle, Delta_ParticleProperties prop)
+        {
+            RemoteParticle veh = null;
+            if (prop == null || (veh = (NetToStreamedItem(netHandle) as RemoteParticle)) == null) return;
+
+            if (prop.Position != null) veh.Position = prop.Position;
+            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
+            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
+            if (prop.Name != null) veh.Name = prop.Name;
+            if (prop.Library != null) veh.Library = prop.Library;
+            if (prop.BoneAttached != null) veh.BoneAttached = prop.BoneAttached.Value;
+            if (prop.Scale != null) veh.Scale = prop.Scale.Value;
+            if (prop.EntityAttached != null) veh.EntityAttached = prop.EntityAttached.Value;
+
+            if (prop.Dimension != null)
+            {
+                veh.Dimension = prop.Dimension.Value;
+                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+            }
+
+            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.AttachedTo != null)
+            {
+                veh.AttachedTo = prop.AttachedTo;
+                var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
+                if (attachedTo != null)
+                {
+                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                }
+            }
+            if (prop.SyncedProperties != null)
+            {
+                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                foreach (var pair in prop.SyncedProperties)
+                {
+                    if (pair.Value is LocalGamePlayerArgument)
+                        veh.SyncedProperties.Remove(pair.Key);
+                    else
+                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                }
+            }
+
+            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
+        }
+
         public void UpdatePlayer(int netHandle, Delta_PlayerProperties prop)
         {
             LogManager.DebugLog("UPDATING PLAYER " + netHandle + " PROP NULL? " + (prop == null));
@@ -1444,6 +1499,41 @@ namespace GTANetwork
             return rem;
         }
 
+        public RemoteParticle CreateParticle(int netHandle, ParticleProperties prop)
+        {
+            RemoteParticle rem;
+            lock (ClientMap)
+            {
+                ClientMap.Add(rem = new RemoteParticle()
+                {
+                    RemoteHandle = netHandle,
+
+                    Position = prop.Position,
+                    Rotation = prop.Rotation,
+                    ModelHash = prop.ModelHash,
+                    EntityType = prop.EntityType,
+                    Dimension = prop.Dimension,
+                    Alpha = prop.Alpha,
+                    SyncedProperties = prop.SyncedProperties,
+                    AttachedTo = prop.AttachedTo,
+                    Attachables = prop.Attachables,
+                    IsInvincible = prop.IsInvincible,
+                    Flag = prop.Flag,
+                    PositionMovement = prop.PositionMovement,
+                    RotationMovement = prop.RotationMovement,
+                    Library = prop.Library,
+                    Name = prop.Name,
+                    EntityAttached = prop.EntityAttached,
+                    BoneAttached = prop.BoneAttached,
+                    Scale = prop.Scale,
+
+                    StreamedIn = false,
+                    LocalOnly = false,
+                });
+            }
+            return rem;
+        }
+
         public SyncPed GetPlayer(int netHandle)
         {
             SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
@@ -1638,6 +1728,9 @@ namespace GTANetwork
                 case EntityType.TextLabel:
                     item.StreamedIn = true;
                     break;
+                case EntityType.Particle:
+                    StreamInParticle((RemoteParticle) item);
+                    break;
             }
 
             if (item is EntityProperties && ((EntityProperties) item).Attachables != null)
@@ -1689,6 +1782,9 @@ namespace GTANetwork
                 case EntityType.Marker:
                 case EntityType.TextLabel:
                     item.StreamedIn = false;
+                    break;
+                case EntityType.Particle:
+                    StreamOutParticle((ILocalHandleable) item);
                     break;
             }
 
@@ -1821,6 +1917,11 @@ namespace GTANetwork
             Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
         }
 
+        private void StreamOutParticle(ILocalHandleable particle)
+        {
+            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(particle.LocalHandle), (int)EntityType.Particle);
+            Function.Call(Hash.REMOVE_PARTICLE_FX, particle.LocalHandle, false);
+        }
 
         private void StreamInBlip(RemoteBlip item)
         {
@@ -1900,6 +2001,56 @@ namespace GTANetwork
             }
 
             data.LocalHandle = ped.Handle;
+            data.StreamedIn = true;
+        }
+
+        private void StreamInParticle(RemoteParticle data)
+        {
+            if (data == null || (object)data.Position == null || (object)data.Rotation == null) return;
+
+            Util.LoadPtfxAsset(data.Library);
+            Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, data.Library);
+
+            int handle;
+
+            if (data.EntityAttached == 0)
+            {
+                handle = Function.Call<int>(Hash.START_PARTICLE_FX_LOOPED_AT_COORD, data.Name,
+                    data.Position.X, data.Position.Y, data.Position.Z,
+                    data.Rotation.X, data.Rotation.Y, data.Rotation.Z,
+                    data.Scale, 0, 0, 0, 0);
+            }
+            else
+            {
+                var target = NetToEntity(data.EntityAttached);
+
+                if (data.BoneAttached <= 0)
+                {
+                    handle = Function.Call<int>(Hash.START_PARTICLE_FX_LOOPED_ON_ENTITY, data.Name,
+                        target,
+                        data.Position.X, data.Position.Y, data.Position.Z,
+                        data.Rotation.X, data.Rotation.Y, data.Rotation.Z,
+                        data.Scale, 0, 0, 0);
+                }
+                else if (target.IsPed())
+                {
+                    handle = Function.Call<int>(Hash.START_PARTICLE_FX_LOOPED_ON_PED_BONE, data.Name,
+                        target,
+                        data.Position.X, data.Position.Y, data.Position.Z,
+                        data.Rotation.X, data.Rotation.Y, data.Rotation.Z,
+                        data.BoneAttached, data.Scale, 0, 0, 0);
+                }
+                else
+                {
+                    handle = Function.Call<int>(Hash._START_PARTICLE_FX_LOOPED_ON_ENTITY_BONE, data.Name,
+                        target,
+                        data.Position.X, data.Position.Y, data.Position.Z,
+                        data.Rotation.X, data.Rotation.Y, data.Rotation.Z,
+                        data.BoneAttached, data.Scale, 0, 0, 0);
+                }
+            }
+            
+            data.LocalHandle = handle;
             data.StreamedIn = true;
         }
 

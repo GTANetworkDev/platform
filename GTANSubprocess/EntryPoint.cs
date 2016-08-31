@@ -109,8 +109,6 @@ namespace GTANetwork
             var keyName = "InstallFolder";
             var keyNameSteam = "InstallFolderSteam";
 
-
-
             InstallFolder = (string)Registry.GetValue(dictPath, keyName, null);
 
             if (string.IsNullOrEmpty(InstallFolder))

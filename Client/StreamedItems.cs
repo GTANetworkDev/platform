@@ -63,6 +63,38 @@ namespace GTANetwork
         }
     }
 
+    public class RemoteParticle : ParticleProperties, IStreamedItem, ILocalHandleable
+    {
+        public int RemoteHandle { get; set; }
+
+        public bool LocalOnly { get; set; }
+
+        public bool StreamedIn { get; set; }
+
+        public int LocalHandle { get; set; }
+
+        public new Vector3 Position
+        {
+            get
+            {
+                if (EntityAttached != 0)
+                {
+                    return Main.NetEntityHandler.NetToStreamedItem(EntityAttached)?.Position ?? new Vector3();
+                }
+                else
+                {
+                    return base.Position;
+                }
+            }
+            set { base.Position = value; }
+        }
+
+        public override int GetHashCode()
+        {
+            return RemoteHandle;
+        }
+    }
+
     public class RemoteVehicle : VehicleProperties, ILocalHandleable, IStreamedItem
     {
         public int LocalHandle { get; set; }

@@ -15,6 +15,8 @@ namespace GTANetworkShared
         Player = 6,
         TextLabel = 7,
         Ped = 8,
+        Particle = 9,
+
         World = 255,
     }
 
@@ -79,6 +81,7 @@ namespace GTANetworkShared
     [ProtoInclude(19, typeof(TextLabelProperties))]
     [ProtoInclude(20, typeof(WorldProperties))]
     [ProtoInclude(21, typeof(PedProperties))]
+    [ProtoInclude(22, typeof(ParticleProperties))]
     public class EntityProperties
     {
         [ProtoMember(1)]
@@ -350,6 +353,30 @@ namespace GTANetworkShared
         public List<string> RemovedIpl { get; set; }
     }
 
+    [ProtoContract]
+    public class ParticleProperties : EntityProperties
+    {
+        public ParticleProperties()
+        {
+            EntityType = (byte) GTANetworkShared.EntityType.Particle;
+        }
+
+        [ProtoMember(1)]
+        public string Library { get; set; }
+
+        [ProtoMember(2)]
+        public string Name { get; set; }
+
+        [ProtoMember(3)]
+        public float Scale { get; set; }
+
+        [ProtoMember(4)]
+        public int EntityAttached { get; set; }
+
+        [ProtoMember(5)]
+        public int BoneAttached { get; set; }
+    }
+
     /*
      * DELTA COMPRESSION
      * */
@@ -364,6 +391,7 @@ namespace GTANetworkShared
     [ProtoInclude(19, typeof(Delta_TextLabelProperties))]
     [ProtoInclude(20, typeof(Delta_WorldProperties))]
     [ProtoInclude(21, typeof(Delta_PedProperties))]
+    [ProtoInclude(22, typeof(Delta_ParticleProperties))]
     public class Delta_EntityProperties
     {
         [ProtoMember(1)]
@@ -593,6 +621,25 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public List<string> RemovedIpl { get; set; }
+    }
+
+    [ProtoContract]
+    public class Delta_ParticleProperties : Delta_EntityProperties
+    {
+        [ProtoMember(1)]
+        public string Library { get; set; }
+
+        [ProtoMember(2)]
+        public string Name { get; set; }
+
+        [ProtoMember(3)]
+        public float? Scale { get; set; }
+
+        [ProtoMember(4)]
+        public int? EntityAttached { get; set; }
+
+        [ProtoMember(5)]
+        public int? BoneAttached { get; set; }
     }
 
     #endregion

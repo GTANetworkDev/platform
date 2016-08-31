@@ -693,11 +693,28 @@ namespace GTANetworkServer
             return false;
         }
 
-        public void playSpecialEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position, Vector3 rotation, float scale)
+        // TODO: add dimension to this
+        public void createParticleEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position, Vector3 rotation, float scale, int dimension = 0)
         {
-            sendNativeToAllPlayers(0xB80D8756B4668AB6, ptfxLibrary);
-            sendNativeToAllPlayers(0x6C38AF3693A69A91, ptfxLibrary);
-            sendNativeToAllPlayers(0x25129531F77B9ED3, ptfxName, position.X, position.Y, position.Z, rotation.X, rotation.Y, rotation.Z, scale, 0, 0, 0);
+            sendNativeToPlayersInRangeInDimension(position, 40, dimension, 0x25129531F77B9ED3, ptfxLibrary, ptfxName,
+                position.X, position.Y, position.Z, rotation.X, rotation.Y, rotation.Z,
+                scale, 0, 0, 0);
+        }
+
+        public void createParticleEffectOnEntity(string ptfxLibrary, string ptfxName, NetHandle entity, Vector3 offset, Vector3 rotation, float scale, int boneIndex = -1, int dimension = 0)
+        {
+            if (boneIndex <= 0)
+            {
+                sendNativeToPlayersInRangeInDimension(getEntityPosition(entity), 40, dimension, 0x0D53A3B8DA0809D2, ptfxLibrary, ptfxName, entity,
+                    offset.X, offset.Y, offset.Z, rotation.X, rotation.Y, rotation.Z,
+                    scale, 0, 0, 0);
+            }
+            else
+            {
+                sendNativeToPlayersInRangeInDimension(getEntityPosition(entity), 40, dimension, 0x0E7E72961BA18619, ptfxLibrary, ptfxName, entity,
+                    offset.X, offset.Y, offset.Z, rotation.X, rotation.Y, rotation.Z,
+                    boneIndex, scale, 0, 0, 0);
+            }
         }
 
         /// <summary>
@@ -1760,6 +1777,51 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(longHash, args);
         }
 
+        public void sendNativeToPlayersInRange(Vector3 pos, float range, ulong hash, params object[] args)
+        {
+            foreach (var client in getAllPlayers())
+            {
+                if (pos.DistanceToSquared(client.Position) < range*range)
+                {
+                    sendNativeToPlayer(client, hash, args);
+                }
+            }
+        }
+
+        public void sendNativeToPlayersInRangeInDimension(Vector3 pos, float range, int dimension, ulong hash, params object[] args)
+        {
+            if (dimension == 0)
+            {
+                sendNativeToPlayersInRange(pos, range, hash, args);
+                return;
+            }
+
+            foreach (var client in getAllPlayers())
+            {
+                if (client.Properties.Dimension == dimension && pos.DistanceToSquared(client.Position) < range * range)
+                {
+                    sendNativeToPlayer(client, hash, args);
+                }
+            }
+        }
+
+        public void sendNativeToPlayersInDimension(int dimension, ulong hash, params object[] args)
+        {
+            if (dimension == 0)
+            {
+                sendNativeToAllPlayers(hash, args);
+                return;
+            }
+
+            foreach (var client in getAllPlayers())
+            {
+                if (client.Properties.Dimension == dimension)
+                {
+                    sendNativeToPlayer(client, hash, args);
+                }
+            }
+        }
+
         public T fetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
         {
             var returnType = Program.ServerInstance.ParseReturnType(typeof (T));
@@ -2817,6 +2879,20 @@ namespace GTANetworkServer
         public NetHandle createPed(PedHash model, Vector3 pos, float heading, int dimension = 0)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateStaticPed((int) model, pos, heading, dimension));
+            lock (ResourceEntities) ResourceEntities.Add(ent);
+            return ent;
+        }
+
+        public NetHandle createLoopedParticleEffectOnPosition(string ptfxLib, string ptfxName, Vector3 position, Vector3 rotation, float scale, int dimension = 0)
+        {
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateParticleEffect(ptfxLib, ptfxName, position, rotation, scale, 0, 0, dimension));
+            lock (ResourceEntities) ResourceEntities.Add(ent);
+            return ent;
+        }
+
+        public NetHandle createLoopedParticleEffectOnEntity(string ptfxLib, string ptfxName, NetHandle entity, Vector3 offset, Vector3 rotation, float scale, int bone = -1, int dimension = 0)
+        {
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateParticleEffect(ptfxLib, ptfxName, offset, rotation, scale, entity.Value, bone, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return ent;
         }

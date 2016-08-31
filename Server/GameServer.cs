@@ -1953,7 +1953,11 @@ namespace GTANResource
                                                     }
                                                     else if (pair.Value.EntityType == (byte) EntityType.Ped)
                                                     {
-                                                        mapObj.Peds.Add(pair.Key, pair.Value);
+                                                        mapObj.Peds.Add(pair.Key, (PedProperties)pair.Value);
+                                                    }
+                                                    else if (pair.Value.EntityType == (byte) EntityType.Particle)
+                                                    {
+                                                        mapObj.Particles.Add(pair.Key, (ParticleProperties) pair.Value);
                                                     }
                                                 }
 

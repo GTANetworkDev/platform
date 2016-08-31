@@ -25,6 +25,11 @@ namespace GTANetwork
             return value;
         }
 
+        public static bool IsPed(this Entity ent)
+        {
+            return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
+        }
+
         public static void SetNonStandardVehicleMod(Vehicle veh, int slot, int value)
         {
             var eSlot = (NonStandardVehicleMod) slot;
@@ -435,6 +440,34 @@ namespace GTANetwork
                     break;
                 }
             }
+
+            LogManager.DebugLog("DICTIONARY LOAD COMPLETE.");
+
+            return dict;
+        }
+
+        public static string LoadPtfxAsset(string dict)
+        {
+            LogManager.DebugLog("REQUESTING PTFX " + dict);
+            Function.Call(Hash.REQUEST_NAMED_PTFX_ASSET, dict);
+
+            DateTime endtime = DateTime.UtcNow + new TimeSpan(0, 0, 0, 0, 5000);
+
+            bool wasLoading = false;
+
+            while (!Function.Call<bool>(Hash.HAS_NAMED_PTFX_ASSET_LOADED, dict))
+            {
+                wasLoading = true;
+                LogManager.DebugLog("DICTIONARY HAS NOT BEEN LOADED. YIELDING...");
+                Script.Yield();
+                Function.Call(Hash.REQUEST_NAMED_PTFX_ASSET, dict);
+                if (DateTime.UtcNow >= endtime)
+                {
+                    break;
+                }
+            }
+
+            //if (wasLoading) Script.Wait(100);
 
             LogManager.DebugLog("DICTIONARY LOAD COMPLETE.");
 
