@@ -2022,6 +2022,9 @@ namespace GTANetwork
             }
             else
             {
+                var targetItem = NetToStreamedItem(data.EntityAttached);
+                if (!targetItem.StreamedIn) StreamIn(targetItem);
+
                 var target = NetToEntity(data.EntityAttached);
 
                 if (data.BoneAttached <= 0)

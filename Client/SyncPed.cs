@@ -471,6 +471,12 @@ namespace GTANetwork
 
                 Main.NetEntityHandler.ReattachAllEntities(this, false);
 
+			    foreach (var source in Main.NetEntityHandler.ClientMap.Where(item => item is RemoteParticle && ((RemoteParticle) item).EntityAttached == RemoteHandle).Cast<RemoteParticle>())
+			    {
+			        Main.NetEntityHandler.StreamOut(source);
+                    Main.NetEntityHandler.StreamIn(source);
+			    }
+
                 if (PacketOptimization.CheckBit(Flag, EntityFlag.Collisionless))
                 {
                     Character.IsCollisionEnabled = false;

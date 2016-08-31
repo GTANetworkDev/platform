@@ -2893,6 +2893,19 @@ namespace GTANetwork
                 }
 
                 Function.Call(Hash.PAUSE_CLOCK, true);
+
+                var us = NetEntityHandler.EntityToStreamedItem(Game.Player.Character.Handle);
+
+                NetEntityHandler.ReattachAllEntities(us, true);
+                foreach (
+                    var source in
+                        Main.NetEntityHandler.ClientMap.Where(
+                            item => item is RemoteParticle && ((RemoteParticle) item).EntityAttached == us.RemoteHandle)
+                            .Cast<RemoteParticle>())
+                {
+                    Main.NetEntityHandler.StreamOut(source);
+                    Main.NetEntityHandler.StreamIn(source);
+                }
             }
             DEBUG_STEP = 23;
             _lastDead = hasRespawned;
