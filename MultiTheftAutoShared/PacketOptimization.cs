@@ -209,6 +209,10 @@ namespace GTANetworkShared
             // Write the gun model
             byteArray.AddRange(GetBytes(data.WeaponHash.Value));
 
+            // Write vehicle damage model
+            byteArray.Add(data.DamageModel.BrokenDoors); // Write doors
+            byteArray.Add(data.DamageModel.BrokenWindows); // Write windows
+            byteArray.AddRange(GetBytes(data.DamageModel.BrokenLights)); // Lights
 
             // If he has a trailer attached, write it's position. (Maybe we can use his pos & rot to calculate it serverside?)
             if (data.Trailer != null)
@@ -304,7 +308,11 @@ namespace GTANetworkShared
 
             // Write the tyre state, using the playerhealth in VehicleData
             byteArray.Add(data.PlayerHealth.Value);
-            
+
+            // Write vehicle damage model
+            byteArray.Add(data.DamageModel.BrokenDoors); // Write doors
+            byteArray.Add(data.DamageModel.BrokenWindows); // Write windows
+
             return byteArray.ToArray();
         }
 
@@ -337,6 +345,10 @@ namespace GTANetworkShared
 
             // Write the tyre state, using the playerhealth in VehicleData
             byteArray.Add(data.PlayerHealth.Value);
+
+            // Write vehicle damage model
+            byteArray.Add(data.DamageModel.BrokenDoors); // Write doors
+            byteArray.Add(data.DamageModel.BrokenWindows); // Write windows
 
             return byteArray.ToArray();
         }
@@ -530,6 +542,12 @@ namespace GTANetworkShared
             // read gun model.
             data.WeaponHash = r.ReadInt32();
 
+            // Read vehicle damage model
+            data.DamageModel = new VehicleDamageModel();
+            data.DamageModel.BrokenDoors = r.ReadByte();
+            data.DamageModel.BrokenWindows = r.ReadByte();
+            data.DamageModel.BrokenLights = r.ReadInt32();
+            
             // Does he have a traielr?
             if (r.ReadBoolean())
             {
@@ -630,6 +648,11 @@ namespace GTANetworkShared
             // Read tyre states
             data.PlayerHealth = r.ReadByte();
 
+            // Read vehicle damage model
+            data.DamageModel = new VehicleDamageModel();
+            data.DamageModel.BrokenDoors = r.ReadByte();
+            data.DamageModel.BrokenWindows = r.ReadByte();
+
             return data;
         }
 
@@ -665,6 +688,11 @@ namespace GTANetworkShared
 
             // Read tyre states.
             data.PlayerHealth = r.ReadByte();
+
+            // Read vehicle damage model
+            data.DamageModel = new VehicleDamageModel();
+            data.DamageModel.BrokenDoors = r.ReadByte();
+            data.DamageModel.BrokenWindows = r.ReadByte();
 
             return data;
         }

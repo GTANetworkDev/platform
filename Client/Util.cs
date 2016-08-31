@@ -221,6 +221,59 @@ namespace GTANetwork
             return veh.Mods[(VehicleModType)id].Index = var;
         }
 
+        public static bool IsInRangeOfEx(this Entity ent, Vector3 pos, float range)
+        {
+            return ent.Position.DistanceToSquared(pos) < (range*range);
+        }
+
+        public static VehicleDamageModel GetVehicleDamageModel(this Vehicle veh)
+        {
+            if (veh == null || !veh.Exists()) return new VehicleDamageModel();
+            var mod = new VehicleDamageModel();
+            
+            var memAdd = veh.MemoryAddress;
+
+            mod.BrokenDoors = 0;
+            mod.BrokenWindows = 0;
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (veh.Doors[(VehicleDoorIndex)i].IsBroken) mod.BrokenDoors |= (byte)(1 << i);
+                if (!veh.Windows[(VehicleWindowIndex) i].IsIntact) mod.BrokenWindows |= (byte) (1 << i);
+            }
+
+            mod.BrokenLights = MemoryAccess.ReadInt(memAdd + 0x77C); // 0x784?
+
+            return mod;
+        }
+
+        public static void SetVehicleDamageModel(this Vehicle veh, VehicleDamageModel model, bool leavedoors = true)
+        {
+            if (veh == null || model == null || !veh.Exists()) return;
+
+            // set doors
+            for (int i = 0; i < 8; i++)
+            {
+                if ((model.BrokenDoors & (byte) (1 << i)) != 0)
+                {
+                    veh.Doors[(VehicleDoorIndex)i].Break(leavedoors);
+                }
+
+                if ((model.BrokenWindows & (byte)(1 << i)) != 0)
+                {
+                    veh.Windows[(VehicleWindowIndex)i].Smash();
+                }
+                else if (!veh.Windows[(VehicleWindowIndex)i].IsIntact)
+                {
+                    veh.Windows[(VehicleWindowIndex)i].Repair();
+                }
+            }
+
+            var addr = veh.MemoryAddress;
+
+            MemoryAccess.WriteInt(addr + 0x77C, model.BrokenLights); // 0x784 ?
+        }
+
         public static unsafe IntPtr FindPattern(string bytes, string mask)
         {
             var patternPtr = Marshal.StringToHGlobalAnsi(bytes);

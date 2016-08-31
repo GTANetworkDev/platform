@@ -2673,6 +2673,7 @@ namespace GTANetwork
                     item.Rotation = playerCar.Rotation.ToLVector();
                     item.Health = playerCar.EngineHealth;
                     item.IsDead = playerCar.IsDead;
+                    item.DamageModel = playerCar.GetVehicleDamageModel();
                 }
 
                 cc = item;
@@ -4508,7 +4509,7 @@ namespace GTANetwork
             if (fullData.Latency != null) syncPed.Latency = fullData.Latency.Value;
             if (fullData.Steering != null) syncPed.SteeringScale = fullData.Steering.Value;
             if (fullData.Velocity != null) syncPed.Speed = fullData.Velocity.ToVector().Length();
-            
+            if (fullData.DamageModel != null && syncPed.MainVehicle != null) syncPed.MainVehicle.SetVehicleDamageModel(fullData.DamageModel);
 
             if (fullData.Flag != null)
             {
@@ -4633,6 +4634,10 @@ namespace GTANetwork
                 car.Health = data.VehicleHealth.Value;
                 car.IsDead = (data.Flag & (int) VehicleDataFlags.VehicleDead) != 0;
 
+                if (car.DamageModel == null) car.DamageModel = new VehicleDamageModel();
+                car.DamageModel.BrokenWindows = data.DamageModel.BrokenWindows;
+                car.DamageModel.BrokenDoors = data.DamageModel.BrokenDoors;
+
                 car.Tires = data.PlayerHealth.Value;
 
                 if (car.StreamedIn)
@@ -4652,6 +4657,8 @@ namespace GTANetwork
                         }
 
                         var veh = new Vehicle(ent.Handle);
+
+                        veh.SetVehicleDamageModel(car.DamageModel);
 
                         veh.EngineHealth = car.Health;
                         if (!ent.IsDead && car.IsDead)

@@ -1599,6 +1599,14 @@ namespace GTANResource
                                                     }
                                                 }
 
+                                                VehicleProperties carProp;
+                                                if ((carProp =
+                                                        NetEntityHandler.NetToProp<VehicleProperties>(
+                                                            fullPacket.VehicleHandle.Value)) != null)
+                                                {
+                                                    carProp.DamageModel = fullPacket.DamageModel;
+                                                }
+
                                                 ResendPacket(fullPacket, client, false);
                                             }
                                             catch(IndexOutOfRangeException)
@@ -1708,7 +1716,7 @@ namespace GTANResource
 
                                                 for (int i = 0; i < bin[0]; i++)
                                                 {
-                                                    var cVehBin = bin.Skip(1 + 44*i).Take(44).ToArray();
+                                                    var cVehBin = bin.Skip(1 + 46*i).Take(46).ToArray();
 
                                                     var fullPacket = PacketOptimization.ReadUnoccupiedVehicleSync(cVehBin);
 
@@ -1723,6 +1731,20 @@ namespace GTANResource
                                                         ((VehicleProperties)
                                                             NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
                                                             .Tires = fullPacket.PlayerHealth.Value;
+
+                                                        if (((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .DamageModel == null) ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .DamageModel = new VehicleDamageModel();
+                                                        ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .DamageModel.BrokenWindows =
+                                                            fullPacket.DamageModel.BrokenWindows;
+                                                        ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .DamageModel.BrokenDoors =
+                                                            fullPacket.DamageModel.BrokenDoors;
 
                                                         if (fullPacket.Flag.HasValue)
                                                         {

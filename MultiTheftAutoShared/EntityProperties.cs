@@ -27,6 +27,19 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
+    public class VehicleDamageModel
+    {
+        [ProtoMember(1)]
+        public byte BrokenWindows { get; set; }
+
+        [ProtoMember(2)]
+        public byte BrokenDoors { get; set; }
+
+        [ProtoMember(3)]
+        public int BrokenLights { get; set; }
+    }
+
+    [ProtoContract]
     public class Attachment
     {
         [ProtoMember(1)]
@@ -155,6 +168,9 @@ namespace GTANetworkShared
 
         [ProtoMember(13)]
         public int TraileredBy { get; set; }
+
+        [ProtoMember(14)]
+        public VehicleDamageModel DamageModel { get; set; }
     }
 
     [ProtoContract]
@@ -431,6 +447,9 @@ namespace GTANetworkShared
 
         [ProtoMember(13)]
         public int? TraileredBy { get; set; }
+
+        [ProtoMember(14)]
+        public VehicleDamageModel DamageModel { get; set; }
     }
 
     [ProtoContract]

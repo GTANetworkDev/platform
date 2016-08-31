@@ -121,18 +121,35 @@ namespace GTANetwork
                                 dist = ent.Position.DistanceToSquared(vehicle.Position.ToVector());
                             }
 
-                            if ((dist) > 2f ||
-                                 ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 2f ||
-                                 Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f ||
-                                 Util.BuildTyreFlag(new Vehicle(ent.Handle)) != vehicle.Tires)
-                            {
-                                var veh = new Vehicle(ent.Handle);
+                            var veh = new Vehicle(ent.Handle);
 
+                            byte BrokenDoors = 0;
+                            byte BrokenWindows = 0;
+
+                            for (int i = 0; i < 8; i++)
+                            {
+                                if (veh.Doors[(VehicleDoorIndex)i].IsBroken) BrokenDoors |= (byte)(1 << i);
+                                if (!veh.Windows[(VehicleWindowIndex)i].IsIntact) BrokenWindows |= (byte)(1 << i);
+                            }
+
+                            bool syncUnocVeh = false;
+                            syncUnocVeh = (dist) > 2f ||
+                                          ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 2f ||
+                                          Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f ||
+                                          Util.BuildTyreFlag(new Vehicle(ent.Handle)) != vehicle.Tires ||
+                                          vehicle.DamageModel == null ||
+                                          vehicle.DamageModel.BrokenWindows != BrokenWindows ||
+                                          vehicle.DamageModel.BrokenDoors != BrokenDoors;
+
+                            if (syncUnocVeh)
+                            {
                                 vehicle.Position = ent.Position.ToLVector();
                                 vehicle.Rotation = ent.Rotation.ToLVector();
                                 vehicle.Health = veh.EngineHealth;
                                 vehicle.Tires = (byte)Util.BuildTyreFlag(veh);
-
+                                if (vehicle.DamageModel == null) vehicle.DamageModel = new VehicleDamageModel();
+                                vehicle.DamageModel.BrokenWindows = BrokenWindows;
+                                vehicle.DamageModel.BrokenDoors = BrokenDoors;
 
                                 var data = new VehicleData();
                                 data.VehicleHandle = vehicle.RemoteHandle;
@@ -140,6 +157,11 @@ namespace GTANetwork
                                 data.Quaternion = vehicle.Rotation;
                                 data.Velocity = ent.Velocity.ToLVector();
                                 data.VehicleHealth = vehicle.Health;
+                                data.DamageModel = new VehicleDamageModel()
+                                {
+                                    BrokenWindows = BrokenWindows,
+                                    BrokenDoors = BrokenDoors,
+                                };
                                 if (ent.IsDead)
                                     data.Flag = (short) VehicleDataFlags.VehicleDead;
                                 else

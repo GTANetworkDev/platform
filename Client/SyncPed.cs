@@ -384,16 +384,16 @@ namespace GTANetwork
         {
             float hRange = _isInVehicle ? 150f : 200f;
             var gPos = _isInVehicle ? VehiclePosition : _position;
-            var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
+            var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
 
             return CreateCharacter(gPos, hRange);
         }
 
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
-			if (Character == null || !Character.Exists() || (!Character.IsInRangeOf(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
+			if (Character == null || !Character.Exists() || (!Character.IsInRangeOfEx(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
-				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOf(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
+				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOfEx(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
                 
 				if (Character != null && Character.Exists()) Character.Delete();
                 
@@ -520,7 +520,7 @@ namespace GTANetwork
 	        if (!Main.UIVisible) return;
             
 			bool isAiming = false;
-			if ((!Character.IsOccluded && (Character.IsInRangeOf(Game.Player.Character.Position, 30f))) ||
+			if ((!Character.IsOccluded && (Character.IsInRangeOfEx(Game.Player.Character.Position, 30f))) ||
 				(isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
 			{
 				if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17) || isAiming)
@@ -725,7 +725,7 @@ namespace GTANetwork
 			//MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
 
 			if (VehicleMods != null && _modSwitch % 50 == 0 &&
-				Game.Player.Character.IsInRangeOf(VehiclePosition, 30f))
+				Game.Player.Character.IsInRangeOfEx(VehiclePosition, 30f))
 			{
 				var id = _modSwitch / 50;
 
@@ -871,7 +871,7 @@ namespace GTANetwork
                         forceMultiplier = 1;
                     }
 
-                    if (Game.Player.Character.IsInRangeOf(newPos, physicsRange))
+                    if (Game.Player.Character.IsInRangeOfEx(newPos, physicsRange))
                     {
                         MainVehicle.Velocity = VehicleVelocity + forceMultiplier*(newPos - MainVehicle.Position);
                     }
@@ -1273,7 +1273,7 @@ namespace GTANetwork
 	    void UpdateProps()
 	    {
             /*
-            if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOf(IsInVehicle ? VehiclePosition : _position, 30f))
+            if (PedProps != null && _clothSwitch % 50 == 0 && Game.Player.Character.IsInRangeOfEx(IsInVehicle ? VehiclePosition : _position, 30f))
 			{
 				var id = _clothSwitch / 50;
 
@@ -2027,7 +2027,7 @@ namespace GTANetwork
                 if (IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
                 var gPos = _isInVehicle ? VehiclePosition : _position;
-                var inRange = Game.Player.Character.IsInRangeOf(gPos, hRange);
+                var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
 
                 if (!StreamedIn)
                 {
@@ -2207,7 +2207,7 @@ namespace GTANetwork
 
             if (OnFootSpeed > 0 || IsAnimal(ModelHash))
             {
-                if (Game.Player.Character.IsInRangeOf(newPos, physicsRange))
+                if (Game.Player.Character.IsInRangeOfEx(newPos, physicsRange))
                 {
                     if (Main.OnFootLagCompensation)
                         Character.Velocity = PedVelocity + 10*(newPos - Character.Position);

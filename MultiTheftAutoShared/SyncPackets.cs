@@ -39,6 +39,8 @@ namespace GTANetworkShared
         public float? Steering { get; set; }
         [ProtoMember(17)]
         public Vector3 Trailer { get; set; }
+        [ProtoMember(18)]
+        public VehicleDamageModel DamageModel { get; set; }
     }
 
     [ProtoContract]

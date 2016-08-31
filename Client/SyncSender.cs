@@ -121,7 +121,7 @@ namespace GTANetwork
 
                             LogManager.DebugLog("SENDING LIGHT VEHICLE SYNC");
 
-                            var lightBin = PacketOptimization.WriteLightSync((VehicleData) lastPacket);
+                            var lightBin = PacketOptimization.WriteLightSync((VehicleData)lastPacket);
 
                             var lightMsg = Main.Client.CreateMessage();
                             lightMsg.Write((byte) PacketType.VehicleLightSync);
@@ -301,6 +301,8 @@ namespace GTANetwork
                 {
                     obj.Trailer = trailer.Position.ToLVector();
                 }
+
+                obj.DamageModel = veh.GetVehicleDamageModel();
 
                 lock (Lock)
                 {

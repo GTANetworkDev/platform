@@ -341,7 +341,14 @@ namespace GTANetwork
             foreach (var p in ClientMap.OfType<RemoteVehicle>())
             {
                 if (p == null || p.Position == null) continue;
-                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nDoors: " + p.Doors;
+                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nDamageModelNull?: " + (p.DamageModel == null);
+
+                if (p.DamageModel != null)
+                {
+                    text += "\nDoors: " + p.DamageModel.BrokenDoors;
+                    text += "\nWindows: " + p.DamageModel.BrokenWindows;
+                    text += "\nLights: " + p.DamageModel.BrokenLights;
+                }
 
                 DrawLabel3D(text, p.Position.ToVector(), 100f, 0.4f);
             }
@@ -656,6 +663,7 @@ namespace GTANetwork
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
             if (prop.VehicleComponents != null) veh.VehicleComponents = prop.VehicleComponents.Value;
             if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
+            if (prop.DamageModel != null) veh.DamageModel = prop.DamageModel;
 
             if (prop.Dimension != null)
             {
@@ -1182,6 +1190,7 @@ namespace GTANetwork
                     VehicleComponents = prop.VehicleComponents,
                     PositionMovement = prop.PositionMovement,
                     RotationMovement = prop.RotationMovement,
+                    DamageModel = prop.DamageModel,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -1942,6 +1951,7 @@ namespace GTANetwork
             veh.SirenActive = data.Siren;
             veh.Mods.LicensePlate = data.NumberPlate;
             veh.Mods.WheelType = 0;
+            veh.Wash();
             Function.Call(Hash.SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX, veh, 0);
             Function.Call(Hash.SET_VEHICLE_WINDOW_TINT, veh, 0);
 
@@ -2072,6 +2082,7 @@ namespace GTANetwork
                 }
             }
 
+            if (data.DamageModel != null) veh.SetVehicleDamageModel(data.DamageModel, false);
 
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;
