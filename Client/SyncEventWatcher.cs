@@ -127,12 +127,13 @@ namespace GTANetwork
                 }
                 Main.DEBUG_STEP = 912;
 
-                if (false) // crash
+                if (car.MemoryAddress != IntPtr.Zero) // crash
                 {
                     if (car.HighBeamsOn != _highBeams)
                     {
                         SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.Highbeams, car.HighBeamsOn);
                     }
+
                     _highBeams = car.HighBeamsOn;
                     Main.DEBUG_STEP = 913;
                     if (car.LightsOn != _lights)

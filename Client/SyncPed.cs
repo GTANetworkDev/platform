@@ -708,6 +708,8 @@ namespace GTANetwork
 
 	    void UpdateVehicleInternalInfo()
 	    {
+	        if (MainVehicle.MemoryAddress == IntPtr.Zero) return;
+
             MainVehicle.EngineHealth = VehicleHealth;
 			if (IsVehDead && !MainVehicle.IsDead)
 			{

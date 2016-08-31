@@ -231,7 +231,6 @@ namespace GTANetwork
             if (veh == null || !veh.Exists()) return new VehicleDamageModel();
             var mod = new VehicleDamageModel();
             
-            var memAdd = veh.MemoryAddress;
 
             mod.BrokenDoors = 0;
             mod.BrokenWindows = 0;
@@ -242,7 +241,11 @@ namespace GTANetwork
                 if (!veh.Windows[(VehicleWindowIndex) i].IsIntact) mod.BrokenWindows |= (byte) (1 << i);
             }
 
-            mod.BrokenLights = MemoryAccess.ReadInt(memAdd + 0x77C); // 0x784?
+            var memAdd = veh.MemoryAddress;
+            if (memAdd != IntPtr.Zero)
+            {
+                mod.BrokenLights = MemoryAccess.ReadInt(memAdd + 0x77C); // 0x784?
+            }
 
             return mod;
         }
@@ -270,8 +273,10 @@ namespace GTANetwork
             }
 
             var addr = veh.MemoryAddress;
-
-            MemoryAccess.WriteInt(addr + 0x77C, model.BrokenLights); // 0x784 ?
+            if (addr != IntPtr.Zero)
+            {
+                MemoryAccess.WriteInt(addr + 0x77C, model.BrokenLights); // 0x784 ?
+            }
         }
 
         public static unsafe IntPtr FindPattern(string bytes, string mask)
