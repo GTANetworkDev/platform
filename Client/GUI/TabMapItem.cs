@@ -209,22 +209,46 @@ namespace GTANetwork.GUI
 
 
                 var blipList = new List<string>();
+                var localCopy = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap);
 
                 foreach (var blip in Util.GetAllBlips())
                 {
-
 					if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
 					{
-						var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
-						var pos = newPos + World3DToMap2D(blip.Position) - new Size(16, 16);
-						var siz = new Size(32, 32);
-						var col = GetBlipcolor(blip.Color, blip.Alpha);
+					    var blipInfo = Main.NetEntityHandler.EntityToStreamedItem(blip.Handle) as RemoteBlip;
+                        float scale = 1f;
 
-						Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A);
+					    if (blipInfo != null)
+					    {
+					        scale = blipInfo.Scale;
+					    }
+
+                        var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
+						var pos = newPos + World3DToMap2D(blip.Position);
+                        var siz = new Size((int)(scale * 32), (int)(scale * 32));
+                        var col = GetBlipcolor(blip.Color, blip.Alpha);
+
+
+						Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
 						blipList.Add(((int)blip.Sprite) + ".png");
 					}
                 }
                 
+                foreach (var blip in localCopy.Where(item => item is RemoteBlip && !item.StreamedIn).Cast<RemoteBlip>()) // draw the unstreamed blips
+                {
+                    if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
+                    {
+                        var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
+                        var pos = newPos + World3DToMap2D(blip.Position.ToVector());
+                        var scale = blip.Scale;
+                        var siz = new Size((int)(scale * 32), (int) (scale * 32));
+                        var col = GetBlipcolor((BlipColor)blip.Color, blip.Alpha);
+
+                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
+                        blipList.Add(((int)blip.Sprite) + ".png");
+                    }
+                }
+
                 if (!Main.PlayerSettings.HideNametagsWhenZoomedOutMap || Zoom > 1f)
                 foreach (var opp in Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>())
                 {
@@ -239,6 +263,7 @@ namespace GTANetwork.GUI
                     new UIResRectangle(new Point((int)pos.X, (int)pos.Y), new Size(15 + StringMeasurer.MeasureString(opp.Name), 30), Color.Black).Draw();
                     new UIResText(opp.Name, new Point((int)pos.X + 5, (int)pos.Y), 0.35f).Draw();
                 }
+
                 /*
 
                 foreach (var blipHandle in Main.NetEntityHandler.Blips)
