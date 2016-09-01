@@ -33,12 +33,16 @@ namespace GTANetwork.GUI
             set
             {
                 if (!_showCursor && value)
+                {
                     _justShownCursor = true;
+                    _lastShownCursor = Util.TickCount;
+                }
                 _showCursor = value;
             }
         }
 
         private static bool _justShownCursor;
+        private static long _lastShownCursor = 0;
         public static PointF _lastMousePoint;
         public static int GameFPS = 1;
         private Keys _lastKey;
@@ -57,8 +61,8 @@ namespace GTANetwork.GUI
         {
             Tick += (sender, args) =>
             {
-                GameFPS = Math.Max((int)Game.FPS, 1);
-
+                GameFPS = (int)Game.FPS;
+                
                 /*if (Game.IsKeyPressed(Keys.F11)) CEFManager.StopRender = true;
                 if (Game.IsKeyPressed(Keys.F12))
                 {
@@ -163,7 +167,7 @@ namespace GTANetwork.GUI
             {
                 if (!ShowCursor) return;
 
-                if (_justShownCursor)
+                if (_justShownCursor && Util.TickCount - _lastShownCursor < 500)
                 {
                     _justShownCursor = false;
                     return;
@@ -317,8 +321,7 @@ namespace GTANetwork.GUI
         }
 
         public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = Math.Min(30, CefController.GameFPS);
-        public static int MOUSE_FPS = Math.Min(60, CefController.GameFPS);
+        public static int FPS = 30;
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
@@ -327,6 +330,7 @@ namespace GTANetwork.GUI
         internal static DXHookD3D11 DirectXHook;
 
         private static long _lastCefRender = 0;
+        private static Bitmap _lastCefBitmap = null;
         
         public static void RenderLoop()
         {
@@ -354,22 +358,17 @@ namespace GTANetwork.GUI
                             using (var graphics = Graphics.FromImage(doubleBuffer))
                             {
 #if !DISABLE_CEF
-                                if (Util.TickCount - _lastCefRender > FPS)
-                                {
-                                    _lastCefRender = Util.TickCount;
+                                lock (Browsers)
+                                    foreach (var browser in Browsers)
+                                    {
+                                        if (browser.Headless) continue;
+                                        var bitmap = browser.GetRawBitmap();
 
-                                    lock (Browsers)
-                                        foreach (var browser in Browsers)
-                                        {
-                                            if (browser.Headless) continue;
-                                            var bitmap = browser.GetRawBitmap();
+                                        if (bitmap == null) continue;
 
-                                            if (bitmap == null) continue;
-
-                                            graphics.DrawImage(bitmap, browser.Position);
-                                            bitmap.Dispose();
-                                        }
-                                }
+                                        graphics.DrawImage(bitmap, browser.Position);
+                                        bitmap.Dispose();
+                                    }
 #endif
                                 if (CefController.ShowCursor)
                                     graphics.DrawImage(cursor, CefController._lastMousePoint);
@@ -384,7 +383,7 @@ namespace GTANetwork.GUI
                 }
                 finally
                 {
-                    Thread.Sleep(1000 / MOUSE_FPS);
+                    Thread.Sleep(1000 / FPS);
                 }
             }
 
@@ -400,7 +399,12 @@ namespace GTANetwork.GUI
                 Browsers.Clear();
             }
 
-            
+            if (_lastCefBitmap != null)
+            {
+                _lastCefBitmap.Dispose();
+                _lastCefBitmap = null;
+            }
+
             try
             {
                 DirectXHook.Dispose();
