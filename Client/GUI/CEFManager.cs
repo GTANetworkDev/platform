@@ -314,7 +314,7 @@ namespace GTANetwork.GUI
         }
 
         public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 30;
+        public static int FPS = 60;
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;

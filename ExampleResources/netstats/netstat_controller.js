@@ -4,11 +4,9 @@ var lastUpdate = 0;
 API.onResourceStart.connect(function() {
 	// init browser
 	var res = API.getScreenResolution();
-	//mainBrowser = API.createCefBrowser(500, 400);
-	mainBrowser = API.createCefBrowser(1920, 1080);
+	mainBrowser = API.createCefBrowser(500, 400);
 	API.waitUntilCefBrowserInitalization(mainBrowser);
-	//API.setCefBrowserPosition(mainBrowser, res.Width - 500, res.Height - 400);
-	API.setCefBrowserPosition(mainBrowser, 0, 0);
+	API.setCefBrowserPosition(mainBrowser, res.Width - 505, res.Height - 405);
 	API.setCefBrowserHeadless(mainBrowser, true);
 	API.loadPageCefBrowser(mainBrowser, "main.html");
 });
@@ -27,8 +25,7 @@ API.onKeyDown.connect(function(sender, args) {
 });
 
 API.onUpdate.connect(function(eventName, args) {
-	if (mainBrowser != null &&
-		!API.getCefBrowserHeadless(mainBrowser) &&
+	if (mainBrowser != null &&		
 		API.getGlobalTime() - lastUpdate > 100) { // update every 100 ms
 		lastUpdate = API.getGlobalTime();
 		mainBrowser.call("updateLines", API.getBytesSentPerSecond(), API.getBytesReceivedPerSecond());		
