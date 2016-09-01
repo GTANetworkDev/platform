@@ -1120,6 +1120,16 @@ namespace GTANetwork
             }
         }
 
+        public void setBlipName(LocalHandle blip, string name)
+        {
+            var ourBlip = Main.NetEntityHandler.EntityToStreamedItem(blip.Value) as RemoteBlip;
+
+            if (ourBlip != null)
+            {
+                ourBlip.Name = name;
+            }
+        }
+
         public void setBlipShortRange(LocalHandle blip, bool shortRange)
         {
             var ourBlip = new Blip(blip.Value);
