@@ -219,8 +219,8 @@ namespace GTANetwork.GUI
                         var siz = new Size((int)(scale * 32), (int)(scale * 32));
                         var col = GetBlipcolor(blip.Color, blip.Alpha);
 
-
-						Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
+                        if (pos.X > 0 && pos.Y > 0 && pos.X < res.Width && pos.Y < res.Height)
+						    Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
 					}
                 }
                 
@@ -234,7 +234,8 @@ namespace GTANetwork.GUI
                         var siz = new Size((int)(scale * 32), (int) (scale * 32));
                         var col = GetBlipcolor((BlipColor)blip.Color, blip.Alpha);
 
-                        Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
+                        if (pos.X > 0 && pos.Y > 0 && pos.X < res.Width && pos.Y < res.Height)
+                            Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
                     }
                 }
 
