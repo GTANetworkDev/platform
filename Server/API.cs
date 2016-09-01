@@ -2491,6 +2491,28 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public void setBlipName(NetHandle blip, string name)
+        {
+            if (doesEntityExist(blip))
+            {
+                if (name == null) name = "";
+
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Name = name;
+                var delta = new Delta_BlipProperties();
+                delta.Name = name;
+                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+            }
+        }
+
+        public string getBlipName(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Name;
+            }
+            return null;
+        }
+
         public void setBlipAlpha(NetHandle blip, int alpha)
         {
             if (doesEntityExist(blip))

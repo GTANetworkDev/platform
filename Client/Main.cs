@@ -216,6 +216,7 @@ namespace GTANetwork
             UpdateSocialClubAvatar();
 
             CEFManager.InitializeCef();
+            Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
         }
 
         public static void ChatOnComplete(object sender,EventArgs args)

@@ -10,6 +10,7 @@ using GTA.Native;
 using NativeUI;
 using NativeUI.PauseMenu;
 using Control = GTA.Control;
+using Screen = GTA.UI.Screen;
 
 namespace GTANetwork.GUI
 {
@@ -17,25 +18,41 @@ namespace GTANetwork.GUI
     {
         public static string MAP_PATH = Main.GTANInstallDir + "images\\map\\map.png";
         public static string BLIP_PATH = Main.GTANInstallDir + "images\\map\\blips\\";
-        private PointF Position = new PointF(1000, 2000);
+
+        public PointF Position
+        {
+            get { return _position1; }
+            set
+            {
+                if (DateTime.Now.Subtract(_lastScroll).TotalMilliseconds > 100)
+                {
+                    _lastScroll = DateTime.Now;
+                    //Audio.PlaySoundFrontend("continue", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                }
+
+                _position1 = value;
+            }
+        }
+
         private Size Size  = new Size(6420, 7898);
         private float Zoom = 1f;
         private bool _isHeldDown;
-        private bool _justOpened;
+        private bool _justOpened_mouse;
+        private bool _justOpened_kb;
         private PointF _heldDownPoint;
         private PointF _mapPosAtHelddown;
         private Sprite _crosshair = new Sprite("minimap", "minimap_g0", new Point(), new Size(256, 1));
         private float Ratio = 6420f/ 7898f;
         private bool _focused;
         private DateTime _holdDownTime;
-        private bool _showPlayerBlip;
-        private DateTime _lastShowPlayerBlip;
+        private DateTime _lastScroll;
 
 
         public TabMapItem() : base("Map")
         {
             CanBeFocused = true;
             DrawBg = false;
+            Position = new PointF(1000, 2000);
         }
 
         public override bool Focused
@@ -48,6 +65,8 @@ namespace GTANetwork.GUI
                     Main.MainMenu.HideTabs = true;
                     var newPos = World3DToMap2D(Game.Player.Character.Position);
                     Position = new PointF(newPos.Width/Zoom, newPos.Height/Zoom);
+                    _justOpened_mouse = true;
+                    _justOpened_kb = true;
                 }
                 else if (_focused && !value)
                 {
@@ -62,21 +81,25 @@ namespace GTANetwork.GUI
             if (Game.IsControlPressed(0, Control.MoveDownOnly))
             {
                 Position = new PointF(Position.X, Position.Y + (20 / Zoom));
+                _wasMouseInput = false;
             }
 
             if (Game.IsControlPressed(0, Control.MoveUpOnly))
             {
                 Position = new PointF(Position.X, Position.Y - (20 / Zoom));
+                _wasMouseInput = false;
             }
 
             if (Game.IsControlPressed(0, Control.MoveLeftOnly))
             {
                 Position = new PointF(Position.X - (20 / Zoom), Position.Y);
+                _wasMouseInput = false;
             }
 
             if (Game.IsControlPressed(0, Control.MoveRightOnly))
             {
                 Position = new PointF(Position.X + (20 / Zoom), Position.Y);
+                _wasMouseInput = false;
             }
 
             if (Game.IsControlPressed(0, Control.CursorScrollDown))
@@ -92,7 +115,11 @@ namespace GTANetwork.GUI
 
         private Size offsetP = new Size();
         private Size offsetS = new Size();
-		
+
+        private bool _wasMouseInput;
+        private PointF _lastMouseInput;
+        private PointF _position1;
+
         public override void Draw()
         {
             base.Draw();
@@ -104,7 +131,9 @@ namespace GTANetwork.GUI
                 if (Game.IsControlJustPressed(0, Control.Attack))
                 {
                     Focused = true;
-                    _justOpened = true;
+                    _justOpened_mouse = true;
+                    _justOpened_kb = true;
+                    Audio.PlaySoundFrontend("accept", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                 }
             }
             else
@@ -116,6 +145,12 @@ namespace GTANetwork.GUI
                 var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.CursorY) * res.Height;
                 var center = new Point((int)(res.Width/2), (int)(res.Height/2));
 
+
+                if (Math.Abs(mouseX - _lastMouseInput.X) > 1f || Math.Abs(mouseY - _lastMouseInput.Y) > 1f)
+                {
+                    _wasMouseInput = true;
+                }
+
                 if (Game.IsControlJustPressed(0, Control.CursorAccept))
                 {
                     _isHeldDown = true;
@@ -125,9 +160,9 @@ namespace GTANetwork.GUI
                 }
                 else if (Game.IsControlJustReleased(0, Control.CursorAccept))
                 {
-                    if (_justOpened)
+                    if (_justOpened_mouse)
                     {
-                        _justOpened = false;
+                        _justOpened_mouse = false;
                     }
                     else
                     {
@@ -140,6 +175,7 @@ namespace GTANetwork.GUI
                             if (Function.Call<bool>(Hash.IS_WAYPOINT_ACTIVE))
                             {
                                 Function.Call(Hash.SET_WAYPOINT_OFF);
+                                Audio.PlaySoundFrontend("CANCEL", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                             }
                             else
                             {
@@ -147,20 +183,42 @@ namespace GTANetwork.GUI
                                 var ourShit = new SizeF(mouseX - wpyPos.X, mouseY - wpyPos.Y);
                                 var realPos = Map2DToWorld3d(wpyPos, wpyPos + ourShit);
                                 Function.Call(Hash.SET_NEW_WAYPOINT, realPos.X, realPos.Y*-1f);
+                                Audio.PlaySoundFrontend("WAYPOINT_SET", "HUD_FRONTEND_DEFAULT_SOUNDSET");
                             }
                         }
                     }
                 }
 
-                var mapPos = Position;
+                if (Game.IsControlJustReleased(0, Control.FrontendAccept))
+                {
+                    if (_justOpened_kb)
+                    {
+                        _justOpened_kb = false;
+                    }
+                    else
+                    {
+                        if (Function.Call<bool>(Hash.IS_WAYPOINT_ACTIVE))
+                        {
+                            Function.Call(Hash.SET_WAYPOINT_OFF);
+                            Audio.PlaySoundFrontend("CANCEL", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                        }
+                        else
+                        {
+                            var wpyPos = new PointF(center.X - Position.X*Zoom, center.Y - Position.Y*Zoom);
+                            var ourShit = new SizeF(center.X - wpyPos.X, center.Y - wpyPos.Y);
+                            var realPos = Map2DToWorld3d(wpyPos, wpyPos + ourShit);
+                            Function.Call(Hash.SET_NEW_WAYPOINT, realPos.X, realPos.Y*-1f);
+                            Audio.PlaySoundFrontend("WAYPOINT_SET", "HUD_FRONTEND_DEFAULT_SOUNDSET");
+                        }
+                    }
+                }
 
                 if (_isHeldDown)
                 {
-                    mapPos = _mapPosAtHelddown + new SizeF((_heldDownPoint.X - mouseX) / Zoom, (_heldDownPoint.Y - mouseY) / Zoom);
+                    Position = _mapPosAtHelddown + new SizeF((_heldDownPoint.X - mouseX) / Zoom, (_heldDownPoint.Y - mouseY) / Zoom);
                 }
 
-
-                var newPos = new PointF(center.X - mapPos.X*Zoom, center.Y - mapPos.Y*Zoom);
+                var newPos = new PointF(center.X - Position.X*Zoom, center.Y - Position.Y*Zoom);
                 var newSize = new SizeF(1024*Zoom, 1024*Zoom);
 
                 DrawSprite("minimap_sea_0_0", "minimap_sea_0_0", newPos, newSize);
@@ -197,6 +255,7 @@ namespace GTANetwork.GUI
                     newPos.Y + World3DToMap2D(Game.Player.Character.Position).Height, 32* playerScale, 32* playerScale,
                     -Game.Player.Character.Rotation.Z, 255, 255, 255, 255, true);
 
+                
 
                 var blipList = new List<string>();
                 var localCopy = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap);
@@ -221,6 +280,25 @@ namespace GTANetwork.GUI
 
                         if (pos.X > 0 && pos.Y > 0 && pos.X < res.Width && pos.Y < res.Height)
 						    Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
+
+					    var len = scale*32;
+					    var halfLen = len/2;
+                        var hoverPos = new PointF(mouseX, mouseY);
+
+					    if (!_wasMouseInput) hoverPos = center;
+
+					    if (blipInfo != null &&
+                            !string.IsNullOrEmpty(blipInfo.Name) &&
+                            hoverPos.X > pos.X - halfLen && hoverPos.Y > pos.Y - halfLen &&
+                            hoverPos.X < pos.X + halfLen && hoverPos.Y < pos.Y + halfLen) // hovering over blip
+					    {
+                            var labelPos = pos - new Size(-32, 14);
+
+                            new Sprite("mplobby", "mp_arrowsmall", new Point((int)labelPos.X - 19, (int)labelPos.Y - 15),
+                                new Size(20, 60), 180f, Color.Black).Draw();
+                            new UIResRectangle(new Point((int)labelPos.X, (int)labelPos.Y), new Size(15 + StringMeasurer.MeasureString(blipInfo.Name), 30), Color.Black).Draw();
+                            new UIResText(blipInfo.Name, new Point((int)labelPos.X + 5, (int)labelPos.Y), 0.35f).Draw();
+                        }
 					}
                 }
                 
@@ -252,6 +330,23 @@ namespace GTANetwork.GUI
                         new Size(20, 60) + offsetS, 180f, Color.Black).Draw();
                     new UIResRectangle(new Point((int)pos.X, (int)pos.Y), new Size(15 + StringMeasurer.MeasureString(opp.Name), 30), Color.Black).Draw();
                     new UIResText(opp.Name, new Point((int)pos.X + 5, (int)pos.Y), 0.35f).Draw();
+                }
+
+
+
+                var p1 = new PointF(center.X - Position.X * Zoom, center.Y - Position.Y * Zoom);
+                var p2 = new SizeF(center.X - p1.X, center.Y - p1.Y);
+                var centerPos = Map2DToWorld3d(p1, p1 + p2);
+
+                centerPos = new Vector2(centerPos.X, centerPos.Y * -1f);
+
+                var zone = World.GetZoneName(centerPos);
+
+                if (!string.IsNullOrEmpty(zone))
+                {
+                    new UIResRectangle(new Point(30, (int)res.Height - 50),
+                        new Size(15 + StringMeasurer.MeasureString(zone), 30), Color.Black).Draw();
+                    new UIResText(zone, new Point(35, (int)res.Height - 50), 0.35f).Draw();
                 }
 
                 /*

@@ -343,18 +343,12 @@ namespace GTANetwork
             // Uncomment to debug stuff
             /*
             
-            foreach (var p in ClientMap.OfType<RemoteVehicle>())
+            foreach (var p in ClientMap.OfType<RemoteBlip>())
             {
                 if (p == null || p.Position == null) continue;
-                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nDamageModelNull?: " + (p.DamageModel == null);
+                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nScale: " + p.Scale;
 
-                if (p.DamageModel != null)
-                {
-                    text += "\nDoors: " + p.DamageModel.BrokenDoors;
-                    text += "\nWindows: " + p.DamageModel.BrokenWindows;
-                    text += "\nLights: " + p.DamageModel.BrokenLights;
-                }
-
+                
                 DrawLabel3D(text, p.Position.ToVector(), 100f, 0.4f);
             }
             //*/
@@ -879,6 +873,7 @@ namespace GTANetwork
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
             if (prop.RangedBlip != null) veh.RangedBlip = prop.RangedBlip.Value;
             if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
+            if (prop.Name != null) veh.Name = prop.Name;
 
             if (prop.Dimension != null)
             {
@@ -1379,6 +1374,7 @@ namespace GTANetwork
                     PositionMovement = prop.PositionMovement,
                     RotationMovement = prop.RotationMovement,
                     Flag = prop.Flag,
+                    Name = prop.Name,
 
                     StreamedIn = false,
                     LocalOnly = false,

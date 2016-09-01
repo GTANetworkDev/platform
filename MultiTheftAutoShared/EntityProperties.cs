@@ -201,6 +201,9 @@ namespace GTANetworkShared
 
         [ProtoMember(6)]
         public float RangedBlip { get; set; }
+
+        [ProtoMember(7)]
+        public string Name { get; set; }
     }
 
     [ProtoContract]
@@ -501,6 +504,9 @@ namespace GTANetworkShared
 
         [ProtoMember(6)]
         public float? RangedBlip { get; set; }
+
+        [ProtoMember(7)]
+        public string Name { get; set; }
     }
 
     [ProtoContract]
