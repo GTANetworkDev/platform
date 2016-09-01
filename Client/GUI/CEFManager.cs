@@ -40,7 +40,7 @@ namespace GTANetwork.GUI
 
         private static bool _justShownCursor;
         public static PointF _lastMousePoint;
-        public static int GameFPS;
+        public static int GameFPS = 1;
         private Keys _lastKey;
 
         public static CefEventFlags GetMouseModifiers(bool leftbutton, bool rightButton)
@@ -57,7 +57,7 @@ namespace GTANetwork.GUI
         {
             Tick += (sender, args) =>
             {
-                GameFPS = (int)Game.FPS;
+                GameFPS = Math.Max((int)Game.FPS, 1);
 
                 /*if (Game.IsKeyPressed(Keys.F11)) CEFManager.StopRender = true;
                 if (Game.IsKeyPressed(Keys.F12))
