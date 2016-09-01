@@ -314,13 +314,16 @@ namespace GTANetwork.GUI
         }
 
         public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 60;
+        public static int FPS = 30;
+        public static int MOUSE_FPS = 60;
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
         public static bool Disposed = true;
 
         internal static DXHookD3D11 DirectXHook;
+
+        private static long _lastCefRender = 0;
         
         public static void RenderLoop()
         {
@@ -348,17 +351,22 @@ namespace GTANetwork.GUI
                             using (var graphics = Graphics.FromImage(doubleBuffer))
                             {
 #if !DISABLE_CEF
-                                lock (Browsers)
-                                    foreach (var browser in Browsers)
-                                    {
-                                        if (browser.Headless) continue;
-                                        var bitmap = browser.GetRawBitmap();
+                                if (Util.TickCount - _lastCefRender > FPS)
+                                {
+                                    _lastCefRender = Util.TickCount;
 
-                                        if (bitmap == null) continue;
+                                    lock (Browsers)
+                                        foreach (var browser in Browsers)
+                                        {
+                                            if (browser.Headless) continue;
+                                            var bitmap = browser.GetRawBitmap();
 
-                                        graphics.DrawImage(bitmap, browser.Position);
-                                        bitmap.Dispose();
-                                    }
+                                            if (bitmap == null) continue;
+
+                                            graphics.DrawImage(bitmap, browser.Position);
+                                            bitmap.Dispose();
+                                        }
+                                }
 #endif
                                 if (CefController.ShowCursor)
                                     graphics.DrawImage(cursor, CefController._lastMousePoint);
@@ -373,7 +381,7 @@ namespace GTANetwork.GUI
                 }
                 finally
                 {
-                    Thread.Sleep(1000 / FPS);
+                    Thread.Sleep(1000 / MOUSE_FPS);
                 }
             }
 
