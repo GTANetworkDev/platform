@@ -40,6 +40,7 @@ namespace GTANetwork.GUI
 
         private static bool _justShownCursor;
         public static PointF _lastMousePoint;
+        public static int GameFPS;
         private Keys _lastKey;
 
         public static CefEventFlags GetMouseModifiers(bool leftbutton, bool rightButton)
@@ -56,11 +57,13 @@ namespace GTANetwork.GUI
         {
             Tick += (sender, args) =>
             {
-                if (Game.IsKeyPressed(Keys.F11)) CEFManager.StopRender = true;
+                GameFPS = (int)Game.FPS;
+
+                /*if (Game.IsKeyPressed(Keys.F11)) CEFManager.StopRender = true;
                 if (Game.IsKeyPressed(Keys.F12))
                 {
                     LogManager.SimpleLog("directx", ObjectTracker.ReportActiveObjects());
-                }
+                }*/
 
                 if (ShowCursor)
                 {
@@ -314,8 +317,8 @@ namespace GTANetwork.GUI
         }
 
         public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 30;
-        public static int MOUSE_FPS = 60;
+        public static int FPS = Math.Min(30, CefController.GameFPS);
+        public static int MOUSE_FPS = Math.Min(60, CefController.GameFPS);
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
