@@ -2181,8 +2181,8 @@ namespace GTANetwork
         private int _lastBytesReceived;
         private int _lastCheck;
 
-        private int _bytesSentPerSecond;
-        private int _bytesReceivedPerSecond;
+        internal static int _bytesSentPerSecond;
+        internal static int _bytesReceivedPerSecond;
         //
         
         public void OnTick(object sender, EventArgs e)

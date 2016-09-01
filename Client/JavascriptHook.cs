@@ -1161,6 +1161,26 @@ namespace GTANetwork
             return Main.ScriptChatVisible;
         }
 
+        public float getAveragePacketSize()
+        {
+            float outp = 0;
+
+            if (Main._averagePacketSize.Count > 0)
+                outp = (float)Main._averagePacketSize.Average();
+
+            return outp;
+        }
+
+        public float getBytesSentPerSecond()
+        {
+            return Main._bytesSentPerSecond;
+        }
+
+        public float getBytesReceivedPerSecond()
+        {
+            return Main._bytesReceivedPerSecond;
+        }
+
         public void requestControlOfPlayer(LocalHandle player)
         {
             var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
