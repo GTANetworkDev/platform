@@ -26,7 +26,7 @@ API.onKeyDown.connect(function(sender, args) {
 
 API.onUpdate.connect(function(eventName, args) {
 	if (mainBrowser != null &&		
-		API.getGlobalTime() - lastUpdate > 100) { // update every 100 ms
+		API.getGlobalTime() - lastUpdate > 1000) { // update every 1 s
 		lastUpdate = API.getGlobalTime();
 		mainBrowser.call("updateLines", API.getBytesSentPerSecond(), API.getBytesReceivedPerSecond());		
 	}
