@@ -1,0 +1,8 @@
+<meta>
+	<info name="UI Network Statistics" author="Guadmaz" version="1.0" />
+
+	<script src="netstat_controller.js" type="client" lang="javascript" />
+
+	<file src="main.html" />
+	<file src="smoothie.js" />
+</meta>
