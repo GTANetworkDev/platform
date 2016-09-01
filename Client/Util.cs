@@ -152,13 +152,13 @@ namespace GTANetwork
 
 	    public static IEnumerable<Blip> GetAllBlips()
 	    {
-		    foreach (BlipSprite sprite in Enum.GetValues(typeof (BlipSprite)))
+		    for(int i = 0; i < 600; i++)
 		    {
-			    int Handle = Function.Call<int>(Hash.GET_FIRST_BLIP_INFO_ID, (int)sprite);
+			    int Handle = Function.Call<int>(Hash.GET_FIRST_BLIP_INFO_ID, i);
 			    while (Function.Call<bool>(Hash.DOES_BLIP_EXIST, Handle))
 			    {
 				    yield return new Blip(Handle);
-					Handle = Function.Call<int>(Hash.GET_NEXT_BLIP_INFO_ID, (int)sprite);
+					Handle = Function.Call<int>(Hash.GET_NEXT_BLIP_INFO_ID, i);
 			    }
 		    }
 		} 

@@ -15,8 +15,8 @@ namespace GTANetwork.GUI
 {
     public class TabMapItem : TabItem
     {
-        public static string MAP_PATH = Main.GTANInstallDir + "\\images\\map\\map.png";
-        public static string BLIP_PATH = Main.GTANInstallDir + "\\images\\map\\blips\\";
+        public static string MAP_PATH = Main.GTANInstallDir + "images\\map\\map.png";
+        public static string BLIP_PATH = Main.GTANInstallDir + "images\\map\\blips\\";
         private PointF Position = new PointF(1000, 2000);
         private Size Size  = new Size(6420, 7898);
         private float Zoom = 1f;
@@ -97,9 +97,6 @@ namespace GTANetwork.GUI
         {
             base.Draw();
 
-            if (!Directory.Exists(Main.GTANInstallDir + "\\images\\map\\blips"))
-                BLIP_PATH = Main.GTANInstallDir + "\\map\\blips\\";
-            
             if (!Focused)
             {
                 DrawSprite("minimap_sea_2_0", "minimap_sea_2_0", new Point(BottomRight.X - 1024, TopLeft.Y), new Size(1024, 1024));
@@ -193,19 +190,12 @@ namespace GTANetwork.GUI
                 _crosshair.Heading = 270;
                 _crosshair.Draw();
 
-                if (_showPlayerBlip)
-                {
-                    Sprite.DrawTexture(BLIP_PATH + "163.png",
-                        new Point((int) (newPos.X + World3DToMap2D(Game.Player.Character.Position).Width - 16),
-                            (int) (newPos.Y + World3DToMap2D(Game.Player.Character.Position).Height - 16)),
-                        new Size(32, 32));
-                }
+                const float playerScale = 0.8f;
 
-                if (DateTime.Now.Subtract(_lastShowPlayerBlip).TotalMilliseconds >= 1000)
-                {
-                    _lastShowPlayerBlip = DateTime.Now;
-                    _showPlayerBlip = !_showPlayerBlip;
-                }
+                Util.DxDrawTexture(0, BLIP_PATH + "player.png",
+                    newPos.X + World3DToMap2D(Game.Player.Character.Position).Width,
+                    newPos.Y + World3DToMap2D(Game.Player.Character.Position).Height, 32* playerScale, 32* playerScale,
+                    -Game.Player.Character.Rotation.Z, 255, 255, 255, 255, true);
 
 
                 var blipList = new List<string>();
@@ -216,13 +206,14 @@ namespace GTANetwork.GUI
 					if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
 					{
 					    var blipInfo = Main.NetEntityHandler.EntityToStreamedItem(blip.Handle) as RemoteBlip;
-                        float scale = 1f;
+
+					    float scale = 1f;
 
 					    if (blipInfo != null)
 					    {
 					        scale = blipInfo.Scale;
 					    }
-
+                        
                         var fname = BLIP_PATH + ((int)blip.Sprite) + ".png";
 						var pos = newPos + World3DToMap2D(blip.Position);
                         var siz = new Size((int)(scale * 32), (int)(scale * 32));
@@ -230,7 +221,6 @@ namespace GTANetwork.GUI
 
 
 						Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
-						blipList.Add(((int)blip.Sprite) + ".png");
 					}
                 }
                 
@@ -245,7 +235,6 @@ namespace GTANetwork.GUI
                         var col = GetBlipcolor((BlipColor)blip.Color, blip.Alpha);
 
                         Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
-                        blipList.Add(((int)blip.Sprite) + ".png");
                     }
                 }
 
@@ -413,9 +402,12 @@ namespace GTANetwork.GUI
             return new PointF(center.X - pos.X*Zoom, center.Y - pos.Y*Zoom) + new SizeF(mapPos.X, mapPos.Y);
         }
 
+        private const int absX = 943;
+        private const int absY = 1912;
+
         public Vector2 Map2DToWorld3d(PointF mapPos, PointF mapPoint)
         {
-            var absoluteZero = new PointF(945 * Zoom, 1910 * Zoom);
+            var absoluteZero = new PointF(absX * Zoom, absY * Zoom);
             float pixelRatio = 4.39106f / Zoom;
 
 
@@ -428,7 +420,7 @@ namespace GTANetwork.GUI
 
         public SizeF World3DToMap2D(Vector3 worldPos)
         {
-            var absoluteZero = new PointF(945 * Zoom, 1910 * Zoom);
+            var absoluteZero = new PointF(absX * Zoom, absY * Zoom);
             float pixelRatio = 4.39106f / Zoom;
             
             return new SizeF()
