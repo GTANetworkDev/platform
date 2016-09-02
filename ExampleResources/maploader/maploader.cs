@@ -20,7 +20,7 @@ using System.Threading;
 
     public List<NetHandle> CreatedEntities = new List<NetHandle>();
 
-    public void OnResourceStop(object sender, EventArgs e)
+    public void OnResourceStop()
     {
         foreach (var handle in CreatedEntities)
         {
@@ -28,7 +28,7 @@ using System.Threading;
         }
     }
 
-    public void OnResourceStart(object sender, EventArgs e)
+    public void OnResourceStart()
     {
         var files = Directory.GetFiles("maps", "*.xml");
         int mapsLoaded = 0;

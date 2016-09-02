@@ -15,7 +15,7 @@ public class ScoreboardScript : Script
         API.onResourceStart += startResourceHandler;
     }
 
-    private void startResourceHandler(object sender, EventArgs e)
+    private void startResourceHandler()
     {
         API.setWorldData("scoreboard_column_names", new List<string>());
         API.setWorldData("scoreboard_column_friendlynames", new List<string>());
@@ -24,7 +24,7 @@ public class ScoreboardScript : Script
         addScoreboardColumn("ping", "Ping", 60);
     }
 
-    private void stopResourceHandler(object sender, EventArgs e)
+    private void stopResourceHandler()
     {
         var players = API.getAllPlayers();
 

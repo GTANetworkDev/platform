@@ -19,7 +19,7 @@ public class Fallout : Script
         API.onResourceStart += start;
     }
 
-    public void start(object sender, EventArgs e)
+    public void start()
     {
         createFallingPanels();
     }
@@ -80,7 +80,7 @@ public class Fallout : Script
 
 
     private Random r = new Random();
-    public void update(object sender, EventArgs e)
+    public void update()
     {
         if (roundStarted) 
         {

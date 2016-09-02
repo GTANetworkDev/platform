@@ -67,7 +67,7 @@ public class CopsNCrooks : Script
 		Vehicles.Add(API.createVehicle((VehicleHash)(-1860900134), new Vector3(428.9f, -960.98f, 29.11f), new Vector3(0, 0, 90.12f), 111, 0));		
 	}
 
-	private void onResStart(object e, EventArgs ob)
+	private void onResStart()
 	{
 		var blip = API.createBlip(_targetPos);
 		API.setBlipColor(blip, 66);
@@ -102,7 +102,7 @@ public class CopsNCrooks : Script
 		return range * range > len;
 	}
 
-	public void onUpdate(object sender, EventArgs e)
+	public void onUpdate()
 	{
 		if (!isRoundOngoing)
 		{

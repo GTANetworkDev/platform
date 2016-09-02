@@ -42,7 +42,7 @@ public class RaceGamemode : Script
     public Dictionary<int, int> Votes { get; set; }
     public Dictionary<int, Race> AvailableChoices { get; set; }
 
-    public void onResourceStart(object sender, EventArgs e)
+    public void onResourceStart()
     {
         TimeLeft = -1;
         AvailableRaces = new List<Race>();
@@ -91,7 +91,7 @@ public class RaceGamemode : Script
         }
     }
 
-    public void onResourceStop(object sender, EventArgs e)
+    public void onResourceStop()
     {
         API.triggerClientEventForAll("resetRace");
         
@@ -183,7 +183,7 @@ public class RaceGamemode : Script
         }
     }
 
-    public void onUpdate(object sender, EventArgs e)
+    public void onUpdate()
     {
         if (DateTime.Now.Subtract(LastSecond).TotalMilliseconds > 1000)
         {

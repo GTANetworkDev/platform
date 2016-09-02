@@ -83,7 +83,7 @@ public class Deathmatch : Script
         }
     }
 
-    private void onResourceStart(object sender, EventArgs e)
+    private void onResourceStart()
     {
         var players = API.getAllPlayers();
 
@@ -108,7 +108,7 @@ public class Deathmatch : Script
         }
     }
 
-    private void onResourceStop(object sender, EventArgs e)
+    private void onResourceStop()
     {
         var players = API.getAllPlayers();
 

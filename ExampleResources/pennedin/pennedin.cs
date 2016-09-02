@@ -25,7 +25,7 @@ public class PennedInMaster : Script
 		API.setPlayerToSpectator(player);
 	}
 
-	public void resourceStart(object sender, EventArgs e)
+	public void resourceStart()
 	{
 		API.sendChatMessageToAll("Round starting in 5 seconds!");
 		API.sleep(5000);
@@ -98,7 +98,7 @@ public class PennedInMaster : Script
 		Countdown = 10;
 	}
 
-	public void update(object sender, EventArgs e)
+	public void update()
 	{
 		if (DateTime.Now.Subtract(_lastsecondupdate).TotalMilliseconds > 1000)
 		{

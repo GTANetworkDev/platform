@@ -75,13 +75,13 @@ public class HunterScript : Script
 	private const int TEAM_HUNTER = 1;
 
 	private Random r = new Random();
-	public void startGM(object sender, EventArgs e)
+	public void startGM()
 	{
 		roundstart();
 	}
 
 
-	public void stopGm(object sender, EventArgs e)
+	public void stopGm()
 	{
 		var players = API.getAllPlayers();
 
@@ -215,7 +215,7 @@ public class HunterScript : Script
 			Spawn(player, player == hawk);
 	}
 
-	public void update(object s, EventArgs e)
+	public void update()
 	{
 		if (!roundstarted) return;
 		if (animal != null)
