@@ -266,7 +266,7 @@ namespace GTANetwork
                 LogManager.DebugLog("NEXTSTEP FOR " + Name + ": " + value);
 
                 if (Main.SlowDownClientForDebug)
-                    Script.Yield();
+                    GTA.UI.Screen.ShowSubtitle(Name + "-sp" + value.ToString());
             }
         }
 
@@ -410,7 +410,7 @@ namespace GTANetwork
 
 				LogManager.DebugLog("CREATING PED FOR " + Name);
 
-				Character = World.CreatePed(charModel, gPos, _rotation.Z);
+			    Character = World.CreatePed(charModel, gPos, _rotation.Z, 26);
 				charModel.MarkAsNoLongerNeeded();
 
 				if (Character == null) return true;
