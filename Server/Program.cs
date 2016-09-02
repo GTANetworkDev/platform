@@ -115,12 +115,10 @@ namespace GTANetworkServer
                 };
             }
 
-            const int tickRate = 60;
-
             while (!CloseProgram)
             {
                 ServerInstance.Tick();
-                Thread.Sleep(1000/tickRate);
+                Thread.Sleep(1000/settings.RefreshHz);
             }
 
         }

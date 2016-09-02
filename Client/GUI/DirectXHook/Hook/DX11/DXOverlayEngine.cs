@@ -64,8 +64,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                 _renderTarget = renderTarget;
                 try
                 {
-                    _deviceContext = ToDispose(new DeviceContext(_device)); // TODO: Test if this fixes crash 
-                    //_deviceContext = new DeviceContext(_device);
+                    //_deviceContext = ToDispose(new DeviceContext(_device)); // TODO: Test if this fixes crash 
+                    _deviceContext = new DeviceContext(_device); // WARN: may cause a mem leak
                 }
                 catch (SharpDXException)
                 {

@@ -52,6 +52,9 @@ namespace GTANetworkShared
         [XmlElement("onfoot_lagcomp")]
         public bool OnFootLagCompensation { get; set; }
 
+        [XmlElement("refresh_rate")]
+        public int RefreshHz { get; set; }
+
         [XmlRoot("resource")]
         public class SettingsResFilepath
         {
@@ -75,6 +78,7 @@ namespace GTANetworkShared
             Resources = new List<SettingsResFilepath>();
             OnFootLagCompensation = true;
             VehicleLagCompensation = true;
+            RefreshHz = 120;
         }
 
         public static ServerSettings ReadSettings(string path)
