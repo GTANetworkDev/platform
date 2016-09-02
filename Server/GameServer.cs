@@ -3137,6 +3137,15 @@ namespace GTANResource
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
+        public void SendServerEventToPlayer(Client target, ServerEventType type, params object[] arg)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)type;
+            obj.Arguments = ParseNativeArguments(arg);
+
+            SendToClient(target, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
+
         public void DetachEntity(int nethandle, bool collision)
         {
             var obj = new SyncEvent();

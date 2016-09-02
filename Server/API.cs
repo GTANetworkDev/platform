@@ -2017,7 +2017,7 @@ namespace GTANetworkServer
         {
             if (!player.Weapons.Contains(weaponHash)) player.Weapons.Add(weaponHash);
 
-            Program.ServerInstance.SendServerEvent(ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
+            Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
 
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, ammo, equipNow, ammo);
         }
@@ -2028,7 +2028,7 @@ namespace GTANetworkServer
             player.Properties.WeaponComponents.Remove((int) weapon);
             player.Properties.WeaponTints.Remove((int) weapon);
 
-            Program.ServerInstance.SendServerEvent(ServerEventType.WeaponPermissionChange, true, (int)weapon, false);
+            Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weapon, false);
 
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x4899CB088EDF59B8, new LocalPlayerArgument(), (int)weapon);
 
@@ -2044,7 +2044,7 @@ namespace GTANetworkServer
             player.Properties.WeaponTints.Clear();
             player.Properties.WeaponComponents.Clear();
 
-            Program.ServerInstance.SendServerEvent(ServerEventType.WeaponPermissionChange, false);
+            Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, false);
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF25DF915FA38C5F3, new LocalPlayerArgument(), true);
 
             var delta = new Delta_PlayerProperties();
