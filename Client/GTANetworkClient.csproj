@@ -173,6 +173,7 @@
     <Compile Include="Interpolator.cs" />
     <Compile Include="JavascriptChat.cs" />
     <Compile Include="JavascriptHook.cs" />
+    <Compile Include="JavascriptXmlParser.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="LoopAudioStream.cs" />
     <Compile Include="Main.cs" />
