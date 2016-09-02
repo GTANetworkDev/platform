@@ -1487,7 +1487,7 @@ namespace GTANetwork
 
 			if (!meleeSwingDone && CurrentWeapon != unchecked((int)WeaponHash.Unarmed))
 			{
-				var gunEntity = Function.Call<Entity>((Hash)0x3B390A939AF0B5FC, Character);
+				var gunEntity = Function.Call<Prop>((Hash)0x3B390A939AF0B5FC, Character);
 				if (gunEntity != null)
 				{
 					Vector3 min;
@@ -1714,7 +1714,7 @@ namespace GTANetwork
 	        }
 
 
-	        var gunEnt = Function.Call<Entity>((Hash)0x3B390A939AF0B5FC, Character);
+	        var gunEnt = Function.Call<Prop>((Hash)0x3B390A939AF0B5FC, Character);
 	        if (gunEnt != null)
 	        {
                 //var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, 0));
