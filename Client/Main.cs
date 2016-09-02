@@ -2509,6 +2509,8 @@ namespace GTANetwork
             }
         */
 
+            //GTA.UI.Screen.ShowSubtitle("Status: " );
+
             if (display)
             {
                 Debug();
