@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Linq;
 using GTA;
 using GTA.Native;
+using GTA.UI;
 using GTANetworkShared;
 using NativeUI;
 using Vector3 = GTA.Math.Vector3;
@@ -1578,8 +1579,6 @@ namespace GTANetwork
                 UpdatePlayerPedPos();
                 return;
 	        }
-
-	        
 #if !CRASHTEST
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
@@ -1598,21 +1597,19 @@ namespace GTANetwork
             }
             else
 #endif
-                if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
+            if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
             {
                 Character.Task.ClearSecondary();
 
-                var latency = DataLatency + TicksSinceLastUpdate;
-                var dir = Position - _lastPosition;
-                var posTarget = Vector3.Lerp(Position, Position + dir,
-                    latency / ((float)AverageLatency));
-
-                var ndir = posTarget - Character.Position;
-                
-                if (ndir.LengthSquared() > 1e-3)
+                if (PedVelocity.LengthSquared() > 0.1f)
                 {
-                    if (Game.GameTime - _lastVehicleAimUpdate > 40)
+                    if (Game.GameTime - _lastVehicleAimUpdate > 100)
                     {
+                        var latency = DataLatency + TicksSinceLastUpdate;
+                        var dir = Position - _lastPosition;
+                        var posTarget = Vector3.Lerp(Position, Position + dir,
+                            latency / ((float)AverageLatency));
+                        var ndir = posTarget - Character.Position;
                         ndir.Normalize();
 
                         var target = Character.Position + ndir*20f;
@@ -1626,11 +1623,11 @@ namespace GTANetwork
                 }
                 else
                 {
-                    Character.Task.AimAt(AimCoords, 100);
+                    Character.Task.AimAt(AimCoords, -1);
                 }
 			}
 
-            UpdatePlayerPedPos();
+            UpdatePlayerPedPos(false);
         }
 
 	    void DisplayMeleeAnimation(int hands)
@@ -2185,7 +2182,7 @@ namespace GTANetwork
         }
 
         private int m_uiForceLocalCounter;
-        private void UpdatePlayerPedPos()
+        private void UpdatePlayerPedPos(bool updateRotation = true)
         {
             Vector3 newPos;
             Vector3 velTarget = new Vector3();
@@ -2332,12 +2329,16 @@ namespace GTANetwork
             }
 
             DEBUG_STEP = 33;
+
+            if (updateRotation)
+            {
 #if !DISABLE_SLERP
-            Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
-                Math.Min(1f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
+                Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                    Math.Min(1f, (DataLatency + TicksSinceLastUpdate)/(float) AverageLatency));
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
+            }
         }
 
         public string GetCoverIdleAnimDict()

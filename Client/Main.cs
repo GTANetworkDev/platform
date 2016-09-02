@@ -295,26 +295,29 @@ namespace GTANetwork
         
         public void GetWelcomeMessage()
         {
-            try
+            ThreadPool.QueueUserWorkItem(delegate
             {
-                using (var wc = new ImpatientWebClient())
+                try
                 {
-                    var rawJson = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim('/') + "/welcome.json");
-                    var jsonObj = JsonConvert.DeserializeObject<WelcomeSchema>(rawJson) as WelcomeSchema;
-                    if (jsonObj == null) throw new WebException();
-                    if (!File.Exists(GTANInstallDir + "\\images\\" + jsonObj.Picture))
+                    using (var wc = new ImpatientWebClient())
                     {
-                        wc.DownloadFile(PlayerSettings.MasterServerAddress.Trim('/') + "/pictures/" + jsonObj.Picture, GTANInstallDir + "\\images\\" + jsonObj.Picture);
-                    }
+                        var rawJson = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim('/') + "/welcome.json");
+                        var jsonObj = JsonConvert.DeserializeObject<WelcomeSchema>(rawJson) as WelcomeSchema;
+                        if (jsonObj == null) throw new WebException();
+                        if (!File.Exists(GTANInstallDir + "\\images\\" + jsonObj.Picture))
+                        {
+                            wc.DownloadFile(PlayerSettings.MasterServerAddress.Trim('/') + "/pictures/" + jsonObj.Picture, GTANInstallDir + "\\images\\" + jsonObj.Picture);
+                        }
                     
-                    _welcomePage.Text = jsonObj.Message;
-                    _welcomePage.TextTitle = jsonObj.Title;
-                    _welcomePage.PromoPicturePath = GTANInstallDir + "\\images\\" + jsonObj.Picture;
+                        _welcomePage.Text = jsonObj.Message;
+                        _welcomePage.TextTitle = jsonObj.Title;
+                        _welcomePage.PromoPicturePath = GTANInstallDir + "\\images\\" + jsonObj.Picture;
+                    }
                 }
-            }
-            catch (WebException ex)
-            {
-            }
+                catch (WebException ex)
+                {
+                }
+            });
         }
 
         public void UpdateSocialClubAvatar()
@@ -2173,6 +2176,7 @@ namespace GTANetwork
         private float _debugPed;
         private Dictionary<int, int> _debugSettings = new Dictionary<int, int>();
         private bool _minimapSet;
+        private object freedebug;
 
         // netstats
         private int _lastBytesSent;
@@ -2508,9 +2512,7 @@ namespace GTANetwork
                 GTA.UI.Screen.ShowNotification("2nd Got: " + hasGot);
             }
         */
-
-            //GTA.UI.Screen.ShowSubtitle("Status: " );
-
+        
             if (display)
             {
                 Debug();
