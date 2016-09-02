@@ -94,7 +94,6 @@
     <Compile Include="Streamer.cs" />
     <Compile Include="UnoccupiedVehicleManager.cs" />
     <Compile Include="WeaponComponentHash.cs" />
-    <Compile Include="XmlParser.cs" />
     <Compile Include="PickupHashes.cs" />
     <Compile Include="ResourceInfo.cs" />
     <Compile Include="VehicleHashes.cs" />
@@ -102,6 +101,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WeaponHashes.cs" />
+    <Compile Include="XmlParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

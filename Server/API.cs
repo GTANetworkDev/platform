@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -372,6 +373,167 @@ namespace GTANetworkServer
             {
                 if (map.Info.Info.Gamemodes.Split(',').Contains(gamemode)) yield return map.DirectoryName;
             }
+        }
+
+        public dynamic getSetting<T>(string settingName)
+        {
+            if (ResourceParent == null) throw new AccessViolationException("Illegal call to getSetting inside the constructor!");
+
+            if (ResourceParent.ResourceParent.Settings != null &&
+                ResourceParent.ResourceParent.Settings.ContainsKey(settingName))
+            {
+                var val = ResourceParent.ResourceParent.Settings[settingName];
+
+                T output;
+
+                if (!val.HasValue)
+                {
+                    if (string.IsNullOrWhiteSpace(val.Value))
+                        val.Value = val.DefaultValue;
+
+                    try
+                    {
+                        output = (T) Convert.ChangeType(val.Value, typeof (T), CultureInfo.InvariantCulture);
+                    }
+                    catch (InvalidCastException)
+                    {
+                        output = (T) Convert.ChangeType(val.DefaultValue, typeof (T), CultureInfo.InvariantCulture);
+                    }
+                    catch (FormatException)
+                    {
+                        output = (T) Convert.ChangeType(val.DefaultValue, typeof (T), CultureInfo.InvariantCulture);
+                    }
+
+                    val.CastObject = output;
+                    val.HasValue = true;
+
+                    ResourceParent.ResourceParent.Settings[settingName] = val;
+                }
+                else
+                {
+                    output = (T) val.CastObject;
+                }
+
+                return output;
+            }
+
+            return null;
+        }
+
+        public void setSetting(string settingName, object value)
+        {
+            if (ResourceParent == null) throw new AccessViolationException("Illegal call to getSetting inside the constructor!");
+
+            if (ResourceParent.ResourceParent.Settings != null &&
+                ResourceParent.ResourceParent.Settings.ContainsKey(settingName))
+            {
+                var ourObj = ResourceParent.ResourceParent.Settings[settingName];
+
+                ourObj.CastObject = value;
+                ourObj.HasValue = true;
+
+                ResourceParent.ResourceParent.Settings[settingName] = ourObj;
+            }
+        }
+
+        public dynamic getResourceSetting<T>(string resource, string setting)
+        {
+            var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
+
+            if (res == null) return null;
+
+            if (res.Settings != null &&
+                res.Settings.ContainsKey(setting))
+            {
+                var val = res.Settings[setting];
+
+                T output;
+
+                if (!val.HasValue)
+                {
+                    if (string.IsNullOrWhiteSpace(val.Value))
+                        val.Value = val.DefaultValue;
+
+                    try
+                    {
+                        output = (T)Convert.ChangeType(val.Value, typeof(T), CultureInfo.InvariantCulture);
+                    }
+                    catch (InvalidCastException)
+                    {
+                        output = (T)Convert.ChangeType(val.DefaultValue, typeof(T), CultureInfo.InvariantCulture);
+                    }
+                    catch (FormatException)
+                    {
+                        output = (T)Convert.ChangeType(val.DefaultValue, typeof(T), CultureInfo.InvariantCulture);
+                    }
+
+                    val.CastObject = output;
+                    val.HasValue = true;
+
+                    res.Settings[setting] = val;
+                }
+                else
+                {
+                    output = (T)val.CastObject;
+                }
+
+                return output;
+            }
+
+            return null;
+        }
+
+        public void setResourceSetting(string resource, string setting, object value)
+        {
+            var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
+
+            if (res == null) return;
+
+            if (res.Settings != null &&
+                res.Settings.ContainsKey(setting))
+            {
+                var ourObj = res.Settings[setting];
+
+                ourObj.CastObject = value;
+                ourObj.HasValue = true;
+
+                res.Settings[setting] = ourObj;
+            }
+        }
+
+        public string[] getResourceSettings(string resource)
+        {
+            var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
+
+            if (res == null) return new string[0];
+
+            return res.Settings.Select(r => r.Key).ToArray();
+        }
+
+        public bool doesConfigExist(string configName)
+        {
+            if (ResourceParent == null) throw new AccessViolationException("Illegal call to doesConfigExist inside the constructor!");
+
+            return ResourceParent.ResourceParent.Info.ConfigFiles != null &&
+                   ResourceParent.ResourceParent.Info.ConfigFiles.Any(
+                       cfg => cfg.Type == ScriptType.server && cfg.Path == configName);
+        }
+
+        public XmlGroup loadConfig(string configName)
+        {
+            if (ResourceParent == null) throw new AccessViolationException("Illegal call to loadConfig inside the constructor!");
+
+            if (doesConfigExist(configName) &&
+                File.Exists("resources" + Path.DirectorySeparatorChar + ResourceParent.ResourceParent.DirectoryName +
+                            Path.DirectorySeparatorChar + configName))
+            {
+                var xml = new XmlGroup();
+                xml.Load("resources" + Path.DirectorySeparatorChar + ResourceParent.ResourceParent.DirectoryName +
+                         Path.DirectorySeparatorChar + configName);
+                return xml;
+            }
+
+            return null;
         }
 
         public XmlGroup loadXml(string path)

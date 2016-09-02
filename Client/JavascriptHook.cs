@@ -909,6 +909,17 @@ namespace GTANetwork
             NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
         }
 
+        public XmlGroup loadConfig(string config)
+        {
+            if (!config.EndsWith(".xml")) return null;
+            var path = getResourceFilePath(config);
+            checkPathSafe(path);
+
+            var xml = new XmlGroup();
+            xml.Load(path);
+            return xml;
+        }
+
         public dynamic fromJson(string json)
         {
             return JObject.Parse(json);

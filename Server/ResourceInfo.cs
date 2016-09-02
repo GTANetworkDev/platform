@@ -515,7 +515,19 @@ namespace GTANetworkServer
         public XmlGroup Map { get; set; }
 
         internal List<NetHandle> MapEntities { get; set; }
+        internal Dictionary<string, CustomSetting> Settings { get; set; }
     }
+
+    public struct CustomSetting
+    {
+        public string Value;
+        public string DefaultValue;
+        public string Description;
+
+        public object CastObject;
+        public bool HasValue;
+    }
+
 
     public enum ScriptType
     {
@@ -556,6 +568,54 @@ namespace GTANetworkServer
 
         [XmlElement("acl")]
         public ResourceAcl ResourceACL { get; set; }
+
+        [XmlElement("settings")]
+        public ResourceSettingsMeta Settings { get; set; }
+
+        [XmlElement("config")]
+        public List<ResourceConfigFile> ConfigFiles { get; set; }
+    }
+
+    public class ResourceConfigFile
+    {
+        [XmlAttribute("src")]
+        public string Path { get; set; }
+
+        [XmlAttribute("type")]
+        public ScriptType Type { get; set; }
+    }
+
+    public class ResourceSettingsMeta
+    {
+        [XmlAttribute("src")]
+        public string Path { get; set; }
+
+        // OR
+
+        [XmlElement]
+        public List<MetaSetting> Settings { get; set; }
+    }
+
+    [XmlRoot("settings")]
+    public class ResourceSettingsFile
+    {
+        [XmlElement("setting")]
+        public List<MetaSetting> Settings { get; set; }
+    }
+
+    public class MetaSetting
+    {
+        [XmlAttribute("name")]
+        public string Name { get; set; }
+
+        [XmlAttribute("value")]
+        public string Value { get; set; }
+
+        [XmlAttribute("default")]
+        public string DefaultValue { get; set; }
+
+        [XmlAttribute("description")]
+        public string Description { get; set; }
     }
 
     [XmlRoot("acl")]

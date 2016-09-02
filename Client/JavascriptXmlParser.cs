@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
 
-namespace GTANetworkServer
+namespace GTANetwork
 {
     public class XmlGroup
     {
@@ -82,11 +82,31 @@ namespace GTANetworkServer
             return _XmlElement.HasAttribute(elementName);
         }
 
-        public T getElementData<T>(string elementName)
+        public object getElementData(string elementName, int returnType)
         {
-            if (!_XmlElement.HasAttribute(elementName)) return default(T);
+            if (!_XmlElement.HasAttribute(elementName)) return null;
             var attribute = _XmlElement.GetAttribute(elementName);
-            return (T) Convert.ChangeType(attribute, typeof (T), CultureInfo.InvariantCulture);
+            Type targetType;
+
+            switch ((ScriptContext.ReturnType)returnType)
+            {
+                default:
+                    return attribute;
+                case ScriptContext.ReturnType.Int:
+                    targetType = typeof(int);
+                    break;
+                case ScriptContext.ReturnType.Bool:
+                    targetType = typeof(bool);
+                    break;
+                case ScriptContext.ReturnType.Float:
+                    targetType = typeof(float);
+                    break;
+                case ScriptContext.ReturnType.String:
+                    return attribute;
+
+            }
+
+            return Convert.ChangeType(attribute, targetType, CultureInfo.InvariantCulture);
         }
     }
 }

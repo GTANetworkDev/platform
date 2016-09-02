@@ -309,6 +309,24 @@ namespace GTANetworkServer
             }
         }
 
+        public Dictionary<string, CustomSetting> LoadSettings(List<MetaSetting> sets)
+        {
+            var dict = new Dictionary<string, CustomSetting>();
+
+            if (sets != null)
+            foreach (var setting in sets)
+            {
+                dict.Set(setting.Name, new CustomSetting()
+                {
+                    Value = setting.Value,
+                    DefaultValue = setting.DefaultValue,
+                    Description = setting.Description,
+                });
+            }
+
+            return dict;
+        }
+
         public bool StartResource(string resourceName, string father = null)
         {
             try
@@ -372,6 +390,46 @@ namespace GTANetworkServer
                     }
                 }
 
+                if (currentResInfo.ConfigFiles != null)
+                foreach (var filePath in currentResInfo.ConfigFiles.Where(cfg => cfg.Type == ScriptType.client))
+                {
+                    using (var md5 = MD5.Create())
+                    using (var stream = File.OpenRead("resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar + filePath.Path))
+                    {
+                        var myData = md5.ComputeHash(stream);
+
+                        var keyName = ourResource.DirectoryName + "_" + filePath.Path;
+
+                        if (FileHashes.ContainsKey(keyName))
+                            FileHashes[keyName] = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                        else
+                            FileHashes.Add(keyName, myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right));
+                    }
+                }
+
+                if (currentResInfo.Settings != null)
+                {
+                    if (string.IsNullOrEmpty(currentResInfo.Settings.Path))
+                    {
+                        ourResource.Settings = LoadSettings(currentResInfo.Settings.Settings);
+                    }
+                    else
+                    {
+                        var ser2 = new XmlSerializer(typeof(ResourceSettingsFile));
+
+                        ResourceSettingsFile file;
+
+                        using (var stream = File.Open(currentResInfo.Settings.Path, FileMode.Open))
+                            file = ser2.Deserialize(stream) as ResourceSettingsFile;
+
+                        if (file != null)
+                        {
+                            ourResource.Settings = LoadSettings(file.Settings);
+                        }
+                    }
+                }
+
+
                 var csScripts = new List<ClientsideScript>();
 
                 var cSharp = new List<string>();
@@ -391,8 +449,7 @@ namespace GTANetworkServer
                                 //Filename = Path.GetFileNameWithoutExtension(script.Path)?.Replace('.', '_'),
                                 Filename = script.Path,
                             };
-
-
+                            
                             using (var md5 = MD5.Create())
                             { 
                                 var myData = md5.ComputeHash(Encoding.UTF8.GetBytes(scrTxt));
