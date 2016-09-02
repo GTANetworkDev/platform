@@ -1708,32 +1708,18 @@ namespace GTANetwork
 	        Function.Call(Hash.SET_PED_SHOOT_RATE, Character, 100);
             Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
 
-            if (!IsInCover)
-            if (Game.GameTime - _lastVehicleAimUpdate > 30)
-            {
-                //Character.Task.AimAt(AimCoords, -1);
-                var latency = DataLatency + TicksSinceLastUpdate;
-                var dir = Position - _lastPosition;
-                var posTarget = Vector3.Lerp(Position, Position + dir,
-                    latency / ((float)AverageLatency));
-
-                var ndir = posTarget - Character.Position;
-                ndir.Normalize();
-
-                var target = Character.Position + ndir * 20f;
-
-                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character, target.X, target.Y,
-                    target.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 3f, false, 2f, 2f, true, 512, false,
-                    unchecked((int)FiringPattern.FullAuto));
-                _lastVehicleAimUpdate = Game.GameTime;
-            }
+	        if (!IsInCover)
+	        {
+	            DisplayAimingAnimation();
+	        }
 
 
-            var gunEnt = Function.Call<Entity>((Hash)0x3B390A939AF0B5FC, Character);
+	        var gunEnt = Function.Call<Entity>((Hash)0x3B390A939AF0B5FC, Character);
 	        if (gunEnt != null)
 	        {
-	            var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, -0.01f));
-	            var dir = (AimCoords - start);
+                //var start = gunEnt.GetOffsetInWorldCoords(new Vector3(0, 0, 0));
+                var start = gunEnt.Position;
+                var dir = (AimCoords - start);
 	            dir.Normalize();
 	            var end = start + dir*100f;
 
