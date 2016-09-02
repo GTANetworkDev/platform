@@ -245,13 +245,13 @@ namespace GTANetwork
                 if (veh.Doors[(VehicleDoorIndex)i].IsBroken) mod.BrokenDoors |= (byte)(1 << i);
                 if (!veh.Windows[(VehicleWindowIndex) i].IsIntact) mod.BrokenWindows |= (byte) (1 << i);
             }
-
+            /*
             var memAdd = veh.MemoryAddress;
             if (memAdd != IntPtr.Zero)
             {
                 mod.BrokenLights = MemoryAccess.ReadInt(memAdd + 0x77C); // 0x784?
             }
-
+            */
             return mod;
         }
 
@@ -276,12 +276,13 @@ namespace GTANetwork
                     veh.Windows[(VehicleWindowIndex)i].Repair();
                 }
             }
-
+            /*
             var addr = veh.MemoryAddress;
             if (addr != IntPtr.Zero)
             {
                 MemoryAccess.WriteInt(addr + 0x77C, model.BrokenLights); // 0x784 ?
             }
+            */
         }
 
         public static void WriteMemory(IntPtr pointer, byte value, int length)
