@@ -63,12 +63,6 @@ namespace GTANetwork.GUI
             {
                 GameFPS = (int)Game.FPS;
                 
-                /*if (Game.IsKeyPressed(Keys.F11)) CEFManager.StopRender = true;
-                if (Game.IsKeyPressed(Keys.F12))
-                {
-                    LogManager.SimpleLog("directx", ObjectTracker.ReportActiveObjects());
-                }*/
-
                 if (ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
@@ -252,38 +246,38 @@ namespace GTANetwork.GUI
         public static void InitializeCef()
         {
 #if !DISABLE_CEF
-            var settings = new CefSharp.CefSettings();
-            settings.SetOffScreenRenderingBestPerformanceArgs();
+                var settings = new CefSharp.CefSettings();
+                settings.SetOffScreenRenderingBestPerformanceArgs();
+                /*
+                settings.RegisterScheme(new CefCustomScheme()
+                {
+                    SchemeHandlerFactory = new ResourceFilePathHandler(),
+                    SchemeName = "http",
+                });
 
-            settings.RegisterScheme(new CefCustomScheme()
-            {
-                SchemeHandlerFactory = new ResourceFilePathHandler(),
-                SchemeName = "http",
-            });
+                settings.RegisterScheme(new CefCustomScheme()
+                {
+                    SchemeHandlerFactory = new ResourceFilePathHandler(),
+                    SchemeName = "https",
+                });
 
-            settings.RegisterScheme(new CefCustomScheme()
-            {
-                SchemeHandlerFactory = new ResourceFilePathHandler(),
-                SchemeName = "https",
-            });
+                settings.RegisterScheme(new CefCustomScheme()
+                {
+                    SchemeHandlerFactory = new ResourceFilePathHandler(),
+                    SchemeName = "resource",
+                });
+                */
+                
+                LogManager.DebugLog("WAITING FOR INITIALIZATION...");
 
-            settings.RegisterScheme(new CefCustomScheme()
-            {
-                SchemeHandlerFactory = new ResourceFilePathHandler(),
-                SchemeName = "resource",
-            });
-
-            settings.CefCommandLineArgs.Add("--off-screen-frame-rate", "60");
-
-            LogManager.DebugLog("WAITING FOR INITIALIZATION...");
-            try
-            {
-                Cef.Initialize(settings);
-            }
-            catch (Exception ex)
-            {
-                LogManager.LogException(ex, "CEF INIT");
-            }
+                try
+                {
+                    Cef.Initialize(settings, true, false);
+                }
+                catch (Exception ex)
+                {
+                    LogManager.LogException(ex, "CEF INIT");
+                }
 #endif
         }
 
@@ -717,7 +711,8 @@ namespace GTANetwork.GUI
             settings.OffScreenTransparentBackground = true;
             settings.JavascriptAccessClipboard = CefState.Disabled;
             settings.JavascriptOpenWindows = CefState.Disabled;
-            
+            //settings.WindowlessFrameRate = 60;
+
             _browser = new ChromiumWebBrowser(browserSettings: settings);
             _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father, this), false);
             //_browser.RequestHandler = new GoBackForwardCanceller(); // disabled for now, giving problems

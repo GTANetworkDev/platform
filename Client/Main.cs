@@ -1349,13 +1349,9 @@ namespace GTANetwork
                     {
                         Script.Yield();
                     }
-
                     Script.Wait(1000);
                     CEFManager.DisposeCef();
                     Script.Wait(5000);
-                    Process.GetProcessesByName("GTAVLauncher")[0].Kill();
-                    Process.GetCurrentProcess().Kill();
-
                     Environment.Exit(0);
                 };
                 MainMenu.Tabs.Add(welcomeItem);
