@@ -62,7 +62,7 @@ namespace GTANetworkServer
                 int paramCounter = 0;
                 Usage = " [" +
                            Parameters.Skip(1)
-                               .Select(par => par.Name)
+                               .Select(par => par.IsOptional ? par.Name + "?" : par.Name)
                                .Aggregate((prev, next) => prev + (paramCounter++ == 0 ? "]" : "") + " [" + next + "]") +
                            (Parameters.Length == 2 ? "]" : "");
             }
@@ -125,7 +125,7 @@ namespace GTANetworkServer
                 int paramCounter = 0;
                 helpText = "~y~USAGE: ~w~/" + commandUsed + " [" +
                            Parameters.Skip(1)
-                               .Select(param => param.Name)
+                               .Select(param => param.IsOptional ? param.Name + "?" : param.Name)
                                .Aggregate((prev, next) => prev + (paramCounter++ == 0 ? "]" : "") + " [" + next + "]") +
                            (Parameters.Length == 2 ? "]" : "");
             }
@@ -137,7 +137,9 @@ namespace GTANetworkServer
             if (!string.IsNullOrEmpty(Usage))
                 helpText = Usage;
 
-            if (args.Length < Parameters.Length || (args.Length > Parameters.Length && !Greedy))
+            int optionalArguments = Parameters.Skip(1).Count(p => p.IsOptional);
+
+            if (args.Length < (Parameters.Length - optionalArguments) || (args.Length > Parameters.Length && !Greedy))
             {
                 Program.ServerInstance.PublicAPI.sendChatMessageToPlayer(sender, helpText);
                 return true;
@@ -154,6 +156,12 @@ namespace GTANetworkServer
 
             for (int i = 1; i < Parameters.Length; i++)
             {
+                if (args.Length <= i)
+                {
+                    arguments[i] = Type.Missing;
+                    continue;
+                }
+
                 if (CustomArgumentParser != null)
                 {
                     try
