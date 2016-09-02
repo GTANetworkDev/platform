@@ -651,6 +651,20 @@ namespace GTANetworkServer
                     Program.ServerInstance.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
                 }
 
+                if (
+                   (pair =
+                       Program.ServerInstance.NetEntityHandler.ToDict()
+                           .FirstOrDefault(
+                               p => p.Value is ParticleProperties && ((ParticleProperties)p.Value).EntityAttached ==
+                       entity.Value)).Key != 0)
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[pair.Key].Dimension = dimension;
+
+                    var deltaBlip = new Delta_EntityProperties();
+                    deltaBlip.Dimension = dimension;
+                    Program.ServerInstance.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
+                }
+
                 if (Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Attachables != null)
                     foreach (var attached in Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Attachables)
                     {
@@ -1281,6 +1295,8 @@ namespace GTANetworkServer
 
         public void setPlayerSkin(Client player, PedHash modelHash)
         {
+            removeAllPlayerWeapons(player);
+
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), (int)modelHash);
             if (doesEntityExist(player.CharacterHandle))
             {

@@ -284,6 +284,14 @@ namespace GTANetwork
             }
         }
 
+        public static void WriteMemory(IntPtr pointer, byte value, int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                MemoryAccess.WriteByte(pointer + i, value);
+            }
+        }
+
         public static unsafe IntPtr FindPattern(string bytes, string mask)
         {
             var patternPtr = Marshal.StringToHGlobalAnsi(bytes);

@@ -2219,16 +2219,19 @@ namespace GTANetwork
                 MainMenu.Visible = true;
                 World.RenderingCamera = MainMenuCamera;
 
-                var address = Util.FindPattern("\x32\xc0\xf3\x0f\x11\x09", "xxxxxx");
+                var address = Util.FindPattern("\x32\xc0\xf3\x0f\x11\x09", "xxxxxx"); // Weapon/radio slowdown
 
                 if (address != IntPtr.Zero)
                 {
-                    MemoryAccess.WriteByte(address, 0x90);
-                    MemoryAccess.WriteByte(address + 1, 0x90);
-                    MemoryAccess.WriteByte(address + 2, 0x90);
-                    MemoryAccess.WriteByte(address + 3, 0x90);
-                    MemoryAccess.WriteByte(address + 4, 0x90);
-                    MemoryAccess.WriteByte(address + 5, 0x90);
+                    Util.WriteMemory(address, 0x90, 6);
+                }
+
+                address = Util.FindPattern("\x48\x85\xC0\x0F\x84\x00\x00\x00\x00\x8B\x48\x50", "xxxxx????xxx");
+                // unlock objects; credit goes to the GTA-MP team
+
+                if (address != IntPtr.Zero)
+                {
+                    Util.WriteMemory(address, 0x90, 24);
                 }
 
                 GTA.UI.Screen.FadeIn(1000);
