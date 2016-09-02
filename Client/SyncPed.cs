@@ -395,8 +395,8 @@ namespace GTANetwork
 			if (Character == null || !Character.Exists() || (!Character.IsInRangeOfEx(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
 				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOfEx(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
-                
-				if (Character != null && Character.Exists()) Character.Delete();
+
+			    if (Character != null && Character.Exists()) Character.Delete();
                 
 				DEBUG_STEP = 3;
 
@@ -1309,18 +1309,14 @@ namespace GTANetwork
                 //Character.Weapons.Select((WeaponHash)CurrentWeapon);
 
                 Character.Weapons.RemoveAll();
-                //Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
-			    //Character.Weapons.Select((WeaponHash) CurrentWeapon);
-
 			    var p = IsInVehicle ? VehiclePosition : Position;
 
-			    var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, CurrentWeapon, 999, p.X, p.Y, p.Z, false, 0, 0);
+			    var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, CurrentWeapon, 999, p.X, p.Y, p.Z, true, 0, 0);
                 
                 if (WeaponTints != null && WeaponTints.ContainsKey(CurrentWeapon))
 			    {
 			        var bitmap = WeaponTints[CurrentWeapon];
 
-                    //Function.Call(Hash.SET_PED_WEAPON_TINT_INDEX, Character, CurrentWeapon, bitmap);
                     Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
 			    }
 
@@ -1328,7 +1324,6 @@ namespace GTANetwork
 			    {
 			        foreach (var comp in WeaponComponents[CurrentWeapon])
 			        {
-                        //Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_PED, Character, CurrentWeapon, comp);
                         Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_WEAPON_OBJECT, wObj, comp);
                     }
 			    }
@@ -1336,10 +1331,6 @@ namespace GTANetwork
                 Function.Call(Hash.GIVE_WEAPON_OBJECT_TO_PED, wObj, Character);
 
 			    DirtyWeapons = false;
-                /*
-			    GTA.UI.Screen.ShowNotification("Updating weapons for " + Name);
-                GTA.UI.Screen.ShowSubtitle("Updating weapons for " + Name, 500);
-                */
 			}
 
 	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
@@ -1797,8 +1788,8 @@ namespace GTANetwork
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
 			{
-				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
-					8f, 10f, -1, flag, -8f, 1, 1, 1);
+			    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
+			        8f, 10f, -1, flag, -8f, 1, 1, 1);
 			}
             
 			
