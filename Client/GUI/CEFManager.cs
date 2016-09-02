@@ -248,7 +248,7 @@ namespace GTANetwork.GUI
 #if !DISABLE_CEF
                 var settings = new CefSharp.CefSettings();
                 settings.SetOffScreenRenderingBestPerformanceArgs();
-                /*
+                
                 settings.RegisterScheme(new CefCustomScheme()
                 {
                     SchemeHandlerFactory = new ResourceFilePathHandler(),
@@ -266,7 +266,7 @@ namespace GTANetwork.GUI
                     SchemeHandlerFactory = new ResourceFilePathHandler(),
                     SchemeName = "resource",
                 });
-                */
+                
                 
                 LogManager.DebugLog("WAITING FOR INITIALIZATION...");
 
