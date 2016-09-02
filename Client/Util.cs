@@ -102,6 +102,18 @@ namespace GTANetwork
             LogManager.DebugLog("MODEL REQUESTED!");
         }
 
+        public static void LoadWeapon(int model)
+        {
+            var start = Util.TickCount;
+            while (!Function.Call<bool>(Hash.HAS_WEAPON_ASSET_LOADED, model))
+            {
+                Function.Call(Hash.REQUEST_WEAPON_ASSET, model, 31, 0);
+                Script.Yield();
+
+                if (Util.TickCount - start > 500) break;
+            }
+        }
+
         public static long TickCount
         {
             get { return DateTime.Now.Ticks / 10000; }

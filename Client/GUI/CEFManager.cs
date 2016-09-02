@@ -425,7 +425,7 @@ namespace GTANetwork.GUI
             LogManager.LogException(threadExceptionEventArgs.ExceptionObject as Exception, "APPTHREAD");
         }
     }
-    
+    #if !DISABLE_CEF
     public class ResourceFilePathHandler : ISchemeHandlerFactory
     {
         public IResourceHandler Create(IBrowser browser, IFrame frame, string schemeName, IRequest request)
@@ -451,7 +451,7 @@ namespace GTANetwork.GUI
             return null;
         }
     }
-
+#endif
     public class GoBackForwardCanceller : IRequestHandler
     {
         bool IRequestHandler.OnResourceResponse(IWebBrowser browser, IBrowser b, IFrame frame, IRequest req, IResponse resp)
@@ -525,18 +525,22 @@ namespace GTANetwork.GUI
     public class BrowserJavascriptCallback
     {
         private V8ScriptEngine _parent;
+#if !DISABLE_CEF
         private Browser _wrapper;
-
+#endif
         public BrowserJavascriptCallback(V8ScriptEngine parent, Browser wrapper)
         {
             _parent = parent;
+#if !DISABLE_CEF
             _wrapper = wrapper;
+#endif
         }
 
         public BrowserJavascriptCallback() { }
 
         public object call(string functionName, params object[] arguments)
         {
+#if !DISABLE_CEF
             if (!_wrapper._localMode) return null;
 
             object objToReturn = null;
@@ -579,10 +583,14 @@ namespace GTANetwork.GUI
             while (!hasValue) Thread.Sleep(10);
 
             return objToReturn;
+#else
+            return null;
+#endif
         }
 
         public object eval(string code)
         {
+#if !DISABLE_CEF
             if (!_wrapper._localMode) return null;
 
             object objToReturn = null;
@@ -604,12 +612,17 @@ namespace GTANetwork.GUI
             while (!hasValue) Thread.Sleep(10);
 
             return objToReturn;
+#else
+            return null;
+#endif
         }
 
         public void addEventHandler(string eventName, Action<object[]> action)
         {
+#if !DISABLE_CEF
             if (!_wrapper._localMode) return;
             _eventHandlers.Add(new Tuple<string, Action<object[]>>(eventName, action));
+#endif
         }
 
         internal void TriggerEvent(string eventName, params object[] arguments)
@@ -626,7 +639,9 @@ namespace GTANetwork.GUI
 
     public class Browser : IDisposable
     {
+#if !DISABLE_CEF
         internal ChromiumWebBrowser _browser;
+#endif
         internal readonly bool _localMode;
         internal bool _hasFocused;
         
@@ -650,6 +665,7 @@ namespace GTANetwork.GUI
         public object eval(string code)
         {
             if (!_localMode) return null;
+#if !DISABLE_CEF
 
             var task = _browser.EvaluateScriptAsync(code);
 
@@ -658,13 +674,14 @@ namespace GTANetwork.GUI
             if (task.Result.Success)
                 return task.Result.Result;
             LogManager.LogException(new Exception(task.Result.Message), "CLIENTSIDESCRIPT -> CEF COMMUNICATION");
+#endif
             return null;
         }
 
         public object call(string method, params object[] arguments)
         {
             if (!_localMode) return null;
-
+#if !DISABLE_CEF
             string callString = method + "(";
 
             for (int i = 0; i < arguments.Length; i++)
@@ -699,13 +716,14 @@ namespace GTANetwork.GUI
                 return task.Result.Result;
 
             LogManager.LogException(new Exception(task.Result.Message), "CLIENTSIDESCRIPT -> CEF COMMUNICATION");
+#endif
             return null;
         }
 
         internal Browser(V8ScriptEngine father, Size browserSize, bool localMode)
         {
             Father = father;
-
+#if !DISABLE_CEF
             var settings = new BrowserSettings();
             settings.LocalStorage = CefState.Disabled;
             settings.OffScreenTransparentBackground = true;
@@ -719,33 +737,49 @@ namespace GTANetwork.GUI
             Size = browserSize;
 
             _localMode = localMode;
+#endif
         }
         
         internal void GoToPage(string page)
         {
             //if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
+#if !DISABLE_CEF
             _browser.Load(page);
+#endif
         }
 
         internal string GetAddress()
         {
+#if !DISABLE_CEF
             if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
             return _browser.Address;
+#else
+            return null;
+#endif
         }
 
         internal bool IsLoading()
         {
+#if !DISABLE_CEF
             if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
             return _browser.IsLoading;
+#else
+            return false;
+#endif
         }
 
         internal bool IsInitialized()
         {
+#if !DISABLE_CEF
             return _browser.IsBrowserInitialized;
+#else
+            return false;
+#endif
         }
 
         internal Bitmap GetRawBitmap()
         {
+#if !DISABLE_CEF
             if (!_browser.IsBrowserInitialized) return null;
 
             if (_browser.Size.Width != Size.Width && _browser.Size.Height != Size.Height)
@@ -754,6 +788,9 @@ namespace GTANetwork.GUI
             Bitmap output = _browser.ScreenshotOrNull();
             _browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
             return output;
+#else
+            return null;
+#endif
         }
 
         internal Bitmap GetBitmap()
@@ -768,15 +805,18 @@ namespace GTANetwork.GUI
             {
                 graphics.DrawImage(bmp, new Point(0, 0));
             }
-
+#if !DISABLE_CEF
             _browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
+#endif
 
             return doubleBuffer;
         }
 
         public void Dispose()
         {
+#if !DISABLE_CEF
             _browser = null;
+#endif
         }
     }
     //*/

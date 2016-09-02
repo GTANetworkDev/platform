@@ -1311,13 +1311,15 @@ namespace GTANetwork
                 Character.Weapons.RemoveAll();
 			    var p = IsInVehicle ? VehiclePosition : Position;
 
-			    var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, CurrentWeapon, 999, p.X, p.Y, p.Z, true, 0, 0);
+			    Util.LoadWeapon(CurrentWeapon);
+
+                var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, CurrentWeapon, 999, p.X, p.Y, p.Z, true, 0, 0);
                 
                 if (WeaponTints != null && WeaponTints.ContainsKey(CurrentWeapon))
 			    {
 			        var bitmap = WeaponTints[CurrentWeapon];
 
-                    Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
+			        Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
 			    }
 
 			    if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon))
@@ -1330,7 +1332,7 @@ namespace GTANetwork
 
                 Function.Call(Hash.GIVE_WEAPON_OBJECT_TO_PED, wObj, Character);
 
-			    DirtyWeapons = false;
+                DirtyWeapons = false;
 			}
 
 	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))

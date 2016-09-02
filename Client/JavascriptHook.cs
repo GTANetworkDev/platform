@@ -737,17 +737,7 @@ namespace GTANetwork
         {
             return browser.IsLoading();
         }
-
-        public void openCefDevTools(Browser browser)
-        {
-            browser._browser.ShowDevTools();
-        }
-
-        public void closeCefDevTools(Browser browser)
-        {
-            browser._browser.CloseDevTools();
-        }
-
+        
         public void callNative(string hash, params object[] args)
         {
             Hash ourHash;

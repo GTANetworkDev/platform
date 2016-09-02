@@ -970,7 +970,7 @@ namespace GTANetwork
                 }
 
                 {
-                    var debugItem = new UIMenuCheckboxItem("Break Every Update For Debugging", false);
+                    var debugItem = new UIMenuCheckboxItem("Subtitle Debug", false);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
                         SlowDownClientForDebug = @checked;
@@ -2162,6 +2162,9 @@ namespace GTANetwork
             {
                 _debugStep = value;
                 //LogManager.DebugLog(value.ToString());
+
+                if (SlowDownClientForDebug)
+                    GTA.UI.Screen.ShowSubtitle(value.ToString());
             }
         }
 
