@@ -269,6 +269,31 @@ namespace GTANetwork
 
             GameSettings.SaveSettings(mySettings);
 
+            var scSubfilePath =
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.LocalApplicationData,
+                    Environment.SpecialFolderOption.DoNotVerify) + "\\Rockstar Games\\GTA V";
+
+            if (File.Exists(scSubfilePath + "\\silentlauncher"))
+            {
+                try
+                {
+                    File.Delete(scSubfilePath + "\\silentlauncher");
+                }
+                catch { }
+            }
+
+            var fils = Directory.GetFiles(scSubfilePath, "*-*");
+
+            foreach (var file in fils)
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch { }
+            }
+
             MoveStuffOut();
         }
 
