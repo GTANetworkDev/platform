@@ -1436,9 +1436,16 @@ namespace GTANetwork
                         CustomAnimationDictionary, CustomAnimationName,
                         3))
                 {
+                    Character.Task.ClearSecondary();
+
                     Function.Call(Hash.TASK_PLAY_ANIM, Character,
                         Util.LoadDict(CustomAnimationDictionary), CustomAnimationName,
                         8f, 10f, -1, CustomAnimationFlag, -8f, 1, 1, 1);
+                }
+
+                if ((CustomAnimationFlag & 32) != 0) // this is a secondary animation
+                {
+                    DisplayWalkingAnimation(false);
                 }
 
                 var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
@@ -1774,7 +1781,7 @@ namespace GTANetwork
             }
 		}
 
-	    void DisplayWalkingAnimation()
+	    void DisplayWalkingAnimation(bool displaySecondary = true)
 	    {
 	        if (IsReloading || (IsInCover && IsShooting && !IsAiming)) return;
 
@@ -1792,20 +1799,22 @@ namespace GTANetwork
 			    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
 			        8f, 10f, -1, flag, -8f, 1, 1, 1);
 			}
-            
-			
-			if (secondaryAnimDict != null &&
-				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
-					3))
-			{
-				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
-					8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
-			}
-            else if (secondaryAnimDict == null)
-            {
-                Character.Task.ClearSecondary();
-            }
-		}
+
+	        if (displaySecondary)
+	        {
+	            if (secondaryAnimDict != null &&
+	                !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
+	                    3))
+	            {
+	                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(secondaryAnimDict), ourAnim,
+	                    8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
+	            }
+	            else if (secondaryAnimDict == null)
+	            {
+	                Character.Task.ClearSecondary();
+	            }
+	        }
+	    }
 
 		bool UpdateOnFootPosition()
 		{
