@@ -234,7 +234,9 @@ namespace GTANetwork
                     obj.Flag |= (short) VehicleDataFlags.ExitingVehicle;
                 }
 
-                if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
+                if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) &&
+                    WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash) &&
+                    Util.GetPedSeat(Game.Player.Character) == -1)
                 {
                     obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                     obj.AimCoords = new GTANetworkShared.Vector3(0, 0, 0);
