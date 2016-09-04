@@ -10,6 +10,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 using GTA;
@@ -344,6 +345,16 @@ namespace GTANetwork
             {
                 LogManager.LogException(ex, "UPDATE SC AVATAR");
             }
+        }
+
+        public bool VerifyGameOwnership()
+        {
+            // simple memory edit can circumvent this.
+            // the idea is to connect to our master server
+            // and look at the player's public profile, and see whether
+            // it has GTA5 purchased.
+
+            return Game.Version > GameVersion.v1_0_791_2_Steam;
         }
 
         private void AddToFavorites(string server)
@@ -2196,6 +2207,8 @@ namespace GTANetwork
         internal static int _bytesSentPerSecond;
         internal static int _bytesReceivedPerSecond;
         //
+
+        internal static Warning _mainWarning;
         
         public void OnTick(object sender, EventArgs e)
         {
@@ -2218,6 +2231,26 @@ namespace GTANetwork
             if (!_hasInitialized)
             {
                 RebuildServerBrowser();
+
+                if (!VerifyGameOwnership())
+                {
+                    _mainWarning = new Warning("alert", "Could not verify game ownership.\nPlease restart your game, or purchase Grand Theft Auto V.");
+                    _mainWarning.OnAccept = () =>
+                    {
+                        if (Client != null && IsOnServer()) Client.Disconnect("Quit");
+                        CEFManager.StopRender = true;
+
+                        while (!CEFManager.Disposed)
+                        {
+                            Script.Yield();
+                        }
+                        CEFManager.DisposeCef();
+                        Script.Wait(500);
+                        //Environment.Exit(0);
+                        Process.GetProcessesByName("GTAVLauncher")[0].Kill();
+                        Process.GetCurrentProcess().Kill();
+                    };
+                }
                 
                 _hasInitialized = true;
             }
@@ -2264,6 +2297,12 @@ namespace GTANetwork
             {
                 Game.DisableControlThisFrame(0, Control.Attack);
                 Game.DisableControlThisFrame(0, Control.Attack2);
+            }
+
+            if (_mainWarning != null)
+            {
+                _mainWarning.Draw();
+                return;
             }
 
             if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
@@ -2574,7 +2613,7 @@ namespace GTANetwork
                         freedebug = ourPed;
                     }
                     */
-                    
+
             if (display)
             {
                 Debug();

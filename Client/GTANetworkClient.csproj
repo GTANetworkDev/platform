@@ -169,6 +169,7 @@
     <Compile Include="GUI\TabQuickConnectItem.cs" />
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />
     <Compile Include="GUI\IChat.cs" />
+    <Compile Include="GUI\Warning.cs" />
     <Compile Include="InputboxThread.cs" />
     <Compile Include="Interpolator.cs" />
     <Compile Include="JavascriptChat.cs" />
