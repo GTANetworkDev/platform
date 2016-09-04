@@ -1439,7 +1439,6 @@ namespace GTANetwork
                     Function.Call(Hash.TASK_PLAY_ANIM, Character,
                         Util.LoadDict(CustomAnimationDictionary), CustomAnimationName,
                         8f, 10f, -1, CustomAnimationFlag, -8f, 1, 1, 1);
-                    CustomAnimationStartTime = Util.TickCount;
                 }
 
                 var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
@@ -1456,7 +1455,7 @@ namespace GTANetwork
                     3) &&
                     Util.TickCount - CustomAnimationStartTime >
                     Function.Call<float>(Hash.GET_ENTITY_ANIM_TOTAL_TIME, Character, CustomAnimationDictionary,
-                        CustomAnimationName) &&
+                        CustomAnimationName) + 100 &&
                         (CustomAnimationFlag & 1) == 0)
                 {
                     IsCustomAnimationPlaying = false;
@@ -1930,7 +1929,7 @@ namespace GTANetwork
                     if (!IsPlayerDead)
                     {
                         Function.Call(Hash.TASK_PLAY_ANIM, Character,
-                            Util.LoadDict("get_up@standard"), "back",
+                            Util.LoadDict("anim@sports@ballgame@handball@"), "ball_get_up",
                             12f, 12f, -1, 0, -10f, 1, 1, 1);
                     }
 
@@ -2726,7 +2725,7 @@ namespace GTANetwork
                 return "creatures@boar@getup getup_l";
             
 
-            return "get_up@standard back";
+            return "anim@sports@ballgame@handball@ ball_get_up";
         }
 
         public void Clear()

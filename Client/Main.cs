@@ -2523,55 +2523,56 @@ namespace GTANetwork
             }
         */
 
-    /*            
-            if (freedebug != null)
-            {
-                if (Game.Player.Character.IsInVehicle() && !((Ped)freedebug).IsInVehicle())
-                {
-                    ((Ped)freedebug).SetIntoVehicle(Game.Player.Character.CurrentVehicle, VehicleSeat.Passenger);
-                }
+            /*            
+                    if (freedebug != null)
+                    {
+                        if (Game.Player.Character.IsInVehicle() && !((Ped)freedebug).IsInVehicle())
+                        {
+                            ((Ped)freedebug).SetIntoVehicle(Game.Player.Character.CurrentVehicle, VehicleSeat.Passenger);
+                        }
 
-                if (Game.IsControlJustPressed(0, Control.VehicleDuck) || Game.IsKeyPressed(Keys.Z))
-                {
-                    Function.Call(Hash.SET_PED_CONFIG_FLAG, ((Ped) freedebug), ++_debugPickup, true);
+                        if (Game.IsControlJustPressed(0, Control.VehicleDuck) || Game.IsKeyPressed(Keys.Z))
+                        {
+                            Function.Call(Hash.SET_PED_CONFIG_FLAG, ((Ped) freedebug), ++_debugPickup, true);
 
-                    GTA.UI.Screen.ShowSubtitle("Flag: " + _debugPickup);
-                }
-            }
+                            GTA.UI.Screen.ShowSubtitle("Flag: " + _debugPickup);
+                        }
+                    }
 
-            if (Game.IsControlJustReleased(0, Control.Context))
-            {
-                Function.Call(Hash.SET_CREATE_RANDOM_COPS, false);
-                var ourPed = World.CreatePed(new Model(PedHash.Swat01SMY),
-                    Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), 0, 20);
-                
-                ourPed.BlockPermanentEvents = true;
+                    if (Game.IsControlJustReleased(0, Control.Context))
+                    {
+                        Function.Call(Hash.SET_CREATE_RANDOM_COPS, false);
+                        var ourPed = World.CreatePed(new Model(PedHash.Swat01SMY),
+                            Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), 0, 20);
 
-                Function.Call(Hash.TASK_SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, ourPed, true);
-                ourPed.IsInvincible = true;
-                ourPed.CanRagdoll = false;
+                        ourPed.BlockPermanentEvents = true;
 
-                ourPed.RelationshipGroup = Main.RelGroup;
-                Function.Call(Hash.SET_PED_RELATIONSHIP_GROUP_DEFAULT_HASH, ourPed, Main.RelGroup);
-                
-                ourPed.FiringPattern = FiringPattern.FullAuto;
+                        Function.Call(Hash.TASK_SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, ourPed, true);
+                        ourPed.IsInvincible = true;
+                        ourPed.CanRagdoll = false;
 
-                Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, ourPed);
+                        ourPed.RelationshipGroup = Main.RelGroup;
+                        Function.Call(Hash.SET_PED_RELATIONSHIP_GROUP_DEFAULT_HASH, ourPed, Main.RelGroup);
 
-                Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, ourPed, false);
-                Function.Call(Hash.SET_PED_DROPS_WEAPONS_WHEN_DEAD, ourPed, false);
+                        ourPed.FiringPattern = FiringPattern.FullAuto;
 
-                Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, ourPed, true);
-                Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, ourPed, Game.Player, true);
-                Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, ourPed, false);
-                Function.Call(Hash.SET_PED_AS_ENEMY, ourPed, false);
-                Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ourPed, true, true);
-                
-                //ourPed.Weapons.Give(WeaponHash.Pistol, 9999, true, true);
+                        Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, ourPed);
 
-                freedebug = ourPed;
-            }
-            */
+                        Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, ourPed, false);
+                        Function.Call(Hash.SET_PED_DROPS_WEAPONS_WHEN_DEAD, ourPed, false);
+
+                        Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, ourPed, true);
+                        Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, ourPed, Game.Player, true);
+                        Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, ourPed, false);
+                        Function.Call(Hash.SET_PED_AS_ENEMY, ourPed, false);
+                        Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ourPed, true, true);
+
+                        //ourPed.Weapons.Give(WeaponHash.Pistol, 9999, true, true);
+
+                        freedebug = ourPed;
+                    }
+                    */
+                    
             if (display)
             {
                 Debug();
@@ -3932,6 +3933,7 @@ namespace GTANetwork
                                                 pair.CustomAnimationName = animName;
                                                 pair.CustomAnimationDictionary = animDict;
                                                 pair.CustomAnimationFlag = animFlag;
+                                                pair.CustomAnimationStartTime = Util.TickCount;
 
                                                 if (!string.IsNullOrEmpty(animName) &&
                                                     string.IsNullOrEmpty(animDict))
