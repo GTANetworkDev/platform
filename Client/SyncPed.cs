@@ -532,63 +532,63 @@ namespace GTANetwork
 			{
 				if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17) || isAiming)
 				{
-					var oldPos = GTA.UI.Screen.WorldToScreen(Character.Position + new Vector3(0, 0, 1.2f));
-
 				    Vector3 targetPos;
+				    targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
 
-				    if (!IsInVehicle && Character.HasBone("IK_Head"))
-				        targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
-                    else
-                        targetPos = Character.AttachedBlip.Position + new Vector3(0, 0, 1.2f);
-                    
+                    if (!Character.HasBone("IK_Head"))
+				    {
+				        targetPos = Character.AttachedBlip.Position + new Vector3(0, 0, 1.2f);
+				    }
 
-                    if (oldPos.X != 0 && oldPos.Y != 0)
+				    if (IsInVehicle)
+				    {
+				        targetPos += Character.CurrentVehicle.Velocity/Game.FPS;
+				    }
+
+					Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
+					DEBUG_STEP = 6;
+					var nameText = Name == null ? "<nameless>" : Name;
+
+					if (TicksSinceLastUpdate > 10000)
+						nameText = "~r~AFK~w~~n~" + nameText;
+
+                    var dist = (GameplayCamera.Position - Character.Position).Length();
+					var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
+
+                    new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
+                        GTA.UI.Font.ChaletLondon, UIResText.Alignment.Centered)
 					{
-						Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
-						DEBUG_STEP = 6;
-						var nameText = Name == null ? "<nameless>" : Name;
+						Outline = true,
+					}.Draw();
+					DEBUG_STEP = 7;
+					if (Character != null)
+					{
+						var armorColor = Color.FromArgb(200, 220, 220, 220);
+						var bgColor = Color.FromArgb(100, 0, 0, 0);
+						var armorPercent = Math.Min(Math.Max(PedArmor / 100f, 0f), 1f);
+						var armorBar = (int)Math.Round(150 * armorPercent);
+						armorBar = (int)(armorBar * sizeOffset);
 
-						if (TicksSinceLastUpdate > 10000)
-							nameText = "~r~AFK~w~~n~" + nameText;
+						new UIResRectangle(
+							new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)),
+							new Size(armorBar, (int)(20 * sizeOffset)),
+							armorColor).Draw();
 
-                        var dist = (GameplayCamera.Position - Character.Position).Length();
-						var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
+						new UIResRectangle(
+							new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)) +
+							new Size(armorBar, 0),
+							new Size((int)(sizeOffset * 150) - armorBar, (int)(sizeOffset * 20)),
+							bgColor).Draw();
 
-                        new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
-                            GTA.UI.Font.ChaletLondon, UIResText.Alignment.Centered)
-						{
-							Outline = true,
-						}.Draw();
-						DEBUG_STEP = 7;
-						if (Character != null)
-						{
-							var armorColor = Color.FromArgb(200, 220, 220, 220);
-							var bgColor = Color.FromArgb(100, 0, 0, 0);
-							var armorPercent = Math.Min(Math.Max(PedArmor / 100f, 0f), 1f);
-							var armorBar = (int)Math.Round(150 * armorPercent);
-							armorBar = (int)(armorBar * sizeOffset);
-
-							new UIResRectangle(
-								new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)),
-								new Size(armorBar, (int)(20 * sizeOffset)),
-								armorColor).Draw();
-
-							new UIResRectangle(
-								new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)) +
-								new Size(armorBar, 0),
-								new Size((int)(sizeOffset * 150) - armorBar, (int)(sizeOffset * 20)),
-								bgColor).Draw();
-
-							new UIResRectangle(
-								new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
-								new Size(
-									(int)((142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset),
-									(int)(12 * sizeOffset)),
-								Color.FromArgb(150, 50, 250, 50)).Draw();
-						}
-						DEBUG_STEP = 8;
-						Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+						new UIResRectangle(
+							new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
+							new Size(
+								(int)((142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset),
+								(int)(12 * sizeOffset)),
+							Color.FromArgb(150, 50, 250, 50)).Draw();
 					}
+					DEBUG_STEP = 8;
+					Function.Call(Hash.CLEAR_DRAW_ORIGIN);
 				}
 			}
 		}
@@ -2072,10 +2072,6 @@ namespace GTANetwork
 
                 DEBUG_STEP = 5;
 
-	            DrawNametag();
-
-                DEBUG_STEP = 9;
-
 	            if (CreateVehicle()) return;
                 
 				_switch++;
@@ -2102,6 +2098,7 @@ namespace GTANetwork
 
                 if (UpdatePosition()) return;
 
+                DrawNametag();
 
                 _lastJumping = IsJumping;
                 _lastFreefall = IsFreefallingWithParachute;

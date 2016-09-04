@@ -2522,7 +2522,7 @@ namespace GTANetwork
                 GTA.UI.Screen.ShowNotification("2nd Got: " + hasGot);
             }
         */
-        
+
             /*
             if (freedebug != null)
             {
@@ -2555,7 +2555,7 @@ namespace GTANetwork
             }
             
             */
-            
+
             if (display)
             {
                 Debug();

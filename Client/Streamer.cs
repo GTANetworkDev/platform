@@ -221,6 +221,11 @@ namespace GTANetwork
                             item.Position =
                                 entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector())
                                     .ToLVector();
+
+                            if (entityTarget.IsPed() && new Ped(entityTarget.Handle).IsInVehicle())
+                            {
+                                item.Position += (new Ped(entityTarget.Handle).CurrentVehicle.Velocity/Game.FPS).ToLVector();
+                            }
                         }
                             break;
                     }
