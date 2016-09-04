@@ -1068,6 +1068,11 @@ namespace GTANetwork
             return new Vector3();
         }
 
+        private SyncPed handleToSyncPed(LocalHandle handle)
+        {
+            return Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == handle.Value) as SyncPed;
+        }
+
         public int getPlayerPing(LocalHandle player)
         {
             if (player == getLocalPlayer()) return (int)(Main.Latency*1000f);

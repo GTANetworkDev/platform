@@ -333,10 +333,9 @@ public class FreeroamScript : Script
     [Command("tp")]
     public void TeleportPlayerToPlayerCommand(Client sender, Client target)
     {
-        var pos = API.getEntityPosition(sender.CharacterHandle);                    
-        API.sendNativeToAllPlayers(0xB80D8756B4668AB6, "scr_rcbarry1");
-        API.sendNativeToAllPlayers(0x6C38AF3693A69A91, "scr_rcbarry1");
-        API.sendNativeToAllPlayers(0x25129531F77B9ED3, "scr_alien_teleport", pos.X, pos.Y, pos.Z, 0, 0, 0, 1f, 0, 0, 0);
+        var pos = API.getEntityPosition(sender.CharacterHandle);
+
+        API.createParticleEffectOnPosition("scr_rcbarry1", "scr_alien_teleport", pos, new Vector3(), 1f);
 
         API.setEntityPosition(sender.CharacterHandle, API.getEntityPosition(target.CharacterHandle));
     }
