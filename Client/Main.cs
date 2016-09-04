@@ -205,8 +205,8 @@ namespace GTANetwork
 
             RelGroup = World.AddRelationshipGroup("SYNCPED");
             FriendRelGroup = World.AddRelationshipGroup("SYNCPED_TEAMMATES");
-            RelGroup.SetRelationshipBetweenGroups(Game.Player.Character.RelationshipGroup, Relationship.Hate, true);
 
+            RelGroup.SetRelationshipBetweenGroups(Game.Player.Character.RelationshipGroup, Relationship.Pedestrians, true);
             FriendRelGroup.SetRelationshipBetweenGroups(Game.Player.Character.RelationshipGroup, Relationship.Companion, true);
 
             //Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
@@ -2175,7 +2175,7 @@ namespace GTANetwork
             }
         }
 
-        private int _debugPickup = 398;
+        private int _debugPickup = 0;
         private int _debugmask;
         private Vehicle _debugVehicle;
         private bool _lastSpectating;
@@ -2523,14 +2523,13 @@ namespace GTANetwork
             }
         */
 
-            /*
+    /*            
             if (freedebug != null)
             {
-                ((Ped) freedebug).Task.AimAt(Game.Player.Character.Position, -1);
-                Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, (Ped) freedebug, Game.Player.Character.Position.X,
-                    Game.Player.Character.Position.Y, Game.Player.Character.Position.Z, true);
-
-                Function.Call(Hash.SET_PED_CONFIG_FLAG, ((Ped)freedebug), 400, true);
+                if (Game.Player.Character.IsInVehicle() && !((Ped)freedebug).IsInVehicle())
+                {
+                    ((Ped)freedebug).SetIntoVehicle(Game.Player.Character.CurrentVehicle, VehicleSeat.Passenger);
+                }
 
                 if (Game.IsControlJustPressed(0, Control.VehicleDuck) || Game.IsKeyPressed(Keys.Z))
                 {
@@ -2547,15 +2546,32 @@ namespace GTANetwork
                     Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), 0, 20);
                 
                 ourPed.BlockPermanentEvents = true;
-                ourPed.Weapons.Give(WeaponHash.Pistol, 9999, true, true);
-                
 
+                Function.Call(Hash.TASK_SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, ourPed, true);
+                ourPed.IsInvincible = true;
+                ourPed.CanRagdoll = false;
+
+                ourPed.RelationshipGroup = Main.RelGroup;
+                Function.Call(Hash.SET_PED_RELATIONSHIP_GROUP_DEFAULT_HASH, ourPed, Main.RelGroup);
+                
+                ourPed.FiringPattern = FiringPattern.FullAuto;
+
+                Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, ourPed);
+
+                Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, ourPed, false);
+                Function.Call(Hash.SET_PED_DROPS_WEAPONS_WHEN_DEAD, ourPed, false);
+
+                Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, ourPed, true);
+                Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, ourPed, Game.Player, true);
+                Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, ourPed, false);
+                Function.Call(Hash.SET_PED_AS_ENEMY, ourPed, false);
+                Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ourPed, true, true);
+                
+                //ourPed.Weapons.Give(WeaponHash.Pistol, 9999, true, true);
 
                 freedebug = ourPed;
             }
-            
             */
-
             if (display)
             {
                 Debug();
