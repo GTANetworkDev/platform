@@ -2258,6 +2258,8 @@ namespace GTANetwork
             Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
             Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
 
+            Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
+
             if (Game.Player.Character.IsRagdoll)
             {
                 Game.DisableControlThisFrame(0, Control.Attack);
@@ -3177,8 +3179,6 @@ namespace GTANetwork
 
             Function.Call((Hash) 0x2F9A292AD0A3BD89);
             Function.Call((Hash) 0x5F3B7749C112D552);
-
-            Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
 
             if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS))
                 Function.Call(Hash.CANCEL_STUNT_JUMP);
