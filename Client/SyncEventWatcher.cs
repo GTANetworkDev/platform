@@ -69,7 +69,7 @@ namespace GTANetwork
             foreach (var pickup in Main.NetEntityHandler.ClientMap.Where(item => item is RemotePickup).Cast<RemotePickup>())
             {
                 if (!pickup.StreamedIn || !Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup.LocalHandle)) continue;
-                if (!player.IsInRangeOf(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup.LocalHandle), 20f)) continue;
+                if (!player.IsInRangeOfEx(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup.LocalHandle), 20f)) continue;
                 if (Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup.LocalHandle) == -1)
                 {
                     Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);

@@ -2805,8 +2805,8 @@ namespace GTANetwork
 
             if (Game.IsControlJustPressed(0, Control.ThrowGrenade) && !Game.Player.Character.IsInVehicle() && IsOnServer() && !Chat.IsFocused)
             {
-                var vehs = World.GetAllVehicles().OrderBy(v => (v.Position - Game.Player.Character.Position).Length()).Take(1).ToList();
-                if (vehs.Any() && Game.Player.Character.IsInRangeOf(vehs[0].Position, 6f))
+                var vehs = World.GetAllVehicles().OrderBy(v => v.Position.DistanceToSquared(Game.Player.Character.Position)).Take(1).ToList();
+                if (vehs.Any() && Game.Player.Character.IsInRangeOfEx(vehs[0].Position, 6f))
                 {
                     var relPos = vehs[0].GetOffsetFromWorldCoords(Game.Player.Character.Position);
                     VehicleSeat seat = VehicleSeat.Any;
