@@ -2081,7 +2081,7 @@ namespace GTANetwork
 				_switch++;
                 DEBUG_STEP = 15;
 
-	            if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
+                if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
 
                 DEBUG_STEP = 16;
 
@@ -2096,6 +2096,8 @@ namespace GTANetwork
                         Character.IsInvincible = false;
                         Character.Kill();
                     }
+
+                    Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
 
                 if (UpdatePosition()) return;

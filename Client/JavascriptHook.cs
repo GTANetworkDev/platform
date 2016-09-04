@@ -353,30 +353,23 @@ namespace GTANetwork
 
         public static void StopAllScripts()
         {
-            lock (ScriptEngines)
-                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
-                {
-                    ScriptEngines[i].Engine.Script.API.isDisposing = true;
-                }
-
-            ThreadJumper.Add(() =>
+            for (int i = ScriptEngines.Count - 1; i >= 0; i--)
             {
-                lock (ScriptEngines)
-                {
-                    foreach (var engine in ScriptEngines)
-                    {
-                        engine.Engine.Script.API.invokeResourceStop();
-                        engine.Engine.Dispose();
-                    }
+                ScriptEngines[i].Engine.Script.API.isDisposing = true;
+            }
 
-                    ScriptEngines.Clear();
-                    AudioDevice?.Stop();
-                    AudioDevice?.Dispose();
-                    AudioReader?.Dispose();
-                    AudioDevice = null;
-                    AudioReader = null;
-                }
-            });
+            foreach (var engine in ScriptEngines)
+            {
+                engine.Engine.Script.API.invokeResourceStop();
+                engine.Engine.Dispose();
+            }
+
+            ScriptEngines.Clear();
+            AudioDevice?.Stop();
+            AudioDevice?.Dispose();
+            AudioReader?.Dispose();
+            AudioDevice = null;
+            AudioReader = null;
 
             lock (CEFManager.Browsers)
             {

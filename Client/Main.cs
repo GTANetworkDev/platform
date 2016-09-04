@@ -211,9 +211,13 @@ namespace GTANetwork
 
             //Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
 
+            SocialClubName = Game.Player.Name;
+
             GetWelcomeMessage();
 
-            UpdateSocialClubAvatar();
+            var t = new Thread(UpdateSocialClubAvatar);
+            t.IsBackground = true;
+            t.Start();
 
             CEFManager.InitializeCef();
             Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
@@ -245,6 +249,7 @@ namespace GTANetwork
         public static RelationshipGroup RelGroup;
         public static RelationshipGroup FriendRelGroup;
         public static bool HasFinishedDownloading;
+        public static string SocialClubName;
 
         // Debug stuff
         private bool display;
@@ -320,23 +325,25 @@ namespace GTANetwork
             });
         }
 
+        private bool _hasScAvatar;
         public void UpdateSocialClubAvatar()
         {
             try
             {
-                var scName = Game.Player.Name;
+                if (string.IsNullOrEmpty(SocialClubName)) return;
 
-                if (string.IsNullOrEmpty(scName)) return;
-
-                var uri = "https://a.rsg.sc/n/" + scName.ToLower();
+                var uri = "https://a.rsg.sc/n/" + SocialClubName.ToLower();
 
                 using (var wc = new ImpatientWebClient())
                 {
-                    wc.DownloadFile(uri, GTANInstallDir  + "\\images\\scavatar.png");
+                    wc.DownloadFile(uri, GTANInstallDir + "\\images\\scavatar.png");
                 }
+                _hasScAvatar = true;
             }
-            catch
-            {}
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "UPDATE SC AVATAR");
+            }
         }
 
         private void AddToFavorites(string server)
@@ -2168,7 +2175,7 @@ namespace GTANetwork
             }
         }
 
-        private int _debugPickup;
+        private int _debugPickup = 398;
         private int _debugmask;
         private Vehicle _debugVehicle;
         private bool _lastSpectating;
@@ -2281,10 +2288,10 @@ namespace GTANetwork
                     MainMenu.ProcessControls();
                 MainMenu.Update();
                 MainMenu.CanLeave = IsOnServer();
-                if (MainMenu.Visible && !MainMenu.TemporarilyHidden && !_mainMapItem.Focused && File.Exists(GTANInstallDir + "\\images\\scavatar.png"))
+                if (MainMenu.Visible && !MainMenu.TemporarilyHidden && !_mainMapItem.Focused && _hasScAvatar && File.Exists(GTANInstallDir + "\\images\\scavatar.png"))
                 {
                     var safe = new Point(300, 180);
-                    Sprite.DrawTexture(GTANInstallDir + "\\images\\scavatar.png", new Point((int)res.Width - safe.X - 64, safe.Y - 80), new Size(64, 64));
+                    Util.DxDrawTexture(0, GTANInstallDir + "\\images\\scavatar.png", res.Width - safe.X - 64, safe.Y - 80, 64, 64, 0, 255, 255, 255, 255, false);
                 }
 
                 if (!IsOnServer()) Game.EnableControlThisFrame(0, Control.FrontendPause);
@@ -2516,6 +2523,39 @@ namespace GTANetwork
             }
         */
         
+            /*
+            if (freedebug != null)
+            {
+                ((Ped) freedebug).Task.AimAt(Game.Player.Character.Position, -1);
+                Function.Call(Hash.SET_PED_SHOOTS_AT_COORD, (Ped) freedebug, Game.Player.Character.Position.X,
+                    Game.Player.Character.Position.Y, Game.Player.Character.Position.Z, true);
+
+                Function.Call(Hash.SET_PED_CONFIG_FLAG, ((Ped)freedebug), 400, true);
+
+                if (Game.IsControlJustPressed(0, Control.VehicleDuck) || Game.IsKeyPressed(Keys.Z))
+                {
+                    Function.Call(Hash.SET_PED_CONFIG_FLAG, ((Ped) freedebug), ++_debugPickup, true);
+
+                    GTA.UI.Screen.ShowSubtitle("Flag: " + _debugPickup);
+                }
+            }
+
+            if (Game.IsControlJustReleased(0, Control.Context))
+            {
+                Function.Call(Hash.SET_CREATE_RANDOM_COPS, false);
+                var ourPed = World.CreatePed(new Model(PedHash.Swat01SMY),
+                    Game.Player.Character.GetOffsetInWorldCoords(new Vector3(0, 5f, 0)), 0, 20);
+                
+                ourPed.BlockPermanentEvents = true;
+                ourPed.Weapons.Give(WeaponHash.Pistol, 9999, true, true);
+                
+
+
+                freedebug = ourPed;
+            }
+            
+            */
+            
             if (display)
             {
                 Debug();
