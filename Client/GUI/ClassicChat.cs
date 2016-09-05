@@ -164,9 +164,6 @@ namespace GTANetwork.GUI
                 var msg = _messages[indx];
 
                 string output = msg.Item1;
-                var limit = UIMenu.GetScreenResolutionMantainRatio().Width - UIMenu.GetSafezoneBounds().X;
-                while (StringMeasurer.MeasureString(output) > limit)
-                    output = output.Substring(0, output.Length - 5);
 
                 if (Main.PlayerSettings.ScaleChatWithSafezone)
                 {
