@@ -294,6 +294,10 @@ namespace GTANetwork
 
         private GameSettings.Settings GameSettings;
 
+        private string CustomAnimation;
+        private int AnimationFlag;
+
+
         public static Camera MainMenuCamera;
         
 
@@ -2857,6 +2861,23 @@ namespace GTANetwork
                 Game.Player.IsInvincible = playerObj.IsInvincible;
             }
 
+            if (!string.IsNullOrWhiteSpace(CustomAnimation))
+            {
+                var sp = CustomAnimation.Split();
+
+                if (
+                    !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Game.Player.Character,
+                        sp[0], sp[1],
+                        3))
+                {
+                    Game.Player.Character.Task.ClearSecondary();
+
+                    Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
+                        Util.LoadDict(sp[0]), sp[1],
+                        8f, 10f, -1, AnimationFlag, -8f, 1, 1, 1);
+                }
+            }
+
             DEBUG_STEP = 13;
             _lastPlayerCar = playerCar;
 
@@ -3992,6 +4013,11 @@ namespace GTANetwork
                                             {
                                                 Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
                                                     Util.LoadDict(animDict), animName, 8f, 10f, -1, animFlag, -8f, 1, 1, 1);
+                                                if ((animFlag & 1) != 0)
+                                                {
+                                                    CustomAnimation = animDict + " " + animName;
+                                                    AnimationFlag = animFlag;
+                                                }
                                             }
                                         }
                                     }
@@ -4017,6 +4043,8 @@ namespace GTANetwork
                                         else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
                                         {
                                             Game.Player.Character.Task.ClearAll();
+                                            AnimationFlag = 0;
+                                            CustomAnimation = null;
                                         }
                                     }
                                     break;
@@ -4866,6 +4894,9 @@ namespace GTANetwork
         {
             Game.Player.Character.Position = _vinewoodSign;
             Game.Player.Character.IsPositionFrozen = false;
+
+            CustomAnimation = null;
+            AnimationFlag = 0;
             
             Util.SetPlayerSkin(PedHash.Clown01SMY);
 
