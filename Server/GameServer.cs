@@ -2109,6 +2109,7 @@ namespace GTANResource
                                     case PacketType.PlayerRespawned:
                                         {
                                             PublicAPI.removeAllPlayerWeapons(client);
+                                            PublicAPI.stopPlayerAnimation(client);
 
                                             lock (RunningResources)
                                                 RunningResources.ForEach(fs => fs.Engines.ForEach(en =>

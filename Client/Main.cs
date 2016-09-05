@@ -4005,6 +4005,9 @@ namespace GTANetwork
                                         }
                                         else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
                                         {
+                                            AnimationFlag = 0;
+                                            CustomAnimation = null;
+
                                             if (string.IsNullOrEmpty(animDict))
                                             {
                                                 Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, Game.Player.Character, animName, 0, 0);
