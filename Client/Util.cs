@@ -446,18 +446,15 @@ namespace GTANetwork
                 Function.Call(Hash.SET_TEXT_WRAP, x, xsize);
             }
 
-            //Function.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
-            Function.Call(Hash._SET_TEXT_ENTRY, new InputArgument(Main.StringCache.GetCached("CELL_EMAIL_BCON")));
-            //NativeUI.UIResText.AddLongString(caption);
+            Function.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
 
             const int maxStringLength = 99;
 
             for (int i = 0; i < caption.Length; i += maxStringLength)
             {
                 Function.Call((Hash)0x6C188BE134E074AA,
-                    new InputArgument(
-                        Main.StringCache.GetCached(caption.Substring(i,
-                            System.Math.Min(maxStringLength, caption.Length - i)))));
+                    caption.Substring(i,
+                            System.Math.Min(maxStringLength, caption.Length - i)));
                 //Function.Call((Hash)0x6C188BE134E074AA, caption.Substring(i, System.Math.Min(maxStringLength, caption.Length - i)));
             }
 

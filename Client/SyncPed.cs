@@ -79,9 +79,14 @@ namespace GTANetwork
         {
             get
             {
-                if (VehicleNetHandle == 0) return 0;
-                var car = Main.NetEntityHandler.NetToStreamedItem(VehicleNetHandle) as RemoteVehicle;
-                return car.ModelHash;
+                if (!Debug)
+                {
+                    if (VehicleNetHandle == 0) return 0;
+                    var car = Main.NetEntityHandler.NetToStreamedItem(VehicleNetHandle) as RemoteVehicle;
+                    return car.ModelHash;
+                }
+
+                return Character.CurrentVehicle?.Model.Hash ?? 0;
             }
         }
 
@@ -540,10 +545,7 @@ namespace GTANetwork
 				        targetPos = Character.AttachedBlip.Position + new Vector3(0, 0, 1.2f);
 				    }
 
-				    if (IsInVehicle)
-				    {
-				        targetPos += Character.CurrentVehicle.Velocity/Game.FPS;
-				    }
+				    targetPos += Character.Velocity/Game.FPS;
 
 					Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
 					DEBUG_STEP = 6;
@@ -556,13 +558,6 @@ namespace GTANetwork
 					var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
 
                     Util.DrawText(nameText, 0, 0, 0.4f * sizeOffset, 245, 245, 245, 255, 0, 1, false, true, 0);
-                    /*
-                    new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
-                        GTA.UI.Font.ChaletLondon, UIResText.Alignment.Centered)
-					{
-						Outline = true,
-					}.Draw();
-                    */
 
 					DEBUG_STEP = 7;
 					if (Character != null)
@@ -573,29 +568,15 @@ namespace GTANetwork
 						var armorBar = Math.Round(150 * armorPercent);
 						armorBar = (armorBar * sizeOffset);
 
-					    Util.DrawRectangle(-75*sizeOffset, -36*sizeOffset, armorBar, 20*sizeOffset, armorColor.R, armorColor.G,
+                        //*
+					    Util.DrawRectangle(-75*sizeOffset, 36*sizeOffset, armorBar, 20*sizeOffset, armorColor.R, armorColor.G,
 					        armorColor.B, armorColor.A);
 					    Util.DrawRectangle(-75*sizeOffset + armorBar, 36*sizeOffset, (sizeOffset*150) - armorBar, sizeOffset*20,
 					        bgColor.R, bgColor.G, bgColor.B, bgColor.A);
-					    Util.DrawRectangle(-71*sizeOffset + armorBar, 36*sizeOffset, sizeOffset*150 - armorBar, sizeOffset*20,
-					        bgColor.R, bgColor.G, bgColor.B, bgColor.A);
-
-					    /*
-						new UIResRectangle(
-							new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)) +
-							new Size(armorBar, 0),
-							new Size((int)(sizeOffset * 150) - armorBar, (int)(sizeOffset * 20)),
-							bgColor).Draw();
-
-						new UIResRectangle(
-							new Point(0, 0) - new Size((int)(71 * sizeOffset), (int)(-40 * sizeOffset)),
-							new Size(
-								(int)((142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset),
-								(int)(12 * sizeOffset)),
-							Color.FromArgb(150, 50, 250, 50)).Draw();
-                            */
-					}
-					DEBUG_STEP = 8;
+					    Util.DrawRectangle(-71*sizeOffset, 40*sizeOffset, (142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset, 12 * sizeOffset,
+                             50, 250, 50, 150);
+                    }
+                    DEBUG_STEP = 8;
 					Function.Call(Hash.CLEAR_DRAW_ORIGIN);
 				}
 			}
@@ -2098,7 +2079,7 @@ namespace GTANetwork
                 DEBUG_STEP = 16;
 
 	            WorkaroundBlip();
-
+                DEBUG_STEP = 119;
                 if (Character != null)
                 {
                     Character.Health = PedHealth;
@@ -2111,7 +2092,7 @@ namespace GTANetwork
 
                     Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
-
+                DEBUG_STEP = 120;
                 if (UpdatePosition()) return;
 
                 DrawNametag();
