@@ -370,6 +370,100 @@ namespace GTANetwork
                 rot, Color.FromArgb(a, r, g, b));
         }
 
+        public static void DrawSprite(string dict, string txtName, double x, double y, double width, double height, double heading,
+            int r, int g, int b, int alpha)
+        {
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
+            if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
+                Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
+
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
+            const float hh = 1080f;
+            float ratio = (float)screenw / screenh;
+            var ww = hh * ratio;
+
+
+            float w = (float)(width / ww);
+            float h = (float)(height / hh);
+            float xx = (float)(x / ww) + w * 0.5f;
+            float yy = (float)(y / hh) + h * 0.5f;
+
+            Function.Call(Hash.DRAW_SPRITE, dict, txtName, xx, yy, w, h, heading, r, g, b, alpha);
+        }
+
+        public static void DrawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
+        {
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
+            const float height = 1080f;
+            float ratio = (float)screenw / screenh;
+            var width = height * ratio;
+
+            float w = (float)wSize / width;
+            float h = (float)hSize / height;
+            float x = (((float)xPos) / width) + w * 0.5f;
+            float y = (((float)yPos) / height) + h * 0.5f;
+
+            Function.Call(Hash.DRAW_RECT, x, y, w, h, r, g, b, alpha);
+        }
+
+        public static void DrawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
+            int justify, bool shadow, bool outline, int wordWrap)
+        {
+            if (!Main.UIVisible || Main.MainMenu.Visible) return;
+            int screenw = GTA.UI.Screen.Resolution.Width;
+            int screenh = GTA.UI.Screen.Resolution.Height;
+            const float height = 1080f;
+            float ratio = (float)screenw / screenh;
+            var width = height * ratio;
+
+            float x = (float)(xPos) / width;
+            float y = (float)(yPos) / height;
+
+            Function.Call(Hash.SET_TEXT_FONT, font);
+            Function.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
+            Function.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
+            if (shadow)
+                Function.Call(Hash.SET_TEXT_DROP_SHADOW);
+            if (outline)
+                Function.Call(Hash.SET_TEXT_OUTLINE);
+            switch (justify)
+            {
+                case 1:
+                    Function.Call(Hash.SET_TEXT_CENTRE, true);
+                    break;
+                case 2:
+                    Function.Call(Hash.SET_TEXT_RIGHT_JUSTIFY, true);
+                    Function.Call(Hash.SET_TEXT_WRAP, 0, x);
+                    break;
+            }
+
+            if (wordWrap != 0)
+            {
+                float xsize = (float)(xPos + wordWrap) / width;
+                Function.Call(Hash.SET_TEXT_WRAP, x, xsize);
+            }
+
+            //Function.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
+            Function.Call(Hash._SET_TEXT_ENTRY, new InputArgument(Main.StringCache.GetCached("CELL_EMAIL_BCON")));
+            //NativeUI.UIResText.AddLongString(caption);
+
+            const int maxStringLength = 99;
+
+            for (int i = 0; i < caption.Length; i += maxStringLength)
+            {
+                Function.Call((Hash)0x6C188BE134E074AA,
+                    new InputArgument(
+                        Main.StringCache.GetCached(caption.Substring(i,
+                            System.Math.Min(maxStringLength, caption.Length - i)))));
+                //Function.Call((Hash)0x6C188BE134E074AA, caption.Substring(i, System.Math.Min(maxStringLength, caption.Length - i)));
+            }
+
+            Function.Call(Hash._DRAW_TEXT, x, y);
+        }
+
         public static Vector3 ToEuler(this Quaternion q)
         {
             var pitchYawRoll = new Vector3();

@@ -555,25 +555,32 @@ namespace GTANetwork
                     var dist = (GameplayCamera.Position - Character.Position).Length();
 					var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
 
+                    Util.DrawText(nameText, 0, 0, 0.4f * sizeOffset, 245, 245, 245, 255, 0, 1, false, true, 0);
+                    /*
                     new UIResText(nameText, new Point(0, 0), 0.4f * sizeOffset, Color.WhiteSmoke,
                         GTA.UI.Font.ChaletLondon, UIResText.Alignment.Centered)
 					{
 						Outline = true,
 					}.Draw();
+                    */
+
 					DEBUG_STEP = 7;
 					if (Character != null)
 					{
 						var armorColor = Color.FromArgb(200, 220, 220, 220);
 						var bgColor = Color.FromArgb(100, 0, 0, 0);
 						var armorPercent = Math.Min(Math.Max(PedArmor / 100f, 0f), 1f);
-						var armorBar = (int)Math.Round(150 * armorPercent);
-						armorBar = (int)(armorBar * sizeOffset);
+						var armorBar = Math.Round(150 * armorPercent);
+						armorBar = (armorBar * sizeOffset);
 
-						new UIResRectangle(
-							new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)),
-							new Size(armorBar, (int)(20 * sizeOffset)),
-							armorColor).Draw();
+					    Util.DrawRectangle(-75*sizeOffset, -36*sizeOffset, armorBar, 20*sizeOffset, armorColor.R, armorColor.G,
+					        armorColor.B, armorColor.A);
+					    Util.DrawRectangle(-75*sizeOffset + armorBar, 36*sizeOffset, (sizeOffset*150) - armorBar, sizeOffset*20,
+					        bgColor.R, bgColor.G, bgColor.B, bgColor.A);
+					    Util.DrawRectangle(-71*sizeOffset + armorBar, 36*sizeOffset, sizeOffset*150 - armorBar, sizeOffset*20,
+					        bgColor.R, bgColor.G, bgColor.B, bgColor.A);
 
+					    /*
 						new UIResRectangle(
 							new Point(0, 0) - new Size((int)(75 * sizeOffset), (int)(-36 * sizeOffset)) +
 							new Size(armorBar, 0),
@@ -586,6 +593,7 @@ namespace GTANetwork
 								(int)((142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset),
 								(int)(12 * sizeOffset)),
 							Color.FromArgb(150, 50, 250, 50)).Draw();
+                            */
 					}
 					DEBUG_STEP = 8;
 					Function.Call(Hash.CLEAR_DRAW_ORIGIN);
