@@ -210,9 +210,17 @@ namespace GTANetworkShared
             byteArray.AddRange(GetBytes(data.WeaponHash.Value));
 
             // Write vehicle damage model
-            byteArray.Add(data.DamageModel.BrokenDoors); // Write doors
-            byteArray.Add(data.DamageModel.BrokenWindows); // Write windows
-            byteArray.AddRange(GetBytes(data.DamageModel.BrokenLights)); // Lights
+            if (data.DamageModel != null)
+            {
+                byteArray.Add(0x01);
+                byteArray.Add(data.DamageModel.BrokenDoors); // Write doors
+                byteArray.Add(data.DamageModel.BrokenWindows); // Write windows
+                byteArray.AddRange(GetBytes(data.DamageModel.BrokenLights)); // Lights
+            }
+            else
+            {
+                byteArray.Add(0x00);
+            }
 
             // If he has a trailer attached, write it's position. (Maybe we can use his pos & rot to calculate it serverside?)
             if (data.Trailer != null)
@@ -543,11 +551,14 @@ namespace GTANetworkShared
             data.WeaponHash = r.ReadInt32();
 
             // Read vehicle damage model
-            data.DamageModel = new VehicleDamageModel();
-            data.DamageModel.BrokenDoors = r.ReadByte();
-            data.DamageModel.BrokenWindows = r.ReadByte();
-            data.DamageModel.BrokenLights = r.ReadInt32();
-            
+            if (r.ReadBoolean())
+            {
+                data.DamageModel = new VehicleDamageModel();
+                data.DamageModel.BrokenDoors = r.ReadByte();
+                data.DamageModel.BrokenWindows = r.ReadByte();
+                data.DamageModel.BrokenLights = r.ReadInt32();
+            }
+
             // Does he have a traielr?
             if (r.ReadBoolean())
             {

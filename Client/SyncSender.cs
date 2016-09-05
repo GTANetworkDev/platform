@@ -304,7 +304,8 @@ namespace GTANetwork
                     obj.Trailer = trailer.Position.ToLVector();
                 }
 
-                obj.DamageModel = veh.GetVehicleDamageModel();
+                if (Util.GetResponsiblePed(veh) == player)
+                    obj.DamageModel = veh.GetVehicleDamageModel();
 
                 lock (Lock)
                 {
