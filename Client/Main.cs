@@ -354,7 +354,7 @@ namespace GTANetwork
             // and look at the player's public profile, and see whether
             // it has GTA5 purchased.
 
-            return Game.Version > GameVersion.v1_0_791_2_Steam;
+            return Game.Version >= GameVersion.v1_0_791_2_Steam;
         }
 
         private void AddToFavorites(string server)
