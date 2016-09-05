@@ -976,7 +976,6 @@ namespace GTANetwork
 
             if (_lastVehicleRotation != null && spazzout)
             {
-
                 var rotDir = new Vector3()
                 {
                     X = Util.GetOffsetDegrees(_lastVehicleRotation.Value.X, VehicleRotation.X),
@@ -2096,7 +2095,11 @@ namespace GTANetwork
                     Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
                 DEBUG_STEP = 120;
-                if (UpdatePosition()) return;
+                if (UpdatePosition())
+                {
+                    DrawNametag();
+                    return;
+                }
 
                 DrawNametag();
 
