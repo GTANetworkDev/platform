@@ -596,11 +596,20 @@ namespace GTANetwork
 	            return true;
 	        }
 
-			if ((!_lastVehicle && _isInVehicle) ||
-					(_lastVehicle && _isInVehicle &&
-					 (MainVehicle == null || (!Character.IsInVehicle(MainVehicle) && Game.Player.Character.VehicleTryingToEnter != MainVehicle) ||
-					  Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle ||
-					  (VehicleSeat != Util.GetPedSeat(Character) && Game.Player.Character.VehicleTryingToEnter != MainVehicle))))
+	        var createVehicle = (!_lastVehicle && _isInVehicle) ||
+	                            (_lastVehicle && _isInVehicle &&
+	                             (MainVehicle == null ||
+	                              (!Character.IsInVehicle(MainVehicle) &&
+	                               Game.Player.Character.VehicleTryingToEnter != MainVehicle) ||
+	                              (VehicleSeat != Util.GetPedSeat(Character) &&
+	                               Game.Player.Character.VehicleTryingToEnter != MainVehicle)));
+
+	        if (!Debug && MainVehicle != null)
+	        {
+	            createVehicle = createVehicle || Main.NetEntityHandler.EntityToNet(MainVehicle.Handle) != VehicleNetHandle;
+	        }
+
+            if (createVehicle)
 			{
 			    if (Debug)
 			    {
@@ -965,11 +974,19 @@ namespace GTANetwork
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
 
-            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f && spazzout)
+            if (_lastVehicleRotation != null && spazzout)
             {
-                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
-                    _vehicleRotation.ToQuaternion(),
-                    Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+
+                var rotDir = new Vector3()
+                {
+                    X = Util.GetOffsetDegrees(_lastVehicleRotation.Value.X, VehicleRotation.X),
+                    Y = Util.GetOffsetDegrees(_lastVehicleRotation.Value.Y, VehicleRotation.Y),
+                    Z = Util.GetOffsetDegrees(_lastVehicleRotation.Value.Z, VehicleRotation.Z)
+                };
+
+                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_vehicleRotation.ToQuaternion(),
+                    (_vehicleRotation + rotDir).ToQuaternion(),
+                    Math.Min(1.5f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
             }
             else
             {

@@ -461,6 +461,16 @@ namespace GTANetwork
             Function.Call(Hash._DRAW_TEXT, x, y);
         }
 
+        public static float GetOffsetDegrees(float a, float b)
+        {
+            float c = (b > a) ? b - a : 0 - (a - b);
+            if (c > 180f)
+                c = 0 - (360 - c);
+            else if (c <= -180)
+                c = 360 + c;
+            return c;
+        }
+
         public static Vector3 ToEuler(this Quaternion q)
         {
             var pitchYawRoll = new Vector3();
