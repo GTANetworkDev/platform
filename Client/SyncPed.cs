@@ -880,22 +880,8 @@ namespace GTANetwork
                 }
                 else
                 {
-                    long currentTime = Util.TickCount;
-                    float alpha = Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
-
-                    alpha = Util.Clamp(0f, alpha, 1.5f);
-
-                    float cAlpha = alpha - currentInterop.LastAlpha;
-                    currentInterop.LastAlpha = alpha;
-
-                    Vector3 comp = Util.Lerp(new Vector3(), cAlpha, currentInterop.vecError);
-
-                    if (alpha == 1.5f)
-                    {
-                        currentInterop.FinishTime = 0;
-                    }
-
-                    newPos = VehiclePosition + comp;
+                    var dataLatency = DataLatency + TicksSinceLastUpdate;
+                    newPos = VehiclePosition + VehicleVelocity * dataLatency / 1000;
                     MainVehicle.Velocity = VehicleVelocity + 2 * (newPos - MainVehicle.Position);
                 }
 
@@ -2160,9 +2146,8 @@ namespace GTANetwork
         private void UpdatePlayerPedPos(bool updateRotation = true)
         {
             Vector3 newPos;
-            Vector3 velTarget = new Vector3();
 
-            if (Main.OnFootLagCompensation)
+            if (!Main.OnFootLagCompensation)
             {
                 long currentTime = Util.TickCount;
 
@@ -2174,25 +2159,15 @@ namespace GTANetwork
             }
             else
             {
-                var dir = Position - _lastPosition;
-                var vdir = PedVelocity - _lastPedVel;
-                
                 var latency = DataLatency + TicksSinceLastUpdate;
-
-                velTarget = Vector3.Lerp(PedVelocity, PedVelocity + vdir,
-                    latency / ((float)AverageLatency));
-                newPos = Vector3.Lerp(Position, Position + dir,
-                    latency / ((float)AverageLatency));
+                newPos = Position + (PedVelocity*latency/1000);
             }
 
             if (OnFootSpeed > 0 || IsAnimal(ModelHash))
             {
                 if (Game.Player.Character.IsInRangeOfEx(newPos, physicsRange))
                 {
-                    if (Main.OnFootLagCompensation)
-                        Character.Velocity = PedVelocity + 10*(newPos - Character.Position);
-                    else
-                        Character.Velocity = velTarget + 2*(newPos - Character.Position);
+                    Character.Velocity = PedVelocity + 10*(newPos - Character.Position);
                 }
                 else
                 {
