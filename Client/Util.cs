@@ -30,6 +30,11 @@ namespace GTANetwork
             return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
         }
 
+        public static string ToF2(this Vector3 vector)
+        {
+            return string.Format("X:{0:F2} Y:{1:F2} Z:{2:F2}", vector.X, vector.Y, vector.Y);
+        }
+
         public static void SetNonStandardVehicleMod(Vehicle veh, int slot, int value)
         {
             var eSlot = (NonStandardVehicleMod) slot;

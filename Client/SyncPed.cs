@@ -976,15 +976,8 @@ namespace GTANetwork
 
             if (_lastVehicleRotation != null && spazzout)
             {
-                var rotDir = new Vector3()
-                {
-                    X = Util.GetOffsetDegrees(_lastVehicleRotation.Value.X, VehicleRotation.X),
-                    Y = Util.GetOffsetDegrees(_lastVehicleRotation.Value.Y, VehicleRotation.Y),
-                    Z = Util.GetOffsetDegrees(_lastVehicleRotation.Value.Z, VehicleRotation.Z)
-                };
-
-                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_vehicleRotation.ToQuaternion(),
-                    (_vehicleRotation + rotDir).ToQuaternion(),
+                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
+                    _vehicleRotation.ToQuaternion(),
                     Math.Min(1.5f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
             }
             else
