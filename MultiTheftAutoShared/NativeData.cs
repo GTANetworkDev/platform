@@ -10,7 +10,7 @@ namespace GTANetworkShared
         public NativeArgument Response { get; set; }
 
         [ProtoMember(2)]
-        public string Id { get; set; }
+        public uint Id { get; set; }
     }
 
     [ProtoContract]
@@ -46,7 +46,7 @@ namespace GTANetworkShared
         public NativeArgument ReturnType { get; set; }
 
         [ProtoMember(4)]
-        public string Id { get; set; }
+        public uint Id { get; set; }
     }
 
     [ProtoContract]

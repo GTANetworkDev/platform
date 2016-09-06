@@ -2842,18 +2842,7 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
             Program.ServerInstance.SendNativeCallToAllPlayers(0xF020C96915705B3A, false, true);
         }
-
-        public  void getPlayerHealth(Client player, Action<object> callback, string salt = "salt")
-        {
-            Program.ServerInstance.GetNativeCallFromPlayer(player, salt,
-                0xEEF059FAD016D209, new IntArgument(), callback, new LocalPlayerArgument());
-        }
-
-        public  void isNightVisionActive(Client player, Action<object> callback, string salt = "salt")
-        {
-            Program.ServerInstance.GetNativeCallFromPlayer(player, salt, 0x2202A3F42C8E5F79, new BooleanArgument(), callback, new LocalPlayerArgument());
-        }
-
+        
         public void setMarkerType(NetHandle marker, int type)
         {
             if (doesEntityExist(marker))

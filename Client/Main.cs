@@ -4341,49 +4341,6 @@ namespace GTANetwork
                         DecodeNativeCall(data);
                     }
                     break;
-                case PacketType.NativeTick:
-                    {
-                        var len = msg.ReadInt32();
-                        var data = (NativeTickCall)DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
-                        if (data == null) return;
-                        lock (_tickNatives)
-                        {
-                            if (!_tickNatives.ContainsKey(data.Identifier))
-                                _tickNatives.Add(data.Identifier, data.Native);
-
-                            _tickNatives[data.Identifier] = data.Native;
-                        }
-                    }
-                    break;
-                case PacketType.NativeTickRecall:
-                    {
-                        var len = msg.ReadInt32();
-                        var data = (NativeTickCall)DeserializeBinary<NativeTickCall>(msg.ReadBytes(len));
-                        if (data == null) return;
-                        lock (_tickNatives)
-                            if (_tickNatives.ContainsKey(data.Identifier)) _tickNatives.Remove(data.Identifier);
-                    }
-                    break;
-                case PacketType.NativeOnDisconnect:
-                    {
-                        var len = msg.ReadInt32();
-                        var data = (NativeData)DeserializeBinary<NativeData>(msg.ReadBytes(len));
-                        if (data == null) return;
-                        lock (_dcNatives)
-                        {
-                            if (!_dcNatives.ContainsKey(data.Id)) _dcNatives.Add(data.Id, data);
-                            _dcNatives[data.Id] = data;
-                        }
-                    }
-                    break;
-                case PacketType.NativeOnDisconnectRecall:
-                    {
-                        var len = msg.ReadInt32();
-                        var data = (NativeData)DeserializeBinary<NativeData>(msg.ReadBytes(len));
-                        if (data == null) return;
-                        lock (_dcNatives) if (_dcNatives.ContainsKey(data.Id)) _dcNatives.Remove(data.Id);
-                    }
-                    break;
             }
             #endregion
         }
@@ -5609,7 +5566,7 @@ namespace GTANetwork
             }
         }
 
-        public void SendNativeCallResponse(string id, object response)
+        public void SendNativeCallResponse(uint id, object response)
         {
             var obj = new NativeResponse();
             obj.Id = id;

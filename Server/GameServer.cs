@@ -2709,7 +2709,7 @@ namespace GTANResource
             obj.Hash = hash;
             obj.Arguments = ParseNativeArguments(arguments);
             obj.ReturnType = null;
-            obj.Id = null;
+            obj.Id = 0;
 
             var bin = SerializeBinary(obj);
 
@@ -2725,153 +2725,12 @@ namespace GTANResource
             }
         }
 
-        public void SetNativeCallOnTickForPlayer(Client player, string identifier, ulong hash, params object[] arguments)
-        {
-            var obj = new NativeData();
-            obj.Hash = hash;
-
-            obj.Arguments = ParseNativeArguments(arguments);
-
-            var wrapper = new NativeTickCall();
-            wrapper.Identifier = identifier;
-            wrapper.Native = obj;
-
-            var bin = SerializeBinary(wrapper);
-
-            var msg = Server.CreateMessage();
-
-            msg.Write((byte)PacketType.NativeTick);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
-        }
-
-        public void SetNativeCallOnTickForAllPlayers(string identifier, ulong hash, params object[] arguments)
-        {
-            var obj = new NativeData();
-            obj.Hash = hash;
-
-            obj.Arguments = ParseNativeArguments(arguments);
-
-            var wrapper = new NativeTickCall();
-            wrapper.Identifier = identifier;
-            wrapper.Native = obj;
-
-            var bin = SerializeBinary(wrapper);
-
-            var msg = Server.CreateMessage();
-
-            msg.Write((byte)PacketType.NativeTick);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
-        }
-
-        public void RecallNativeCallOnTickForPlayer(Client player, string identifier)
-        {
-            var wrapper = new NativeTickCall();
-            wrapper.Identifier = identifier;
-
-            var bin = SerializeBinary(wrapper);
-
-            var msg = Server.CreateMessage();
-            msg.Write((byte)PacketType.NativeTickRecall);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
-        }
-
-        public void RecallNativeCallOnTickForAllPlayers(string identifier)
-        {
-            var wrapper = new NativeTickCall();
-            wrapper.Identifier = identifier;
-
-            var bin = SerializeBinary(wrapper);
-
-            var msg = Server.CreateMessage();
-            msg.Write((byte)PacketType.NativeTickRecall);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
-        }
-
-        public void SetNativeCallOnDisconnectForPlayer(Client player, string identifier, ulong hash, params object[] arguments)
-        {
-            var obj = new NativeData();
-            obj.Hash = hash;
-            obj.Id = identifier;
-            obj.Arguments = ParseNativeArguments(arguments);
-
-            
-            var bin = SerializeBinary(obj);
-
-            var msg = Server.CreateMessage();
-
-            msg.Write((byte)PacketType.NativeOnDisconnect);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
-        }
-
-        public void SetNativeCallOnDisconnectForAllPlayers(string identifier, ulong hash, params object[] arguments)
-        {
-            var obj = new NativeData();
-            obj.Hash = hash;
-            obj.Id = identifier;
-            obj.Arguments = ParseNativeArguments(arguments);
-
-            var bin = SerializeBinary(obj);
-
-            var msg = Server.CreateMessage();
-
-            msg.Write((byte)PacketType.NativeOnDisconnect);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
-        }
-
-        public void RecallNativeCallOnDisconnectForPlayer(Client player, string identifier)
-        {
-            var obj = new NativeData();
-            obj.Id = identifier;
-
-            var bin = SerializeBinary(obj);
-
-            var msg = Server.CreateMessage();
-            msg.Write((byte)PacketType.NativeOnDisconnectRecall);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
-        }
-
-        public void RecallNativeCallOnDisconnectForAllPlayers(string identifier)
-        {
-            var obj = new NativeData();
-            obj.Id = identifier;
-
-            var bin = SerializeBinary(obj);
-
-            var msg = Server.CreateMessage();
-            msg.Write((byte)PacketType.NativeOnDisconnectRecall);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            Server.SendToAll(msg, NetDeliveryMethod.ReliableOrdered);
-        }
-
-        private ulong _nativeCount = 0;
+        private uint _nativeCount = 0;
         public object ReturnNativeCallFromPlayer(Client player, ulong hash, NativeArgument returnType, params object[] args)
         {
             _nativeCount++;
             object output = null;
-            GetNativeCallFromPlayer(player, _nativeCount.ToString(), hash, returnType, (o) =>
+            GetNativeCallFromPlayer(player, _nativeCount, hash, returnType, (o) =>
             {
                 output = o;
             }, args);
@@ -2883,17 +2742,13 @@ namespace GTANResource
             return output;
         }
 
-        private Dictionary<string, Action<object>> _callbacks = new Dictionary<string, Action<object>>();
-        public void GetNativeCallFromPlayer(Client player, string salt, ulong hash, NativeArgument returnType, Action<object> callback,
+        private Dictionary<uint, Action<object>> _callbacks = new Dictionary<uint, Action<object>>();
+        public void GetNativeCallFromPlayer(Client player, uint salt, ulong hash, NativeArgument returnType, Action<object> callback,
             params object[] arguments)
         {
             var obj = new NativeData();
             obj.Hash = hash;
             obj.ReturnType = returnType;
-            salt = Environment.TickCount.ToString() +
-                   salt +
-                   player.NetConnection.RemoteUniqueIdentifier.ToString() +
-                   DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds.ToString();
             obj.Id = salt;
             obj.Arguments = ParseNativeArguments(arguments);
 
