@@ -1312,7 +1312,7 @@ namespace GTANetwork
 			        Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
 			    }
 
-			    if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon))
+			    if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon) && WeaponComponents[CurrentWeapon] != null)
 			    {
 			        foreach (var comp in WeaponComponents[CurrentWeapon])
 			        {

@@ -2044,6 +2044,9 @@ namespace GTANetworkServer
             player.Properties.WeaponTints.Clear();
             player.Properties.WeaponComponents.Clear();
 
+            player.Properties.WeaponTints.Add((int)WeaponHash.Unarmed, 0);
+            player.Properties.WeaponComponents.Add((int)WeaponHash.Unarmed, new List<int>());
+
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, false);
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF25DF915FA38C5F3, new LocalPlayerArgument(), true);
 
