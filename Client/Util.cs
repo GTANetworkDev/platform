@@ -35,6 +35,12 @@ namespace GTANetwork
             return string.Format("X:{0:F2} Y:{1:F2} Z:{2:F2}", vector.X, vector.Y, vector.Y);
         }
 
+        public static bool IsExitingLeavingCar(this Ped player)
+        {
+            return player.IsSubtaskActive(161) || player.IsSubtaskActive(162) || player.IsSubtaskActive(163) ||
+                   player.IsSubtaskActive(164) || player.IsSubtaskActive(167) || player.IsSubtaskActive(168);
+        }
+
         public static void SetNonStandardVehicleMod(Vehicle veh, int slot, int value)
         {
             var eSlot = (NonStandardVehicleMod) slot;
@@ -276,6 +282,10 @@ namespace GTANetwork
         {
             if (veh == null || model == null || !veh.Exists()) return;
 
+            bool isinvincible = veh.IsInvincible;
+
+            veh.IsInvincible = false;
+
             // set doors
             for (int i = 0; i < 8; i++)
             {
@@ -300,6 +310,8 @@ namespace GTANetwork
                 MemoryAccess.WriteInt(addr + 0x77C, model.BrokenLights); // 0x784 ?
             }
             */
+
+            veh.IsInvincible = isinvincible;
         }
 
         public static void WriteMemory(IntPtr pointer, byte value, int length)

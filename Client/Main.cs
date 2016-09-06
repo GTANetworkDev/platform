@@ -1951,7 +1951,7 @@ namespace GTANetwork
 
                 var obj = new PedData();
                 obj.AimCoords = aimCoord.ToLVector();
-                obj.Position = player.Position.ToLVector();
+                obj.Position = (player.Position + new Vector3(10, 0, 0)).ToLVector();
                 obj.Quaternion = player.Rotation.ToLVector();
                 obj.PedArmor = (byte)player.Armor;
                 obj.PedModelHash = player.Model.Hash;
@@ -2000,6 +2000,25 @@ namespace GTANetwork
                             Game.Player.Character);
                 }
 
+                if (player.IsSubtaskActive(168))
+                {
+                    obj.Flag |= (int)PedDataFlags.ClosingVehicleDoor;
+                }
+
+                if (player.IsSubtaskActive(161) || player.IsSubtaskActive(162) || player.IsSubtaskActive(163) ||
+                    player.IsSubtaskActive(164))
+                {
+                    obj.Flag |= (int)PedDataFlags.EnteringVehicle;
+
+                    obj.VehicleTryingToEnter =
+                        Main.NetEntityHandler.EntityToNet(Function.Call<int>(Hash.GET_VEHICLE_PED_IS_TRYING_TO_ENTER,
+                            Game.Player.Character));
+
+                    obj.SeatTryingToEnter = (sbyte)
+                        Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER,
+                            Game.Player.Character);
+                }
+
                 obj.Speed = GetPedWalkingSpeed(player);
                 return obj;
             }
@@ -2023,7 +2042,9 @@ namespace GTANetwork
                 var vehdead = veh.IsDead;
 
                 var obj = new VehicleData();
-                obj.Position = veh.Position.ToLVector();
+                obj.Position = (veh.Position + new Vector3(10, 0, 0)).ToLVector();
+
+
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
@@ -2036,6 +2057,11 @@ namespace GTANetwork
                 obj.Flag = 0;
                 obj.Steering = veh.SteeringAngle;
                 obj.Latency = _debugInterval/1000f;
+
+                if (player.IsSubtaskActive(167) || player.IsSubtaskActive(168))
+                {
+                    obj.Flag |= (short)VehicleDataFlags.ExitingVehicle;
+                }
 
                 if (horn)
                     obj.Flag |= (byte)VehicleDataFlags.PressingHorn;
@@ -2617,6 +2643,7 @@ namespace GTANetwork
                         freedebug = ourPed;
                     }
                     */
+
 
             if (display)
             {
@@ -5097,6 +5124,7 @@ namespace GTANetwork
                         _debugSyncPed.IsShooting = (data.Flag & (short) VehicleDataFlags.Shooting) > 0;
                         _debugSyncPed.IsAiming = (data.Flag & (short) VehicleDataFlags.Aiming) > 0;
                         _debugSyncPed.IsInBurnout = (data.Flag & (short)VehicleDataFlags.BurnOut) > 0;
+                        _debugSyncPed.ExitingVehicle = (data.Flag.Value & (short)VehicleDataFlags.ExitingVehicle) != 0;
                         _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
                         if (data.AimCoords != null)
                             _debugSyncPed.AimCoords = data.AimCoords.ToVector();
@@ -5141,12 +5169,22 @@ namespace GTANetwork
                         _debugSyncPed.IsVaulting = (data.Flag & (int)PedDataFlags.IsVaulting) > 0;
                         _debugSyncPed.EnteringVehicle = (data.Flag & (int)PedDataFlags.EnteringVehicle) != 0;
 
+                        if ((data.Flag.Value & (int)PedDataFlags.ClosingVehicleDoor) != 0 && _debugSyncPed.MainVehicle != null && _debugSyncPed.MainVehicle.Model.Hash != (int)VehicleHash.CargoPlane)
+                        {
+                            _debugSyncPed.MainVehicle.Doors[(VehicleDoorIndex)_debugSyncPed.VehicleSeat + 1].Close(true);
+                        }
+
                         if (_debugSyncPed.EnteringVehicle)
                         {
-                            _debugSyncPed.VehicleNetHandle = data.VehicleTryingToEnter.Value;
-                            _debugSyncPed.VehicleSeat = data.SeatTryingToEnter.Value;
+                            _debugSyncPed.VehicleNetHandle =
+                                Function.Call<int>(Hash.GET_VEHICLE_PED_IS_TRYING_TO_ENTER,
+                                    Game.Player.Character);
+
+                            _debugSyncPed.VehicleSeat = (sbyte)
+                                Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER,
+                                    Game.Player.Character);
                         }
-                        
+
                         _debugSyncPed.StartInterpolation();
                     }
                 }

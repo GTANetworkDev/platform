@@ -6,11 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Windows.Forms;
 using GTA;
 using GTA.Native;
 using GTA.UI;
 using GTANetworkShared;
 using NativeUI;
+using Control = GTA.Control;
 using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
@@ -1248,6 +1250,10 @@ namespace GTANetwork
 	                Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
 	            }
 	        }
+	        if (!ExitingVehicle && _lastExitingVehicle)
+	        {
+	            DirtyWeapons = true;
+	        }
 
 	        _lastExitingVehicle = ExitingVehicle;
 
@@ -1843,7 +1849,7 @@ namespace GTANetwork
 		        Entity targetVeh = null;
 		        if (Debug)
 		        {
-		             targetVeh = World.GetAllVehicles().OrderBy(v => v.Position.DistanceToSquared(Position)).FirstOrDefault();
+		            targetVeh = MainVehicle;
 		        }
 		        else
 		        {
@@ -1854,11 +1860,13 @@ namespace GTANetwork
 		        {
                     Character.Task.ClearAll();
                     Character.Task.ClearSecondary();
-		            Character.IsPositionFrozen = false;
+                    Character.Task.ClearAllImmediately();
+                    Character.IsPositionFrozen = false;
 		            Character.Task.EnterVehicle(new Vehicle(targetVeh.Handle), (GTA.VehicleSeat) VehicleSeat, -1, 2f);
+                    _seatEnterStart = Util.TickCount;
 		        }
 		    }
-
+            
 		    _lastEnteringVehicle = EnteringVehicle;
 
 		    if (EnteringVehicle) return true;
@@ -1990,7 +1998,7 @@ namespace GTANetwork
 
 
 		private int DEBUG_STEP_backend;
-        private bool _initialized;
+        private long _seatEnterStart;
         private bool _isReloading;
 
         private const float hRange = 1000f; // 1km
@@ -2053,8 +2061,15 @@ namespace GTANetwork
                     inRange = true;
 
                 DEBUG_STEP = 1;
-                
-                if (Character != null && (Character.IsSubtaskActive(67) || IsBeingControlledByScript))
+
+
+                bool enteringSeat = _seatEnterStart != 0 && Util.TickCount - _seatEnterStart < 500;
+
+                bool test = Character != null &&
+                            (Character.IsSubtaskActive(67) || IsBeingControlledByScript ||
+                             Character.IsExitingLeavingCar() || enteringSeat);
+
+                if (test)
                 {
                     DrawNametag();
                     return;
@@ -2088,6 +2103,7 @@ namespace GTANetwork
                     Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
                 DEBUG_STEP = 120;
+
                 if (UpdatePosition())
                 {
                     DrawNametag();
