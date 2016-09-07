@@ -146,8 +146,6 @@ namespace GTANetwork
         }
     }
 
-
-
     public class Streamer
     {
         public Streamer()
@@ -473,7 +471,7 @@ namespace GTANetwork
             lock (ClientMap)
             {
                 var handleable = netId as ILocalHandleable;
-                if (netId == null || handleable == null) return null;
+                if (netId == null || handleable == null) return new Prop(netId?.RemoteHandle ?? 0);
                 if (handleable.LocalHandle == -2) return Game.Player.Character;
                 return new Prop(handleable.LocalHandle);
             }
@@ -522,7 +520,7 @@ namespace GTANetwork
 
         public int EntityToNet(LocalHandle entityHandle)
         {
-            if (entityHandle.GameValue)
+            if (entityHandle.LocalId)
             {
                 if (entityHandle.Value == 0) return 0;
                 if (entityHandle.Value == Game.Player.Character.Handle)
@@ -1193,7 +1191,7 @@ namespace GTANetwork
             if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
         }
 
-        public RemoteVehicle CreateVehicle(int model, Vector3 position, Vector3 rotation, int netHash)
+        public RemoteVehicle CreateVehicle(int model, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, int netHash)
         {
             RemoteVehicle rem;
             lock (ClientMap)
@@ -1202,8 +1200,8 @@ namespace GTANetwork
                 {
                     RemoteHandle = netHash,
                     ModelHash = model,
-                    Position = position.ToLVector(),
-                    Rotation = rotation.ToLVector(),
+                    Position = position,
+                    Rotation = rotation,
                     StreamedIn = false,
                     LocalOnly = false,
                 });
@@ -1336,7 +1334,7 @@ namespace GTANetwork
             return rem;
         }
 
-        public RemoteBlip CreateBlip(Vector3 pos, int netHandle)
+        public RemoteBlip CreateBlip(GTANetworkShared.Vector3 pos, int netHandle)
         {
             RemoteBlip rem;
             lock (ClientMap)
@@ -1344,7 +1342,7 @@ namespace GTANetwork
                 ClientMap.Add(rem = new RemoteBlip()
                 {
                     RemoteHandle = netHandle,
-                    Position = pos.ToLVector(),
+                    Position = pos,
                     StreamedIn = false,
                     LocalOnly = false,
                     EntityType = (byte) EntityType.Blip,
@@ -1676,6 +1674,54 @@ namespace GTANetwork
             });
             return newId;
         }
+
+        public int CreateLocalVehicle(int model, GTANetworkShared.Vector3 pos, float heading)
+        {
+            var veh = CreateVehicle(model, pos, new GTANetworkShared.Vector3(0, 0, heading), ++_localHandleCounter);
+            veh.LocalOnly = true;
+            return veh.RemoteHandle;
+        }
+
+        public int CreateLocalBlip(GTANetworkShared.Vector3 pos)
+        {
+            var b = CreateBlip(pos, ++_localHandleCounter);
+            b.LocalOnly = true;
+
+            return b.RemoteHandle;
+        }
+
+        public int CreateLocalObject(int model, Vector3 pos, Vector3 rot)
+        {
+            var p = CreateObject(model, pos, rot, false, ++_localHandleCounter);
+            p.LocalOnly = true;
+            return p.RemoteHandle;
+        }
+
+        public int CreateLocalPickup(int model, Vector3 pos, Vector3 rot, int amount)
+        {
+            var p = CreatePickup(pos, rot, model, amount, ++_localHandleCounter);
+            p.LocalOnly = true;
+            return p.RemoteHandle;
+        }
+
+        public int CreateLocalPed(int model, GTANetworkShared.Vector3 pos, float heading)
+        {
+            var pp = new PedProperties();
+            pp.EntityType = (byte)EntityType.Ped;
+            pp.Position = pos;
+            pp.Alpha = 255;
+            pp.ModelHash = model;
+            pp.Rotation = new GTANetworkShared.Vector3(0, 0, heading);
+            pp.Dimension = 0;
+
+            var p = CreatePed(model, pp);
+            p.LocalOnly = true;
+            p.RemoteHandle = ++_localHandleCounter;
+
+            return p.RemoteHandle;
+        }
+
+
 
         public int CreateLocalLabel(string text, Vector3 pos, float range, float size, int dimension = 0)
         {
@@ -2240,6 +2286,11 @@ namespace GTANetwork
             }
 
             if (data.DamageModel != null) veh.SetVehicleDamageModel(data.DamageModel, false);
+
+            if (data.LocalOnly)
+            {
+                veh.LockStatus = VehicleLockStatus.CannotBeTriedToEnter;
+            }
 
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;

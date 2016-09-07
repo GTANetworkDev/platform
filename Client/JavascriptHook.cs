@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Dynamic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -931,11 +932,24 @@ namespace GTANetwork
         {
             return browser.IsLoading();
         }
+
+        private bool parseHash(string hash, out Hash result)
+        {
+            if (hash.StartsWith("0x"))
+            {
+                result = (Hash) int.Parse(hash.Substring(2), NumberStyles.HexNumber);
+                return true;
+            }
+
+            if (!Hash.TryParse(hash, out result))
+                return false;
+            return true;
+        }
         
         public void callNative(string hash, params object[] args)
         {
             Hash ourHash;
-            if (!Hash.TryParse(hash, out ourHash))
+            if (!parseHash(hash, out ourHash))
                 return;
             Function.Call(ourHash, args.Select(o =>
             {
@@ -950,7 +964,7 @@ namespace GTANetwork
         public object returnNative(string hash, int returnType, params object[] args)
         {
             Hash ourHash;
-            if (!Hash.TryParse(hash, out ourHash))
+            if (!parseHash(hash, out ourHash))
                 return null;
             var fArgs = args.Select(o =>
             {
@@ -1284,12 +1298,22 @@ namespace GTANetwork
             return 0;
         }
 
+        public LocalHandle createVehicle(int model, Vector3 pos, float heading)
+        {
+            var car = Main.NetEntityHandler.CreateLocalVehicle(model, pos, heading);
+            return new LocalHandle(car, true);
+        }
+
+        public LocalHandle createPed(int model, Vector3 pos, float heading)
+        {
+            var ped = Main.NetEntityHandler.CreateLocalPed(model, pos, heading);
+            return new LocalHandle(ped, true);
+        }
+
         public LocalHandle createBlip(Vector3 pos)
         {
-            var blip = World.CreateBlip(pos.ToVector());
-            if (!Main.BlipCleanup.Contains(blip.Handle))
-                Main.BlipCleanup.Add(blip.Handle);
-            return new LocalHandle(blip.Handle);
+            var blip = Main.NetEntityHandler.CreateLocalBlip(pos);
+            return new LocalHandle(blip, true);
         }
 
         public void setBlipPosition(LocalHandle blip, Vector3 pos)
@@ -1298,6 +1322,16 @@ namespace GTANetwork
             {
                 new Blip(blip.Value).Position = pos.ToVector();
             }
+        }
+
+        public Vector3 getBlipPosition(LocalHandle blip)
+        {
+            if (new Blip(blip.Value).Exists())
+            {
+                return new Blip(blip.Value).Position.ToLVector();
+            }
+
+            return null;
         }
 
         public void setBlipColor(LocalHandle blip, int color)
@@ -1310,6 +1344,16 @@ namespace GTANetwork
             }
         }
 
+        public int getBlipColor(LocalHandle blip)
+        {
+            if (new Blip(blip.Value).Exists())
+            {
+                return (int)new Blip(blip.Value).Color;
+            }
+
+            return 0;
+        }
+
         public void setBlipSprite(LocalHandle blip, int sprite)
         {
             var ourBlip = new Blip(blip.Value);
@@ -1320,9 +1364,19 @@ namespace GTANetwork
             }
         }
 
+        public int getBlipSprite(LocalHandle blip)
+        {
+            if (new Blip(blip.Value).Exists())
+            {
+                return (int)new Blip(blip.Value).Sprite;
+            }
+
+            return 0;
+        }
+
         public void setBlipName(LocalHandle blip, string name)
         {
-            var ourBlip = Main.NetEntityHandler.EntityToStreamedItem(blip.Value) as RemoteBlip;
+            var ourBlip = Main.NetEntityHandler.NetToStreamedItem(blip.Raw, true) as RemoteBlip;
 
             if (ourBlip != null)
             {

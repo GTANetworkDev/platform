@@ -151,51 +151,6 @@ namespace GTANetworkShared
         UnoccupiedVeh = 11,
     }
 
-    public struct LocalHandle
-    {
-        public LocalHandle(int handle)
-        {
-            Value = handle;
-            GameValue = true;
-        }
-
-        public LocalHandle(int handle, bool gamevalue)
-        {
-            Value = handle;
-            GameValue = gamevalue;
-        }
-
-        public int Value { get; set; }
-        public bool GameValue;
-
-        public override bool Equals(object obj)
-        {
-            return (obj as LocalHandle?)?.Value == Value;
-        }
-
-        public static bool operator ==(LocalHandle left, LocalHandle right)
-        {
-            return left.Value == right.Value;
-        }
-
-        public static bool operator !=(LocalHandle left, LocalHandle right)
-        {
-            return left.Value != right.Value;
-        }
-
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return Value.ToString();
-        }
-
-        public bool IsNull { get { return Value == 0; } }
-    }
-
     public struct NetHandle
     {
         public NetHandle(int handle)
