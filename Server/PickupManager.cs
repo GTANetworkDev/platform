@@ -15,7 +15,6 @@ namespace GTANetworkServer
                 if (!PickupsToRespawn.ContainsKey(netHandle))
                 {
                     PickupsToRespawn.Add(netHandle, Program.GetTicks());
-                    Program.Output("ADDING PICKUP AT " + Program.GetTicks());
                 }
             }
         }
