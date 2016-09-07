@@ -84,6 +84,7 @@ namespace GTANetwork
         private static Vector3 _preSpectatorPos;
 
         public static Streamer NetEntityHandler;
+        public static CameraManager CameraManager;
 
         private readonly MenuPool _menuPool;
 
@@ -153,6 +154,7 @@ namespace GTANetwork
             _threadJumping = new Queue<Action>();
 
             NetEntityHandler = new Streamer();
+            CameraManager = new CameraManager();
 
             Watcher = new SyncEventWatcher(this);
             VehicleSyncManager = new UnoccupiedVehicleSync();
@@ -4930,7 +4932,7 @@ namespace GTANetwork
 			DEBUG_STEP = 48;
 
 			DEBUG_STEP = 49;
-
+            CameraManager.Reset();
 			NetEntityHandler.ClearAll();
 			DEBUG_STEP = 50;
 			JavascriptHook.StopAllScripts();

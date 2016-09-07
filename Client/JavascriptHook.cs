@@ -488,6 +488,192 @@ namespace GTANetwork
             return c;
         }
 
+        public GlobalCamera createCamera(Vector3 position, Vector3 rotation)
+        {
+            return Main.CameraManager.Create(position, rotation);
+        }
+
+        public void setActiveCamera(GlobalCamera camera)
+        {
+            Main.CameraManager.SetActive(camera);
+        }
+
+        public void setGameplayCameraActive()
+        {
+            Main.CameraManager.SetActive(null);
+        }
+
+        public GlobalCamera getActiveCamera()
+        {
+            return Main.CameraManager.GetActive();
+        }
+
+        public void setCameraShake(GlobalCamera cam, string shakeType, float amplitute)
+        {
+            cam.Shake = shakeType;
+            cam.ShakeAmp = amplitute;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                Function.Call(Hash.SHAKE_CAM, cam.CamObj.Handle, cam.Shake, cam.ShakeAmp);
+            }
+        }
+
+        public void stopCameraShake(GlobalCamera cam)
+        {
+            cam.Shake = null;
+            cam.ShakeAmp = 0;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                Function.Call(Hash.STOP_CAM_SHAKING, cam.CamObj.Handle, true);
+            }
+        }
+
+        public bool isCameraShaking(GlobalCamera cam)
+        {
+            return !string.IsNullOrEmpty(cam.Shake);
+        }
+
+        public void setCameraPosition(GlobalCamera cam, Vector3 pos)
+        {
+            cam.Position = pos;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.Position = pos.ToVector();
+            }
+        }
+
+        public Vector3 getCameraPosition(GlobalCamera cam)
+        {
+            return cam.Position;
+        }
+
+        public void setCameraRotation(GlobalCamera cam, Vector3 rotation)
+        {
+            cam.Rotation = rotation;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.Rotation = rotation.ToVector();
+            }
+        }
+
+        public Vector3 getCameraRotation(GlobalCamera cam)
+        {
+            return cam.Rotation;
+        }
+
+        public void setCameraFov(GlobalCamera cam, float fov)
+        {
+            cam.Fov = fov;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.FieldOfView = fov;
+            }
+        }
+
+        public float getCameraFov(GlobalCamera cam)
+        {
+            return cam.Fov;
+        }
+
+        public void pointCameraAtPosition(GlobalCamera cam, Vector3 pos)
+        {
+            cam.EntityPointing = 0;
+            cam.VectorPointing = pos;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.PointAt(pos.ToVector());
+            }
+        }
+
+        public void pointCameraAtEntity(GlobalCamera cam, LocalHandle ent, Vector3 offset)
+        {
+            cam.VectorPointing = null;
+            cam.EntityPointing = ent.Value;
+            cam.PointOffset = offset;
+            cam.BonePointing = 0;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.PointAt(new Prop(ent.Value), offset.ToVector());
+            }
+        }
+
+        public void pointCameraAtEntityBone(GlobalCamera cam, LocalHandle ent, int bone, Vector3 offset)
+        {
+            cam.VectorPointing = null;
+            cam.EntityPointing = ent.Value;
+            cam.BonePointing = bone;
+            cam.PointOffset = offset;
+
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.PointAt(new Ped(ent.Value), bone, offset.ToVector());
+            }
+        }
+
+        public void stopCameraPointing(GlobalCamera cam)
+        {
+            cam.VectorPointing = null;
+            cam.EntityPointing = 0;
+            cam.BonePointing = 0;
+            cam.PointOffset = null;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.StopPointing();
+            }
+        }
+
+        public void attachCameraToEntity(GlobalCamera cam, LocalHandle ent, Vector3 offset)
+        {
+            cam.EntityAttached = ent.Value;
+            cam.BoneAttached = 0;
+            cam.AttachOffset = offset;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.AttachTo(new Prop(ent.Value), offset.ToVector());
+            }
+        }
+
+        public void attachCameraToEntityBone(GlobalCamera cam, LocalHandle ent, int bone, Vector3 offset)
+        {
+            cam.EntityAttached = ent.Value;
+            cam.BoneAttached = bone;
+            cam.AttachOffset = offset;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.AttachTo(new Ped(ent.Value), bone, offset.ToVector());
+            }
+        }
+
+        public void detachCamera(GlobalCamera cam)
+        {
+            cam.EntityAttached = 0;
+            cam.BoneAttached = 0;
+            cam.AttachOffset = null;
+
+            if (cam.CamObj != null && cam.Active)
+            {
+                cam.CamObj.Detach();
+            }
+        }
+
+        public void interpolateCameras(GlobalCamera from, GlobalCamera to, double duration, bool easepos, bool easerot)
+        {
+            if (!from.Active) Main.CameraManager.SetActive(from);
+
+            Main.CameraManager.SetActiveWithInterp(to, (int)duration, easepos, easerot);
+        }
+
         public PointF getCursorPosition()
         {
             return CefController._lastMousePoint;

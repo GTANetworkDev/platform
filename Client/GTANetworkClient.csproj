@@ -130,6 +130,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BiDictionarity.cs" />
+    <Compile Include="CameraManager.cs" />
     <Compile Include="GUI\ClassicChat.cs" />
     <Compile Include="GUI\Chat.cs" />
     <Compile Include="ChatData.cs" />
