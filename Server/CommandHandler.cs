@@ -285,7 +285,7 @@ namespace GTANetworkServer
                     var cmd = method.GetCustomAttribute<CommandAttribute>();
                     var args = method.GetParameters();
                     var parser = new CommandParser();
-                    parser.Command = (string.IsNullOrWhiteSpace(cmd.CommandString) && method.Name.StartsWith("Command_")) ? method.Name.Substring(8).ToLower() : cmd.CommandString;
+                    parser.Command = (string.IsNullOrWhiteSpace(cmd.CommandString)) ? method.Name.ToLower() : cmd.CommandString;
                     parser.Greedy = cmd.GreedyArg;
                     parser.Engine = engine;
                     parser.Parameters = args;

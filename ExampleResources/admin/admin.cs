@@ -22,7 +22,7 @@ public class AdminScript : Script
     #region Commands
 
     [Command(SensitiveInfo = true, ACLRequired = true)]
-    public void Command_Login(Client sender, string password)
+    public void Login(Client sender, string password)
     {
         var logResult = API.loginPlayer(sender, password);
         switch (logResult)
@@ -47,25 +47,25 @@ public class AdminScript : Script
     }
 
     [Command(ACLRequired = true)]
-    public void Command_SetTime(Client sender, int hours, int minutes)
+    public void SetTime(Client sender, int hours, int minutes)
     {
         API.setTime(hours, minutes);
     }
 
     [Command(ACLRequired = true)]
-    public void Command_SetWeather(Client sender, string newWeather)
+    public void SetWeather(Client sender, string newWeather)
     {
         API.setWeather(newWeather);
     }
 
     [Command(ACLRequired = true)]
-    public void Command_Logout(Client sender)
+    public void Logout(Client sender)
     {
         API.logoutPlayer(sender);
     }
 
    [Command(ACLRequired = true)]
-    public void Command_Start(Client sender, string resource)
+    public void Start(Client sender, string resource)
     {
         if (!API.doesResourceExist(resource))
         {
@@ -83,7 +83,7 @@ public class AdminScript : Script
     }
 
     [Command(ACLRequired = true)]
-    public void Command_Stop(Client sender, string resource)
+    public void Stop(Client sender, string resource)
     {
         if (!API.doesResourceExist(resource))
         {
@@ -102,7 +102,7 @@ public class AdminScript : Script
 
 
     [Command(ACLRequired = true)]
-    public void Command_Restart(Client sender, string resource)
+    public void Restart(Client sender, string resource)
     {
         if (API.doesResourceExist(resource))
         {
@@ -118,13 +118,13 @@ public class AdminScript : Script
     }
 
     [Command(GreedyArg = true, ACLRequired = true)]
-    public void Command_Kick(Client sender, Client target, string reason)
+    public void Kick(Client sender, Client target, string reason)
     {
         API.kickPlayer(target, reason);
     }
 
     [Command(ACLRequired = true)]
-    public void Command_Kill(Client sender, Client target)
+    public void Kill(Client sender, Client target)
     {
         API.setPlayerHealth(target, -1);
     }

@@ -10,7 +10,7 @@ using System.Threading;
 public class GlueScript : Script
 {
 	[Command]
-	public void Command_Glue(Client sender)
+	public void Glue(Client sender)
 	{
 		if(API.isEntityAttachedToAnything(sender.CharacterHandle))
 		{
