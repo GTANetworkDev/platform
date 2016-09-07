@@ -328,6 +328,7 @@ namespace GTANetwork
             scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
             scriptEngine.AddHostType("Keys", typeof(Keys));
             scriptEngine.AddHostType("Point", typeof(Point));
+            scriptEngine.AddHostType("PointF", typeof(PointF));
             scriptEngine.AddHostType("Size", typeof(Size));
             scriptEngine.AddHostType("Vector3", typeof(Vector3));
             scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
@@ -873,6 +874,20 @@ namespace GTANetwork
         public Point getCefBrowserPosition(Browser browser)
         {
             return browser.Position;
+        }
+
+        public void pinCefBrowser(Browser browser, double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
+        {
+            browser.Pinned = new PointF[4];
+            browser.Pinned[0] = new PointF((float) x1, (float) y1);
+            browser.Pinned[1] = new PointF((float) x2, (float) y2);
+            browser.Pinned[2] = new PointF((float) x3, (float) y3);
+            browser.Pinned[3] = new PointF((float) x4, (float) y4);
+        }
+
+        public void clearCefPinning(Browser browser)
+        {
+            browser.Pinned = null;
         }
 
         public void verifyIntegrityOfCache()

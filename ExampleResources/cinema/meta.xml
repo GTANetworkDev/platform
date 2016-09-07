@@ -1,0 +1,4 @@
+<meta>
+	<info type="script" />
+	<script src="controller.js" type="client" lang="javascript" />
+</meta>

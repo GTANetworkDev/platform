@@ -360,7 +360,22 @@ namespace GTANetwork.GUI
 
                                         if (bitmap == null) continue;
 
-                                        graphics.DrawImage(bitmap, browser.Position);
+                                        if (browser.Pinned == null || browser.Pinned.Length != 4)
+                                            graphics.DrawImage(bitmap, browser.Position);
+                                        else
+                                        {
+                                            YLScsDrawing.Imaging.Filters.FreeTransform filter = new YLScsDrawing.Imaging.Filters.FreeTransform();
+                                            filter.Bitmap = bitmap;
+                                            filter.FourCorners = browser.Pinned;
+                                            filter.IsBilinearInterpolation = true; // optional for higher quality
+                                            using (System.Drawing.Bitmap perspectiveImg = filter.Bitmap)
+                                            {
+                                                var maxLeft = Math.Min(browser.Pinned[0].X, browser.Pinned[3].X);
+                                                var maxUp = Math.Min(browser.Pinned[0].Y, browser.Pinned[1].Y);
+
+                                                graphics.DrawImage(perspectiveImg, new PointF(maxLeft, maxUp));
+                                            }
+                                        }
                                         bitmap.Dispose();
                                     }
 #endif
@@ -648,6 +663,8 @@ namespace GTANetwork.GUI
         public bool Headless = false;
 
         public Point Position { get; set; }
+
+        public PointF[] Pinned { get; set; }
         
         private Size _size;
         public Size Size
