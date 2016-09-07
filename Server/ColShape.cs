@@ -16,6 +16,25 @@ namespace GTANetworkServer
         public event ColShapeEvent onEntityExitColShape;
         public int handle;
 
+        public int dimension
+        {
+            get { return _dimension; }
+            set
+            {
+                _dimension = value;
+                if (value != 0)
+                {
+                    lock (EntitiesInContact)
+                    {
+                        EntitiesInContact.RemoveAll(
+                            ent =>
+                                Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(ent).Dimension !=
+                                value && Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(ent).Dimension != 0);
+                    }
+                }
+            }
+        }
+
         private Dictionary<string, object> _data = new Dictionary<string, object>();
 
         public bool containsEntity(NetHandle ent)
@@ -59,6 +78,7 @@ namespace GTANetworkServer
         }
 
         internal List<int> EntitiesInContact = new List<int>();
+        private int _dimension;
     }
 
     public class SphereColShape : ColShape
@@ -193,7 +213,7 @@ namespace GTANetworkServer
                     lock (ColShapes)
                     {
                         foreach (var shape in ColShapes)
-                            foreach (var entity in entList)
+                            foreach (var entity in entList.Where(ent => shape.dimension == 0 || ent.Value.Dimension == 0 || ent.Value.Dimension == shape.dimension))
                             {
                                 if (entity.Value == null || entity.Value.Position == null) continue;
                                 if (shape.Check(entity.Value.Position))
