@@ -917,7 +917,7 @@ namespace GTANetwork
 
                 float fThreshold = (VEHICLE_INTERPOLATION_WARP_THRESHOLD + VEHICLE_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * Speed);
 
-                if (MainVehicle.Position.DistanceTo(currentInterop.vecTarget) > fThreshold)
+                if (MainVehicle.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold)
                 {
                     // Abort all interpolation
                     currentInterop.FinishTime = 0;
@@ -949,6 +949,7 @@ namespace GTANetwork
                 {
                     var t = new Vector3(MainVehicle.Position.X, MainVehicle.Position.Y, newPos.Z);
                     MainVehicle.PositionNoOffset = t;
+                    currentInterop.FinishTime = 0;
                 }
 #endif
 
@@ -960,7 +961,7 @@ namespace GTANetwork
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = MainVehicle.Position;
             }
-            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && _lastVehiclePos != null && spazzout)
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && _lastVehiclePos != null && spazzout && currentInterop.FinishTime > 0)
             {
                 var dir = VehiclePosition - _lastVehiclePos.Value;
                 var posTarget = Util.LinearVectorLerp(_carPosOnUpdate, VehiclePosition + dir,
@@ -1914,9 +1915,23 @@ namespace GTANetwork
                     var posTarget = Util.LinearVectorLerp(Position, Position + dir,
                         TicksSinceLastUpdate,
                         (int)AverageLatency);
-                    
-                    Character.Velocity = target + 2 * (posTarget - Character.Position);
-                    _stopTime = DateTime.Now;
+
+                    const int PED_INTERPOLATION_WARP_THRESHOLD = 15;
+                    const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
+
+                    float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
+                                        PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
+
+			        if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold*fThreshold)
+			        {
+			            Character.PositionNoOffset = currentInterop.vecTarget;
+			        }
+			        else
+                    { 
+			            Character.Velocity = target + 2*(posTarget - Character.Position);
+			        }
+
+			        _stopTime = DateTime.Now;
                     _carPosOnUpdate = Character.Position;
                     
                     return true;
@@ -2192,7 +2207,7 @@ namespace GTANetwork
                 newPos = Position + (PedVelocity*latency/1000);
             }
 
-            if (OnFootSpeed > 0 || IsAnimal(ModelHash))
+            if ((OnFootSpeed > 0 || IsAnimal(ModelHash)) && currentInterop.FinishTime != 0)
             {
                 if (Game.Player.Character.IsInRangeOfEx(newPos, physicsRange))
                 {
@@ -2217,7 +2232,7 @@ namespace GTANetwork
                                     PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED*PedVelocity.Length());
 
                 // There is a reason to have this condition this way: To prevent NaNs generating new NaNs after interpolating (Comparing with NaNs always results to false).
-                if (Character.Position.DistanceTo(currentInterop.vecTarget) > fThreshold || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25)
+                if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold/* || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25*/)
                 {
                     // Abort all interpolation
                     currentInterop.FinishTime = 0;
@@ -2263,8 +2278,7 @@ namespace GTANetwork
                 // Only force position if needed for at least two consecutive calls
                 if (!bForceLocalZ && !bForceLocalXY)
                     m_uiForceLocalCounter = 0;
-                else
-                if (m_uiForceLocalCounter++ > 1)
+                else if (m_uiForceLocalCounter++ > 1)
                 {
                     Vector3 targetPos = Character.Position;
 
@@ -2279,11 +2293,12 @@ namespace GTANetwork
                     }
 
                     Character.PositionNoOffset = targetPos;
+                    currentInterop.FinishTime = 0;
                 }
 
 #endif
             }
-            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000)
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && currentInterop.FinishTime != 0)
             {
                 var posTarget = Util.LinearVectorLerp(_carPosOnUpdate, Position + (Position - _lastPosition),
                     (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);

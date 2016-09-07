@@ -773,7 +773,7 @@ namespace GTANetwork.GUI
 #if !DISABLE_CEF
             return _browser.IsBrowserInitialized;
 #else
-            return false;
+            return true;
 #endif
         }
 
