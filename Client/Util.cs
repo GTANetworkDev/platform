@@ -141,10 +141,10 @@ namespace GTANetwork
                     Function.Call(Hash.SET_VEHICLE_WINDOW_TINT, veh, value);
                     break;
                 case NonStandardVehicleMod.EnginePowerMultiplier:
-                    Function.Call(Hash._SET_VEHICLE_ENGINE_POWER_MULTIPLIER, veh, value);
+                    Function.Call(Hash._SET_VEHICLE_ENGINE_POWER_MULTIPLIER, veh, BitConverter.ToSingle(BitConverter.GetBytes(value), 0));
                     break;
                 case NonStandardVehicleMod.EngineTorqueMultiplier:
-                    Function.Call(Hash._SET_VEHICLE_ENGINE_TORQUE_MULTIPLIER, veh, value);
+                    Function.Call(Hash._SET_VEHICLE_ENGINE_TORQUE_MULTIPLIER, veh, BitConverter.ToSingle(BitConverter.GetBytes(value), 0));
                     break;
                 case NonStandardVehicleMod.NeonLightPos:
                     for (int i = 0; i < 8; i++)

@@ -620,14 +620,14 @@ namespace GTANetwork
             if (prop.IsDead != null) veh.IsDead = prop.IsDead.Value;
             if (prop.Mods != null)
             {
-                var oldMods = prop.Mods;
+                var oldMods = veh.Mods;
                 veh.Mods = prop.Mods;
                 if (veh.StreamedIn)
                 {
                     var car = new Vehicle(NetToEntity(veh)?.Handle ?? 0);
 
                     if (car.Handle != 0)
-                    foreach (var pair in oldMods.Except(prop.Mods))
+                    foreach (var pair in prop.Mods.Where(pair => !oldMods.ContainsKey(pair.Key) || oldMods[pair.Key] != pair.Value))
                     {
                         if (pair.Key <= 60)
                         {

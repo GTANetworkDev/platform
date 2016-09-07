@@ -1210,7 +1210,6 @@ namespace GTANetworkServer
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(vehicle.Value))
             {
                 ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods.Set((byte)modType, mod);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x6AF0636DDEDCB6DD, new EntityArgument(vehicle.Value), modType, mod, false);
 
                 var delta = new Delta_VehicleProperties();
                 delta.Mods = ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods;
