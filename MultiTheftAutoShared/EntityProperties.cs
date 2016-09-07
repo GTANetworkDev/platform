@@ -249,6 +249,9 @@ namespace GTANetworkShared
 
         [ProtoMember(3)]
         public uint RespawnTime { get; set; }
+
+        [ProtoMember(4)]
+        public int CustomModel { get; set; }
     }
 
     [ProtoContract]
@@ -542,6 +545,9 @@ namespace GTANetworkShared
 
         [ProtoMember(3)]
         public uint? RespawnTime { get; set; }
+
+        [ProtoMember(4)]
+        public int? CustomModel { get; set; }
     }
 
     [ProtoContract]

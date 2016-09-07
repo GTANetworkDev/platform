@@ -3044,6 +3044,18 @@ namespace GTANetworkServer
             return ent;
         }
 
+        public NetHandle createPickup(int model, Vector3 pos, Vector3 rot, bool vehicle, uint respawnTime, int dimension = 0)
+        {
+            var ent =
+                new NetHandle(
+                    Program.ServerInstance.NetEntityHandler.CreatePickup(
+                        (int) (vehicle ? PickupHash.PICKUP_VEHICLE_CUSTOM_SCRIPT : PickupHash.PICKUP_CUSTOM_SCRIPT), pos,
+                        rot, -1, respawnTime, dimension, model));
+
+            lock (ResourceEntities) ResourceEntities.Add(ent);
+            return ent;
+        }
+
         public void respawnPickup(NetHandle pickup)
         {
             var pic = Program.ServerInstance.NetEntityHandler.NetToProp<PickupProperties>(pickup.Value);

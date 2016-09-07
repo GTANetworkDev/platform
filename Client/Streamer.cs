@@ -1159,6 +1159,7 @@ namespace GTANetwork
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
             if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
+            if (prop.CustomModel != null) veh.CustomModel = prop.CustomModel.Value;
 
             if (prop.Dimension != null)
             {
@@ -1639,6 +1640,7 @@ namespace GTANetwork
                     AttachedTo = prop.AttachedTo,
                     Attachables = prop.Attachables,
                     IsInvincible = prop.IsInvincible,
+                    CustomModel = prop.CustomModel,
 
                     PositionMovement = prop.PositionMovement,
                     RotationMovement = prop.RotationMovement,
@@ -2296,10 +2298,18 @@ namespace GTANetwork
 
         private void StreamInPickup(RemotePickup pickup)
         {
+            int model = 0;
+
+            if (pickup.CustomModel != 0)
+            {
+                Util.LoadModel(new Model(pickup.CustomModel));
+                model = pickup.CustomModel;
+            }
+
             var newPickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, pickup.ModelHash,
                 pickup.Position.X, pickup.Position.Y, pickup.Position.Z,
                 pickup.Rotation.X, pickup.Rotation.Y, pickup.Rotation.Z,
-                515, pickup.Amount, 0, true, 0);
+                515, pickup.Amount, 0, true, model);
 
             var start = 0;
             while (Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup) == -1 && start < 20)

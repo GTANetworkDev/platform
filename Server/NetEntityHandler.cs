@@ -161,7 +161,7 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreatePickup(int model, Vector3 pos, Vector3 rot, int amount, uint respawnTime, int dimension)
+        public int CreatePickup(int model, Vector3 pos, Vector3 rot, int amount, uint respawnTime, int dimension, int customModel = 0)
         {
             int localEntityHash = ++EntityCounter;
             var obj = new PickupProperties();
@@ -172,6 +172,7 @@ namespace GTANetworkServer
             obj.Amount = amount;
             obj.Dimension = dimension;
             obj.Alpha = 255;
+            obj.CustomModel = customModel;
             obj.EntityType = (byte)EntityType.Pickup;
             lock (ServerEntities) ServerEntities.Add(localEntityHash, obj);
 
