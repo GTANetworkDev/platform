@@ -2321,6 +2321,11 @@ namespace GTANetwork
             new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).IsPositionFrozen = true;
             new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).IsPersistent = true;
 
+            if ((pickup.Flag & (byte)EntityFlag.Collisionless) != 0)
+            {
+                new Prop(Function.Call<int>(Hash.GET_PICKUP_OBJECT, newPickup)).IsCollisionEnabled = false;
+            }
+
             pickup.StreamedIn = true;
             pickup.LocalHandle = newPickup;
 

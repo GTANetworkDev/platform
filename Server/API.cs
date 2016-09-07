@@ -892,15 +892,7 @@ namespace GTANetworkServer
                     boneIndex, scale, 0, 0, 0);
             }
         }
-
-        /// <summary>
-        /// WARN: Resets on reconnect.
-        /// </summary>
-        public void setCollisionBetweenEntities(NetHandle entity1, NetHandle entity2, bool collision)
-        {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xA53ED5520C07654A, entity1, entity2, collision);
-        }
-
+        
         public void setPlayerBlipColor(Client target, int newColor)
         {
             Program.ServerInstance.ChangePlayerBlipColor(target, newColor);

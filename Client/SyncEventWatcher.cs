@@ -70,10 +70,21 @@ namespace GTANetwork
             {
                 if (!pickup.StreamedIn || !Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup.LocalHandle)) continue;
                 if (!player.IsInRangeOfEx(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup.LocalHandle), 20f)) continue;
-                if (Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup.LocalHandle) == -1)
+
+                var obj = Function.Call<int>(Hash.GET_PICKUP_OBJECT, pickup.LocalHandle);
+
+                if (obj == -1)
                 {
                     Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
                     SendSyncEvent(SyncEventType.PickupPickedUp, pickup.RemoteHandle);
+                }
+                else if((pickup.Flag & (byte)EntityFlag.Collisionless) != 0)
+                {
+                    new Prop(obj).IsCollisionEnabled = false;
+                }
+                else if((pickup.Flag & (byte)EntityFlag.Collisionless) == 0 && !new Prop(obj).IsCollisionEnabled)
+                {
+                    new Prop(obj).IsCollisionEnabled = true;
                 }
             }
             Main.DEBUG_STEP = 903;
