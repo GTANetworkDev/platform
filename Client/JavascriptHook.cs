@@ -1498,6 +1498,37 @@ namespace GTANetwork
             Main.NetEntityHandler.Remove(item);
         }
 
+        public void attachEntity(LocalHandle ent1, LocalHandle ent2, string bone, Vector3 positionOffset, Vector3 rotationOffset)
+        {
+            if (ent1.Properties<IStreamedItem>().AttachedTo != null)
+            {
+                Main.NetEntityHandler.DetachEntity(ent1.Properties<IStreamedItem>(), false);
+            }
+
+            Main.NetEntityHandler.AttachEntityToEntity(ent1.Properties<IStreamedItem>(), ent2.Properties<IStreamedItem>(), new Attachment()
+            {
+                Bone = bone,
+                PositionOffset = positionOffset,
+                RotationOffset = rotationOffset,
+                NetHandle = ent2.Properties<IStreamedItem>().RemoteHandle,
+            });
+        }
+
+        public void detachEntity(LocalHandle ent)
+        {
+            Main.NetEntityHandler.DetachEntity(ent.Properties<IStreamedItem>(), false);
+        }
+
+        public bool isEntityAttachedToAnything(LocalHandle ent)
+        {
+            return ent.Properties<IStreamedItem>() != null;
+        }
+
+        public bool isEntityAttachedToEntity(LocalHandle from, LocalHandle to)
+        {
+            return (from.Properties<IStreamedItem>().AttachedTo?.NetHandle ?? 0) == to.Properties<IStreamedItem>().RemoteHandle;
+        }
+
         public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size)
         {
             return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0), true);
@@ -2002,6 +2033,22 @@ namespace GTANetwork
         public int getEntityModel(LocalHandle entity)
         {
             return new Prop(entity.Value).Model.Hash;
+        }
+
+        public void givePlayerWeapon(int weapon, int ammo, bool equipNow, bool ammoLoaded)
+        {
+            CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash) weapon);
+            Game.Player.Character.Weapons.Give((WeaponHash) weapon, ammo, equipNow, ammoLoaded);
+        }
+
+        public bool doesPlayerHaveWeapon(int weapon)
+        {
+            return Game.Player.Character.Weapons.HasWeapon((WeaponHash) weapon);
+        }
+
+        public void removePlayerWeapon(int weapon)
+        {
+            CrossReference.EntryPoint.WeaponInventoryManager.Deny((WeaponHash) weapon);
         }
 
         public void setWeather(string weather)

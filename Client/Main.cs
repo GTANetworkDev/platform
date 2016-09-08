@@ -125,8 +125,8 @@ namespace GTANetwork
         
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
-        private UnoccupiedVehicleSync VehicleSyncManager;
-        private WeaponManager WeaponInventoryManager;
+        public UnoccupiedVehicleSync VehicleSyncManager;
+        public WeaponManager WeaponInventoryManager;
 
         private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
 

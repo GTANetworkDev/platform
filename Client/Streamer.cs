@@ -1849,7 +1849,7 @@ namespace GTANetwork
             }
         }
 
-        private void AttachEntityToEntity(IStreamedItem ent, IStreamedItem entTarget, Attachment info)
+        public void AttachEntityToEntity(IStreamedItem ent, IStreamedItem entTarget, Attachment info)
         {
             if (!ent.StreamedIn || !entTarget.StreamedIn || info == null) return;
             LogManager.DebugLog("AE2E_1");
