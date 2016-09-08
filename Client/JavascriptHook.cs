@@ -1063,12 +1063,16 @@ namespace GTANetwork
 
         public Vector3 getEntityPosition(LocalHandle entity)
         {
-            return new Prop(entity.Value).Position.ToLVector();
+            if (entity.Properties<RemoteVehicle>().StreamedIn)
+                return new Prop(entity.Value).Position.ToLVector();
+            else return entity.Properties<RemoteVehicle>().Position;
         }
 
         public Vector3 getEntityRotation(LocalHandle entity)
         {
-            return new Prop(entity.Value).Rotation.ToLVector();
+            if (entity.Properties<RemoteVehicle>().StreamedIn)
+                return new Prop(entity.Value).Rotation.ToLVector();
+            else return entity.Properties<RemoteVehicle>().Rotation;
         }
 
         public Vector3 getEntityVelocity(LocalHandle entity)
@@ -1078,7 +1082,9 @@ namespace GTANetwork
 
         public float getVehicleHealth(LocalHandle entity)
         {
-            return new Vehicle(entity.Value).EngineHealth;
+            if (entity.Properties<RemoteVehicle>().StreamedIn)
+                return new Vehicle(entity.Value).EngineHealth;
+            else return entity.Properties<RemoteVehicle>().Health;
         }
 
         public float getVehicleRPM(LocalHandle entity)
@@ -1318,10 +1324,9 @@ namespace GTANetwork
 
         public void setBlipPosition(LocalHandle blip, Vector3 pos)
         {
-            if (new Blip(blip.Value).Exists())
-            {
+            if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Position = pos.ToVector();
-            }
+            blip.Properties<RemoteBlip>().Position = pos;
         }
 
         public Vector3 getBlipPosition(LocalHandle blip)
@@ -1330,18 +1335,19 @@ namespace GTANetwork
             {
                 return new Blip(blip.Value).Position.ToLVector();
             }
-
-            return null;
+            else
+            {
+                return blip.Properties<RemoteBlip>().Position;
+            }
         }
 
         public void setBlipColor(LocalHandle blip, int color)
         {
             var ourBlip = new Blip(blip.Value);
 
-            if (ourBlip.Exists())
-            {
-                ourBlip.Color = (BlipColor) color;
-            }
+            if (blip.Properties<RemoteBlip>().StreamedIn)
+                new Blip(blip.Value).Color = (BlipColor) color;
+            blip.Properties<RemoteBlip>().Color = color;
         }
 
         public int getBlipColor(LocalHandle blip)
@@ -1351,17 +1357,16 @@ namespace GTANetwork
                 return (int)new Blip(blip.Value).Color;
             }
 
-            return 0;
+            return blip.Properties<RemoteBlip>().Color;
         }
 
         public void setBlipSprite(LocalHandle blip, int sprite)
         {
             var ourBlip = new Blip(blip.Value);
 
-            if (ourBlip.Exists())
-            {
-                ourBlip.Sprite = (BlipSprite)sprite;
-            }
+            if (blip.Properties<RemoteBlip>().StreamedIn)
+                new Blip(blip.Value).Sprite = (BlipSprite) sprite;
+            blip.Properties<RemoteBlip>().Sprite = sprite;
         }
 
         public int getBlipSprite(LocalHandle blip)
@@ -1371,35 +1376,21 @@ namespace GTANetwork
                 return (int)new Blip(blip.Value).Sprite;
             }
 
-            return 0;
+            return blip.Properties<RemoteBlip>().Sprite;
         }
 
         public void setBlipName(LocalHandle blip, string name)
         {
-            var ourBlip = Main.NetEntityHandler.NetToStreamedItem(blip.Raw, true) as RemoteBlip;
-
-            if (ourBlip != null)
-            {
-                ourBlip.Name = name;
-            }
+            blip.Properties<RemoteBlip>().Name = name;
         }
 
         public void setBlipShortRange(LocalHandle blip, bool shortRange)
         {
             var ourBlip = new Blip(blip.Value);
 
-            if (ourBlip.Exists())
-            {
-                ourBlip.IsShortRange = shortRange;
-            }
-        }
-
-        public void removeBlip(LocalHandle blip)
-        {
-            if (new Blip(blip.Value).Exists())
-            {
-                new Blip(blip.Value).Remove();
-            }
+            if (blip.Properties<RemoteBlip>().StreamedIn)
+                new Blip(blip.Value).IsShortRange = shortRange;
+            blip.Properties<RemoteBlip>().IsShortRange = shortRange;
         }
         
         public void setBlipScale(LocalHandle blip, double scale)
@@ -1409,10 +1400,9 @@ namespace GTANetwork
 
         public void setBlipScale(LocalHandle blip, float scale)
         {
-            if (new Blip(blip.Value).Exists())
-            {
+            if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Scale = scale;
-            }
+            blip.Properties<RemoteBlip>().Scale = scale;
         }
 
         public void setChatVisible(bool display)
@@ -1502,7 +1492,10 @@ namespace GTANetwork
 
         public void deleteEntity(LocalHandle handle)
         {
-            Main.NetEntityHandler.DeleteLocalEntity(handle.Value);
+            var item = handle.Properties<IStreamedItem>();
+
+            Main.NetEntityHandler.StreamOut(item);
+            Main.NetEntityHandler.Remove(item);
         }
 
         public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size)

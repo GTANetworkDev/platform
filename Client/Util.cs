@@ -49,6 +49,15 @@ namespace GTANetwork
                 return _internalId;
             }
         }
+
+        public T Properties<T>() where T : IStreamedItem
+        {
+            if (LocalId)
+                return (T) Main.NetEntityHandler.NetToStreamedItem(_internalId, true);
+            else
+                return (T) Main.NetEntityHandler.EntityToStreamedItem(_internalId);
+        }
+
         public bool LocalId;
 
         public override bool Equals(object obj)
