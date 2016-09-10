@@ -937,7 +937,7 @@ namespace GTANetwork
         {
             if (hash.StartsWith("0x"))
             {
-                result = (Hash) int.Parse(hash.Substring(2), NumberStyles.HexNumber);
+                result = (Hash) ulong.Parse(hash.Substring(2), NumberStyles.HexNumber);
                 return true;
             }
 
