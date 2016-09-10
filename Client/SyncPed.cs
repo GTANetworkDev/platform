@@ -67,6 +67,7 @@ namespace GTANetwork
         public bool EnteringVehicle;
         private bool _lastEnteringVehicle;
         public bool IsOnFire;
+        private bool _lastFire;
         public bool IsBeingControlledByScript;
 
         public bool ExitingVehicle;
@@ -285,6 +286,7 @@ namespace GTANetwork
         private bool _lastJumping;
         private bool _blip;
         private bool _justEnteredVeh;
+        private bool _playingGetupAnim;
         private DateTime _lastHornPress = DateTime.Now;
         private DateTime? _spazzout_prevention;
         
@@ -534,8 +536,8 @@ namespace GTANetwork
 	    void DrawNametag()
 	    {
 	        if (!Main.UIVisible) return;
-            
-			bool isAiming = false;
+
+            bool isAiming = false;
 			if ((!Character.IsOccluded && (Character.IsInRangeOfEx(Game.Player.Character.Position, 30f))) ||
 				(isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
 			{
@@ -1780,8 +1782,7 @@ namespace GTANetwork
 
 			DEBUG_STEP = 34;
 
-			if (
-				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
+			if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
 			{
 			    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.LoadDict(animDict), ourAnim,
@@ -1812,26 +1813,19 @@ namespace GTANetwork
 
 			UpdateCurrentWeapon();
 
-			if (!_lastJumping && IsJumping)
+
+            if (!_lastJumping && IsJumping)
 			{
-				//Character.FreezePosition = false;
 				Character.Task.Jump();
 			}
-
-			if (!IsJumping && _lastJumping)
-			{
-				//Character.FreezePosition = true;
-			}
-
-		    var isonfire = Function.Call<bool>(Hash.IS_ENTITY_ON_FIRE, Character);
             
-            if (IsOnFire && !isonfire)
+            if (IsOnFire && !_lastFire)
             {
                 Character.IsInvincible = false;
                 if (_scriptFire != 0) Function.Call(Hash.REMOVE_SCRIPT_FIRE, _scriptFire);
                 _scriptFire = Function.Call<int>(Hash.START_ENTITY_FIRE, Character);
             }
-            else if (!IsOnFire && isonfire)
+            else if (!IsOnFire && _lastFire)
             {
                 Function.Call(Hash.STOP_ENTITY_FIRE, Character);
                 Character.IsInvincible = true;
@@ -1841,6 +1835,8 @@ namespace GTANetwork
 
                 _scriptFire = 0;
             }
+
+		    _lastFire = IsOnFire;
 
 		    if (EnteringVehicle && !_lastEnteringVehicle)
 		    {
@@ -1871,7 +1867,7 @@ namespace GTANetwork
 
             Character.CanBeTargetted = true;
 
-            DEBUG_STEP = 24;
+		    DEBUG_STEP = 24;
 			if (IsFreefallingWithParachute)
 			{
 				DisplayParachuteFreefall();
@@ -1882,8 +1878,6 @@ namespace GTANetwork
 			}
 			else
 			{
-				Character.IsPositionFrozen = false;
-
 				if (_parachuteProp != null)
 				{
 					_parachuteProp.Delete();
@@ -1891,7 +1885,7 @@ namespace GTANetwork
 				}
 				DEBUG_STEP = 27;
 
-			    bool ragdoll = IsRagdoll;
+                bool ragdoll = IsRagdoll;
 
 			    if (IsPlayerDead) ragdoll = true;
 
@@ -1944,30 +1938,37 @@ namespace GTANetwork
                         Function.Call(Hash.TASK_PLAY_ANIM, Character,
                             Util.LoadDict("anim@sports@ballgame@handball@"), "ball_get_up",
                             12f, 12f, -1, 0, -10f, 1, 1, 1);
+
+                        _playingGetupAnim = true;
                     }
 
                     return true;
                 }
 
-			    var getupAnim = GetAnimalGetUpAnimation().Split();
+			    if (_playingGetupAnim)
+			    {
+			        var getupAnim = GetAnimalGetUpAnimation().Split();
 
-                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
-                {
-                    UpdatePlayerPedPos();
-                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0], getupAnim[1]);
+			        if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
+			        {
+			            UpdatePlayerPedPos();
+			            var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0],
+			                getupAnim[1]);
 
-                    if (currentTime >= 0.7f)
-                    {
-                        Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
-                        Character.Task.ClearAll();
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
+			            if (currentTime >= 0.7f)
+			            {
+			                Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
+			                Character.Task.ClearAll();
+			                _playingGetupAnim = false;
+			            }
+			            else
+			            {
+			                return true;
+			            }
+			        }
+			    }
 
-				if (lastMeleeAnim != null)
+			    if (lastMeleeAnim != null)
 				{
 					DisplayMeleeAnimation();
 				}
@@ -1982,9 +1983,8 @@ namespace GTANetwork
 				}
 
 				DEBUG_STEP = 30;
-                
 
-				if (IsShooting)
+                if (IsShooting)
 				{
 					DisplayShootingAnimation();
 				}
@@ -1995,6 +1995,7 @@ namespace GTANetwork
 
 			        DisplayCustomAnimation();
 			    }
+
 
                 DEBUG_STEP = 32;
 				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
@@ -2020,17 +2021,21 @@ namespace GTANetwork
         {
             try
             {
-                if (!StreamedIn || IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
+                if (!StreamedIn ||
+                    IsSpectating ||
+                    (Flag & (int) EntityFlag.PlayerSpectating) != 0 ||
+                    ModelHash == 0 ||
+                    string.IsNullOrEmpty(Name)) return;
 
                 var gPos = _isInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
                 
                 DEBUG_STEP = 0;
-                
+                /*
                 if (CrossReference.EntryPoint.CurrentSpectatingPlayer == this ||
                     (Character != null && Main.NetEntityHandler.NetToEntity(CrossReference.EntryPoint.SpectatingEntity)?.Handle == Character.Handle))
                     inRange = true;
-
+                    */
                 DEBUG_STEP = 1;
 
 
@@ -2051,8 +2056,8 @@ namespace GTANetwork
                 DEBUG_STEP = 5;
 
 	            if (CreateVehicle()) return;
-                
-				_switch++;
+
+                _switch++;
                 DEBUG_STEP = 15;
 
                 if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
@@ -2061,6 +2066,7 @@ namespace GTANetwork
 
 	            WorkaroundBlip();
                 DEBUG_STEP = 119;
+
                 if (Character != null)
                 {
                     Character.Health = PedHealth;

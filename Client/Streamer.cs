@@ -17,10 +17,13 @@ namespace GTANetwork
         private List<IStreamedItem> _itemsToStreamOut;
         private Vector3 _playerPosition;
 
+        public static SyncPed[] StreamedInPlayers;
+
         public StreamerThread()
         {
             _itemsToStreamIn = new List<IStreamedItem>();
             _itemsToStreamOut = new List<IStreamedItem>();
+            StreamedInPlayers = new SyncPed[MAX_PLAYERS];
 
             Tick += StreamerTick;
 
@@ -89,6 +92,11 @@ namespace GTANetwork
                     _itemsToStreamIn.AddRange(streamedLabels.Take(MAX_LABELS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedPeds.Take(MAX_PEDS).Where(item => !item.StreamedIn));
                     _itemsToStreamIn.AddRange(streamedParticles.Take(MAX_PARTICLES).Where(item => !item.StreamedIn));
+                }
+
+                lock (StreamedInPlayers)
+                {
+                    StreamedInPlayers = streamedPlayers.Take(MAX_PLAYERS).ToArray();
                 }
 
                 endTick:
