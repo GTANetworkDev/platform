@@ -494,6 +494,7 @@ namespace GTANetwork
 
                 LogManager.DebugLog("ATTACHING BLIP FOR " + Name);
 
+                /*
 				if (_blip)
 				{
 					Character.AttachBlip();
@@ -523,6 +524,7 @@ namespace GTANetwork
 
 					LogManager.DebugLog("BLIP DONE FOR" + Name);
 				}
+                */
 
 				return true;
 			}
@@ -541,12 +543,7 @@ namespace GTANetwork
 				{
 				    Vector3 targetPos;
 				    targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
-
-                    if (!Character.HasBone("IK_Head"))
-				    {
-				        targetPos = Character.AttachedBlip.Position + new Vector3(0, 0, 1.2f);
-				    }
-
+                    
 				    targetPos += Character.Velocity/Game.FPS;
 
 					Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
@@ -701,7 +698,7 @@ namespace GTANetwork
 
 	    void WorkaroundBlip()
 	    {
-            if (_isInVehicle && MainVehicle != null && (Character.AttachedBlip == null || (Character.AttachedBlip.Position - MainVehicle.Position).Length() > 70f) && _blip)
+            if (_isInVehicle && MainVehicle != null && (Character.AttachedBlip == null || (Character.GetBoneCoord(Bone.SKEL_Head) - MainVehicle.Position).Length() > 70f) && _blip)
 			{
 				LogManager.DebugLog("Blip was too far away -- deleting");
 				Character.Delete();
@@ -2023,52 +2020,11 @@ namespace GTANetwork
         {
             try
             {
-                if (IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
+                if (!StreamedIn || IsSpectating || (Flag & (int) EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
                 var gPos = _isInVehicle ? VehiclePosition : _position;
                 var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
-
-                if (!StreamedIn)
-                {
-                    if (Character != null && Character.Exists())
-                    {
-                        Character.Delete();
-                    }
-
-                    if (_parachuteProp != null && _parachuteProp.Exists())
-                    {
-                        _parachuteProp.Delete();
-                    }
-
-                    if (_mainBlip == null || !_mainBlip.Exists())
-                    {
-                        _mainBlip = World.CreateBlip(gPos);
-                        SetBlipNameFromTextFile(_mainBlip, Name);
-                    }
-
-                    if (BlipSprite != -1)
-                        _mainBlip.Sprite = (BlipSprite)BlipSprite;
-                    if (BlipColor != -1)
-                        _mainBlip.Color = (BlipColor)BlipColor;
-                    else
-                        _mainBlip.Color = GTA.BlipColor.White;
-                    _mainBlip.Scale = 0.8f;
-                    _mainBlip.Alpha = BlipAlpha;
-
-                    Vector3 lastPos = _isInVehicle
-                        ? _lastVehiclePos == null ? VehiclePosition : _lastVehiclePos.Value
-                        : _lastPosition == null ? Position : _lastPosition;
-                    var delta = Util.TickCount - LastUpdateReceived;
-
-                    _mainBlip.Position = Vector3.Lerp(lastPos, gPos,Math.Min(delta / 1000f, 1f));
-                }
-                else if (StreamedIn && _mainBlip != null && _mainBlip.Exists())
-                {
-                    _mainBlip.Remove();
-                    _mainBlip = null;
-                }
-
-
+                
                 DEBUG_STEP = 0;
                 
                 if (CrossReference.EntryPoint.CurrentSpectatingPlayer == this ||
