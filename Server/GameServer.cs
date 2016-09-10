@@ -221,6 +221,9 @@ namespace GTANetworkServer
             StreamerThread = new Thread(Streamer.MainThread);
             StreamerThread.IsBackground = true;
             StreamerThread.Start();
+
+            // StressTest.Init();
+            // Uncomment to start a stress test
         }
 
         public void AnnounceSelfToMaster()
@@ -946,7 +949,7 @@ namespace GTANResource
                 Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, exclude, ConnectionChannel.NativeCall);
         }
 
-        private void ResendPacket(PedData fullPacket, Client exception, bool pure)
+        internal void ResendPacket(PedData fullPacket, Client exception, bool pure)
         {
             byte[] full = new byte[0];
             byte[] basic = new byte[0];
@@ -963,8 +966,9 @@ namespace GTANResource
 
             foreach(var client in exception.Streamer.GetNearClients())
             {
+                if (client.Fake) continue;
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
-                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+                if (client == exception) continue;
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (pure)
@@ -1009,8 +1013,9 @@ namespace GTANResource
 
             foreach (var client in exception.Streamer.GetFarClients())
             {
+                if (client.Fake) continue;
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
-                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+                if (client == exception) continue;
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (pure)
@@ -1032,7 +1037,7 @@ namespace GTANResource
             }
         }
 
-        private void ResendBulletPacket(int netHandle, Vector3 aim, bool shooting, Client exception)
+        internal void ResendBulletPacket(int netHandle, Vector3 aim, bool shooting, Client exception)
         {
             byte[] full = new byte[0];
 
@@ -1054,7 +1059,7 @@ namespace GTANResource
             }
         }
 
-        private void ResendPacket(VehicleData fullPacket, Client exception, bool pure)
+        internal void ResendPacket(VehicleData fullPacket, Client exception, bool pure)
         {
             byte[] full = new byte[0];
             byte[] basic = new byte[0];
@@ -1148,7 +1153,7 @@ namespace GTANResource
             }
         }
 
-        private void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
+        internal void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
         {
             byte[] full = new byte[0];
             byte[] basic = new byte[0];
@@ -2088,6 +2093,8 @@ namespace GTANResource
                                                         {
                                                             en.InvokePlayerDownloadFinished(client);
                                                         }));
+
+                                                StressTest.HasPlayers = true;
                                             }
 
                                             break;
@@ -2214,7 +2221,8 @@ namespace GTANResource
 
                 for (int i = Clients.Count - 1; i >= 0; i--)
                 {
-                    Clients[i].NetConnection.Disconnect("Server is shutting down");
+                    if (!Clients[i].Fake)
+                        Clients[i].NetConnection.Disconnect("Server is shutting down");
                 }
 
                 ColShapeManager.Shutdown();
@@ -2514,6 +2522,7 @@ namespace GTANResource
             lock (Clients)
             foreach (var client in Clients)
             {
+                if (client.Fake) continue;
                 var data = SerializeBinary(newData);
                 NetOutgoingMessage msg = Server.CreateMessage();
                 msg.Write((byte)packetType);
@@ -2530,7 +2539,7 @@ namespace GTANResource
             lock (Clients)
             foreach (var client in Clients)
             {
-                if (client == exclude) continue;
+                if (client == exclude || client.Fake) continue;
                 var data = SerializeBinary(newData);
                 NetOutgoingMessage msg = Server.CreateMessage();
                 msg.Write((byte)packetType);

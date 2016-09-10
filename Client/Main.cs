@@ -676,7 +676,7 @@ namespace GTANetwork
             List<SyncPed> list = null;
             lock (NetEntityHandler)
             {
-                list = new List<SyncPed>(NetEntityHandler.ClientMap.Where(pair => pair is SyncPed).Cast<SyncPed>());
+                list = new List<SyncPed>(NetEntityHandler.ClientMap.Where(pair => pair is SyncPed).Cast<SyncPed>().Take(20));
             }
             
             _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
@@ -3497,14 +3497,17 @@ namespace GTANetwork
 
         public bool IsMessageTypeThreadsafe(NetIncomingMessageType msgType)
         {
-            if (msgType == NetIncomingMessageType.StatusChanged ||
-                msgType == NetIncomingMessageType.Data) return false;
-            //return true;
             return false;
+
+            if (msgType == NetIncomingMessageType.Data || msgType == NetIncomingMessageType.StatusChanged)
+                return false;
+            return true;
         }
 
         private bool IsPacketTypeThreadsafe(PacketType type)
         {
+            return false;
+
             if (type == PacketType.CreateEntity ||
                 type == PacketType.DeleteEntity ||
                 type == PacketType.FileTransferTick || // TODO: Make this threadsafe (remove GTA.UI.Screen.ShowSubtitle)
@@ -3512,10 +3515,12 @@ namespace GTANetwork
                 type == PacketType.ServerEvent ||
                 type == PacketType.SyncEvent ||
                 type == PacketType.NativeCall ||
+                type == PacketType.BasicUnoccupiedVehSync ||
+                type == PacketType.UnoccupiedVehSync ||
+                type == PacketType.UnoccupiedVehStartStopSync ||
                 type == PacketType.NativeResponse)
                 return false;
-            //return true;
-            return false;
+            return true;
         }
 
         private void ProcessDataMessage(NetIncomingMessage msg, PacketType type)

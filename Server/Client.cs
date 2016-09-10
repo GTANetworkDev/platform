@@ -12,6 +12,8 @@ namespace GTANetworkServer
         internal Dictionary<int, long> LastPacketReceived = new Dictionary<int, long>();
         internal Streamer Streamer { get; set; }
 
+        internal bool Fake { get; set; }
+
 
         public NetConnection NetConnection { get; private set; }
         public DeltaCompressor DeltaCompressor { get; set; }
@@ -62,6 +64,9 @@ namespace GTANetworkServer
             Client target;
             if ((target = obj as Client) != null)
             {
+                if (NetConnection == null || target.NetConnection == null)
+                    return CharacterHandle == target.CharacterHandle;
+
                 return NetConnection.RemoteUniqueIdentifier == target.NetConnection.RemoteUniqueIdentifier;
             }
             return false;
@@ -71,6 +76,7 @@ namespace GTANetworkServer
         {
             if ((object) left == null && (object) right == null) return true;
             if ((object)left == null || (object)right == null) return false;
+            if (left.NetConnection == null || right.NetConnection == null) return left.CharacterHandle == right.CharacterHandle;
 
             return left.NetConnection.RemoteUniqueIdentifier == right.NetConnection.RemoteUniqueIdentifier;
         }
@@ -79,6 +85,7 @@ namespace GTANetworkServer
         {
             if ((object)left == null && (object)right == null) return false;
             if ((object)left == null || (object)right == null) return true;
+            if (left.NetConnection == null || right.NetConnection == null) return left.CharacterHandle != right.CharacterHandle;
 
             return left.NetConnection.RemoteUniqueIdentifier != right.NetConnection.RemoteUniqueIdentifier;
         }

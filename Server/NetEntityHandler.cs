@@ -28,7 +28,13 @@ namespace GTANetworkServer
 
         public void UpdateMovements()
         {
-            var copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities);
+            List<KeyValuePair<int, EntityProperties>> copy;
+
+            lock (ServerEntities)
+            {
+                copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities);
+            }
+
             // Get all entities who are interpolating
             foreach (var pair in copy.Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null))
             {
