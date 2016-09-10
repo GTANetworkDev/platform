@@ -698,7 +698,7 @@ namespace GTANetwork
 
 	    void WorkaroundBlip()
 	    {
-            if (_isInVehicle && MainVehicle != null && (Character.AttachedBlip == null || (Character.GetBoneCoord(Bone.SKEL_Head) - MainVehicle.Position).Length() > 70f) && _blip)
+            if (_isInVehicle && MainVehicle != null && (Character.GetOffsetInWorldCoords(new Vector3()) - MainVehicle.Position).Length() > 70f && _blip)
 			{
 				LogManager.DebugLog("Blip was too far away -- deleting");
 				Character.Delete();
