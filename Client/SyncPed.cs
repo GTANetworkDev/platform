@@ -976,11 +976,11 @@ namespace GTANetwork
             DEBUG_STEP = 21;
 #if !DISABLE_SLERP
 
-            if (_lastVehicleRotation != null && spazzout)
+            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f && spazzout)
             {
                 MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
                     _vehicleRotation.ToQuaternion(),
-                    Math.Min(1.5f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
+                    Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
             }
             else
             {
