@@ -1020,36 +1020,6 @@ namespace GTANetworkServer
             sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0x172AA1B624FA1013, owner.CharacterHandle, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
         }
 
-        public void setPlayerBlipColor(Client target, int newColor)
-        {
-            Program.ServerInstance.ChangePlayerBlipColor(target, newColor);
-        }
-
-        public void setPlayerBlipColorForPlayer(Client target, int newColor, Client forPlayer)
-        {
-            Program.ServerInstance.ChangePlayerBlipColorForPlayer(target, newColor, forPlayer);
-        }
-
-        public void setPlayerBlipAlpha(Client target, int newAlpha)
-        {
-            Program.ServerInstance.ChangePlayerBlipAlpha(target, newAlpha);
-        }
-
-        public void setPlayerBlipAlphaForPlayer(Client target, int newAlpha, Client forPlayer)
-        {
-            Program.ServerInstance.ChangePlayerBlipAlphaForPlayer(target, newAlpha, forPlayer);
-        }
-
-        public void setPlayerBlipSprite(Client target, int newSprite)
-        {
-            Program.ServerInstance.ChangePlayerBlipSprite(target, newSprite);
-        }
-
-        public void setPlayerBlipSpriteForPlayer(Client target, int newSprite, Client forPlayer)
-        {
-            Program.ServerInstance.ChangePlayerBlipSpriteForPlayer(target, newSprite, forPlayer);
-        }
-
         public void setPlayerToSpectator(Client player)
         {
             Program.ServerInstance.SetPlayerOnSpectate(player, true);
