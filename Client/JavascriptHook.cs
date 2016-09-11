@@ -1063,16 +1063,16 @@ namespace GTANetwork
 
         public Vector3 getEntityPosition(LocalHandle entity)
         {
-            if (entity.Properties<RemoteVehicle>().StreamedIn)
+            if (entity.Properties<IStreamedItem>().StreamedIn)
                 return new Prop(entity.Value).Position.ToLVector();
-            else return entity.Properties<RemoteVehicle>().Position;
+            else return entity.Properties<IStreamedItem>().Position;
         }
 
         public Vector3 getEntityRotation(LocalHandle entity)
         {
-            if (entity.Properties<RemoteVehicle>().StreamedIn)
+            if (entity.Properties<IStreamedItem>().StreamedIn)
                 return new Prop(entity.Value).Rotation.ToLVector();
-            else return entity.Properties<RemoteVehicle>().Rotation;
+            else return ((EntityProperties)entity.Properties<IStreamedItem>()).Rotation;
         }
 
         public Vector3 getEntityVelocity(LocalHandle entity)
@@ -2028,6 +2028,16 @@ namespace GTANetwork
         public int getEntityTransparency(LocalHandle entity)
         {
             return new Prop(entity.Value).Opacity;
+        }
+
+        public void setEntityDimension(LocalHandle entity, int dimension)
+        {
+            entity.Properties<IStreamedItem>().Dimension = dimension;
+        }
+
+        public int getEntityDimension(LocalHandle entity)
+        {
+            return entity.Properties<IStreamedItem>().Dimension;
         }
 
         public int getEntityModel(LocalHandle entity)

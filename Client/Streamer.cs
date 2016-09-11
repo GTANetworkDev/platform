@@ -1201,6 +1201,14 @@ namespace GTANetwork
 
         public RemoteVehicle CreateVehicle(int model, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, int netHash)
         {
+            short vehComp = ~0;
+            if (model == unchecked((int)VehicleHash.Taxi))
+                vehComp = 1 << 5;
+            else if (model == (int)VehicleHash.Police)
+                vehComp = 1 << 2;
+            else if (model == (int)VehicleHash.Skylift)
+                vehComp = -1537;
+
             RemoteVehicle rem;
             lock (ClientMap)
             {
@@ -1212,6 +1220,16 @@ namespace GTANetwork
                     Rotation = rotation,
                     StreamedIn = false,
                     LocalOnly = false,
+                    IsDead = false,
+                    Health = 1000,
+                    Alpha = 255,
+                    Livery = 0,
+                    NumberPlate = "NETWORK",
+                    EntityType = (byte)EntityType.Vehicle,
+                    PrimaryColor = 0,
+                    SecondaryColor = 0,
+                    Dimension = 0,
+                    VehicleComponents = vehComp,
                 });
             }
             return rem;
@@ -1353,6 +1371,11 @@ namespace GTANetwork
                     Position = pos,
                     StreamedIn = false,
                     LocalOnly = false,
+                    Alpha = 255,
+                    Dimension = 0,
+                    Sprite = 0,
+                    Scale = 1f,
+                    AttachedNetEntity = 0,
                     EntityType = (byte) EntityType.Blip,
                 });
             }
@@ -1663,7 +1686,8 @@ namespace GTANetwork
         public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
         {
             var newId = ++_localHandleCounter;
-            ClientMap.Add(new RemoteMarker()
+            RemoteMarker mark;
+            ClientMap.Add(mark = new RemoteMarker()
             {
                 MarkerType = markerType,
                 Position = pos.ToLVector(),
@@ -1680,6 +1704,10 @@ namespace GTANetwork
                 StreamedIn = true,
                 RemoteHandle = newId,
             });
+
+            if (Count(typeof(RemoteMarker)) < StreamerThread.MAX_MARKERS)
+                StreamIn(mark);
+
             return newId;
         }
 
@@ -1687,6 +1715,10 @@ namespace GTANetwork
         {
             var veh = CreateVehicle(model, pos, new GTANetworkShared.Vector3(0, 0, heading), ++_localHandleCounter);
             veh.LocalOnly = true;
+
+            if (Count(typeof(RemoteVehicle)) < StreamerThread.MAX_VEHICLES)
+                StreamIn(veh);
+
             return veh.RemoteHandle;
         }
 
@@ -1695,6 +1727,9 @@ namespace GTANetwork
             var b = CreateBlip(pos, ++_localHandleCounter);
             b.LocalOnly = true;
 
+            if (Count(typeof(RemoteBlip)) < StreamerThread.MAX_BLIPS)
+                StreamIn(b);
+
             return b.RemoteHandle;
         }
 
@@ -1702,6 +1737,10 @@ namespace GTANetwork
         {
             var p = CreateObject(model, pos, rot, false, ++_localHandleCounter);
             p.LocalOnly = true;
+
+            if (Count(typeof(RemoteProp)) < StreamerThread.MAX_OBJECTS)
+                StreamIn(p);
+
             return p.RemoteHandle;
         }
 
@@ -1709,6 +1748,10 @@ namespace GTANetwork
         {
             var p = CreatePickup(pos, rot, model, amount, ++_localHandleCounter);
             p.LocalOnly = true;
+
+            if (Count(typeof(RemotePickup)) < StreamerThread.MAX_PICKUPS)
+                StreamIn(p);
+
             return p.RemoteHandle;
         }
 
@@ -1726,6 +1769,9 @@ namespace GTANetwork
             p.LocalOnly = true;
             p.RemoteHandle = ++_localHandleCounter;
 
+            if (Count(typeof(RemotePed)) < StreamerThread.MAX_PEDS)
+                StreamIn(p);
+
             return p.RemoteHandle;
         }
 
@@ -1734,7 +1780,8 @@ namespace GTANetwork
         public int CreateLocalLabel(string text, Vector3 pos, float range, float size, int dimension = 0)
         {
             var newId = ++_localHandleCounter;
-            ClientMap.Add(new RemoteTextLabel()
+            RemoteTextLabel label;
+            ClientMap.Add(label = new RemoteTextLabel()
             {
                 Position = pos.ToLVector(),
                 Size = size,
@@ -1750,6 +1797,10 @@ namespace GTANetwork
                 Range = range,
                 EntitySeethrough = false,
             });
+
+            if (Count(typeof(RemoteTextLabel)) < StreamerThread.MAX_LABELS)
+                StreamIn(label);
+
             return newId;
         }
 

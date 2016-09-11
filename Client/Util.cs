@@ -18,7 +18,7 @@ namespace GTANetwork
         public LocalHandle(int handle)
         {
             _internalId = handle;
-            LocalId = true;
+            LocalId = false;
         }
 
         public LocalHandle(int handle, bool localId)
@@ -43,7 +43,7 @@ namespace GTANetwork
             {
                 if (LocalId)
                 {
-                    Main.NetEntityHandler.NetToEntity(Main.NetEntityHandler.NetToStreamedItem(_internalId, true));
+                    return Main.NetEntityHandler.NetToEntity(Main.NetEntityHandler.NetToStreamedItem(_internalId, true))?.Handle ?? 0;
                 }
 
                 return _internalId;
