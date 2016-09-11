@@ -259,6 +259,7 @@ namespace GTANetwork
                         Game.Player.Character.Weapons.Current?.AmmoInClip != 0)
                     {
                         obj.Flag |= (byte)VehicleDataFlags.Shooting;
+                        obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                     }
 
                     if (((player.IsSubtaskActive(200) || player.IsSubtaskActive(190)) &&
@@ -267,6 +268,7 @@ namespace GTANetwork
                          player.IsSubtaskActive(200)))
                     {
                         obj.Flag |= (byte)VehicleDataFlags.Aiming;
+                        obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                     }
 
                     var outputArg = new OutputArgument();
@@ -280,11 +282,11 @@ namespace GTANetwork
                             (((VehicleData) LastSyncPacket).Flag & (byte) VehicleDataFlags.Shooting) != 0)
                         {
                             obj.Flag |= (byte) VehicleDataFlags.Shooting;
+                            obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                         }
                     }
 
                     obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
-
                 }
 
                 Vehicle trailer;

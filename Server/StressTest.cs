@@ -9,7 +9,7 @@ namespace GTANetworkServer
 {
     public static class StressTest
     {
-        public static int PlayersToSim = 1000;
+        public static int PlayersToSim = 500;
         public static bool HasPlayers;
         public static List<Client> Players = new List<Client>();
 

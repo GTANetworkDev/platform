@@ -14,9 +14,9 @@ namespace GTANetworkServer
 
         internal bool Fake { get; set; }
 
-
+        public int LastPedFlag { get; set; }
+        public int LastVehicleFlag { get; set; }
         public NetConnection NetConnection { get; private set; }
-        public DeltaCompressor DeltaCompressor { get; set; }
         public string SocialClubName { get; set; }
         public string Name { get; set; }
         public float Latency { get; set; }
@@ -24,6 +24,7 @@ namespace GTANetworkServer
         public int GameVersion { get; set; }
         public List<WeaponHash> Weapons = new List<WeaponHash>();
         public WeaponHash CurrentWeapon { get; set; }
+        public Vector3 LastAimPos { get; set; }
 
         public NetHandle CurrentVehicle { get; set; }
         public Vector3 Position { get; internal set; }
@@ -50,6 +51,9 @@ namespace GTANetworkServer
 
         public Client(NetConnection nc)
         {
+            Health = 100;
+            Armor = 0;
+            
             NetConnection = nc;
             Streamer = new Streamer(this);
         }

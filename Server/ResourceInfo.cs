@@ -296,6 +296,116 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokeVehicleTrailerChange(NetHandle entity, NetHandle trailer)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeVehicleTrailerChange(entity, trailer);
+            }));
+        }
+
+        public void InvokePlayerDetonateStickies(Client player)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePlayerDetonateStickies(player);
+            }));
+        }
+
+        public void InvokePlayerModelChange(Client player, int oldModel)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePlayerModelChange(player, oldModel);
+            }));
+        }
+
+        public void InvokeVehicleTyreBurst(NetHandle entity, int index)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeVehicleTyreBurst(entity, index);
+            }));
+        }
+
+        public void InvokeVehicleDoorBreak(NetHandle entity, int index)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeVehicleDoorBreak(entity, index);
+            }));
+        }
+
+        public void InvokeVehicleWindowBreak(NetHandle entity, int index)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeVehicleWindowBreak(entity, index);
+            }));
+        }
+
+        public void InvokeVehicleSirenToggle(NetHandle entity, bool oldValue)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeVehicleSirenToggle(entity, oldValue);
+            }));
+        }
+
+        public void InvokeVehicleHealthChange(NetHandle player, float oldValue)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokeVehicleHealthChange(player, oldValue);
+            }));
+        }
+
+        public void InvokePlayerWeaponChange(Client player, int oldValue)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePlayerWeaponSwitch(player, oldValue);
+            }));
+        }
+
+        public void InvokePlayerArmorChange(Client player, int oldValue)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePlayerArmorChange(player, oldValue);
+            }));
+        }
+
+        public void InvokePlayerHealthChange(Client player, int oldValue)
+        {
+            lock (_mainQueue.SyncRoot)
+            _mainQueue.Enqueue(new Action(() =>
+            {
+                if (Language == ScriptingEngineLanguage.compiled)
+                    _compiledScript.API.invokePlayerHealthChange(player, oldValue);
+            }));
+        }
+
         public void InvokeServerResourceStop(string resource)
         {
             lock (_mainQueue.SyncRoot)

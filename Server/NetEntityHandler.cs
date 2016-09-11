@@ -397,6 +397,7 @@ namespace GTANetworkServer
                 {
                     EntityType = (byte) EntityType.Player,
                     BlipSprite = 1,
+                    ModelHash = (int) PedHash.Clown01SMY,
                     BlipAlpha = 255,
                     Alpha = 255,
                 });

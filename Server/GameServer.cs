@@ -222,7 +222,7 @@ namespace GTANetworkServer
             StreamerThread.IsBackground = true;
             StreamerThread.Start();
 
-            // StressTest.Init();
+            //StressTest.Init();
             // Uncomment to start a stress test
         }
 
@@ -1517,11 +1517,50 @@ namespace GTANResource
                                                 
                                                 fullPacket.NetHandle = client.CharacterHandle.Value;
 
+                                                if (fullPacket.PlayerHealth.Value != client.Health)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerHealthChange(client, client.Health);
+                                                        }));
+                                                }
+
+                                                if (fullPacket.PedArmor.Value != client.Armor)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerArmorChange(client, client.Armor);
+                                                        }));
+                                                }
+
+                                                if (fullPacket.WeaponHash != null && fullPacket.WeaponHash.Value != (int)client.CurrentWeapon)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerWeaponChange(client, (int)client.CurrentWeapon);
+                                                        }));
+                                                }
+
                                                 client.Health = fullPacket.PlayerHealth.Value;
                                                 client.Armor = fullPacket.PedArmor.Value;
+                                                client.LastVehicleFlag = fullPacket.Flag.Value;
                                                 client.LastUpdate = DateTime.Now;
+
                                                 if (fullPacket.WeaponHash != null)
                                                     client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
+
+                                                if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
+                                                    VehicleDataFlags.HasAimData) && fullPacket.AimCoords != null)
+                                                {
+                                                    client.LastAimPos = fullPacket.AimCoords;
+                                                }
+                                                else
+                                                {
+                                                    client.LastAimPos = null;
+                                                }
 
                                                 if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
                                                     VehicleDataFlags.Driver))
@@ -1560,14 +1599,46 @@ namespace GTANResource
                                                         }
 
                                                         if (fullPacket.VehicleHealth.HasValue)
+                                                        {
+                                                            if (fullPacket.VehicleHealth.Value != ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                .Health)
+                                                            {
+                                                                lock (RunningResources)
+                                                                    RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                                    {
+                                                                        en.InvokeVehicleHealthChange(client, ((VehicleProperties)
+                                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                                .Health);
+                                                                    }));
+                                                            }
+
                                                             ((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
                                                                 .Health = fullPacket.VehicleHealth.Value;
+                                                        }
+
                                                         if (fullPacket.Flag.HasValue)
+                                                        {
+                                                            if ((fullPacket.Flag &
+                                                                (byte)VehicleDataFlags.SirenActive) != 0 ^ ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                .Siren)
+                                                            {
+                                                                lock (RunningResources)
+                                                                    RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                                    {
+                                                                        en.InvokeVehicleSirenToggle(client, ((VehicleProperties)
+                                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                                .Siren);
+                                                                    }));
+                                                            }
+
                                                             ((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
                                                                 .Siren = (fullPacket.Flag &
                                                                           (byte) VehicleDataFlags.SirenActive) > 0;
+                                                        }
                                                     }
 
                                                     if (NetEntityHandler.ToDict()
@@ -1604,8 +1675,6 @@ namespace GTANResource
 
                                                 UpdateAttachables(client.CharacterHandle.Value);
                                                 UpdateAttachables(client.CurrentVehicle.Value);
-                                                //SendToAll(data, PacketType.VehiclePositionData, false, client, ConnectionChannel.PositionData);
-
                                             }
                                             catch (IndexOutOfRangeException)
                                             {
@@ -1661,12 +1730,70 @@ namespace GTANResource
                                                     }
                                                 }
 
-                                                VehicleProperties carProp;
-                                                if ((carProp =
-                                                        NetEntityHandler.NetToProp<VehicleProperties>(
-                                                            fullPacket.VehicleHandle.Value)) != null)
+
+                                                if (fullPacket.DamageModel != null)
                                                 {
-                                                    carProp.DamageModel = fullPacket.DamageModel;
+                                                    if (((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]) ==
+                                                        null)
+                                                    {
+                                                        ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .DamageModel = new VehicleDamageModel();
+                                                    }
+
+                                                    var oldDoors = ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                        .DamageModel.BrokenDoors;
+
+                                                    var oldWindows = ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                        .DamageModel.BrokenWindows;
+
+                                                    ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                        .DamageModel = fullPacket.DamageModel;
+
+                                                    if ((oldDoors ^ fullPacket.DamageModel.BrokenDoors) != 0)
+                                                    {
+                                                        lock (RunningResources)
+                                                        {
+                                                            for (int k = 0; k < 8; k++)
+                                                            {
+                                                                if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
+                                                                     1 << k) == 0) continue;
+
+                                                                RunningResources.ForEach(
+                                                                    fs => fs.Engines.ForEach(en =>
+                                                                    {
+                                                                        en.InvokeVehicleDoorBreak(
+                                                                            new NetHandle(fullPacket.VehicleHandle.Value),
+                                                                            k);
+                                                                    }));
+                                                            }
+                                                        }
+                                                    }
+
+
+                                                    if ((oldWindows ^ fullPacket.DamageModel.BrokenWindows) != 0)
+                                                    {
+                                                        lock (RunningResources)
+                                                        {
+                                                            for (int k = 0; k < 8; k++)
+                                                            {
+                                                                if (((oldDoors ^ fullPacket.DamageModel.BrokenWindows) &
+                                                                     1 << k) == 0) continue;
+
+                                                                RunningResources.ForEach(
+                                                                    fs => fs.Engines.ForEach(en =>
+                                                                    {
+                                                                        en.InvokeVehicleWindowBreak(
+                                                                            new NetHandle(fullPacket.VehicleHandle.Value),
+                                                                            k);
+                                                                    }));
+                                                            }
+                                                        }
+                                                    }
                                                 }
 
                                                 ResendPacket(fullPacket, client, false);
@@ -1686,6 +1813,10 @@ namespace GTANResource
 
                                                 fullPacket.NetHandle = client.CharacterHandle.Value;
 
+                                                var oldHealth = client.Health;
+                                                var oldArmor = client.Armor;
+                                                var oldWeap = client.CurrentWeapon;
+
                                                 client.Health = fullPacket.PlayerHealth.Value;
                                                 client.Armor = fullPacket.PedArmor.Value;
                                                 client.Position = fullPacket.Position;
@@ -1693,6 +1824,34 @@ namespace GTANResource
                                                 client.Rotation = fullPacket.Quaternion;
                                                 client.Velocity = fullPacket.Velocity;
                                                 client.CurrentWeapon = (WeaponHash) fullPacket.WeaponHash.Value;
+                                                if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
+
+                                                if (fullPacket.PlayerHealth.Value != oldHealth)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerHealthChange(client, oldHealth);
+                                                        }));
+                                                }
+
+                                                if (fullPacket.PedArmor.Value != oldArmor)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerArmorChange(client, oldArmor);
+                                                        }));
+                                                }
+
+                                                if (fullPacket.WeaponHash.Value != (int)oldWeap)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerWeaponChange(client, (int)oldWeap);
+                                                        }));
+                                                }
 
                                                 if (client.IsInVehicleInternal && !client.CurrentVehicle.IsNull)
                                                 {
@@ -1738,8 +1897,20 @@ namespace GTANResource
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                                 {
+                                                    var oldValue =
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash;
+
                                                     NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
                                                         fullPacket.PedModelHash.Value;
+
+                                                    if (oldValue != fullPacket.PedModelHash.Value)
+                                                    {
+                                                        lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerModelChange(client, oldValue);
+                                                        }));
+                                                    }
                                                 }
 
                                                 ResendPacket(fullPacket, client, false);
@@ -1799,6 +1970,14 @@ namespace GTANResource
                                                             .DamageModel == null) ((VehicleProperties)
                                                             NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
                                                             .DamageModel = new VehicleDamageModel();
+
+                                                        var oldDoors = ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .DamageModel.BrokenWindows;
+                                                        var oldWindows = ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                            .DamageModel.BrokenDoors;
+
                                                         ((VehicleProperties)
                                                             NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
                                                             .DamageModel.BrokenWindows =
@@ -1808,13 +1987,57 @@ namespace GTANResource
                                                             .DamageModel.BrokenDoors =
                                                             fullPacket.DamageModel.BrokenDoors;
 
+                                                        if ((oldDoors ^ fullPacket.DamageModel.BrokenDoors) != 0)
+                                                        {
+                                                            lock (RunningResources)
+                                                            {
+                                                                for (int k = 0; k < 8; k++)
+                                                                {
+                                                                    if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
+                                                                         1 << k) == 0) continue;
+                                                                    
+                                                                    RunningResources.ForEach(
+                                                                        fs => fs.Engines.ForEach(en =>
+                                                                        {
+                                                                            en.InvokeVehicleDoorBreak(new NetHandle(fullPacket.VehicleHandle.Value), k);
+                                                                        }));
+                                                                }
+                                                            }
+                                                        }
+
+
+                                                        if ((oldWindows ^ fullPacket.DamageModel.BrokenWindows) != 0)
+                                                        {
+                                                            lock (RunningResources)
+                                                            {
+                                                                for (int k = 0; k < 8; k++)
+                                                                {
+                                                                    if (((oldDoors ^ fullPacket.DamageModel.BrokenWindows) &
+                                                                         1 << k) == 0) continue;
+
+                                                                    RunningResources.ForEach(
+                                                                        fs => fs.Engines.ForEach(en =>
+                                                                        {
+                                                                            en.InvokeVehicleWindowBreak(new NetHandle(fullPacket.VehicleHandle.Value), k);
+                                                                        }));
+                                                                }
+                                                            }
+                                                        }
+
                                                         if (fullPacket.Flag.HasValue)
                                                         {
                                                             var newDead = (fullPacket.Flag &
                                                                            (byte) VehicleDataFlags.VehicleDead) > 0;
-                                                            if (!((VehicleProperties)
+                                                            var oldDead = ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
+                                                                    ])
+                                                                .IsDead;
+
+                                                            ((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                                .IsDead && newDead)
+                                                                .IsDead = newDead;
+
+                                                            if (!oldDead && newDead)
                                                             {
                                                                 lock (RunningResources)
                                                                     RunningResources.ForEach(
@@ -1823,16 +2046,31 @@ namespace GTANResource
                                                                             en.InvokeVehicleDeath(new NetHandle(fullPacket.VehicleHandle.Value));
                                                                         }));
                                                             }
-
-                                                            ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                                .IsDead = newDead;
                                                         }
 
                                                         if (fullPacket.VehicleHealth.HasValue)
+                                                        {
+                                                            var oldValue = ((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
+                                                                    ])
+                                                                .Health;
+
                                                             ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
+                                                                    ])
                                                                 .Health = fullPacket.VehicleHealth.Value;
+
+                                                            if (fullPacket.VehicleHealth.Value != oldValue)
+                                                            {
+                                                                lock (RunningResources)
+                                                                    RunningResources.ForEach(
+                                                                        fs => fs.Engines.ForEach(en =>
+                                                                        {
+                                                                            en.InvokeVehicleHealthChange(client,
+                                                                                oldValue);
+                                                                        }));
+                                                            }
+                                                        }
                                                     }
 
                                                     ResendUnoccupiedPacket(fullPacket, client);
@@ -2379,7 +2617,14 @@ namespace GTANResource
                         if (NetEntityHandler.ToDict().ContainsKey((int)args[2]))
                             ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[2]]).TraileredBy = (int)args[1];
                     }
-                    break;
+
+                    lock (RunningResources)
+                        RunningResources.ForEach(
+                            fs => fs.Engines.ForEach(en =>
+                            {
+                                en.InvokeVehicleTrailerChange(new NetHandle((int)args[1]), (bool)args[0] ? new NetHandle((int)args[2]) : new NetHandle());
+                            }));
+                        break;
                 }
                 case SyncEventType.TireBurst:
                 {
@@ -2388,11 +2633,24 @@ namespace GTANResource
                     var isBursted = (bool)args[2];
                     if (NetEntityHandler.ToDict().ContainsKey(veh))
                     {
+                        var oldValue = (((VehicleProperties) NetEntityHandler.ToDict()[(int) args[0]]).Tires &
+                                        (byte) (1 << tireId)) != 0;
+
                         if (isBursted)
-                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[0]]).Doors |= (byte)(1 << tireId);
+                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[0]]).Tires |= (byte)(1 << tireId);
                         else
-                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[0]]).Doors &= (byte)(~(1 << tireId));
+                            ((VehicleProperties)NetEntityHandler.ToDict()[(int)args[0]]).Tires &= (byte)(~(1 << tireId));
+
+                        if (oldValue ^ isBursted)
+                        {
+                            lock (RunningResources)
+                            RunningResources.ForEach(
+                                fs => fs.Engines.ForEach(en =>
+                                {
+                                    en.InvokeVehicleTyreBurst(new NetHandle((int) args[0]), tireId);
+                                }));
                         }
+                    }
                     break;
                 }
                 case SyncEventType.PickupPickedUp:
@@ -2411,6 +2669,19 @@ namespace GTANResource
                     }
                     break;
                 }
+                case SyncEventType.StickyBombDetonation:
+                {
+                    var playerId = (int) args[0];
+                    var c = PublicAPI.getPlayerFromHandle(new NetHandle(playerId));
+
+                    lock (RunningResources)
+                            RunningResources.ForEach(
+                                fs => fs.Engines.ForEach(en =>
+                                {
+                                    en.InvokePlayerDetonateStickies(c);
+                                }));
+                }
+                    break;
             }
         }
 

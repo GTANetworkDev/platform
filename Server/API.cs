@@ -73,6 +73,12 @@ namespace GTANetworkServer
         public delegate void EntityDataChangedEvent(NetHandle entity, string key, object oldValue);
         public delegate void ResourceEvent(string resourceName);
         public delegate void DataReceivedEvent(string data);
+        public delegate void PlayerIntEvent(Client player, int oldValue);
+        public delegate void PlayerWeaponEvent(Client player, WeaponHash oldValue);
+        public delegate void EntityHealthEvent(NetHandle entity, float oldValue);
+        public delegate void EntityBooleanEvent(NetHandle entity, bool oldValue);
+        public delegate void EntityIntEvent(NetHandle entity, int index);
+        public delegate void TrailerEvent(NetHandle tower, NetHandle trailer);
         #endregion
 
         #region Events
@@ -99,7 +105,72 @@ namespace GTANetworkServer
         public event EntityDataChangedEvent onEntityDataChange;
         public event ResourceEvent onServerResourceStart;
         public event ResourceEvent onServerResourceStop;
-        //public event DataReceivedEvent onCustomDataReceived;
+        public event EntityHealthEvent onVehicleHealthChange;
+        public event PlayerIntEvent onPlayerHealthChange;
+        public event PlayerIntEvent onPlayerArmorChange;
+        public event PlayerWeaponEvent onPlayerWeaponSwitch;
+        public event EntityBooleanEvent onVehicleSirenToggle;
+        public event EntityIntEvent onVehicleDoorBreak;
+        public event EntityIntEvent onVehicleWindowSmash;
+        public event EntityIntEvent onVehicleTyreBurst;
+        public event TrailerEvent onVehicleTrailerChange;
+        public event PlayerIntEvent onPlayerModelChange;
+        public event PlayerEvent onPlayerDetonateStickies;
+
+        internal void invokePlayerDetonateStickies(Client player)
+        {
+            onPlayerDetonateStickies?.Invoke(player);
+        }
+
+        internal void invokePlayerModelChange(Client player, int oldModel)
+        {
+            onPlayerModelChange?.Invoke(player, oldModel);
+        }
+
+        internal void invokeVehicleTrailerChange(NetHandle veh1, NetHandle veh2)
+        {
+            onVehicleTrailerChange?.Invoke(veh1, veh2);
+        }
+
+        internal void invokeVehicleDoorBreak(NetHandle vehicle, int index)
+        {
+            onVehicleDoorBreak?.Invoke(vehicle, index);
+        }
+
+        internal void invokeVehicleWindowBreak(NetHandle vehicle, int index)
+        {
+            onVehicleWindowSmash?.Invoke(vehicle, index);
+        }
+
+        internal void invokeVehicleTyreBurst(NetHandle vehicle, int index)
+        {
+            onVehicleTyreBurst?.Invoke(vehicle, index);
+        }
+
+        internal void invokeVehicleSirenToggle(NetHandle entity, bool oldValue)
+        {
+            onVehicleSirenToggle?.Invoke(entity, oldValue);
+        }
+
+        internal void invokeVehicleHealthChange(NetHandle entity, float oldValue)
+        {
+            onVehicleHealthChange?.Invoke(entity, oldValue);
+        }
+
+        internal void invokePlayerWeaponSwitch(Client entity, int oldValue)
+        {
+            onPlayerWeaponSwitch?.Invoke(entity, (WeaponHash) oldValue);
+        }
+
+        internal void invokePlayerArmorChange(Client entity, int oldValue)
+        {
+            onPlayerArmorChange?.Invoke(entity, oldValue);
+        }
+
+        internal void invokePlayerHealthChange(Client entity, int oldValue)
+        {
+            onPlayerHealthChange?.Invoke(entity, oldValue);
+        }
 
         internal void invokeOnEntityDataChange(NetHandle entity, string key, object oldValue)
         {
@@ -623,6 +694,51 @@ namespace GTANetworkServer
             return Program.ServerInstance.Clients.FirstOrDefault(c => c.CharacterHandle == handle);
         }
 
+        public bool isPlayerOnFire(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.OnFire) != 0;
+        }
+
+        public bool isPlayerParachuting(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.ParachuteOpen) != 0;
+        }
+
+        public bool isPlayerInFreefall(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.InFreefall) != 0;
+        }
+
+        public bool isPlayerAiming(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.Aiming) != 0;
+        }
+
+        public bool isPlayerShooting(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.Shooting) != 0;
+        }
+
+        public bool isPlayerReloading(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.IsReloading) != 0;
+        }
+
+        public bool isPlayerInCover(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.IsInCover) != 0;
+        }
+
+        public bool isPlayerOnLadder(Client player)
+        {
+            return (player.LastPedFlag & (int)PedDataFlags.IsOnLadder) != 0;
+        }
+
+        public Vector3 getPlayerAimingPoint(Client player)
+        {
+            return player.LastAimPos;
+        }
+
         public bool isPlayerInAnyVehicle(Client player)
         {
             return player.IsInVehicle;
@@ -630,7 +746,9 @@ namespace GTANetworkServer
 
         public bool isPlayerDead(Client player)
         {
-            return player.Health <= 0;
+            if (player.IsInVehicle)
+                return (player.LastVehicleFlag & (int) VehicleDataFlags.PlayerDead) != 0;
+            else return (player.LastPedFlag & (int)PedDataFlags.PlayerDead) != 0;
         }
 
         public NetHandle getPlayerCurrentVehicle(Client player)
@@ -869,7 +987,6 @@ namespace GTANetworkServer
             return false;
         }
 
-        // TODO: add dimension to this
         public void createParticleEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position, Vector3 rotation, float scale, int dimension = 0)
         {
             sendNativeToPlayersInRangeInDimension(position, 40, dimension, 0x25129531F77B9ED3, ptfxLibrary, ptfxName,
@@ -892,7 +1009,17 @@ namespace GTANetworkServer
                     boneIndex, scale, 0, 0, 0);
             }
         }
-        
+
+        public void createExplosion(int explosionType, Vector3 position, float damageScale, int dimension = 0)
+        {
+            sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0xE3AD2BDBAEE269AC, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
+        }
+
+        public void createOwnedExplosion(Client owner, int explosionType, Vector3 position, float damageScale, int dimension = 0)
+        {
+            sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0x172AA1B624FA1013, owner.CharacterHandle, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
+        }
+
         public void setPlayerBlipColor(Client target, int newColor)
         {
             Program.ServerInstance.ChangePlayerBlipColor(target, newColor);
@@ -973,6 +1100,155 @@ namespace GTANetworkServer
                 return ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Livery;
             }
             return 0;
+        }
+
+        public NetHandle getVehicleTrailer(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return
+                    new NetHandle(((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Trailer);
+            }
+
+            return new NetHandle();
+        }
+
+        public NetHandle getVehicleTraileredBy(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return
+                    new NetHandle(((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).TraileredBy);
+            }
+
+            return new NetHandle();
+        }
+
+        public bool getVehicleSirenState(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).Siren;
+            }
+
+            return false;
+        }
+
+        public bool isVehicleTyrePopped(NetHandle vehicle, int tyre)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return (Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).Tires &
+                        1 << tyre) != 0;
+            }
+
+            return false;
+        }
+
+        public void popVehicleTyre(NetHandle vehicle, int tyre, bool pop)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                if (pop)
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).Tires |= (byte)(1 << tyre);
+                    sendNativeToAllPlayers(0xEC6A202EE4960385, vehicle, tyre, false, 1000);
+                }
+                else
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).Tires &= (byte)~(1 << tyre);
+                    sendNativeToAllPlayers(0x6E13FC662B882D1D, vehicle, tyre);
+                }
+
+                var delta = new Delta_VehicleProperties();
+                delta.Tires = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).Tires;
+                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+            }
+        }
+
+        public bool isVehicleDoorBroken(NetHandle vehicle, int door)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                if (Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel ==
+                    null) return false;
+
+                return (Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel.BrokenDoors & 1 << door) != 0;
+            }
+
+            return false;
+        }
+
+        public void breakVehicleDoor(NetHandle vehicle, int door, bool breakDoor)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                if (Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel ==
+                    null)
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel = new VehicleDamageModel();
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value)
+                        .DamageModel.BrokenDoors = 0;
+                }
+
+                if (breakDoor)
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel.BrokenDoors |= (byte)(1 << door);
+                    sendNativeToAllPlayers(0xD4D4F6A4AB575A33, vehicle, door, false);
+                }
+                else
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel.BrokenDoors &= (byte)~(1 << door);
+                }
+
+                var delta = new Delta_VehicleProperties();
+                delta.DamageModel = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel;
+                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+            }
+        }
+
+        public bool isVehicleWindowBroken(NetHandle vehicle, int window)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                if (Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel ==
+                    null) return false;
+
+                return (Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel.BrokenWindows & 1 << window) != 0;
+            }
+
+            return false;
+        }
+
+        public void breakVehicleWindow(NetHandle vehicle, int window, bool breakWindow)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                if (Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel ==
+                    null)
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel = new VehicleDamageModel();
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value)
+                        .DamageModel.BrokenWindows = 0;
+                }
+
+                if (breakWindow)
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value)
+                        .DamageModel.BrokenDoors |= (byte)(1 << window);
+                    sendNativeToAllPlayers(0x9E5B5E4D2CCD2259, vehicle, window);
+                }
+                else
+                {
+                    Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value)
+                        .DamageModel.BrokenDoors &= (byte)~(1 << window);
+                    sendNativeToAllPlayers(0x772282EBEB95E682, vehicle, window);
+                }
+
+                var delta = new Delta_VehicleProperties();
+                delta.DamageModel = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel;
+                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+            }
         }
 
         public void setVehicleExtra(NetHandle vehicle, int slot, bool enabled)
@@ -1444,6 +1720,11 @@ namespace GTANetworkServer
             if (classId < 0 || classId >= ConstantVehicleDataOrganizer.VehicleClasses.Length) return "";
 
             return ConstantVehicleDataOrganizer.VehicleClasses[classId];
+        }
+
+        public void detonatePlayerStickies(Client player)
+        {
+            sendNativeToAllPlayers(0xFC4BD125DE7611E4, player.CharacterHandle, (int)WeaponHash.StickyBomb, true);
         }
 
         public void setPlayerSkin(Client player, PedHash modelHash)
@@ -1928,6 +2209,20 @@ namespace GTANetworkServer
         public Vector3 getPlayerVelocity(Client player)
         {
             return player.Velocity ?? new Vector3();
+        }
+
+        public void setPlayerVelocity(Client player, Vector3 velocity)
+        {
+            if (player.IsInVehicle)
+            {
+                sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.CurrentVehicle, velocity.X, velocity.Y,
+                    velocity.Z);
+            }
+            else
+            {
+                sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.CharacterHandle, velocity.X, velocity.Y,
+                    velocity.Z);
+            }
         }
 
         public int getPlayerVehicleSeat(Client player)
