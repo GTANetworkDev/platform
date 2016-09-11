@@ -5916,7 +5916,7 @@ namespace GTANetwork
 
         public static bool SetEntityProperty(LocalHandle entity, string key, object value)
         {
-            var handle = NetEntityHandler.EntityToNet(entity);
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
             var item = NetEntityHandler.NetToStreamedItem(handle);
             var prop = item as EntityProperties;
 
@@ -5945,7 +5945,7 @@ namespace GTANetwork
 
         public static void ResetEntityProperty(LocalHandle entity, string key)
         {
-            var handle = NetEntityHandler.EntityToNet(entity);
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
             var item = NetEntityHandler.NetToStreamedItem(handle);
             var prop = item as EntityProperties;
 
@@ -5966,7 +5966,7 @@ namespace GTANetwork
 
         public static bool HasEntityProperty(LocalHandle entity, string key)
         {
-            var handle = NetEntityHandler.EntityToNet(entity);
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
             var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
 
             if (prop == null || string.IsNullOrEmpty(key) || prop.SyncedProperties == null) return false;
@@ -5976,7 +5976,7 @@ namespace GTANetwork
 
         public static object GetEntityProperty(LocalHandle entity, string key)
         {
-            var handle = NetEntityHandler.EntityToNet(entity);
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
             var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
 
             if (prop == null || string.IsNullOrEmpty(key)) return null;

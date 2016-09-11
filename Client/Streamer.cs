@@ -525,36 +525,7 @@ namespace GTANetwork
                 return ourItem?.RemoteHandle ?? entityHandle;
             }
         }
-
-        public int EntityToNet(LocalHandle entityHandle)
-        {
-            if (entityHandle.LocalId)
-            {
-                if (entityHandle.Value == 0) return 0;
-                if (entityHandle.Value == Game.Player.Character.Handle)
-                    return
-                        ClientMap.FirstOrDefault(i => i is RemotePlayer && ((RemotePlayer) i).LocalHandle == -2)
-                            ?.RemoteHandle ?? 0;
-                lock (ClientMap)
-                {
-                    var ourItem = ClientMap.FirstOrDefault(item =>
-                        !item.LocalOnly && item.StreamedIn && item is ILocalHandleable &&
-                        ((ILocalHandleable) item).LocalHandle == entityHandle.Value);
-                    return ourItem?.RemoteHandle ?? 0;
-                }
-            }
-            else
-            {
-                lock (ClientMap)
-                {
-                    var ourItem = ClientMap.FirstOrDefault(item =>
-                        !item.LocalOnly && item.StreamedIn && item is ILocalHandleable &&
-                        ((ILocalHandleable)item).LocalHandle == entityHandle.Value);
-                    return ourItem?.RemoteHandle ?? 0;
-                }
-            }
-        }
-
+        
         public void Remove(IStreamedItem item)
         {
             lock (ClientMap) ClientMap.Remove(item);

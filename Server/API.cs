@@ -2955,6 +2955,12 @@ namespace GTANetworkServer
             }
         }
 
+        public void registerCustomColShape(ColShape shape)
+        {
+            Program.ServerInstance.ColShapeManager.Add(shape);
+            lock (ResourceColShapes) ResourceColShapes.Add(shape);
+        }
+
         public SphereColShape createSphereColShape(Vector3 position, float range)
         {
             var shape = new SphereColShape(position, range);

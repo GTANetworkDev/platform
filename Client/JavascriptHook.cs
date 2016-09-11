@@ -1220,21 +1220,89 @@ namespace GTANetwork
             return new Ped(ped.Value).Armor;
         }
 
-        public LocalHandle[] getAllPlayers()
+        public LocalHandle[] getStreamedPlayers()
         {
             return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>().Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
         }
 
-        public LocalHandle[] getAllVehicles()
+        public LocalHandle[] getStreamedVehicles()
         {
             return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteVehicle && item.StreamedIn).Cast<RemoteVehicle>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
         }
 
+        public LocalHandle[] getStreamedObjects()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteProp && item.StreamedIn).Cast<RemoteProp>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+        }
+
+        public LocalHandle[] getStreamedPickups()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemotePickup && item.StreamedIn)
+                    .Cast<RemotePickup>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+        }
+
+        public LocalHandle[] getStreamedPeds()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemotePed && item.StreamedIn)
+                    .Cast<RemotePed>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+        }
+
+        public LocalHandle[] getStreamedMarkers()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemoteMarker && item.StreamedIn)
+                    .Cast<RemoteMarker>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
+        }
+
+        public LocalHandle[] getStreamedTextLabels()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemoteTextLabel && item.StreamedIn)
+                    .Cast<RemoteTextLabel>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
+        }
+
+        public LocalHandle[] getAllVehicles()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteVehicle)
+                .Cast<RemoteVehicle>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
+        }
+
         public LocalHandle[] getAllObjects()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteVehicle && item.StreamedIn).Cast<RemoteVehicle>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteProp)
+                .Cast<RemoteProp>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
         }
-        
+
+        public LocalHandle[] getAllPickups()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemotePickup)
+                    .Cast<RemotePickup>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
+        }
+
+        public LocalHandle[] getAllPeds()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemotePed)
+                    .Cast<RemotePed>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
+        }
+
+        public LocalHandle[] getAllMarkers()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemoteMarker)
+                    .Cast<RemoteMarker>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
+        }
+
+        public LocalHandle[] getAllTextLabels()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item =>
+                item is RemoteTextLabel)
+                    .Cast<RemoteTextLabel>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
+        }
+
         public LocalHandle getPlayerVehicle(LocalHandle player)
         {
             return new LocalHandle(new Ped(player.Value).CurrentVehicle?.Handle ?? 0);
@@ -1307,19 +1375,19 @@ namespace GTANetwork
         public LocalHandle createVehicle(int model, Vector3 pos, float heading)
         {
             var car = Main.NetEntityHandler.CreateLocalVehicle(model, pos, heading);
-            return new LocalHandle(car, true);
+            return new LocalHandle(car, HandleType.LocalHandle);
         }
 
         public LocalHandle createPed(int model, Vector3 pos, float heading)
         {
             var ped = Main.NetEntityHandler.CreateLocalPed(model, pos, heading);
-            return new LocalHandle(ped, true);
+            return new LocalHandle(ped, HandleType.LocalHandle);
         }
 
         public LocalHandle createBlip(Vector3 pos)
         {
             var blip = Main.NetEntityHandler.CreateLocalBlip(pos);
-            return new LocalHandle(blip, true);
+            return new LocalHandle(blip, HandleType.LocalHandle);
         }
 
         public void setBlipPosition(LocalHandle blip, Vector3 pos)
@@ -1471,7 +1539,7 @@ namespace GTANetwork
 
         public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b), false);
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b), HandleType.LocalHandle);
         }
 
         public void setMarkerPosition(LocalHandle marker, Vector3 pos)
@@ -1531,7 +1599,7 @@ namespace GTANetwork
 
         public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0), true);
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0), HandleType.LocalHandle);
         }
 
         public string getResourceFilePath(string fileName)

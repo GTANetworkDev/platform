@@ -13,18 +13,25 @@ using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork
 {
+    public enum HandleType
+    {
+        GameHandle,
+        LocalHandle,
+        NetHandle,
+    }
+
     public struct LocalHandle
     {
         public LocalHandle(int handle)
         {
             _internalId = handle;
-            LocalId = false;
+            HandleType = HandleType.GameHandle;
         }
 
-        public LocalHandle(int handle, bool localId)
+        public LocalHandle(int handle, HandleType localId)
         {
             _internalId = handle;
-            LocalId = localId;
+            HandleType = localId;
         }
 
         private int _internalId;
@@ -41,9 +48,13 @@ namespace GTANetwork
         {
             get
             {
-                if (LocalId)
+                if (HandleType == HandleType.LocalHandle)
                 {
                     return Main.NetEntityHandler.NetToEntity(Main.NetEntityHandler.NetToStreamedItem(_internalId, true))?.Handle ?? 0;
+                }
+                else if (HandleType == HandleType.NetHandle)
+                {
+                    return Main.NetEntityHandler.NetToEntity(_internalId)?.Handle ?? 0;
                 }
 
                 return _internalId;
@@ -52,13 +63,15 @@ namespace GTANetwork
 
         public T Properties<T>() where T : IStreamedItem
         {
-            if (LocalId)
+            if (HandleType == HandleType.LocalHandle)
                 return (T) Main.NetEntityHandler.NetToStreamedItem(_internalId, true);
+            else if (HandleType == HandleType.NetHandle)
+                return (T) Main.NetEntityHandler.NetToStreamedItem(_internalId);
             else
                 return (T) Main.NetEntityHandler.EntityToStreamedItem(_internalId);
         }
 
-        public bool LocalId;
+        public HandleType HandleType;
 
         public override bool Equals(object obj)
         {
