@@ -21,12 +21,6 @@ namespace GTANetwork
             var sw = new Stopwatch();
             sw.Start();
 
-            //List<SyncPed> localOpps = null;
-
-            //localOpps = new List<SyncPed>(StreamerThread.StreamedInPlayers);
-
-            //for (int i = 0; i < localOpps.Count; i++) localOpps[i].DisplayLocally();
-
             for (int i = 0; i < StreamerThread.MAX_PLAYERS; i++)
             {
                 if (i >= StreamerThread.StreamedInPlayers.Length) break;
@@ -34,8 +28,6 @@ namespace GTANetwork
             }
 
             sw.Stop();
-
-            GTA.UI.Screen.ShowSubtitle("Elapsed: " + sw.ElapsedMilliseconds);
 
             LogManager.DebugLog("END LOOP");
         }
