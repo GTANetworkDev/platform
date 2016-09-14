@@ -331,7 +331,7 @@ namespace GTANetworkServer
             return Path.GetFullPath("resources\\" + ResourceParent.ResourceParent.DirectoryName);
         }
 
-        public string getResourceName(string resource)
+        public string getCurrentResourceName(string resource)
         {
             if (doesResourceExist(resource))
             {
@@ -1942,7 +1942,7 @@ namespace GTANetworkServer
             return getAllPlayers().Where(filterByRadius).ToList();
         }
 
-        public void setPlayerProp(Client player, int slot, int drawable, int texture)
+        public void setPlayerClothes(Client player, int slot, int drawable, int texture)
         {
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
             {
@@ -2326,6 +2326,16 @@ namespace GTANetworkServer
         public WeaponTint getPlayerWeaponTint(Client player, WeaponHash weapon)
         {
             return (WeaponTint) player.Properties.WeaponTints.Get((int) weapon);
+        }
+
+        public WeaponComponent[] getPlayerWeaponComponents(Client player, WeaponHash weapon)
+        {
+            if (player.Properties.WeaponComponents.ContainsKey((int)weapon))
+            {
+                return player.Properties.WeaponComponents[(int) weapon].Select(k => (WeaponComponent)k).ToArray();
+            }
+            
+            return new WeaponComponent[0];
         }
 
         public void givePlayerWeaponComponent(Client player, WeaponHash weapon, WeaponComponent component)
@@ -2872,6 +2882,28 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public int getPickupCustomModel(NetHandle pickup)
+        {
+            PickupProperties p;
+            if ((p = Program.ServerInstance.NetEntityHandler.NetToProp<PickupProperties>(pickup.Value)) != null)
+            {
+                return p.CustomModel;
+            }
+
+            return 0;
+        }
+
+        public bool getPickupPickedUp(NetHandle pickup)
+        {
+            PickupProperties p;
+            if ((p = Program.ServerInstance.NetEntityHandler.NetToProp<PickupProperties>(pickup.Value)) != null)
+            {
+                return p.PickedUp;
+            }
+
+            return false;
+        }
+
         public void repairVehicle(NetHandle vehicle)
         {
             if (doesEntityExist(vehicle))
@@ -2889,9 +2921,10 @@ namespace GTANetworkServer
         public void setPlayerHealth(Client player, int health)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
+            player.Health = health;
         }
 
-        public float getPlayerHealth(Client player)
+        public int getPlayerHealth(Client player)
         {
             return player.Health;
         }
@@ -2950,7 +2983,7 @@ namespace GTANetworkServer
             return null;
         }
 
-        public void setBlipAlpha(NetHandle blip, int alpha)
+        public void setBlipTransparency(NetHandle blip, int alpha)
         {
             if (doesEntityExist(blip))
             {
@@ -2963,7 +2996,7 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0x45FF974EEE1C8734, blip, alpha);
         }
 
-        public int getBlipAlpha(NetHandle blip)
+        public int getBlipTransparency(NetHandle blip)
         {
             if (doesEntityExist(blip))
             {
@@ -3111,6 +3144,16 @@ namespace GTANetworkServer
             }
         }
 
+        public int getMarkerType(NetHandle marker)
+        {
+            if (doesEntityExist(marker))
+            {
+                return ((MarkerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).MarkerType;
+            }
+
+            return 0;
+        }
+
         public void setMarkerPosition(NetHandle marker, Vector3 position)
         {
             if (doesEntityExist(marker))
@@ -3121,6 +3164,16 @@ namespace GTANetworkServer
                 delta.Position = position;
                 Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
             }
+        }
+
+        public Vector3 getMarkerPosition(NetHandle marker)
+        {
+            if (doesEntityExist(marker))
+            {
+                return ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Position;
+            }
+
+            return null;
         }
 
         public void setMarkerRotation(NetHandle marker, Vector3 rotation)
@@ -3135,6 +3188,16 @@ namespace GTANetworkServer
             }
         }
 
+        public Vector3 getMarkerRotation(NetHandle marker)
+        {
+            if (doesEntityExist(marker))
+            {
+                return ((MarkerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Rotation;
+            }
+
+            return null;
+        }
+
         public void setMarkerScale(NetHandle marker, Vector3 scale)
         {
             if (doesEntityExist(marker))
@@ -3145,6 +3208,38 @@ namespace GTANetworkServer
                 delta.Scale = scale;
                 Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
             }
+        }
+
+        public Vector3 getMarkerScale(NetHandle marker)
+        {
+            if (doesEntityExist(marker))
+            {
+                return ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Scale;
+            }
+
+            return null;
+        }
+
+        public void setMarkerDirection(NetHandle marker, Vector3 dir)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Direction = dir;
+
+                var delta = new Delta_MarkerProperties();
+                delta.Direction = dir;
+                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
+        public Vector3 getMarkerDirection(NetHandle marker)
+        {
+            if (doesEntityExist(marker))
+            {
+                return ((MarkerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Direction;
+            }
+
+            return null;
         }
 
         public void setMarkerColor(NetHandle marker, int alpha, int red, int green, int blue)
@@ -3162,6 +3257,22 @@ namespace GTANetworkServer
                 delta.Green = (byte)green;
                 delta.Blue = (byte)blue;
                 Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
+        public void getMarkerColor(NetHandle marker, out int alpha, out int red, out int green, out int blue)
+        {
+            alpha = 0;
+            red = 0;
+            green = 0;
+            blue = 0;
+
+            if (doesEntityExist(marker))
+            {
+                alpha = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Alpha;
+                red = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Red;
+                green = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Green;
+                blue = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Blue;
             }
         }
 
@@ -3204,6 +3315,22 @@ namespace GTANetworkServer
                 delta.Green = green;
                 delta.Blue = blue;
                 Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+            }
+        }
+
+        public void getTextLabelColor(NetHandle label, out int alpha, out int red, out int green, out int blue)
+        {
+            alpha = 0;
+            red = 0;
+            green = 0;
+            blue = 0;
+
+            if (doesEntityExist(label))
+            {
+                alpha = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Alpha;
+                red = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Red;
+                green = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Green;
+                blue = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Blue;
             }
         }
 

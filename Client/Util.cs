@@ -61,7 +61,7 @@ namespace GTANetwork
             }
         }
 
-        public T Properties<T>() where T : IStreamedItem
+        public T Properties<T>()
         {
             if (HandleType == HandleType.LocalHandle)
                 return (T) Main.NetEntityHandler.NetToStreamedItem(_internalId, true);
@@ -630,6 +630,19 @@ namespace GTANetwork
             result.Z = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2;
             result.W = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2;
             return result;
+        }
+
+        public static int FromArgb(byte a, byte r, byte g, byte b)
+        {
+            return b | g << 8 | r << 16 | a << 24;
+        }
+
+        public static void ToArgb(int argb, out byte a, out byte r, out byte g, out byte b)
+        {
+            b = (byte)(argb & 0xFF);
+            g = (byte)((argb & 0xFF00) >> 8);
+            r = (byte)((argb & 0xFF0000) >> 16);
+            a = (byte)((argb & 0xFF000000) >> 24);
         }
 
         public static int GetTrackId()

@@ -93,6 +93,8 @@ namespace GTANetworkServer
         private float _range;
         public Vector3 Center;
 
+        private NetHandle _attachedNetHandle;
+
         public float Range
         {
             get
@@ -108,7 +110,22 @@ namespace GTANetworkServer
 
         internal override bool Check(Vector3 pos)
         {
-            return Center.DistanceToSquared(pos) <= _rangeSquared;
+            var c = Center;
+
+            if (!_attachedNetHandle.IsNull)
+                c = Program.ServerInstance.PublicAPI.getEntityPosition(_attachedNetHandle);
+
+            return c.DistanceToSquared(pos) <= _rangeSquared;
+        }
+
+        public void attachToEntity(NetHandle entity)
+        {
+            _attachedNetHandle = entity;
+        }
+
+        private void detach()
+        {
+            _attachedNetHandle = new NetHandle(0);
         }
     }
 

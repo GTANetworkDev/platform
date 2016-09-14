@@ -707,6 +707,11 @@ namespace GTANetwork
             return new PointF(p.X*res.Width, p.Y*res.Height);
         }
 
+        public string getCurrentResourceName()
+        {
+            return ParentResourceName;
+        }
+
         public Vector3 screenToWorld(PointF pos)
         {
             var res = getScreenResolution();
@@ -1097,6 +1102,1319 @@ namespace GTANetwork
             return new Ped(player.Value).IsInVehicle();
         }
 
+        public bool isPlayerOnFire(LocalHandle player)
+        {
+            return new Ped(player.Value).IsOnFire;
+        }
+
+        public bool isPlayerParachuting(LocalHandle player)
+        {
+            return new Ped(player.Value).ParachuteState == ParachuteState.Gliding;
+        }
+
+        public bool isPlayerInFreefall(LocalHandle player)
+        {
+            return Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, player.Value) == 0 &&
+                new Ped(player.Value).IsInAir;
+        }
+
+        public bool isPlayerAiming(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+            {
+                return new Ped(player.Value).IsAiming;
+            }
+            else
+            {
+                return handleToSyncPed(player).IsAiming;
+            }
+        }
+
+        public bool isPlayerShooting(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+            {
+                return new Ped(player.Value).IsShooting;
+            }
+            else
+            {
+                return handleToSyncPed(player).IsShooting;
+            }
+        }
+
+        public bool isPlayerReloading(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+            {
+                return new Ped(player.Value).IsReloading;
+            }
+            else
+            {
+                return handleToSyncPed(player).IsReloading;
+            }
+        }
+
+        public bool isPlayerInCover(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+            {
+                return new Ped(player.Value).IsInCover();
+            }
+            else
+            {
+                return handleToSyncPed(player).IsInCover;
+            }
+        }
+
+        public bool isPlayerOnLadder(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+            {
+                return Subtask.IsSubtaskActive(player.Value, ESubtask.USING_LADDER);
+            }
+            else
+            {
+                return handleToSyncPed(player).IsOnLadder;
+            }
+        }
+
+        public Vector3 getPlayerAimingPoint(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+            {
+                return Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
+            }
+            else
+            {
+                return handleToSyncPed(player).AimCoords.ToLVector();
+            }
+        }
+
+        public bool isPlayerDead(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+            {
+                return Game.Player.Character.IsDead;
+            }
+            else
+            {
+                return handleToSyncPed(player).IsPlayerDead;
+            }
+        }
+
+        public bool doesEntityExist(LocalHandle entity)
+        {
+            return !entity.IsNull;
+        }
+
+        public void setEntityInvincible(LocalHandle entity, bool invincible)
+        {
+            entity.Properties<EntityProperties>().IsInvincible = invincible;
+
+            new Prop(entity.Value).IsInvincible = invincible;
+        }
+
+        public bool getEntityInvincible(LocalHandle entity)
+        {
+            if (!entity.IsNull)
+            {
+                return new Prop(entity.Value).IsInvincible;
+            }
+
+            return entity.Properties<EntityProperties>().IsInvincible;
+        }
+
+        public void createParticleEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position,
+            Vector3 rotation, float scale)
+        {
+            Util.LoadPtfxAsset(ptfxLibrary);
+            Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, ptfxLibrary);
+            Function.Call((Hash) 0x25129531F77B9ED3, ptfxName, position.X, position.Y, position.Z, rotation.X,
+                rotation.Y, rotation.Z,
+                scale, 0, 0, 0);
+        }
+
+        public void createParticleEffectOnEntity(string ptfxLibrary, string ptfxName, LocalHandle entity, Vector3 offset,
+            Vector3 rotation, float scale, int boneIndex = -1)
+        {
+            Util.LoadPtfxAsset(ptfxLibrary);
+            Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, ptfxLibrary);
+
+            if (boneIndex <= 0)
+            {
+                Function.Call((Hash) 0x0D53A3B8DA0809D2, ptfxName, entity.Value, offset.X, offset.Y, offset.Z,
+                    rotation.X, rotation.Y, rotation.Z,
+                    scale, 0, 0, 0);
+            }
+            else
+            {
+                Function.Call((Hash)0x0E7E72961BA18619, ptfxName, entity.Value, offset.X, offset.Y, offset.Z,
+                    rotation.X, rotation.Y, rotation.Z,
+                    boneIndex, scale, 0, 0, 0);
+            }
+        }
+
+        public void createExplosion(int explosionType, Vector3 position, float damageScale)
+        {
+            Function.Call((Hash) 0xE3AD2BDBAEE269AC, position.X, position.Y, position.Z, explosionType, damageScale,
+                true, false);
+        }
+
+        public void createOwnedExplosion(LocalHandle owner, int explosionType, Vector3 position, float damageScale)
+        {
+            Function.Call((Hash)0x172AA1B624FA1013, owner.Value, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
+        }
+
+        public void setVehicleLivery(LocalHandle vehicle, int livery)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                veh.Livery = livery;
+                if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.Livery = livery;
+            }
+        }
+
+        public int getVehicleLivery(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return new Vehicle(vehicle.Value).Mods.Livery;
+
+                return veh.Livery;
+            }
+            return 0;
+        }
+
+        public LocalHandle getVehicleTrailer(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh == null || veh.Trailer == 0) return new LocalHandle(0);
+
+            return new LocalHandle(veh.Trailer, HandleType.NetHandle);
+        }
+
+        public LocalHandle getVehicleTraileredBy(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh == null || veh.TraileredBy == 0) return new LocalHandle(0);
+
+            return new LocalHandle(veh.TraileredBy, HandleType.NetHandle);
+        }
+
+        public bool getVehicleSirenState(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return new Vehicle(vehicle.Value).SirenActive;
+
+                return veh.Siren;
+            }
+            return false;
+        }
+
+        public bool isVehicleTyrePopped(LocalHandle vehicle, int tyre)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return Util.BuildTyreArray(new Vehicle(vehicle.Value))[tyre];
+
+                return (veh.Tires & (1 << tyre)) != 0;
+            }
+
+            return false;
+        }
+
+        public void popVehicleTyre(LocalHandle vehicle, int tyre, bool pop)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn)
+                {
+                    if (pop)
+                        new Vehicle(vehicle.Value).Wheels[tyre].Burst();
+                    else new Vehicle(vehicle.Value).Wheels[tyre].Fix();
+                }
+
+                if (pop)
+                {
+                    veh.Tires |= (byte)(1 << tyre);
+                }
+                else
+                {
+                    veh.Tires &= (byte)~(1 << tyre);
+                }
+            }
+        }
+
+        public bool isVehicleDoorBroken(LocalHandle vehicle, int door)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return new Vehicle(vehicle.Value).Doors[(VehicleDoorIndex)door].IsBroken;
+
+                return (veh.Doors & (1 << door)) != 0;
+            }
+
+            return false;
+        }
+
+        public void breakVehicleTyre(LocalHandle vehicle, int door, bool breakDoor)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn)
+                {
+                    if (breakDoor)
+                        new Vehicle(vehicle.Value).Doors[(VehicleDoorIndex)door].Break(true);
+                }
+
+                if (breakDoor)
+                {
+                    veh.Doors |= (byte)(1 << door);
+                }
+                else
+                {
+                    veh.Doors &= (byte)~(1 << door);
+                }
+            }
+        }
+
+        public bool isVehicleWindowBroken(LocalHandle vehicle, int window)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return !new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].IsIntact;
+
+                if (veh.DamageModel == null) return false;
+                return (veh.DamageModel.BrokenWindows & (1 << window)) != 0;
+            }
+
+            return false;
+        }
+
+        public void breakVehicleWindow(LocalHandle vehicle, int window, bool breakWindow)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn)
+                {
+                    if (breakWindow)
+                        new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].Smash();
+                    else new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].Repair();
+                }
+
+                if (breakWindow)
+                {
+                    veh.Tires |= (byte)(1 << window);
+                }
+                else
+                {
+                    veh.Tires &= (byte)~(1 << window);
+                }
+            }
+        }
+
+        public void setVehicleExtra(LocalHandle vehicle, int slot, bool enabled)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) new Vehicle(vehicle.Value).ToggleExtra(slot, enabled);
+
+                if (enabled)
+                    veh.VehicleComponents |= (short)(1 << slot);
+                else
+                    veh.VehicleComponents &= (short)~(1 << slot);
+            }
+        }
+
+        public bool getVehicleExtra(LocalHandle vehicle, int slot)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return new Vehicle(vehicle.Value).IsExtraOn(slot);
+                return (veh.VehicleComponents & (1 << slot)) != 0;
+            }
+
+            return false;
+        }
+
+        public void setVehicleNumberPlate(LocalHandle vehicle, string plate)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) new Vehicle(veh.LocalHandle).Mods.LicensePlate = plate;
+                veh.NumberPlate = plate;
+            }
+        }
+
+        public string getVehicleNumberPlate(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return new Vehicle(veh.LocalHandle).Mods.LicensePlate;
+                return veh.NumberPlate;
+            }
+
+            return null;
+        }
+
+        public void setVehicleEngineStatus(LocalHandle vehicle, bool turnedOn)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (!turnedOn)
+                {
+                    veh.Flag = (byte)PacketOptimization.SetBit(veh.Flag, EntityFlag.EngineOff);
+                }
+                else
+                {
+                    veh.Flag = (byte)PacketOptimization.ResetBit(veh.Flag, EntityFlag.EngineOff);
+                }
+
+                new Vehicle(vehicle.Value).IsEngineRunning = turnedOn;
+                new Vehicle(vehicle.Value).IsDriveable = !turnedOn;
+            }
+        }
+
+        public bool getEngineStatus(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                return PacketOptimization.CheckBit(veh.Flag, EntityFlag.EngineOff);
+            }
+
+            return false;
+        }
+
+        public void setVehicleSpecialLightStatus(LocalHandle vehicle, bool status)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn)
+                {
+                    new Vehicle(vehicle.Value).TaxiLightOn = status;
+                    new Vehicle(vehicle.Value).SearchLightOn = status;
+                }
+
+                if (status)
+                    veh.Flag = (byte) PacketOptimization.SetBit(veh.Flag, EntityFlag.SpecialLight);
+                else
+                    veh.Flag = (byte) PacketOptimization.ResetBit(veh.Flag, EntityFlag.SpecialLight);
+            }
+        }
+
+        public bool getVehicleSpecialLightStatus(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                return PacketOptimization.CheckBit(veh.Flag, EntityFlag.SpecialLight);
+            }
+
+            return false;
+        }
+
+        public void setEntityCollissionless(LocalHandle entity, bool status)
+        {
+            if (status)
+                entity.Properties<EntityProperties>().Flag =
+                    (byte) PacketOptimization.SetBit(entity.Properties<EntityProperties>().Flag, EntityFlag.Collisionless);
+            else
+                entity.Properties<EntityProperties>().Flag =
+                    (byte) PacketOptimization.ResetBit(entity.Properties<EntityProperties>().Flag, EntityFlag.Collisionless);
+
+            if (entity.Properties<IStreamedItem>().StreamedIn)
+            {
+                new Prop(entity.Value).IsCollisionEnabled = !status;
+            }
+        }
+
+        public bool getEntityCollisionless(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<EntityProperties>();
+
+            if (veh != null)
+            {
+                return PacketOptimization.CheckBit(veh.Flag, EntityFlag.Collisionless);
+            }
+
+            return false;
+        }
+
+        public void setVehicleMod(LocalHandle vehicle, int slot, int modType)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh.Mods == null) veh.Mods = new Dictionary<byte, int>();
+
+            veh.Mods[(byte) slot] = modType;
+
+            if (slot >= 60)
+            {
+                Util.SetNonStandardVehicleMod(new Vehicle(vehicle.Value), slot, modType);
+            }
+            else
+            {
+                if (slot >= 17 && slot <= 22)
+                    new Vehicle(vehicle.Value).Mods[(VehicleToggleModType)slot].IsInstalled = modType != 0;
+                else
+                    new Vehicle(vehicle.Value).SetMod(slot, modType, false);
+            }
+        }
+
+        public int getVehicleMod(LocalHandle vehicle, int slot)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                return veh.Mods?[(byte) slot] ?? -1;
+            }
+
+            return 0;
+        }
+
+        public void removeVehicleMod(LocalHandle vehicle, int slot)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                veh.Mods?.Remove((byte) slot);
+
+                if (veh.StreamedIn)
+                    Function.Call((Hash)0x92D619E420858204, vehicle.Value, slot);
+            }
+        }
+
+        public void setVehicleBulletproofTyres(LocalHandle vehicle, bool bulletproof)
+        {
+            setVehicleMod(vehicle, 61, bulletproof ? 0x01 : 0x00);
+        }
+
+        public bool getVehicleBulletproofTyres(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 61) != 0;
+        }
+
+        public void setVehicleNumberPlateStyle(LocalHandle vehicle, int style)
+        {
+            setVehicleMod(vehicle, 62, style);
+        }
+
+        public int getVehicleNumberPlateStyle(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 62);
+        }
+
+        public void setVehiclePearlescentColor(LocalHandle vehicle, int color)
+        {
+            setVehicleMod(vehicle, 63, color);
+        }
+
+        public int getVehiclePearlescentColor(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 63);
+        }
+
+        public void setVehicleWheelColor(LocalHandle vehicle, int color)
+        {
+            setVehicleMod(vehicle, 64, color);
+        }
+
+        public int getVehicleWheelColor(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 64);
+        }
+
+        public void setVehicleWheelType(LocalHandle vehicle, int type)
+        {
+            setVehicleMod(vehicle, 65, type);
+        }
+
+        public int getVehicleWheelType(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 65);
+        }
+
+        
+        public void setVehicleModColor1(LocalHandle vehicle, int r, int g, int b)
+        {
+            setVehicleMod(vehicle, 66, Color.FromArgb(r,g,b).ToArgb());
+        }
+        /*
+        public void getVehicleModColor1(LocalHandle vehicle, out byte red, out byte green, out byte blue)
+        {
+            var val = getVehicleMod(vehicle, 66);
+            byte a;
+            Extensions.ToArgb(val, out a, out red, out green, out blue);
+        }
+
+        */
+
+        public void setVehicleModColor2(LocalHandle vehicle, int r, int g, int b)
+        {
+            setVehicleMod(vehicle, 67, Color.FromArgb(r,g,b).ToArgb());
+        }
+        /*
+        public void getVehicleModColor2(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        {
+            var val = getVehicleMod(vehicle, 67);
+            byte a;
+            Extensions.ToArgb(val, out a, out red, out green, out blue);
+        }
+        */
+        public void setVehicleTyreSmokeColor(LocalHandle vehicle, int r, int g, int b)
+        {
+            setVehicleMod(vehicle, 68, Color.FromArgb(r,g,b).ToArgb());
+        }
+        /*
+        public void getVehicleTyreSmokeColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        {
+            var val = getVehicleMod(vehicle, 68);
+            byte a;
+            Extensions.ToArgb(val, out a, out red, out green, out blue);
+        }
+        */
+        
+        public void setVehicleWindowTint(LocalHandle vehicle, int type)
+        {
+            setVehicleMod(vehicle, 69, type);
+        }
+
+        public int getVehicleWindowTint(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 69);
+        }
+
+        public void setVehicleEnginePowerMultiplier(LocalHandle vehicle, float mult)
+        {
+            setVehicleMod(vehicle, 70, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
+        }
+
+        public float getVehicleEnginePowerMultiplier(LocalHandle vehicle)
+        {
+            return BitConverter.ToSingle(BitConverter.GetBytes(getVehicleMod(vehicle, 70)), 0);
+        }
+
+        public void setVehicleEngineTorqueMultiplier(LocalHandle vehicle, float mult)
+        {
+            setVehicleMod(vehicle, 71, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
+        }
+
+        public float getVehicleEngineTorqueMultiplier(LocalHandle vehicle)
+        {
+            return BitConverter.ToSingle(BitConverter.GetBytes(getVehicleMod(vehicle, 71)), 0);
+        }
+
+        public void setVehicleNeonState(LocalHandle vehicle, int slot, bool turnedOn)
+        {
+            var currentState = getVehicleMod(vehicle, 72);
+
+            if (turnedOn)
+                setVehicleMod(vehicle, 72, currentState | 1 << slot);
+            else
+                setVehicleMod(vehicle, 72, currentState & ~(1 << slot));
+        }
+
+        public bool getVehicleNeonState(LocalHandle vehicle, int slot)
+        {
+            return (getVehicleMod(vehicle, 72) & (1 << slot)) != 0;
+        }
+
+        public void setVehicleNeonColor(LocalHandle vehicle, int r, int g, int b)
+        {
+            setVehicleMod(vehicle, 73, Color.FromArgb(r,g,b).ToArgb());
+        }
+        /*
+        public void getVehicleNeonColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        {
+            var val = getVehicleMod(vehicle, 73);
+            byte a;
+            Extensions.ToArgb(val, out a, out red, out green, out blue);
+        }
+        */
+        public void setVehicleDashboardColor(LocalHandle vehicle, int type)
+        {
+            setVehicleMod(vehicle, 74, type);
+        }
+
+        public int getVehicleDashboardColor(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 74);
+        }
+
+        public void setVehicleTrimColor(LocalHandle vehicle, int type)
+        {
+            setVehicleMod(vehicle, 75, type);
+        }
+
+        public int getVehicleTrimColor(LocalHandle vehicle)
+        {
+            return getVehicleMod(vehicle, 75);
+        }
+
+        public string getVehicleDisplayName(int model)
+        {
+            return Function.Call<string>(Hash._GET_LABEL_TEXT,
+                Function.Call<string>(Hash.GET_DISPLAY_NAME_FROM_VEHICLE_MODEL, (int) model));
+        }
+
+        public float getVehicleMaxSpeed(int model)
+        {
+            return Function.Call<float>((Hash)0xF417C2502FFFED43, (int)model);
+        }
+
+        public float getVehicleMaxBraking(int model)
+        {
+            return Function.Call<float>((Hash)0xDC53FD41B4ED944C, (int)model);
+        }
+
+        public float getVehicleMaxTraction(int model)
+        {
+            return Function.Call<float>((Hash)0x539DE94D44FDFD0D, (int)model);
+        }
+
+        public float getVehicleMaxAcceleration(int model)
+        {
+            return Function.Call<float>((Hash)0x8C044C5C84505B6A, (int)model);
+        }
+
+        public float getVehicleMaxOccupants(int model)
+        {
+            return Function.Call<int>(Hash._GET_VEHICLE_MODEL_MAX_NUMBER_OF_PASSENGERS, (int)model);
+        }
+
+        public int getVehicleClass(int model)
+        {
+            return Function.Call<int>(Hash.GET_VEHICLE_CLASS_FROM_NAME, (int)model);
+        }
+
+        public void detonatePlayerStickies()
+        {
+            Function.Call((Hash)0xFC4BD125DE7611E4, Game.Player.Character, (int)WeaponHash.StickyBomb, true);
+        }
+
+        public void setPlayerSkin(int model)
+        {
+            Util.SetPlayerSkin((PedHash)model);
+            setPlayerDefaultClothes();
+        }
+
+        public void setPlayerDefaultClothes()
+        {
+            Function.Call((Hash)0x45EEE61580806D63, Game.Player.Character);
+        }
+
+        public void setPlayerTeam(int team)
+        {
+            Main.LocalTeam = team;
+        }
+
+        public void playPlayerScenario(string name)
+        {
+            Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, Game.Player.Character, name, 0, 0);
+        }
+
+        public void playPlayerAnimation(string animDict, string animName, int flag, int duration = -1)
+        {
+            Util.LoadDict(animDict);
+            Game.Player.Character.Task.PlayAnimation(animDict, animName, -8f, 8f, duration, (AnimationFlags) flag, 8f);
+        }
+
+        public void stopPlayerAnimation()
+        {
+            Game.Player.Character.Task.ClearAll();
+        }
+
+        public void setVehiclePrimaryColor(LocalHandle vehicle, int color)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                veh.PrimaryColor = color;
+
+                if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.PrimaryColor = (VehicleColor) color;
+            }
+        }
+
+        public void setVehicleSecondaryColor(LocalHandle vehicle, int color)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                veh.SecondaryColor = color;
+
+                if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.SecondaryColor = (VehicleColor)color;
+            }
+        }
+
+        public void setVehicleCustomPrimaryColor(LocalHandle vehicle, int r, int g, int b)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                veh.PrimaryColor = Color.FromArgb(0x01, r, g, b).ToArgb();
+
+                if (veh.StreamedIn)
+                    new Vehicle(vehicle.Value).Mods.CustomPrimaryColor = Color.FromArgb(0x01, r, g, b);
+            }
+        }
+
+        public void setVehicleCustomSecondaryColor(LocalHandle vehicle, int r, int g, int b)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                veh.SecondaryColor = Color.FromArgb(0x01, r,g,b).ToArgb();
+
+                if (veh.StreamedIn)
+                    new Vehicle(vehicle.Value).Mods.CustomSecondaryColor = Color.FromArgb(0x01, r, g, b);
+            }
+        }
+
+        public Color getVehicleCustomPrimaryColor(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                byte r, g, b, a;
+                Util.ToArgb(veh.PrimaryColor, out a, out r, out g, out b);
+
+                return Color.FromArgb(r, g, b);
+            }
+
+            return Color.White;
+        }
+
+        public Color getVehicleCustomSecondaryColor(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                byte r, g, b, a;
+                Util.ToArgb(veh.SecondaryColor, out a, out r, out g, out b);
+
+                return Color.FromArgb(r, g, b);
+            }
+
+            return Color.White;
+        }
+
+        public int getVehiclePrimaryColor(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn) return (int)new Vehicle(vehicle.Value).Mods.PrimaryColor;
+
+                return veh.PrimaryColor;
+            }
+
+            return 0;
+        }
+
+        public int getVehicleSecondaryColor(LocalHandle vehicle)
+        {
+            var veh = vehicle.Properties<RemoteVehicle>();
+
+            if (veh != null)
+            {
+                if (veh.StreamedIn)
+                    return (int)new Vehicle(vehicle.Value).Mods.SecondaryColor;
+
+                return veh.SecondaryColor;
+            }
+
+            return 0;
+        }
+
+        public void setPlayerClothes(LocalHandle player, int slot, int drawable, int texture)
+        {
+            var pl = player.Properties<RemotePlayer>();
+
+            Function.Call((Hash)0x262B14F48D29DE80, player.Value, slot, drawable, texture, 2);
+
+            if (pl.Textures == null) pl.Textures = new Dictionary<byte, byte>();
+            if (pl.Props == null) pl.Props = new Dictionary<byte, byte>();
+
+            pl.Textures[(byte) slot] = (byte)texture;
+            pl.Textures[(byte) slot] = (byte) drawable;
+        }
+
+        public void setPlayerAccessory(LocalHandle player, int slot, int drawable, int texture)
+        {
+            var pl = player.Properties<RemotePlayer>();
+
+            Function.Call((Hash)0x93376B65A266EB5F, player.Value, slot, drawable, texture, true);
+
+            if (pl.Accessories == null) pl.Accessories = new Dictionary<byte, Tuple<byte, byte>>();
+
+            pl.Accessories[(byte)slot] = new Tuple<byte, byte>((byte) drawable, (byte) texture);
+        }
+
+        public void clearPlayerAccessory(LocalHandle player, int slot)
+        {
+            var pl = player.Properties<RemotePlayer>();
+
+            Function.Call((Hash)0x0943E5B8E078E76E, player.Value, slot);
+
+            if (pl.Accessories == null) return;
+
+            pl.Accessories.Remove((byte) slot);
+        }
+
+        public VehicleHash vehicleNameToModel(string modelName)
+        {
+            return (from object value in Enum.GetValues(typeof(VehicleHash)) where modelName.ToLower() == ((VehicleHash)value).ToString().ToLower() select ((VehicleHash)value)).FirstOrDefault();
+        }
+
+        public PedHash pedNameToModel(string modelName)
+        {
+            return (from object value in Enum.GetValues(typeof(PedHash)) where modelName.ToLower() == ((PedHash)value).ToString().ToLower() select ((PedHash)value)).FirstOrDefault();
+        }
+        
+        public WeaponHash weaponNameToModel(string modelName)
+        {
+            return (from object value in Enum.GetValues(typeof(WeaponHash)) where modelName.ToLower() == ((WeaponHash)value).ToString().ToLower() select ((WeaponHash)value)).FirstOrDefault();
+        }
+
+        public void clearPlayerTasks()
+        {
+            Game.Player.Character.Task.ClearAllImmediately();
+        }
+
+        public void setEntityPositionFrozen(LocalHandle entity, bool frozen)
+        {
+            new Prop(entity.Value).IsPositionFrozen = frozen;
+        }
+
+        public void setEntityVelocity(LocalHandle entity, Vector3 velocity)
+        {
+            new Prop(entity.Value).Velocity = velocity.ToVector();
+        }
+
+        public int getPlayerVehicleSeat(LocalHandle player)
+        {
+            return Util.GetPedSeat(new Ped(player.Value));
+        }
+
+        public void setPlayerWeaponTint(int weapon, int tint)
+        {
+            Function.Call((Hash)0x50969B9B89ED5738, Game.Player.Character, weapon, tint);
+            ((RemotePlayer) Main.NetEntityHandler.NetToStreamedItem(Game.Player.Character.Handle, useGameHandle: true))
+                .WeaponTints[weapon] = (byte) tint;
+        }
+
+        public int getPlayerWeaponTint(int weapon)
+        {
+            return ((RemotePlayer)Main.NetEntityHandler.NetToStreamedItem(Game.Player.Character.Handle, useGameHandle: true))
+                .WeaponTints[weapon];
+        }
+
+        public void givePlayerWeaponComponent(int weapon, int component)
+        {
+            Game.Player.Character.Weapons[(WeaponHash)weapon].SetComponent((WeaponComponent) component, true);
+        }
+
+        public void removePlayerWeaponComponent(int weapon, int component)
+        {
+            Game.Player.Character.Weapons[(WeaponHash)weapon].SetComponent((WeaponComponent)component, false);
+        }
+
+        public bool hasPlayerWeaponComponent(int weapon, int component)
+        {
+            return Game.Player.Character.Weapons[(WeaponHash) weapon].IsComponentActive((WeaponComponent) component);
+        }
+
+        public WeaponComponent[] getAllWeaponComponents(WeaponHash weapon)
+        {
+            switch (weapon)
+            {
+                default:
+                    return new WeaponComponent[0];
+                case WeaponHash.Pistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.PistolClip01,
+                        WeaponComponent.PistolClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtPiSupp02,
+                        WeaponComponent.PistolVarmodLuxe,
+                    };
+                case WeaponHash.CombatPistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CombatPistolClip01,
+                        WeaponComponent.CombatPistolClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtPiSupp,
+                        WeaponComponent.CombatPistolVarmodLowrider,
+                    };
+                case WeaponHash.APPistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.APPistolClip01,
+                        WeaponComponent.APPistolClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtPiSupp,
+                        WeaponComponent.APPistolVarmodLuxe,
+                    };
+                case WeaponHash.MicroSMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MicroSMGClip01,
+                        WeaponComponent.MicroSMGClip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtScopeMacro,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.MicroSMGVarmodLuxe,
+                    };
+                case WeaponHash.SMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SMGClip01,
+                        WeaponComponent.SMGClip02,
+                        WeaponComponent.SMGClip03,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtPiSupp,
+                        WeaponComponent.AtScopeMacro02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.SMGVarmodLuxe,
+                    };
+                case WeaponHash.AssaultRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AssaultRifleClip01,
+                        WeaponComponent.AssaultRifleClip02,
+                        WeaponComponent.AssaultRifleClip03,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMacro,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.AssaultRifleVarmodLuxe,
+                    };
+                case WeaponHash.CarbineRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CarbineRifleClip01,
+                        WeaponComponent.CarbineRifleClip02,
+                        WeaponComponent.CarbineRifleClip03,
+                        WeaponComponent.AtRailCover01,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMedium,
+                        WeaponComponent.AtArSupp,
+                        WeaponComponent.CarbineRifleVarmodLuxe,
+                    };
+                case WeaponHash.AdvancedRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AdvancedRifleClip01,
+                        WeaponComponent.AdvancedRifleClip02,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                        WeaponComponent.AtArSupp,
+                        WeaponComponent.AdvancedRifleVarmodLuxe,
+                    };
+                case WeaponHash.MG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MGClip01,
+                        WeaponComponent.MGClip02,
+                        WeaponComponent.AtScopeSmall02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.MGVarmodLowrider,
+                    };
+                case WeaponHash.CombatMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CombatMGClip01,
+                        WeaponComponent.CombatMGClip02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtScopeMedium,
+                        WeaponComponent.CombatMGVarmodLowrider,
+                    };
+                case WeaponHash.PumpShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AtSrSupp,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.PumpShotgunVarmodLowrider,
+                    };
+                case WeaponHash.AssaultShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AssaultShotgunClip01,
+                        WeaponComponent.AssaultShotgunClip02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtArSupp,
+                    };
+                case WeaponHash.SniperRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SniperRifleClip01,
+                        WeaponComponent.AtScopeLarge,
+                        WeaponComponent.AtScopeMax,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.SniperRifleVarmodLuxe,
+                    };
+                case WeaponHash.HeavySniper:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.HeavySniperClip01,
+                        WeaponComponent.AtScopeLarge,
+                        WeaponComponent.AtScopeMax,
+                    };
+                case WeaponHash.GrenadeLauncher:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                    };
+                case WeaponHash.Minigun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MinigunClip01,
+                    };
+                case WeaponHash.AssaultSMG:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AssaultSMGClip01,
+                        WeaponComponent.AssaultSMGClip02,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMacro,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.AssaultSMGVarmodLowrider,
+                    };
+                case WeaponHash.BullpupShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtArSupp02,
+                    };
+                case WeaponHash.Pistol50:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.Pistol50Clip01,
+                        WeaponComponent.Pistol50Clip02,
+                        WeaponComponent.AtPiFlsh,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.Pistol50VarmodLuxe,
+                    };
+                case WeaponHash.CombatPDW:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.CombatPDWClip01,
+                        WeaponComponent.CombatPDWClip02,
+                        WeaponComponent.CombatPDWClip03,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                        WeaponComponent.AtArAfGrip,
+                    };
+                case WeaponHash.SawnOffShotgun:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SawnoffShotgunVarmodLuxe,
+                    };
+                case WeaponHash.BullpupRifle:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.BullpupRifleClip01,
+                        WeaponComponent.BullpupRifleClip02,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeSmall,
+                        WeaponComponent.AtArSupp,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.BullpupRifleVarmodLow,
+                    };
+                case WeaponHash.SNSPistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SNSPistolClip01,
+                        WeaponComponent.SNSPistolClip02,
+                        WeaponComponent.SNSPistolVarmodLowrider,
+                    };
+                case WeaponHash.SpecialCarbine:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SpecialCarbineClip01,
+                        WeaponComponent.SpecialCarbineClip02,
+                        WeaponComponent.SpecialCarbineClip03,
+                        WeaponComponent.AtArFlsh,
+                        WeaponComponent.AtScopeMedium,
+                        WeaponComponent.AtArSupp02,
+                        WeaponComponent.AtArAfGrip,
+                        WeaponComponent.SpecialCarbineVarmodLowrider,
+                    };
+                case WeaponHash.KnuckleDuster:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.KnuckleVarmodPimp,
+                        WeaponComponent.KnuckleVarmodBallas,
+                        WeaponComponent.KnuckleVarmodDollar,
+                        WeaponComponent.KnuckleVarmodDiamond,
+                        WeaponComponent.KnuckleVarmodHate,
+                        WeaponComponent.KnuckleVarmodLove,
+                        WeaponComponent.KnuckleVarmodPlayer,
+                        WeaponComponent.KnuckleVarmodKing,
+                        WeaponComponent.KnuckleVarmodVagos,
+                    };
+                case WeaponHash.MachinePistol:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.MachinePistolClip01,
+                        WeaponComponent.MachinePistolClip02,
+                        WeaponComponent.MachinePistolClip03,
+                        WeaponComponent.AtPiSupp,
+                    };
+                case WeaponHash.SwitchBlade:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.SwitchbladeVarmodVar1,
+                        WeaponComponent.SwitchbladeVarmodVar2,
+                    };
+                case WeaponHash.Revolver:
+                    return new WeaponComponent[]
+                    {
+                        WeaponComponent.RevolverClip01,
+                        WeaponComponent.RevolverVarmodBoss,
+                        WeaponComponent.RevolverVarmodGoon,
+                    };
+            }
+        }
+
+        public int getPlayerCurrentWeapon()
+        {
+            return (int)Game.Player.Character.Weapons.Current.Hash;
+        }
+
+        public void disconnect(string reason)
+        {
+            Main.Client.Disconnect(reason);
+        }
+
+        public void setEntityPosition(LocalHandle ent, Vector3 pos)
+        {
+            new Prop(ent.Value).Position = pos.ToVector();
+            ent.Properties<EntityProperties>().Position = pos;
+        }
+
+        public void setEntityRotation(LocalHandle ent, Vector3 rot)
+        {
+            new Prop(ent.Value).Rotation = rot.ToVector();
+            ent.Properties<EntityProperties>().Rotation = rot;
+        }
+
+        public void setPlayerIntoVehicle(LocalHandle vehicle, int seat)
+        {
+            Game.Player.Character.SetIntoVehicle(new Vehicle(vehicle.Value), (VehicleSeat)seat);
+        }
+
+        public void setPlayerHealth(int health)
+        {
+            Game.Player.Character.Health = health;
+        }
+
+        public int getPlayerHealth(LocalHandle player)
+        {
+            if (player.Value == Game.Player.Character.Handle)
+                return Game.Player.Character.Health;
+            else return handleToSyncPed(player).PedHealth;
+        }
+
+        public void setTextLabelText(LocalHandle label, string text)
+        {
+            label.Properties<RemoteTextLabel>().Text = text;
+        }
+
+        public void setTextLabelColor(LocalHandle textLabel, int alpha, int r, int g, int b)
+        {
+            var p = textLabel.Properties<RemoteTextLabel>();
+
+            p.Alpha = (byte)alpha;
+            p.Red = (byte)r;
+            p.Green = (byte)g;
+            p.Blue = (byte)b;
+        }
+
+        public Color getTextLabelColor(LocalHandle textLabel)
+        {
+            var p = textLabel.Properties<RemoteTextLabel>();
+
+            return Color.FromArgb(p.Alpha, p.Red, p.Green, p.Blue);
+        }
+
+        public void setTextLabelSeethrough(LocalHandle handle, bool seethrough)
+        {
+            handle.Properties<RemoteTextLabel>().EntitySeethrough = seethrough;
+        }
+
+        public bool getTextLabelSeethrough(LocalHandle handle)
+        {
+            return handle.Properties<RemoteTextLabel>().EntitySeethrough;
+        }
+
+        public Vector3 getOffsetInWorldCoords(LocalHandle entity, Vector3 offset)
+        {
+            return new Prop(entity.Value).GetOffsetInWorldCoords(offset.ToVector()).ToLVector();
+        }
+
+        public Vector3 getOffsetFromWorldCoords(LocalHandle entity, Vector3 pos)
+        {
+            return new Prop(entity.Value).GetOffsetFromWorldCoords(pos.ToVector()).ToLVector();
+        }
+
+        public void drawLine(Vector3 start, Vector3 end, int a, int r, int g, int b)
+        {
+            Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, r,g,b,a);
+        }
+
         public void playSoundFrontEnd(string audioLib, string audioName)
         {
             Function.Call((Hash)0x2F844A8B08D76685, audioLib, true);
@@ -1199,25 +2517,17 @@ namespace GTANetwork
         {
             return Game.Player.IsInvincible;
         }
-
-        public void setPlayerHealth(LocalHandle ped, int health)
+        
+        public void setPlayerArmor(int armor)
         {
-            new Ped(ped.Value).Health = health;
+            Game.Player.Character.Armor = armor;
         }
 
-        public int getPlayerHealth(LocalHandle ped)
+        public int getPlayerArmor(LocalHandle player)
         {
-            return new Ped(ped.Value).Health;
-        }
-
-        public void setPlayerArmor(LocalHandle ped, int armor)
-        {
-            new Ped(ped.Value).Armor = armor;
-        }
-
-        public int getPlayerArmor(LocalHandle ped)
-        {
-            return new Ped(ped.Value).Armor;
+            if (player.Value == Game.Player.Character.Handle)
+                return Game.Player.Character.Health;
+            else return handleToSyncPed(player).PedHealth;
         }
 
         public LocalHandle[] getStreamedPlayers()
@@ -1409,6 +2719,16 @@ namespace GTANetwork
             }
         }
 
+        public Vector3 getWaypointPosition()
+        {
+            return World.WaypointPosition.ToLVector();
+        }
+
+        public bool isWaypointSet()
+        {
+            return Game.IsWaypointActive;
+        }
+
         public void setBlipColor(LocalHandle blip, int color)
         {
             var ourBlip = new Blip(blip.Value);
@@ -1430,8 +2750,6 @@ namespace GTANetwork
 
         public void setBlipSprite(LocalHandle blip, int sprite)
         {
-            var ourBlip = new Blip(blip.Value);
-
             if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Sprite = (BlipSprite) sprite;
             blip.Properties<RemoteBlip>().Sprite = sprite;
@@ -1452,13 +2770,32 @@ namespace GTANetwork
             blip.Properties<RemoteBlip>().Name = name;
         }
 
+        public string getBlipName(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().Name;
+        }
+
+        public void setBlipTransparency(LocalHandle blip, int alpha)
+        {
+            blip.Properties<RemoteBlip>().Alpha = (byte)alpha;
+            Function.Call((Hash)0x45FF974EEE1C8734, blip.Value, alpha);
+        }
+
+        public int getBlipTransparency(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().Alpha;
+        }
+
         public void setBlipShortRange(LocalHandle blip, bool shortRange)
         {
-            var ourBlip = new Blip(blip.Value);
-
             if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).IsShortRange = shortRange;
             blip.Properties<RemoteBlip>().IsShortRange = shortRange;
+        }
+
+        public bool getBlipShortRange(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().IsShortRange;
         }
         
         public void setBlipScale(LocalHandle blip, double scale)
@@ -1471,6 +2808,11 @@ namespace GTANetwork
             if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Scale = scale;
             blip.Properties<RemoteBlip>().Scale = scale;
+        }
+
+        public float getBlipScale(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().Scale;
         }
 
         public void setChatVisible(bool display)
@@ -1542,6 +2884,33 @@ namespace GTANetwork
             return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b), HandleType.LocalHandle);
         }
 
+        public void setMarkerType(LocalHandle marker, int type)
+        {
+            marker.Properties<RemoteMarker>().MarkerType = type;
+        }
+
+        public int getMarkerType(LocalHandle marker)
+        {
+            return marker.Properties<RemoteMarker>().MarkerType;
+        }
+
+        public void setMarkerColor(LocalHandle marker, int alpha, int r, int g, int b)
+        {
+            var p = marker.Properties<RemoteMarker>();
+
+            p.Alpha = (byte) alpha;
+            p.Red = (byte)r;
+            p.Green = (byte)g;
+            p.Blue = (byte)b;
+        }
+
+        public Color getMarkerColor(LocalHandle marker)
+        {
+            var p = marker.Properties<RemoteMarker>();
+
+            return Color.FromArgb(p.Alpha, p.Red, p.Green, p.Blue);
+        }
+
         public void setMarkerPosition(LocalHandle marker, Vector3 pos)
         {
             var delta = new Delta_MarkerProperties();
@@ -1550,12 +2919,45 @@ namespace GTANetwork
             Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
         }
 
+        public Vector3 getMarkerPosition(LocalHandle marker)
+        {
+            return marker.Properties<RemoteMarker>().Position;
+        }
+
+        public void setMarkerRotation(LocalHandle marker, Vector3 rotation)
+        {
+            marker.Properties<RemoteMarker>().Rotation = rotation;
+        }
+
+        public Vector3 getMarkerRotation(LocalHandle marker)
+        {
+            return marker.Properties<RemoteMarker>().Rotation;
+        }
+
         public void setMarkerScale(LocalHandle marker, Vector3 scale)
         {
             var delta = new Delta_MarkerProperties();
             delta.Scale = scale;
 
             Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
+        }
+
+        public Vector3 getMarkerScale(LocalHandle marker)
+        {
+            return marker.Properties<RemoteMarker>().Scale;
+        }
+
+        public void setMarkerDirection(LocalHandle marker, Vector3 dir)
+        {
+            var delta = new Delta_MarkerProperties();
+            delta.Direction = dir;
+
+            Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
+        }
+
+        public Vector3 getMarkerDirection(LocalHandle marker)
+        {
+            return marker.Properties<RemoteMarker>().Direction;
         }
 
         public void deleteEntity(LocalHandle handle)
@@ -2093,6 +3495,11 @@ namespace GTANetwork
             new Prop(entity.Value).Opacity = alpha;
         }
 
+        public int getEntityType(LocalHandle entity)
+        {
+            return (int) entity.Properties<IStreamedItem>().EntityType;
+        }
+
         public int getEntityTransparency(LocalHandle entity)
         {
             return new Prop(entity.Value).Opacity;
@@ -2117,6 +3524,12 @@ namespace GTANetwork
         {
             CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash) weapon);
             Game.Player.Character.Weapons.Give((WeaponHash) weapon, ammo, equipNow, ammoLoaded);
+        }
+
+        public void removeAllPlayerWeapons()
+        {
+            Game.Player.Character.Weapons.RemoveAll();
+            CrossReference.EntryPoint.WeaponInventoryManager.Clear();
         }
 
         public bool doesPlayerHaveWeapon(int weapon)

@@ -18,6 +18,16 @@ namespace GTANetwork
             return Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, ped, sub);
         }
 
+        public static bool IsSubtaskActive(int ped, ESubtask sub)
+        {
+            return Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, ped, (int)sub);
+        }
+
+        public static bool IsSubtaskActive(int ped, int sub)
+        {
+            return Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, ped, sub);
+        }
+
         public static void Debug()
         {
             StringBuilder sb = new StringBuilder();
