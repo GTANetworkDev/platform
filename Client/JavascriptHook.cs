@@ -819,9 +819,9 @@ namespace GTANetwork
             return Main.CanOpenChatbox;
         }
 
-        public Browser createCefBrowser(double width, double height, bool local = true)
+        public Browser createCefBrowser(double width, double height, string page, bool local = true)
         {
-            var newBrowser = new Browser(Engine, new Size((int)width, (int)height), local);
+            var newBrowser = new Browser(Engine, new Size((int)width, (int)height), local, page);
             CEFManager.Browsers.Add(newBrowser);
             return newBrowser;
         }
@@ -843,7 +843,7 @@ namespace GTANetwork
         {
             return browser.IsInitialized();
         }
-
+        
         public void waitUntilCefBrowserInitalization(Browser browser)
         {
             while (!browser.IsInitialized())
@@ -851,7 +851,7 @@ namespace GTANetwork
                 sleep(0);
             }
         }
-
+        
         public void setCefBrowserSize(Browser browser, double width, double height)
         {
             browser.Size = new Size((int) width, (int) height);
@@ -3262,6 +3262,10 @@ namespace GTANetwork
         public delegate void DataChangedEvent(LocalHandle entity, string key, object oldValue);
         public delegate void CustomDataReceived(string data);
         public delegate void EmptyEvent();
+        public delegate void EntityEvent(LocalHandle entity);
+        public delegate void PlayerKilledEvent(LocalHandle killer, int weapon);
+        public delegate void IntChangeEvent(int oldValue);
+        public delegate void BoolChangeEvent(bool oldValue);
 
         public event EmptyEvent onResourceStart;
         public event EmptyEvent onResourceStop;
@@ -3275,6 +3279,29 @@ namespace GTANetwork
         public event StreamEvent onEntityStreamOut;
         public event DataChangedEvent onEntityDataChange;
         public event CustomDataReceived onCustomDataReceived;
+        
+        // Below: implement trigger
+        public event PlayerKilledEvent onPlayerDeath;
+        // Below: implement invoker
+        public event EmptyEvent onPlayerRespawn;
+        public event EntityEvent onPlayerPickup;
+        public event EntityEvent onPlayerEnterVehicle;
+        public event EntityEvent onPlayerExitVehicle;
+        public event IntChangeEvent onVehicleHealthChange;
+        public event IntChangeEvent onPlayerHealthChange;
+        public event IntChangeEvent onPlayerArmorChange;
+        public event IntChangeEvent onPlayerWeaponSwitch;
+        public event BoolChangeEvent onVehicleSirenToggle;
+        public event EmptyEvent onPlayerDetonateStickies;
+        public event IntChangeEvent onPlayerModelChange;
+        public event IntChangeEvent onVehicleDoorBreak;
+        public event IntChangeEvent onVehicleWindowSmash;
+        public event IntChangeEvent onVehicleTyreBurst;
+
+        internal void invokePlayerKilled(LocalHandle item, int weapon)
+        {
+            onPlayerDeath?.Invoke(item, weapon);
+        }
 
         internal void invokeEntityStreamIn(LocalHandle item, int type)
         {
