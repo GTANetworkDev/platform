@@ -737,7 +737,7 @@ namespace GTANetwork.GUI
             return null;
         }
 
-        internal Browser(V8ScriptEngine father, Size browserSize, bool localMode)
+        internal Browser(V8ScriptEngine father, Size browserSize, bool localMode, string page)
         {
             Father = father;
 #if !DISABLE_CEF
@@ -748,7 +748,7 @@ namespace GTANetwork.GUI
             settings.JavascriptOpenWindows = CefState.Disabled;
             settings.WindowlessFrameRate = 60;
 
-            _browser = new ChromiumWebBrowser(browserSettings: settings);
+            _browser = new ChromiumWebBrowser(page, browserSettings: settings);
             _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father, this), false);
             //_browser.RequestHandler = new GoBackForwardCanceller(); // disabled for now, giving problems
             Size = browserSize;
