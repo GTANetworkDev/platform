@@ -1010,14 +1010,14 @@ namespace GTANetworkServer
             }
         }
 
-        public void createExplosion(int explosionType, Vector3 position, float damageScale, int dimension = 0)
+        public void createExplosion(ExplosionType explosionType, Vector3 position, float damageScale = 1f, int dimension = 0)
         {
-            sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0xE3AD2BDBAEE269AC, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
+            sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0xE3AD2BDBAEE269AC, position.X, position.Y, position.Z, (int)explosionType, damageScale, true, false, 1f);
         }
 
-        public void createOwnedExplosion(Client owner, int explosionType, Vector3 position, float damageScale, int dimension = 0)
+        public void createOwnedExplosion(Client owner, ExplosionType explosionType, Vector3 position, float damageScale = 1f, int dimension = 0)
         {
-            sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0x172AA1B624FA1013, owner.CharacterHandle, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
+            sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0x172AA1B624FA1013, owner.CharacterHandle, position.X, position.Y, position.Z, (int)explosionType, damageScale, true, false, 1f);
         }
 
         public void setPlayerToSpectator(Client player)

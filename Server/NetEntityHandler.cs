@@ -178,6 +178,7 @@ namespace GTANetworkServer
             obj.Amount = amount;
             obj.Dimension = dimension;
             obj.Alpha = 255;
+            obj.Flag = 0;
             obj.CustomModel = customModel;
             obj.EntityType = (byte)EntityType.Pickup;
             lock (ServerEntities) ServerEntities.Add(localEntityHash, obj);

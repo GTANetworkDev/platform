@@ -227,48 +227,51 @@ namespace GTANetworkServer
                     var entities = new Dictionary<int, EntityProperties>(Program.ServerInstance.NetEntityHandler.ToDict());
                     var entList = entities.Where(pair => _validTypes.Contains((EntityType) pair.Value.EntityType));
 
+                    List<ColShape> localShapes;
                     lock (ColShapes)
                     {
-                        foreach (var shape in ColShapes)
-                            foreach (var entity in entList.Where(ent => shape.dimension == 0 || ent.Value.Dimension == 0 || ent.Value.Dimension == shape.dimension))
+                        localShapes = new List<ColShape>(ColShapes);
+                    }
+
+                    foreach (var shape in localShapes)
+                        foreach (var entity in entList.Where(ent => shape.dimension == 0 || ent.Value.Dimension == 0 || ent.Value.Dimension == shape.dimension))
+                        {
+                            if (entity.Value == null || entity.Value.Position == null) continue;
+                            if (shape.Check(entity.Value.Position))
                             {
-                                if (entity.Value == null || entity.Value.Position == null) continue;
-                                if (shape.Check(entity.Value.Position))
+                                if (!shape.EntitiesInContact.Contains(entity.Key))
                                 {
-                                    if (!shape.EntitiesInContact.Contains(entity.Key))
-                                    {
-                                        NetHandle ent = new NetHandle(entity.Key);
+                                    NetHandle ent = new NetHandle(entity.Key);
 
-                                        lock (Program.ServerInstance.RunningResources)
-                                                Program.ServerInstance.RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                {
-                                                    en.InvokeColshapeEnter(shape, ent);
-                                                }));
+                                    lock (Program.ServerInstance.RunningResources)
+                                            Program.ServerInstance.RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                            {
+                                                en.InvokeColshapeEnter(shape, ent);
+                                            }));
 
-                                        shape.InvokeEnterColshape(ent);
+                                    shape.InvokeEnterColshape(ent);
 
-                                        shape.EntitiesInContact.Add(entity.Key);
-                                    }
-                                }
-                                else
-                                {
-                                    if (shape.EntitiesInContact.Contains(entity.Key))
-                                    {
-                                        NetHandle ent = new NetHandle(entity.Key);
-
-                                        lock (Program.ServerInstance.RunningResources)
-                                                Program.ServerInstance.RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                {
-                                                    en.InvokeColshapeExit(shape, ent);
-                                                }));
-
-                                        shape.InvokeExitColshape(ent);
-
-                                        shape.EntitiesInContact.Remove(entity.Key);
-                                    }
+                                    shape.EntitiesInContact.Add(entity.Key);
                                 }
                             }
-                    }
+                            else
+                            {
+                                if (shape.EntitiesInContact.Contains(entity.Key))
+                                {
+                                    NetHandle ent = new NetHandle(entity.Key);
+
+                                    lock (Program.ServerInstance.RunningResources)
+                                            Program.ServerInstance.RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                            {
+                                                en.InvokeColshapeExit(shape, ent);
+                                            }));
+
+                                    shape.InvokeExitColshape(ent);
+
+                                    shape.EntitiesInContact.Remove(entity.Key);
+                                }
+                            }
+                        }
                 }
                 catch (Exception ex)
                 {

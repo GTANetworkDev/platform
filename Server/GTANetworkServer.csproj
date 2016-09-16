@@ -86,6 +86,7 @@
     <Compile Include="ColShape.cs" />
     <Compile Include="ConstantVehicleData.cs" />
     <Compile Include="DeltaCompressor.cs" />
+    <Compile Include="ExplosionTypes.cs" />
     <Compile Include="GameServer.cs" />
     <Compile Include="CommandHandler.cs" />
     <Compile Include="MemberwiseClone.cs" />

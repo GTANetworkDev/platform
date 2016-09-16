@@ -2891,7 +2891,8 @@ namespace GTANetwork
                     }
 
                     int h = _lastPlayerCar.Handle;
-                    JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerExitVehicle(new LocalHandle(h)));
+                    var lh = new LocalHandle(h);
+                    JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerExitVehicle(lh));
                     _lastVehicleSiren = false;
                 }
 
