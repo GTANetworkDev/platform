@@ -4,10 +4,8 @@ var lastInVehicle = false;
 API.onResourceStart.connect(function() {
 	var res = API.getScreenResolution();
 	mainBrowser = API.createCefBrowser(1000, 500);
-	API.setCefBrowserPosition(mainBrowser, res.Width - 1000, res.Height - 500);
-	API.setCefBrowserHeadless(mainBrowser, true);
-	API.waitUntilCefBrowserInitalization(mainBrowser);
-	API.loadPageCefBrowser(mainBrowser, "main.html");
+	API.setCefBrowserPosition(mainBrowser, res.Width - 1000, res.Height - 500, "main.html");
+	API.setCefBrowserHeadless(mainBrowser, true);	
 });
 
 API.onResourceStop.connect(function() {

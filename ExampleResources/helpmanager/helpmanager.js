@@ -3,11 +3,10 @@ var mainBrowser = null;
 API.onResourceStart.connect(function() {
 	// init browser
 	var res = API.getScreenResolution();
-	mainBrowser = API.createCefBrowser(res.Width - 300, res.Height - 300);
-	API.waitUntilCefBrowserInitalization(mainBrowser);
+	mainBrowser = API.createCefBrowser(res.Width - 300, res.Height - 300, "main.html");
 	API.setCefBrowserPosition(mainBrowser, 150, 150);
 	API.setCefBrowserHeadless(mainBrowser, true);
-	API.loadPageCefBrowser(mainBrowser, "main.html");
+	API.waitUntilCefBrowserInitalization(mainBrowser);
 });
 
 API.onResourceStop.connect(function() {

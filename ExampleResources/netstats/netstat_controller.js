@@ -6,9 +6,8 @@ API.onResourceStart.connect(function() {
 	var res = API.getScreenResolution();
 	mainBrowser = API.createCefBrowser(500, 400);
 	API.waitUntilCefBrowserInitalization(mainBrowser);
-	API.setCefBrowserPosition(mainBrowser, res.Width - 505, res.Height - 405);
-	API.setCefBrowserHeadless(mainBrowser, true);
-	API.loadPageCefBrowser(mainBrowser, "main.html");
+	API.setCefBrowserPosition(mainBrowser, res.Width - 505, res.Height - 405, "main.html");
+	API.setCefBrowserHeadless(mainBrowser, true);	
 });
 
 API.onResourceStop.connect(function() {

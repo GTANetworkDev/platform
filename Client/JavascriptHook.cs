@@ -2547,7 +2547,8 @@ namespace GTANetwork
 
         public LocalHandle[] getStreamedPlayers()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>().Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
+            return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed && item.StreamedIn)
+                .Cast<SyncPed>().Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
         }
 
         public LocalHandle[] getStreamedVehicles()
@@ -2586,6 +2587,12 @@ namespace GTANetwork
             return Main.NetEntityHandler.ClientMap.Where(item =>
                 item is RemoteTextLabel && item.StreamedIn)
                     .Cast<RemoteTextLabel>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
+        }
+
+        public LocalHandle[] getAllPlayers()
+        {
+            return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>()
+                .Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
         }
 
         public LocalHandle[] getAllVehicles()
@@ -2746,8 +2753,6 @@ namespace GTANetwork
 
         public void setBlipColor(LocalHandle blip, int color)
         {
-            var ourBlip = new Blip(blip.Value);
-
             if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Color = (BlipColor) color;
             blip.Properties<RemoteBlip>().Color = color;
