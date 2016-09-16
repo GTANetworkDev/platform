@@ -3315,7 +3315,77 @@ namespace GTANetwork
         public event EmptyEvent onPlayerDetonateStickies;
         public event IntChangeEvent onVehicleTyreBurst;
 
-        internal void invokePlayerKilled(LocalHandle item, int weapon)
+        internal void invokeonPlayerDetonateStickies()
+        {
+            onPlayerDetonateStickies?.Invoke();
+        }
+
+        internal void invokeonVehicleSirenToggle()
+        {
+            onVehicleSirenToggle?.Invoke();
+        }
+
+        internal void invokeonPlayerModelChange(int old)
+        {
+            onPlayerModelChange?.Invoke(old);
+        }
+
+        internal void invokeonVehicleTyreBurst(int old)
+        {
+            onVehicleTyreBurst?.Invoke(old);
+        }
+
+        internal void invokeonPlayerWeaponSwitch(int old)
+        {
+            onPlayerWeaponSwitch?.Invoke(old);
+        }
+
+        internal void invokeonPlayerArmorChange(int old)
+        {
+            onPlayerArmorChange?.Invoke(old);
+        }
+
+        internal void invokeonPlayerHealthChange(int old)
+        {
+            onPlayerHealthChange?.Invoke(old);
+        }
+
+        internal void invokeonVehicleWindowSmash(int old)
+        {
+            onVehicleWindowSmash?.Invoke(old);
+        }
+
+        internal void invokeonVehicleDoorBreak(int old)
+        {
+            onVehicleDoorBreak?.Invoke(old);
+        }
+
+        internal void invokeonVehicleHealthChange(int old)
+        {
+            onVehicleHealthChange?.Invoke(old);
+        }
+
+        internal void invokeonPlayerExitVehicle(LocalHandle veh)
+        {
+            onPlayerExitVehicle?.Invoke(veh);
+        }
+
+        internal void invokeonPlayerEnterVehicle(LocalHandle veh)
+        {
+            onPlayerEnterVehicle?.Invoke(veh);
+        }
+
+        internal void invokeonPlayerPickup(LocalHandle entity)
+        {
+            onPlayerPickup?.Invoke(entity);
+        }
+
+        internal void invokeonPlayerRespawn()
+        {
+            onPlayerRespawn?.Invoke();
+        }
+
+        internal void invokeonPlayerDeath(LocalHandle item, int weapon)
         {
             onPlayerDeath?.Invoke(item, weapon);
         }

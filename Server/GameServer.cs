@@ -1734,7 +1734,7 @@ namespace GTANResource
                                                 if (fullPacket.DamageModel != null)
                                                 {
                                                     if (((VehicleProperties)
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]) ==
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).DamageModel ==
                                                         null)
                                                     {
                                                         ((VehicleProperties)

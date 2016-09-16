@@ -31,7 +31,7 @@ namespace GTANetwork
             if (Game.IsControlJustPressed(0, Control.Detonate) && _hasPlacedStickies)
             {
                 SyncEventWatcher.SendSyncEvent(SyncEventType.StickyBombDetonation, Main.NetEntityHandler.EntityToNet(Game.Player.Character.Handle));
-                JavascriptHook.InvokeCustomEvent(api => api.onPlayerDetonateStickies?.Invoke());
+                JavascriptHook.InvokeCustomEvent(api => api.invokeonPlayerDetonateStickies());
                 _hasPlacedStickies = false;
             }
         }
