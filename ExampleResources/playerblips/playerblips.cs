@@ -20,7 +20,6 @@ public class PlayerBlips : Script
 			foreach (var player in API.getAllPlayers())
 			{
 				PlayerJoin(player);
-				PlayerJavascriptDownloadComplete(player);
 			}
 		};
 	}
