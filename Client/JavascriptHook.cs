@@ -834,9 +834,9 @@ namespace GTANetwork
             return Main.CanOpenChatbox;
         }
 
-        public Browser createCefBrowser(double width, double height, string page, bool local = true)
+        public Browser createCefBrowser(double width, double height, bool local = true)
         {
-            var newBrowser = new Browser(Engine, new Size((int)width, (int)height), local, page);
+            var newBrowser = new Browser(Engine, new Size((int)width, (int)height), local);
             CEFManager.Browsers.Add(newBrowser);
             return newBrowser;
         }

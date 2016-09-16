@@ -76,7 +76,7 @@ namespace GTANetwork
                 if (obj == -1)
                 {
                     JavascriptHook.InvokeCustomEvent(
-                        api => api.invokeonPlayerPickup(new LocalHandle(pickup.RemoteHandle, HandleType.NetHandle)));
+                        api => api?.invokeonPlayerPickup(new LocalHandle(pickup.RemoteHandle, HandleType.NetHandle)));
                     Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
                     SendSyncEvent(SyncEventType.PickupPickedUp, pickup.RemoteHandle);
                 }
@@ -209,7 +209,7 @@ namespace GTANetwork
                             SendSyncEvent(SyncEventType.TireBurst, Main.NetEntityHandler.EntityToNet(car.Handle), i, isBusted);
 
                         var lI = i;
-                        JavascriptHook.InvokeCustomEvent(api => api.invokeonVehicleTyreBurst(lI));
+                        JavascriptHook.InvokeCustomEvent(api => api?.invokeonVehicleTyreBurst(lI));
                     }
                     _tires[i] = isBusted;
                 }
