@@ -2,6 +2,7 @@
 	<info name="Player Blips" author="Guadmaz" version="1.0" description="Adds blips for all players." />
 
 	<script src="playerblips.cs" type="server" lang="csharp" />
+	<script src="playerblips.js" type="client" lang="javascript" />
 
 	<exported method="getPlayerBlip" class="PlayerBlips" />
 	<exported method="setPlayerBlip" class="PlayerBlips" />

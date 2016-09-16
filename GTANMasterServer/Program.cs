@@ -286,6 +286,64 @@ namespace GTANMasterServer
         }
     }
 
+    public static class MiscFilesServer
+    {
+        private static DateTime _lastUpdate;
+
+        public static void Work()
+        {
+            if (DateTime.Now.Subtract(_lastUpdate).TotalMinutes > 30)
+            {
+                UpdateManifest();
+            }
+        }
+
+        public static string WorkDir = Path.GetFullPath("misc" + Path.DirectorySeparatorChar + "files");
+
+        public static string LastJson { get; set; }
+
+        public static void UpdateManifest()
+        {
+            _lastUpdate = DateTime.Now;
+
+            var files = GetFilesInFolder(WorkDir);
+
+            var obj = new FileManifest();
+            obj.Files = files;
+
+            LastJson = JsonConvert.SerializeObject(obj);
+        }
+
+        public static string MakeRelative(string filePath, string referencePath)
+        {
+            var fileUri = new Uri(filePath);
+            var referenceUri = new Uri(referencePath);
+            return referenceUri.MakeRelativeUri(fileUri).ToString();
+        }
+
+        private static List<string> GetFilesInFolder(string folder)
+        {
+            var output = new List<string>();
+
+            foreach (var file in Directory.GetFiles(folder))
+            {
+                output.Add(MakeRelative(file, WorkDir));
+            }
+
+            foreach (var directory in Directory.GetDirectories(folder))
+            {
+                output.AddRange(GetFilesInFolder(directory));
+            }
+
+            return output;
+        }
+
+        public class FileManifest
+        {
+            public List<string> Files { get; set; }
+        }
+    }
+
     public class VersioningUpdaterWorker
     {
         public ParseableVersion LastClientVersion;
@@ -452,9 +510,47 @@ namespace GTANMasterServer
     {
         public MasterModule()
         {
-            Get["/servers"] = _ => Program.GtanServerWorker.ToJson();
+            Get["/servers"] = _ =>
+            {
+                var resp = (Response) Program.GtanServerWorker.ToJson();
+                resp.ContentType = "application/json";
 
-            Get["/"] = _ => Program.CoopServerWorker.ToJson();
+                return resp;
+            };
+
+            Get["/static.json"] = _ =>
+            {
+                var resp = (Response) MiscFilesServer.LastJson;
+
+                resp.ContentType = "application/json";
+
+                return resp;
+            };
+
+            Get["/static/{path*}"] = path =>
+            {
+                string fullFile = Path.Combine(MiscFilesServer.WorkDir, path);
+
+                if (Path.GetFullPath(fullFile).StartsWith(MiscFilesServer.WorkDir)) return 404;
+
+                if (File.Exists(fullFile))
+                {
+                    return Response.AsFile("misc" + Path.DirectorySeparatorChar + "files" + Path.DirectorySeparatorChar +
+                                        (string)path);
+                }
+
+                return 404;
+            };
+
+            Get["/"] = _ =>
+            {
+                var resp = (Response)Program.CoopServerWorker.ToJson();
+
+                resp.ContentType = "application/json";
+
+                return resp;
+            };
+
             Post["/"] = parameters =>
             {
                 if (Request.IsLocal()) return 403;
@@ -478,7 +574,13 @@ namespace GTANMasterServer
 
             Get["/pictures/{pic}"] = parameters => Response.AsFile("welcome" + Path.DirectorySeparatorChar + "pictures" + Path.DirectorySeparatorChar + ((string)parameters.pic));
 
-            Get["/welcome.json"] = _ => WelcomeMessageWorker.ToJson();
+            Get["/welcome.json"] = _ =>
+            {
+                var resp = (Response) WelcomeMessageWorker.ToJson();
+                resp.ContentType = "application/json";
+
+                return resp;
+            };
 
 
             Get["/update/{channel}/version"] = parameters =>
