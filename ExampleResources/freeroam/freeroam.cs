@@ -110,7 +110,7 @@ public class FreeroamScript : Script
     [Command("clothes")]
     public void SetPedClothesCommand(Client sender, int slot, int drawable, int texture)
     {
-        API.setPlayerProp(sender, slot, drawable, texture);
+        API.setPlayerClothes(sender, slot, drawable, texture);
         API.sendChatMessageToPlayer(sender, "Clothes applied successfully!");
     }
 

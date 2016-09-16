@@ -81,7 +81,7 @@ public class Cashgrab
 		
 		cashGrabTray2 = HeistScript.CAPI.createObject(269934519, startPos, new Vector3());
 
-		HeistScript.CAPI.setPlayerProp(owner, 5, 0, 0);
+		HeistScript.CAPI.setPlayerClothes(owner, 5, 0, 0);
 
 		playerList = HeistScript.CAPI.getAllPlayers();
 
@@ -133,7 +133,7 @@ public class Cashgrab
 			if ((int)args[0] != _id) return;
 
 			HeistScript.CAPI.deleteEntity(_bagProp);
-			HeistScript.CAPI.setPlayerProp(_owner, 5, 45, 0);
+			HeistScript.CAPI.setPlayerClothes(_owner, 5, 45, 0);
 
 			HeistScript.CAPI.clearPlayerTasks(_owner);
 			Finished = true;

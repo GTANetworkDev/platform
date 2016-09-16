@@ -1,0 +1,8 @@
+<meta>
+	<info name="Player Blips" author="Guadmaz" version="1.0" description="Adds blips for all players." />
+
+	<script src="playerblips.cs" type="server" lang="csharp" />
+
+	<exported method="getPlayerBlip" class="PlayerBlips" />
+	<exported method="setPlayerBlip" class="PlayerBlips" />
+</meta>

@@ -18,6 +18,13 @@ public class HunterScript : Script
 		API.onPlayerRespawn += respawn;
 		API.onPlayerConnected += respawn;
 		API.onPlayerDisconnected += playerleft;
+		API.onPlayerConnected += player => 
+		{
+			if (API.getAllPlayers().Count == 1 && !roundstarted)
+			{
+				roundstart();
+			}
+		};
 	}
 
 	private Vector3 _quadSpawn = new Vector3(-1564.36f, 4499.71f, 21.37f);
@@ -87,9 +94,11 @@ public class HunterScript : Script
 
 		foreach (var player in players)
 		{
-			API.setPlayerBlipAlpha(player, 255);
-			API.setPlayerBlipSprite(player, 1);
-			API.setPlayerBlipColor(player, 0);
+			var pBlip = API.exported.playerblips.getPlayerBlip(player);
+
+			API.setBlipTransparency(pBlip, 255);
+			API.setBlipSprite(pBlip, 1);
+			API.setBlipColor(pBlip, 0);
 			API.setPlayerTeam(player, 0);
 			API.setEntityInvincible(player, false);
 		}
@@ -109,6 +118,8 @@ public class HunterScript : Script
 	public void roundstart()
 	{
 		var players = API.getAllPlayers();
+
+		if (players.Count == 0) return;
 
 		API.deleteEntity(breadcrumb);
 		API.deleteEntity(_quad);
@@ -137,14 +148,15 @@ public class HunterScript : Script
 		_quad = API.createVehicle(VehicleHash.Blazer, _quadSpawn, new Vector3(0,0,0), 0, 0);
 
 		animal = players[r.Next(players.Count)];
+		var aBlip = API.exported.playerblips.getPlayerBlip(animal);
 		API.setPlayerSkin(animal, PedHash.Deer);
 		API.setPlayerTeam(animal, TEAM_ANIMAL);
-		API.setPlayerBlipAlpha(animal, 0);
+		API.setBlipTransparency(aBlip, 0);
 		API.setEntityInvincible(animal, false);
 		var spawnp = _animalSpawnpoints[r.Next(_animalSpawnpoints.Count)];
 		API.setEntityPosition(animal.CharacterHandle, spawnp);
-		API.setPlayerBlipSprite(animal, 141);
-		API.setPlayerBlipColor(animal, 1);
+		API.setBlipSprite(aBlip, 141);
+		API.setBlipColor(aBlip, 1);
 
 		API.sendChatMessageToPlayer(animal, "You are the animal! Collect all the checkpoints to win!");		
 
@@ -172,22 +184,24 @@ public class HunterScript : Script
 
 	public void Spawn(Client player, bool hawk = false)
 	{
+		var pBlip = API.exported.playerblips.getPlayerBlip(player);
+
 		if (!hawk)
 		{
 			var skin = _skinList[r.Next(_skinList.Count)];		
 			API.setPlayerSkin(player, skin);
 			API.givePlayerWeapon(player, WeaponHash.PumpShotgun, 9999, true, true);
 			API.givePlayerWeapon(player, WeaponHash.SniperRifle, 9999, true, true);
-			API.setPlayerBlipAlpha(player, 0);
-			API.setPlayerBlipSprite(player, 1);		
+			API.setBlipTransparency(pBlip, 0);
+			API.setBlipSprite(pBlip, 1);		
 		}
 		else
 		{
 			API.setPlayerSkin(player, PedHash.ChickenHawk);
-			API.setPlayerBlipAlpha(player, 255);
-			API.setPlayerBlipSprite(player, 422);
+			API.setBlipTransparency(pBlip, 255);
+			API.setBlipSprite(pBlip, 422);
 		}
-		API.setPlayerBlipColor(player, 0);
+		API.setBlipColor(pBlip, 0);
 		API.setEntityPosition(player.CharacterHandle, _hunterSpawnpoints[r.Next(_hunterSpawnpoints.Count)]);
 		if (animal != null) API.sendChatMessageToPlayer(player, "~r~" + animal.Name + "~w~ is the animal! ~r~Hunt~w~ it!");		
 		API.setPlayerTeam(player, TEAM_HUNTER);
@@ -220,6 +234,8 @@ public class HunterScript : Script
 		if (!roundstarted) return;
 		if (animal != null)
 		{
+			var pBlip = API.exported.playerblips.getPlayerBlip(animal);
+
 			for(int i = 0; i < _checkpoints.Count; i++)
 			{
 				var pos = API.getEntityPosition(_checkpoints[i]);
@@ -243,29 +259,27 @@ public class HunterScript : Script
 						break;
 					}
 
-					API.setPlayerBlipAlpha(animal, 255);
+					API.setBlipTransparency(pBlip, 255);
 					API.sleep(5000);
-					API.setPlayerBlipAlpha(animal, 0);					
+					API.setBlipTransparency(pBlip, 0);					
 
 					break;
 				}
 			}
-		}
-
-		if (animal != null)
+		
 			if (API.TickCount - lastIdleCheck > 20000) // 20 secs
 			{
 				lastIdleCheck = API.TickCount;
 
 				if (API.getEntityPosition(animal.CharacterHandle).DistanceToSquared(lastIdlePosition) < 5f)
 				{
-					API.setPlayerBlipAlpha(animal, 255);
+					API.setBlipTransparency(pBlip, 255);
 					API.sleep(1000);
-					API.setPlayerBlipAlpha(animal, 0);
+					API.setBlipTransparency(pBlip, 0);
 				}
 				else
 				{
-					API.setPlayerBlipAlpha(animal, 0);
+					API.setBlipTransparency(pBlip, 0);
 				}
 
 				if (!breadcrumbLock) // breadcrumbs are very messy since i was debugging the blips not disappearing
@@ -274,7 +288,7 @@ public class HunterScript : Script
 					breadcrumb = API.createBlip(lastIdlePosition);
 					API.setBlipSprite(breadcrumb, 161);
 					API.setBlipColor(breadcrumb, 1);
-					API.setBlipAlpha(breadcrumb, 200);
+					API.setBlipTransparency(breadcrumb, 200);
 
 					lastBreadcrumb = API.TickCount;					
 				}
@@ -287,6 +301,7 @@ public class HunterScript : Script
 				API.deleteEntity(breadcrumb);
 				breadcrumbLock = false;
 			}
+		}
 	}
 
 	private bool breadcrumbLock;

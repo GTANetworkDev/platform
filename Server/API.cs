@@ -331,7 +331,7 @@ namespace GTANetworkServer
             return Path.GetFullPath("resources\\" + ResourceParent.ResourceParent.DirectoryName);
         }
 
-        public string getCurrentResourceName(string resource)
+        public string getResourceName(string resource)
         {
             if (doesResourceExist(resource))
             {

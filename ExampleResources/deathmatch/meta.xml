@@ -2,6 +2,9 @@
     <info name="Deathmatch" author="Guadmaz" type="gamemode" />
         
     <script src="deathmatch.cs" type="server" lang="csharp" />
+
     <include resource="scoreboard" />
-    <export function="Respawn" />
+    <include resource="playerblips" />
+
+    <export function="Respawn" />        
 </meta>

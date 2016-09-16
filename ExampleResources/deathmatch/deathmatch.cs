@@ -77,8 +77,10 @@ public class Deathmatch : Script
 
         foreach (var player in players)
         {
-            API.setPlayerBlipSprite(player, 1);
-            API.setPlayerBlipColor(player, 0);
+            var pBlip = API.exported.playerblips.getPlayerBlip(player);
+
+            API.setBlipSprite(pBlip, 1);
+            API.setBlipColor(pBlip, 0);
             Respawn(player);
         }
     }
@@ -114,8 +116,10 @@ public class Deathmatch : Script
 
         foreach (var player in players)
         {
-            API.setPlayerBlipSprite(player, 1);
-            API.setPlayerBlipColor(player, 0);
+            var pBlip = API.exported.playerblips.getPlayerBlip(player);
+
+            API.setBlipSprite(pBlip, 1);
+            API.setBlipColor(pBlip, 0);
 
             API.setEntityData(player.CharacterHandle, "dm_score", 0);
             API.setEntityData(player.CharacterHandle, "dm_deaths", 0);
@@ -159,8 +163,10 @@ public class Deathmatch : Script
     
     public void OnPlayerRespawn(Client player)
     {
-        API.setPlayerBlipSprite(player, 1);
-        API.setPlayerBlipColor(player, 0);
+        var pBlip = API.exported.playerblips.getPlayerBlip(player);
+
+        API.setBlipSprite(pBlip, 1);
+        API.setBlipColor(pBlip, 0);
 
         Respawn(player);        
     }    
@@ -210,9 +216,11 @@ public class Deathmatch : Script
                 Killstreaks[killer]++;
                 if (Killstreaks[killer] >= 3)
                 {
+                    var kBlip = API.exported.playerblips.getPlayerBlip(killer);
+
                     API.sendChatMessageToAll("~b~" + killer.Name + "~w~ is on a killstreak! ~r~" + Killstreaks[killer] + "~w~ kills and counting!");
-                    API.setPlayerBlipSprite(killer, 303);
-                    API.setPlayerBlipColor(killer, 1);
+                    API.setBlipSprite(kBlip, 303);
+                    API.setBlipColor(kBlip, 1);
 
                     if (Killstreaks[killer] == 4)
                     {
@@ -250,13 +258,15 @@ public class Deathmatch : Script
             }
         }
 
+        var pBlip = API.exported.playerblips.getPlayerBlip(player);
+
         if (Killstreaks.ContainsKey(player))
         {
             if (Killstreaks[player] >= 3 && killer != null)
             {
                 API.sendChatMessageToAll("~b~" + killer.Name + "~w~ ruined ~r~" + player.Name + "~w~'s killstreak!");                
-                API.setPlayerBlipColor(player, 0);
-                API.setPlayerBlipSprite(player, 1);                
+                API.setBlipColor(pBlip, 0);
+                API.setBlipSprite(pBlip, 1);                
             }
             Killstreaks[player] = 0;
         }
@@ -265,6 +275,6 @@ public class Deathmatch : Script
             Killstreaks.Add(player, 0);
         }
 
-        API.setPlayerBlipSprite(player, 274);
+        API.setBlipSprite(pBlip, 274); // why is it here?
     }
 }
