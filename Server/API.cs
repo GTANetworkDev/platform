@@ -1055,6 +1055,11 @@ namespace GTANetworkServer
             Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
         }
 
+        public bool getPlayerNametagVisible(Client player)
+        {
+            return PacketOptimization.CheckBit(player.Properties.NametagSettings, 1);
+        }
+
         public void setPlayerNametagColor(Client player, byte r, byte g, byte b)
         {
             player.Properties.NametagSettings = PacketOptimization.SetBit(player.Properties.NametagSettings, 2);

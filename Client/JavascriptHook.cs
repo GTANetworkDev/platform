@@ -1865,6 +1865,11 @@ namespace GTANetwork
                 p.NametagSettings = PacketOptimization.SetBit(p.NametagSettings, 1);
         }
 
+        public bool getPlayerNametagVisible(LocalHandle player)
+        {
+            return PacketOptimization.CheckBit(player.Properties<PlayerProperties>().NametagSettings, 1);
+        }
+
         public void setPlayerNametagColor(LocalHandle player, byte r, byte g, byte b)
         {
             var p = player.Properties<PlayerProperties>();
