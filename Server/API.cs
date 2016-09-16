@@ -417,7 +417,7 @@ namespace GTANetworkServer
             {
                 var gms = Program.ServerInstance.GetResourceInfo(resource)?.Info;
 
-                if (gms == null || gms.Type != ResourceType.map) return null;
+                if (gms == null || gms.Type != ResourceType.map) return new string[0];
 
                 if (string.IsNullOrEmpty(gms.Gamemodes)) return new string[0];
 
@@ -440,13 +440,13 @@ namespace GTANetworkServer
 
         public IEnumerable<string> getMapsForGamemode(string gamemode)
         {
-            foreach (var map in Program.ServerInstance.AvailableMaps)
+            foreach (var map in getAllResources())
             {
-                if (map.Info.Info.Gamemodes.Split(',').Contains(gamemode)) yield return map.DirectoryName;
+                if (getMapGamemodes(map).Contains(gamemode)) yield return map;
             }
         }
 
-        public dynamic getSetting<T>(string settingName)
+        public T getSetting<T>(string settingName)
         {
             if (ResourceParent == null) throw new AccessViolationException("Illegal call to getSetting inside the constructor!");
 
@@ -488,7 +488,7 @@ namespace GTANetworkServer
                 return output;
             }
 
-            return null;
+            return default(T);
         }
 
         public void setSetting(string settingName, object value)
@@ -507,11 +507,11 @@ namespace GTANetworkServer
             }
         }
 
-        public dynamic getResourceSetting<T>(string resource, string setting)
+        public T getResourceSetting<T>(string resource, string setting)
         {
             var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
 
-            if (res == null) return null;
+            if (res == null) return default(T);
 
             if (res.Settings != null &&
                 res.Settings.ContainsKey(setting))
@@ -551,7 +551,7 @@ namespace GTANetworkServer
                 return output;
             }
 
-            return null;
+            return default(T);
         }
 
         public void setResourceSetting(string resource, string setting, object value)
@@ -669,6 +669,11 @@ namespace GTANetworkServer
         public string[] getRunningResources()
         {
             return Program.ServerInstance.RunningResources.Select(r => r.DirectoryName).ToArray();
+        }
+
+        public string[] getAllResources()
+        {
+            return Directory.GetDirectories("resources").Select(s => Path.GetFileName(s)).ToArray();
         }
 
         public void playSoundFrontEnd(Client target, string audioLib, string audioName)
@@ -3098,7 +3103,7 @@ namespace GTANetworkServer
             {
                 return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Scale;
             }
-
+            
             return 0;
         }
 

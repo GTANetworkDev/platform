@@ -3527,6 +3527,16 @@ namespace GTANetwork
             menu.SetBannerType(new UIResRectangle(new Point(), new Size(), Color.FromArgb(alpha, red, green, blue)));
         }
 
+        public void setMenuTitle(UIMenu menu, string title)
+        {
+            menu.Title.Caption = title;
+        }
+
+        public void setMenuSubtitle(UIMenu menu, string text)
+        {
+            menu.Subtitle.Caption = text;
+        }
+
         public string getUserInput(string defaultText, int maxlen)
         {
             return Game.GetUserInput(defaultText, maxlen);

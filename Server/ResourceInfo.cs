@@ -676,8 +676,7 @@ namespace GTANetworkServer
         [XmlElement("acl")]
         public ResourceAcl ResourceACL { get; set; }
 
-        [XmlElement("settings")]
-        public ResourceSettingsMeta Settings { get; set; }
+        public ResourceSettingsMeta settings { get; set; }
 
         [XmlElement("config")]
         public List<ResourceConfigFile> ConfigFiles { get; set; }
@@ -692,6 +691,7 @@ namespace GTANetworkServer
         public ScriptType Type { get; set; }
     }
 
+    [XmlRoot("settings")]
     public class ResourceSettingsMeta
     {
         [XmlAttribute("src")]
@@ -699,7 +699,7 @@ namespace GTANetworkServer
 
         // OR
 
-        [XmlElement]
+        [XmlElement("setting")]
         public List<MetaSetting> Settings { get; set; }
     }
 

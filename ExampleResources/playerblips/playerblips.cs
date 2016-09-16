@@ -14,6 +14,24 @@ public class PlayerBlips : Script
 		API.onPlayerConnected += PlayerJoin;
 		API.onPlayerDisconnected += PlayerLeave;
 		API.onPlayerFinishedDownload += PlayerJavascriptDownloadComplete;
+		API.onResourceStop += resourceStop;
+		API.onResourceStart += () => 
+		{
+			foreach (var player in API.getAllPlayers())
+			{
+				PlayerJoin(player);
+				PlayerJavascriptDownloadComplete(player);
+			}
+		};
+	}
+
+	private void resourceStop()
+	{
+		foreach (var player in API.getAllPlayers())
+		{
+			API.resetEntityData(player, "PLAYERBLIPS_HAS_BLIP_RECEIVED");
+			API.resetEntityData(player, "PLAYERBLIPS_MAIN_BLIP");
+		}
 	}
 
 	private void PlayerJoin(Client player)
@@ -50,7 +68,10 @@ public class PlayerBlips : Script
 
 	public NetHandle getPlayerBlip(Client player)
 	{
-		return API.getEntityData(player, "PLAYERBLIPS_MAIN_BLIP");
+		if (!API.hasEntityData(player, "PLAYERBLIPS_MAIN_BLIP")) return new NetHandle(0);
+
+		var data = API.getEntityData(player, "PLAYERBLIPS_MAIN_BLIP");
+		return (object)data == null ? new NetHandle(0) : data;
 	}
 
 	public void setPlayerBlip(Client player, NetHandle blip)

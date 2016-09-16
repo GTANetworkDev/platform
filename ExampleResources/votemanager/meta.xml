@@ -1,3 +1,18 @@
 <meta>
 	<info author="Guadmaz" />
+
+	<script src="main.cs" type="server" lang="csharp" />
+	<script src="votetypes.cs" type="server" lang="csharp" />
+
+	<script src="gui.js" type="client" lang="javascript" />
+
+	<assembly ref="System.dll" />
+
+	<settings>
+		<setting name="votelength" value="60000" default="60000" description="Vote length in milliseconds" />
+		<setting name="votecooldown" value="60000" default="60000" description="Cool down between votes." />
+
+		<setting name="enablevotemap" value="true" default="true" description="Sets whether /votemap command is enabled." />
+		<setting name="enablevotekick" value="true" default="true" description="Sets whether /votekick command is enabled." />
+	</settings>
 </meta>

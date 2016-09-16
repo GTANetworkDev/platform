@@ -410,11 +410,11 @@ namespace GTANetworkServer
                     }
                 }
 
-                if (currentResInfo.Settings != null)
+                if (currentResInfo.settings != null)
                 {
-                    if (string.IsNullOrEmpty(currentResInfo.Settings.Path))
+                    if (string.IsNullOrEmpty(currentResInfo.settings.Path))
                     {
-                        ourResource.Settings = LoadSettings(currentResInfo.Settings.Settings);
+                        ourResource.Settings = LoadSettings(currentResInfo.settings.Settings);
                     }
                     else
                     {
@@ -422,7 +422,7 @@ namespace GTANetworkServer
 
                         ResourceSettingsFile file;
 
-                        using (var stream = File.Open(currentResInfo.Settings.Path, FileMode.Open))
+                        using (var stream = File.Open(currentResInfo.settings.Path, FileMode.Open))
                             file = ser2.Deserialize(stream) as ResourceSettingsFile;
 
                         if (file != null)
@@ -671,15 +671,7 @@ namespace GTANetworkServer
                 if (ourRes == null) return false;
 
                 Program.Output("Stopping " + resourceName);
-
-                var dependencies =
-                    RunningResources.Where(r => r.Info.Includes.Any(i => i.Resource == resourceName))
-                        .Except(resourceParent ?? new Resource[0]);
-                foreach (var res in dependencies)
-                {
-                    StopResource(res.DirectoryName, dependencies.ToArray());
-                }
-
+                
                 RunningResources.Remove(ourRes);
             }
 
@@ -866,6 +858,7 @@ namespace GTANetworkServer
             compParams.ReferencedAssemblies.Add("System.IO.dll");
             compParams.ReferencedAssemblies.Add("System.Linq.dll");
             compParams.ReferencedAssemblies.Add("System.Core.dll");
+            compParams.ReferencedAssemblies.Add("System.dll");
             compParams.ReferencedAssemblies.Add("Microsoft.CSharp.dll");
             compParams.ReferencedAssemblies.Add("GTANetworkServer.exe");
             compParams.ReferencedAssemblies.Add("GTANetworkShared.dll");

@@ -4,6 +4,6 @@
 	<script src="playerblips.cs" type="server" lang="csharp" />
 	<script src="playerblips.js" type="client" lang="javascript" />
 
-	<exported method="getPlayerBlip" class="PlayerBlips" />
-	<exported method="setPlayerBlip" class="PlayerBlips" />
+	<export function="getPlayerBlip" class="PlayerBlips" />
+	<export function="setPlayerBlip" class="PlayerBlips" />
 </meta>
