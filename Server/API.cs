@@ -1057,7 +1057,7 @@ namespace GTANetworkServer
 
         public bool getPlayerNametagVisible(Client player)
         {
-            return PacketOptimization.CheckBit(player.Properties.NametagSettings, 1);
+            return !PacketOptimization.CheckBit(player.Properties.NametagSettings, 1);
         }
 
         public void setPlayerNametagColor(Client player, byte r, byte g, byte b)

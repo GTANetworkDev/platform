@@ -569,7 +569,7 @@ namespace GTANetwork
 				    {
 				        byte r, g, b, a;
 
-                        Util.ToArgb(NametagSettings >> 8, out r, out g, out b, out a);
+                        Util.ToArgb(NametagSettings >> 8, out a, out r, out g, out b);
 
 				        defaultColor = Color.FromArgb(r, g, b);
 				    }
