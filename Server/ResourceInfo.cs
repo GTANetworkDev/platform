@@ -109,10 +109,8 @@ namespace GTANetworkServer
                                 mainAction?.Invoke();
                             }
                         }
-                        catch (ResourceAbortedException)
-                        {
-                            
-                        }
+                        catch (ThreadAbortException) { }
+                        catch (ResourceAbortedException) { }
                         catch (Exception ex)
                         {
                             Program.Output("EXCEPTION IN RESOURCE " + ResourceParent.DirectoryName + " INSIDE SCRIPTENGINE " + Filename);
@@ -137,9 +135,8 @@ namespace GTANetworkServer
                     if (Language == ScriptingEngineLanguage.compiled)
                         _compiledScript.API.invokeUpdate();
                 }
-                catch (ResourceAbortedException)
-                {
-                }
+                catch (ThreadAbortException) { }
+                catch (ResourceAbortedException) { }
                 catch (Exception ex)
                 {
                     Program.Output("EXCEPTION IN RESOURCE " + ResourceParent.DirectoryName + " INSIDE SCRIPTENGINE " + Filename);

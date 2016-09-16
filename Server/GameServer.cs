@@ -2141,12 +2141,17 @@ namespace GTANResource
                                                 lock (RunningResources)
                                                     RunningResources.ForEach(
                                                         en =>
+                                                        {
+                                                            if (en.DirectoryName != data.Resource) return;
+
                                                             en.Engines.ForEach(fs =>
                                                             {
                                                                 fs.InvokeClientEvent(client, data.EventName,
-                                                                    DecodeArgumentListPure(data.Arguments?.ToArray() ?? new NativeArgument[0]).ToArray());
-                                                            }
-                                                                ));
+                                                                    DecodeArgumentListPure(data.Arguments?.ToArray() ??
+                                                                                           new NativeArgument[0])
+                                                                        .ToArray());
+                                                            });
+                                                        });
                                             }
                                         }
                                         break;

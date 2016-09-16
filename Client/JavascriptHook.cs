@@ -141,11 +141,15 @@ namespace GTANetwork
         public static WaveOutEvent AudioDevice { get; set; }
         public static WaveStream AudioReader { get; set; }
 
-        public static void InvokeServerEvent(string eventName, object[] arguments)
+        public static void InvokeServerEvent(string eventName, string resource, object[] arguments)
         {
             ThreadJumper.Add(() =>
             {
-                lock (ScriptEngines) ScriptEngines.ForEach(en => en.Engine.Script.API.invokeServerEvent(eventName, arguments));
+                lock (ScriptEngines) ScriptEngines.ForEach(en =>
+                {
+                    if (en.ResourceParent != resource) return;
+                    en.Engine.Script.API.invokeServerEvent(eventName, arguments);
+                });
             });
         }
 
@@ -3259,7 +3263,7 @@ namespace GTANetwork
 
         public void triggerServerEvent(string eventName, params object[] arguments)
         {
-            Main.TriggerServerEvent(eventName, arguments);
+            Main.TriggerServerEvent(eventName, ParentResourceName, arguments);
         }
 
         public string toString(object obj)

@@ -4420,10 +4420,10 @@ namespace GTANetwork
                         if (data != null)
                         {
                             if (data.Arguments != null && data.Arguments.Count > 0)
-                                JavascriptHook.InvokeServerEvent(data.EventName,
+                                JavascriptHook.InvokeServerEvent(data.EventName, data.Resource,
                                     DecodeArgumentListPure(data.Arguments?.ToArray()).ToArray());
                             else
-                                JavascriptHook.InvokeServerEvent(data.EventName, new object[0]);
+                                JavascriptHook.InvokeServerEvent(data.EventName, data.Resource, new object[0]);
                         }
                     }
                     break;
@@ -5488,11 +5488,12 @@ namespace GTANetwork
             return list;
         }
 
-        public static void TriggerServerEvent(string eventName, params object[] args)
+        public static void TriggerServerEvent(string eventName, string resource, params object[] args)
         {
             if (!IsOnServer()) return;
             var packet = new ScriptEventTrigger();
             packet.EventName = eventName;
+            packet.Resource = resource;
             packet.Arguments = ParseNativeArguments(args);
             var bin = SerializeBinary(packet);
 

@@ -31,6 +31,9 @@ namespace GTANetworkShared
 
         [ProtoMember(2)]
         public List<NativeArgument> Arguments { get; set; }
+
+        [ProtoMember(3)]
+        public string Resource { get; set; }
     }
 
     [ProtoContract]

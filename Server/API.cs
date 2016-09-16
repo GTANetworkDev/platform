@@ -2088,8 +2088,11 @@ namespace GTANetworkServer
 
         public void triggerClientEventForAll(string eventName, params object[] args)
         {
+            if (ResourceParent == null) throw new NullReferenceException("Invalid call to triggerClientEventForAll inside constructor!");
+
             var packet = new ScriptEventTrigger();
             packet.EventName = eventName;
+            packet.Resource = ResourceParent.ResourceParent.DirectoryName;
             packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
 
             Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
@@ -2097,8 +2100,11 @@ namespace GTANetworkServer
 
         public void triggerClientEvent(Client player, string eventName, params object[] args)
         {
+            if (ResourceParent == null) throw new NullReferenceException("Invalid call to triggerClientEventForAll inside constructor!");
+
             var packet = new ScriptEventTrigger();
             packet.EventName = eventName;
+            packet.Resource = ResourceParent.ResourceParent.DirectoryName;
             packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
 
             Program.ServerInstance.SendToClient(player, packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
