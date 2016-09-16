@@ -91,7 +91,7 @@ public class HunterScript : Script
 			API.setPlayerBlipSprite(player, 1);
 			API.setPlayerBlipColor(player, 0);
 			API.setPlayerTeam(player, 0);
-			API.setPlayerInvincible(player, false);
+			API.setEntityInvincible(player, false);
 		}
 	}
 
@@ -140,7 +140,7 @@ public class HunterScript : Script
 		API.setPlayerSkin(animal, PedHash.Deer);
 		API.setPlayerTeam(animal, TEAM_ANIMAL);
 		API.setPlayerBlipAlpha(animal, 0);
-		API.setPlayerInvincible(animal, false);
+		API.setEntityInvincible(animal, false);
 		var spawnp = _animalSpawnpoints[r.Next(_animalSpawnpoints.Count)];
 		API.setEntityPosition(animal.CharacterHandle, spawnp);
 		API.setPlayerBlipSprite(animal, 141);
@@ -176,8 +176,8 @@ public class HunterScript : Script
 		{
 			var skin = _skinList[r.Next(_skinList.Count)];		
 			API.setPlayerSkin(player, skin);
-			API.givePlayerWeapon(player, 487013001, 9999, true, true);
-			API.givePlayerWeapon(player, 100416529, 9999, true, true);
+			API.givePlayerWeapon(player, WeaponHash.PumpShotgun, 9999, true, true);
+			API.givePlayerWeapon(player, WeaponHash.SniperRifle, 9999, true, true);
 			API.setPlayerBlipAlpha(player, 0);
 			API.setPlayerBlipSprite(player, 1);		
 		}
@@ -191,7 +191,7 @@ public class HunterScript : Script
 		API.setEntityPosition(player.CharacterHandle, _hunterSpawnpoints[r.Next(_hunterSpawnpoints.Count)]);
 		if (animal != null) API.sendChatMessageToPlayer(player, "~r~" + animal.Name + "~w~ is the animal! ~r~Hunt~w~ it!");		
 		API.setPlayerTeam(player, TEAM_HUNTER);
-		API.setPlayerInvincible(player, false);
+		API.setEntityInvincible(player, false);
 	}
 
 	public void dead(Client player, NetHandle reason, int weapon)

@@ -190,9 +190,9 @@ public class CopsNCrooks : Script
 
 		API.setPlayerSkin(player, (PedHash)1581098148); // Cop01SMY
 
-		API.givePlayerWeapon(player, 1737195953, 1, true, true);
-		API.givePlayerWeapon(player, 1593441988, 300, true, true);
-		API.givePlayerWeapon(player, 487013001, 300, true, true);
+		API.givePlayerWeapon(player, WeaponHash.Nightstick, 1, true, true);
+		API.givePlayerWeapon(player, WeaponHash.CombatPistol, 300, true, true);
+		API.givePlayerWeapon(player, WeaponHash.PumpShotgun, 300, true, true);
 
 
 		API.setPlayerHealth(player, 100);
@@ -206,9 +206,9 @@ public class CopsNCrooks : Script
 	public void CrookRespawn(Client player)
 	{		
 		if (!isRoundOngoing) return;
-		API.givePlayerWeapon(player, 615608432, 20, true, true);		
-		API.givePlayerWeapon(player, 137902532, 100, true, true);
-		API.givePlayerWeapon(player, 1627465347, 700, true, true);
+		API.givePlayerWeapon(player, WeaponHash.Molotov, 20, true, true);		
+		API.givePlayerWeapon(player, WeaponHash.VintagePistol, 100, true, true);
+		API.givePlayerWeapon(player, WeaponHash.Gusenberg, 700, true, true);
 		API.setPlayerHealth(player, 100);
 		API.setEntityPosition(player.CharacterHandle, _crookRespawn);
 	}

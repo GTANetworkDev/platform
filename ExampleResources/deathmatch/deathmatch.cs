@@ -15,7 +15,7 @@ public struct RespawnablePickup
 public class Deathmatch : Script
 {
     private List<Vector3> spawns;
-    private List<int> weapons;
+    private List<WeaponHash> weapons;
     private Dictionary<Client, int> Killstreaks;
     private Random rInst;
     
@@ -28,10 +28,10 @@ public class Deathmatch : Script
         spawns.Add(new Vector3(1576.09, 3607.35, 38.73));
         spawns.Add(new Vector3(1596.88, 3590.43, 42.12));
 
-        weapons = new List<int>();
-        weapons.Add(324215364);
-        weapons.Add(487013001);
-        weapons.Add(-2084633992);
+        weapons = new List<WeaponHash>();
+        weapons.Add(WeaponHash.MicroSMG);
+        weapons.Add(WeaponHash.PumpShotgun);
+        weapons.Add(WeaponHash.CarbineRifle);
         
         rInst = new Random();
 
@@ -216,30 +216,30 @@ public class Deathmatch : Script
 
                     if (Killstreaks[killer] == 4)
                     {
-                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 25));
+                        API.setPlayerHealth(killer, (int)Math.Min(100, API.getPlayerHealth(killer) + 25));
                         API.sendChatMessageToPlayer(killer, "~g~Health bonus!");
                     }
                     else if (Killstreaks[killer] == 6)
                     {
-                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 50));
+                        API.setPlayerHealth(killer, (int)Math.Min(100, API.getPlayerHealth(killer) + 50));
                         API.sendChatMessageToPlayer(killer, "~g~Health bonus!");
                     }
                     else if (Killstreaks[killer] == 8)
                     {
-                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 75));
-                        API.setPlayerArmor(killer, Math.Min(100, API.getPlayerArmor(killer) + 25));
+                        API.setPlayerHealth(killer, (int)Math.Min(100, API.getPlayerHealth(killer) + 75));
+                        API.setPlayerArmor(killer, (int)Math.Min(100, API.getPlayerArmor(killer) + 25));
                         API.sendChatMessageToPlayer(killer, "~g~Health and armor bonus!");
                     }
                     else if (Killstreaks[killer] == 12)
                     {
-                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 75));
-                        API.setPlayerArmor(killer, Math.Min(100, API.getPlayerArmor(killer) + 50));
+                        API.setPlayerHealth(killer, (int)Math.Min(100, API.getPlayerHealth(killer) + 75));
+                        API.setPlayerArmor(killer, (int)Math.Min(100, API.getPlayerArmor(killer) + 50));
                         API.sendChatMessageToPlayer(killer, "~g~Health and armor bonus!");
                     }
                     else if (Killstreaks[killer] >= 16 && Killstreaks[killer] % 4 == 0)
                     {
-                        API.setPlayerHealth(killer, Math.Min(100, API.getPlayerHealth(killer) + 75));
-                        API.setPlayerArmor(killer, Math.Min(100, API.getPlayerArmor(killer) + 75));
+                        API.setPlayerHealth(killer, (int)Math.Min(100, API.getPlayerHealth(killer) + 75));
+                        API.setPlayerArmor(killer, (int)Math.Min(100, API.getPlayerArmor(killer) + 75));
                         API.sendChatMessageToPlayer(killer, "~g~Health and armor bonus!");
                     }
                 }
