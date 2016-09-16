@@ -2230,6 +2230,11 @@ namespace GTANetwork
         private Dictionary<int, int> _debugSettings = new Dictionary<int, int>();
         private bool _minimapSet;
         private object freedebug;
+        private int _lastPlayerHealth = 100;
+        private int _lastPlayerArmor = 0;
+        private bool _lastVehicleSiren;
+        private WeaponHash _lastPlayerWeapon = WeaponHash.Unarmed;
+        private PedHash _lastPlayerModel = PedHash.Clown01SMY;
 
         // netstats
         private int _lastBytesSent;
@@ -2816,11 +2821,46 @@ namespace GTANetwork
 
                 if (item != null)
                 {
+                    var lastHealth = item.Health;
+                    var lastDamageModel = item.DamageModel;
+
                     item.Position = playerCar.Position.ToLVector();
                     item.Rotation = playerCar.Rotation.ToLVector();
                     item.Health = playerCar.EngineHealth;
                     item.IsDead = playerCar.IsDead;
                     item.DamageModel = playerCar.GetVehicleDamageModel();
+
+                    if (lastHealth != playerCar.EngineHealth)
+                    {
+                        JavascriptHook.InvokeCustomEvent(api => api.onVehicleHealthChange?.Invoke((int)lastHealth));
+                    }
+
+                    if (lastDamageModel != null)
+                    {
+                        if (lastDamageModel.BrokenWindows != item.DamageModel.BrokenWindows)
+                        {
+                            for (int i = 0; i < 8; i++)
+                            {
+                                if (((lastDamageModel.BrokenWindows ^ item.DamageModel.BrokenWindows) & 1 << i) != 0)
+                                {
+                                    var i1 = i;
+                                    JavascriptHook.InvokeCustomEvent(api => api.onVehicleWindowSmash?.Invoke(i1));
+                                }
+                            }
+                        }
+
+                        if (lastDamageModel.BrokenDoors != item.DamageModel.BrokenDoors)
+                        {
+                            for (int i = 0; i < 8; i++)
+                            {
+                                if (((lastDamageModel.BrokenDoors ^ item.DamageModel.BrokenDoors) & 1 << i) != 0)
+                                {
+                                    var i1 = i;
+                                    JavascriptHook.InvokeCustomEvent(api => api.onVehicleDoorBreak?.Invoke(i1));
+                                }
+                            }
+                        }
+                    }
                 }
 
                 cc = item;
@@ -2849,6 +2889,9 @@ namespace GTANetwork
                         Function.Call(Hash.SET_VEHICLE_ENGINE_ON, _lastPlayerCar,
                             !PacketOptimization.CheckBit(c.Flag, EntityFlag.EngineOff), true, true);
                     }
+
+                    JavascriptHook.InvokeCustomEvent(api => api.onPlayerExitVehicle?.Invoke(new LocalHandle(_lastPlayerCar.Handle)));
+                    _lastVehicleSiren = false;
                 }
 
                 if (playerCar != null)
@@ -2862,6 +2905,8 @@ namespace GTANetwork
                     {
                         playerCar.IsInvincible = cc?.IsInvincible ?? false;
                     }
+
+                    JavascriptHook.InvokeCustomEvent(api => api.onPlayerEnterVehicle(new LocalHandle(playerCar.Handle)));
                 }
 
                 LastCarEnter = DateTime.Now;
@@ -2879,6 +2924,15 @@ namespace GTANetwork
                 {
                     playerCar.IsInvincible = true;
                 }
+
+                var siren = playerCar.SirenActive;
+
+                if (siren != _lastVehicleSiren)
+                {
+                    JavascriptHook.InvokeCustomEvent(api => api.onVehicleSirenToggle?.Invoke());
+                }
+
+                _lastVehicleSiren = siren;
             }
 
             Game.Player.Character.MaxHealth = 200;
@@ -3042,6 +3096,8 @@ namespace GTANetwork
                 msg.Write((byte)PacketType.PlayerRespawned);
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
 
+                JavascriptHook.InvokeCustomEvent(api => api.onPlayerRespawn?.Invoke());
+
                 if (Weather != null) Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Weather);
                 if (Time.HasValue)
                 {
@@ -3063,6 +3119,37 @@ namespace GTANetwork
                     Main.NetEntityHandler.StreamIn(source);
                 }
             }
+
+            var pHealth = player.Health;
+            var pArmor = player.Armor;
+            var pGun = player.Weapons.Current?.Hash ?? WeaponHash.Unarmed;
+            var pModel = player.Model.Hash;
+
+            if (pHealth != _lastPlayerHealth)
+            {
+                JavascriptHook.InvokeCustomEvent(api => api.onPlayerHealthChange?.Invoke(_lastPlayerHealth));
+            }
+
+            if (pArmor != _lastPlayerArmor)
+            {
+                JavascriptHook.InvokeCustomEvent(api => api.onPlayerArmorChange?.Invoke(_lastPlayerArmor));
+            }
+
+            if (pGun != _lastPlayerWeapon)
+            {
+                JavascriptHook.InvokeCustomEvent(api => api.onPlayerWeaponSwitch?.Invoke((int)_lastPlayerWeapon));
+            }
+
+            if (pModel != (int) _lastPlayerModel)
+            {
+                JavascriptHook.InvokeCustomEvent(api => api.onPlayerModelChange?.Invoke((int)_lastPlayerModel));
+            }
+
+            _lastPlayerHealth = pHealth;
+            _lastPlayerArmor = pArmor;
+            _lastPlayerWeapon = pGun;
+            _lastPlayerModel = (PedHash) pModel;
+
             DEBUG_STEP = 23;
             _lastDead = hasRespawned;
             DEBUG_STEP = 24;
@@ -3070,7 +3157,6 @@ namespace GTANetwork
             DEBUG_STEP = 25;
             if (killed && !_lastKilled)
             {
-
                 var msg = Client.CreateMessage();
                 msg.Write((byte)PacketType.PlayerKilled);
                 var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
@@ -3096,6 +3182,8 @@ namespace GTANetwork
                 }
                 */
                 Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
+
+                JavascriptHook.InvokeCustomEvent(api => api.onPlayerDeath?.Invoke(new LocalHandle(killer), weapon));
 
                 NativeUI.BigMessageThread.MessageInstance.ShowColoredShard("WASTED", "", HudColor.HUD_COLOUR_BLACK, HudColor.HUD_COLOUR_RED, 7000);
                 Function.Call(Hash.REQUEST_SCRIPT_AUDIO_BANK, "HUD_MINI_GAME_SOUNDSET", true);

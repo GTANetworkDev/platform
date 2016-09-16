@@ -171,6 +171,17 @@ namespace GTANetwork
             });
         }
 
+        public static void InvokeCustomEvent(Action<dynamic> func)
+        {
+            ThreadJumper.Add(() =>
+            {
+                lock (ScriptEngines)
+                {
+                    ScriptEngines.ForEach(en => func(en.Engine.Script.API));
+                }
+            });
+        }
+
         public static void InvokeStreamInEvent(LocalHandle handle, int type)
         {
             ThreadJumper.Add(() =>
@@ -3279,23 +3290,20 @@ namespace GTANetwork
         public event StreamEvent onEntityStreamOut;
         public event DataChangedEvent onEntityDataChange;
         public event CustomDataReceived onCustomDataReceived;
-        
-        // Below: implement trigger
         public event PlayerKilledEvent onPlayerDeath;
-        // Below: implement invoker
         public event EmptyEvent onPlayerRespawn;
         public event EntityEvent onPlayerPickup;
         public event EntityEvent onPlayerEnterVehicle;
         public event EntityEvent onPlayerExitVehicle;
         public event IntChangeEvent onVehicleHealthChange;
+        public event IntChangeEvent onVehicleDoorBreak;
+        public event IntChangeEvent onVehicleWindowSmash;
         public event IntChangeEvent onPlayerHealthChange;
         public event IntChangeEvent onPlayerArmorChange;
         public event IntChangeEvent onPlayerWeaponSwitch;
-        public event BoolChangeEvent onVehicleSirenToggle;
-        public event EmptyEvent onPlayerDetonateStickies;
         public event IntChangeEvent onPlayerModelChange;
-        public event IntChangeEvent onVehicleDoorBreak;
-        public event IntChangeEvent onVehicleWindowSmash;
+        public event EmptyEvent onVehicleSirenToggle;
+        public event EmptyEvent onPlayerDetonateStickies;
         public event IntChangeEvent onVehicleTyreBurst;
 
         internal void invokePlayerKilled(LocalHandle item, int weapon)
