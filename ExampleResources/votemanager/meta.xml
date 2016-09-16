@@ -1,10 +1,12 @@
 <meta>
-	<info author="Guadmaz" />
+	<info author="Guadmaz" name="Vote Manager" description="Utility resource to manage votes" version="1.0" />
 
 	<script src="main.cs" type="server" lang="csharp" />
 	<script src="votetypes.cs" type="server" lang="csharp" />
-
 	<script src="gui.js" type="client" lang="javascript" />
+
+	<export function="startMapVote" class="VotemanagerEntryPoint" />
+	<export function="startKickVote" class="VotemanagerEntryPoint" />
 
 	<assembly ref="System.dll" />
 

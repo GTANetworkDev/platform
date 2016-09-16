@@ -75,6 +75,11 @@ namespace Votemanager
                 API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ /votemap has been disabled on this server!");
             }
 
+            if (CurrentVote != null)
+            {
+                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ A vote is already in progress!");
+            }
+
             if (API.TickCount - TimeSinceLastVote > API.getSetting<int>("votecooldown"))
             {
                 API.sendChatMessageToAll("~b~~h~" + sender.Name + "~h~~w~ has started a vote map!");
@@ -92,6 +97,11 @@ namespace Votemanager
             if (!API.getSetting<bool>("enablevotekick"))
             {
                 API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ /votekick has been disabled on this server!");
+            }
+
+            if (CurrentVote != null)
+            {
+                API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ A vote is already in progress!");
             }
 
             if (API.TickCount - TimeSinceLastVote > API.getSetting<int>("votecooldown"))
