@@ -3260,7 +3260,7 @@ namespace GTANetwork
             } while (DateTime.Now.Subtract(start).TotalMilliseconds < ms);
         }
 
-        public void startAudio(string path, bool looped)
+        public void startAudio(string path, bool looped = false)
         {
             //if (path.StartsWith("http")) return;
             path = getResourceFilePath(path);
