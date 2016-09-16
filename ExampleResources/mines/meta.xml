@@ -1,0 +1,5 @@
+<meta>
+	<info name="Mines" description="Test resource to play around with mines" />
+
+	<script src="mines.cs" type="server" lang="csharp" />
+</meta>
