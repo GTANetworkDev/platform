@@ -296,6 +296,12 @@ namespace GTANetworkShared
 
         [ProtoMember(10)]
         public Dictionary<int, List<int>> WeaponComponents { get; set; } 
+
+        [ProtoMember(11)]
+        public string NametagText { get; set; }
+
+        [ProtoMember(12)]
+        public int NametagSettings { get; set; }
     }
 
     [ProtoContract]
@@ -582,6 +588,12 @@ namespace GTANetworkShared
 
         [ProtoMember(10)]
         public Dictionary<int, List<int>> WeaponComponents { get; set; }
+
+        [ProtoMember(11)]
+        public string NametagText { get; set; }
+
+        [ProtoMember(12)]
+        public int? NametagSettings { get; set; }
     }
 
     [ProtoContract]

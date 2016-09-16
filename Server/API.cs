@@ -1025,6 +1025,59 @@ namespace GTANetworkServer
             sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0x172AA1B624FA1013, owner.CharacterHandle, position.X, position.Y, position.Z, (int)explosionType, damageScale, true, false, 1f);
         }
 
+        public void setPlayerNametag(Client player, string text)
+        {
+            player.Properties.NametagText = text;
+
+            var delta = new Delta_PlayerProperties();
+            delta.NametagText = text;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+        }
+
+        public void resetPlayerNametag(Client player)
+        {
+            player.Properties.NametagText = " ";
+
+            var delta = new Delta_PlayerProperties();
+            delta.NametagText = " ";
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+        }
+
+        public void setPlayerNametagVisible(Client player, bool visible)
+        {
+            if (visible)
+                player.Properties.NametagSettings = PacketOptimization.ResetBit(player.Properties.NametagSettings, 1);
+            else
+                player.Properties.NametagSettings = PacketOptimization.SetBit(player.Properties.NametagSettings, 1);
+
+            var delta = new Delta_PlayerProperties();
+            delta.NametagSettings = player.Properties.NametagSettings;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+        }
+
+        public void setPlayerNametagColor(Client player, byte r, byte g, byte b)
+        {
+            player.Properties.NametagSettings = PacketOptimization.SetBit(player.Properties.NametagSettings, 2);
+
+            var col = Extensions.FromArgb(0, r, g, b) << 8;
+            player.Properties.NametagSettings |= col;
+
+            var delta = new Delta_PlayerProperties();
+            delta.NametagSettings = player.Properties.NametagSettings;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+        }
+
+        public void resetPlayerNametagColor(Client player)
+        {
+            player.Properties.NametagSettings = PacketOptimization.ResetBit(player.Properties.NametagSettings, 2);
+
+            player.Properties.NametagSettings &= 255;
+
+            var delta = new Delta_PlayerProperties();
+            delta.NametagSettings = player.Properties.NametagSettings;
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+        }
+
         public void setPlayerToSpectator(Client player)
         {
             Program.ServerInstance.SetPlayerOnSpectate(player, true);

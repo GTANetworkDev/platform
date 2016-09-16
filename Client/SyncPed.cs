@@ -537,6 +537,8 @@ namespace GTANetwork
 	    {
 	        if (!Main.UIVisible) return;
 
+            if ((NametagSettings & 1) != 0) return;
+
             bool isAiming = false;
 			if ((!Character.IsOccluded && (Character.IsInRangeOfEx(Game.Player.Character.Position, 30f))) ||
 				(isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
@@ -552,13 +554,27 @@ namespace GTANetwork
 					DEBUG_STEP = 6;
 					var nameText = Name == null ? "<nameless>" : Name;
 
+				    if (!string.IsNullOrEmpty(NametagText))
+				        nameText = NametagText;
+
 					if (TicksSinceLastUpdate > 10000)
 						nameText = "~r~AFK~w~~n~" + nameText;
 
                     var dist = (GameplayCamera.Position - Character.Position).Length();
 					var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
 
-                    Util.DrawText(nameText, 0, 0, 0.4f * sizeOffset, 245, 245, 245, 255, 0, 1, false, true, 0);
+				    Color defaultColor = Color.FromArgb(245, 245, 245);
+
+				    if ((NametagSettings & 2) != 0)
+				    {
+				        byte r, g, b, a;
+
+                        Util.ToArgb(NametagSettings >> 8, out r, out g, out b, out a);
+
+				        defaultColor = Color.FromArgb(r, g, b);
+				    }
+
+                    Util.DrawText(nameText, 0, 0, 0.4f * sizeOffset, defaultColor.R, defaultColor.G, defaultColor.B, 255, 0, 1, false, true, 0);
 
 					DEBUG_STEP = 7;
 					if (Character != null)

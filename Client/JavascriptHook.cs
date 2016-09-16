@@ -1845,6 +1845,45 @@ namespace GTANetwork
             Function.Call((Hash)0xFC4BD125DE7611E4, Game.Player.Character, (int)WeaponHash.StickyBomb, true);
         }
 
+        public void setPlayerNametag(LocalHandle player, string text)
+        {
+            player.Properties<PlayerProperties>().NametagText = text;
+        }
+
+        public void resetPlayerNametag(LocalHandle player)
+        {
+            player.Properties<PlayerProperties>().NametagText = " ";
+        }
+
+        public void setPlayerNametagVisible(LocalHandle player, bool show)
+        {
+            var p = player.Properties<PlayerProperties>();
+
+            if (show)
+                p.NametagSettings = PacketOptimization.ResetBit(p.NametagSettings, 1);
+            else
+                p.NametagSettings = PacketOptimization.SetBit(p.NametagSettings, 1);
+        }
+
+        public void setPlayerNametagColor(LocalHandle player, byte r, byte g, byte b)
+        {
+            var p = player.Properties<PlayerProperties>();
+
+            p.NametagSettings = PacketOptimization.SetBit(p.NametagSettings, 2);
+
+            var col = Util.FromArgb(0, r, g, b) << 8;
+            p.NametagSettings |= col;
+        }
+
+        public void resetPlayerNametagColor(LocalHandle player)
+        {
+            var p = player.Properties<PlayerProperties>();
+
+            p.NametagSettings = PacketOptimization.ResetBit(p.NametagSettings, 2);
+
+            p.NametagSettings &= 255;
+        }
+
         public void setPlayerSkin(int model)
         {
             Util.SetPlayerSkin((PedHash)model);

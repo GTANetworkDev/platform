@@ -745,5 +745,20 @@ namespace GTANetworkShared
         {
             return value &= ~(int) flag;
         }
+
+        public static bool CheckBit(int value, int flag)
+        {
+            return (value & (int)flag) != 0;
+        }
+
+        public static int SetBit(int value, int flag)
+        {
+            return value |= (int)flag;
+        }
+
+        public static int ResetBit(int value, int flag)
+        {
+            return value &= ~(int)flag;
+        }
     }
 }

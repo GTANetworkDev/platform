@@ -1032,6 +1032,9 @@ namespace GTANetwork
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
 
+            if (prop.NametagText != null) veh.NametagText = prop.NametagText;
+            if (prop.NametagSettings != null) veh.NametagSettings = prop.NametagSettings.Value;
+
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
@@ -1089,6 +1092,8 @@ namespace GTANetwork
             if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
             if (prop.Flag != null) veh.Flag = prop.Flag.Value;
             if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
+            if (prop.NametagText != null) veh.NametagText = prop.NametagText;
+            if (prop.NametagSettings != null) veh.NametagSettings = prop.NametagSettings.Value;
 
             if (prop.Dimension != null)
             {
@@ -1588,6 +1593,8 @@ namespace GTANetwork
             rem.RotationMovement = prop.RotationMovement;
             rem.WeaponTints = prop.WeaponTints;
             rem.WeaponComponents = prop.WeaponComponents;
+            rem.NametagText = prop.NametagText;
+            rem.NametagSettings = prop.NametagSettings;
             
             if (rem is SyncPed)
             {
