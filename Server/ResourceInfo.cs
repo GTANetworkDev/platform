@@ -18,7 +18,7 @@ namespace GTANetworkServer
         vbasic,
     }
 
-    public class ScriptingEngine
+    internal class ScriptingEngine
     {
         public ScriptingEngineLanguage Language { get; private set; }
         public string Filename { get; set; }
@@ -613,7 +613,7 @@ namespace GTANetworkServer
         #endregion
     }
 
-    public class Resource
+    internal class Resource
     {
         public string DirectoryName { get; set; }
         public ResourceInfo Info { get; set; }

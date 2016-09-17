@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace GTANetworkServer
 {
-    public class Streamer
+    internal class Streamer
     {
         public static bool Stop;
         public static void MainThread()

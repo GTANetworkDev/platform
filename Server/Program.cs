@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -67,7 +68,7 @@ namespace GTANetworkServer
 
 
         public static string Location { get { return AppDomain.CurrentDomain.BaseDirectory; } }
-        public static GameServer ServerInstance { get; set; }
+        internal static GameServer ServerInstance { get; set; }
         private static bool CloseProgram = false;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -83,9 +84,10 @@ namespace GTANetworkServer
             if (_log)
                 File.AppendAllText("server.log", "-> SERVER STARTED AT " + DateTime.Now);
 
+            ParseableVersion serverVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
 
             Console.WriteLine("=======================================================================");
-            Console.WriteLine("= GRAND THEFT AUTO NETWORK v1.0");
+            Console.WriteLine("= GRAND THEFT AUTO NETWORK v{0}", serverVersion);
             Console.WriteLine("=======================================================================");
             Console.WriteLine("= Server Name: " + settings.Name);
             Console.WriteLine("= Server Port: " + settings.Port);

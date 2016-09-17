@@ -20,7 +20,7 @@ using ProtoBuf;
 
 namespace GTANetworkServer
 {
-    public class StreamingClient
+    internal class StreamingClient
     {
         public StreamingClient(Client c)
         {
@@ -34,7 +34,7 @@ namespace GTANetworkServer
         public List<StreamedData> Files { get; set; }
     }
 
-    public class StreamedData
+    internal class StreamedData
     {
         public StreamedData()
         {
@@ -54,8 +54,8 @@ namespace GTANetworkServer
         public string Resource { get; set; }
         public string Hash { get; set; }
     }
-    
-    public class GameServer
+
+    internal class GameServer
     {
         public GameServer(ServerSettings conf)
         {
@@ -134,7 +134,7 @@ namespace GTANetworkServer
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
         public bool AnnounceToLAN { get; set; }
-        public AccessControlList ACL { get; set; }
+        internal AccessControlList ACL { get; set; }
         public bool IsClosing { get; set; }
         public bool ReadyToClose { get; set; }
         public bool ACLEnabled { get; set; }

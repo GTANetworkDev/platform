@@ -7,7 +7,7 @@ using Lidgren.Network;
 
 namespace GTANetworkServer
 {
-    public static class StressTest
+    internal static class StressTest
     {
         public static int PlayersToSim = 500;
         public static bool HasPlayers;

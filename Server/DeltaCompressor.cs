@@ -4,7 +4,7 @@ using GTANetworkShared;
 
 namespace GTANetworkServer
 {
-    public class DeltaCompressor
+    internal class DeltaCompressor
     {
         public DeltaCompressor(Client client)
         {

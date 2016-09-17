@@ -7,7 +7,7 @@ using Lidgren.Network;
 
 namespace GTANetworkServer
 {
-    public class UnoccupiedVehicleManager
+    internal class UnoccupiedVehicleManager
     {
         private const int UPDATE_RATE = 500;
         private const float SYNC_RANGE = 130;

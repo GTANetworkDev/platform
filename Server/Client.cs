@@ -14,9 +14,9 @@ namespace GTANetworkServer
 
         internal bool Fake { get; set; }
 
-        public int LastPedFlag { get; set; }
-        public int LastVehicleFlag { get; set; }
-        public NetConnection NetConnection { get; private set; }
+        internal int LastPedFlag { get; set; }
+        internal int LastVehicleFlag { get; set; }
+        internal NetConnection NetConnection { get; private set; }
         public string SocialClubName { get; set; }
         public string Name { get; set; }
         public float Latency { get; set; }

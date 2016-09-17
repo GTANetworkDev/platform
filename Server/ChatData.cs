@@ -3,7 +3,7 @@
 namespace GTANetworkServer
 {
     [ProtoContract]
-    public class ChatData
+    internal class ChatData
     {
         [ProtoMember(1)]
         public long Id { get; set; }

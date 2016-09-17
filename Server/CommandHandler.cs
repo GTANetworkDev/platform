@@ -85,7 +85,7 @@ namespace GTANetworkServer
         public string Group;
     }
 
-    public class CommandParser
+    internal class CommandParser
     {
         public string Command;
         public string Usage;
@@ -264,8 +264,8 @@ namespace GTANetworkServer
             return true;
         }
     }
-    
-    public class CommandCollection
+
+    internal class CommandCollection
     {
         public List<CommandParser> ResourceCommands = new List<CommandParser>();
         public Resource Resource;
@@ -342,7 +342,7 @@ namespace GTANetworkServer
         }
     }
 
-    public class CommandHandler
+    internal class CommandHandler
     {
         public CommandHandler()
         {

@@ -5,7 +5,7 @@ using GTANetworkShared;
 
 namespace GTANetworkServer
 {
-    public class NetEntityHandler
+    internal class NetEntityHandler
     {
         private int EntityCounter = 1;
         private Dictionary<int, EntityProperties> ServerEntities;

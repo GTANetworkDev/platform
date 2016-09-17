@@ -5,7 +5,7 @@ using System.Xml.Serialization;
 
 namespace GTANetworkServer
 {
-    public class AccessControlList
+    internal class AccessControlList
     {
         private string _filepath;
         private ACLRoot _mainAcl;
