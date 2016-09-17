@@ -116,6 +116,7 @@ namespace GTANetworkServer
             MinimumClientVersion = ParseableVersion.Parse(conf.MinimumClientVersion);
             OnFootLagComp = conf.OnFootLagCompensation;
             VehLagComp = conf.VehicleLagCompensation;
+            LogLevel = conf.LogLevel;
         }
 
         public ParseableVersion MinimumClientVersion;
@@ -133,6 +134,7 @@ namespace GTANetworkServer
         public Resource Gamemode { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
+        public int LogLevel { get; set; }
         public bool AnnounceToLAN { get; set; }
         internal AccessControlList ACL { get; set; }
         public bool IsClosing { get; set; }
@@ -237,9 +239,13 @@ namespace GTANetworkServer
                     {
                         wb.UploadData(MasterServer.Trim('/') + "/addserver", Encoding.UTF8.GetBytes(Port.ToString()));
                     }
-                    catch (WebException)
+                    catch (WebException ex)
                     {
                         Program.Output("Failed to announce self: master server is not available at this time.");
+                        if (LogLevel >= 2)
+                        {
+                            Program.Output(ex.ToString());
+                        }
                     }
                 }
             });

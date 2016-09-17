@@ -332,6 +332,7 @@ namespace GTANetwork
         {
             ClientsideScriptWrapper csWrapper = null;
             
+            
             var scriptEngine = new V8ScriptEngine();
             scriptEngine.AddHostObject("host", new HostFunctions());
             scriptEngine.AddHostObject("API", new ScriptContext(scriptEngine));
@@ -377,6 +378,7 @@ namespace GTANetwork
 
             foreach (var engine in ScriptEngines)
             {
+                engine.Engine.Interrupt();
                 engine.Engine.Script.API.invokeResourceStop();
                 engine.Engine.Dispose();
             }
@@ -863,7 +865,7 @@ namespace GTANetwork
         {
             while (!browser.IsInitialized())
             {
-                sleep(0);
+                Script.Yield();
             }
         }
         
@@ -3624,6 +3626,11 @@ namespace GTANetwork
         public void enableControlThisFrame(int control)
         {
             Game.EnableControlThisFrame(0, (GTA.Control)control);
+        }
+
+        public void disableAllControlsThisFrame()
+        {
+            Game.DisableAllControlsThisFrame(0);
         }
 
         public bool isChatOpen()
