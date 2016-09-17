@@ -2275,9 +2275,19 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToPlayer(player, longHash, args);
         }
 
+        public void sendNativeToPlayer(Client player, Hash native, params object[] args)
+        {
+            sendNativeToPlayer(player, (ulong) native, args);
+        }
+
         public void sendNativeToAllPlayers(ulong longHash, params object[] args)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(longHash, args);
+        }
+
+        public void sendNativeToAllPlayers(Hash native, params object[] args)
+        {
+            sendNativeToAllPlayers((ulong) native, args);
         }
 
         public void sendNativeToPlayersInRange(Vector3 pos, float range, ulong hash, params object[] args)
@@ -2289,6 +2299,11 @@ namespace GTANetworkServer
                     sendNativeToPlayer(client, hash, args);
                 }
             }
+        }
+
+        public void sendNativeToPlayersInRange(Vector3 pos, float range, Hash native, params object[] args)
+        {
+            sendNativeToPlayersInRange(pos, range, (ulong) native, args);
         }
 
         public void sendNativeToPlayersInRangeInDimension(Vector3 pos, float range, int dimension, ulong hash, params object[] args)
@@ -2308,6 +2323,12 @@ namespace GTANetworkServer
             }
         }
 
+        public void sendNativeToPlayersInRangeInDimension(Vector3 pos, float range, int dimension, Hash native,
+            params object[] args)
+        {
+            sendNativeToPlayersInRangeInDimension(pos, range, dimension, native, args);
+        }
+
         public void sendNativeToPlayersInDimension(int dimension, ulong hash, params object[] args)
         {
             if (dimension == 0)
@@ -2325,6 +2346,11 @@ namespace GTANetworkServer
             }
         }
 
+        public void sendNativeToPlayersInDimension(int dimension, Hash native, params object[] args)
+        {
+            sendNativeToPlayersInDimension(dimension, (ulong) native, args);
+        }
+
         public T fetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
         {
             var returnType = Program.ServerInstance.ParseReturnType(typeof (T));
@@ -2336,6 +2362,11 @@ namespace GTANetworkServer
 
             return (T) Program.ServerInstance.ReturnNativeCallFromPlayer(player, longHash,
                 returnType, args);
+        }
+
+        public T fetchNativeFromPlayer<T>(Client player, Hash native, params object[] args)
+        {
+            return fetchNativeFromPlayer<T>(player, (ulong) native, args);
         }
 
         public void givePlayerWeapon(Client player, WeaponHash weaponHash, int ammo, bool equipNow, bool ammoLoaded)

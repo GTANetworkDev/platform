@@ -90,6 +90,7 @@
     <Compile Include="GameServer.cs" />
     <Compile Include="CommandHandler.cs" />
     <Compile Include="MemberwiseClone.cs" />
+    <Compile Include="NativeHashes.cs" />
     <Compile Include="PedHashes.cs" />
     <Compile Include="PickupManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
