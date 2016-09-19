@@ -160,6 +160,8 @@ namespace GTANetwork
                     LogManager.LogException(ex, "SYNCSENDER");
                 }
 
+                LogManager.DebugLog("END SYNC SEND");
+
                 Thread.Sleep(PURE_SYNC_RATE);
             }
         }

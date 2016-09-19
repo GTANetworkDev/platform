@@ -12,6 +12,7 @@ using System.Threading;
 using System.Windows.Forms;
 using CefSharp;
 using CefSharp.OffScreen;
+using Distort;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
@@ -361,20 +362,15 @@ namespace GTANetwork.GUI
                                         if (bitmap == null) continue;
 
                                         if (browser.Pinned == null || browser.Pinned.Length != 4)
-                                            graphics.DrawImage(bitmap, browser.Position);
+                                            graphics.DrawImageUnscaled(bitmap, browser.Position);
                                         else
                                         {
-                                            YLScsDrawing.Imaging.Filters.FreeTransform filter = new YLScsDrawing.Imaging.Filters.FreeTransform();
-                                            filter.Bitmap = bitmap;
-                                            filter.FourCorners = browser.Pinned;
-                                            filter.IsBilinearInterpolation = true; // optional for higher quality
-                                            using (System.Drawing.Bitmap perspectiveImg = filter.Bitmap)
-                                            {
-                                                var maxLeft = Math.Min(browser.Pinned[0].X, browser.Pinned[3].X);
-                                                var maxUp = Math.Min(browser.Pinned[0].Y, browser.Pinned[1].Y);
+                                            var bmOut = new FastBitmap(doubleBuffer);
+                                            var ourText = new FastBitmap(bitmap);
 
-                                                graphics.DrawImage(perspectiveImg, new PointF(maxLeft, maxUp));
-                                            }
+                                            QuadDistort.DrawBitmap(ourText, browser.Pinned[0].Floor(), browser.Pinned[1].Floor(), browser.Pinned[2].Floor(), browser.Pinned[3].Floor(), bmOut);
+
+                                            graphics.DrawImageUnscaled(bmOut, 0, 0);
                                         }
                                         bitmap.Dispose();
                                     }

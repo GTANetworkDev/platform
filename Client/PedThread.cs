@@ -17,9 +17,11 @@ namespace GTANetwork
         {
             if (!Main.IsOnServer()) return;
             if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
-            
-            var sw = new Stopwatch();
-            sw.Start();
+
+            //var sw = new Stopwatch();
+            //sw.Start();
+
+            LogManager.DebugLog("START LOOP");
 
             for (int i = 0; i < StreamerThread.MAX_PLAYERS; i++)
             {
@@ -27,7 +29,7 @@ namespace GTANetwork
                 StreamerThread.StreamedInPlayers[i]?.DisplayLocally();
             }
 
-            sw.Stop();
+            //sw.Stop();
 
             LogManager.DebugLog("END LOOP");
         }

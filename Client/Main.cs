@@ -2211,7 +2211,7 @@ namespace GTANetwork
             set
             {
                 _debugStep = value;
-                //LogManager.DebugLog(value.ToString());
+                LogManager.DebugLog(value.ToString());
 
                 if (SlowDownClientForDebug)
                     GTA.UI.Screen.ShowSubtitle(value.ToString());

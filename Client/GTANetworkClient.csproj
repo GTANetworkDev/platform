@@ -166,9 +166,9 @@
     <Compile Include="DebugWindow.cs" />
     <Compile Include="DownloadManager.cs" />
     <Compile Include="GameSettings.cs" />
-    <Compile Include="GUI\Extern\FreeTransform.cs" />
-    <Compile Include="GUI\Extern\ImageData.cs" />
-    <Compile Include="GUI\Extern\Vector.cs" />
+    <Compile Include="GUI\Extern\FastBitmap.cs" />
+    <Compile Include="GUI\Extern\QuadDistort.cs" />
+    <Compile Include="GUI\Extern\RGBColor.cs" />
     <Compile Include="GUI\TabMapItem.cs" />
     <Compile Include="GUI\TabQuickConnectItem.cs" />
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />

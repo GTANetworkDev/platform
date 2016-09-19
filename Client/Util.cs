@@ -113,6 +113,11 @@ namespace GTANetwork
             return value;
         }
 
+        public static Point Floor(this PointF point)
+        {
+            return new Point((int)point.X, (int) point.Y);
+        }
+
         public static bool IsPed(this Entity ent)
         {
             return Function.Call<bool>(Hash.IS_ENTITY_A_PED, ent);
