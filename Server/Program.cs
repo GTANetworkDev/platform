@@ -11,7 +11,7 @@ using GTANetworkShared;
 
 namespace GTANetworkServer
 {
-    public static class Program
+    internal static class Program
     {
         private static object _filelock = new object();
         private static bool _log;
