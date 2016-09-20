@@ -800,6 +800,7 @@ namespace GTANetworkServer
         {
             Type = ResourceType.script;
             Multithreaded = false;
+            Name = "";
         }
 
         [XmlAttribute("author")]

@@ -1,57 +1,46 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using GTANetworkServer;
 using GTANetworkShared;
-using System.Threading;
 
 public class MinesTest : Script
 {
-	public MinesTest()
-	{
-		API.consoleOutput("Starting mines!");
-	}
+    public MinesTest()
+    {
+        API.onResourceStart += myResourceStart;
+    }
 
-	public const float MineRange = 10f;
+    public void myResourceStart()
+    {
+        API.consoleOutput("Starting mines!");
+    }
 
-	[Command("mine")]
-	public void PlaceMine(Client sender)
-	{
-		var pos = API.getEntityPosition(sender);
-		var playerDim = API.getEntityDimension(sender);
+    [Command("mine")]
+    public void PlaceMine(Client sender, float MineRange = 10f)
+    {
+        var pos = API.getEntityPosition(sender);
+        var playerDimension = API.getEntityDimension(sender);
 
-		var mine = new Mine();
-		mine.Prop = API.createObject(848107085, pos - new Vector3(0, 0, 1f), new Vector3(), playerDim); // prop_bomb_01
-		mine.Owner = sender;
-		mine.Shape = API.createSphereColShape(pos, MineRange);
-		mine.Position = pos;
+        var prop = API.createObject(API.getHashKey("prop_bomb_01"), pos - new Vector3(0, 0, 1f), new Vector3(), playerDimension);     
+        var shape = API.createSphereColShape(pos, MineRange);
+        shape.dimension = playerDimension;
+        
+        bool mineArmed = false;
+        
+        shape.onEntityEnterColShape += (shape, ent) =>
+        {
+            if (!mineArmed) return;
+            API.createOwnedExplosion(sender, ExplosionType.EXPLOSION_HI_OCTANE, pos, 1f, playerDimension);
+            API.deleteEntity(prop);
+            API.deleteColShape(shape);
+        };
 
-		mine.Shape.onEntityEnterColShape += (shape, ent) =>
-		{
-			if (!mine.Armed) return;
-			API.createOwnedExplosion(mine.Owner, ExplosionType.EXPLOSION_HI_OCTANE, mine.Position, 1f, playerDim);
-			API.deleteEntity(mine.Prop);
-			API.deleteColShape(mine.Shape);
-		};
-
-		mine.Shape.onEntityExitColShape += (shape, ent) =>
-		{
-			if (ent == mine.Owner.CharacterHandle && !mine.Armed)
-			{
-				mine.Armed = true;
-				API.sendNotificationToPlayer(mine.Owner, "Mine has been ~r~armed~w~!", true);
-			}
-		};
-	}
-}
-
-public struct Mine
-{
-	public ColShape Shape { get; set; }
-	public Client Owner { get; set; }
-	public NetHandle Prop { get; set; }
-	public bool Armed { get; set; }
-	public Vector3 Position { get; set; }
+        shape.onEntityExitColShape += (shape, ent) =>
+        {
+            if (ent == sender.CharacterHandle && !mineArmed)
+            {
+                mineArmed = true;
+                API.sendNotificationToPlayer(sender, "Mine has been ~r~armed~w~!", true);
+            }
+        };
+    }
 }
