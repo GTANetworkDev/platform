@@ -3254,50 +3254,6 @@ namespace GTANetworkServer
             return 0;
         }
 
-        public void setMarkerPosition(NetHandle marker, Vector3 position)
-        {
-            if (doesEntityExist(marker))
-            {
-                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Position = position;
-
-                var delta = new Delta_MarkerProperties();
-                delta.Position = position;
-                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
-            }
-        }
-
-        public Vector3 getMarkerPosition(NetHandle marker)
-        {
-            if (doesEntityExist(marker))
-            {
-                return ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Position;
-            }
-
-            return null;
-        }
-
-        public void setMarkerRotation(NetHandle marker, Vector3 rotation)
-        {
-            if (doesEntityExist(marker))
-            {
-                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Rotation = rotation;
-
-                var delta = new Delta_MarkerProperties();
-                delta.Rotation = rotation;
-                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
-            }
-        }
-
-        public Vector3 getMarkerRotation(NetHandle marker)
-        {
-            if (doesEntityExist(marker))
-            {
-                return ((MarkerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Rotation;
-            }
-
-            return null;
-        }
-
         public void setMarkerScale(NetHandle marker, Vector3 scale)
         {
             if (doesEntityExist(marker))

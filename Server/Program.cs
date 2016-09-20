@@ -130,14 +130,18 @@ namespace GTANetworkServer
 
         private static bool ConsoleCtrlCheck(CtrlTypes ctrType)
         {
-            ServerInstance.IsClosing = true;
-            Program.Output("Terminating...");
-            DateTime start = DateTime.Now;
-            while (!ServerInstance.ReadyToClose)
+            try
             {
-                Thread.Sleep(10);
+                ServerInstance.IsClosing = true;
+                Program.Output("Terminating...");
+                DateTime start = DateTime.Now;
+                while (!ServerInstance.ReadyToClose)
+                {
+                    Thread.Sleep(10);
+                }
+                CloseProgram = true;
             }
-            CloseProgram = true;
+            catch { }
             return true;
         }
 

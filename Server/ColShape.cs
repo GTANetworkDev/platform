@@ -278,10 +278,8 @@ namespace GTANetworkServer
                     Program.Output("COLSHAPE FAILURE");
                     Program.Output(ex.ToString());
                 }
-                finally
-                {
-                    Thread.Sleep(100);
-                }
+
+                Thread.Sleep(100);
             }
         }
     }
