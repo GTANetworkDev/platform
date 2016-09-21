@@ -16,6 +16,7 @@ using GTANetworkShared;
 using Lidgren.Network;
 using Microsoft.CSharp;
 using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 using ProtoBuf;
 
 namespace GTANetworkServer
@@ -54,6 +55,9 @@ namespace GTANetworkServer
         public string Resource { get; set; }
         public string Hash { get; set; }
     }
+
+    public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
+    public delegate void ExportedEventDelegate(dynamic[] parameters);
 
     internal class GameServer
     {
@@ -154,8 +158,6 @@ namespace GTANetworkServer
         public ColShapeManager ColShapeManager;
         public CommandHandler CommandHandler;
         public dynamic ExportedFunctions;
-        public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
-        public delegate void ExportedEventDelegate(dynamic[] parameters);
 
         public List<Resource> RunningResources;
         public PickupManager PickupManager;
@@ -244,7 +246,17 @@ namespace GTANetworkServer
                 {
                     try
                     {
-                        wb.UploadData(MasterServer.Trim('/') + "/addserver", Encoding.UTF8.GetBytes(Port.ToString()));
+                        var annObject = new MasterServerAnnounce();
+
+                        annObject.ServerName = Name;
+                        annObject.CurrentPlayers = Clients.Count;
+                        annObject.MaxPlayers = MaxPlayers;
+                        annObject.Map = CurrentMap?.DirectoryName;
+                        annObject.Gamemode = string.IsNullOrEmpty(GamemodeName) ? Gamemode?.DirectoryName : GamemodeName;
+                        annObject.Port = Port;
+
+                        wb.UploadData(MasterServer.Trim('/') + "/addserver",
+                            Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(annObject)));
                     }
                     catch (WebException ex)
                     {

@@ -49,6 +49,8 @@
   <ItemGroup>
     <Compile Include="BitReader.cs" />
     <Compile Include="EntityProperties.cs" />
+    <Compile Include="GTANSchemeListener.cs" />
+    <Compile Include="MasterServerAnnounce.cs" />
     <Compile Include="Math.cs" />
     <Compile Include="NativeData.cs" />
     <Compile Include="NonStandardVehicleMods.cs" />

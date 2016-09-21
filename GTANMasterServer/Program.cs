@@ -18,7 +18,7 @@ namespace GTANMasterServer
 {
     public class Program
     {
-        public static MasterServerWorker GtanServerWorker;
+        public static MasterServer2Worker GtanServerWorker;
         public static MasterServerWorker CoopServerWorker;
         public static Dictionary<string, VersioningUpdaterWorker> UpdateChannels;
 
@@ -32,7 +32,7 @@ namespace GTANMasterServer
 
             var url = "http://+:" + port;
 
-            GtanServerWorker = new MasterServerWorker();
+            GtanServerWorker = new MasterServer2Worker();
             CoopServerWorker = new MasterServerWorker();
             UpdateChannels = new Dictionary<string, VersioningUpdaterWorker>();
 
@@ -506,13 +506,100 @@ namespace GTANMasterServer
         }
     }
 
+    public class MasterServer2Worker
+    {
+        public Dictionary<string, DateTime> UpdatesServers = new Dictionary<string, DateTime>();
+        public Dictionary<string, MasterServerAnnounceSchema> Servers = new Dictionary<string, MasterServerAnnounceSchema>();
+
+        public int MaxMinutes = 10;
+
+        public object GlobalLock = new object();
+
+        public void Work()
+        {
+            Dictionary<string, DateTime> copy;
+
+            lock (GlobalLock)
+            {
+                copy = new Dictionary<string, DateTime>(UpdatesServers);
+            }
+
+            foreach (var pair in copy)
+            {
+                if (DateTime.Now.Subtract(pair.Value).TotalMinutes > MaxMinutes)
+                {
+                    lock (GlobalLock)
+                    {
+                        UpdatesServers.Remove(pair.Key);
+                        Servers.Remove(pair.Key);
+                    }
+                }
+            }
+        }
+
+        public void AddServer(string ip, string json)
+        {
+            try
+            {
+                var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
+
+                var finalAddr = ip + ":" + newServObj.Port;
+
+                newServObj.IP = finalAddr;
+                lock (GlobalLock)
+                {
+                    if (UpdatesServers.ContainsKey(finalAddr))
+                    {
+                        UpdatesServers[finalAddr] = DateTime.Now;
+                        Servers[finalAddr] = newServObj;
+                        return;
+                    }
+
+                    UpdatesServers.Add(finalAddr, DateTime.Now);
+                    Servers.Add(finalAddr, newServObj);
+                }
+            }
+            catch { }
+        }
+
+        public string ToJson()
+        {
+            lock (GlobalLock)
+            {
+                var obj = new MasterServer2Schema();
+                obj.list = new List<MasterServerAnnounceSchema>(Servers.Select(pair => pair.Value));
+
+                return JsonConvert.SerializeObject(obj);
+            }
+        }
+
+        public string ToRawJson()
+        {
+            lock (GlobalLock)
+            {
+                var obj = new MasterServerSchema();
+                obj.list = new List<string>(Servers.Select(s => s.Value.IP));
+
+                return JsonConvert.SerializeObject(obj);
+            }
+        }
+    }
+
     public class MasterModule : NancyModule
     {
         public MasterModule()
         {
             Get["/servers"] = _ =>
             {
-                var resp = (Response) Program.GtanServerWorker.ToJson();
+                var resp = (Response) Program.GtanServerWorker.ToRawJson();
+                resp.ContentType = "application/json";
+
+                return resp;
+            };
+
+            Get["/apiservers"] = _ =>
+            {
+                var resp = (Response)Program.GtanServerWorker.ToJson();
                 resp.ContentType = "application/json";
 
                 return resp;
@@ -565,10 +652,10 @@ namespace GTANMasterServer
             Post["/addserver"] = parameters =>
             {
                 if (Request.IsLocal()) return 403;
-                var port = new StreamReader(Request.Body).ReadToEnd();
-                var serverAddress = Request.UserHostAddress + ":" + port;
+                var jsonData = new StreamReader(Request.Body).ReadToEnd();
+                var serverAddress = Request.UserHostAddress;
                 Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:mm:ss"));
-                Program.GtanServerWorker.AddServer(serverAddress);
+                Program.GtanServerWorker.AddServer(serverAddress, jsonData);
                 return 200;
             };
 
@@ -645,6 +732,22 @@ namespace GTANMasterServer
     public class MasterServerSchema
     {
         public List<string> list { get; set; }
+    }
+
+    public class MasterServer2Schema
+    {
+        public List<MasterServerAnnounceSchema> list { get; set; }
+    }
+
+    public class MasterServerAnnounceSchema
+    {
+        public int Port { get; set; }
+        public int MaxPlayers { get; set; }
+        public string ServerName { get; set; }
+        public int CurrentPlayers { get; set; }
+        public string Gamemode { get; set; }
+        public string Map { get; set; }
+        public string IP { get; set; }
     }
 
     public class Startup
