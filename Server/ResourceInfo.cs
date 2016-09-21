@@ -97,6 +97,10 @@ namespace GTANetworkServer
                                     {
 
                                     }
+                                    catch (ThreadAbortException)
+                                    {
+
+                                    }
                                     catch (Exception ex)
                                     {
                                         Program.Output("EXCEPTION IN RESOURCE " + ResourceParent.DirectoryName + " INSIDE SCRIPTENGINE " + Filename);

@@ -1,0 +1,7 @@
+<meta>
+	<info name="Map Cycler" description="Calls a votemap every time a round ends." version="1.0" async="true" />
+
+	<include resource="votemanager" />
+
+	<script src="mapcycler.cs" type="server" lang="csharp" />
+</meta>

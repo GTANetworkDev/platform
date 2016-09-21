@@ -822,6 +822,28 @@ namespace GTANetworkServer
             ResourceParent.AddTrackedThread(t);
             return t;
         }
+
+        public void delay(int ms, bool once, Action target)
+        {
+            var t = new System.Timers.Timer(ms);
+            t.AutoReset = !once;
+            t.Elapsed += (sender, args) =>
+            {
+                if (ResourceParent.HasTerminated) return;
+
+                try
+                {
+                    target?.Invoke();
+                }
+                catch (ThreadAbortException) { }
+                catch (ResourceAbortedException) { }
+                catch (Exception ex)
+                {
+                    Program.Output("EXCEPTION IN RESOURCE " + ResourceParent.ResourceParent.DirectoryName + " INSIDE SCRIPTENGINE " + ResourceParent.Filename);
+                    Program.Output(ex.ToString());
+                }
+            };
+        }
         
         /// <summary>
         /// Notice: not available in the Script constructor. Use onResourceStart even instead.
