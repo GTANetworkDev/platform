@@ -247,38 +247,41 @@ namespace GTANetwork.GUI
         public static void InitializeCef()
         {
 #if !DISABLE_CEF
-                var settings = new CefSharp.CefSettings();
-                settings.SetOffScreenRenderingBestPerformanceArgs();
+            var settings = new CefSharp.CefSettings();
+            settings.SetOffScreenRenderingBestPerformanceArgs();
                 
-                settings.RegisterScheme(new CefCustomScheme()
-                {
-                    SchemeHandlerFactory = new ResourceFilePathHandler(),
-                    SchemeName = "http",
-                });
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeHandlerFactory = new ResourceFilePathHandler(),
+                SchemeName = "http",
+            });
 
-                settings.RegisterScheme(new CefCustomScheme()
-                {
-                    SchemeHandlerFactory = new ResourceFilePathHandler(),
-                    SchemeName = "https",
-                });
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeHandlerFactory = new ResourceFilePathHandler(),
+                SchemeName = "https",
+            });
 
-                settings.RegisterScheme(new CefCustomScheme()
-                {
-                    SchemeHandlerFactory = new ResourceFilePathHandler(),
-                    SchemeName = "resource",
-                });
-                
-                
-                LogManager.DebugLog("WAITING FOR INITIALIZATION...");
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeHandlerFactory = new ResourceFilePathHandler(),
+                SchemeName = "resource",
+            });
 
-                try
-                {
-                    Cef.Initialize(settings, true, false);
-                }
-                catch (Exception ex)
-                {
-                    LogManager.LogException(ex, "CEF INIT");
-                }
+            settings.CefCommandLineArgs.Add("enable-media-stream", "1");
+            settings.CefCommandLineArgs.Add("enable-speech-input", "1");
+
+
+            LogManager.DebugLog("WAITING FOR INITIALIZATION...");
+
+            try
+            {
+                Cef.Initialize(settings, true, false);
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "CEF INIT");
+            }
 #endif
         }
 

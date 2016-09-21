@@ -165,6 +165,9 @@ namespace GTANetworkServer
         public Thread StreamerThread;
 
         private Dictionary<string, string> FileHashes { get; set; }
+        public Dictionary<NetHandle, Dictionary<string, object>> EntityProperties = 
+            new Dictionary<NetHandle, Dictionary<string, object>>();
+        public Dictionary<string, object> WorldProperties = new Dictionary<string, object>();
 
         public NetEntityHandler NetEntityHandler { get; set; }
 
