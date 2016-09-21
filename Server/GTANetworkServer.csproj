@@ -81,6 +81,7 @@
   <ItemGroup>
     <Compile Include="AccessControlList.cs" />
     <Compile Include="API.cs" />
+    <Compile Include="Bans.cs" />
     <Compile Include="ChatData.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="ColShape.cs" />

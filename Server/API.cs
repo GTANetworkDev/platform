@@ -2756,7 +2756,7 @@ namespace GTANetworkServer
 
         public void kickPlayer(Client player, string reason)
         {
-            player.NetConnection.Disconnect("Kicked: " + reason);
+            player.NetConnection.Disconnect(reason);
         }
 
         public void kickPlayer(Client player)
@@ -2764,7 +2764,23 @@ namespace GTANetworkServer
             player.NetConnection.Disconnect("You have been kicked.");
         }
 
+        public void banPlayer(Client player, string reason)
+        {
+            Program.ServerInstance.BanManager.BanPlayer(player, reason);
+            kickPlayer(player, reason);
+        }
 
+        public void banPlayer(Client player)
+        {
+            Program.ServerInstance.BanManager.BanPlayer(player);
+            kickPlayer(player);
+        }
+
+        public void unbanPlayer(string socialClubHandle)
+        {
+            Program.ServerInstance.BanManager.UnbanPlayer(socialClubHandle);
+        }
+        
         private Random r = new Random();
         public double random()
         {

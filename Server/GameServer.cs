@@ -63,18 +63,19 @@ namespace GTANetworkServer
             Downloads = new List<StreamingClient>();
             RunningResources = new List<Resource>();
             CommandHandler = new CommandHandler();
+            BanManager = new BanManager();
             FileHashes = new Dictionary<string, string>();
             ExportedFunctions = new System.Dynamic.ExpandoObject();
             PickupManager = new PickupManager();
             UnoccupiedVehicleManager = new UnoccupiedVehicleManager();
+            NetEntityHandler = new NetEntityHandler();
 
             MaxPlayers = 32;
             Port = conf.Port;
             
-            NetEntityHandler = new NetEntityHandler();
 
             ACLEnabled = conf.UseACL && File.Exists("acl.xml");
-
+            BanManager.Initialize();
             if (ACLEnabled)
             {
                 ACL = new AccessControlList("acl.xml");
@@ -149,6 +150,7 @@ namespace GTANetworkServer
         public bool OnFootLagComp { get; set; }
         public List<string> ModWhitelist { get; set; }
 
+        public BanManager BanManager;
         public ColShapeManager ColShapeManager;
         public CommandHandler CommandHandler;
         public dynamic ExportedFunctions;
@@ -1290,6 +1292,12 @@ namespace GTANResource
                                 if (cVersion < VersionCompatibility.LastCompatibleClientVersion)
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
+                                    continue;
+                                }
+
+                                if (BanManager.IsClientBanned(client))
+                                {
+                                    client.NetConnection.Deny("You are banned.");
                                     continue;
                                 }
 
