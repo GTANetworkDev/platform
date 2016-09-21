@@ -4504,12 +4504,6 @@ namespace GTANetwork
 
                             NetEntityHandler.AddLocalCharacter(respObj.CharacterHandle);
 
-                            if (respObj.Settings != null)
-                            {
-                                OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
-                                VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
-                            }
-
                             var confirmObj = Client.CreateMessage();
                             confirmObj.Write((byte) PacketType.ConnectionConfirmed);
                             confirmObj.Write(false);
@@ -4519,6 +4513,24 @@ namespace GTANetwork
                             MainMenu.Tabs.Insert(0, _serverItem);
                             MainMenu.Tabs.Insert(0, _mainMapItem);
                             MainMenu.RefreshIndex();
+
+                            if (respObj.Settings != null)
+                            {
+                                OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
+                                VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
+
+                                if (respObj.Settings.ModWhitelist != null)
+                                {
+                                    if (!DownloadManager.ValidateExternalMods(respObj.Settings.ModWhitelist))
+                                        Client.Disconnect("Some mods are not whitelisted");
+                                }
+                            }
+
+                            if (ParseableVersion.FromLong(respObj.ServerVersion) <
+                                VersionCompatibility.LastCompatibleServerVersion)
+                            {
+                                Client.Disconnect("Server is outdated");
+                            }
                             break;
                         case NetConnectionStatus.Disconnected:
                             var reason = msg.ReadString();

@@ -35,6 +35,39 @@ namespace GTANetwork
             "application/x-font-ttf",
         };
 
+        public static bool ValidateExternalMods(List<string> whitelist)
+        {
+            // Enumerate modules?
+
+            foreach (var asiMod in Directory.GetFiles("/", "*.asi"))
+            {
+                var filename = Path.GetFileName(asiMod);
+                if (filename != null &&
+                    (filename.ToLower() == "scripthookvdotnet.asi" ||
+                     filename.ToLower() == "scripthookv.asi"))
+                {
+                    continue;
+                }
+
+                if (!whitelist.Contains(HashFile(asiMod))) return false;
+            }
+
+            return true;
+        }
+
+        public static string HashFile(string path)
+        {
+            byte[] myData;
+
+            using (var md5 = MD5.Create())
+            using (var stream = File.OpenRead(path))
+            {
+                myData = md5.ComputeHash(stream);
+            }
+
+            return myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+        }
+
         public static bool CheckFileIntegrity()
         {
             foreach (var pair in FileIntegrity)

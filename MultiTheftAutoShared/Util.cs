@@ -124,7 +124,7 @@ namespace GTANetworkShared
         public int Revision { get; set; }
         public int Build { get; set; }
 
-        public ParseableVersion(int major, int minor, int rev, int build)
+        public ParseableVersion(int major, int minor, int build, int rev)
         {
             Major = major;
             Minor = minor;

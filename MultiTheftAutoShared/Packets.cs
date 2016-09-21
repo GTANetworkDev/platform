@@ -198,6 +198,9 @@ namespace GTANetworkShared
 
         [ProtoMember(2)]
         public SharedSettings Settings { get; set; }
+
+        [ProtoMember(3)]
+        public ulong ServerVersion { get; set; }
     }
 
     [ProtoContract]
@@ -208,6 +211,9 @@ namespace GTANetworkShared
 
         [ProtoMember(2)]
         public bool OnFootLagCompensation { get; set; }
+
+        [ProtoMember(3)]
+        public List<string> ModWhitelist { get; set; }
     }
 
     [ProtoContract]

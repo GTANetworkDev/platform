@@ -58,6 +58,8 @@ namespace GTANetworkShared
         [XmlElement("loglevel")]
         public int LogLevel { get; set; }
 
+        public WhitelistCollection whitelist { get; set; }
+
         [XmlRoot("resource")]
         public class SettingsResFilepath
         {
@@ -120,5 +122,17 @@ namespace GTANetworkShared
                 using (var stream = File.OpenWrite(path)) ser.Serialize(stream, settings = new ServerSettings());
             }
         }
+    }
+
+    public class WhitelistCollection
+    {
+        [XmlElement("mod")]
+        public List<WhitelistItem> Items;
+    }
+
+    public class WhitelistItem
+    {
+        [XmlAttribute("hash")]
+        public string Hash { get; set; }
     }
 }

@@ -117,6 +117,10 @@ namespace GTANetworkServer
             OnFootLagComp = conf.OnFootLagCompensation;
             VehLagComp = conf.VehicleLagCompensation;
             LogLevel = conf.LogLevel;
+            if (conf.whitelist != null && conf.whitelist != null)
+            {
+                ModWhitelist = conf.whitelist.Items.Select(item => item.Hash).ToList();
+            }
         }
 
         public ParseableVersion MinimumClientVersion;
@@ -143,6 +147,7 @@ namespace GTANetworkServer
         public bool UseUPnP { get; set; }
         public bool VehLagComp { get; set; }
         public bool OnFootLagComp { get; set; }
+        public List<string> ModWhitelist { get; set; }
 
         public ColShapeManager ColShapeManager;
         public CommandHandler CommandHandler;
@@ -1282,6 +1287,12 @@ namespace GTANResource
                                     continue;
                                 }
 
+                                if (cVersion < VersionCompatibility.LastCompatibleClientVersion)
+                                {
+                                    client.NetConnection.Deny("Outdated version. Please update your client.");
+                                    continue;
+                                }
+
                                 int clients = 0;
                                 lock (Clients) clients = Clients.Count;
                                 if (clients <= MaxPlayers)
@@ -1324,6 +1335,7 @@ namespace GTANResource
                                     {
                                         OnFootLagCompensation = OnFootLagComp,
                                         VehicleLagCompensation = VehLagComp,
+                                        ModWhitelist = ModWhitelist,
                                     };
                                     
                                     var channelHail = Server.CreateMessage();
