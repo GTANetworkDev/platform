@@ -19,6 +19,8 @@ public class RaceGamemode : Script
         API.onClientEventTrigger += onClientEvent;
         API.onResourceStop += onResourceStop;
         API.onResourceStart += onResourceStart;
+
+        API.onMapChange += MapChange;
     }
 
     public bool IsRaceOngoing { get; set; }
@@ -26,31 +28,19 @@ public class RaceGamemode : Script
     public Race CurrentRace { get; set; }
     public List<Race> AvailableRaces { get; set; }
     public List<Vector3> CurrentRaceCheckpoints { get; set; }
-    public Dictionary<long, int> RememberedBlips { get; set; }
     public DateTime RaceStart { get; set; }
     public List<NetHandle> Objects { get; set; }
     public List<Thread> ActiveThreads { get; set; }    
     public int RaceStartCountdown { get; set; }
     public DateTime RaceTimer { get; set; }
 
-    // Voting
-    public int TimeLeft { get; set; }
-    public int VoteEnd { get; set; }
-    public DateTime LastSecond { get; set; }
-    public DateTime VoteStart { get; set; }
-    public List<Client> Voters { get; set; }
-    public Dictionary<int, int> Votes { get; set; }
-    public Dictionary<int, Race> AvailableChoices { get; set; }
-
     public void onResourceStart()
     {
         TimeLeft = -1;
         AvailableRaces = new List<Race>();
         Opponents = new List<Opponent>();
-        RememberedBlips = new Dictionary<long, int>();
         CurrentRaceCheckpoints = new List<Vector3>();
         Objects = new List<NetHandle>();
-        ActiveThreads = new List<Thread>();
         LoadRaces();
 
         API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
@@ -59,7 +49,7 @@ public class RaceGamemode : Script
         API.exported.scoreboard.addScoreboardColumn("race_checkpoints", "Checkpoints", 160);
         API.exported.scoreboard.addScoreboardColumn("race_time", "Time", 120);
 
-        StartVote();
+        API.exported.mapcycler.endRound();
     }
 
     private void UpdateScoreboardData(Opponent player, int place)
@@ -68,11 +58,6 @@ public class RaceGamemode : Script
             API.exported.scoreboard.setPlayerScoreboardData(player.Client, "race_place", place.ToString());
         API.exported.scoreboard.setPlayerScoreboardData(player.Client, "race_checkpoints", player.CheckpointsPassed.ToString());
         API.exported.scoreboard.setPlayerScoreboardData(player.Client, "race_time", player.TimeFinished);
-    }
-
-    public bool IsVoteActive()
-    {
-        return DateTime.Now.Subtract(VoteStart).TotalSeconds < 60;
     }
 
     public void onPlayerRespawn(Client player)
@@ -119,6 +104,106 @@ public class RaceGamemode : Script
         API.exported.scoreboard.removeScoreboardColumn("race_place");
         API.exported.scoreboard.removeScoreboardColumn("race_checkpoints");
         API.exported.scoreboard.removeScoreboardColumn("race_time");
+    }
+
+    private Race parseRace(string mapName, XmlGroup map)
+    {
+        var output = new Race();
+        output.Name = API.getResourceName(mapName);
+        output.Description = API.getResourceDescription(mapName);
+        output.Filename = mapName;
+
+        var meta = map.getElementByType("laps");
+
+        if (meta != null)
+        {
+            output.LapsAvailable = meta.getElementData<bool>("value");
+        }
+
+        var checkpoints = new List<Vector3>();
+
+        foreach(var chk in map.getElementsByType("checkpoint"))
+        {
+            checkpoints.Add(
+                new Vector3(chk.getElementData<float>("posX"),
+                            chk.getElementData<float>("posY"),
+                            chk.getElementData<float>("posZ")));
+        }
+
+        output.Checkpoints = checkpoints.ToArray();
+
+        var sp = new List<SpawnPoint>();
+
+        foreach(var chk in map.getElementsByType("spawnpoint"))
+        {
+            sp.Add(new SpawnPoint() {
+                Position = new Vector3(chk.getElementData<float>("posX"),
+                            chk.getElementData<float>("posY"),
+                            chk.getElementData<float>("posZ"))),
+                Heading = chk.getElementData<float>("heading"),
+            });
+        }
+
+        output.SpawnPoints = sp.ToArray();
+
+        var vehs = new List<VehicleHash>();
+
+        foreach(var chk in map.getElementsByType("availablecar"))
+        {
+            vehs.Add(API.vehicleNameToModel(chk.getElementData<float>("model")));
+        }
+
+        output.AvailableVehicles = vehs.ToArray();
+
+        return output;
+    }
+
+    public void MapChange(string mapName, XmlGroup map)
+    {
+        race = new Race(parseRace(mapName, map));
+
+        CurrentRace = race;
+
+        Opponents.ForEach(op =>
+        {
+            op.HasFinished = false;
+            op.CheckpointsPassed = 0;
+            op.TimeFinished = "";
+            if (!op.Vehicle.IsNull)
+            {
+                API.deleteEntity(op.Vehicle);
+            }
+
+            API.freezePlayer(op.Client, true);
+        });
+
+        foreach (var ent in Objects)
+        {
+            API.deleteEntity(ent);
+        }
+
+        Objects.Clear();
+
+        foreach (var prop in race.DecorativeProps)
+        {
+            Objects.Add(API.createObject(prop.Hash, prop.Position, prop.Rotation));
+        }
+
+        var clients = API.getAllPlayers();
+
+        for (int i = 0; i < clients.Count; i++)
+        {
+            API.freezePlayer(clients[i], false);
+
+            SetUpPlayerForRace(clients[i], CurrentRace, true, i);
+        }
+
+        CurrentRaceCheckpoints = race.Checkpoints.ToList();
+        RaceStart = DateTime.UtcNow;
+
+        API.consoleOutput("RACE: Starting race " + race.Name);
+
+        RaceStartCountdown = 13;
     }
 
     private DateTime _lastPositionCalculation;
@@ -229,20 +314,6 @@ public class RaceGamemode : Script
                     RaceTimer = DateTime.Now;
                 }
             }
-
-            if (VoteEnd > 0)
-            {
-                VoteEnd--;
-                if (VoteEnd == 0)
-                {
-                    EndRace();
-                    var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
-                    API.sendChatMessageToAll("Race ~b~" + raceWon.Name + "~w~ has won the vote!");
-
-                    API.sleep(1000);
-                    StartRace(raceWon);
-                }
-            }
         }
         
 
@@ -333,18 +404,16 @@ public class RaceGamemode : Script
     [Command("forcemap", ACLRequired = true, GreedyArg = true)]
     public void ForceMapCommand(Client sender, string mapFilename)
     {
-        var locatedMap = AvailableRaces.FirstOrDefault(m => m.Filename == mapFilename);
-        if (locatedMap == null)
+        if (!API.doesResourceExist(mapFilename) || API.getResourceType(mapFilename) != ResourceType.map)
         {
-            API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ No map found: " + mapFilename + "!");
+            API.sendChatMessageToPlayer(sender, "Map was not found!");
             return;
         }
 
-        VoteEnd = 0;
         EndRace();
         API.sendChatMessageToAll("Starting map ~b~" + locatedMap.Name + "!");
         API.sleep(1000);
-        StartRace(locatedMap);
+        API.startResource(mapFilename);
     }
 
     public void onPlayerConnect(Client player)
@@ -358,87 +427,6 @@ public class RaceGamemode : Script
         {
             API.triggerClientEvent(player, "race_toggleGhostMode", true);
         }
-
-        if (DateTime.Now.Subtract(VoteStart).TotalSeconds < 60)
-        {
-            object[] argumentList = new object[11];
-
-            argumentList[0] = AvailableChoices.Count;
-            for (var i = 0; i < AvailableChoices.Count; i++)
-            {
-                argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
-            }
-
-            API.triggerClientEvent(player, "race_startVotemap", argumentList);
-        }
-    }
-
-    private int LoadRaces()
-    {
-        int counter = 0;
-        if (!Directory.Exists("races")) return 0;
-        foreach (string path in Directory.GetFiles("races", "*.xml"))
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(Race));
-            StreamReader file = new StreamReader(path);
-            var raceout = (Race)serializer.Deserialize(file);
-            file.Close();
-            raceout.Filename = Path.GetFileName(path);
-            AvailableRaces.Add(raceout);
-            counter++;
-        }
-        return counter;
-    }
-
-
-    private void StartRace(Race race)
-    {
-        race = new Race(race);
-
-        CurrentRace = race;
-
-        Opponents.ForEach(op =>
-        {
-            op.HasFinished = false;
-            op.CheckpointsPassed = 0;
-            op.TimeFinished = "";
-            if (!op.Vehicle.IsNull)
-            {
-                API.deleteEntity(op.Vehicle);
-            }
-
-            API.freezePlayer(op.Client, true);
-        });
-
-
-
-        foreach (var ent in Objects)
-        {
-            API.deleteEntity(ent);
-        }
-
-        Objects.Clear();
-
-        foreach (var prop in race.DecorativeProps)
-        {
-            Objects.Add(API.createObject(prop.Hash, prop.Position, prop.Rotation));
-        }
-
-        var clients = API.getAllPlayers();
-
-        for (int i = 0; i < clients.Count; i++)
-        {
-            API.freezePlayer(clients[i], false);
-
-            SetUpPlayerForRace(clients[i], CurrentRace, true, i);
-        }
-
-        CurrentRaceCheckpoints = race.Checkpoints.ToList();
-        RaceStart = DateTime.UtcNow;
-
-        API.consoleOutput("RACE: Starting race " + race.Name);
-
-        RaceStartCountdown = 13;
     }
 
     private void EndRace()
@@ -623,63 +611,6 @@ public class RaceGamemode : Script
                     (CurrentRace.Checkpoints[playerCheckpoint].Subtract(player.Client.Position)).Length());
         return output;
     }
-
-    public void StartVote()
-    {
-        var pickedRaces = new List<Race>();
-        var racePool = new List<Race>(AvailableRaces);
-        var rand = new Random();
-
-        for (int i = 0; i < Math.Min(9, AvailableRaces.Count); i++)
-        {
-            var pick = rand.Next(racePool.Count);
-            pickedRaces.Add(racePool[pick]);
-            racePool.RemoveAt(pick);
-        }
-
-        Votes = new Dictionary<int, int>();
-        Voters = new List<Client>();
-        AvailableChoices = new Dictionary<int, Race>();
-
-        var counter = 1;
-        foreach (var race in pickedRaces)
-        {
-            Votes.Add(counter, 0);
-            AvailableChoices.Add(counter, race);
-            counter++;
-        }
-
-        object[] argumentList = new object[11];
-
-        argumentList[0] = AvailableChoices.Count;
-        for (var i = 0; i < AvailableChoices.Count; i++)
-        {
-            argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
-        }
-
-        API.triggerClientEventForAll("race_startVotemap", argumentList);
-
-        VoteStart = DateTime.Now;
-        VoteEnd = 60;
-    }
-
-    private string GetVoteHelpString()
-    {
-        if (DateTime.Now.Subtract(VoteStart).TotalSeconds > 60)
-            return null;
-
-        var build = new StringBuilder();
-        build.Append("Type /vote [id] to vote for the next race! The options are:");
-
-        foreach (var race in AvailableChoices)
-        {
-            build.Append("\n" + race.Key + ": " + race.Value.Name);
-        }
-
-        return build.ToString();
-    }
-
-
 }
 
 

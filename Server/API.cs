@@ -3455,6 +3455,14 @@ namespace GTANetworkServer
             return shape;
         }
 
+        public CylinderColShape createCylinderColShape(Vector3 position, float range, float height)
+        {
+            var shape = new CylinderColShape(position, range, height);
+            Program.ServerInstance.ColShapeManager.Add(shape);
+            lock (ResourceColShapes) ResourceColShapes.Add(shape);
+            return shape;
+        }
+
         public Rectangle2DColShape create2DColShape(float x, float y, float width, float height)
         {
             var shape = new Rectangle2DColShape(x, y, width, height);

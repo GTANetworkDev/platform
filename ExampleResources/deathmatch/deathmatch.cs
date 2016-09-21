@@ -18,6 +18,8 @@ public class Deathmatch : Script
     private List<WeaponHash> weapons;
     private Dictionary<Client, int> Killstreaks;
     private Random rInst;
+
+    private int killTarget;
     
     public Deathmatch()
     {
@@ -108,6 +110,8 @@ public class Deathmatch : Script
             API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kills", "0");
             API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kdr", "0");
         }
+
+        killTarget = API.getSetting<int>("victory_kills");
     }
 
     private void onResourceStop()
@@ -211,6 +215,12 @@ public class Deathmatch : Script
 
             UpdateScoreboardData(killer);
 
+            if (API.getEntityData(killer.CharacterHandle, "dm_kills") >= killTarget)
+            {
+                API.sendChatMessageToAll("~b~~h~" + killer.Name + "~h~~w~ has won the round with " + killTarget + " kills and " + API.getEntityData(player.CharacterHandle, "dm_deaths") + " deaths!");
+                API.exported.mapcycler.endRound();
+            }
+
             if (Killstreaks.ContainsKey(killer))
             {
                 Killstreaks[killer]++;
@@ -275,6 +285,6 @@ public class Deathmatch : Script
             Killstreaks.Add(player, 0);
         }
 
-        API.setBlipSprite(pBlip, 274); // why is it here?
+        //API.setBlipSprite(pBlip, 274); // why is it here?        
     }
 }

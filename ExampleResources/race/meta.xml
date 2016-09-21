@@ -9,4 +9,9 @@
     <script src="race_local.js" type="client" lang="javascript" />
 
     <include resource="scoreboard" />
+    <include resource="mapcycler" />
+
+    <settings>
+    	
+    </settings>
 </meta>

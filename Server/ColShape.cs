@@ -129,6 +129,62 @@ namespace GTANetworkServer
         }
     }
 
+    public class CylinderColShape : ColShape
+    {
+        internal CylinderColShape(Vector3 center, float range, float height)
+        {
+            Range = range;
+            Center = center;
+            _height = height;
+        }
+
+        private float _rangeSquared;
+        private float _range;
+        private float _height;
+        public Vector3 Center;
+
+        private NetHandle _attachedNetHandle;
+
+        public float Range
+        {
+            get
+            {
+                return _range;
+            }
+            set
+            {
+                _rangeSquared = value * value;
+                _range = value;
+            }
+        }
+
+        public float Height
+        {
+            get { return _height; }
+            set { _height = value; }
+        }
+
+        internal override bool Check(Vector3 pos)
+        {
+            var c = Center;
+
+            if (!_attachedNetHandle.IsNull)
+                c = Program.ServerInstance.PublicAPI.getEntityPosition(_attachedNetHandle);
+
+            return c.DistanceToSquared2D(pos) <= _rangeSquared && pos.Z > c.Z - Height && pos.Z < c.Z + Height;
+        }
+
+        public void attachToEntity(NetHandle entity)
+        {
+            _attachedNetHandle = entity;
+        }
+
+        private void detach()
+        {
+            _attachedNetHandle = new NetHandle(0);
+        }
+    }
+
     public class Rectangle2DColShape : ColShape
     {
         internal Rectangle2DColShape(Vector3 start, Vector3 stop)
