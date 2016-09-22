@@ -756,11 +756,6 @@ namespace GTANetworkServer
             else return (player.LastPedFlag & (int)PedDataFlags.PlayerDead) != 0;
         }
 
-        public NetHandle getPlayerCurrentVehicle(Client player)
-        {
-            return player.CurrentVehicle;
-        }
-
         public void requestIpl(string iplName)
         {
             var world = Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
@@ -3470,14 +3465,7 @@ namespace GTANetworkServer
 
         public NetHandle getPlayerVehicle(Client player)
         {
-            if (player.IsInVehicle)
-            {
-                return player.CurrentVehicle;
-            }
-            else
-            {
-                return new NetHandle(0);
-            }
+            return player.CurrentVehicle;
         }
 
         public void setTextLabelText(NetHandle label, string newText)
@@ -3638,7 +3626,7 @@ namespace GTANetworkServer
             var ent =
                 new NetHandle(
                     Program.ServerInstance.NetEntityHandler.CreatePickup(
-                        (int) (vehicle ? PickupHash.PICKUP_VEHICLE_CUSTOM_SCRIPT : PickupHash.PICKUP_CUSTOM_SCRIPT), pos,
+                        (int) (vehicle ? PickupHash.VehicleCustomScript : PickupHash.CustomScript), pos,
                         rot, -1, respawnTime, dimension, model));
 
             lock (ResourceEntities) ResourceEntities.Add(ent);
