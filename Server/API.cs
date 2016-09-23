@@ -1152,6 +1152,40 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public void setVehicleLocked(NetHandle vehicle, bool locked)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                if (locked)
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag =
+                        (byte)PacketOptimization.SetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
+                            EntityFlag.VehicleLocked);
+                }
+                else
+                {
+                    Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag =
+                        (byte)PacketOptimization.ResetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
+                            EntityFlag.VehicleLocked);
+                }
+                Program.ServerInstance.SendNativeCallToAllPlayers(0xB664292EAECF7FA6, new EntityArgument(vehicle.Value), locked ? 2 : 1);
+
+                var delta = new Delta_VehicleProperties();
+                delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;
+                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+            }
+        }
+
+        public bool getVehicleLocked(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return PacketOptimization.CheckBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
+                            EntityFlag.VehicleLocked);
+            }
+            return false;
+        }
+
         public NetHandle getVehicleTrailer(NetHandle vehicle)
         {
             if (doesEntityExist(vehicle))
@@ -3478,6 +3512,16 @@ namespace GTANetworkServer
                 delta.Text = newText;
                 Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
             }
+        }
+
+        public string getTextLabelText(NetHandle label)
+        {
+            if (doesEntityExist(label))
+            {
+                return ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Text;
+            }
+
+            return null;
         }
 
         public void setTextLabelColor(NetHandle label, int red, int green, int blue, int alpha)

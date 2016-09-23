@@ -1,4 +1,5 @@
-﻿using System;
+﻿//#define ATTACHSERVER
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -79,6 +80,7 @@ namespace GTANetwork
         public static bool WriteDebugLog;
         public static bool SlowDownClientForDebug;
         public static bool Multithreading;
+        public static bool HTTPFileServer;
 
         public static bool IsSpectating;
         private static Vector3 _preSpectatorPos;
@@ -1194,7 +1196,7 @@ namespace GTANetwork
             
             #region Host
             {
-                #if ATTACHSERVER   
+                #if ATTACHSERVER
                 var settingsPath = GTANInstallDir + "\\server\\settings.xml";
                 var settingsFile = ServerSettings.ReadSettings(settingsPath);
 
@@ -2246,6 +2248,7 @@ namespace GTANetwork
         //
 
         internal static Warning _mainWarning;
+        internal static string _threadsafeSubtitle;
         
         public void OnTick(object sender, EventArgs e)
         {
@@ -2262,6 +2265,11 @@ namespace GTANetwork
 
 
                 _lastCheck = Environment.TickCount;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_threadsafeSubtitle))
+            {
+                GTA.UI.Screen.ShowSubtitle(_threadsafeSubtitle, 500);
             }
 
 
@@ -3458,6 +3466,69 @@ namespace GTANetwork
             return Client != null && Client.ConnectionStatus == NetConnectionStatus.Connected;
         }
 
+        private Thread _httpDownloadThread;
+        private bool _cancelDownload;
+        private void StartFileDownload(string address)
+        {
+            _cancelDownload = false;
+
+            _httpDownloadThread?.Abort();
+            _httpDownloadThread = new Thread((ThreadStart)delegate
+            {
+                try
+                {
+                    using (WebClient wc = new WebClient())
+                    {
+                        var manifestJson = wc.DownloadString(address + "/manifest.json");
+
+                        var obj = JsonConvert.DeserializeObject<FileManifest>(manifestJson);
+
+                        wc.DownloadProgressChanged += (sender, args) =>
+                        {
+                            _threadsafeSubtitle = "Downloading " + args.ProgressPercentage;
+                        };
+
+                        foreach (var resource in obj.exportedFiles)
+                        {
+                            if (!Directory.Exists(FileTransferId._DOWNLOADFOLDER_ + resource.Key))
+                                Directory.CreateDirectory(FileTransferId._DOWNLOADFOLDER_ + resource.Key);
+
+                            foreach (var file in resource.Value)
+                            {
+                                if (file.type == FileType.Script) continue;
+
+                                string target = Path.Combine(FileTransferId._DOWNLOADFOLDER_, resource.Key, file.path);
+
+                                if (File.Exists(target))
+                                {
+                                    var newHash = DownloadManager.HashFile(target);
+
+                                    if (newHash == file.hash) continue;
+                                }
+
+                                wc.DownloadFileAsync(
+                                    new Uri(string.Format("{0}/{1}/{2}", address, resource.Key, file.path)), target);
+
+                                while (wc.IsBusy)
+                                {
+                                    Thread.Yield();
+                                    if (_cancelDownload)
+                                    {
+                                        wc.CancelAsync();
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    LogManager.LogException(ex, "HTTP FILE DOWNLOAD");
+                }
+            });
+        }
+
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
             Chat.OnKeyDown(e.KeyCode);
@@ -3619,6 +3690,11 @@ namespace GTANetwork
             LogManager.DebugLog("RECEIVED DATATYPE " + type);
             switch (type)
             {
+                case PacketType.RedownloadManifest:
+                    {
+                        StartFileDownload(string.Format("http://{0}:{1}", _currentServerIp, _currentServerPort));
+                    }
+                    break;
                 case PacketType.VehiclePureSync:
                     {
                         var len = msg.ReadInt32();
@@ -4519,6 +4595,8 @@ namespace GTANetwork
                                 OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
                                 VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
 
+                                HTTPFileServer = respObj.Settings.UseHttpServer;
+
                                 if (respObj.Settings.ModWhitelist != null)
                                 {
                                     if (!DownloadManager.ValidateExternalMods(respObj.Settings.ModWhitelist))
@@ -4530,6 +4608,20 @@ namespace GTANetwork
                                 VersionCompatibility.LastCompatibleServerVersion)
                             {
                                 Client.Disconnect("Server is outdated");
+                            }
+
+
+                            if (HTTPFileServer)
+                            {
+                                StartFileDownload(string.Format("http://{0}:{1}", _currentServerIp,  _currentServerPort));
+
+                                if (Main.JustJoinedServer)
+                                {
+                                    World.RenderingCamera = null;
+                                    Main.MainMenu.TemporarilyHidden = false;
+                                    Main.MainMenu.Visible = false;
+                                    Main.JustJoinedServer = false;
+                                }
                             }
                             break;
                         case NetConnectionStatus.Disconnected:
@@ -5047,6 +5139,9 @@ namespace GTANetwork
 		    SyncCollector.ForceAimData = false;
             StringCache.Dispose();
 		    StringCache = null;
+		    _threadsafeSubtitle = null;
+		    _cancelDownload = true;
+		    _httpDownloadThread?.Abort();
 		    CefController.ShowCursor = false;
 			DEBUG_STEP = 51;
 			DownloadManager.Cancel();

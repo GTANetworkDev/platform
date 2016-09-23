@@ -1306,6 +1306,31 @@ namespace GTANetwork
             return 0;
         }
 
+        public void setVehicleLocked(LocalHandle vehicle, bool locked)
+        {
+            var prop = vehicle.Properties<EntityProperties>();
+
+            if (locked)
+            {
+                prop.Flag = (byte)PacketOptimization.SetBit(prop.Flag, EntityFlag.VehicleLocked);
+            }
+            else
+            {
+                prop.Flag = (byte)PacketOptimization.ResetBit(prop.Flag, EntityFlag.VehicleLocked);
+            }
+
+            Function.Call((Hash)0xB664292EAECF7FA6, vehicle.Value, locked ? 2 : 1);
+        }
+
+        public bool getVehicleLocked(LocalHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                return PacketOptimization.CheckBit(vehicle.Properties<EntityProperties>().Flag, EntityFlag.VehicleLocked);
+            }
+            return false;
+        }
+
         public LocalHandle getVehicleTrailer(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();

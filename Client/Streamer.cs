@@ -2329,6 +2329,11 @@ namespace GTANetwork
                 veh.LockStatus = VehicleLockStatus.CannotBeTriedToEnter;
             }
 
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.VehicleLocked))
+            {
+                veh.LockStatus = VehicleLockStatus.Locked;
+            }
+
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;
             LogManager.DebugLog("DISCARDING MODEL");

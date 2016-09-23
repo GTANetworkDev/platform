@@ -35,7 +35,7 @@ namespace GTANetworkShared
         UpdateEntityProperties = 26,
         FileAcceptDeny = 27,
         ServerEvent = 28,
-        Ack = 29,
+        RedownloadManifest = 29,
         PedPureSync = 30,
         PedLightSync = 31,
         VehiclePureSync = 32,
@@ -214,6 +214,9 @@ namespace GTANetworkShared
 
         [ProtoMember(3)]
         public List<string> ModWhitelist { get; set; }
+
+        [ProtoMember(4)]
+        public bool UseHttpServer { get; set; }
     }
 
     [ProtoContract]

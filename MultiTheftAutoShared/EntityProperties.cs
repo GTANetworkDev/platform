@@ -26,6 +26,7 @@ namespace GTANetworkShared
         EngineOff = 1 << 1,
         SpecialLight = 1 << 2,
         PlayerSpectating = 1 << 3,
+        VehicleLocked = 1 << 4,
     }
 
     [ProtoContract]

@@ -58,6 +58,9 @@ namespace GTANetworkShared
         [XmlElement("loglevel")]
         public int LogLevel { get; set; }
 
+        [XmlElement("httpserver")]
+        public bool UseHTTPServer { get; set; }
+
         public WhitelistCollection whitelist { get; set; }
 
         [XmlRoot("resource")]
@@ -83,6 +86,7 @@ namespace GTANetworkShared
             Resources = new List<SettingsResFilepath>();
             OnFootLagCompensation = true;
             VehicleLagCompensation = true;
+            UseHTTPServer = false;
             RefreshHz = 120;
             LogLevel = 0;
         }

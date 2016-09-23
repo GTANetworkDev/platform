@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -122,6 +123,7 @@ namespace GTANetworkServer
             OnFootLagComp = conf.OnFootLagCompensation;
             VehLagComp = conf.VehicleLagCompensation;
             LogLevel = conf.LogLevel;
+            UseHTTPFileServer = conf.UseHTTPServer;
             if (conf.whitelist != null && conf.whitelist != null)
             {
                 ModWhitelist = conf.whitelist.Items.Select(item => item.Hash).ToList();
@@ -153,6 +155,7 @@ namespace GTANetworkServer
         public bool VehLagComp { get; set; }
         public bool OnFootLagComp { get; set; }
         public List<string> ModWhitelist { get; set; }
+        public bool UseHTTPFileServer { get; set; }
 
         public BanManager BanManager;
         public ColShapeManager ColShapeManager;
@@ -163,6 +166,7 @@ namespace GTANetworkServer
         public PickupManager PickupManager;
         public UnoccupiedVehicleManager UnoccupiedVehicleManager;
         public Thread StreamerThread;
+        public FileServer FileServer;
 
         private Dictionary<string, string> FileHashes { get; set; }
         public Dictionary<NetHandle, Dictionary<string, object>> EntityProperties = 
@@ -176,14 +180,21 @@ namespace GTANetworkServer
         public List<Resource> AvailableMaps;
         public Resource CurrentMap;
 
-        public readonly ScriptVersion ServerVersion = ScriptVersion.VERSION_0_9;
-
-        //private List<ClientsideScript> _clientScripts;
         private DateTime _lastAnnounceDateTime;
 
         public void Start(string[] filterscripts)
         {
-            Server.Start();
+            try
+            {
+                Server.Start();
+            }
+            catch (SocketException ex)
+            {
+                Program.Output("ERROR: Socket Exception when starting server: " + ex.Message);
+                Console.Read();
+                Program.CloseProgram = true;
+                return;
+            }
 
             if (AnnounceSelf)
             {
@@ -191,31 +202,16 @@ namespace GTANetworkServer
                 AnnounceSelfToMaster();
             }
             
-            Program.Output("Preloading maps...");
-
-            AvailableMaps = new List<Resource>();
-
-            foreach (var dir in Directory.GetDirectories("resources").Select(f => Path.GetFileName(f)))
-            {
-                var baseDir = "resource\\" + dir + "\\";
-
-                if (!File.Exists(baseDir + "meta.xml"))
-                    continue;
-
-                var xmlSer = new XmlSerializer(typeof(ResourceInfo));
-                ResourceInfo currentResInfo;
-                using (var str = File.OpenRead(baseDir + "meta.xml"))
-                    currentResInfo = (ResourceInfo)xmlSer.Deserialize(str);
-
-                if (currentResInfo.Info.Type != ResourceType.map) continue;
-                var res = new Resource();
-                res.DirectoryName = dir;
-                res.Info = currentResInfo;
-                AvailableMaps.Add(res);
-             }
-
             NetEntityHandler.CreateWorld();
             ColShapeManager = new ColShapeManager();
+
+            if (UseHTTPFileServer)
+            {
+                Program.Output("Starting file server...");
+
+                FileServer = new FileServer();
+                FileServer.Start(Port);
+            }
 
             Program.Output("Loading resources...");
             foreach (var path in filterscripts)
@@ -405,6 +401,8 @@ namespace GTANetworkServer
                         StartResource(resource.Resource, resourceName);
                     }
 
+                FileModule.ExportedFiles.Set(resourceName, new List<FileDeclaration>());
+
                 foreach (var filePath in currentResInfo.Files)
                 {
                     using (var md5 = MD5.Create())
@@ -414,10 +412,14 @@ namespace GTANetworkServer
 
                         var keyName = ourResource.DirectoryName + "_" + filePath.Path;
 
+                        string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+
                         if (FileHashes.ContainsKey(keyName))
-                            FileHashes[keyName] = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                            FileHashes[keyName] = hash;
                         else
-                            FileHashes.Add(keyName, myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right));
+                            FileHashes.Add(keyName, hash);
+
+                        FileModule.ExportedFiles[resourceName].Add(new FileDeclaration(filePath.Path, hash, FileType.Normal));
                     }
                 }
 
@@ -431,10 +433,14 @@ namespace GTANetworkServer
 
                         var keyName = ourResource.DirectoryName + "_" + filePath.Path;
 
+                        string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+
                         if (FileHashes.ContainsKey(keyName))
-                            FileHashes[keyName] = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                            FileHashes[keyName] = hash;
                         else
-                            FileHashes.Add(keyName, myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right));
+                            FileHashes.Add(keyName, hash);
+
+                        FileModule.ExportedFiles[resourceName].Add(new FileDeclaration(filePath.Path, hash, FileType.Normal));
                     }
                 }
 
@@ -480,18 +486,22 @@ namespace GTANetworkServer
                                 //Filename = Path.GetFileNameWithoutExtension(script.Path)?.Replace('.', '_'),
                                 Filename = script.Path,
                             };
+
+                            string hash;
                             
                             using (var md5 = MD5.Create())
                             { 
                                 var myData = md5.ComputeHash(Encoding.UTF8.GetBytes(scrTxt));
-                                var scriptHash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
-                                csScript.MD5Hash = scriptHash;
+                                hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                                csScript.MD5Hash = hash;
 
                                 if (FileHashes.ContainsKey(ourResource.DirectoryName + "_" + script.Path))
-                                    FileHashes[ourResource.DirectoryName + "_" + script.Path] = scriptHash;
+                                    FileHashes[ourResource.DirectoryName + "_" + script.Path] = hash;
                                 else
-                                    FileHashes.Add(ourResource.DirectoryName + "_" + script.Path, scriptHash);
+                                    FileHashes.Add(ourResource.DirectoryName + "_" + script.Path, hash);
                             }
+
+                            FileModule.ExportedFiles[resourceName].Add(new FileDeclaration(script.Path, hash, FileType.Script));
 
                             ourResource.ClientsideScripts.Add(csScript);
                             csScripts.Add(csScript);
@@ -545,23 +555,32 @@ namespace GTANetworkServer
                 {
                     var downloader = new StreamingClient(client);
 
-                    foreach (var file in currentResInfo.Files)
+                    if (!UseHTTPFileServer)
                     {
-                        var fileData = new StreamedData();
-                        fileData.Id = randGen.Next(int.MaxValue);
-                        fileData.Type = FileType.Normal;
-                        fileData.Data =
-                            File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
-                                                ourResource.DirectoryName +
-                                                Path.DirectorySeparatorChar +
-                                                file.Path);
-                        fileData.Name = file.Path;
-                        fileData.Resource = ourResource.DirectoryName;
-                        fileData.Hash = FileHashes.ContainsKey(ourResource.DirectoryName + "_" + file.Path)
-                            ? FileHashes[ourResource.DirectoryName + "_" + file.Path]
-                            : null;
+                        foreach (var file in currentResInfo.Files)
+                        {
+                            var fileData = new StreamedData();
+                            fileData.Id = randGen.Next(int.MaxValue);
+                            fileData.Type = FileType.Normal;
+                            fileData.Data =
+                                File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
+                                                  ourResource.DirectoryName +
+                                                  Path.DirectorySeparatorChar +
+                                                  file.Path);
+                            fileData.Name = file.Path;
+                            fileData.Resource = ourResource.DirectoryName;
+                            fileData.Hash = FileHashes.ContainsKey(ourResource.DirectoryName + "_" + file.Path)
+                                ? FileHashes[ourResource.DirectoryName + "_" + file.Path]
+                                : null;
 
-                        downloader.Files.Add(fileData);
+                            downloader.Files.Add(fileData);
+                        }
+                    }
+                    else
+                    {
+                        var msg = Server.CreateMessage();
+                        msg.Write((byte)PacketType.RedownloadManifest);
+                        client.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
                     }
 
                     foreach (var script in ourResource.ClientsideScripts)
@@ -732,10 +751,13 @@ namespace GTANetworkServer
             var gPool = ExportedFunctions as IDictionary<string, object>;
             if (gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
             CommandHandler.Unregister(ourRes.DirectoryName);
-
-            foreach (var resource in RunningResources)
+            FileModule.ExportedFiles.Remove(resourceName);
+            lock (RunningResources)
             {
-                resource.Engines.ForEach(en => en.InvokeServerResourceStop(ourRes.DirectoryName));
+                foreach (var resource in RunningResources)
+                {
+                    resource.Engines.ForEach(en => en.InvokeServerResourceStop(ourRes.DirectoryName));
+                }
             }
 
             Program.Output("Stopped " + resourceName + "!");
@@ -1359,6 +1381,7 @@ namespace GTANResource
                                         OnFootLagCompensation = OnFootLagComp,
                                         VehicleLagCompensation = VehLagComp,
                                         ModWhitelist = ModWhitelist,
+                                        UseHttpServer = UseHTTPFileServer,
                                     };
                                     
                                     var channelHail = Server.CreateMessage();
@@ -2311,24 +2334,31 @@ namespace GTANResource
                                                 var downloader = new StreamingClient(client);
                                                 downloader.Files.Add(mapData);
 
-                                                foreach (var resource in RunningResources)
+                                                if (!UseHTTPFileServer)
                                                 {
-                                                    foreach (var file in resource.Info.Files)
+                                                    foreach (var resource in RunningResources)
                                                     {
-                                                        var fileData = new StreamedData();
-                                                        fileData.Id = r.Next(int.MaxValue);
-                                                        fileData.Type = FileType.Normal;
-                                                        fileData.Data =
-                                                            File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
-                                                                                resource.DirectoryName +
-                                                                                Path.DirectorySeparatorChar +
-                                                                                file.Path);
-                                                        fileData.Name = file.Path;
-                                                        fileData.Resource = resource.DirectoryName;
-                                                        fileData.Hash = FileHashes.ContainsKey(resource.DirectoryName + "_" + file.Path)
-                                                            ? FileHashes[resource.DirectoryName + "_" + file.Path]
-                                                            : null;
-                                                        downloader.Files.Add(fileData);
+                                                        foreach (var file in resource.Info.Files)
+                                                        {
+                                                            var fileData = new StreamedData();
+                                                            fileData.Id = r.Next(int.MaxValue);
+                                                            fileData.Type = FileType.Normal;
+                                                            fileData.Data =
+                                                                File.ReadAllBytes("resources" +
+                                                                                  Path.DirectorySeparatorChar +
+                                                                                  resource.DirectoryName +
+                                                                                  Path.DirectorySeparatorChar +
+                                                                                  file.Path);
+                                                            fileData.Name = file.Path;
+                                                            fileData.Resource = resource.DirectoryName;
+                                                            fileData.Hash =
+                                                                FileHashes.ContainsKey(resource.DirectoryName + "_" +
+                                                                                       file.Path)
+                                                                    ? FileHashes[
+                                                                        resource.DirectoryName + "_" + file.Path]
+                                                                    : null;
+                                                            downloader.Files.Add(fileData);
+                                                        }
                                                     }
                                                 }
 
@@ -2344,12 +2374,13 @@ namespace GTANResource
                                                     downloader.Files.Add(scriptData);
                                                 }
 
-
                                                 var endStream = new StreamedData();
                                                 endStream.Id = r.Next(int.MaxValue);
                                                 endStream.Data = new byte[] { 0xDE, 0xAD, 0xF0, 0x0D };
                                                 endStream.Type = FileType.EndOfTransfer;
                                                 downloader.Files.Add(endStream);
+
+
                                                 Downloads.Add(downloader);
                                                 
                                                 lock (RunningResources)
@@ -2491,20 +2522,25 @@ namespace GTANResource
             {
                 Streamer.Stop = true;
 
-                for (int i = RunningResources.Count - 1; i >= 0; i--)
+                try
                 {
-                    StopResource(RunningResources[i].DirectoryName);
+                    for (int i = RunningResources.Count - 1; i >= 0; i--)
+                    {
+                        StopResource(RunningResources[i].DirectoryName);
+                    }
+
+                    for (int i = Clients.Count - 1; i >= 0; i--)
+                    {
+                        if (!Clients[i].Fake)
+                            Clients[i].NetConnection.Disconnect("Server is shutting down");
+                    }
+
+                    ColShapeManager.Shutdown();
+                    FileServer.Dispose();
+
+                    if (UseUPnP) Server.UPnP?.DeleteForwardingRule(Port);
                 }
-
-                for (int i = Clients.Count - 1; i >= 0; i--)
-                {
-                    if (!Clients[i].Fake)
-                        Clients[i].NetConnection.Disconnect("Server is shutting down");
-                }
-
-                ColShapeManager.Shutdown();
-
-                if (UseUPnP) Server.UPnP?.DeleteForwardingRule(Port);
+                catch { }
 
                 ReadyToClose = true;
                 return;

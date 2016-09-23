@@ -69,7 +69,7 @@ namespace GTANetworkServer
 
         public static string Location { get { return AppDomain.CurrentDomain.BaseDirectory; } }
         internal static GameServer ServerInstance { get; set; }
-        private static bool CloseProgram = false;
+        internal static bool CloseProgram = false;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -78,7 +78,7 @@ namespace GTANetworkServer
         static void Main(string[] args)
         {
             var settings = ServerSettings.ReadSettings(Program.Location + "settings.xml");
-
+            
             _log = settings.LogToFile;
 
             if (_log)
@@ -100,6 +100,13 @@ namespace GTANetworkServer
 
             Output("Starting...");
 
+            if (!Directory.Exists("resources"))
+            {
+                Output("ERROR: Necessary \"resources\" folder does not exist!");
+                Console.Read();
+                return;
+            }
+
             ServerInstance = new GameServer(settings);
             ServerInstance.AllowDisplayNames = true;
 
@@ -108,7 +115,9 @@ namespace GTANetworkServer
             Output("Started! Waiting for connections.");
 
             if (Type.GetType("Mono.Runtime") == null)
+            {
                 SetConsoleCtrlHandler(new HandlerRoutine(ConsoleCtrlCheck), true);
+            }
             else
             {
                 Console.CancelKeyPress += (sender, eventArgs) =>

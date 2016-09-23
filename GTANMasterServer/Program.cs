@@ -618,7 +618,7 @@ namespace GTANMasterServer
             {
                 string fullFile = Path.Combine(MiscFilesServer.WorkDir, path);
 
-                if (Path.GetFullPath(fullFile).StartsWith(MiscFilesServer.WorkDir)) return 404;
+                if (!Path.GetFullPath(fullFile).StartsWith(MiscFilesServer.WorkDir)) return 404;
 
                 if (File.Exists(fullFile))
                 {
