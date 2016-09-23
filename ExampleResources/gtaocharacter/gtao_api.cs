@@ -22,8 +22,10 @@ public class GTAOnlineCharacter : Script
         API.setEntityData(ent, "GTAO_HAIR_HIGHLIGHT_COLOR", 0);
         API.setEntityData(ent, "GTAO_EYE_COLOR", 0);
         API.setEntityData(ent, "GTAO_EYEBROWS", 0);
-        API.setEntityData(ent, "GTAO_MAKEUP", 0);
-        API.setEntityData(ent, "GTAO_LIPSTICK", 0);
+
+        //API.setEntityData(ent, "GTAO_MAKEUP", 0); // No lipstick by default. 
+        //API.setEntityData(ent, "GTAO_LIPSTICK", 0); // No makeup by default.
+
         API.setEntityData(ent, "GTAO_EYEBROWS_COLOR", 0);
         API.setEntityData(ent, "GTAO_MAKEUP_COLOR", 0);
         API.setEntityData(ent, "GTAO_LIPSTICK_COLOR", 0);
@@ -65,7 +67,7 @@ public class GTAOnlineCharacter : Script
         API.resetEntityData(ent, "GTAO_FACE_FEATURES_LIST");
 	}
 
-	public bool isPlayerFaceValid(NetHandle player)
+	public bool isPlayerFaceValid(NetHandle ent)
 	{
 		if (!API.hasEntityData(ent, "GTAO_SHAPE_FIRST_ID")) return false;
         if (!API.hasEntityData(ent, "GTAO_SHAPE_SECOND_ID")) return false;
@@ -77,8 +79,8 @@ public class GTAOnlineCharacter : Script
         if (!API.hasEntityData(ent, "GTAO_HAIR_HIGHLIGHT_COLOR")) return false;
         if (!API.hasEntityData(ent, "GTAO_EYE_COLOR")) return false;
         if (!API.hasEntityData(ent, "GTAO_EYEBROWS")) return false;
-        if (!API.hasEntityData(ent, "GTAO_MAKEUP")) return false;
-        if (!API.hasEntityData(ent, "GTAO_LIPSTICK")) return false;
+        //if (!API.hasEntityData(ent, "GTAO_MAKEUP")) return false; // Player may have no makeup
+        //if (!API.hasEntityData(ent, "GTAO_LIPSTICK")) return false; // Player may have no lipstick
         if (!API.hasEntityData(ent, "GTAO_EYEBROWS_COLOR")) return false;
         if (!API.hasEntityData(ent, "GTAO_MAKEUP_COLOR")) return false;
         if (!API.hasEntityData(ent, "GTAO_LIPSTICK_COLOR")) return false;

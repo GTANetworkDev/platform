@@ -7,4 +7,5 @@
 	<export function="initializePedFace" class="GTAOnlineCharacter" />
 	<export function="removePedFace" class="GTAOnlineCharacter" />
 	<export function="updatePlayerFace" class="GTAOnlineCharacter" />
+	<export function="isPlayerFaceValid" class="GTAOnlineCharacter" />
 </meta>
