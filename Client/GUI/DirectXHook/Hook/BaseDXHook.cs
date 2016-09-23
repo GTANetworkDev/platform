@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Remoting;
 using System.Threading;
 using EasyHook;
+using GTANetwork.Util;
 
 namespace GTANetwork.GUI.DirectXHook.Hook
 {

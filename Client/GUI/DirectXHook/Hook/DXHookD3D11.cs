@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using GTANetwork.GUI.DirectXHook.Hook.Common;
 using GTANetwork.GUI.DirectXHook.Hook.DX11;
+using GTANetwork.Util;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;

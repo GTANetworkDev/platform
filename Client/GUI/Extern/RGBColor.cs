@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Drawing;
 using System.Runtime.InteropServices;
 
-namespace System.Drawing
+namespace GTANetwork.GUI.Extern
 {
 	/// <summary>
 	/// Fast and optimized representation of ARGB color

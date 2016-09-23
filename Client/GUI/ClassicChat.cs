@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using GTA;
+using GTANetwork.Javascript;
 using NativeUI;
 using Control = GTA.Control;
 

@@ -22,7 +22,7 @@ namespace GTANetwork.GUI
             if (!string.IsNullOrEmpty(PromoPicturePath) && File.Exists(PromoPicturePath) && !Game.IsLoading)
             {
                 WordWrap = BottomRight.X - TopLeft.X - 40 - 400 - 20;
-                Util.DxDrawTexture(0, PromoPicturePath, BottomRight.X - 400, TopLeft.Y, 400, 600, 0, 255, 255, 255, 255);
+                Util.Util.DxDrawTexture(0, PromoPicturePath, BottomRight.X - 400, TopLeft.Y, 400, 600, 0, 255, 255, 255, 255);
             }
         }
     }

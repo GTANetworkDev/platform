@@ -12,7 +12,7 @@ using System.Threading;
 using System.Windows.Forms;
 using CefSharp;
 using CefSharp.OffScreen;
-using Distort;
+using GTANetwork.Util;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
@@ -36,7 +36,7 @@ namespace GTANetwork.GUI
                 if (!_showCursor && value)
                 {
                     _justShownCursor = true;
-                    _lastShownCursor = Util.TickCount;
+                    _lastShownCursor = Util.Util.TickCount;
                 }
                 _showCursor = value;
             }
@@ -162,7 +162,7 @@ namespace GTANetwork.GUI
             {
                 if (!ShowCursor) return;
 
-                if (_justShownCursor && Util.TickCount - _lastShownCursor < 500)
+                if (_justShownCursor && Util.Util.TickCount - _lastShownCursor < 500)
                 {
                     _justShownCursor = false;
                     return;

@@ -129,15 +129,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BiDictionarity.cs" />
-    <Compile Include="CameraManager.cs" />
+    <Compile Include="Misc\BiDictionarity.cs" />
+    <Compile Include="Javascript\CameraManager.cs" />
     <Compile Include="GUI\ClassicChat.cs" />
     <Compile Include="GUI\Chat.cs" />
-    <Compile Include="ChatData.cs" />
-    <Compile Include="DataCollector.cs" />
-    <Compile Include="DeltaCompressor.cs" />
+    <Compile Include="Misc\ChatData.cs" />
+    <Compile Include="Util\DataCollector.cs" />
+    <Compile Include="Networking\DeltaCompressor.cs" />
     <Compile Include="EntityMemoryHandler.cs" />
-    <Compile Include="GameScript.cs" />
+    <Compile Include="Misc\GameScript.cs" />
     <Compile Include="GUI\CEFManager.cs" />
     <Compile Include="GUI\DirectXHook\Exceptions.cs" />
     <Compile Include="GUI\DirectXHook\Hook\BaseDXHook.cs" />
@@ -163,9 +163,9 @@
     <Compile Include="GUI\DirectXHook\Hook\IDXHook.cs" />
     <Compile Include="GUI\DirectXHook\Hook\SafeHGlobal.cs" />
     <Compile Include="GUI\DirectXHook\NativeMethods.cs" />
-    <Compile Include="DebugWindow.cs" />
-    <Compile Include="DownloadManager.cs" />
-    <Compile Include="GameSettings.cs" />
+    <Compile Include="Util\DebugWindow.cs" />
+    <Compile Include="Networking\DownloadManager.cs" />
+    <Compile Include="Misc\GameSettings.cs" />
     <Compile Include="GUI\Extern\FastBitmap.cs" />
     <Compile Include="GUI\Extern\QuadDistort.cs" />
     <Compile Include="GUI\Extern\RGBColor.cs" />
@@ -174,37 +174,37 @@
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />
     <Compile Include="GUI\IChat.cs" />
     <Compile Include="GUI\Warning.cs" />
-    <Compile Include="InputboxThread.cs" />
-    <Compile Include="Interpolator.cs" />
-    <Compile Include="JavascriptChat.cs" />
-    <Compile Include="JavascriptHook.cs" />
-    <Compile Include="JavascriptXmlParser.cs" />
-    <Compile Include="LogManager.cs" />
-    <Compile Include="LoopAudioStream.cs" />
+    <Compile Include="Util\InputboxThread.cs" />
+    <Compile Include="Util\Interpolator.cs" />
+    <Compile Include="Javascript\JavascriptChat.cs" />
+    <Compile Include="Javascript\JavascriptHook.cs" />
+    <Compile Include="Javascript\JavascriptXmlParser.cs" />
+    <Compile Include="Util\LogManager.cs" />
+    <Compile Include="Javascript\LoopAudioStream.cs" />
     <Compile Include="Main.cs" />
-    <Compile Include="MemoryScan.cs" />
-    <Compile Include="MimeSniffer.cs" />
-    <Compile Include="ModelSpoofer.cs" />
-    <Compile Include="StickyBombTracker.cs" />
-    <Compile Include="Streamer.cs" />
-    <Compile Include="PedThread.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Util\MemoryScan.cs" />
+    <Compile Include="Util\MimeSniffer.cs" />
+    <Compile Include="Util\ModelSpoofer.cs" />
+    <Compile Include="Util\StickyBombTracker.cs" />
+    <Compile Include="Networking\Streamer.cs" />
+    <Compile Include="Networking\PedThread.cs" />
+    <Compile Include="Misc\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
     </Compile>
-    <Compile Include="Screenshot.cs" />
-    <Compile Include="StreamedItems.cs" />
-    <Compile Include="StringCache.cs" />
-    <Compile Include="Subtask.cs" />
-    <Compile Include="SyncEventWatcher.cs" />
-    <Compile Include="SyncSender.cs" />
-    <Compile Include="UnoccupiedVehicleSync.cs" />
-    <Compile Include="WeaponDataProvider.cs" />
-    <Compile Include="SyncPed.cs" />
-    <Compile Include="Util.cs" />
-    <Compile Include="WeaponManager.cs" />
+    <Compile Include="Util\Screenshot.cs" />
+    <Compile Include="Networking\StreamedItems.cs" />
+    <Compile Include="Util\StringCache.cs" />
+    <Compile Include="Util\Subtask.cs" />
+    <Compile Include="Networking\SyncEventWatcher.cs" />
+    <Compile Include="Networking\SyncSender.cs" />
+    <Compile Include="Networking\UnoccupiedVehicleSync.cs" />
+    <Compile Include="Misc\WeaponDataProvider.cs" />
+    <Compile Include="Networking\SyncPed.cs" />
+    <Compile Include="Util\Util.cs" />
+    <Compile Include="Networking\WeaponManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

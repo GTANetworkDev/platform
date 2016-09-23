@@ -18,6 +18,10 @@ using GTA;
 using GTA.Math;
 using GTA.Native;
 using GTANetwork.GUI;
+using GTANetwork.Javascript;
+using GTANetwork.Misc;
+using GTANetwork.Networking;
+using GTANetwork.Util;
 using GTANetworkShared;
 using Lidgren.Network;
 using Microsoft.Win32;
@@ -150,9 +154,9 @@ namespace GTANetwork
 
             CrossReference.EntryPoint = this;
 
-            PlayerSettings = Util.ReadSettings(GTANInstallDir + "\\settings.xml");
+            PlayerSettings = Util.Util.ReadSettings(GTANInstallDir + "\\settings.xml");
 
-            GameSettings = GTANetwork.GameSettings.LoadGameSettings();
+            GameSettings = Misc.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
 
             NetEntityHandler = new Streamer();
@@ -372,18 +376,18 @@ namespace GTANetwork
             int port;
             if (split.Length < 2 || string.IsNullOrWhiteSpace(split[0]) || string.IsNullOrWhiteSpace(split[1]) || !int.TryParse(split[1], out port)) return;
             PlayerSettings.FavoriteServers.Add(server);
-            Util.SaveSettings(GTANInstallDir + "\\settings.xml");
+            Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
         private void RemoveFromFavorites(string server)
         {
             PlayerSettings.FavoriteServers.Remove(server);
-            Util.SaveSettings(GTANInstallDir + "\\settings.xml");
+            Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
         private void SaveSettings()
         {
-            Util.SaveSettings(GTANInstallDir + "\\settings.xml");
+            Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
         private void AddServerToRecent(UIMenuItem server)
@@ -397,7 +401,7 @@ namespace GTANetwork
                 PlayerSettings.RecentServers.Add(server.Description);
                 if (PlayerSettings.RecentServers.Count > 20)
                     PlayerSettings.RecentServers.RemoveAt(0);
-                Util.SaveSettings(GTANInstallDir + "\\settings.xml");
+                Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
 
                 var item = new UIMenuItem(server.Text);
                 item.Description = server.Description;
@@ -446,7 +450,7 @@ namespace GTANetwork
                 PlayerSettings.RecentServers.Add(server);
                 if (PlayerSettings.RecentServers.Count > 20)
                     PlayerSettings.RecentServers.RemoveAt(0);
-                Util.SaveSettings(GTANInstallDir + "\\settings.xml");
+                Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
 
                 var item = new UIMenuItem(server);
                 item.Description = server;
@@ -541,7 +545,7 @@ namespace GTANetwork
                         var port = GetOpenUdpPort();
                         if (port == 0)
                         {
-                            Util.SafeNotify("No available UDP port was found.");
+                            Util.Util.SafeNotify("No available UDP port was found.");
                             return;
                         }
                         _config.Port = port;
@@ -563,7 +567,7 @@ namespace GTANetwork
                     }
                     catch (Exception e)
                     {
-                        Util.SafeNotify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
+                        Util.Util.SafeNotify("~r~~h~ERROR~h~~w~~n~Could not contact master server. Try again later.");
                         var logOutput = "===== EXCEPTION CONTACTING MASTER SERVER @ " + DateTime.UtcNow + " ======\n";
                         logOutput += "Message: " + e.Message;
                         logOutput += "\nData: " + e.Data;
@@ -753,7 +757,7 @@ namespace GTANetwork
                         int newPort;
                         if (!int.TryParse(newIp, out newPort))
                         {
-                            Util.SafeNotify("Wrong port format!");
+                            Util.Util.SafeNotify("Wrong port format!");
                             return;
                         }
                         Port = newPort;
@@ -876,7 +880,7 @@ namespace GTANetwork
 
                             if (!serverIp.Contains(":"))
                             {
-                                Util.SafeNotify("Server IP and port need to be separated by a : character!");
+                                Util.Util.SafeNotify("Server IP and port need to be separated by a : character!");
                                 return;
                             }
 
@@ -1056,12 +1060,12 @@ namespace GTANetwork
                         double newSetting;
                         if (!double.TryParse(strInput, out newSetting))
                         {
-                            Util.SafeNotify("Input was not in the correct format.");
+                            Util.Util.SafeNotify("Input was not in the correct format.");
                             return;
                         }
 
                         GameSettings.Graphics.CityDensity.Value = newSetting;
-                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                        Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
 
@@ -1078,12 +1082,12 @@ namespace GTANetwork
                         bool newSetting;
                         if (!bool.TryParse(strInput, out newSetting))
                         {
-                            Util.SafeNotify("Input was not in the correct format.");
+                            Util.Util.SafeNotify("Input was not in the correct format.");
                             return;
                         }
 
                         GameSettings.Graphics.DoF.Value = newSetting;
-                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                        Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
 
@@ -1100,12 +1104,12 @@ namespace GTANetwork
                         int newSetting;
                         if (!int.TryParse(strInput, out newSetting))
                         {
-                            Util.SafeNotify("Input was not in the correct format.");
+                            Util.Util.SafeNotify("Input was not in the correct format.");
                             return;
                         }
 
                         GameSettings.Graphics.GrassQuality.Value = newSetting;
-                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                        Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
 
@@ -1122,12 +1126,12 @@ namespace GTANetwork
                         int newSetting;
                         if (!int.TryParse(strInput, out newSetting))
                         {
-                            Util.SafeNotify("Input was not in the correct format.");
+                            Util.Util.SafeNotify("Input was not in the correct format.");
                             return;
                         }
 
                         GameSettings.Graphics.MSAA.Value = newSetting;
-                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                        Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
 
@@ -1147,12 +1151,12 @@ namespace GTANetwork
                         int newSetting;
                         if (!int.TryParse(strInput, out newSetting))
                         {
-                            Util.SafeNotify("Input was not in the correct format.");
+                            Util.Util.SafeNotify("Input was not in the correct format.");
                             return;
                         }
 
                         GameSettings.Video.Windowed.Value = newSetting;
-                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                        Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
 
@@ -1169,12 +1173,12 @@ namespace GTANetwork
                         int newSetting;
                         if (!int.TryParse(strInput, out newSetting))
                         {
-                            Util.SafeNotify("Input was not in the correct format.");
+                            Util.Util.SafeNotify("Input was not in the correct format.");
                             return;
                         }
 
                         GameSettings.Video.VSync.Value = newSetting;
-                        GTANetwork.GameSettings.SaveSettings(GameSettings);
+                        Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
 
@@ -1392,7 +1396,7 @@ namespace GTANetwork
                 AddToFavorites(_currentServerIp + ":" + _currentServerPort);
                 var item = new UIMenuItem(serb);
                 item.Description = serb;
-                Util.SafeNotify("Server added to favorites!");
+                Util.Util.SafeNotify("Server added to favorites!");
                 item.Activated += (faf, selectedItem) =>
                 {
                     if (IsOnServer())
@@ -1950,7 +1954,7 @@ namespace GTANetwork
                 obj.PedArmor = (byte)player.Armor;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
-                obj.PlayerHealth = (byte)Util.Clamp(0, player.Health, 255);
+                obj.PlayerHealth = (byte)Util.Util.Clamp(0, player.Health, 255);
 
                 obj.Velocity = player.Velocity.ToLVector();
                 obj.Flag = 0;
@@ -2042,12 +2046,12 @@ namespace GTANetwork
                 obj.VehicleHandle = NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle);
                 obj.Quaternion = veh.Rotation.ToLVector();
                 obj.PedModelHash = player.Model.Hash;
-                obj.PlayerHealth = (byte)Util.Clamp(0, player.Health, 255);
+                obj.PlayerHealth = (byte)Util.Util.Clamp(0, player.Health, 255);
                 obj.VehicleHealth = veh.EngineHealth;
                 obj.Velocity = veh.Velocity.ToLVector();
                 obj.PedArmor = (byte)player.Armor;
                 obj.RPM = veh.CurrentRPM;
-                obj.VehicleSeat = (short)Util.GetPedSeat(player);
+                obj.VehicleSeat = (short)Util.Util.GetPedSeat(player);
                 obj.Flag = 0;
                 obj.Steering = veh.SteeringAngle;
                 obj.Latency = _debugInterval/1000f;
@@ -2067,13 +2071,13 @@ namespace GTANetwork
                 if (veh.IsInBurnout)
                     obj.Flag |= (byte)VehicleDataFlags.BurnOut;
 
-                if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
+                if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.Util.GetPedSeat(Game.Player.Character)) && WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)veh.Model.Hash))
                 {
                     obj.WeaponHash = GetCurrentVehicleWeaponHash(Game.Player.Character);
                     if (Game.IsEnabledControlPressed(0, Control.VehicleFlyAttack))
                         obj.Flag |= (byte)VehicleDataFlags.Shooting;
                 }
-                else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.GetPedSeat(Game.Player.Character)))
+                else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.Util.GetPedSeat(Game.Player.Character)))
                 {
                     obj.AimCoords = RaycastEverything(new Vector2(0, 0)).ToLVector();
                     obj.WeaponHash = 0;
@@ -2301,19 +2305,19 @@ namespace GTANetwork
                 MainMenu.Visible = true;
                 World.RenderingCamera = MainMenuCamera;
 
-                var address = Util.FindPattern("\x32\xc0\xf3\x0f\x11\x09", "xxxxxx"); // Weapon/radio slowdown
+                var address = Util.Util.FindPattern("\x32\xc0\xf3\x0f\x11\x09", "xxxxxx"); // Weapon/radio slowdown
 
                 if (address != IntPtr.Zero)
                 {
-                    Util.WriteMemory(address, 0x90, 6);
+                    Util.Util.WriteMemory(address, 0x90, 6);
                 }
 
-                address = Util.FindPattern("\x48\x85\xC0\x0F\x84\x00\x00\x00\x00\x8B\x48\x50", "xxxxx????xxx");
+                address = Util.Util.FindPattern("\x48\x85\xC0\x0F\x84\x00\x00\x00\x00\x8B\x48\x50", "xxxxx????xxx");
                 // unlock objects; credit goes to the GTA-MP team
 
                 if (address != IntPtr.Zero)
                 {
-                    Util.WriteMemory(address, 0x90, 24);
+                    Util.Util.WriteMemory(address, 0x90, 24);
                 }
 
                 GTA.UI.Screen.FadeIn(1000);
@@ -2367,7 +2371,7 @@ namespace GTANetwork
                 if (MainMenu.Visible && !MainMenu.TemporarilyHidden && !_mainMapItem.Focused && _hasScAvatar && File.Exists(GTANInstallDir + "\\images\\scavatar.png"))
                 {
                     var safe = new Point(300, 180);
-                    Util.DxDrawTexture(0, GTANInstallDir + "\\images\\scavatar.png", res.Width - safe.X - 64, safe.Y - 80, 64, 64, 0, 255, 255, 255, 255, false);
+                    Util.Util.DxDrawTexture(0, GTANInstallDir + "\\images\\scavatar.png", res.Width - safe.X - 64, safe.Y - 80, 64, 64, 0, 255, 255, 255, 255, false);
                 }
 
                 if (!IsOnServer()) Game.EnableControlThisFrame(0, Control.FrontendPause);
@@ -2916,7 +2920,7 @@ namespace GTANetwork
 
             if (playerCar != null)
             {
-                if (Util.GetResponsiblePed(playerCar).Handle == player.Handle)
+                if (Util.Util.GetResponsiblePed(playerCar).Handle == player.Handle)
                 {
                     playerCar.IsInvincible = cc?.IsInvincible ?? false;
                 }
@@ -2956,7 +2960,7 @@ namespace GTANetwork
                     Game.Player.Character.Task.ClearSecondary();
 
                     Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
-                        Util.LoadDict(sp[0]), sp[1],
+                        Util.Util.LoadDict(sp[0]), sp[1],
                         8f, 10f, -1, AnimationFlag, -8f, 1, 1, 1);
                 }
             }
@@ -3392,7 +3396,7 @@ namespace GTANetwork
                             continue;
                         }
 
-                        if (Util.IsVehicleEmpty(entity) && !VehicleSyncManager.IsInterpolating(entity.Handle) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
+                        if (Util.Util.IsVehicleEmpty(entity) && !VehicleSyncManager.IsInterpolating(entity.Handle) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
                         {
                             if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)
                             {
@@ -3604,7 +3608,7 @@ namespace GTANetwork
                 var cport = GetOpenUdpPort();
                 if (cport == 0)
                 {
-                    Util.SafeNotify("No available UDP port was found.");
+                    Util.Util.SafeNotify("No available UDP port was found.");
                     return;
                 }
                 _config.Port = cport;
@@ -4183,7 +4187,7 @@ namespace GTANetwork
                                                 pair.CustomAnimationName = animName;
                                                 pair.CustomAnimationDictionary = animDict;
                                                 pair.CustomAnimationFlag = animFlag;
-                                                pair.CustomAnimationStartTime = Util.TickCount;
+                                                pair.CustomAnimationStartTime = Util.Util.TickCount;
 
                                                 if (!string.IsNullOrEmpty(animName) &&
                                                     string.IsNullOrEmpty(animDict))
@@ -4205,7 +4209,7 @@ namespace GTANetwork
                                             else
                                             {
                                                 Function.Call(Hash.TASK_PLAY_ANIM, Game.Player.Character,
-                                                    Util.LoadDict(animDict), animName, 8f, 10f, -1, animFlag, -8f, 1, 1, 1);
+                                                    Util.Util.LoadDict(animDict), animName, 8f, 10f, -1, animFlag, -8f, 1, 1, 1);
                                                 if ((animFlag & 1) != 0)
                                                 {
                                                     CustomAnimation = animDict + " " + animName;
@@ -4546,7 +4550,7 @@ namespace GTANetwork
                     {
                         case NetConnectionStatus.InitiatedConnect:
                             World.RenderingCamera = null;
-                            Util.SafeNotify("Connecting...");
+                            Util.Util.SafeNotify("Connecting...");
                             LocalTeam = -1;
                             LocalDimension = 0;
                             ResetPlayer();
@@ -4557,14 +4561,14 @@ namespace GTANetwork
                             StringCache = new StringCache();
                             break;
                         case NetConnectionStatus.Connected:
-                            Util.SafeNotify("Connection successful!");
+                            Util.Util.SafeNotify("Connection successful!");
                             var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
                             var respObj =
                                 DeserializeBinary<ConnectionResponse>(
                                     msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
                             if (respObj == null)
                             {
-                                Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
+                                Util.Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
                                 return;
                             }
 
@@ -4616,7 +4620,7 @@ namespace GTANetwork
                             break;
                         case NetConnectionStatus.Disconnected:
                             var reason = msg.ReadString();
-                            Util.SafeNotify("You have been disconnected" +
+                            Util.Util.SafeNotify("You have been disconnected" +
                                         (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
                             DEBUG_STEP = 40;
                             OnLocalDisconnect();
@@ -4788,10 +4792,10 @@ namespace GTANetwork
             {
                 if (safeThreaded)
                 {
-                    Util.SafeNotify("Unhandled Exception ocurred in Process Messages");
-                    Util.SafeNotify("Message Type: " + msg.MessageType);
-                    Util.SafeNotify("Data Type: " + type);
-                    Util.SafeNotify(e.Message);
+                    Util.Util.SafeNotify("Unhandled Exception ocurred in Process Messages");
+                    Util.Util.SafeNotify("Message Type: " + msg.MessageType);
+                    Util.Util.SafeNotify("Data Type: " + type);
+                    Util.Util.SafeNotify(e.Message);
                 }
                 LogManager.LogException(e, "PROCESS MESSAGES (TYPE: " + msg.MessageType + " DATATYPE: " + type + ")");
             }
@@ -4806,7 +4810,7 @@ namespace GTANetwork
             syncPed.Position = position;
             syncPed.VehiclePosition = position;
 
-            syncPed.LastUpdateReceived = Util.TickCount;
+            syncPed.LastUpdateReceived = Util.Util.TickCount;
 
             if (syncPed.VehicleNetHandle != 0)
             {
@@ -4894,7 +4898,7 @@ namespace GTANetwork
 
             if (purePacket)
             {
-                syncPed.LastUpdateReceived = Util.TickCount;
+                syncPed.LastUpdateReceived = Util.Util.TickCount;
                 syncPed.StartInterpolation();
             }
         }
@@ -4961,7 +4965,7 @@ namespace GTANetwork
 
             if (pure)
             {
-                syncPed.LastUpdateReceived = Util.TickCount;
+                syncPed.LastUpdateReceived = Util.Util.TickCount;
                 syncPed.StartInterpolation();
             }
         }
@@ -5076,7 +5080,7 @@ namespace GTANetwork
             CustomAnimation = null;
             AnimationFlag = 0;
             
-            Util.SetPlayerSkin(PedHash.Clown01SMY);
+            Util.Util.SetPlayerSkin(PedHash.Clown01SMY);
 
             Game.Player.Character.MaxHealth = 200;
             Game.Player.Character.Health = 200;
@@ -5226,15 +5230,15 @@ namespace GTANetwork
                 GTA.UI.Screen.ShowSubtitle("SIMULATED PING: " + _debugInterval, 5000);
             }
 
-            if (Util.TickCount - _debugLastSync > _debugSyncrate)
+            if (Util.Util.TickCount - _debugLastSync > _debugSyncrate)
             {
-                _debugLastSync = Util.TickCount;
+                _debugLastSync = Util.Util.TickCount;
 
 
-                _lastData.Add(new Tuple<long, object>(Util.TickCount,
+                _lastData.Add(new Tuple<long, object>(Util.Util.TickCount,
                     player.IsInVehicle() ? (object) PackageVehicleData() : (object) PackagePedData()));
 
-                if (Util.TickCount - _lastData[0].Item1 >= (_debugInterval))
+                if (Util.Util.TickCount - _lastData[0].Item1 >= (_debugInterval))
                 {
                     //_artificialLagCounter = DateTime.Now;
                     //_debugFluctuation = _r.Next(10) - 5;
@@ -5250,7 +5254,7 @@ namespace GTANetwork
                             player.CurrentVehicle.Opacity = 50;
 
                         var data = (VehicleData) ourData;
-                        _debugSyncPed.LastUpdateReceived = Util.TickCount;
+                        _debugSyncPed.LastUpdateReceived = Util.Util.TickCount;
 
                         _debugSyncPed.VehicleNetHandle = data.VehicleHandle.Value;
                         _debugSyncPed.VehiclePosition = data.Position.ToVector();
@@ -5295,7 +5299,7 @@ namespace GTANetwork
                         _debugSyncPed.IsRagdoll = player.IsRagdoll;
                         _debugSyncPed.OnFootSpeed = data.Speed.Value;
                         _debugSyncPed.PedArmor = data.PedArmor.Value;
-                        _debugSyncPed.LastUpdateReceived = Util.TickCount;
+                        _debugSyncPed.LastUpdateReceived = Util.Util.TickCount;
                         _debugSyncPed.Position = data.Position.ToVector();
                         _debugSyncPed.ModelHash = data.PedModelHash.Value;
                         _debugSyncPed.Rotation = data.Quaternion.ToVector();
@@ -5677,14 +5681,14 @@ namespace GTANetwork
             if (((int) nativeType & (int) NativeType.NeedsAnimDict) > 0)
             {
                 var animDict = ((StringArgument)obj.Arguments[1]).Data;
-                Util.LoadDict(animDict);
+                Util.Util.LoadDict(animDict);
             }
 
             if (((int)nativeType & (int)NativeType.PtfxAssetRequest) != 0)
             {
                 var animDict = ((StringArgument)obj.Arguments[0]).Data;
 
-                Util.LoadPtfxAsset(animDict);
+                Util.Util.LoadPtfxAsset(animDict);
                 Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, animDict);
                 
                 list.RemoveAt(0);

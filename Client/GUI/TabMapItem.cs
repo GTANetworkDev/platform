@@ -7,6 +7,8 @@ using System.Windows.Forms;
 using GTA;
 using GTA.Math;
 using GTA.Native;
+using GTANetwork.Networking;
+using GTANetwork.Util;
 using NativeUI;
 using NativeUI.PauseMenu;
 using Control = GTA.Control;
@@ -250,7 +252,7 @@ namespace GTANetwork.GUI
 
                 const float playerScale = 0.8f;
 
-                Util.DxDrawTexture(0, BLIP_PATH + "player.png",
+                Util.Util.DxDrawTexture(0, BLIP_PATH + "player.png",
                     newPos.X + World3DToMap2D(Game.Player.Character.Position).Width,
                     newPos.Y + World3DToMap2D(Game.Player.Character.Position).Height, 32* playerScale, 32* playerScale,
                     -Game.Player.Character.Rotation.Z, 255, 255, 255, 255, true);
@@ -260,7 +262,7 @@ namespace GTANetwork.GUI
                 var blipList = new List<string>();
                 var localCopy = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap);
 
-                foreach (var blip in Util.GetAllBlips())
+                foreach (var blip in Util.Util.GetAllBlips())
                 {
 					if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
 					{
@@ -279,7 +281,7 @@ namespace GTANetwork.GUI
                         var col = GetBlipcolor(blip.Color, blip.Alpha);
 
                         if (pos.X > 0 && pos.Y > 0 && pos.X < res.Width && pos.Y < res.Height)
-						    Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
+						    Util.Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
 
 					    var len = scale*32;
 					    var halfLen = len/2;
@@ -313,7 +315,7 @@ namespace GTANetwork.GUI
                         var col = GetBlipcolor((BlipColor)blip.Color, blip.Alpha);
 
                         if (pos.X > 0 && pos.Y > 0 && pos.X < res.Width && pos.Y < res.Height)
-                            Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
+                            Util.Util.DxDrawTexture(blipList.Count, fname, pos.X, pos.Y, siz.Width, siz.Height, 0f, col.R, col.G, col.B, col.A, true);
                     }
                 }
 
