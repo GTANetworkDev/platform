@@ -73,7 +73,6 @@ namespace GTANetworkShared
         public List<string> RecentServers { get; set; }
         public bool ScaleChatWithSafezone { get; set; }
         public bool SteamPowered { get; set; }
-        public bool HideNametagsWhenZoomedOutMap { get; set; }
         public string UpdateChannel { get; set; }
         public bool DisableRockstarEditor { get; set; }
         public Keys ScreenshotKey { get; set; }
@@ -85,7 +84,6 @@ namespace GTANetworkShared
             RecentServers = new List<string>();
             ScaleChatWithSafezone = true;
             SteamPowered = false;
-            HideNametagsWhenZoomedOutMap = false;
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
             ScreenshotKey = Keys.F8;

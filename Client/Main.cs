@@ -1015,16 +1015,6 @@ namespace GTANetwork
                 }
                 
                 {
-                    var debugItem = new UIMenuCheckboxItem("Hide Map Nametags When Zoomed Out", PlayerSettings.HideNametagsWhenZoomedOutMap);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        PlayerSettings.HideNametagsWhenZoomedOutMap = @checked;
-                        SaveSettings();
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
-                {
                     var debugItem = new UIMenuCheckboxItem("Disable Rockstar Editor", PlayerSettings.DisableRockstarEditor);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
