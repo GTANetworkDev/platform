@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GTA;
+using GTANetwork.Util;
 using GTANetworkShared;
 using Lidgren.Network;
 using Vector3 = GTA.Math.Vector3;

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Xml;
+using GTANetworkServer.Constant;
 using GTANetworkShared;
 using Lidgren.Network;
 using Newtonsoft.Json;

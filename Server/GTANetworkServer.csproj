@@ -100,18 +100,18 @@
     <Compile Include="AccessControlList.cs" />
     <Compile Include="API.cs" />
     <Compile Include="Bans.cs" />
-    <Compile Include="ChatData.cs" />
+    <Compile Include="Constant\ChatData.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="ColShape.cs" />
-    <Compile Include="ConstantVehicleData.cs" />
+    <Compile Include="Constant\ConstantVehicleData.cs" />
     <Compile Include="DeltaCompressor.cs" />
     <Compile Include="ExplosionTypes.cs" />
     <Compile Include="FileServer.cs" />
     <Compile Include="GameServer.cs" />
     <Compile Include="CommandHandler.cs" />
     <Compile Include="MemberwiseClone.cs" />
-    <Compile Include="NativeHashes.cs" />
-    <Compile Include="PedHashes.cs" />
+    <Compile Include="Constant\NativeHashes.cs" />
+    <Compile Include="Constant\PedHashes.cs" />
     <Compile Include="PickupManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
@@ -121,13 +121,13 @@
     <Compile Include="Streamer.cs" />
     <Compile Include="StressTest.cs" />
     <Compile Include="UnoccupiedVehicleManager.cs" />
-    <Compile Include="WeaponComponentHash.cs" />
-    <Compile Include="PickupHashes.cs" />
+    <Compile Include="Constant\WeaponComponentHash.cs" />
+    <Compile Include="Constant\PickupHashes.cs" />
     <Compile Include="ResourceInfo.cs" />
-    <Compile Include="VehicleHashes.cs" />
+    <Compile Include="Constant\VehicleHashes.cs" />
     <Compile Include="NetEntityHandler.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="WeaponHashes.cs" />
+    <Compile Include="Constant\WeaponHashes.cs" />
     <Compile Include="XmlParser.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -185,7 +185,7 @@ namespace GTANetworkServer
         {
             try
             {
-                dynamic objectToReturn = null;
+                object objectToReturn = null;
                 bool hasValue = false;
                 lock (_mainQueue.SyncRoot)
                 _mainQueue.Enqueue(new Action(() =>

@@ -1,6 +1,6 @@
 ﻿using ProtoBuf;
 
-namespace GTANetworkServer
+namespace GTANetworkServer.Constant
 {
     [ProtoContract]
     internal class ChatData

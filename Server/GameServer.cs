@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using GTANetworkServer.Constant;
 using GTANetworkShared;
 using Lidgren.Network;
 using Microsoft.CSharp;

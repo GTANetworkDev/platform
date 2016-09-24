@@ -319,7 +319,6 @@ namespace GTANetwork.GUI
                     }
                 }
 
-                if (!Main.PlayerSettings.HideNametagsWhenZoomedOutMap || Zoom > 1f)
                 foreach (var opp in Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>())
                 {
                     if (opp.Character?.AttachedBlip == null || string.IsNullOrWhiteSpace(opp.Name) || opp.Character.AttachedBlip.Alpha == 0) continue;

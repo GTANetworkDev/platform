@@ -3,7 +3,7 @@ using System.IO;
 using GTANetworkShared;
 using Newtonsoft.Json;
 
-namespace GTANetworkServer
+namespace GTANetworkServer.Constant
 {
     public struct ConstantVehicleData
     {
