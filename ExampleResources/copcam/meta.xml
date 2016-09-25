@@ -1,0 +1,6 @@
+<meta>
+	<info type="script" name="Police Camera" description="Basic Maverick camera for police" author="Guadmaz" />
+
+	<script src="copcam_trigger.cs" type="server" lang="csharp" />
+	<script src="copcam_controller.js" type="client" lang="javascript" />
+</meta>

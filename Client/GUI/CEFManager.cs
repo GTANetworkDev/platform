@@ -8,14 +8,17 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using CefSharp;
 using CefSharp.OffScreen;
-using GTANetwork.Util;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
+using GTANetwork.GUI.Extern;
+using GTANetwork.Javascript;
+using GTANetwork.Util;
 using Microsoft.ClearScript.V8;
 using SharpDX;
 using SharpDX.Diagnostics;
@@ -762,6 +765,13 @@ namespace GTANetwork.GUI
 #if !DISABLE_CEF
             _browser.Load(page);
 #endif
+        }
+
+        internal void LoadHtml(string html)
+        {
+#if !DISABLE_CEF
+            _browser.LoadHtml(html, "localhost", Encoding.UTF8);
+#endif            
         }
 
         internal string GetAddress()

@@ -77,6 +77,11 @@ namespace GTANetwork.Networking
 
                 if (obj == -1)
                 {
+                    if (PickupToWeapon.Translate(pickup.ModelHash) != 0)
+                    {
+                        CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash)PickupToWeapon.Translate(pickup.ModelHash));
+                    }
+
                     JavascriptHook.InvokeCustomEvent(
                         api => api?.invokeonPlayerPickup(new LocalHandle(pickup.RemoteHandle, HandleType.NetHandle)));
                     Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);

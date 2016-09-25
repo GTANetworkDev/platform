@@ -5998,8 +5998,18 @@ namespace GTANetwork
 
         public static Vector3 RaycastEverything(Vector2 screenCoord)
         {
-            var camPos = GameplayCamera.Position;
-            var camRot = GameplayCamera.Rotation;
+            Vector3 camPos, camRot;
+            if (World.RenderingCamera == null)
+            {
+                camPos = GameplayCamera.Position;
+                camRot = GameplayCamera.Rotation;
+            }
+            else
+            {
+                camPos = World.RenderingCamera.Position;
+                camRot = World.RenderingCamera.Rotation;
+            }
+
             const float raycastToDist = 100.0f;
             const float raycastFromDist = 1f;
 

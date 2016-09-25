@@ -2811,7 +2811,7 @@ namespace GTANetworkServer
                         WeaponComponent.AtScopeSmall,
                         WeaponComponent.AtArAfGrip,
                     };
-                case WeaponHash.SawnOffShotgun:
+                case WeaponHash.SawnoffShotgun:
                     return new WeaponComponent[]
                     {
                         WeaponComponent.SawnoffShotgunVarmodLuxe,

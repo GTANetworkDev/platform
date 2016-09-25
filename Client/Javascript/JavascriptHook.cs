@@ -951,6 +951,15 @@ namespace GTANetwork.Javascript
             }
         }
 
+        public void loadHtmlCefBrowser(Browser browser, string html)
+        {
+            if (browser == null) return;
+            if (browser._localMode)
+            {
+                browser.LoadHtml(html);
+            }
+        }
+
         public bool isCefBrowserLoading(Browser browser)
         {
             return browser.IsLoading();
@@ -3657,6 +3666,21 @@ namespace GTANetwork.Javascript
         public void disableAllControlsThisFrame()
         {
             Game.DisableAllControlsThisFrame(0);
+        }
+
+        public float getControlNormal(int control)
+        {
+            return Game.GetControlNormal(0, (GTA.Control) control);
+        }
+
+        public float getDisabledControlNormal(int control)
+        {
+            return Game.GetDisabledControlNormal(0, (GTA.Control)control);
+        }
+
+        public void setControlNormal(int control, float value)
+        {
+            Game.SetControlNormal(0, (GTA.Control)control, value);
         }
 
         public bool isChatOpen()

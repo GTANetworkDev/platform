@@ -1275,7 +1275,7 @@ namespace GTANResource
                     }
 
                     if (client == null) client = new Client(msg.SenderConnection);
-
+                    PacketType packetType = PacketType.NpcPedPositionData;
 
                     try
                     {
@@ -1489,7 +1489,7 @@ namespace GTANResource
                                 }
                                 break;
                             case NetIncomingMessageType.Data:
-                                var packetType = (PacketType)msg.ReadByte();
+                                packetType = (PacketType)msg.ReadByte();
 
                                 switch (packetType)
                                 {
@@ -2483,7 +2483,7 @@ namespace GTANResource
                     }
                     catch (Exception ex)
                     {
-                        Program.Output("EXCEPTION IN MESSAGEPUMP");
+                        Program.Output("EXCEPTION IN MESSAGEPUMP, MSG TYPE: " + msg.MessageType + " DATA TYPE: " + packetType);
                         Program.Output(ex.ToString());
                     }
                     finally
@@ -2741,6 +2741,13 @@ namespace GTANResource
                             RunningResources.ForEach(res => res.Engines.ForEach(en => en.InvokePlayerPickup(sender, new NetHandle(pickupId))));
                             if (((PickupProperties)NetEntityHandler.ToDict()[pickupId]).RespawnTime > 0)
                                 PickupManager.Add(pickupId);
+
+                            if (
+                                PickupToWeapon.Translate(
+                                    ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).ModelHash) != 0)
+                            {
+                                sender.Weapons.Add((WeaponHash) PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash));
+                            }
                         }
                     }
                     break;
