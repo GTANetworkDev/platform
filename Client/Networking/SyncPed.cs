@@ -1407,12 +1407,7 @@ namespace GTANetwork.Networking
 
             DEBUG_STEP = 25;
 
-#if !DISABLE_SLERP
-            Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
-                    Math.Min(1f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
-#else
-	        Character.Quaternion = Rotation.ToQuaternion();
-#endif
+	        Character.Quaternion = _rotation.ToQuaternion();
 
             if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
@@ -2093,11 +2088,7 @@ namespace GTANetwork.Networking
                 }
                 DEBUG_STEP = 120;
 
-                if (UpdatePosition())
-                {
-                    DrawNametag();
-                    return;
-                }
+                UpdatePosition();
 
                 DrawNametag();
 
@@ -2148,7 +2139,7 @@ namespace GTANetwork.Networking
             if (Character.Gender == Gender.Female)
                 dict = "move_f@generic";
 
-            dict = Character.IsInWater ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : dict;
+            dict = Character.SubmersionLevel >= 0.8f ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : dict;
 
             return dict;
         }
@@ -2303,8 +2294,15 @@ namespace GTANetwork.Networking
             if (updateRotation)
             {
 #if !DISABLE_SLERP
-                Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
-                    Math.Min(1f, (DataLatency + TicksSinceLastUpdate)/(float) AverageLatency));
+                if (!Character.IsSwimmingUnderWater)
+                {
+                    Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
+                        Math.Min(1f, (DataLatency + TicksSinceLastUpdate)/(float) AverageLatency));
+                }
+                else
+                {
+                    Character.Quaternion = Rotation.ToQuaternion();
+                }
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif

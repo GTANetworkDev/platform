@@ -3654,8 +3654,10 @@ namespace GTANetworkServer
         public NetHandle createBlip(NetHandle entity)
         {
             if (entity.IsNull || !entity.Exists()) throw new ArgumentNullException(nameof(entity));
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(entity));
-            lock (ResourceEntities) ResourceEntities.Add(ent);
+            //var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateBlip(entity));
+            //lock (ResourceEntities) ResourceEntities.Add(ent);
+            var ent = createBlip(getEntityPosition(entity));
+            attachEntityToEntity(ent, entity, null, new Vector3(), new Vector3());
             return ent;
         }
 
