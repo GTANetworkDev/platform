@@ -661,19 +661,21 @@ namespace GTANetwork.Networking
 
 				if (MainVehicle != null && MainVehicle.Handle != 0)
 				{
+                    /*
 				    if (VehicleSeat == -1)
 				    {
-				        MainVehicle.Position = VehiclePosition;
+				        //MainVehicle.Position = VehiclePosition;
 				    }
 				    else
 				    {
 				        Character.PositionNoOffset = MainVehicle.Position;
-				    }
+				    }*/
+                    Character.PositionNoOffset = MainVehicle.Position;
 
-					MainVehicle.IsEngineRunning = true;
-					MainVehicle.IsInvincible = true;
-					Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
-					DEBUG_STEP = 12;
+                    MainVehicle.IsEngineRunning = true;
+                    MainVehicle.IsInvincible = true;
+                    Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
+                    DEBUG_STEP = 12;
 				}
 				DEBUG_STEP = 13;
 				_lastVehicle = true;
