@@ -1349,26 +1349,24 @@ namespace GTANetwork.Networking
 
 	    void DisplayParachuteFreefall()
 	    {
-            Character.IsPositionFrozen = true;
-			Character.CanRagdoll = false;
-
 			if (!_lastFreefall)
 			{
 				Character.Task.ClearAllImmediately();
 				Character.Task.ClearSecondary();
 			}
 
-			var target = Util.Util.LinearVectorLerp(_lastPosition,
-				_position,
+            //UpdatePlayerPedPos(fixWarp: false);
+
+            var target = Util.Util.LinearVectorLerp(_lastPosition,
+                _position,
                 TicksSinceLastUpdate, (int)AverageLatency);
 
-			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
-				0);
-			DEBUG_STEP = 25;
+            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
+                0);
+            DEBUG_STEP = 25;
 #if !DISABLE_SLERP
-            var latency = DataLatency + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
-                Math.Min(1f, latency / (float)AverageLatency));
+                    Math.Min(1f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
 #else
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
@@ -1392,33 +1390,31 @@ namespace GTANetwork.Networking
 					Character.Rotation, false, false);
 				_parachuteProp.IsPositionFrozen = true;
 				Function.Call(Hash.SET_ENTITY_COLLISION, _parachuteProp.Handle, false, 0);
+
+                _parachuteProp.AttachTo(Character, Character.GetBoneIndex(Bone.SKEL_Spine2), new Vector3(3.6f, 0, 0f), new Vector3(0, 90, 0));
+                
 				Character.Task.ClearAllImmediately();
 				Character.Task.ClearSecondary();
 			}
+            
 
-			Character.IsPositionFrozen = true;
-			Character.CanRagdoll = false;
-
-			var target = Util.Util.LinearVectorLerp(_lastPosition,
-				_position,
+            var target = Util.Util.LinearVectorLerp(_lastPosition,
+                _position,
                 TicksSinceLastUpdate, (int)AverageLatency);
 
-			Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
-				0);
-			DEBUG_STEP = 25;
+            Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, target.X, target.Y, target.Z, 0, 0, 0,
+                0);
+
+            DEBUG_STEP = 25;
 
 #if !DISABLE_SLERP
-            var latency = DataLatency + TicksSinceLastUpdate;
             Character.Quaternion = GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(),
-                Math.Min(1f, latency / (float)AverageLatency));
+                    Math.Min(1f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency));
 #else
 	        Character.Quaternion = Rotation.ToQuaternion();
 #endif
 
-            _parachuteProp.Position = Character.Position + new Vector3(0, 0, 3.7f) +
-									  Character.ForwardVector * 0.5f;
-			_parachuteProp.Quaternion = Character.Quaternion;
-			if (
+            if (
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character,
 					"skydive@parachute@first_person", "chute_idle_right",
 					3))
@@ -1886,139 +1882,140 @@ namespace GTANetwork.Networking
 			if (IsFreefallingWithParachute)
 			{
 				DisplayParachuteFreefall();
+			    return false;
 			}
-			else if (IsParachuteOpen)
+
+			if (IsParachuteOpen)
 			{
 				DisplayOpenParachute();
+			    return false;
 			}
-			else
+
+			if (_parachuteProp != null)
 			{
-				if (_parachuteProp != null)
-				{
-					_parachuteProp.Delete();
-					_parachuteProp = null;
-				}
-				DEBUG_STEP = 27;
+				_parachuteProp.Delete();
+				_parachuteProp = null;
+			}
+			DEBUG_STEP = 27;
 
-                bool ragdoll = IsRagdoll;
+            bool ragdoll = IsRagdoll;
 
-			    if (IsPlayerDead) ragdoll = true;
+			if (IsPlayerDead) ragdoll = true;
 
-			    if (ragdoll)
+			if (ragdoll)
+			{
+			    if (!Character.IsRagdoll)
 			    {
-			        if (!Character.IsRagdoll)
-			        {
-			            Character.CanRagdoll = true;
-                        Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 50000, 60000, 0, 1, 1, 1);
-			        }
-
-                    var dir = Position - _lastPosition;
-                    var vdir = PedVelocity - _lastPedVel;
-                    var target = Util.Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                        TicksSinceLastUpdate,
-                        (int)AverageLatency);
-
-                    var posTarget = Util.Util.LinearVectorLerp(Position, Position + dir,
-                        TicksSinceLastUpdate,
-                        (int)AverageLatency);
-
-                    const int PED_INTERPOLATION_WARP_THRESHOLD = 15;
-                    const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
-
-                    float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
-                                        PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
-
-			        if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold*fThreshold)
-			        {
-			            Character.PositionNoOffset = currentInterop.vecTarget;
-			        }
-			        else
-                    { 
-			            Character.Velocity = target + 2*(posTarget - Character.Position);
-			        }
-
-			        _stopTime = DateTime.Now;
-                    _carPosOnUpdate = Character.Position;
-                    
-                    return true;
+			        Character.CanRagdoll = true;
+                    Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 50000, 60000, 0, 1, 1, 1);
 			    }
-                else if (!ragdoll && Character.IsRagdoll)
+
+                var dir = Position - _lastPosition;
+                var vdir = PedVelocity - _lastPedVel;
+                var target = Util.Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
+                    TicksSinceLastUpdate,
+                    (int)AverageLatency);
+
+                var posTarget = Util.Util.LinearVectorLerp(Position, Position + dir,
+                    TicksSinceLastUpdate,
+                    (int)AverageLatency);
+
+                const int PED_INTERPOLATION_WARP_THRESHOLD = 15;
+                const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
+
+                float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
+                                    PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
+
+			    if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold*fThreshold)
+			    {
+			        Character.PositionNoOffset = currentInterop.vecTarget;
+			    }
+			    else
+                { 
+			        Character.Velocity = target + 2*(posTarget - Character.Position);
+			    }
+
+			    _stopTime = DateTime.Now;
+                _carPosOnUpdate = Character.Position;
+                    
+                return true;
+			}
+            else if (!ragdoll && Character.IsRagdoll)
+            {
+                Character.CanRagdoll = false;
+                Character.Task.ClearAllImmediately();
+                Character.PositionNoOffset = Position;
+
+                if (!IsPlayerDead)
                 {
-                    Character.CanRagdoll = false;
-                    Character.Task.ClearAllImmediately();
-                    Character.PositionNoOffset = Position;
+                    Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                        Util.Util.LoadDict("anim@sports@ballgame@handball@"), "ball_get_up",
+                        12f, 12f, -1, 0, -10f, 1, 1, 1);
 
-                    if (!IsPlayerDead)
-                    {
-                        Function.Call(Hash.TASK_PLAY_ANIM, Character,
-                            Util.Util.LoadDict("anim@sports@ballgame@handball@"), "ball_get_up",
-                            12f, 12f, -1, 0, -10f, 1, 1, 1);
-
-                        _playingGetupAnim = true;
-                    }
-
-                    return true;
+                    _playingGetupAnim = true;
                 }
 
-			    if (_playingGetupAnim)
+                return true;
+            }
+
+			if (_playingGetupAnim)
+			{
+			    var getupAnim = GetAnimalGetUpAnimation().Split();
+
+			    if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
 			    {
-			        var getupAnim = GetAnimalGetUpAnimation().Split();
+			        UpdatePlayerPedPos();
+			        var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0],
+			            getupAnim[1]);
 
-			        if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
+			        if (currentTime >= 0.7f)
 			        {
-			            UpdatePlayerPedPos();
-			            var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0],
-			                getupAnim[1]);
-
-			            if (currentTime >= 0.7f)
-			            {
-			                Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
-			                Character.Task.ClearAll();
-			                _playingGetupAnim = false;
-			            }
-			            else
-			            {
-			                return true;
-			            }
+			            Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
+			            Character.Task.ClearAll();
+			            _playingGetupAnim = false;
+			        }
+			        else
+			        {
+			            return true;
 			        }
 			    }
+			}
 
-			    if (lastMeleeAnim != null)
-				{
-					DisplayMeleeAnimation();
-				}
-				else if (IsInMeleeCombat)
-				{
-					DisplayMeleeCombat();
-				}
-				DEBUG_STEP = 29;
-				if (IsAiming && !IsShooting)
-				{
-					DisplayAimingAnimation();
-				}
+			if (lastMeleeAnim != null)
+			{
+				DisplayMeleeAnimation();
+			}
+			else if (IsInMeleeCombat)
+			{
+				DisplayMeleeCombat();
+			}
+			DEBUG_STEP = 29;
+			if (IsAiming && !IsShooting)
+			{
+				DisplayAimingAnimation();
+			}
 
-				DEBUG_STEP = 30;
+			DEBUG_STEP = 30;
 
-                if (IsShooting)
-				{
-					DisplayShootingAnimation();
-				}
+            if (IsShooting)
+			{
+				DisplayShootingAnimation();
+			}
 
-			    if (IsCustomAnimationPlaying)
-			    {
-                    UpdatePlayerPedPos();
+			if (IsCustomAnimationPlaying)
+			{
+                UpdatePlayerPedPos();
 
-			        DisplayCustomAnimation();
-			    }
+			    DisplayCustomAnimation();
+			}
 
 
-                DEBUG_STEP = 32;
-				if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
-				{
-					UpdatePlayerPedPos();
+            DEBUG_STEP = 32;
+			if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
+			{
+				UpdatePlayerPedPos();
 
-					DisplayWalkingAnimation();
-				}
+				DisplayWalkingAnimation();
 			}
 
 			return false;
@@ -2164,7 +2161,7 @@ namespace GTANetwork.Networking
         }
 
         private int m_uiForceLocalCounter;
-        private void UpdatePlayerPedPos(bool updateRotation = true)
+        private void UpdatePlayerPedPos(bool updateRotation = true, bool fixWarp = true)
         {
             Vector3 newPos;
 
@@ -2200,79 +2197,81 @@ namespace GTANetwork.Networking
                 _carPosOnUpdate = Character.Position;
 
 #if !DISABLE_UNDER_FLOOR_FIX
-
-                const int PED_INTERPOLATION_WARP_THRESHOLD = 5;
-                const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
-
-                // Check if the distance to interpolate is too far.
-                float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
-                                    PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED*PedVelocity.Length());
-
-                // There is a reason to have this condition this way: To prevent NaNs generating new NaNs after interpolating (Comparing with NaNs always results to false).
-                if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold/* || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25*/)
+                if (fixWarp)
                 {
-                    // Abort all interpolation
-                    currentInterop.FinishTime = 0;
-                    Character.PositionNoOffset = currentInterop.vecTarget;
-                }
+                    const int PED_INTERPOLATION_WARP_THRESHOLD = 5;
+                    const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
 
-                // Calc remote movement
-                var vecRemoteMovement = Position - _lastPosition;
-                
-                // Calc local error
-                var vecLocalError = currentInterop.vecTarget - Character.Position;
+                    // Check if the distance to interpolate is too far.
+                    float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
+                                        PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED*PedVelocity.Length());
 
-                // Small remote movement + local position error = force a warp
-                bool bForceLocalZ = false;
-                bool bForceLocalXY = false;
-                if (Math.Abs(vecRemoteMovement.Z) < 0.01f)
-                {
-                    float fLocalErrorZ = Math.Abs(vecLocalError.Z);
-                    if (fLocalErrorZ > 0.1f && fLocalErrorZ < 10)
+                    // There is a reason to have this condition this way: To prevent NaNs generating new NaNs after interpolating (Comparing with NaNs always results to false).
+                    if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold*fThreshold
+                        /* || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25*/)
                     {
-                        bForceLocalZ = true;
-                    }
-                }
-
-                if (Math.Abs(vecRemoteMovement.X) < 0.01f)
-                {
-                    float fLocalErrorX = Math.Abs(vecLocalError.X);
-                    if (fLocalErrorX > 0.1f && fLocalErrorX < 10)
-                    {
-                        bForceLocalXY = true;
-                    }
-                }
-
-                if (Math.Abs(vecRemoteMovement.Y) < 0.01f)
-                {
-                    float fLocalErrorY = Math.Abs(vecLocalError.Y);
-                    if (fLocalErrorY > 0.1f && fLocalErrorY < 10)
-                    {
-                        bForceLocalXY = true;
-                    }
-                }
-
-                // Only force position if needed for at least two consecutive calls
-                if (!bForceLocalZ && !bForceLocalXY)
-                    m_uiForceLocalCounter = 0;
-                else if (m_uiForceLocalCounter++ > 1)
-                {
-                    Vector3 targetPos = Character.Position;
-
-                    if (bForceLocalZ)
-                    {
-                        targetPos = new Vector3(targetPos.X, targetPos.Y, currentInterop.vecTarget.Z);
-                        Character.Velocity = new Vector3(Character.Velocity.X, Character.Velocity.Y, 0);
-                    }
-                    if (bForceLocalXY)
-                    {
-                        targetPos = new Vector3(currentInterop.vecTarget.X, currentInterop.vecTarget.Y, targetPos.Z);
+                        // Abort all interpolation
+                        currentInterop.FinishTime = 0;
+                        Character.PositionNoOffset = currentInterop.vecTarget;
                     }
 
-                    Character.PositionNoOffset = targetPos;
-                    currentInterop.FinishTime = 0;
-                }
+                    // Calc remote movement
+                    var vecRemoteMovement = Position - _lastPosition;
 
+                    // Calc local error
+                    var vecLocalError = currentInterop.vecTarget - Character.Position;
+
+                    // Small remote movement + local position error = force a warp
+                    bool bForceLocalZ = false;
+                    bool bForceLocalXY = false;
+                    if (Math.Abs(vecRemoteMovement.Z) < 0.01f)
+                    {
+                        float fLocalErrorZ = Math.Abs(vecLocalError.Z);
+                        if (fLocalErrorZ > 0.1f && fLocalErrorZ < 10)
+                        {
+                            bForceLocalZ = true;
+                        }
+                    }
+
+                    if (Math.Abs(vecRemoteMovement.X) < 0.01f)
+                    {
+                        float fLocalErrorX = Math.Abs(vecLocalError.X);
+                        if (fLocalErrorX > 0.1f && fLocalErrorX < 10)
+                        {
+                            bForceLocalXY = true;
+                        }
+                    }
+
+                    if (Math.Abs(vecRemoteMovement.Y) < 0.01f)
+                    {
+                        float fLocalErrorY = Math.Abs(vecLocalError.Y);
+                        if (fLocalErrorY > 0.1f && fLocalErrorY < 10)
+                        {
+                            bForceLocalXY = true;
+                        }
+                    }
+
+                    // Only force position if needed for at least two consecutive calls
+                    if (!bForceLocalZ && !bForceLocalXY)
+                        m_uiForceLocalCounter = 0;
+                    else if (m_uiForceLocalCounter++ > 1)
+                    {
+                        Vector3 targetPos = Character.Position;
+
+                        if (bForceLocalZ)
+                        {
+                            targetPos = new Vector3(targetPos.X, targetPos.Y, currentInterop.vecTarget.Z);
+                            Character.Velocity = new Vector3(Character.Velocity.X, Character.Velocity.Y, 0);
+                        }
+                        if (bForceLocalXY)
+                        {
+                            targetPos = new Vector3(currentInterop.vecTarget.X, currentInterop.vecTarget.Y, targetPos.Z);
+                        }
+
+                        Character.PositionNoOffset = targetPos;
+                        currentInterop.FinishTime = 0;
+                    }
+                }
 #endif
             }
             else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && currentInterop.FinishTime != 0)

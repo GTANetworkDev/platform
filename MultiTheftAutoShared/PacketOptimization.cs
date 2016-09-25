@@ -33,8 +33,8 @@ namespace GTANetworkShared
             byteArray.AddRange(GetBytes(data.Position.Y));
             byteArray.AddRange(GetBytes(data.Position.Z));
 
-            // Only send roll & pitch if we're ragdolling.
-            if (CheckBit(data.Flag.Value, PedDataFlags.Ragdoll))
+            // Only send roll & pitch if we're parachuting.
+            if (CheckBit(data.Flag.Value, PedDataFlags.ParachuteOpen))
             {
                 byteArray.AddRange(GetBytes(data.Quaternion.X));
                 byteArray.AddRange(GetBytes(data.Quaternion.Y));
@@ -386,7 +386,7 @@ namespace GTANetworkShared
             position.Z = r.ReadSingle();
 
             // Only read pitchand roll if he's ragdolling
-            if (CheckBit(data.Flag.Value, PedDataFlags.Ragdoll))
+            if (CheckBit(data.Flag.Value, PedDataFlags.ParachuteOpen))
             {
                 rotation.X = r.ReadSingle();
                 rotation.Y = r.ReadSingle();
