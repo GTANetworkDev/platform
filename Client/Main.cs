@@ -5999,7 +5999,8 @@ namespace GTANetwork
         public static Vector3 RaycastEverything(Vector2 screenCoord)
         {
             Vector3 camPos, camRot;
-            if (World.RenderingCamera == null)
+
+            if (World.RenderingCamera.Handle == -1)
             {
                 camPos = GameplayCamera.Position;
                 camRot = GameplayCamera.Rotation;

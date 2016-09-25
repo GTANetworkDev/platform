@@ -35,7 +35,7 @@ public class PlayerBlips : Script
 
 	private void PlayerJoin(Client player)
 	{
-		var pBlip = API.createBlip(player);
+		var pBlip = API.createBlip(API.getEntityPosition(player));
 		API.attachEntityToEntity(pBlip, player, null, new Vector3(), new Vector3());
 
 		API.setBlipName(pBlip, player.Name);
