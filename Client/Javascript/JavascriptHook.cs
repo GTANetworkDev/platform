@@ -2651,8 +2651,8 @@ namespace GTANetwork.Javascript
         public int getPlayerArmor(LocalHandle player)
         {
             if (player.Value == Game.Player.Character.Handle)
-                return Game.Player.Character.Health;
-            else return handleToSyncPed(player).PedHealth;
+                return Game.Player.Character.Armor;
+            else return handleToSyncPed(player).PedArmor;
         }
 
         public LocalHandle[] getStreamedPlayers()
@@ -2859,6 +2859,18 @@ namespace GTANetwork.Javascript
         public bool isWaypointSet()
         {
             return Game.IsWaypointActive;
+        }
+
+        public void setWaypoint(double x, double y)
+        {
+            if (isWaypointSet()) removeWaypoint();
+
+            Function.Call(Hash.SET_NEW_WAYPOINT, (float)x, (float)y);
+        }
+
+        public void removeWaypoint()
+        {
+            World.RemoveWaypoint();
         }
 
         public void setBlipColor(LocalHandle blip, int color)
@@ -3386,6 +3398,21 @@ namespace GTANetwork.Javascript
             return obj.ToString();
         }
 
+        public string getBoneName(int bone)
+        {
+            return ((Bone) bone).ToString();
+        }
+
+        public string getWeaponName(int weapon)
+        {
+            return ((WeaponHash) weapon).ToString();
+        }
+
+        public string getVehicleModelName(int model)
+        {
+            return ((VehicleHash) model).ToString();
+        }
+
         public delegate void ServerEventTrigger(string eventName, object[] arguments);
         public delegate void ChatEvent(string msg);
         public delegate void StreamEvent(LocalHandle item, int entityType);
@@ -3396,6 +3423,7 @@ namespace GTANetwork.Javascript
         public delegate void PlayerKilledEvent(LocalHandle killer, int weapon);
         public delegate void IntChangeEvent(int oldValue);
         public delegate void BoolChangeEvent(bool oldValue);
+        public delegate void PlayerDamageEvent(LocalHandle attacker, int weaponUsed, int boneHit);
 
         public event EmptyEvent onResourceStart;
         public event EmptyEvent onResourceStop;
@@ -3424,6 +3452,12 @@ namespace GTANetwork.Javascript
         public event EmptyEvent onVehicleSirenToggle;
         public event EmptyEvent onPlayerDetonateStickies;
         public event IntChangeEvent onVehicleTyreBurst;
+        public event PlayerDamageEvent onLocalPlayerDamaged;
+
+        internal void invokeonLocalPlayerDamaged(LocalHandle player, int weaponUsed, int bone/*, byte[] health, byte[] armor*/)
+        {
+            onLocalPlayerDamaged?.Invoke(player, weaponUsed, bone/*, BitConverter.ToInt32(health, 0), BitConverter.ToInt32(armor, 0)*/);
+        }
 
         internal void invokeonPlayerDetonateStickies()
         {

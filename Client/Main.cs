@@ -3131,22 +3131,26 @@ namespace GTANetwork
 
             if (pHealth != _lastPlayerHealth)
             {
-                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerHealthChange(_lastPlayerHealth));
+                int test = _lastPlayerHealth;
+                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerHealthChange(test));
             }
 
             if (pArmor != _lastPlayerArmor)
             {
-                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerArmorChange(_lastPlayerArmor));
+                int test = _lastPlayerArmor;
+                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerArmorChange(test));
             }
 
             if (pGun != _lastPlayerWeapon)
             {
-                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerWeaponSwitch((int)_lastPlayerWeapon));
+                WeaponHash test = _lastPlayerWeapon;
+                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerWeaponSwitch((int)test));
             }
 
             if (pModel != (int) _lastPlayerModel)
             {
-                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerModelChange((int)_lastPlayerModel));
+                PedHash test = _lastPlayerModel;
+                JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerModelChange((int)test));
             }
 
             _lastPlayerHealth = pHealth;

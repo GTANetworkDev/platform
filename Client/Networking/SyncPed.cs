@@ -1227,7 +1227,26 @@ namespace GTANetwork.Networking
 
                     _lastVehicleAimUpdate = Game.GameTime;
 					_lastDrivebyShooting = IsShooting || IsAiming;
-				}
+
+                    if (Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, Game.Player.Character, Character, true))
+                    {
+
+                        int boneHit = -1;
+                        var boneHitArg = new OutputArgument();
+
+                        if (Function.Call<bool>(Hash.GET_PED_LAST_DAMAGE_BONE, Game.Player.Character, boneHitArg))
+                        {
+                            boneHit = boneHitArg.GetResult<int>();
+                        }
+
+                        LocalHandle them = new LocalHandle(Character.Handle, HandleType.GameHandle);
+                        JavascriptHook.InvokeCustomEvent(api =>
+                            api.invokeonLocalPlayerDamaged(them, CurrentWeapon, boneHit/*, playerHealth, playerArmor*/));
+                    }
+
+                    Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, Character);
+                    Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, Game.Player.Character);
+                }
 
 				if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
 				{
@@ -1685,8 +1704,11 @@ namespace GTANetwork.Networking
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
 			var animDict = GetAnimDictionary(ourAnim);
 
+            //var playerHealth = BitConverter.GetBytes(Game.Player.Character.Health);
+            //var playerArmor = BitConverter.GetBytes(Game.Player.Character.Armor);
 
-	        if (!IsInCover)
+
+            if (!IsInCover)
 	        {
                 Character.Task.ClearSecondary();
 
@@ -1709,7 +1731,6 @@ namespace GTANetwork.Networking
 	        {
 	            DisplayAimingAnimation();
 	        }
-
 
 	        var gunEnt = Function.Call<Prop>((Hash)0x3B390A939AF0B5FC, Character);
 	        if (gunEnt != null)
@@ -1749,8 +1770,27 @@ namespace GTANetwork.Networking
 	                _lastStart = start;
 	                _lastEnd = end;
 	            }
-	        }
-	    }
+
+	            if (Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, Game.Player.Character, Character, true))
+	            {
+
+	                int boneHit = -1;
+                    var boneHitArg = new OutputArgument();
+
+	                if (Function.Call<bool>(Hash.GET_PED_LAST_DAMAGE_BONE, Game.Player.Character, boneHitArg))
+	                {
+	                    boneHit = boneHitArg.GetResult<int>();
+	                }
+
+                    LocalHandle them = new LocalHandle(Character.Handle, HandleType.GameHandle);
+                    JavascriptHook.InvokeCustomEvent(api =>
+                        api.invokeonLocalPlayerDamaged(them, CurrentWeapon, boneHit/*, playerHealth, playerArmor*/));
+	            }
+
+                Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, Character);
+                Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, Game.Player.Character);
+            }
+        }
 
 	    void DisplayShootingAnimation()
 	    {
