@@ -105,7 +105,7 @@
     <Compile Include="ColShape.cs" />
     <Compile Include="Constant\ConstantVehicleData.cs" />
     <Compile Include="DeltaCompressor.cs" />
-    <Compile Include="ExplosionTypes.cs" />
+    <Compile Include="Constant\ExplosionTypes.cs" />
     <Compile Include="FileServer.cs" />
     <Compile Include="GameServer.cs" />
     <Compile Include="CommandHandler.cs" />

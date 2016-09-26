@@ -229,7 +229,7 @@ namespace GTANetwork
             t.Start();
 
             CEFManager.InitializeCef();
-            Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
+            //Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
         }
 
         public static void ChatOnComplete(object sender,EventArgs args)

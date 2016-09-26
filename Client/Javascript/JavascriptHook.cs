@@ -839,7 +839,13 @@ namespace GTANetwork.Javascript
 
         public Browser createCefBrowser(double width, double height, bool local = true)
         {
-            var newBrowser = new Browser(Engine, new Size((int)width, (int)height), local);
+            var rat = getScreenResolutionMantainRatio();
+            var ramp = getScreenResolution();
+
+            int w = (int) ((width / rat.Width) * ramp.Width);
+            int h = (int)((height / rat.Height) * ramp.Height);
+
+            var newBrowser = new Browser(Engine, new Size(w, h), local);
             CEFManager.Browsers.Add(newBrowser);
             return newBrowser;
         }
@@ -872,7 +878,13 @@ namespace GTANetwork.Javascript
         
         public void setCefBrowserSize(Browser browser, double width, double height)
         {
-            browser.Size = new Size((int) width, (int) height);
+            var rat = getScreenResolutionMantainRatio();
+            var ramp = getScreenResolution();
+
+            int w = (int)((width / rat.Width) * ramp.Width);
+            int h = (int)((height / rat.Height) * ramp.Height);
+
+            browser.Size = new Size(w,h);
         }
 
         public Size getCefBrowserSize(Browser browser)
@@ -892,7 +904,13 @@ namespace GTANetwork.Javascript
 
         public void setCefBrowserPosition(Browser browser, double xPos, double yPos)
         {
-            browser.Position = new Point((int) xPos, (int) yPos);
+            var rat = getScreenResolutionMantainRatio();
+            var ramp = getScreenResolution();
+
+            int w = (int)((xPos / rat.Width) * ramp.Width);
+            int h = (int)((yPos / rat.Height) * ramp.Height);
+
+            browser.Position = new Point(w, h);
         }
 
         public Point getCefBrowserPosition(Browser browser)
@@ -900,13 +918,24 @@ namespace GTANetwork.Javascript
             return browser.Position;
         }
 
+        internal PointF ratioToRealRes(double x, double y)
+        {
+            var rat = getScreenResolutionMantainRatio();
+            var ramp = getScreenResolution();
+
+            float w = (float)((x / rat.Width) * ramp.Width);
+            float h = (float)((y / rat.Height) * ramp.Height);
+
+            return new PointF(w,h);
+        }
+
         public void pinCefBrowser(Browser browser, double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
         {
             browser.Pinned = new PointF[4];
-            browser.Pinned[0] = new PointF((float) x1, (float) y1);
-            browser.Pinned[1] = new PointF((float) x2, (float) y2);
-            browser.Pinned[2] = new PointF((float) x3, (float) y3);
-            browser.Pinned[3] = new PointF((float) x4, (float) y4);
+            browser.Pinned[0] = ratioToRealRes(x1, y1);
+            browser.Pinned[1] = ratioToRealRes(x2, y2);
+            browser.Pinned[2] = ratioToRealRes(x3, y3);
+            browser.Pinned[3] = ratioToRealRes(x4, y4);
         }
 
         public void clearCefPinning(Browser browser)
