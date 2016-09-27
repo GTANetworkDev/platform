@@ -2131,19 +2131,47 @@ namespace GTANetwork.Javascript
             pl.Accessories.Remove((byte) slot);
         }
 
-        public VehicleHash vehicleNameToModel(string modelName)
+        public int vehicleNameToModel(string modelName)
         {
-            return (from object value in Enum.GetValues(typeof(VehicleHash)) where modelName.ToLower() == ((VehicleHash)value).ToString().ToLower() select ((VehicleHash)value)).FirstOrDefault();
+            int model = 0;
+
+            if (VehicleHash.TryParse(modelName, out model))
+                return model;
+
+            return 0;
         }
 
-        public PedHash pedNameToModel(string modelName)
+        public int pedNameToModel(string modelName)
         {
-            return (from object value in Enum.GetValues(typeof(PedHash)) where modelName.ToLower() == ((PedHash)value).ToString().ToLower() select ((PedHash)value)).FirstOrDefault();
+            int model = 0;
+
+            if (PedHash.TryParse(modelName, out model))
+                return model;
+
+            return 0;
         }
         
-        public WeaponHash weaponNameToModel(string modelName)
+        public int weaponNameToModel(string modelName)
         {
-            return (from object value in Enum.GetValues(typeof(WeaponHash)) where modelName.ToLower() == ((WeaponHash)value).ToString().ToLower() select ((WeaponHash)value)).FirstOrDefault();
+            int model = 0;
+
+            if (WeaponHash.TryParse(modelName, out model))
+                return model;
+
+            return 0;
+        }
+
+        public void loadInterior(Vector3 pos)
+        {
+            int interior;
+            if ((interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, pos.X, pos.Y, pos.Z)) != 0)
+            {
+                Function.Call((Hash)0x2CA429C029CCF247, interior); // LOAD_INTERIOR
+                Function.Call(Hash.SET_INTERIOR_ACTIVE, interior, true);
+                Function.Call(Hash.DISABLE_INTERIOR, interior, false);
+                if (Function.Call<bool>(Hash.IS_INTERIOR_CAPPED, interior))
+                    Function.Call(Hash.CAP_INTERIOR, interior, false);
+            }
         }
 
         public void clearPlayerTasks()
@@ -2938,6 +2966,14 @@ namespace GTANetwork.Javascript
         public bool getBlipShortRange(LocalHandle blip)
         {
             return blip.Properties<RemoteBlip>().IsShortRange;
+        }
+
+        public void showBlipRoute(LocalHandle blip, bool show)
+        {
+            if (blip.Properties<RemoteBlip>().StreamedIn)
+            {
+                new Blip(blip.Value).ShowRoute = show;
+            }
         }
         
         public void setBlipScale(LocalHandle blip, double scale)
