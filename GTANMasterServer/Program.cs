@@ -205,7 +205,7 @@ namespace GTANMasterServer
             var creds = File.ReadAllText("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "credentials.txt").Split('=');
 
             var form = string.Format(formParams, creds[0], creds[1]);
-            var url = @"https://ci.appveyor.com/api/user/login";
+            var url = @"http://ci.appveyor.com/api/user/login";
             string cookieHeader;
 
             WebRequest req = WebRequest.Create(url);
@@ -224,7 +224,7 @@ namespace GTANMasterServer
 
 
             string pageSource;
-            string getUrl = @"https://ci.appveyor.com/api/projects/Guad/mtav";
+            string getUrl = @"http://ci.appveyor.com/api/projects/Guad/mtav";
             WebRequest getRequest = WebRequest.Create(getUrl);
             getRequest.Headers.Add("Cookie", cookieHeader);
             WebResponse getResponse = getRequest.GetResponse();
@@ -237,7 +237,7 @@ namespace GTANMasterServer
             var buildId = match.Groups[1].Captures[0].Value;
 
 
-            var buildFileUri = $"https://ci.appveyor.com/api/buildjobs/{buildId}/artifacts/Client/bin/Client%20Folder.zip";
+            var buildFileUri = $"http://ci.appveyor.com/api/buildjobs/{buildId}/artifacts/Client/bin/Client%20Folder.zip";
 
             
             WebRequest fileRequest = WebRequest.Create(buildFileUri);

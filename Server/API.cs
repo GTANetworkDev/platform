@@ -317,6 +317,11 @@ namespace GTANetworkServer
 
         #region Functions
 
+        public static API Public
+        {
+            get { return Program.ServerInstance.PublicAPI; }
+        }
+
         public long TickCount
         {
             get { return DateTime.Now.Ticks/10000; }

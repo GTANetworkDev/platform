@@ -322,7 +322,7 @@ namespace GTANetwork.GUI
         }
 
         public static List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 60;
+        public static int FPS = 30;
         public static Thread RenderThread;
         public static bool StopRender;
         public static Size ScreenSize;
@@ -748,7 +748,7 @@ namespace GTANetwork.GUI
             settings.OffScreenTransparentBackground = true;
             settings.JavascriptAccessClipboard = CefState.Disabled;
             settings.JavascriptOpenWindows = CefState.Disabled;
-            settings.WindowlessFrameRate = 60;
+            settings.WindowlessFrameRate = 30;
 
             _browser = new ChromiumWebBrowser(browserSettings: settings);
             _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father, this), false);

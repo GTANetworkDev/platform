@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Dynamic;
@@ -261,6 +262,15 @@ namespace GTANetwork.Javascript
                     {
                         LogException(ex);
                     }
+
+                    try
+                    {
+                        engine.Engine.Script.API.processCoroutines();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogException(ex);
+                    }
                 }
             }
 
@@ -456,6 +466,50 @@ namespace GTANetwork.Javascript
         internal bool isDisposing;
         internal string ParentResourceName;
         internal V8ScriptEngine Engine;
+
+        List<dynamic> unblockedCoroutines = new List<dynamic>();
+        List<dynamic> shouldRunNextFrame = new List<dynamic>();
+        SortedList<int, dynamic> shouldRunInTime = new SortedList<int, dynamic>();
+
+        internal void processCoroutines()
+        {
+            foreach (var coroutine in unblockedCoroutines)
+            {
+                dynamic result;
+                if (!(result = coroutine.next()).done)
+                {
+                    dynamic value = result.value;
+                    if (value is int)
+                    {
+                        int offset = (int) value;
+                        int nextRun = Environment.TickCount + offset;
+                        if (!shouldRunInTime.ContainsKey(nextRun))
+                        {
+                            shouldRunInTime.Add(nextRun, coroutine);
+                        }
+                    }
+                    else
+                    {
+                        shouldRunNextFrame.Add(coroutine);
+                    }
+                }
+            }
+
+            unblockedCoroutines = new List<dynamic>(shouldRunNextFrame);
+            shouldRunNextFrame.Clear();
+
+            while (shouldRunInTime.Count > 0 && Environment.TickCount - shouldRunInTime.ElementAt(0).Key > 0)
+            {
+                unblockedCoroutines.Add(shouldRunInTime.ElementAt(0).Value);
+                shouldRunInTime.RemoveAt(0);
+            }
+        }
+
+        public void startCoroutine(dynamic target)
+        {
+            dynamic iterator = target();
+            shouldRunNextFrame.Add(iterator);
+        }
 
 
         internal bool isPathSafe(string path)
