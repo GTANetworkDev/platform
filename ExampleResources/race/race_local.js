@@ -176,6 +176,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
         if (mainBlip == null) {
             mainBlip = API.createBlip(newPos);
+            API.setBlipColor(mainBlip, 66);
         } else {
             API.setBlipPosition(mainBlip, newPos);
         }
@@ -197,6 +198,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
             if (secondBlip == null) {
                 secondBlip = API.createBlip(secondNextBlip);
+                API.setBlipColor(secondBlip, 66);
                 API.setBlipScale(secondBlip, 0.6);
             } else {
                 API.setBlipPosition(secondBlip, secondNextBlip);
@@ -209,7 +211,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         }
 
         if (isFinishLine && secondBlip != null) {
-            API.removeBlip(secondBlip);
+            API.deleteEntity(secondBlip);
             secondBlip = null;
         }
     }
@@ -219,12 +221,12 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         API.showShard("finished");
 
         if (mainBlip != null) {
-            API.removeBlip(mainBlip);
+            API.deleteEntity(mainBlip);
             mainBlip = null;
         }
 
         if (secondBlip != null) {
-            API.removeBlip(secondBlip);
+            API.deleteEntity(secondBlip);
             secondBlip = null;
         }
 
@@ -242,12 +244,12 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 
     if (eventName === "resetRace") {
         if (mainBlip != null) {
-            API.removeBlip(mainBlip);
+            API.deleteEntity(mainBlip);
             mainBlip = null;
         }
 
         if (secondBlip != null) {
-            API.removeBlip(secondBlip);
+            API.deleteEntity(secondBlip);
             secondBlip = null;
         }
 

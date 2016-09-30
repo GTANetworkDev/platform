@@ -33,17 +33,16 @@ public class RaceGamemode : Script
     public List<Thread> ActiveThreads { get; set; }    
     public int RaceStartCountdown { get; set; }
     public DateTime RaceTimer { get; set; }
+    public DateTime LastSecond {get; set;}
 
     public void onResourceStart()
     {
-        TimeLeft = -1;
         AvailableRaces = new List<Race>();
         Opponents = new List<Opponent>();
         CurrentRaceCheckpoints = new List<Vector3>();
         Objects = new List<NetHandle>();
-        LoadRaces();
 
-        API.consoleOutput("Race gamemode started! Loaded " + AvailableRaces.Count + " races.");
+        API.consoleOutput("Race gamemode started!");
 
         API.exported.scoreboard.addScoreboardColumn("race_place", "Place", 80);
         API.exported.scoreboard.addScoreboardColumn("race_checkpoints", "Checkpoints", 160);
@@ -80,27 +79,6 @@ public class RaceGamemode : Script
     {
         API.triggerClientEventForAll("resetRace");
         
-        Opponents.ForEach(op =>
-        {
-            op.HasFinished = false;
-            op.CheckpointsPassed = 0;
-            if (!op.Vehicle.IsNull)
-            {
-                API.deleteEntity(op.Vehicle);
-            }
-        });
-
-        foreach (var ent in Objects)
-        {
-            API.deleteEntity(ent);
-        }
-
-        foreach (var t in ActiveThreads)
-        {
-            if (!t.IsAlive) continue;
-            t.Abort();
-        }
-
         API.exported.scoreboard.removeScoreboardColumn("race_place");
         API.exported.scoreboard.removeScoreboardColumn("race_checkpoints");
         API.exported.scoreboard.removeScoreboardColumn("race_time");
@@ -139,7 +117,7 @@ public class RaceGamemode : Script
             sp.Add(new SpawnPoint() {
                 Position = new Vector3(chk.getElementData<float>("posX"),
                             chk.getElementData<float>("posY"),
-                            chk.getElementData<float>("posZ"))),
+                            chk.getElementData<float>("posZ")),
                 Heading = chk.getElementData<float>("heading"),
             });
         }
@@ -150,7 +128,7 @@ public class RaceGamemode : Script
 
         foreach(var chk in map.getElementsByType("availablecar"))
         {
-            vehs.Add(API.vehicleNameToModel(chk.getElementData<float>("model")));
+            vehs.Add((VehicleHash)chk.getElementData<int>("model"));
         }
 
         output.AvailableVehicles = vehs.ToArray();
@@ -160,7 +138,9 @@ public class RaceGamemode : Script
 
     public void MapChange(string mapName, XmlGroup map)
     {
-        race = new Race(parseRace(mapName, map));
+        API.consoleOutput("Parsing map...");
+        var race = new Race(parseRace(mapName, map));
+        API.consoleOutput("Map parse done! Race null? " + (race == null));
 
         CurrentRace = race;
 
@@ -177,16 +157,18 @@ public class RaceGamemode : Script
             API.freezePlayer(op.Client, true);
         });
 
-        foreach (var ent in Objects)
+        if (Objects != null)
         {
-            API.deleteEntity(ent);
+            foreach (var ent in Objects)
+            {
+                API.deleteEntity(ent);
+            }
+
+            Objects.Clear();
         }
-
-        Objects.Clear();
-
-        foreach (var prop in race.DecorativeProps)
+        else
         {
-            Objects.Add(API.createObject(prop.Hash, prop.Position, prop.Rotation));
+            Objects = new List<NetHandle>();
         }
 
         var clients = API.getAllPlayers();
@@ -254,13 +236,7 @@ public class RaceGamemode : Script
 
     private void onClientEvent(Client sender, string eventName, params object[] arguments)
     {
-        if (eventName == "race_castVote" && IsVoteActive() && !Voters.Contains(sender))
-        {
-            var voteCast = (int)arguments[0];
-            Votes[voteCast]++;
-            Voters.Add(sender);            
-        }
-        else if (eventName == "race_requestRespawn")
+        if (eventName == "race_requestRespawn")
         {
             Opponent curOp = Opponents.FirstOrDefault(op => op.Client == sender);
             if (curOp == null || curOp.HasFinished || !curOp.HasStarted || curOp.CheckpointsPassed == 0) return;
@@ -273,25 +249,7 @@ public class RaceGamemode : Script
         if (DateTime.Now.Subtract(LastSecond).TotalMilliseconds > 1000)
         {
             LastSecond = DateTime.Now;
-            if (TimeLeft > 0)
-            {
-                TimeLeft--;
-
-                if (TimeLeft == 0)
-                {
-                    if (!IsVoteActive())
-                        StartVote();
-                }
-                else if (TimeLeft == 30)
-                {
-                    API.sendChatMessageToAll("Vote for next map will start in 30 seconds!");
-                }
-                else if (TimeLeft == 59)
-                {
-                    API.sendChatMessageToAll("Vote for next map will start in 60 seconds!");
-                }
-            }
-
+            
             if (RaceStartCountdown > 0)
             {
                 RaceStartCountdown--;
@@ -335,7 +293,7 @@ public class RaceGamemode : Script
                         {
                             if (Opponents.All(op => !op.HasFinished))
                             {
-                                TimeLeft = 60;
+                                API.exported.mapcycler.endRoundEx(60000);
                             }
 
                             opponent.HasFinished = true;
@@ -388,19 +346,6 @@ public class RaceGamemode : Script
         lock (Opponents) Opponents.Remove(curOp);
     }
 
-    [Command("votemap")]
-    public void StartVotemapCommand(Client sender)
-    {
-        if (!IsVoteActive() && (!IsRaceOngoing || DateTime.UtcNow.Subtract(RaceStart).TotalSeconds > 60))
-        {
-            StartVote();
-        }
-        else
-        {
-            API.sendChatMessageToPlayer(sender, "A vote is already in progress, or the race has just started!");
-        }
-    }
-
     [Command("forcemap", ACLRequired = true, GreedyArg = true)]
     public void ForceMapCommand(Client sender, string mapFilename)
     {
@@ -411,7 +356,7 @@ public class RaceGamemode : Script
         }
 
         EndRace();
-        API.sendChatMessageToAll("Starting map ~b~" + locatedMap.Name + "!");
+        API.sendChatMessageToAll("Starting map ~b~" + mapFilename + "!");
         API.sleep(1000);
         API.startResource(mapFilename);
     }

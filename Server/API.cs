@@ -844,6 +844,7 @@ namespace GTANetworkServer
                     Program.Output(ex.ToString());
                 }
             };
+            t.Start();
         }
         
         /// <summary>

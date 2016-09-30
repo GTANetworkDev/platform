@@ -15,7 +15,8 @@ public class MapCycler : Script
 
         API.delay(msDelay, true, () =>
         {
-            API.exported.votemanager.startMapVote(null);
+            API.consoleOutput("Starting vote map!");
+            API.exported.votemanager.startMapVote("");
         });
     }
 }
