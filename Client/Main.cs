@@ -688,7 +688,7 @@ namespace GTANetwork
             _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
 
             var us =
-                NetEntityHandler.ClientMap.FirstOrDefault(p => p is RemotePlayer && ((RemotePlayer) p).LocalHandle == -2) as RemotePlayer;
+                NetEntityHandler.ClientMap.Values.FirstOrDefault(p => p is RemotePlayer && ((RemotePlayer) p).LocalHandle == -2) as RemotePlayer;
 
             if (us == null)
                 _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
@@ -3115,7 +3115,7 @@ namespace GTANetwork
                 NetEntityHandler.ReattachAllEntities(us, true);
                 foreach (
                     var source in
-                        Main.NetEntityHandler.ClientMap.Where(
+                        Main.NetEntityHandler.ClientMap.Values.Where(
                             item => item is RemoteParticle && ((RemoteParticle) item).EntityAttached == us.RemoteHandle)
                             .Cast<RemoteParticle>())
                 {
@@ -3268,18 +3268,18 @@ namespace GTANetwork
                 }
             }
             else if (IsSpectating && SpectatingEntity == 0 && CurrentSpectatingPlayer == null &&
-                     NetEntityHandler.ClientMap.Count(op => op is SyncPed && !((SyncPed)op).IsSpectating &&
+                     NetEntityHandler.ClientMap.Values.Count(op => op is SyncPed && !((SyncPed)op).IsSpectating &&
                             (((SyncPed)op).Team == 0 || ((SyncPed)op).Team == Main.LocalTeam) &&
                             (((SyncPed)op).Dimension == 0 || ((SyncPed)op).Dimension == Main.LocalDimension)) > 0)
             {
                 CurrentSpectatingPlayer =
-                    NetEntityHandler.ClientMap.Where(
+                    NetEntityHandler.ClientMap.Values.Where(
                         op =>
                             op is SyncPed && !((SyncPed) op).IsSpectating &&
                             (((SyncPed) op).Team == 0 || ((SyncPed) op).Team == Main.LocalTeam) &&
                             (((SyncPed) op).Dimension == 0 || ((SyncPed) op).Dimension == Main.LocalDimension))
                         .ElementAt(_currentSpectatingPlayerIndex%
-                                   NetEntityHandler.ClientMap.Count(
+                                   NetEntityHandler.ClientMap.Values.Count(
                                        op =>
                                            op is SyncPed && !((SyncPed) op).IsSpectating &&
                                            (((SyncPed) op).Team == 0 || ((SyncPed) op).Team == Main.LocalTeam) &&
@@ -4157,7 +4157,7 @@ namespace GTANetwork
                                         else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
                                         {
                                             LocalTeam = newTeam;
-                                            foreach (var opponent in NetEntityHandler.ClientMap.Where(item => item is SyncPed && ((SyncPed)item).LocalHandle != -2).Cast<SyncPed>())
+                                            foreach (var opponent in NetEntityHandler.ClientMap.Values.Where(item => item is SyncPed && ((SyncPed)item).LocalHandle != -2).Cast<SyncPed>())
                                             {
                                                 if (opponent.Character != null &&
                                                     (opponent.Team == newTeam && newTeam != -1))

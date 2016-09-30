@@ -5,6 +5,7 @@ using System.Linq;
 using GTA;
 using GTA.Native;
 using GTANetwork.Javascript;
+using GTANetwork.Misc;
 using GTANetwork.Util;
 using GTANetworkShared;
 using NativeUI;
@@ -49,7 +50,7 @@ namespace GTANetwork.Networking
             {
                 if (!Main.IsOnServer() || !Main.HasFinishedDownloading) goto endTick;
 
-                var copyMap = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap);
+                var copyMap = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap.Values);
 
                 var streamedItems = copyMap.Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2);
 
@@ -129,7 +130,7 @@ namespace GTANetwork.Networking
 
                 foreach (var item in _itemsToStreamOut)
                 {
-                    if (Main.NetEntityHandler.ClientMap.Contains(item))
+                    if (Main.NetEntityHandler.ClientMap.Reverse.ContainsKey(item))
                         Main.NetEntityHandler.StreamOut(item);
                 }
 
@@ -142,7 +143,7 @@ namespace GTANetwork.Networking
                 
                 foreach (var item in _itemsToStreamIn)
                 {
-                    if (Main.NetEntityHandler.ClientMap.Contains(item))
+                    if (Main.NetEntityHandler.ClientMap.Reverse.ContainsKey(item))
                         Main.NetEntityHandler.StreamIn(item);
                 }
 
@@ -159,7 +160,8 @@ namespace GTANetwork.Networking
     {
         public Streamer()
         {
-            ClientMap = new List<IStreamedItem>();
+            ClientMap = new BiDictionary<int, IStreamedItem>();
+            HandleMap = new BiDictionary<int, int>();
         }
 
         private int _localHandleCounter = 0;
@@ -171,7 +173,7 @@ namespace GTANetwork.Networking
 
         public void UpdateAttachments()
         {
-            var attaches = new List<EntityProperties>(ClientMap.Where(item => item.StreamedIn && item.AttachedTo != null).Cast<EntityProperties>());
+            var attaches = new List<EntityProperties>(ClientMap.Values.Where(item => item.StreamedIn && item.AttachedTo != null).Cast<EntityProperties>());
 
             foreach (var item in attaches)
             {
@@ -244,7 +246,7 @@ namespace GTANetwork.Networking
         {
             var cars =
                 new List<RemoteVehicle>(
-                    ClientMap.Where(
+                    ClientMap.Values.Where(
                         item => item.StreamedIn && item is RemoteVehicle && new Model(((RemoteVehicle) item).ModelHash).IsHelicopter)
                         .Cast<RemoteVehicle>());
 
@@ -261,7 +263,7 @@ namespace GTANetwork.Networking
         {
             var ents =
                 new List<EntityProperties>(
-                    ClientMap.Where(item => item.PositionMovement != null || item.RotationMovement != null).Cast<EntityProperties>());
+                    ClientMap.Values.Where(item => item.PositionMovement != null || item.RotationMovement != null).Cast<EntityProperties>());
 
             foreach (var ent in ents)
             {
@@ -341,7 +343,7 @@ namespace GTANetwork.Networking
 
         public void DrawMarkers()
         {
-            var markers = new List<RemoteMarker>(ClientMap.Where(item => item is RemoteMarker && item.StreamedIn).Cast<RemoteMarker>());
+            var markers = new List<RemoteMarker>(ClientMap.Values.Where(item => item is RemoteMarker && item.StreamedIn).Cast<RemoteMarker>());
 
             foreach (var marker in markers)
             {
@@ -368,7 +370,7 @@ namespace GTANetwork.Networking
 
         public void DrawLabels()
         {
-            var labels = new List<RemoteTextLabel>(ClientMap.Where(item => item is RemoteTextLabel && item.StreamedIn).Cast<RemoteTextLabel>());
+            var labels = new List<RemoteTextLabel>(ClientMap.Values.Where(item => item is RemoteTextLabel && item.StreamedIn).Cast<RemoteTextLabel>());
 
             foreach (var label in labels)
             {
@@ -417,13 +419,11 @@ namespace GTANetwork.Networking
             }
         }
 
-        public List<IStreamedItem> ClientMap;
-        public WorldProperties ServerWorld;
+        public BiDictionary<int, IStreamedItem> ClientMap; // Global, IStreamedItem
+        public BiDictionary<int, int> HandleMap; // Global, GameHandle
 
-        public void DeleteLocalEntity(int handle)
-        {
-            ClientMap.RemoveAll(item => !(item is RemotePlayer) && item.LocalOnly && item.RemoteHandle == handle);
-        }
+        public WorldProperties ServerWorld;
+        
 
         public IStreamedItem EntityToStreamedItem(int gameHandle)
         {
@@ -436,18 +436,27 @@ namespace GTANetwork.Networking
             {
                 lock (ClientMap)
                 {
-                    return ClientMap.FirstOrDefault(item => item.RemoteHandle == netId && item.LocalOnly == local);
+                    if (ClientMap.ContainsKey(netId)) return ClientMap[netId];
+                    return null;
                 }
             }
             else
             {
-                if (netId == Game.Player.Character.Handle)
-                {
-                    return ClientMap.OfType<RemotePlayer>().FirstOrDefault(p => p.LocalHandle == -2);
-                }
-
                 lock (ClientMap)
                 {
+                    if (HandleMap.Reverse.ContainsKey(netId))
+                    {
+                        int remId = HandleMap.Reverse[netId];
+                        return ClientMap[remId];
+                    }
+
+                    if (netId == Game.Player.Character.Handle)
+                    {
+                        netId = -2;
+                        if (HandleMap.Reverse.ContainsKey(-2))
+                            return ClientMap[HandleMap.Reverse[-2]];
+                    }
+
                     return ClientMap.OfType<ILocalHandleable>().FirstOrDefault(item => item.LocalHandle == netId) as IStreamedItem;
                 }
             }
@@ -457,7 +466,8 @@ namespace GTANetwork.Networking
         {
             lock (ClientMap)
             {
-                ClientMap.Add(new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true});
+                ClientMap.Add(nethandle, new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true});
+                HandleMap.Add(nethandle, -2);
             }
         }
 
@@ -465,7 +475,7 @@ namespace GTANetwork.Networking
         {
             lock (ClientMap)
             {
-                var streamedItem = ClientMap.FirstOrDefault(item => item.RemoteHandle == netId && !item.LocalOnly && item.StreamedIn);
+                var streamedItem = NetToStreamedItem(netId);
                 var handleable = streamedItem as ILocalHandleable;
                 if (streamedItem == null) return null;
                 if (handleable == null) return new Prop(netId);
@@ -515,31 +525,36 @@ namespace GTANetwork.Networking
         {
             if (entityHandle == 0) return 0;
             if (entityHandle == Game.Player.Character.Handle)
-                return
-                    ClientMap.FirstOrDefault(i => i is RemotePlayer && ((RemotePlayer) i).LocalHandle == -2)
-                        ?.RemoteHandle ?? 0;
+                return HandleMap.Reverse[-2];
             lock (ClientMap)
             {
-                var ourItem = ClientMap.FirstOrDefault(item =>
-                    !item.LocalOnly && item.StreamedIn && item is ILocalHandleable &&
-                    ((ILocalHandleable) item).LocalHandle == entityHandle);
-                return ourItem?.RemoteHandle ?? entityHandle;
+                if (HandleMap.Reverse.ContainsKey(entityHandle))
+                    return HandleMap.Reverse[entityHandle];
+
+                return entityHandle;
             }
         }
         
         public void Remove(IStreamedItem item)
         {
-            lock (ClientMap) ClientMap.Remove(item);
+            lock (ClientMap)
+            {
+                ClientMap.Remove(item.RemoteHandle);
+                HandleMap.Remove(item.RemoteHandle);
+            }
         }
 
         public void RemoveByNetHandle(int netHandle)
         {
-            lock (ClientMap) ClientMap.Remove(NetToStreamedItem(netHandle));
+            lock (ClientMap)
+            {
+                Remove(NetToStreamedItem(netHandle));
+            }
         }
 
         public void RemoveByLocalHandle(int localHandle)
         {
-            lock (ClientMap) ClientMap.Remove(NetToStreamedItem(localHandle, true));
+            lock (ClientMap) Remove(NetToStreamedItem(localHandle, true));
         }
 
         public bool IsLocalPlayer(IStreamedItem item)
@@ -1189,7 +1204,7 @@ namespace GTANetwork.Networking
             RemoteVehicle rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteVehicle()
+                ClientMap.Add(netHash, rem = new RemoteVehicle()
                 {
                     RemoteHandle = netHash,
                     ModelHash = model,
@@ -1217,7 +1232,7 @@ namespace GTANetwork.Networking
             RemoteVehicle rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteVehicle()
+                ClientMap.Add(netHandle, rem = new RemoteVehicle()
                 {
                     RemoteHandle = netHandle,
 
@@ -1261,7 +1276,7 @@ namespace GTANetwork.Networking
             RemotePed rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemotePed()
+                ClientMap.Add(netHandle, rem = new RemotePed()
                 {
                     RemoteHandle = netHandle,
 
@@ -1293,7 +1308,7 @@ namespace GTANetwork.Networking
             RemoteProp rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteProp()
+                ClientMap.Add(netHash, rem = new RemoteProp()
                 {
                     RemoteHandle = netHash,
                     ModelHash = model,
@@ -1312,7 +1327,7 @@ namespace GTANetwork.Networking
             RemoteProp rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteProp()
+                ClientMap.Add(netHandle, rem = new RemoteProp()
                 {
                     RemoteHandle = netHandle,
 
@@ -1342,7 +1357,7 @@ namespace GTANetwork.Networking
             RemoteBlip rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteBlip()
+                ClientMap.Add(netHandle, rem = new RemoteBlip()
                 {
                     RemoteHandle = netHandle,
                     Position = pos,
@@ -1364,7 +1379,7 @@ namespace GTANetwork.Networking
             RemoteBlip rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteBlip()
+                ClientMap.Add(netHandle, rem = new RemoteBlip()
                 {
                     RemoteHandle = netHandle,
                     SyncedProperties = prop.SyncedProperties,
@@ -1400,7 +1415,7 @@ namespace GTANetwork.Networking
             RemoteBlip rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteBlip()
+                ClientMap.Add(netHandle, rem = new RemoteBlip()
                 {
                     RemoteHandle = netHandle,
                     AttachedNetEntity = entity.RemoteHandle,
@@ -1417,7 +1432,7 @@ namespace GTANetwork.Networking
         {
             lock (ClientMap)
             {
-                ClientMap.Add(new RemoteMarker()
+                ClientMap.Add(netHandle, new RemoteMarker()
                 {
                     MarkerType = type,
                     Position = position,
@@ -1439,7 +1454,7 @@ namespace GTANetwork.Networking
             RemoteMarker rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteMarker()
+                ClientMap.Add(netHandle, rem = new RemoteMarker()
                 {
                     RemoteHandle = netHandle,
 
@@ -1476,7 +1491,7 @@ namespace GTANetwork.Networking
             RemoteTextLabel rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteTextLabel()
+                ClientMap.Add(netHandle, rem = new RemoteTextLabel()
                 {
                     RemoteHandle = netHandle,
 
@@ -1512,7 +1527,7 @@ namespace GTANetwork.Networking
             RemoteParticle rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemoteParticle()
+                ClientMap.Add(netHandle, rem = new RemoteParticle()
                 {
                     RemoteHandle = netHandle,
 
@@ -1549,7 +1564,7 @@ namespace GTANetwork.Networking
             {
                 lock (ClientMap)
                 {
-                    ClientMap.Add(rem = new SyncPed()
+                    ClientMap.Add(netHandle, rem = new SyncPed()
                     {
                         RemoteHandle = netHandle,
                         EntityType = (byte) EntityType.Player,
@@ -1613,7 +1628,7 @@ namespace GTANetwork.Networking
             RemotePickup rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemotePickup()
+                ClientMap.Add(netHandle, rem = new RemotePickup()
                 {
                     RemoteHandle = netHandle,
                     Position = pos.ToLVector(),
@@ -1632,7 +1647,7 @@ namespace GTANetwork.Networking
             RemotePickup rem;
             lock (ClientMap)
             {
-                ClientMap.Add(rem = new RemotePickup()
+                ClientMap.Add(netHandle, rem = new RemotePickup()
                 {
                     RemoteHandle = netHandle,
 
@@ -1664,9 +1679,9 @@ namespace GTANetwork.Networking
 
         public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
         {
-            var newId = ++_localHandleCounter;
+            var newId = --_localHandleCounter;
             RemoteMarker mark;
-            ClientMap.Add(mark = new RemoteMarker()
+            ClientMap.Add(newId, mark = new RemoteMarker()
             {
                 MarkerType = markerType,
                 Position = pos.ToLVector(),
@@ -1692,7 +1707,7 @@ namespace GTANetwork.Networking
 
         public int CreateLocalVehicle(int model, GTANetworkShared.Vector3 pos, float heading)
         {
-            var veh = CreateVehicle(model, pos, new GTANetworkShared.Vector3(0, 0, heading), ++_localHandleCounter);
+            var veh = CreateVehicle(model, pos, new GTANetworkShared.Vector3(0, 0, heading), --_localHandleCounter);
             veh.LocalOnly = true;
 
             if (Count(typeof(RemoteVehicle)) < StreamerThread.MAX_VEHICLES)
@@ -1703,7 +1718,7 @@ namespace GTANetwork.Networking
 
         public int CreateLocalBlip(GTANetworkShared.Vector3 pos)
         {
-            var b = CreateBlip(pos, ++_localHandleCounter);
+            var b = CreateBlip(pos, --_localHandleCounter);
             b.LocalOnly = true;
 
             if (Count(typeof(RemoteBlip)) < StreamerThread.MAX_BLIPS)
@@ -1714,7 +1729,7 @@ namespace GTANetwork.Networking
 
         public int CreateLocalObject(int model, Vector3 pos, Vector3 rot)
         {
-            var p = CreateObject(model, pos, rot, false, ++_localHandleCounter);
+            var p = CreateObject(model, pos, rot, false, --_localHandleCounter);
             p.LocalOnly = true;
 
             if (Count(typeof(RemoteProp)) < StreamerThread.MAX_OBJECTS)
@@ -1725,7 +1740,7 @@ namespace GTANetwork.Networking
 
         public int CreateLocalPickup(int model, Vector3 pos, Vector3 rot, int amount)
         {
-            var p = CreatePickup(pos, rot, model, amount, ++_localHandleCounter);
+            var p = CreatePickup(pos, rot, model, amount, --_localHandleCounter);
             p.LocalOnly = true;
 
             if (Count(typeof(RemotePickup)) < StreamerThread.MAX_PICKUPS)
@@ -1746,7 +1761,7 @@ namespace GTANetwork.Networking
 
             var p = CreatePed(model, pp);
             p.LocalOnly = true;
-            p.RemoteHandle = ++_localHandleCounter;
+            p.RemoteHandle = --_localHandleCounter;
 
             if (Count(typeof(RemotePed)) < StreamerThread.MAX_PEDS)
                 StreamIn(p);
@@ -1758,9 +1773,9 @@ namespace GTANetwork.Networking
 
         public int CreateLocalLabel(string text, Vector3 pos, float range, float size, int dimension = 0)
         {
-            var newId = ++_localHandleCounter;
+            var newId = --_localHandleCounter;
             RemoteTextLabel label;
-            ClientMap.Add(label = new RemoteTextLabel()
+            ClientMap.Add(newId, label = new RemoteTextLabel()
             {
                 Position = pos.ToLVector(),
                 Size = size,
@@ -1820,6 +1835,19 @@ namespace GTANetwork.Networking
                     break;
             }
 
+            if (item is ILocalHandleable)
+            {
+                var han = item as ILocalHandleable;
+                if (HandleMap.ContainsKey(item.RemoteHandle))
+                {
+                    HandleMap[item.RemoteHandle] = han.LocalHandle;
+                }
+                else
+                {
+                    HandleMap.Add(item.RemoteHandle, han.LocalHandle);
+                }
+            }
+
             if (item is EntityProperties && ((EntityProperties) item).Attachables != null)
             {
                 foreach (var attachable in ((EntityProperties)item).Attachables)
@@ -1876,6 +1904,11 @@ namespace GTANetwork.Networking
             }
 
             item.StreamedIn = false;
+
+            if (item is ILocalHandleable)
+            {
+                if (HandleMap.ContainsKey(item.RemoteHandle)) HandleMap.Remove(item.RemoteHandle);
+            }
 
             if (item.Attachables != null)
             {
@@ -2435,7 +2468,7 @@ namespace GTANetwork.Networking
                 LogManager.DebugLog("HANDLEMAP LOCKED");
                 LogManager.DebugLog("HANDLEMAP SIZE: " + ClientMap.Count);
 
-                foreach (var pair in ClientMap)
+                foreach (var pair in ClientMap.Values)
                 {
                     if (!pair.StreamedIn) continue;
 
@@ -2444,6 +2477,7 @@ namespace GTANetwork.Networking
 
                 LogManager.DebugLog("CLEARING LISTS");
                 ClientMap.Clear();
+                HandleMap.Clear();
                 _localHandleCounter = 0;
             }
 

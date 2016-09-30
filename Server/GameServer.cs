@@ -219,14 +219,7 @@ namespace GTANetworkServer
             {
                 if (string.IsNullOrWhiteSpace(path)) continue;
 
-                try
-                {
-                    StartResource(path);
-                }
-                catch (Exception ex)
-                {
-                    Program.Output("Failed to load resource \"" + path + "\", error: " + ex.Message);
-                }
+                StartResource(path);
             }
 
             StreamerThread = new Thread(Streamer.MainThread);

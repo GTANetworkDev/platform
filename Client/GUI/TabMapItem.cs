@@ -260,7 +260,7 @@ namespace GTANetwork.GUI
                 
 
                 var blipList = new List<string>();
-                var localCopy = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap);
+                var localCopy = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap.Values);
 
                 foreach (var blip in Util.Util.GetAllBlips())
                 {

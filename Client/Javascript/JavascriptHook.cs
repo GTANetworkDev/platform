@@ -2739,90 +2739,90 @@ namespace GTANetwork.Javascript
 
         public LocalHandle[] getStreamedPlayers()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed && item.StreamedIn)
+            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is SyncPed && item.StreamedIn)
                 .Cast<SyncPed>().Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
         }
 
         public LocalHandle[] getStreamedVehicles()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteVehicle && item.StreamedIn).Cast<RemoteVehicle>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is RemoteVehicle && item.StreamedIn).Cast<RemoteVehicle>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
         }
 
         public LocalHandle[] getStreamedObjects()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteProp && item.StreamedIn).Cast<RemoteProp>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
+            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is RemoteProp && item.StreamedIn).Cast<RemoteProp>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
         }
 
         public LocalHandle[] getStreamedPickups()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemotePickup && item.StreamedIn)
                     .Cast<RemotePickup>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
         }
 
         public LocalHandle[] getStreamedPeds()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemotePed && item.StreamedIn)
                     .Cast<RemotePed>().Select(op => new LocalHandle(op.LocalHandle)).ToArray();
         }
 
         public LocalHandle[] getStreamedMarkers()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemoteMarker && item.StreamedIn)
                     .Cast<RemoteMarker>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getStreamedTextLabels()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemoteTextLabel && item.StreamedIn)
                     .Cast<RemoteTextLabel>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllPlayers()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>()
+            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is SyncPed).Cast<SyncPed>()
                 .Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
         }
 
         public LocalHandle[] getAllVehicles()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteVehicle)
+            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is RemoteVehicle)
                 .Cast<RemoteVehicle>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllObjects()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item => item is RemoteProp)
+            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is RemoteProp)
                 .Cast<RemoteProp>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllPickups()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemotePickup)
                     .Cast<RemotePickup>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllPeds()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemotePed)
                     .Cast<RemotePed>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllMarkers()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemoteMarker)
                     .Cast<RemoteMarker>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllTextLabels()
         {
-            return Main.NetEntityHandler.ClientMap.Where(item =>
+            return Main.NetEntityHandler.ClientMap.Values.Where(item =>
                 item is RemoteTextLabel)
                     .Cast<RemoteTextLabel>().Select(op => new LocalHandle(op.RemoteHandle, op.LocalOnly ? HandleType.LocalHandle : HandleType.NetHandle)).ToArray();
         }
@@ -2839,7 +2839,7 @@ namespace GTANetwork.Javascript
 
         public LocalHandle getPlayerByName(string name)
         {
-            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed) op).Name == name) as SyncPed;
+            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed) op).Name == name) as SyncPed;
             if (opp != null && opp.Character != null)
                 return new LocalHandle(opp.Character.Handle);
             return new LocalHandle(0);
@@ -2851,11 +2851,11 @@ namespace GTANetwork.Javascript
             {
                 return
                     ((RemotePlayer)
-                        Main.NetEntityHandler.ClientMap.First(
+                        Main.NetEntityHandler.ClientMap.Values.First(
                             op => op is RemotePlayer && ((RemotePlayer) op).LocalHandle == -2)).Name;
             }
 
-            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
             if (opp != null)
                 return opp.Name;
             return null;
@@ -2875,7 +2875,7 @@ namespace GTANetwork.Javascript
         {
             if (player == getLocalPlayer()) return Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
 
-            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
             if (opp != null)
                 return opp.AimCoords.ToLVector();
             return new Vector3();
@@ -2883,14 +2883,14 @@ namespace GTANetwork.Javascript
 
         private SyncPed handleToSyncPed(LocalHandle handle)
         {
-            return Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == handle.Value) as SyncPed;
+            return Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == handle.Value) as SyncPed;
         }
 
         public int getPlayerPing(LocalHandle player)
         {
             if (player == getLocalPlayer()) return (int)(Main.Latency*1000f);
 
-            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
             if (opp != null)
                 return (int)(opp.Latency * 1000f);
             return 0;
@@ -3079,7 +3079,7 @@ namespace GTANetwork.Javascript
 
         public void requestControlOfPlayer(LocalHandle player)
         {
-            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
             if (opp != null)
             {
                 opp.IsBeingControlledByScript = true;
@@ -3088,7 +3088,7 @@ namespace GTANetwork.Javascript
 
         public void stopControlOfPlayer(LocalHandle player)
         {
-            var opp = Main.NetEntityHandler.ClientMap.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
             if (opp != null)
             {
                 opp.IsBeingControlledByScript = false;

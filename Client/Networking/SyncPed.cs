@@ -480,7 +480,7 @@ namespace GTANetwork.Networking
 
                 Main.NetEntityHandler.ReattachAllEntities(this, false);
 
-			    foreach (var source in Main.NetEntityHandler.ClientMap.Where(item => item is RemoteParticle && ((RemoteParticle) item).EntityAttached == RemoteHandle).Cast<RemoteParticle>())
+			    foreach (var source in Main.NetEntityHandler.ClientMap.Values.Where(item => item is RemoteParticle && ((RemoteParticle) item).EntityAttached == RemoteHandle).Cast<RemoteParticle>())
 			    {
 			        Main.NetEntityHandler.StreamOut(source);
                     Main.NetEntityHandler.StreamIn(source);
