@@ -3543,6 +3543,7 @@ namespace GTANetwork.Javascript
         public delegate void IntChangeEvent(int oldValue);
         public delegate void BoolChangeEvent(bool oldValue);
         public delegate void PlayerDamageEvent(LocalHandle attacker, int weaponUsed, int boneHit);
+        public delegate void PlayerMeleeDamageEvent(LocalHandle attacker, int weaponUsed);
 
         public event EmptyEvent onResourceStart;
         public event EmptyEvent onResourceStop;
@@ -3572,6 +3573,12 @@ namespace GTANetwork.Javascript
         public event EmptyEvent onPlayerDetonateStickies;
         public event IntChangeEvent onVehicleTyreBurst;
         public event PlayerDamageEvent onLocalPlayerDamaged;
+        public event PlayerMeleeDamageEvent onLocalPlayerMeleeHit;
+
+        internal void invokeonLocalPlayerMeleeHit(LocalHandle player, int weaponUsed)
+        {
+            onLocalPlayerMeleeHit?.Invoke(player, weaponUsed);
+        }
 
         internal void invokeonLocalPlayerDamaged(LocalHandle player, int weaponUsed, int bone/*, byte[] health, byte[] armor*/)
         {

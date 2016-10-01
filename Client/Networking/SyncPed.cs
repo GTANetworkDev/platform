@@ -1517,7 +1517,10 @@ namespace GTANetwork.Networking
 					if (ray.DitHit && ray.DitHitEntity &&
 						ray.HitEntity.Handle == Game.Player.Character.Handle)
 					{
-						Game.Player.Character.ApplyDamage(25);
+                        LocalHandle them = new LocalHandle(Character.Handle, HandleType.GameHandle);
+                        JavascriptHook.InvokeCustomEvent(api =>
+                            api.invokeonLocalPlayerMeleeHit(them, CurrentWeapon));
+                        Game.Player.Character.ApplyDamage(25);
 						meleeSwingDone = true;
 					}
 				}
@@ -1530,7 +1533,10 @@ namespace GTANetwork.Networking
 				var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
 				if (ray.DitHit && ray.DitHitEntity && ray.HitEntity.Handle == Game.Player.Character.Handle)
 				{
-					Game.Player.Character.ApplyDamage(25);
+                    LocalHandle them = new LocalHandle(Character.Handle, HandleType.GameHandle);
+                    JavascriptHook.InvokeCustomEvent(api =>
+                        api.invokeonLocalPlayerMeleeHit(them, CurrentWeapon));
+                    Game.Player.Character.ApplyDamage(25);
 					meleeSwingDone = true;
 				}
 			}
