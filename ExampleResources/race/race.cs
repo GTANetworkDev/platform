@@ -138,6 +138,8 @@ public class RaceGamemode : Script
 
     public void MapChange(string mapName, XmlGroup map)
     {
+        EndRace();
+
         API.consoleOutput("Parsing map...");
         var race = new Race(parseRace(mapName, map));
         API.consoleOutput("Map parse done! Race null? " + (race == null));

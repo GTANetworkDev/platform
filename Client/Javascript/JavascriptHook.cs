@@ -21,6 +21,7 @@ using NativeUI;
 using NAudio.Wave;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Control = GTA.Control;
 using Vector3 = GTANetworkShared.Vector3;
 
 namespace GTANetwork.Javascript
@@ -129,6 +130,7 @@ namespace GTANetwork.Javascript
             ScriptEngines = new List<ClientsideScriptWrapper>();
             ThreadJumper = new List<Action>();
             TextElements = new List<UIResText>();
+            Exported = new ExpandoObject();
         }
 
         public static PointF MousePosition { get; set; }
@@ -142,6 +144,8 @@ namespace GTANetwork.Javascript
 
         public static WaveOutEvent AudioDevice { get; set; }
         public static WaveStream AudioReader { get; set; }
+
+        private static ExpandoObject Exported { get; set; }
 
         public static void InvokeServerEvent(string eventName, string resource, object[] arguments)
         {
@@ -320,6 +324,8 @@ namespace GTANetwork.Javascript
             {
                 List<ClientsideScriptWrapper> scripts = localSc.Select(StartScript).ToList();
 
+                var exportedDict = Exported as IDictionary<string, object>;
+
                 foreach (var compiledResources in scripts)
                 {
                     dynamic obj = new ExpandoObject();
@@ -332,9 +338,17 @@ namespace GTANetwork.Javascript
                     {
                         asDict.Add(resourceEngine.Filename, resourceEngine.Engine.Script);
                     }
+
+                    exportedDict.Add(compiledResources.ResourceParent, obj);
                     
                     compiledResources.Engine.AddHostObject("resource", obj);
-                    compiledResources.Engine.Script.API.invokeResourceStart();
+                }
+
+                foreach (var cr in scripts)
+                {
+                    cr.Engine.AddHostObject("exported", Exported);
+
+                    cr.Engine.Script.API.invokeResourceStart();
                 }
             });
         }
@@ -400,6 +414,7 @@ namespace GTANetwork.Javascript
             AudioReader?.Dispose();
             AudioDevice = null;
             AudioReader = null;
+            Exported = new ExpandoObject();
 
             lock (CEFManager.Browsers)
             {
@@ -420,6 +435,9 @@ namespace GTANetwork.Javascript
                     if (ScriptEngines[i].ResourceParent != resourceName) continue;
                     ScriptEngines[i].Engine.Script.API.isDisposing = true;
                 }
+
+            var dict = Exported as IDictionary<string, object>;
+            dict.Remove(resourceName);
 
             ThreadJumper.Add(delegate
             {
@@ -1502,6 +1520,38 @@ namespace GTANetwork.Javascript
                 if (veh.StreamedIn) return new Vehicle(vehicle.Value).Doors[(VehicleDoorIndex)door].IsBroken;
 
                 return (veh.Doors & (1 << door)) != 0;
+            }
+
+            return false;
+        }
+
+        public void setVehicleDoorState(LocalHandle vehicle, int door, bool open)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                var prop = vehicle.Properties<RemoteVehicle>();
+
+                if (open) prop.Doors |= (byte)(1 << door);
+                else prop.Doors &= (byte)~(1 << door);
+
+                if (open)
+                {
+                    Function.Call(Hash.SET_VEHICLE_DOOR_OPEN, vehicle.Value, door, false, false);
+                }
+                else
+                {
+                    Function.Call(Hash.SET_VEHICLE_DOOR_SHUT, vehicle.Value, door, false);
+                }
+            }
+        }
+
+        public bool getVehicleDoorState(LocalHandle vehicle, int door)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                var prop = vehicle.Properties<RemoteVehicle>();
+
+                return (prop.Doors & (1 << door)) != 0;
             }
 
             return false;
@@ -3741,7 +3791,11 @@ namespace GTANetwork.Javascript
 
             if (menu.Visible)
             {
-                Game.DisableAllControlsThisFrame(0);
+                Game.DisableControlThisFrame(0, Control.NextCamera);
+                Game.DisableControlThisFrame(0, Control.NextWeapon);
+                Game.DisableControlThisFrame(0, Control.VehicleNextRadio);
+                Game.DisableControlThisFrame(0, Control.LookLeftRight);
+                Game.DisableControlThisFrame(0, Control.LookUpDown);
             }
         }
 

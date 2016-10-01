@@ -205,6 +205,9 @@ namespace GTANetwork.Networking
                 }
                 else if (CurrentFile.Type == FileType.EndOfTransfer)
                 {
+                    List<string> AffectedResources = new List<string>();
+                    AffectedResources.AddRange(PendingScripts.ClientsideScripts.Select(cs => cs.ResourceParent));
+
                     Main.StartClientsideScripts(PendingScripts);
                     PendingScripts.ClientsideScripts.Clear();
 
@@ -216,7 +219,7 @@ namespace GTANetwork.Networking
                         Main.JustJoinedServer = false;
                     }
 
-                    Main.InvokeFinishedDownload();
+                    Main.InvokeFinishedDownload(AffectedResources);
                 }
                 else if (CurrentFile.Type == FileType.CustomData)
                 {

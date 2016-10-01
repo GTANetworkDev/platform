@@ -1298,6 +1298,38 @@ namespace GTANetworkServer
             }
         }
 
+        public void setVehicleDoorState(NetHandle vehicle, int door, bool open)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                var prop = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value);
+
+                if (open) prop.Doors |= (byte) (1 << door);
+                else prop.Doors &= (byte) ~(1 << door);
+
+                if (open)
+                {
+                    sendNativeToAllPlayers(Hash.SET_VEHICLE_DOOR_OPEN, vehicle, door, false, false);
+                }
+                else
+                {
+                    sendNativeToAllPlayers(Hash.SET_VEHICLE_DOOR_SHUT, vehicle, door, false);
+                }
+            }
+        }
+
+        public bool getVehicleDoorState(NetHandle vehicle, int door)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                var prop = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value);
+
+                return (prop.Doors & (1 << door)) != 0;
+            }
+
+            return false;
+        }
+
         public bool isVehicleWindowBroken(NetHandle vehicle, int window)
         {
             if (doesEntityExist(vehicle))

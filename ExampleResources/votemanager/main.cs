@@ -73,11 +73,13 @@ namespace Votemanager
             if (!API.getSetting<bool>("enablevotemap"))
             {
                 API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ /votemap has been disabled on this server!");
+                return;
             }
 
             if (CurrentVote != null)
             {
                 API.sendChatMessageToPlayer(sender, "~r~ERROR:~w~ A vote is already in progress!");
+                return;
             }
 
             if (API.TickCount - TimeSinceLastVote > API.getSetting<int>("votecooldown"))

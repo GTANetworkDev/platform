@@ -1813,12 +1813,12 @@ namespace GTANResource
                                                             {
                                                                 if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
                                                                      1 << k) == 0) continue;
-
+                                                                var localCopy = fullPacket.VehicleHandle.Value;
                                                                 RunningResources.ForEach(
                                                                     fs => fs.Engines.ForEach(en =>
                                                                     {
                                                                         en.InvokeVehicleDoorBreak(
-                                                                            new NetHandle(fullPacket.VehicleHandle.Value),
+                                                                            new NetHandle(localCopy),
                                                                             k);
                                                                     }));
                                                             }
@@ -1834,12 +1834,13 @@ namespace GTANResource
                                                             {
                                                                 if (((oldDoors ^ fullPacket.DamageModel.BrokenWindows) &
                                                                      1 << k) == 0) continue;
+                                                                var localCopy = fullPacket.VehicleHandle.Value;
 
                                                                 RunningResources.ForEach(
                                                                     fs => fs.Engines.ForEach(en =>
                                                                     {
                                                                         en.InvokeVehicleWindowBreak(
-                                                                            new NetHandle(fullPacket.VehicleHandle.Value),
+                                                                            new NetHandle(localCopy),
                                                                             k);
                                                                     }));
                                                             }
@@ -2389,12 +2390,24 @@ namespace GTANResource
                                             }
                                             else
                                             {
+                                                var length = msg.ReadInt32();
+                                                string[] resources = new string[length];
+
+                                                for (int i = 0; i < length; i++)
+                                                {
+                                                    resources[i] = msg.ReadString();
+                                                }
+
                                                 lock (RunningResources)
-                                                    RunningResources.ForEach(
-                                                        fs => fs.Engines.ForEach(en =>
+                                                    RunningResources.ForEach(fs =>
+                                                    {
+                                                        if (Array.IndexOf(resources, fs.DirectoryName) == -1) return;
+
+                                                        fs.Engines.ForEach(en =>
                                                         {
                                                             en.InvokePlayerDownloadFinished(client);
-                                                        }));
+                                                        });
+                                                    });
 
                                                 StressTest.HasPlayers = true;
                                             }

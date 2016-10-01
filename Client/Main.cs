@@ -2161,11 +2161,16 @@ namespace GTANetwork
             return output;
         }
 
-        public static void InvokeFinishedDownload()
+        public static void InvokeFinishedDownload(List<string> resources)
         {
             var confirmObj = Client.CreateMessage();
             confirmObj.Write((byte)PacketType.ConnectionConfirmed);
             confirmObj.Write(true);
+            confirmObj.Write(resources.Count);
+            foreach (var resource in resources)
+            {
+                confirmObj.Write(resource);
+            }
             Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
 
             HasFinishedDownloading = true;
