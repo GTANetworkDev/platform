@@ -404,7 +404,11 @@ namespace GTANetwork.Networking
 			{
 				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOfEx(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
 
-			    if (Character != null && Character.Exists()) Character.Delete();
+			    if (Character != null && Character.Exists())
+			    {
+                    LogManager.DebugLog("DELETING CHARACTER");
+			        Character.Delete();
+			    }
                 
 				DEBUG_STEP = 3;
 
@@ -423,6 +427,7 @@ namespace GTANetwork.Networking
 
 				if (Character == null) return true;
 
+                lock (Main.NetEntityHandler.ClientMap) Main.NetEntityHandler.HandleMap.Set(RemoteHandle, Character.Handle);
 
 			    Character.CanBeTargetted = true;
 
@@ -2787,6 +2792,8 @@ namespace GTANetwork.Networking
                 _parachuteProp.Delete();
                 _parachuteProp = null;
             }
+
+            lock (Main.NetEntityHandler.ClientMap) Main.NetEntityHandler.HandleMap.Remove(RemoteHandle);
         }
 
 #endregion
