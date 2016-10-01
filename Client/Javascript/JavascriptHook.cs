@@ -2598,13 +2598,15 @@ namespace GTANetwork.Javascript
 
         public void setEntityPosition(LocalHandle ent, Vector3 pos)
         {
-            new Prop(ent.Value).Position = pos.ToVector();
+            var handle = ent.Value;
+            if (handle > 0) new Prop(handle).Position = pos.ToVector();
             ent.Properties<EntityProperties>().Position = pos;
         }
 
         public void setEntityRotation(LocalHandle ent, Vector3 rot)
         {
-            new Prop(ent.Value).Rotation = rot.ToVector();
+            var handle = ent.Value;
+            if (handle > 0) new Prop(handle).Rotation = rot.ToVector();
             ent.Properties<EntityProperties>().Rotation = rot;
         }
 
@@ -3191,29 +3193,6 @@ namespace GTANetwork.Javascript
             var p = marker.Properties<RemoteMarker>();
 
             return Color.FromArgb(p.Alpha, p.Red, p.Green, p.Blue);
-        }
-
-        public void setMarkerPosition(LocalHandle marker, Vector3 pos)
-        {
-            var delta = new Delta_MarkerProperties();
-            delta.Position = pos;
-            
-            Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
-        }
-
-        public Vector3 getMarkerPosition(LocalHandle marker)
-        {
-            return marker.Properties<RemoteMarker>().Position;
-        }
-
-        public void setMarkerRotation(LocalHandle marker, Vector3 rotation)
-        {
-            marker.Properties<RemoteMarker>().Rotation = rotation;
-        }
-
-        public Vector3 getMarkerRotation(LocalHandle marker)
-        {
-            return marker.Properties<RemoteMarker>().Rotation;
         }
 
         public void setMarkerScale(LocalHandle marker, Vector3 scale)

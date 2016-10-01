@@ -129,6 +129,21 @@ namespace GTANetworkServer
             {
                 ModWhitelist = conf.whitelist.Items.Select(item => item.Hash).ToList();
             }
+
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+            {
+                var index = args.Name.IndexOf(",");
+                string actualAssembly = args.Name;
+
+                if (index != -1) actualAssembly = args.Name.Substring(0, index) + ".dll";
+
+                if (AssemblyReferences.ContainsKey(actualAssembly))
+                {
+                    return Assembly.LoadFrom(AssemblyReferences[actualAssembly]);
+                }
+
+                return null;
+            };
         }
 
         public ParseableVersion MinimumClientVersion;
@@ -180,6 +195,9 @@ namespace GTANetworkServer
 
         public List<Resource> AvailableMaps;
         public Resource CurrentMap;
+
+        // Assembly name, Path to assembly.
+        public Dictionary<string, string> AssemblyReferences = new Dictionary<string, string>();
 
         private DateTime _lastAnnounceDateTime;
 
@@ -460,6 +478,14 @@ namespace GTANetworkServer
                     }
                 }
 
+                // Load assembly references
+                if (currentResInfo.References != null)
+                    foreach (var ass in currentResInfo.References)
+                    {
+                        AssemblyReferences.Set(ass.Name,
+                            "resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar + ass.Name);
+                    }
+                
 
                 var csScripts = new List<ClientsideScript>();
 
@@ -909,7 +935,9 @@ namespace GTANetworkServer
 
             foreach (var s in references)
             {
-                compParams.ReferencedAssemblies.Add(s);
+                if (File.Exists(AssemblyReferences[s]))
+                    compParams.ReferencedAssemblies.Add(AssemblyReferences[s]);
+                else compParams.ReferencedAssemblies.Add(s);
             }
 
             compParams.GenerateInMemory = true;
