@@ -326,22 +326,22 @@ namespace GTANetwork.Javascript
 
                 var exportedDict = Exported as IDictionary<string, object>;
 
-                foreach (var compiledResources in scripts)
+                foreach (var group in scripts.GroupBy(css => css.ResourceParent))
                 {
-                    dynamic obj = new ExpandoObject();
-                    var asDict = obj as IDictionary<string, object>;
+                    dynamic thisRes = new ExpandoObject();
+                    var thisResDict = thisRes as IDictionary<string, object>;
 
-                    foreach (var resourceEngine in
-                            scripts.Where(
-                                s => s.ResourceParent == compiledResources.ResourceParent &&
-                                s != compiledResources))
+                    foreach (var compiledResources in group)
                     {
-                        asDict.Add(resourceEngine.Filename, resourceEngine.Engine.Script);
+                        thisResDict.Add(compiledResources.Filename, compiledResources.Engine.Script);
                     }
 
-                    exportedDict.Add(compiledResources.ResourceParent, obj);
-                    
-                    compiledResources.Engine.AddHostObject("resource", obj);
+                    foreach (var wrapper in group)
+                    {
+                        wrapper.Engine.AddHostObject("resource", thisRes);
+                    }
+
+                    exportedDict.Add(group.Key, thisRes);
                 }
 
                 foreach (var cr in scripts)
