@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<PlayerSettings xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <MasterServerAddress>http://master.gtanet.work/</MasterServerAddress>
+  <FavoriteServers>
+  </FavoriteServers>
+  <RecentServers>    
+  </RecentServers>
+  <ScaleChatWithSafezone>true</ScaleChatWithSafezone>
+  <SteamPowered>false</SteamPowered>
+  <UpdateChannel>stable</UpdateChannel>
+  <DisableRockstarEditor>true</DisableRockstarEditor>
+  <ScreenshotKey>F8</ScreenshotKey>
+</PlayerSettings>

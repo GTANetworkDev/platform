@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CEFInjector", "CEFInjector\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Map2Resource", "Map2Resource\Map2Resource.csproj", "{10863F07-14E9-4F11-A247-49E376A38AC3}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "GTANSetup", "GTANSetup\GTANSetup.vdproj", "{BFB7FE6D-2C0D-41D6-AC81-FE62094C486C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{10863F07-14E9-4F11-A247-49E376A38AC3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{10863F07-14E9-4F11-A247-49E376A38AC3}.Release|x64.ActiveCfg = Release|Any CPU
 		{10863F07-14E9-4F11-A247-49E376A38AC3}.Release|x64.Build.0 = Release|Any CPU
+		{BFB7FE6D-2C0D-41D6-AC81-FE62094C486C}.Debug|Any CPU.ActiveCfg = Debug
+		{BFB7FE6D-2C0D-41D6-AC81-FE62094C486C}.Debug|x64.ActiveCfg = Debug
+		{BFB7FE6D-2C0D-41D6-AC81-FE62094C486C}.Release|Any CPU.ActiveCfg = Release
+		{BFB7FE6D-2C0D-41D6-AC81-FE62094C486C}.Release|x64.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
