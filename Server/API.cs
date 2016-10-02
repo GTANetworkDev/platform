@@ -905,6 +905,11 @@ namespace GTANetworkServer
             Program.Output(text);
         }
 
+        public void consoleOutput(string text, params object[] args)
+        {
+            Program.Output(string.Format(text, args));
+        }
+
         public void downloadData(Client target, string data)
         {
             if (ResourceParent == null || ResourceParent.ResourceParent == null) throw new NullReferenceException("Illegal call to sendCustomData inside constructor!");
