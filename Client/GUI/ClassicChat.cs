@@ -287,7 +287,7 @@ namespace GTANetwork.GUI
             }
 
             
-            var keyChar = GetCharFromKey(key, Game.IsKeyPressed(Keys.ShiftKey), Game.IsKeyPressed(Keys.Alt));
+            var keyChar = GetCharFromKey(key, Game.IsKeyPressed(Keys.ShiftKey), Game.IsKeyPressed(Keys.Menu) && Game.IsKeyPressed(Keys.Control));
 
             if (keyChar.Length == 0) return;
 

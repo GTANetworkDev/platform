@@ -1098,7 +1098,7 @@ namespace GTANetwork.Javascript
         {
             Hash ourHash;
             if (!parseHash(hash, out ourHash))
-                return null;
+                throw new ArgumentException("Hash \"" + hash + "\" has not been found!");
             var fArgs = args.Select(o =>
             {
                 if (o is LocalHandle)
@@ -1107,6 +1107,7 @@ namespace GTANetwork.Javascript
                     return new InputArgument(((fArg)o).Value);
                 return new InputArgument(o);
             }).ToArray();
+
             switch ((ReturnType)returnType)
             {
                 case ReturnType.Int:
@@ -1344,13 +1345,12 @@ namespace GTANetwork.Javascript
 
         public bool getEntityInvincible(LocalHandle entity)
         {
-            /*
-            if (!entity.IsNull)
-            {
-                return new Prop(entity.Value).IsInvincible;
-            }
-            */
             return entity.Properties<EntityProperties>().IsInvincible;
+        }
+
+        public bool getLocalPlayerInvincible()
+        {
+            return Main._playerGodMode;
         }
 
         public void createParticleEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position,

@@ -2256,6 +2256,8 @@ namespace GTANetwork
 
         internal static Warning _mainWarning;
         internal static string _threadsafeSubtitle;
+
+        internal static bool _playerGodMode;
         
         public void OnTick(object sender, EventArgs e)
         {
@@ -2666,6 +2668,8 @@ namespace GTANetwork
                     }
                     */
 
+            
+
 
             if (display)
             {
@@ -2827,6 +2831,8 @@ namespace GTANetwork
             DEBUG_STEP = 9;
             Watcher.Tick();
             DEBUG_STEP = 10;
+
+            _playerGodMode = Game.Player.IsInvincible;
 
             int netPlayerCar = 0;
             RemoteVehicle cc = null;
@@ -3362,7 +3368,7 @@ namespace GTANetwork
             Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
             Function.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
             Function.Call((Hash)0xD2B315B6689D537D, Game.Player, false);
-
+            Function.Call(Hash.DISPLAY_CASH, false);
             DEBUG_STEP = 30;
 
             GameScript.Pulse();
@@ -3539,7 +3545,7 @@ namespace GTANetwork
                 }
             });
         }
-
+        
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
             Chat.OnKeyDown(e.KeyCode);

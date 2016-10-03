@@ -668,7 +668,8 @@ namespace GTANMasterServer
             {
                 if (Request.IsLocal()) return 403;
                 var jsonData = new StreamReader(Request.Body).ReadToEnd();
-                var serverAddress = Request.UserHostAddress;
+                var serverAddress = Request.Headers["x-real-ip"].FirstOrDefault();
+                //var serverAddress = Request.UserHostAddress;
                 Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:mm:ss"));
                 Program.GtanServerWorker.AddServer(serverAddress, jsonData);
                 return 200;

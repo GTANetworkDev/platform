@@ -452,6 +452,14 @@ namespace GTANetworkServer
             }
         }
 
+        public bool hasSetting(string settingName)
+        {
+            if (ResourceParent == null) throw new AccessViolationException("Illegal call to getSetting inside the constructor!");
+
+            return ResourceParent.ResourceParent.Settings != null &&
+                   ResourceParent.ResourceParent.Settings.ContainsKey(settingName);
+        }
+
         public T getSetting<T>(string settingName)
         {
             if (ResourceParent == null) throw new AccessViolationException("Illegal call to getSetting inside the constructor!");
@@ -511,6 +519,16 @@ namespace GTANetworkServer
 
                 ResourceParent.ResourceParent.Settings[settingName] = ourObj;
             }
+        }
+
+        public bool hasResourceSetting(string resource, string settingName)
+        {
+            var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
+
+            if (res == null) return false;
+
+            return res.Settings != null &&
+                   res.Settings.ContainsKey(settingName);
         }
 
         public T getResourceSetting<T>(string resource, string setting)
@@ -2990,7 +3008,9 @@ namespace GTANetworkServer
                 var delta = new Delta_EntityProperties();
 	            delta.Position = newPosition;
                 Program.ServerInstance.UpdateEntityInfo(netHandle.Value, EntityType.Prop, delta);
-            }
+
+	            setLocalEntityData(netHandle, "__LAST_POSITION_SET", TickCount);
+	        }
         }
 
         public void moveEntityPosition(NetHandle netHandle, Vector3 target, int duration)
@@ -3147,6 +3167,8 @@ namespace GTANetworkServer
 
             player.IsInVehicle = true;
             player.CurrentVehicle = vehicle;
+
+            setLocalEntityData(player, "__LAST_POSITION_SET", TickCount);
         }
 
         public void warpPlayerOutOfVehicle(Client player, NetHandle vehicle)
