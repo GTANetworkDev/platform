@@ -40,8 +40,11 @@ public class AntiCheat : Script
             }
 
             var lastLegitTp = API.getLocalEntityData(p, "__LAST_POSITION_SET");
+            var lastLegitDeath = API.getLocalEntityData(p, "__LAST_PLAYER_DEATH") ?? 0;
+            var lastLegitRespawn = API.getLocalEntityData(p, "__LAST_PLAYER_RESPAWN") ?? 0;
+            var stillDead = lastLegitRespawn < lastLegitDeath;
 
-            if (lastLegitTp == null || API.TickCount - API.getLocalEntityData(p, "__LAST_POSITION_SET") > 500)
+            if ((lastLegitTp == null || API.TickCount - lastLegitTp > 500) && !stillDead)
             {
                 var lastPos = API.getLocalEntityData(p, "ANTICHEAT_LAST_POS");
                 var velocity = API.getPlayerVelocity(p).Length();

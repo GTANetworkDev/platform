@@ -2454,6 +2454,8 @@ namespace GTANResource
                                                     en.InvokePlayerDeath(client, reason, weapon);
                                                 }));
                                             }
+
+                                            PublicAPI.setLocalEntityData(client, "__LAST_PLAYER_DEATH", PublicAPI.TickCount);
                                         }
                                         break;
                                     case PacketType.PlayerRespawned:
@@ -2467,6 +2469,7 @@ namespace GTANResource
                                                     en.InvokePlayerRespawn(client);
                                                 }));
 
+                                            PublicAPI.setLocalEntityData(client, "__LAST_PLAYER_RESPAWN", PublicAPI.TickCount);
                                         }
                                         break;
                                     case PacketType.UpdateEntityProperties:

@@ -780,6 +780,13 @@ namespace GTANetworkServer
             else return (player.LastPedFlag & (int)PedDataFlags.PlayerDead) != 0;
         }
 
+        public bool isPlayerRespawning(Client player)
+        {
+            var lastLegitDeath = getLocalEntityData(player, "__LAST_PLAYER_DEATH") ?? 0;
+            var lastLegitRespawn = getLocalEntityData(player, "__LAST_PLAYER_RESPAWN") ?? 0;
+            return lastLegitRespawn < lastLegitDeath;
+        }
+
         public void requestIpl(string iplName)
         {
             var world = Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
@@ -2347,6 +2354,15 @@ namespace GTANetworkServer
                 new List<NetHandle>(
                     Program.ServerInstance.NetEntityHandler.ToDict()
                         .Where(pair => pair.Value.EntityType == (byte)EntityType.TextLabel)
+                        .Select(pair => new NetHandle(pair.Key)));
+        }
+
+        public List<NetHandle> getAllPeds()
+        {
+            return
+                new List<NetHandle>(
+                    Program.ServerInstance.NetEntityHandler.ToDict()
+                        .Where(pair => pair.Value.EntityType == (byte)EntityType.Ped)
                         .Select(pair => new NetHandle(pair.Key)));
         }
 
