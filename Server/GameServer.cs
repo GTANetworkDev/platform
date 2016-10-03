@@ -1490,7 +1490,7 @@ namespace GTANResource
                                 lock (RunningResources)
                                 {
                                     obj.Gamemode = string.IsNullOrEmpty(GamemodeName)
-                                        ? RunningResources.FirstOrDefault(r => r.Info.Info.Type == ResourceType.gamemode)?
+                                        ? Gamemode?
                                             .DirectoryName ?? "GTA Network"
                                         : GamemodeName;
                                 }

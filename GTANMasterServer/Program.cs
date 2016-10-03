@@ -617,6 +617,7 @@ namespace GTANMasterServer
             {
                 var resp = (Response)Program.GtanServerWorker.ToJson();
                 resp.ContentType = "application/json";
+                resp.Headers.Add("Access-Control-Allow-Origin", "*");
 
                 return resp;
             };

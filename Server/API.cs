@@ -1167,6 +1167,22 @@ namespace GTANetworkServer
             Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
         }
 
+        public void explodeVehicle(NetHandle vehicle)
+        {
+            if (doesEntityExist(vehicle))
+            {
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).IsDead = true;
+                ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Health = -100;
+
+                sendNativeToAllPlayers(Hash.EXPLODE_VEHICLE, vehicle, true, false);
+
+                var delta = new Delta_VehicleProperties();
+                delta.IsDead = true;
+                delta.Health = -100;
+                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+            }
+        }
+
         public void setVehicleLivery(NetHandle vehicle, int livery)
         {
             if (doesEntityExist(vehicle))
