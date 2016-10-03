@@ -1344,11 +1344,12 @@ namespace GTANetwork.Javascript
 
         public bool getEntityInvincible(LocalHandle entity)
         {
+            /*
             if (!entity.IsNull)
             {
                 return new Prop(entity.Value).IsInvincible;
             }
-
+            */
             return entity.Properties<EntityProperties>().IsInvincible;
         }
 

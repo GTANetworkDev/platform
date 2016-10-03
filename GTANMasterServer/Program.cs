@@ -118,8 +118,12 @@ namespace GTANMasterServer
 
                 Directory.CreateDirectory(basedir + "" + Path.DirectorySeparatorChar + "scripts");
 
+                Console.WriteLine("Fetching last build...");
+
                 FetchLastBuild("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
-                
+
+                Console.WriteLine("Fetch complete. Zipping up...");
+
                 zipFile = UnzipFile("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
 
                 foreach (var memoryStream in zipFile)
@@ -204,6 +208,8 @@ namespace GTANMasterServer
 
             var creds = File.ReadAllText("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "credentials.txt").Split('=');
 
+            Console.WriteLine("Logging into appveyor...");
+
             var form = string.Format(formParams, creds[0], creds[1]);
             var url = @"http://ci.appveyor.com/api/user/login";
             string cookieHeader;
@@ -214,36 +220,45 @@ namespace GTANMasterServer
             req.Method = "POST";
             byte[] bytes = Encoding.ASCII.GetBytes(form);
             req.ContentLength = bytes.Length;
+            Console.WriteLine("Writing to stream...");
             using (Stream os = req.GetRequestStream())
             {
                 os.Write(bytes, 0, bytes.Length);
             }
-
+            Console.WriteLine("Getting response...");
             WebResponse resp = req.GetResponse();
             cookieHeader = resp.Headers["Set-cookie"];
 
+            Console.WriteLine("Getting last build...");
 
             string pageSource;
             string getUrl = @"http://ci.appveyor.com/api/projects/Guad/mtav";
             WebRequest getRequest = WebRequest.Create(getUrl);
+            Console.WriteLine("Adding cookies...");
+
             getRequest.Headers.Add("Cookie", cookieHeader);
+
+            Console.WriteLine("Getting response...");
             WebResponse getResponse = getRequest.GetResponse();
             using (StreamReader sr = new StreamReader(getResponse.GetResponseStream()))
             {
                 pageSource = sr.ReadToEnd();
             }
-
+            
             var match = Regex.Match(pageSource, "\"jobId\":\"([0-9a-zA-Z]+)");
             var buildId = match.Groups[1].Captures[0].Value;
 
 
             var buildFileUri = $"http://ci.appveyor.com/api/buildjobs/{buildId}/artifacts/Client/bin/Client%20Folder.zip";
 
-            
+            Console.WriteLine("Downloading client folder...");
             WebRequest fileRequest = WebRequest.Create(buildFileUri);
             fileRequest.Headers.Add("Cookie", cookieHeader);
+
+            Console.WriteLine("Getting stream response...");
             WebResponse fileResponse = fileRequest.GetResponse();
             if (File.Exists(destination)) File.Delete(destination);
+            Console.WriteLine("Downloading file...");
             using (var fileDest = File.Create(destination))
             {
                 fileResponse.GetResponseStream().CopyTo(fileDest);

@@ -11,7 +11,7 @@ namespace GTANetwork.Util
 {
     public class Screenshot
     {
-        public static void TakeScreenshot()
+        public static void TakeScreenshot(string name = null)
         {
             var t = new Thread((ThreadStart) delegate
             {
@@ -37,7 +37,11 @@ namespace GTANetwork.Util
                    graphics.Dispose();
                 }
 
-                var filename = "gtanetwork-" + (Directory.GetFiles(destinationFolder, "*.png").Count()+1).ToString("000") + ".png";
+                string filename;
+                if (string.IsNullOrEmpty(name))
+                    filename = "gtanetwork-" +
+                               (Directory.GetFiles(destinationFolder, "*.png").Count() + 1).ToString("000") + ".png";
+                else filename = name;
 
                 bmp.Save(destinationFolder + Path.DirectorySeparatorChar + filename);
 

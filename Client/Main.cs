@@ -711,6 +711,14 @@ namespace GTANetwork
             OnTick(null, EventArgs.Empty);
         }
 
+        public static IEnumerable<ProcessModule> GetModules()
+        {
+            var modules = Process.GetCurrentProcess().Modules;
+            
+            for (int i = 0; i < modules.Count; i++)
+                yield return modules[i];
+        }
+
         private TabMapItem _mainMapItem;
         private void BuildMainMenu()
         {

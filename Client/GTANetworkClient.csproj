@@ -205,6 +205,7 @@
     <Compile Include="Networking\SyncPed.cs" />
     <Compile Include="Util\Util.cs" />
     <Compile Include="Networking\WeaponManager.cs" />
+    <Compile Include="Util\VehiclePhotos.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

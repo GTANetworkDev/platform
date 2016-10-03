@@ -39,19 +39,15 @@ namespace GTANetwork.Networking
 
         public static bool ValidateExternalMods(List<string> whitelist)
         {
-            // Enumerate modules?
-
-            foreach (var asiMod in Directory.GetFiles("/", "*.asi"))
+            foreach (var asiMod in Main.GetModules().Where(mod => mod.ModuleName.EndsWith(".asi")))
             {
-                var filename = Path.GetFileName(asiMod);
-                if (filename != null &&
-                    (filename.ToLower() == "scripthookvdotnet.asi" ||
-                     filename.ToLower() == "scripthookv.asi"))
+                if ((asiMod.ModuleName.ToLower() == "scripthookvdotnet.asi" ||
+                     asiMod.ModuleName.ToLower() == "scripthookv.asi"))
                 {
                     continue;
                 }
 
-                if (!whitelist.Contains(HashFile(asiMod))) return false;
+                if (!whitelist.Contains(HashFile(asiMod.FileName))) return false;
             }
 
             return true;
