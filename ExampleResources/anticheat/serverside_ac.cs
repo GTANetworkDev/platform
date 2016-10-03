@@ -33,7 +33,7 @@ public class AntiCheat : Script
 
         foreach (var p in players)
         {
-            if (API.getLocalEntityData(p, "ANTICHEAT_LAST_POS") == null)
+            if (API.getLocalEntityData(p, "ANTICHEAT_LAST_POS") == null || API.getLocalEntityData(p, "ANTICHEAT_LAST_POS") == new Vector3())
             {
                 API.setLocalEntityData(p, "ANTICHEAT_LAST_POS", API.getEntityPosition(p));
                 continue;
@@ -77,10 +77,10 @@ public class AntiCheat : Script
                 API.consoleOutput("[ANTICHEAT] Player " + player.Name + " is cheating with " + cheat + "!");
                 break;
             case 2:
-                API.kickPlayer(player, "Cheating");
+                API.kickPlayer(player, "Cheating: " + cheat);
                 break;
             case 3:
-                API.banPlayer(player, "Cheating");
+                API.banPlayer(player, "Cheating: " + cheat);
                 break;
         }
     }

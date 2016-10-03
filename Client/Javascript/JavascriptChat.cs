@@ -82,7 +82,7 @@ namespace GTANetwork.Javascript
             }
 
 
-            var keyChar = ClassicChat.GetCharFromKey(key, GTA.Game.IsKeyPressed(Keys.ShiftKey), GTA.Game.IsKeyPressed(Keys.Menu) && GTA.Game.IsKeyPressed(Keys.Control));
+            var keyChar = ClassicChat.GetCharFromKey(key, GTA.Game.IsKeyPressed(Keys.ShiftKey), GTA.Game.IsKeyPressed(Keys.Menu) && GTA.Game.IsKeyPressed(Keys.ControlKey));
 
             if (keyChar.Length == 0) return;
             

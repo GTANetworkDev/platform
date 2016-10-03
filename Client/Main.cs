@@ -4572,8 +4572,8 @@ namespace GTANetwork
                     switch (newStatus)
                     {
                         case NetConnectionStatus.InitiatedConnect:
-                            World.RenderingCamera = null;
                             Util.Util.SafeNotify("Connecting...");
+                            /*World.RenderingCamera = null;*/
                             LocalTeam = -1;
                             LocalDimension = 0;
                             ResetPlayer();
