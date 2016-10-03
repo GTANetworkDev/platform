@@ -120,6 +120,7 @@ namespace GTANMasterServer
 
                 Console.WriteLine("Fetching last build...");
 
+                // Download the zip to download.zip
                 FetchLastBuild("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
 
                 Console.WriteLine("Fetch complete. Zipping up...");

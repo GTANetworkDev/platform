@@ -263,7 +263,10 @@ namespace GTANetworkServer
                         annObject.CurrentPlayers = Clients.Count;
                         annObject.MaxPlayers = MaxPlayers;
                         annObject.Map = CurrentMap?.DirectoryName;
-                        annObject.Gamemode = string.IsNullOrEmpty(GamemodeName) ? Gamemode?.DirectoryName : GamemodeName;
+                        annObject.Gamemode = string.IsNullOrEmpty(GamemodeName)
+                                        ? Gamemode?
+                                            .DirectoryName ?? "GTA Network"
+                                        : GamemodeName;
                         annObject.Port = Port;
 
                         wb.UploadData(MasterServer.Trim('/') + "/addserver",
