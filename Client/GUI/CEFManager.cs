@@ -171,7 +171,7 @@ namespace GTANetwork.GUI
                     return;
                 }
 
-                #if !DISABLE_CEF
+#if !DISABLE_CEF
 
                 foreach (var browser in CEFManager.Browsers)
                 {
@@ -217,7 +217,7 @@ namespace GTANetwork.GUI
                     browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
                 }
 
-                #endif
+#endif
             };
 
             KeyUp += (sender, args) =>

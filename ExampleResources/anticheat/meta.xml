@@ -1,0 +1,14 @@
+<meta>
+	<info type="script" name="Anti-Cheat" version="1.0" async="true" />
+
+	<script src="serverside_ac.cs" type="server" lang="csharp" />
+	<script src="clientside_ac.js" type="client" lang="javascript" />
+
+	<settings>
+		<setting name="CHEAT_TELEPORT" value="2" default="2	" description="What to do when we detect a player using a cheat. 0=Do nothing, 1=Console warn, 2=Kick, 3=Ban" />
+
+		<setting name="CHEAT_GODMODE" value="2" default="2" description="What to do when we detect a player using a cheat. 0=Do nothing, 1=Console warn, 2=Kick, 3=Ban" />
+
+		<setting name="CHEAT_AIRBREAK" value="2" default="2" description="What to do when we detect a player using a cheat. 0=Do nothing, 1=Console warn, 2=Kick, 3=Ban" />
+	</settings>
+</meta>
