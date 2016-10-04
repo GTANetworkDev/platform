@@ -269,6 +269,7 @@ namespace GTANetworkServer
                                             .DirectoryName ?? "GTA Network"
                                         : GamemodeName;
                         annObject.Port = Port;
+                        annObject.Passworded = PasswordProtected;
 
                         wb.UploadData(MasterServer.Trim('/') + "/addserver",
                             Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(annObject)));

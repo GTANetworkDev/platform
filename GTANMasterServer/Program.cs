@@ -766,6 +766,7 @@ namespace GTANMasterServer
         public string Gamemode { get; set; }
         public string Map { get; set; }
         public string IP { get; set; }
+        public bool Passworded { get; set; }
     }
 
     public class Startup

@@ -8,5 +8,6 @@
         public int CurrentPlayers { get; set; }
         public string Gamemode { get; set; }
         public string Map { get; set; }
+        public bool Passworded { get; set; }
     }
 }
