@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
-using GTANetworkServer;
+using GTANetworkShared;
 
 namespace Map2Resource
 {

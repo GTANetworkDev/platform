@@ -13,12 +13,14 @@ namespace GTANetworkServer
         internal int VehicleHandleInternal { get; set; }
         internal Dictionary<int, long> LastPacketReceived = new Dictionary<int, long>();
         internal Streamer Streamer { get; set; }
+        internal DateTime LastUpdate { get; set; }
 
         internal bool Fake { get; set; }
 
         internal int LastPedFlag { get; set; }
         internal int LastVehicleFlag { get; set; }
         internal NetConnection NetConnection { get; private set; }
+
         public string SocialClubName { get; set; }
         public string Name { get; set; }
         public float Latency { get; set; }
@@ -37,18 +39,17 @@ namespace GTANetworkServer
         public bool IsInVehicle { get; internal set; }
         public int VehicleSeat { get; internal set; }
 
-        public DateTime LastUpdate { get; internal set; }
 
-        public NetHandle CharacterHandle { get; set; }
+        public Player CharacterHandle { get; set; }
 
-        public PlayerProperties Properties
+        internal PlayerProperties Properties
         {
-            get { return Program.ServerInstance.NetEntityHandler.ToDict()[CharacterHandle.Value] as PlayerProperties; }
+            get { return Program.ServerInstance.NetEntityHandler.ToDict()[CharacterHandle.handle.Value] as PlayerProperties; }
         }
 
         internal void CommitConnection()
         {
-            CharacterHandle = new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle());
+            CharacterHandle = new Player(this, API.Public, new NetHandle(Program.ServerInstance.NetEntityHandler.GeneratePedHandle()));
         }
 
         public Client(NetConnection nc)
@@ -61,6 +62,11 @@ namespace GTANetworkServer
         }
 
         public static implicit operator NetHandle(Client c)
+        {
+            return c.CharacterHandle;
+        }
+
+        public static implicit operator Player(Client c)
         {
             return c.CharacterHandle;
         }

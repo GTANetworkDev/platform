@@ -1096,7 +1096,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagText = text;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
         }
 
         public void resetPlayerNametag(Client player)
@@ -1105,7 +1105,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagText = " ";
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
         }
 
         public void setPlayerNametagVisible(Client player, bool visible)
@@ -1117,7 +1117,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagSettings = player.Properties.NametagSettings;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
         }
 
         public bool getPlayerNametagVisible(Client player)
@@ -1134,7 +1134,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagSettings = player.Properties.NametagSettings;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
         }
 
         public void resetPlayerNametagColor(Client player)
@@ -1145,7 +1145,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagSettings = player.Properties.NametagSettings;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
         }
 
         public void setPlayerToSpectator(Client player)
@@ -1155,7 +1155,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Flag = player.Properties.Flag;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public void setPlayerToSpectatePlayer(Client player, Client target)
@@ -1165,7 +1165,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Flag = player.Properties.Flag;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public void unspectatePlayer(Client player)
@@ -1175,7 +1175,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Flag = player.Properties.Flag;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public void explodeVehicle(NetHandle vehicle)
@@ -2012,12 +2012,12 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), (int)modelHash);
             if (doesEntityExist(player.CharacterHandle))
             {
-                ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
                     .ModelHash = (int)modelHash;
                 
                 var delta = new Delta_PlayerProperties();
                 delta.ModelHash = (int)modelHash;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
             }
 
             setPlayerDefaultClothes(player);
@@ -2028,15 +2028,15 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0x45EEE61580806D63, player.CharacterHandle);
             if (doesEntityExist(player.CharacterHandle))
             {
-                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Clear();
-                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Clear();
-                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Clear();
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value]).Accessories.Clear();
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value]).Textures.Clear();
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value]).Props.Clear();
 
                 var delta = new Delta_PlayerProperties();
                 delta.Textures = new Dictionary<byte, byte>();
                 delta.Accessories = new Dictionary<byte, Tuple<byte, byte>>();
                 delta.Props = new Dictionary<byte, byte>();
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
             }
         }
 
@@ -2050,7 +2050,12 @@ namespace GTANetworkServer
         {
             Program.ServerInstance.ChangePlayerTeam(player, team);
         }
-        
+
+        public int getPlayerTeam(Client player)
+        {
+            return player.Properties.Team;
+        }
+
         public void playPlayerAnimation(Client player, int flag, string animDict, string animName)
         {
             Program.ServerInstance.PlayCustomPlayerAnimation(player, flag, animDict, animName);
@@ -2252,51 +2257,99 @@ namespace GTANetworkServer
 
         public void setPlayerClothes(Client player, int slot, int drawable, int texture)
         {
-            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.handle.Value))
             {
-                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Props.Set((byte)slot, (byte)drawable);
-                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Textures.Set((byte)slot, (byte)texture);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x262B14F48D29DE80, new EntityArgument(player.CharacterHandle.Value), slot, drawable, texture, 2);
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value]).Props.Set((byte)slot, (byte)drawable);
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value]).Textures.Set((byte)slot, (byte)texture);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x262B14F48D29DE80, new EntityArgument(player.CharacterHandle.handle.Value), slot, drawable, texture, 2);
 
                 var delta = new Delta_PlayerProperties();
                 delta.Textures =
-                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
                         .Textures;
                 delta.Props =
-                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
                         .Props;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
             }
+        }
+
+        public int getPlayerClothesDrawable(Client player, int slot)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.handle.Value))
+            {
+                return
+                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
+                        .Props.Get((byte) slot);
+            }
+
+            return 0;
+        }
+
+        public int getPlayerClothesTexture(Client player, int slot)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.handle.Value))
+            {
+                return
+                    ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
+                        .Textures.Get((byte)slot);
+            }
+
+            return 0;
         }
 
         public void setPlayerAccessory(Client player, int slot, int drawable, int texture)
         {
-            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.handle.Value))
             {
-                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Set((byte)slot, new Tuple<byte, byte>((byte)drawable, (byte) texture));
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x93376B65A266EB5F, new EntityArgument(player.CharacterHandle.Value), slot, drawable, texture, true);
+                ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value]).Accessories.Set((byte)slot, new Tuple<byte, byte>((byte)drawable, (byte) texture));
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x93376B65A266EB5F, new EntityArgument(player.CharacterHandle.handle.Value), slot, drawable, texture, true);
 
                 var delta = new Delta_PlayerProperties();
                 delta.Accessories =
-                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
                         .Accessories;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
             }
         }
 
         public void clearPlayerAccessory(Client player, int slot)
         {
-            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.Value))
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.handle.Value))
             {
-                ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value]).Accessories.Remove((byte) slot);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x0943E5B8E078E76E, new EntityArgument(player.CharacterHandle.Value), slot);
+                ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value]).Accessories.Remove((byte) slot);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0x0943E5B8E078E76E, new EntityArgument(player.CharacterHandle.handle.Value), slot);
 
                 var delta = new Delta_PlayerProperties();
                 delta.Accessories =
-                    ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.Value])
+                    ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
                         .Accessories;
-                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+                Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
             }
+        }
+
+        public int getPlayerAccessoryDrawable(Client player, int slot)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.handle.Value))
+            {
+                return
+                    ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
+                        .Accessories.Get((byte)slot).Item1;
+            }
+
+            return 0;
+        }
+
+        public int getPlayerAccessoryTexture(Client player, int slot)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.CharacterHandle.handle.Value))
+            {
+                return
+                    ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.CharacterHandle.handle.Value])
+                        .Accessories.Get((byte)slot).Item2;
+            }
+
+            return 0;
         }
 
         public void clearPlayerTasks(Client player)
@@ -2484,12 +2537,12 @@ namespace GTANetworkServer
 
             player.Name = newName;
 
-            Program.ServerInstance.NetEntityHandler.NetToProp<PlayerProperties>(player.CharacterHandle.Value).Name =
+            Program.ServerInstance.NetEntityHandler.NetToProp<PlayerProperties>(player.CharacterHandle.handle.Value).Name =
                 newName;
 
             var delta = new Delta_PlayerProperties();
             delta.Name = newName;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
 
             return true;
         }
@@ -2645,7 +2698,7 @@ namespace GTANetworkServer
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public void removeAllPlayerWeapons(Client player)
@@ -2663,7 +2716,7 @@ namespace GTANetworkServer
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public void setPlayerWeaponTint(Client player, WeaponHash weapon, WeaponTint tint)
@@ -2674,7 +2727,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public WeaponTint getPlayerWeaponTint(Client player, WeaponHash weapon)
@@ -2710,7 +2763,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public void removePlayerWeaponComponent(Client player, WeaponHash weapon, WeaponComponent component)
@@ -2724,7 +2777,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.Value, EntityType.Player, delta, player);
+            Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
         }
 
         public WeaponComponent[] getAllWeaponComponents(WeaponHash weapon)
@@ -3152,12 +3205,12 @@ namespace GTANetworkServer
         public void setPlayerSeatbelt(Client player, bool seatbelt)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x1913FE4CBF41C463,
-                new EntityArgument(player.CharacterHandle.Value), 32, !seatbelt);
+                new EntityArgument(player.CharacterHandle.handle.Value), 32, !seatbelt);
         }
 
         public bool getPlayerSeatbelt(Client player)
         {
-            return !fetchNativeFromPlayer<bool>(player, 0x7EE53118C892B513, new EntityArgument(player.CharacterHandle.Value), 32, true);
+            return !fetchNativeFromPlayer<bool>(player, 0x7EE53118C892B513, new EntityArgument(player.CharacterHandle.handle.Value), 32, true);
         }
 
         public void freezePlayer(Client player, bool freeze)
@@ -3167,7 +3220,7 @@ namespace GTANetworkServer
                 Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CurrentVehicle.Value), freeze);
             }
 
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CharacterHandle.Value), freeze);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CharacterHandle.handle.Value), freeze);
         }
 
 	    public void setEntityRotation(NetHandle netHandle, Vector3 newRotation)

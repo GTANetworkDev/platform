@@ -7,15 +7,41 @@ namespace GTANetworkServer
         internal Entity(API father, NetHandle handle)
         {
             Base = father;
-            Handle = handle;
+            this.handle = handle;
         }
 
-        public NetHandle Handle { get; protected set; }
+        public NetHandle handle { get; protected set; }
         protected API Base { get; set; }
 
         public static implicit operator NetHandle(Entity c)
         {
-            return c.Handle;
+            return c.handle;
+        }
+
+        public override int GetHashCode()
+        {
+            return handle.Value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return (obj as NetHandle?)?.Value == handle.Value;
+        }
+
+        public static bool operator ==(Entity left, Entity right)
+        {
+            if ((object) left == null && (object) right == null) return true;
+            if ((object) left == null || (object) right == null) return false;
+
+            return left.handle == right.handle;
+        }
+
+        public static bool operator !=(Entity left, Entity right)
+        {
+            if ((object)left == null && (object)right == null) return false;
+            if ((object)left == null || (object)right == null) return true;
+
+            return left.handle != right.handle;
         }
 
         #region Properties
