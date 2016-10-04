@@ -122,12 +122,9 @@
     <Compile Include="StressTest.cs" />
     <Compile Include="UnoccupiedVehicleManager.cs" />
     <Compile Include="Constant\WeaponComponentHash.cs" />
-    <Compile Include="Constant\PickupHashes.cs" />
     <Compile Include="ResourceInfo.cs" />
-    <Compile Include="Constant\VehicleHashes.cs" />
     <Compile Include="NetEntityHandler.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Constant\WeaponHashes.cs" />
     <Compile Include="XmlParser.cs" />
   </ItemGroup>
   <ItemGroup>

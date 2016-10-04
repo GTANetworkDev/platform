@@ -55,13 +55,16 @@
     <Compile Include="NativeData.cs" />
     <Compile Include="NonStandardVehicleMods.cs" />
     <Compile Include="PacketOptimization.cs" />
+    <Compile Include="PickupHashes.cs" />
     <Compile Include="PickupToWeapon.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Packets.cs" />
     <Compile Include="ServerSettings.cs" />
     <Compile Include="SyncPackets.cs" />
     <Compile Include="Util.cs" />
+    <Compile Include="VehicleHashes.cs" />
     <Compile Include="VersionCompatibility.cs" />
+    <Compile Include="WeaponHashes.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
