@@ -10,7 +10,7 @@ using Nancy;
 using Newtonsoft.Json;
 using Owin;
 
-namespace GTANetworkServer
+namespace GTANetworkServer.Managers
 {
     public class FileServer : IDisposable
     {

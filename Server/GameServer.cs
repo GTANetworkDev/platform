@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using GTANetworkServer.Constant;
+using GTANetworkServer.Managers;
 using GTANetworkShared;
 using Lidgren.Network;
 using Microsoft.CSharp;

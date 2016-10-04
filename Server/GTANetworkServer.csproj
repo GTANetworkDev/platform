@@ -97,33 +97,43 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AccessControlList.cs" />
+    <Compile Include="Elements\Blip.cs" />
+    <Compile Include="Elements\Entity.cs" />
+    <Compile Include="Elements\Marker.cs" />
+    <Compile Include="Elements\Object.cs" />
+    <Compile Include="Elements\ParticleEffect.cs" />
+    <Compile Include="Elements\Ped.cs" />
+    <Compile Include="Elements\Pickup.cs" />
+    <Compile Include="Elements\Player.cs" />
+    <Compile Include="Elements\TextLabel.cs" />
+    <Compile Include="Elements\Vehicle.cs" />
+    <Compile Include="Managers\AccessControlList.cs" />
     <Compile Include="API.cs" />
-    <Compile Include="Bans.cs" />
+    <Compile Include="Managers\Bans.cs" />
     <Compile Include="Constant\ChatData.cs" />
-    <Compile Include="Client.cs" />
-    <Compile Include="ColShape.cs" />
+    <Compile Include="Elements\Client.cs" />
+    <Compile Include="Elements\ColShape.cs" />
     <Compile Include="Constant\ConstantVehicleData.cs" />
-    <Compile Include="DeltaCompressor.cs" />
+    <Compile Include="Managers\DeltaCompressor.cs" />
     <Compile Include="Constant\ExplosionTypes.cs" />
-    <Compile Include="FileServer.cs" />
+    <Compile Include="Managers\FileServer.cs" />
     <Compile Include="GameServer.cs" />
-    <Compile Include="CommandHandler.cs" />
+    <Compile Include="Managers\CommandHandler.cs" />
     <Compile Include="MemberwiseClone.cs" />
     <Compile Include="Constant\NativeHashes.cs" />
     <Compile Include="Constant\PedHashes.cs" />
-    <Compile Include="PickupManager.cs" />
+    <Compile Include="Managers\PickupManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Compile Include="Streamer.cs" />
-    <Compile Include="StressTest.cs" />
-    <Compile Include="UnoccupiedVehicleManager.cs" />
+    <Compile Include="Managers\Streamer.cs" />
+    <Compile Include="Managers\StressTest.cs" />
+    <Compile Include="Managers\UnoccupiedVehicleManager.cs" />
     <Compile Include="Constant\WeaponComponentHash.cs" />
     <Compile Include="ResourceInfo.cs" />
-    <Compile Include="NetEntityHandler.cs" />
+    <Compile Include="Managers\NetEntityHandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="XmlParser.cs" />
   </ItemGroup>

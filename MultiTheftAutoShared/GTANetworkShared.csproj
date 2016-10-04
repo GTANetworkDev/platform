@@ -53,6 +53,7 @@
     <Compile Include="MasterServerAnnounce.cs" />
     <Compile Include="Math.cs" />
     <Compile Include="NativeData.cs" />
+    <Compile Include="NetHandle.cs" />
     <Compile Include="NonStandardVehicleMods.cs" />
     <Compile Include="PacketOptimization.cs" />
     <Compile Include="PickupHashes.cs" />

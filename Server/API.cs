@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Xml;
 using GTANetworkServer.Constant;
+using GTANetworkServer.Managers;
 using GTANetworkShared;
 using Lidgren.Network;
 using Newtonsoft.Json;
@@ -963,6 +964,16 @@ namespace GTANetworkServer
                 delta.Alpha = (byte) newAlpha;
                 Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
             }
+        }
+
+        public byte getEntityTransparency(NetHandle entity)
+        {
+            if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(entity.Value))
+            {
+                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Alpha;
+            }
+
+            return 0;
         }
 
         public void setEntityDimension(NetHandle entity, int dimension)

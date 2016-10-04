@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using GTANetworkShared;
 using Lidgren.Network;
 
-namespace GTANetworkServer
+namespace GTANetworkServer.Managers
 {
     internal class UnoccupiedVehicleManager
     {

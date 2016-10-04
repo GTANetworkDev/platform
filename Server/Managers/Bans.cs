@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 
-namespace GTANetworkServer
+namespace GTANetworkServer.Managers
 {
     public class BanCollection
     {

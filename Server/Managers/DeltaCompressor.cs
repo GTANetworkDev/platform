@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using GTANetworkShared;
 
-
-namespace GTANetworkServer
+namespace GTANetworkServer.Managers
 {
     internal class DeltaCompressor
     {
