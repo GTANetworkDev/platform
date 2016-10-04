@@ -31,6 +31,8 @@ using Newtonsoft.Json;
 using ProtoBuf;
 using Control = GTA.Control;
 using Vector3 = GTA.Math.Vector3;
+using WeaponHash = GTA.WeaponHash;
+using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork
 {
@@ -4284,8 +4286,8 @@ namespace GTANetwork
                                         var hash = (int) args[1];
                                         var hasPermission = (bool) args[2];
                                         
-                                        if (hasPermission) WeaponInventoryManager.Allow((WeaponHash) hash);
-                                        else WeaponInventoryManager.Deny((WeaponHash)hash);
+                                        if (hasPermission) WeaponInventoryManager.Allow((GTANetworkShared.WeaponHash) hash);
+                                        else WeaponInventoryManager.Deny((GTANetworkShared.WeaponHash)hash);
                                     }
                                     else
                                     {

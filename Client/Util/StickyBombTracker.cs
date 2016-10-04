@@ -3,6 +3,8 @@ using GTA;
 using GTANetwork.Javascript;
 using GTANetwork.Networking;
 using GTANetworkShared;
+using WeaponHash = GTA.WeaponHash;
+using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Util
 {

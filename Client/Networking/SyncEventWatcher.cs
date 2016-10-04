@@ -5,6 +5,8 @@ using GTA.Native;
 using GTANetwork.Javascript;
 using GTANetwork.Util;
 using GTANetworkShared;
+using WeaponHash = GTA.WeaponHash;
+using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Networking
 {
@@ -79,7 +81,7 @@ namespace GTANetwork.Networking
                 {
                     if (PickupToWeapon.Translate(pickup.ModelHash) != 0)
                     {
-                        CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash)PickupToWeapon.Translate(pickup.ModelHash));
+                        CrossReference.EntryPoint.WeaponInventoryManager.Allow((GTANetworkShared.WeaponHash)PickupToWeapon.Translate(pickup.ModelHash));
                     }
 
                     JavascriptHook.InvokeCustomEvent(

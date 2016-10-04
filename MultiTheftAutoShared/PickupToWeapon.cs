@@ -50,8 +50,13 @@
                 case -105925489: return 453432689; // WeaponPistol -> Pistol
                 case -95310859: return -102323637; // WeaponBottle -> Bottle
                 case -30788308: return 100416529; // WeaponSniperRifle -> SniperRifle
-
-
+                case 155106086: return -1810795771; // WeaponPoolcue -> Poolcue 
+                case 158843122: return -853065399; // WeaponBattleaxe -> Battleaxe 
+                case -1352061783: return -1169823560; // WeaponPipebomb -> Pipebomb 
+                case -1127890446: return 317205821; // WeaponAutoshotgun -> Autoshotgun 
+                case -747492773: return -1121678507; // WeaponMiniSMG -> MiniSMG 
+                case -451800215: return 419712736; // WeaponWrench -> Wrench 
+                case -253098439: return 125959754; // WeaponCompactLauncher -> CompactLauncher 
             }
         }
     }

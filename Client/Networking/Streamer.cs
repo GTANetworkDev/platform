@@ -10,6 +10,7 @@ using GTANetwork.Util;
 using GTANetworkShared;
 using NativeUI;
 using Vector3 = GTA.Math.Vector3;
+using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Networking
 {

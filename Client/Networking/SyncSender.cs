@@ -8,6 +8,8 @@ using GTANetwork.Util;
 using GTANetworkShared;
 using Lidgren.Network;
 using Vector3 = GTA.Math.Vector3;
+using WeaponHash = GTA.WeaponHash;
+using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Networking
 {
