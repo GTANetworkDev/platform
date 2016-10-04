@@ -23,6 +23,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Control = GTA.Control;
 using Vector3 = GTANetworkShared.Vector3;
+using VehicleHash = GTANetworkShared.VehicleHash;
+using WeaponHash = GTANetworkShared.WeaponHash;
 
 namespace GTANetwork.Javascript
 {
@@ -2314,17 +2316,17 @@ namespace GTANetwork.Javascript
 
         public void givePlayerWeaponComponent(int weapon, int component)
         {
-            Game.Player.Character.Weapons[(WeaponHash)weapon].SetComponent((WeaponComponent) component, true);
+            Game.Player.Character.Weapons[(GTA.WeaponHash)weapon].SetComponent((WeaponComponent) component, true);
         }
 
         public void removePlayerWeaponComponent(int weapon, int component)
         {
-            Game.Player.Character.Weapons[(WeaponHash)weapon].SetComponent((WeaponComponent)component, false);
+            Game.Player.Character.Weapons[(GTA.WeaponHash)weapon].SetComponent((WeaponComponent)component, false);
         }
 
         public bool hasPlayerWeaponComponent(int weapon, int component)
         {
-            return Game.Player.Character.Weapons[(WeaponHash) weapon].IsComponentActive((WeaponComponent) component);
+            return Game.Player.Character.Weapons[(GTA.WeaponHash) weapon].IsComponentActive((WeaponComponent) component);
         }
 
         public WeaponComponent[] getAllWeaponComponents(WeaponHash weapon)
@@ -2515,7 +2517,7 @@ namespace GTANetwork.Javascript
                         WeaponComponent.AtScopeSmall,
                         WeaponComponent.AtArAfGrip,
                     };
-                case WeaponHash.SawnOffShotgun:
+                case WeaponHash.SawnoffShotgun:
                     return new WeaponComponent[]
                     {
                         WeaponComponent.SawnoffShotgunVarmodLuxe,
@@ -3942,7 +3944,7 @@ namespace GTANetwork.Javascript
         public void givePlayerWeapon(int weapon, int ammo, bool equipNow, bool ammoLoaded)
         {
             CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash) weapon);
-            Game.Player.Character.Weapons.Give((WeaponHash) weapon, ammo, equipNow, ammoLoaded);
+            Game.Player.Character.Weapons.Give((GTA.WeaponHash) weapon, ammo, equipNow, ammoLoaded);
         }
 
         public void removeAllPlayerWeapons()
@@ -3953,7 +3955,7 @@ namespace GTANetwork.Javascript
 
         public bool doesPlayerHaveWeapon(int weapon)
         {
-            return Game.Player.Character.Weapons.HasWeapon((WeaponHash) weapon);
+            return Game.Player.Character.Weapons.HasWeapon((GTA.WeaponHash) weapon);
         }
 
         public void removePlayerWeapon(int weapon)

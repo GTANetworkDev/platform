@@ -1,4 +1,4 @@
-﻿namespace GTANetworkServer
+﻿namespace GTANetworkShared
 {
     public enum WeaponHash
     {
@@ -70,5 +70,12 @@
         Bottle = -102323637,
         SmokeGrenade = -37975472,
         Parachute = -72657034,
+        Autoshotgun = 317205821,
+        Battleaxe = -853065399,
+        CompactLauncher = 125959754,
+        MiniSMG = -1121678507,
+        Pipebomb = -1169823560,
+        Poolcue = -1810795771,
+        Wrench = 419712736,
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace GTANetworkServer
+﻿namespace GTANetworkShared
 {
     public enum VehicleHash : int
     {
@@ -453,5 +453,26 @@
         Tampa2 = -1071380347,
         Omnis = -777172681,
         Trophytruck2 = -663299102,
+        Avarus = -2115793025,
+        Blazer4 = -440768424,
+        Chimera = 6774487,
+        Daemon2 = -1404136503,
+        Defiler = 822018448,
+        Esskey = 2035069708,
+        Faggio = -1842748181,
+        Faggio3 = -1289178744,
+        Hakuchou2 = -255678177,
+        Manchez = -1523428744,
+        Nightblade = -1606187161,
+        Raptor = -674927303,
+        Ratbike = 1873600305,
+        Sanctus = 1491277511,
+        Shotaro = -405626514,
+        Tornado6 = -1558399629,
+        Vortex = -609625092,
+        Wolfsbane = -618617997,
+        Youga2 = 1026149675,
+        Zombiea = -1009268949,
+        Zombieb = -570033273,
     }
 }

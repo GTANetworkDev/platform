@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GTA;
+using WeaponHash = GTANetworkShared.WeaponHash;
 
 namespace GTANetwork.Networking
 {
@@ -26,13 +27,8 @@ namespace GTANetwork.Networking
             {
                 if (!_playerInventory.Contains(hash))
                 {
-                    Game.Player.Character.Weapons.Remove(hash);
+                    Game.Player.Character.Weapons.Remove((GTA.WeaponHash)(int)hash);
                 }
-            }
-
-            if (!_playerInventory.Contains((WeaponHash)4222310262)) // parachute
-            {
-                Game.Player.Character.Weapons.Remove((WeaponHash)4222310262);
             }
         }
 

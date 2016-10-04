@@ -1,4 +1,4 @@
-﻿namespace GTANetworkServer
+﻿namespace GTANetworkShared
 {
     public enum PickupHash
     {
@@ -73,5 +73,13 @@
         WeaponBottle = -95310859,
         MoneyVariable = -31919185,
         WeaponSniperRifle = -30788308,
+        WeaponAutoshotgun = -1127890446,
+        WeaponBattleaxe = 158843122,
+        WeaponCompactLauncher = -253098439,
+        WeaponMiniSMG = -747492773,
+        WeaponPipebomb = -1352061783,
+        WeaponPoolcue = 155106086,
+        WeaponWrench = -451800215,
+
     }
 }
