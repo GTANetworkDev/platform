@@ -6,29 +6,32 @@ namespace GTANetwork.Misc
 
     public static class WeaponDataProvider
     {
-        public static bool IsWeaponAutomatic(WeaponHash hash)
+        public static bool IsWeaponAutomatic(GTANetworkShared.WeaponHash hash)
         {
             switch (hash)
             {
                 default:
                     return true;
-                case WeaponHash.Molotov:
-                case WeaponHash.BZGas:
-                case WeaponHash.SmokeGrenade:
-                case WeaponHash.ProximityMine:
-                case WeaponHash.StickyBomb:
-                case WeaponHash.Grenade:
-                case WeaponHash.Flare:
-                case WeaponHash.Snowball:
-                case WeaponHash.Ball:
+                case GTANetworkShared.WeaponHash.Molotov:
+                case GTANetworkShared.WeaponHash.BZGas:
+                case GTANetworkShared.WeaponHash.SmokeGrenade:
+                case GTANetworkShared.WeaponHash.ProximityMine:
+                case GTANetworkShared.WeaponHash.StickyBomb:
+                case GTANetworkShared.WeaponHash.Grenade:
+                case GTANetworkShared.WeaponHash.Flare:
+                case GTANetworkShared.WeaponHash.Snowball:
+                case GTANetworkShared.WeaponHash.Ball:
+                case GTANetworkShared.WeaponHash.Pipebomb:
 
-                case WeaponHash.RPG:
-                case WeaponHash.HomingLauncher:
-                case WeaponHash.Railgun:
-                case WeaponHash.GrenadeLauncher:
-                case WeaponHash.Firework:
-                case WeaponHash.Musket:
-                case WeaponHash.FlareGun:
+                case GTANetworkShared.WeaponHash.RPG:
+                case GTANetworkShared.WeaponHash.HomingLauncher:
+                case GTANetworkShared.WeaponHash.Railgun:
+                case GTANetworkShared.WeaponHash.GrenadeLauncher:
+                case GTANetworkShared.WeaponHash.Firework:
+                case GTANetworkShared.WeaponHash.Musket:
+                case GTANetworkShared.WeaponHash.FlareGun:
+                case GTANetworkShared.WeaponHash.CompactLauncher:
+
                     return false;
             }
         }
@@ -89,42 +92,27 @@ namespace GTANetwork.Misc
         {
             var uW = unchecked((uint) wephash);
 
-            switch ((WeaponHash) uW)
+            switch ((GTANetworkShared.WeaponHash) uW)
             {
                 default:
                     return false;
-                case WeaponHash.Molotov:
-                case WeaponHash.BZGas:
-                case WeaponHash.SmokeGrenade:
-                case WeaponHash.ProximityMine:
-                case WeaponHash.StickyBomb:
-                case WeaponHash.Grenade:
-                case WeaponHash.Flare:
-                case WeaponHash.Snowball:
-                case WeaponHash.Ball:
+                case GTANetworkShared.WeaponHash.Molotov:
+                case GTANetworkShared.WeaponHash.BZGas:
+                case GTANetworkShared.WeaponHash.SmokeGrenade:
+                case GTANetworkShared.WeaponHash.ProximityMine:
+                case GTANetworkShared.WeaponHash.StickyBomb:
+                case GTANetworkShared.WeaponHash.Grenade:
+                case GTANetworkShared.WeaponHash.Flare:
+                case GTANetworkShared.WeaponHash.Snowball:
+                case GTANetworkShared.WeaponHash.Ball:
+                case GTANetworkShared.WeaponHash.Pipebomb:
                     return true;
             }
         }
 
         public static bool NeedsManualRotation(int wephash)
         {
-            var uW = unchecked((uint)wephash);
-
-            switch ((WeaponHash)uW)
-            {
-                default:
-                    return false;
-                case WeaponHash.Molotov:
-                case WeaponHash.BZGas:
-                case WeaponHash.SmokeGrenade:
-                case WeaponHash.ProximityMine:
-                case WeaponHash.StickyBomb:
-                case WeaponHash.Grenade:
-                case WeaponHash.Flare:
-                case WeaponHash.Snowball:
-                case WeaponHash.Ball:
-                    return true;
-            }
+            return NeedsFakeBullets(wephash);
         }
 
         public static Vector3 GetVehicleWeaponMuzzle(VehicleHash model, bool rockets)

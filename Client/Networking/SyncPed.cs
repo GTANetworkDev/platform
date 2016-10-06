@@ -2429,10 +2429,13 @@ namespace GTANetwork.Networking
             if (weapon == unchecked((int)WeaponHash.Minigun))
                 return 5;
             if (weapon == unchecked((int)WeaponHash.GolfClub) ||
+                weapon == unchecked((int)GTANetworkShared.WeaponHash.Poolcue) ||
                 weapon == unchecked((int)WeaponHash.Bat))
                 return 4;
             if (weapon == unchecked((int) WeaponHash.Knife) || weapon == unchecked((int) WeaponHash.Nightstick) ||
                 weapon == unchecked((int) WeaponHash.Hammer) || weapon == unchecked((int) WeaponHash.Crowbar) ||
+                weapon == unchecked((int)GTANetworkShared.WeaponHash.Wrench) ||
+                weapon == unchecked((int)GTANetworkShared.WeaponHash.Battleaxe) ||
                 weapon == unchecked((int) WeaponHash.Dagger) || weapon == unchecked((int) WeaponHash.Hatchet) ||
                 weapon == unchecked((int) WeaponHash.KnuckleDuster) || weapon == -581044007 || weapon == -102323637 || weapon == -538741184)
                 return 3;
@@ -2451,6 +2454,7 @@ namespace GTANetwork.Networking
                 weapon == unchecked((int)WeaponHash.AssaultShotgun) ||
                 weapon == unchecked((int)WeaponHash.BullpupShotgun) ||
                 weapon == unchecked((int)WeaponHash.SawnOffShotgun) ||
+                weapon == unchecked((int)GTANetworkShared.WeaponHash.Autoshotgun) ||
                 weapon == unchecked((int)WeaponHash.CompactRifle))
                 return 2;
             return 1;
