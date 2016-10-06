@@ -18,7 +18,15 @@ namespace GTANetworkServer
 
         public Dictionary<int, EntityProperties> ToDict()
         {
-            return ServerEntities;
+                return ServerEntities;
+        }
+
+        public Dictionary<int, EntityProperties> ToCopy()
+        {
+            lock (ServerEntities)
+            {
+                return new Dictionary<int, EntityProperties>(ServerEntities);
+            }
         }
 
         public T NetToProp<T>(int handle) where T : EntityProperties
@@ -29,12 +37,7 @@ namespace GTANetworkServer
 
         public void UpdateMovements()
         {
-            List<KeyValuePair<int, EntityProperties>> copy;
-
-            lock (ServerEntities)
-            {
-                copy = new List<KeyValuePair<int, EntityProperties>>(ServerEntities);
-            }
+            var copy = ToCopy();
 
             // Get all entities who are interpolating
             foreach (var pair in copy.Where(pair => pair.Value.PositionMovement != null || pair.Value.RotationMovement != null))

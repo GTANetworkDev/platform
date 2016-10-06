@@ -112,7 +112,7 @@
     <Compile Include="Managers\Bans.cs" />
     <Compile Include="Constant\ChatData.cs" />
     <Compile Include="Elements\Client.cs" />
-    <Compile Include="Elements\ColShape.cs" />
+    <Compile Include="Managers\ColShape.cs" />
     <Compile Include="Constant\ConstantVehicleData.cs" />
     <Compile Include="Managers\DeltaCompressor.cs" />
     <Compile Include="Constant\ExplosionTypes.cs" />

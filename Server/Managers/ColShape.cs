@@ -280,7 +280,8 @@ namespace GTANetworkServer
             {
                 try
                 {
-                    var entities = new Dictionary<int, EntityProperties>(Program.ServerInstance.NetEntityHandler.ToDict());
+                    Dictionary<int, EntityProperties> entities = Program.ServerInstance.NetEntityHandler.ToCopy();
+
                     var entList = entities.Where(pair => _validTypes.Contains((EntityType) pair.Value.EntityType));
 
                     List<ColShape> localShapes;

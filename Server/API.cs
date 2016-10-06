@@ -989,7 +989,7 @@ namespace GTANetworkServer
                 KeyValuePair<int, EntityProperties> pair;
                 if (
                     (pair =
-                        Program.ServerInstance.NetEntityHandler.ToDict()
+                        Program.ServerInstance.NetEntityHandler.ToCopy()
                             .FirstOrDefault(
                                 p => p.Value is BlipProperties && ((BlipProperties) p.Value).AttachedNetEntity ==
                         entity.Value)).Key != 0)
@@ -1003,7 +1003,7 @@ namespace GTANetworkServer
 
                 if (
                    (pair =
-                       Program.ServerInstance.NetEntityHandler.ToDict()
+                       Program.ServerInstance.NetEntityHandler.ToCopy()
                            .FirstOrDefault(
                                p => p.Value is ParticleProperties && ((ParticleProperties)p.Value).EntityAttached ==
                        entity.Value)).Key != 0)
@@ -2387,7 +2387,7 @@ namespace GTANetworkServer
         {
             return
                 new List<NetHandle>(
-                    Program.ServerInstance.NetEntityHandler.ToDict()
+                    Program.ServerInstance.NetEntityHandler.ToCopy()
                         .Where(pair => pair.Value.EntityType == (byte) EntityType.Vehicle)
                         .Select(pair => new NetHandle(pair.Key)));
         }
@@ -2396,7 +2396,7 @@ namespace GTANetworkServer
         {
             return
                 new List<NetHandle>(
-                    Program.ServerInstance.NetEntityHandler.ToDict()
+                    Program.ServerInstance.NetEntityHandler.ToCopy()
                         .Where(pair => pair.Value.EntityType == (byte)EntityType.Prop)
                         .Select(pair => new NetHandle(pair.Key)));
         }
@@ -2405,7 +2405,7 @@ namespace GTANetworkServer
         {
             return
                 new List<NetHandle>(
-                    Program.ServerInstance.NetEntityHandler.ToDict()
+                    Program.ServerInstance.NetEntityHandler.ToCopy()
                         .Where(pair => pair.Value.EntityType == (byte)EntityType.Marker)
                         .Select(pair => new NetHandle(pair.Key)));
         }
@@ -2414,7 +2414,7 @@ namespace GTANetworkServer
         {
             return
                 new List<NetHandle>(
-                    Program.ServerInstance.NetEntityHandler.ToDict()
+                    Program.ServerInstance.NetEntityHandler.ToCopy()
                         .Where(pair => pair.Value.EntityType == (byte)EntityType.Blip)
                         .Select(pair => new NetHandle(pair.Key)));
         }
@@ -2423,7 +2423,7 @@ namespace GTANetworkServer
         {
             return
                 new List<NetHandle>(
-                    Program.ServerInstance.NetEntityHandler.ToDict()
+                    Program.ServerInstance.NetEntityHandler.ToCopy()
                         .Where(pair => pair.Value.EntityType == (byte)EntityType.Pickup)
                         .Select(pair => new NetHandle(pair.Key)));
         }
@@ -2432,7 +2432,7 @@ namespace GTANetworkServer
         {
             return
                 new List<NetHandle>(
-                    Program.ServerInstance.NetEntityHandler.ToDict()
+                    Program.ServerInstance.NetEntityHandler.ToCopy()
                         .Where(pair => pair.Value.EntityType == (byte)EntityType.TextLabel)
                         .Select(pair => new NetHandle(pair.Key)));
         }
@@ -2441,7 +2441,7 @@ namespace GTANetworkServer
         {
             return
                 new List<NetHandle>(
-                    Program.ServerInstance.NetEntityHandler.ToDict()
+                    Program.ServerInstance.NetEntityHandler.ToCopy()
                         .Where(pair => pair.Value.EntityType == (byte)EntityType.Ped)
                         .Select(pair => new NetHandle(pair.Key)));
         }

@@ -50,7 +50,7 @@ namespace GTANetworkServer.Managers
         public static bool IsVehicleUnoccupied(NetHandle vehicle)
         {
             var players = Program.ServerInstance.PublicAPI.getAllPlayers();
-            var vehicles = Program.ServerInstance.NetEntityHandler.ToDict().Select(pair => pair.Value).Where(p => p is VehicleProperties).Cast<VehicleProperties>();
+            var vehicles = Program.ServerInstance.NetEntityHandler.ToCopy().Select(pair => pair.Value).Where(p => p is VehicleProperties).Cast<VehicleProperties>();
             var prop = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value);
 
             return players.TrueForAll(c => c.CurrentVehicle != vehicle) && vehicles.All(v => v.Trailer != vehicle.Value) &&

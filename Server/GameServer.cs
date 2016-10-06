@@ -2310,7 +2310,7 @@ namespace GTANResource
                                                 mapObj.World =
                                                     Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
 
-                                                foreach (var pair in NetEntityHandler.ToDict())
+                                                foreach (var pair in NetEntityHandler.ToCopy())
                                                 {
                                                     if (pair.Value.EntityType == (byte)EntityType.Vehicle)
                                                     {
