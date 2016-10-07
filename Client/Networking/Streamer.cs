@@ -117,10 +117,12 @@ namespace GTANetwork.Networking
 
             if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
             {
+                /*
                 Function.Call((Hash)0xABA17D7CE615ADBF, "STRING");
                 Function.Call((Hash)0x6C188BE134E074AA, "Streaming");
                 Function.Call((Hash)0xBD12F8228410D9B4, 5);
                 spinner = true;
+                */
 
                 StreamInProgress = true;
             }
@@ -150,8 +152,11 @@ namespace GTANetwork.Networking
 
                 _itemsToStreamIn.Clear();
             }
+
+            /*
             if (spinner)
                 Function.Call((Hash)0x10D373323E5B9C0D);
+            */
 
             StreamInProgress = false;
         }

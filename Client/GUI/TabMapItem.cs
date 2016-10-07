@@ -165,6 +165,7 @@ namespace GTANetwork.GUI
                     if (_justOpened_mouse)
                     {
                         _justOpened_mouse = false;
+                        _justOpened_kb = false;
                     }
                     else
                     {
@@ -196,6 +197,7 @@ namespace GTANetwork.GUI
                     if (_justOpened_kb)
                     {
                         _justOpened_kb = false;
+                        _justOpened_mouse = false;
                     }
                     else
                     {

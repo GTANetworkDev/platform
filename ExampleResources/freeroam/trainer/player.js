@@ -30,7 +30,7 @@ API.onResourceStart.connect(function (sender, e) {
 	var hp = API.createMenuItem("Restore Health", "");
 
 	hp.Activated.connect(function (menu, item) {
-		API.setPlayerHealth(API.getLocalPlayer(), 100);
+		API.setPlayerHealth(100);
 		API.sendNotification("Health ~g~restored.");		
 	});
 
@@ -39,7 +39,7 @@ API.onResourceStart.connect(function (sender, e) {
 	var armor = API.createMenuItem("Restore Armor", "");
 
 	armor.Activated.connect(function (menu, item) {
-		API.setPlayerArmor(API.getLocalPlayer(), 100);
+		API.setPlayerArmor(100);
 		API.sendNotification("Armor ~g~restored.");		
 	});
 
@@ -48,7 +48,7 @@ API.onResourceStart.connect(function (sender, e) {
 	var suicide = API.createMenuItem("Suicide", "");
 
 	suicide.Activated.connect(function (menu, item) {
-		API.setPlayerHealth(API.getLocalPlayer(), -1);		
+		API.setPlayerHealth(-1);		
 	});
 
 	mainWindow.AddItem(suicide);
