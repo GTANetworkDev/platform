@@ -364,7 +364,7 @@ namespace GTANetwork.Util
             var memAdd = veh.MemoryAddress;
             if (memAdd != IntPtr.Zero)
             {
-                mod.BrokenLights = MemoryAccess.ReadInt(memAdd + 0x77C); // 0x784?
+                mod.BrokenLights = MemoryAccess.ReadInt(memAdd + 0x79C); // Old: 0x77C
             }
             */
             return mod;
@@ -399,7 +399,7 @@ namespace GTANetwork.Util
             var addr = veh.MemoryAddress;
             if (addr != IntPtr.Zero)
             {
-                MemoryAccess.WriteInt(addr + 0x77C, model.BrokenLights); // 0x784 ?
+                MemoryAccess.WriteInt(addr + 0x79C, model.BrokenLights); // 0x784 ?
             }
             */
 
