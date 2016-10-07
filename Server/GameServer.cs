@@ -1539,14 +1539,20 @@ namespace GTANResource
 
                                                         if (pass)
                                                         {
+                                                            var cancelArg = new CancelEventArgs();
+
                                                             lock (RunningResources)
                                                                 RunningResources.ForEach(
                                                                     fs =>
                                                                         fs.Engines.ForEach(
-                                                                            en => en.InvokeChatCommand(client, data.Message)));
-                                                            
-                                                            if (!CommandHandler.Parse(client, data.Message))
-                                                                PublicAPI.sendChatMessageToPlayer(client, "~r~ERROR:~w~ Command not found.");
+                                                                            en => en.InvokeChatCommand(client, data.Message, cancelArg)));
+
+                                                            if (!cancelArg.Cancel)
+                                                            {
+                                                                if (!CommandHandler.Parse(client, data.Message))
+                                                                    PublicAPI.sendChatMessageToPlayer(client,
+                                                                        "~r~ERROR:~w~ Command not found.");
+                                                            }
                                                         }
                                                         else
                                                         {

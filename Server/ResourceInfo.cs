@@ -523,14 +523,14 @@ namespace GTANetworkServer
             }));
         }
 
-        public void InvokeChatCommand(Client sender, string command)
+        public void InvokeChatCommand(Client sender, string command, CancelEventArgs ce)
         {
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
                 if (Language == ScriptingEngineLanguage.compiled)
                 {
-                    _compiledScript.API.invokeChatCommand(sender, command);
+                    _compiledScript.API.invokeChatCommand(sender, command, ce);
                 }
             }));
         }

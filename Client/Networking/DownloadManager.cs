@@ -201,12 +201,6 @@ namespace GTANetwork.Networking
                 }
                 else if (CurrentFile.Type == FileType.EndOfTransfer)
                 {
-                    List<string> AffectedResources = new List<string>();
-                    AffectedResources.AddRange(PendingScripts.ClientsideScripts.Select(cs => cs.ResourceParent));
-
-                    Main.StartClientsideScripts(PendingScripts);
-                    PendingScripts.ClientsideScripts.Clear();
-
                     if (Main.JustJoinedServer)
                     {
                         World.RenderingCamera = null;
@@ -214,6 +208,12 @@ namespace GTANetwork.Networking
                         Main.MainMenu.Visible = false;
                         Main.JustJoinedServer = false;
                     }
+
+                    List<string> AffectedResources = new List<string>();
+                    AffectedResources.AddRange(PendingScripts.ClientsideScripts.Select(cs => cs.ResourceParent));
+
+                    Main.StartClientsideScripts(PendingScripts);
+                    PendingScripts.ClientsideScripts.Clear();
 
                     Main.InvokeFinishedDownload(AffectedResources);
                 }

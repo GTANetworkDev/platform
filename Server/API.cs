@@ -60,7 +60,7 @@ namespace GTANetworkServer
 
         #region Delegates
         public delegate void EmptyEvent();
-        public delegate void CommandEvent(Client sender, string command);
+        public delegate void CommandEvent(Client sender, string command, CancelEventArgs cancel);
         public delegate void ChatEvent(Client sender, string message, CancelEventArgs cancel);
         public delegate void PlayerEvent(Client player);
         public delegate void PlayerConnectingEvent(Client player, CancelEventArgs cancelConnection);
@@ -284,9 +284,9 @@ namespace GTANetworkServer
             onPlayerPickup?.Invoke(pickupee, pickup);
         }
 
-        internal void invokeChatCommand(Client sender, string msg)
+        internal void invokeChatCommand(Client sender, string msg, CancelEventArgs ce)
         {
-            onChatCommand?.Invoke(sender, msg);
+            onChatCommand?.Invoke(sender, msg, ce);
         }
 
         internal void invokePlayerBeginConnect(Client player, CancelEventArgs e)
@@ -724,6 +724,11 @@ namespace GTANetworkServer
             return Program.ServerInstance.Clients.FirstOrDefault(c => c.CharacterHandle == handle);
         }
 
+        public bool isPlayerConnected(Client player)
+        {
+            return player.NetConnection.Status == NetConnectionStatus.Connected;
+        }
+
         public bool isPlayerOnFire(Client player)
         {
             return (player.LastPedFlag & (int)PedDataFlags.OnFire) != 0;
@@ -890,6 +895,11 @@ namespace GTANetworkServer
         public int getHashKey(string input)
         {
             return Program.GetHash(input);
+        }
+
+        public string getHashSHA256(string input)
+        {
+            return Program.GetHashSHA256(input);
         }
 
         public int loginPlayer(Client player, string password)
@@ -1640,7 +1650,7 @@ namespace GTANetworkServer
             }
             return false;
         }
-
+        
         public bool setWorldData(string key, object value)
         {
             return Program.ServerInstance.SetEntityProperty(1, key, value, true);
@@ -1723,6 +1733,16 @@ namespace GTANetworkServer
                 }
             }
             return false;
+        }
+
+        public string[] getAllLocalEntityData(NetHandle entity)
+        {
+            if (doesEntityExist(entity) && Program.ServerInstance.EntityProperties.ContainsKey(entity))
+            {
+                return Program.ServerInstance.EntityProperties[entity].Select(pair => pair.Key).ToArray();
+            }
+
+            return new string[0];
         }
 
         public bool setLocalWorldData(string key, object value)
