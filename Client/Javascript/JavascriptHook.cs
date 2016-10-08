@@ -155,7 +155,7 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines) ScriptEngines.ForEach(en =>
                 {
-                    if (en.ResourceParent != resource) return;
+                    if (resource != "*" && en.ResourceParent != resource) return;
                     en.Engine.Script.API.invokeServerEvent(eventName, arguments);
                 });
             });
