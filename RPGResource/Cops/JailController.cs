@@ -33,6 +33,7 @@ namespace RPGResource.Cops
         public void jailPlayer(Client player, int seconds)
         {
             API.setLocalEntityData(player, "Jailed", true);
+            API.resetPlayerNametagColor(player);
             API.setEntityPosition(player, JailCenter);
 
             API.setLocalEntityData(player, "WantedLevel", 0);

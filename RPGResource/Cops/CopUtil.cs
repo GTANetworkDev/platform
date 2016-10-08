@@ -39,7 +39,10 @@ namespace RPGResource.Cops
             playerCrimes.Add(crimeId);
 
             API.Public.setLocalEntityData(player, "Crimes", playerCrimes);
-
+            if (crimeWL.WantedLevel > 2)
+                API.Public.setPlayerNametagColor(player, 232, 44, 44);
+            else
+                API.Public.setPlayerNametagColor(player, 240, 160, 55);
             API.Public.setPlayerWantedLevel(player, (int)Math.Ceiling(crimeWL.WantedLevel / 2f));
 
             return true;

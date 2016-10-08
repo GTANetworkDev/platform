@@ -50,6 +50,8 @@ namespace RPGResource
 
         public void SpawnCop(Client target)
         {
+            API.setPlayerNametagColor(target, 55, 135, 240);
+
             API.setLocalEntityData(target, "IS_COP", true);
             API.setLocalEntityData(target, "IS_CROOK", false);
 
@@ -70,6 +72,8 @@ namespace RPGResource
 
         public void SpawnCitizen(Client target)
         {
+            API.resetPlayerNametagColor(target);
+
             API.setLocalEntityData(target, "IS_COP", false);
             API.setLocalEntityData(target, "IS_CROOK", true);
 
