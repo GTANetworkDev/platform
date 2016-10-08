@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using GTANetworkServer;
 using GTANetworkShared;
 
@@ -39,7 +40,7 @@ namespace RPGResource.Cops
 
             API.Public.setLocalEntityData(player, "Crimes", playerCrimes);
 
-            API.Public.setPlayerWantedLevel(player, crimeWL.WantedLevel);
+            API.Public.setPlayerWantedLevel(player, (int)Math.Ceiling(crimeWL.WantedLevel / 2f));
 
             return true;
         }

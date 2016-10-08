@@ -124,5 +124,7 @@ namespace RPGResource
         public int WantedLevel { get; set; }
         public int Money { get; set; }
         public List<int> Crimes { get; set; } 
+        public bool Jailed { get; set; }
+        public uint JailTime { get; set; }
     }
 }

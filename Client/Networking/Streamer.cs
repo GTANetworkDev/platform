@@ -1844,13 +1844,17 @@ namespace GTANetwork.Networking
             if (item is ILocalHandleable)
             {
                 var han = item as ILocalHandleable;
-                if (HandleMap.ContainsKey(item.RemoteHandle))
+
+                if (han.LocalHandle != 0)
                 {
-                    HandleMap[item.RemoteHandle] = han.LocalHandle;
-                }
-                else
-                {
-                    HandleMap.Add(item.RemoteHandle, han.LocalHandle);
+                    if (HandleMap.ContainsKey(item.RemoteHandle))
+                    {
+                        HandleMap[item.RemoteHandle] = han.LocalHandle;
+                    }
+                    else
+                    {
+                        HandleMap.Add(item.RemoteHandle, han.LocalHandle);
+                    }
                 }
             }
 

@@ -282,7 +282,7 @@ namespace GTANetwork.Util
         {
             var model = new Model(skin);
 
-            model.Request(5000);
+            model.Request(1000);
 
             Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
 

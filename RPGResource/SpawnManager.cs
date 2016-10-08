@@ -25,8 +25,8 @@ namespace RPGResource
                 var skin = args[0];
                 bool isCop = (bool)args[1];
 
-                DimensionManager.DismissPrivateDimension(sender);
-                API.setEntityDimension(sender, 0);
+                //DimensionManager.DismissPrivateDimension(sender);
+                //API.setEntityDimension(sender, 0);
 
                 if (isCop)
                     SpawnCop(sender);
@@ -38,9 +38,9 @@ namespace RPGResource
 
         public void CreateSkinSelection(Client target)
         {
-            var ourDim = DimensionManager.RequestPrivateDimension(target);
+            //var ourDim = DimensionManager.RequestPrivateDimension(target);
 
-            API.setEntityDimension(target, ourDim);
+            //API.setEntityDimension(target, ourDim);
 
             API.setEntityPosition(target, _skinSelectorPos);
             API.setEntityRotation(target, new Vector3(0, 0, _skinSelectorHead));
@@ -73,12 +73,19 @@ namespace RPGResource
             API.setLocalEntityData(target, "IS_COP", false);
             API.setLocalEntityData(target, "IS_CROOK", true);
 
-            API.setEntityPosition(target, _crookSpawnpoint);
-            API.removeAllPlayerWeapons(target);
+            if (API.getLocalEntityData(target, "Jailed") == true)
+            {
+                API.call("JailController", "jailPlayer", API.getLocalEntityData(target, "JailTime"));
+            }
+            else
+            {
+                API.setEntityPosition(target, _crookSpawnpoint);
+                API.removeAllPlayerWeapons(target);
+            }
 
             API.sendChatMessageToPlayer(target, "You are a citizen! Do various jobs to earn money and reputation!");
 
-            API.setPlayerWantedLevel(target, (int)Math.Ceiling((float)API.getLocalEntityData(target, "WantedLevel") / 2));
+            API.setPlayerWantedLevel(target, (int)Math.Ceiling((float)API.getLocalEntityData(target, "WantedLevel") / 2f));
         }
     }
 }

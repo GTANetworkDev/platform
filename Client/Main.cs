@@ -1589,15 +1589,18 @@ namespace GTANetwork
                                         pair.Value.Textures.Get((byte)i), 2);
                                 }
 
-                                ourSyncPed.Character.Opacity = pair.Value.Alpha;
+                                lock (NetEntityHandler.HandleMap)
+                                    NetEntityHandler.HandleMap.Set(pair.Key, ourSyncPed.Character.Handle);
 
+                                ourSyncPed.Character.Opacity = pair.Value.Alpha;
+                                /*
                                 if (ourSyncPed.Character.AttachedBlip != null)
                                 {
                                     ourSyncPed.Character.AttachedBlip.Sprite = (BlipSprite)pair.Value.BlipSprite;
                                     ourSyncPed.Character.AttachedBlip.Color = (BlipColor)pair.Value.BlipColor;
                                     ourSyncPed.Character.AttachedBlip.Alpha = pair.Value.BlipAlpha;
                                 }
-
+                                */
                                 NetEntityHandler.ReattachAllEntities(ourSyncPed, false);
                             }
                         }

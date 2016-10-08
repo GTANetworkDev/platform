@@ -28,6 +28,8 @@
     <script src="Cops/PoliceStation.cs" type="server" lang="csharp" />
 
     <script src="Global/GlobalCommands.cs" type="server" lang="csharp" />
+    <script src="Global/Util.cs" type="server" lang="csharp" />
+    <script src="Global/RespawnManager.cs" type="server" lang="csharp" />
     
     <script src="Vehicles/VehicleSpawner.cs" type="server" lang="csharp" />
 </meta>

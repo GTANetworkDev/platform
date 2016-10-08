@@ -23,14 +23,20 @@ namespace RPGResource.Cops
                 return;
             }
 
-            if (API.getLocalEntityData(sender, "IS_COP") == true)
+            if (API.getLocalEntityData(target, "IS_COP") == true)
             {
                 API.sendChatMessageToPlayer(sender, "~r~You cant arrest a cop!");
                 return;
             }
 
-            if (API.getLocalEntityData(sender, "WantedLevel") == null ||
-                API.getLocalEntityData(sender, "WantedLevel") <= 2)
+            if (API.getEntityPosition(sender).DistanceToSquared(API.getEntityPosition(target)) > 16f)
+            {
+                API.sendChatMessageToPlayer(sender, "~r~You're too far!");
+                return;
+            }
+
+            if (API.getLocalEntityData(target, "WantedLevel") == null ||
+                API.getLocalEntityData(target, "WantedLevel") <= 2)
             {
                 API.sendChatMessageToPlayer(sender, "~r~The player doesn't have an arrest warrant!");
                 return;
@@ -61,7 +67,7 @@ namespace RPGResource.Cops
 
             foreach (var player in players)
             {
-                if (API.getLocalEntityData(player, "LOGGED_IN") != true || API.getLocalEntityData(player, "WantedLevel") <= 2) continue;
+                if (API.getLocalEntityData(player, "LOGGED_IN") != true || API.getLocalEntityData(player, "IS_COP") == true || API.getLocalEntityData(player, "WantedLevel") <= 2) continue;
 
                 var crimes = (List<int>)API.getLocalEntityData(player, "Crimes");
 
@@ -91,7 +97,7 @@ namespace RPGResource.Cops
                 return;
             }
 
-            if (API.getLocalEntityData(sender, "IS_COP") == true)
+            if (API.getLocalEntityData(criminal, "IS_COP") == true)
             {
                 API.sendChatMessageToPlayer(sender, "~r~You cant report a cop!");
                 return;
@@ -149,9 +155,9 @@ namespace RPGResource.Cops
                 return;
             }
 
-            if (API.getLocalEntityData(sender, "IS_COP") == true)
+            if (API.getLocalEntityData(criminal, "IS_COP") == true)
             {
-                API.sendChatMessageToPlayer(sender, "~r~You cant ticket a cop!");
+                API.sendChatMessageToPlayer(criminal, "~r~You cant ticket a cop!");
                 return;
             }
 
@@ -159,6 +165,12 @@ namespace RPGResource.Cops
                 API.getLocalEntityData(criminal, "WantedLevel") > 2)
             {
                 API.sendChatMessageToPlayer(sender, "~r~You cant ticket this player!");
+                return;
+            }
+
+            if (API.getEntityPosition(sender).DistanceToSquared(API.getEntityPosition(criminal)) > 25f)
+            {
+                API.sendChatMessageToPlayer(sender, "~r~You're too far!");
                 return;
             }
 
