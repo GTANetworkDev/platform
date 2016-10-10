@@ -142,7 +142,7 @@ public class Deathmatch : Script
     // Exported
     public void Respawn(Client player)
     {
-        API.sendNativeToPlayer(player, 17464388802800305651, new EntityArgument(player.CharacterHandle.Value), true);
+        API.removeAllPlayerWeapons(player);
         var rand = spawns[rInst.Next(spawns.Count)];
         API.setEntityPosition(player.CharacterHandle, rand);
         foreach(var gun in weapons)
@@ -215,12 +215,12 @@ public class Deathmatch : Script
 
             UpdateScoreboardData(killer);
 
-            if (API.getEntityData(killer.CharacterHandle, "dm_kills") >= killTarget)
+            /*if (API.getEntityData(killer.CharacterHandle, "dm_kills") >= killTarget)
             {
                 API.sendChatMessageToAll("~b~~h~" + killer.Name + "~h~~w~ has won the round with " + killTarget + " kills and " + API.getEntityData(player.CharacterHandle, "dm_deaths") + " deaths!");
                 API.exported.mapcycler.endRound();
             }
-
+*/
             if (Killstreaks.ContainsKey(killer))
             {
                 Killstreaks[killer]++;

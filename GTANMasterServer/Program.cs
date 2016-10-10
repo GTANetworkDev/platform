@@ -151,6 +151,7 @@ namespace GTANMasterServer
                 {
                     using (ZipFile filesZip = new ZipFile())
                     {
+                        
                         filesZip.AddDirectory(basedir + "" + Path.DirectorySeparatorChar + "scripts", "scripts");
                         filesZip.AddFiles(Directory.GetFiles(basedir), "" + Path.DirectorySeparatorChar + "");
                         if (Directory.Exists(basedir + Path.DirectorySeparatorChar + "scripts_auto"))

@@ -24,14 +24,21 @@ namespace RPGResource.Global
 
                 string crimeList = string.Join(", ", crimes.Select(i => WantedLevelDataProvider.Crimes.Get(i).Name));
 
-                API.sendChatMessageToPlayer(sender,
-                    string.Format("~h~Wanted Level:~h~ ~b~{0}~w~~h~Crimes~h~: {1}",
-                        Util.Repeat("* ", API.getLocalEntityData(sender, "WantedLevel")),
-                        crimeList
-                        ));
+                if (API.getLocalEntityData(sender, "IS_COP") != true)
+                {
+                    API.sendChatMessageToPlayer(sender,
+                        string.Format("~h~Wanted Level:~h~ ~b~{0}~w~~h~Crimes~h~: {1}",
+                            Util.Repeat("* ", API.getLocalEntityData(sender, "WantedLevel")),
+                            crimeList
+                            ));
+
+                    // TODO: Skills
+                }
+                else
+                {
+                    // TODO: Cop ranks, experience
+                }
             }
-            // TODO: Skills
-            // TODO: Cop ranks, experience
         }
     }
 }

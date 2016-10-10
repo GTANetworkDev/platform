@@ -2001,6 +2001,8 @@ namespace GTANetwork
                     obj.Flag |= (int)PedDataFlags.IsOnLadder;
                 if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player))
                     obj.Flag |= (int)PedDataFlags.IsVaulting;
+                if (player.IsReloading)
+                    obj.Flag |= (int)PedDataFlags.IsReloading;
                 if (player.IsSubtaskActive(161) || player.IsSubtaskActive(162) || player.IsSubtaskActive(163) ||
                     player.IsSubtaskActive(164))
                 {
@@ -2164,14 +2166,20 @@ namespace GTANetwork
                     if (ped.Velocity.Length() > 0.5) output = 2;
                 }
             }
+
             if (Function.Call<bool>(Hash.IS_PED_WALKING, ped))
                 output = 1;
             if (Function.Call<bool>(Hash.IS_PED_RUNNING, ped))
                 output = 2;
-            if (Function.Call<bool>(Hash.IS_PED_SPRINTING, ped))
+            if (Function.Call<bool>(Hash.IS_PED_SPRINTING, ped) || (ped.IsPlayer && Game.IsControlPressed(0, Control.Sprint)))
                 output = 3;
-            if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped))
-                output = output; // do nothing, yet
+            if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
+
+            if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
+            {
+                if (ped.Velocity.LengthSquared() > 0.1f*0.1f)
+                    output = 1;
+            }
 
             return output;
         }

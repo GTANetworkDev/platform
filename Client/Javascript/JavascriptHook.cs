@@ -3268,7 +3268,7 @@ namespace GTANetwork.Javascript
             return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0), HandleType.LocalHandle);
         }
 
-        public string getResourceFilePath(string fileName)
+        internal string getResourceFilePath(string fileName)
         {
             if (!isPathSafe(fileName)) throw new AccessViolationException("Illegal path to file!");
             return FileTransferId._DOWNLOADFOLDER_ + ParentResourceName + "\\" + fileName;

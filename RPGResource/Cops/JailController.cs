@@ -14,7 +14,7 @@ namespace RPGResource.Cops
             API.onResourceStart += start;
         }
 
-        public readonly Vector3 JailCenter = new Vector3(1707.69f, 2546.69f, 45.56f);
+        public static readonly Vector3 JailCenter = new Vector3(1707.69f, 2546.69f, 45.56f);
         public static Dictionary<Client, long> JailTimes = new Dictionary<Client, long>();
 
         public void start()

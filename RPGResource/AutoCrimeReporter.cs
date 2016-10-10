@@ -1,4 +1,5 @@
-﻿using GTANetworkServer;
+﻿using System.Linq;
+using GTANetworkServer;
 using GTANetworkShared;
 using RPGResource.Cops;
 
@@ -47,6 +48,18 @@ namespace RPGResource
                 else
                     CopUtil.ReportPlayer(killerClient, 0); // Murder
             }
+
+            if (API.getLocalEntityData(victim, "WantedLevel") > 2)
+            {
+                var allPlayers = API.getPlayersInRadiusOfPlayer(15f, victim);
+
+                if (allPlayers.Any(player => API.getLocalEntityData(player, "IS_COP") == true))
+                {
+                    API.call("JailController", "jailPlayer", victim,
+                        WantedLevelDataProvider.GetTimeFromWantedLevel(API.getLocalEntityData(victim, "WantedLevel")));
+                }
+            }
+
         }
     }
 }
