@@ -2176,8 +2176,6 @@ namespace GTANetwork.Networking
         private long lastAimSet;
         public void VMultiAiming()
         {
-            count++;
-
             if (_aimingProp != null && _aimingProp.Exists())
             {
                 this._aimingProp.Position = AimCoords;
@@ -2198,25 +2196,27 @@ namespace GTANetwork.Networking
 
             // Game doesnt detect IsWalking/IsRunning/IsSprinting when aiming
 
+            delta = 1000;
+
             if ((!isAiming || count % 50 == 0) && OnFootSpeed == 0)
             {
                 Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _aimingProp, -1, false);
                 _lastAimCoords = AimCoords;
             }
-            else if (OnFootSpeed == 1 && (!isAiming /*|| !Character.IsWalking*/) && delta > 500)
+            else if (OnFootSpeed == 1 && (!isAiming || !Character.IsWalking) && delta > 500)
             {
                 Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, 1f, false, 1f, 1f, true, 1, false, (uint)FiringPattern.FullAuto);
                 lastAimSet = Util.Util.TickCount;
 
                 _lastAimCoords = AimCoords;
             }
-            else if (OnFootSpeed == 2 && (!isAiming /*|| !Character.IsRunning*/) && delta > 500)
+            else if (OnFootSpeed == 2 && (!isAiming || !Character.IsRunning) && delta > 500)
             {
                 Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, 2f, false, 2f, 2f, true, 1, false, (uint)FiringPattern.FullAuto);
                 lastAimSet = Util.Util.TickCount;
                 _lastAimCoords = AimCoords;
             }
-            else if (OnFootSpeed == 3 && (!isAiming/* || !Character.IsSprinting*/) && delta > 500)
+            else if (OnFootSpeed == 3 && (!isAiming || !Character.IsSprinting) && delta > 500)
             {
                 Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, 3f, false, 3f, 3f, true, 1, false, (uint)FiringPattern.FullAuto);
                 lastAimSet = Util.Util.TickCount;
@@ -2365,8 +2365,6 @@ namespace GTANetwork.Networking
             }
 
             StuckDetection();
-
-            count++;
         }
 
         public void StuckDetection()
@@ -2517,6 +2515,8 @@ namespace GTANetwork.Networking
                     Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
                 DEBUG_STEP = 120;
+
+                count++;
 
                 UpdatePosition();
 

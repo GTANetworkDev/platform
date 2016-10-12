@@ -2148,8 +2148,10 @@ namespace GTANetwork
         {
             byte output = 0;
             string animd;
+
             if ((animd = SyncPed.GetAnimalAnimationDictionary(ped.Model.Hash)) != null)
             {
+                // Player has an animal skin
                 var hash = (PedHash) ped.Model.Hash;
 
                 if (hash == PedHash.ChickenHawk || hash == PedHash.Cormorant || hash == PedHash.Crow ||
@@ -2175,6 +2177,7 @@ namespace GTANetwork
                 output = 3;
             if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
 
+            // The natives above dont work if player is aiming
             if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
             {
                 if (ped.Velocity.LengthSquared() > 0.1f*0.1f)

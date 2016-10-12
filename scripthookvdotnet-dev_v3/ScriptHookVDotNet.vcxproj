@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="NativeGen|x64">
+      <Configuration>NativeGen</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{019193A7-50C0-444A-84CA-777595E702CD}</ProjectGuid>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <Keyword>ManagedCProj</Keyword>
+    <RootNamespace>GTA</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <!-- Global configuration settings -->
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <!-- Support for VS2013 and VS2015 -->
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '12.0'">v120</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '14.0'">v140</PlatformToolset>
+    <OutDir>$(SolutionDir)bin\</OutDir>
+    <IntDir>$(SolutionDir)obj\</IntDir>
+    <CharacterSet>Unicode</CharacterSet>
+    <CLRSupport>true</CLRSupport>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ExtensionsToDeleteOnClean>*.netmodule;*.xdc;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+    <XDCMakeToolExe>XDCMake.exe</XDCMakeToolExe>
+    <XDCMakeToolPath>$(SolutionDir)tools\</XDCMakeToolPath>
+  </PropertyGroup>
+  <!-- Specific configuration settings -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'NativeGen'">
+    <ConfigurationType>Utility</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <!-- Global compilation settings -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>source\core;source\scripting;sdk\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>sdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ScriptHookV.lib;$(IntDir)$(TargetName).netmodule;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Xdcmake>
+      <AdditionalDocumentFile>$(IntDir)$(TargetName).xdc;%(AdditionalDocumentFile)</AdditionalDocumentFile>
+    </Xdcmake>
+  </ItemDefinitionGroup>
+  <!-- Specific compilation settings -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOSOUND;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+    <CsCompile>
+      <Optimize>true</Optimize>
+      <NoWarn>1591;%(NoWarn)</NoWarn>
+    </CsCompile>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(TargetDir)$(TargetName).asi"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'NativeGen'">
+    <PreBuildEvent>
+      <Command>tools\NativeGen.exe source\core\NativeHashes.hpp</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)\ProjectSchema.xml" Condition="'$(ConfigurationType)' != 'Utility'" />
+  </ItemGroup>
+  <!-- Core source files -->
+  <ItemGroup>
+    <ClCompile Include="source\AssemblyInfo.cpp" />
+    <ClCompile Include="source\core\Main.cpp" />
+    <ClCompile Include="source\core\Native.cpp" />
+    <ClCompile Include="source\core\NativeMemory.cpp" />
+    <ClCompile Include="source\core\Script.cpp" />
+    <ClCompile Include="source\core\ScriptDomain.cpp" />
+    <ClCompile Include="source\core\Settings.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\core\Native.hpp" />
+    <ClInclude Include="source\core\NativeHashes.hpp" />
+    <ClInclude Include="source\core\NativeMemory.hpp" />
+    <ClInclude Include="source\core\Script.hpp" />
+    <ClInclude Include="source\core\ScriptDomain.hpp" />
+    <ClInclude Include="source\core\Settings.hpp" />
+  </ItemGroup>
+  <!-- Additional source files -->
+  <ItemGroup>
+    <ClCompile Include="source\scripting\Matrix.cpp" />
+    <ClCompile Include="source\scripting\Quaternion.cpp" />
+    <ClCompile Include="source\scripting\Vector2.cpp" />
+    <ClCompile Include="source\scripting\Vector3.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\scripting\Matrix.hpp" />
+    <ClInclude Include="source\scripting\Quaternion.hpp" />
+    <ClInclude Include="source\scripting\Vector2.hpp" />
+    <ClInclude Include="source\scripting\Vector3.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CsCompile Include="source\scripting\Audio.cs" />
+    <CsCompile Include="source\scripting\Blip.cs" />
+    <CsCompile Include="source\scripting\Bone.cs" />
+    <CsCompile Include="source\scripting\Camera.cs" />
+    <CsCompile Include="source\scripting\ButtonCombination.cs" />
+    <CsCompile Include="source\scripting\Checkpoint.cs" />
+    <CsCompile Include="source\scripting\Controls.cs" />
+    <CsCompile Include="source\scripting\Entity.cs" />
+    <CsCompile Include="source\scripting\Euphoria.cs" />
+    <CsCompile Include="source\scripting\EuphoriaBase.cs" />
+    <CsCompile Include="source\scripting\EuphoriaHelpers.cs" />
+    <CsCompile Include="source\scripting\Font.cs" />
+    <CsCompile Include="source\scripting\Game.cs" />
+    <CsCompile Include="source\scripting\Element.cs" />
+    <CsCompile Include="source\scripting\Interfaces.cs" />
+    <CsCompile Include="source\scripting\Model.cs" />
+    <CsCompile Include="source\scripting\Ped.cs" />
+    <CsCompile Include="source\scripting\PedGroup.cs" />
+    <CsCompile Include="source\scripting\PedHash.cs" />
+    <CsCompile Include="source\scripting\Pickup.cs" />
+    <CsCompile Include="source\scripting\Player.cs" />
+    <CsCompile Include="source\scripting\Prop.cs" />
+    <CsCompile Include="source\scripting\RadioStation.cs" />
+    <CsCompile Include="source\scripting\Raycast.cs" />
+    <CsCompile Include="source\scripting\Relationship.cs" />
+    <CsCompile Include="source\scripting\RelationshipGroup.cs" />
+    <CsCompile Include="source\scripting\Rope.cs" />
+    <CsCompile Include="source\scripting\Scaleform.cs" />
+    <CsCompile Include="source\scripting\Screen.cs" />
+    <CsCompile Include="source\scripting\Sprite.cs" />
+    <CsCompile Include="source\scripting\Tasks.cs" />
+    <CsCompile Include="source\scripting\Text.cs" />
+    <CsCompile Include="source\scripting\Vehicle.cs" />
+    <CsCompile Include="source\scripting\VehicleDoor.cs" />
+    <CsCompile Include="source\scripting\VehicleDoorCollection.cs" />
+    <CsCompile Include="source\scripting\VehicleHash.cs" />
+    <CsCompile Include="source\scripting\VehicleMod.cs" />
+    <CsCompile Include="source\scripting\VehicleModCollection.cs" />
+    <CsCompile Include="source\scripting\VehicleToggleMod.cs" />
+    <CsCompile Include="source\scripting\VehicleWheel.cs" />
+    <CsCompile Include="source\scripting\VehicleWheelCollection.cs" />
+    <CsCompile Include="source\scripting\VehicleWindow.cs" />
+    <CsCompile Include="source\scripting\VehicleWindowCollection.cs" />
+    <CsCompile Include="source\scripting\Weapon.cs" />
+    <CsCompile Include="source\scripting\WeaponAsset.cs" />
+    <CsCompile Include="source\scripting\WeaponCollection.cs" />
+    <CsCompile Include="source\scripting\WeaponHash.cs" />
+    <CsCompile Include="source\scripting\World.cs" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <!-- Compile C# source files -->
+  <Target Name="CsCompile" DependsOnTargets="ClCompile" BeforeTargets="Link" AfterTargets="ClCompile" Inputs="@(CsCompile)" Outputs="$(IntDir)$(TargetName).netmodule">
+    <Message Text="Compiling scripting API" />
+    <Csc Sources="@(CsCompile)" AddModules="$(IntDir)Main.obj" TargetType="Module" Optimize="%(CsCompile.Optimize)" DisabledWarnings="%(CsCompile.NoWarn)" OutputAssembly="$(IntDir)$(TargetName).netmodule" DocumentationFile="$(IntDir)$(TargetName).xdc" Condition="'@(CsCompile)' != ''" />
+  </Target>
+  <!-- Verify SDK files exist before generating anything -->
+  <Target Name="VerifySDKFiles" BeforeTargets="BeforeBuildGenerateSources">
+    <ItemGroup>
+      <!-- Look for the header files and the library -->
+      <SDKFiles Include="sdk\inc\*.h" />
+      <SDKLib Include="sdk\lib\*.lib" />
+    </ItemGroup>
+    <PropertyGroup>
+      <!-- Make sure all necessary files are present -->
+      <SDKFilesMissing>false</SDKFilesMissing>
+      <SDKFilesMissing Condition="'@(SDKFiles)' == '' or '@(SDKLib)' == ''">true</SDKFilesMissing>
+    </PropertyGroup>
+    <Error Text="ScriptHookV SDK files not found. Please copy the SDK files into the 'sdk' folder and try again." Condition="$(SDKFilesMissing)" />
+  </Target>
+</Project>
