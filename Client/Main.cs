@@ -2168,7 +2168,6 @@ namespace GTANetwork
                     if (ped.Velocity.Length() > 0.5) output = 2;
                 }
             }
-
             if (Function.Call<bool>(Hash.IS_PED_WALKING, ped))
                 output = 1;
             if (Function.Call<bool>(Hash.IS_PED_RUNNING, ped))
@@ -2177,12 +2176,12 @@ namespace GTANetwork
                 output = 3;
             if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
 
-            // The natives above dont work if player is aiming
-            if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
+            /*if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
             {
                 if (ped.Velocity.LengthSquared() > 0.1f*0.1f)
                     output = 1;
             }
+            */
 
             return output;
         }
