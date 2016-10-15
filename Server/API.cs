@@ -1897,11 +1897,12 @@ namespace GTANetworkServer
             setVehicleMod(vehicle, 66, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
-        public void getVehicleModColor1(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        public Color getVehicleModColor1(NetHandle vehicle)
         {
             var val = getVehicleMod(vehicle, 66);
-            byte a;
+            byte a,red,green,blue;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
+            return new Color(red,green,blue);
         }
 
         public void setVehicleModColor2(NetHandle vehicle, int r, int g, int b)
@@ -1909,11 +1910,12 @@ namespace GTANetworkServer
             setVehicleMod(vehicle, 67, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
-        public void getVehicleModColor2(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        public Color getVehicleModColor2(NetHandle vehicle)
         {
             var val = getVehicleMod(vehicle, 67);
-            byte a;
+            byte a, red, green, blue;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
+            return new Color(red, green, blue);
         }
 
         public void setVehicleTyreSmokeColor(NetHandle vehicle, int r, int g, int b)
@@ -1921,11 +1923,13 @@ namespace GTANetworkServer
             setVehicleMod(vehicle, 68, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
-        public void getVehicleTyreSmokeColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        public Color getVehicleTyreSmokeColor(NetHandle vehicle)
         {
             var val = getVehicleMod(vehicle, 68);
-            byte a;
+            byte a, red, green, blue;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
+
+            return new Color(red, green, blue);
         }
 
         public void setVehicleWindowTint(NetHandle vehicle, int type)
@@ -1978,11 +1982,13 @@ namespace GTANetworkServer
             setVehicleMod(vehicle, 73, Extensions.FromArgb(0, (byte)r, (byte)g, (byte)b));
         }
 
-        public void getVehicleNeonColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        public Color getVehicleNeonColor(NetHandle vehicle)
         {
             var val = getVehicleMod(vehicle, 73);
-            byte a;
+            byte a, red, green, blue;
             Extensions.ToArgb(val, out a, out red, out green, out blue);
+
+            return new Color(red, green, blue);
         }
 
         public void setVehicleDashboardColor(NetHandle vehicle, int type)
@@ -2241,11 +2247,11 @@ namespace GTANetworkServer
             return 0;
         }
 
-        public void getVehicleCustomPrimaryColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        public Color getVehicleCustomPrimaryColor(NetHandle vehicle)
         {
-            red = 0;
-            green = 0;
-            blue = 0;
+            byte red = 0;
+            byte green = 0;
+            byte blue = 0;
             byte a;
 
             if (doesEntityExist(vehicle))
@@ -2253,6 +2259,8 @@ namespace GTANetworkServer
                 Extensions.ToArgb(((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor,
                     out a, out red, out green, out blue);
             }
+
+            return new Color(red, green, blue, 255);
         }
 
         public int getVehicleSecondaryColor(NetHandle vehicle)
@@ -2264,11 +2272,11 @@ namespace GTANetworkServer
             return 0;
         }
 
-        public void getVehicleCustomSecondaryColor(NetHandle vehicle, out byte red, out byte green, out byte blue)
+        public Color getVehicleCustomSecondaryColor(NetHandle vehicle)
         {
-            red = 0;
-            green = 0;
-            blue = 0;
+            byte red = 0;
+            byte green = 0;
+            byte blue = 0;
             byte a;
 
             if (doesEntityExist(vehicle))
@@ -2276,6 +2284,8 @@ namespace GTANetworkServer
                 Extensions.ToArgb(((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor,
                     out a, out red, out green, out blue);
             }
+
+            return new Color(red, green, blue, 255);
         }
 
         public Client getPlayerFromName(string name)

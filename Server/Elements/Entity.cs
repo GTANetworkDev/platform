@@ -84,6 +84,11 @@ namespace GTANetworkServer
             }
         }
 
+        public bool IsNull
+        {
+            get { return handle.IsNull; }
+        }
+
         public bool exists
         {
             get { return Base.doesEntityExist(this); }
