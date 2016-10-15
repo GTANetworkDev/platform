@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define RELATIVE_CEF_POS
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
@@ -913,12 +915,16 @@ namespace GTANetwork.Javascript
 
         public Browser createCefBrowser(double width, double height, bool local = true)
         {
+#if RELATIVE_CEF_POS
             var rat = getScreenResolutionMantainRatio();
             var ramp = getScreenResolution();
 
             int w = (int) ((width / rat.Width) * ramp.Width);
-            int h = (int)((height / rat.Height) * ramp.Height);
-
+            int h = (int) ((height / rat.Height) * ramp.Height);
+#else
+            int w = (int) width;
+            int h = (int) height;
+#endif
             var newBrowser = new Browser(Engine, new Size(w, h), local);
             CEFManager.Browsers.Add(newBrowser);
             return newBrowser;
@@ -952,12 +958,16 @@ namespace GTANetwork.Javascript
         
         public void setCefBrowserSize(Browser browser, double width, double height)
         {
+#if RELATIVE_CEF_POS
             var rat = getScreenResolutionMantainRatio();
             var ramp = getScreenResolution();
 
             int w = (int)((width / rat.Width) * ramp.Width);
             int h = (int)((height / rat.Height) * ramp.Height);
-
+#else
+            int w = (int) width;
+            int h = (int) height;
+#endif
             browser.Size = new Size(w,h);
         }
 
@@ -978,12 +988,16 @@ namespace GTANetwork.Javascript
 
         public void setCefBrowserPosition(Browser browser, double xPos, double yPos)
         {
+#if RELATIVE_CEF_POS
             var rat = getScreenResolutionMantainRatio();
             var ramp = getScreenResolution();
 
             int w = (int)((xPos / rat.Width) * ramp.Width);
             int h = (int)((yPos / rat.Height) * ramp.Height);
-
+#else
+            int w = (int) xPos;
+            int h = (int) yPos;
+#endif
             browser.Position = new Point(w, h);
         }
 
@@ -1006,10 +1020,17 @@ namespace GTANetwork.Javascript
         public void pinCefBrowser(Browser browser, double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
         {
             browser.Pinned = new PointF[4];
+#if RELATIVE_CEF_POS
             browser.Pinned[0] = ratioToRealRes(x1, y1);
             browser.Pinned[1] = ratioToRealRes(x2, y2);
             browser.Pinned[2] = ratioToRealRes(x3, y3);
             browser.Pinned[3] = ratioToRealRes(x4, y4);
+#else
+            browser.Pinned[0] = new PointF((float)x1, (float)y1);
+            browser.Pinned[1] = new PointF((float)x2, (float)y2);
+            browser.Pinned[2] = new PointF((float)x3, (float)y3);
+            browser.Pinned[3] = new PointF((float)x4, (float)y4);
+#endif
         }
 
         public void clearCefPinning(Browser browser)
@@ -3723,7 +3744,7 @@ namespace GTANetwork.Javascript
             onKeyUp?.Invoke(sender, e);
         }
 
-        #region Menus
+#region Menus
 
         public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
         {
@@ -4028,7 +4049,7 @@ namespace GTANetwork.Javascript
             BottomRight = 9,
         }
 
-        #endregion
+#endregion
     }
 
 }
