@@ -1109,6 +1109,11 @@ namespace GTANetworkServer
             Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
         }
 
+        public string getPlayerNametag(Client player)
+        {
+            return player.Properties.NametagText;
+        }
+
         public void resetPlayerNametag(Client player)
         {
             player.Properties.NametagText = " ";
@@ -1145,6 +1150,23 @@ namespace GTANetworkServer
             var delta = new Delta_PlayerProperties();
             delta.NametagSettings = player.Properties.NametagSettings;
             Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta);
+        }
+
+        public Color getPlayerNametagColor(Client player)
+        {
+            var output = new Color();
+
+            byte a, r, g, b;
+
+            var col = player.Properties.NametagSettings >> 8;
+            Extensions.ToArgb(col, out a, out r, out g, out b);
+
+            output.alpha = a;
+            output.red = r;
+            output.green = g;
+            output.blue = b;
+
+            return output;
         }
 
         public void resetPlayerNametagColor(Client player)
@@ -1186,6 +1208,11 @@ namespace GTANetworkServer
             var delta = new Delta_PlayerProperties();
             delta.Flag = player.Properties.Flag;
             Program.ServerInstance.UpdateEntityInfo(player.CharacterHandle.handle.Value, EntityType.Player, delta, player);
+        }
+
+        public bool isPlayerSpectating(Client player)
+        {
+            return PacketOptimization.CheckBit(player.Properties.Flag, EntityFlag.PlayerSpectating);
         }
 
         public void explodeVehicle(NetHandle vehicle)
@@ -3677,6 +3704,8 @@ namespace GTANetworkServer
                 output.green = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Green;
                 output.blue = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Blue;
             }
+
+            return output;
         }
 
         public NetHandle getPlayerVehicle(Client player)
@@ -3724,20 +3753,19 @@ namespace GTANetworkServer
             }
         }
 
-        public void getTextLabelColor(NetHandle label, out int alpha, out int red, out int green, out int blue)
+        public Color getTextLabelColor(NetHandle label)
         {
-            alpha = 0;
-            red = 0;
-            green = 0;
-            blue = 0;
+            Color output = new Color();
 
             if (doesEntityExist(label))
             {
-                alpha = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Alpha;
-                red = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Red;
-                green = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Green;
-                blue = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Blue;
+                output.alpha = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Alpha;
+                output.red = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Red;
+                output.green = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Green;
+                output.blue = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Blue;
             }
+
+            return output;
         }
 
         public void setTextLabelSeethrough(NetHandle label, bool seethrough)
@@ -3751,6 +3779,15 @@ namespace GTANetworkServer
                 delta.EntitySeethrough = seethrough;
                 Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
             }
+        }
+
+        public bool getTextLabelSeethrough(NetHandle label)
+        {
+            if (doesEntityExist(label))
+            {
+                return ((TextLabelProperties) Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).EntitySeethrough;
+            }
+            return false;
         }
 
         public void registerCustomColShape(ColShape shape)
