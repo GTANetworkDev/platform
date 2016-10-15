@@ -2231,6 +2231,7 @@ namespace GTANetwork.Networking
             if (IsReloading || (IsInCover && IsShooting && !IsAiming))
             {
                 UpdatePlayerPedPos();
+                return;
             }
 
             long tServer = DataLatency;

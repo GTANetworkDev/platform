@@ -2686,9 +2686,6 @@ namespace GTANetwork
                     }
                     */
 
-            
-
-
             if (display)
             {
                 Debug();
@@ -5806,6 +5803,11 @@ namespace GTANetwork
                     SendNativeCallResponse(obj.Id, Function.Call<Vector3>((Hash)obj.Hash, list.ToArray()));
                 }
             }
+
+            if (((int) nativeType & (int) NativeType.PlayerSkinChange) > 0)
+            {
+                Game.Player.Character.SetDefaultClothes();
+            }
         }
 
         public void SendNativeCallResponse(uint id, object response)
@@ -5867,6 +5869,7 @@ namespace GTANetwork
             EntityWarp = 1 << 10,
             NeedsAnimDict = 1 << 11,
             PtfxAssetRequest = 1 << 12,
+            PlayerSkinChange = 1 << 13,
         }
 
         private NativeType CheckNativeHash(ulong hash)
@@ -5876,7 +5879,7 @@ namespace GTANetwork
                 default:
                     return NativeType.Unknown;
                 case 0x00A1CADD00108836:
-                    return NativeType.NeedsModel2 | NativeType.Unknown | NativeType.NeedsModel;
+                    return NativeType.NeedsModel2 | NativeType.Unknown | NativeType.NeedsModel | NativeType.PlayerSkinChange;
                 case 0xD49F9B0955C367DE:
                     return NativeType.NeedsModel2 | NativeType.NeedsModel | NativeType.ReturnsEntity;
                 case 0x7DD959874C1FD534:

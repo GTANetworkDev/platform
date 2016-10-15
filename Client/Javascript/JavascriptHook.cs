@@ -942,7 +942,7 @@ namespace GTANetwork.Javascript
             return browser.IsInitialized();
         }
         
-        public void waitUntilCefBrowserInitalization(Browser browser)
+        public void waitUntilCefBrowserInit(Browser browser)
         {
             while (!browser.IsInitialized())
             {

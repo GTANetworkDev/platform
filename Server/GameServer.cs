@@ -683,8 +683,11 @@ namespace GTANetworkServer
 
                         if (string.IsNullOrWhiteSpace(func.EventName))
                         {
-                            ExportedFunctionDelegate punchthrough =
-                                parameters => engine.InvokeMethod(func.Name, parameters);
+                            ExportedFunctionDelegate punchthrough = new ExportedFunctionDelegate((ExportedFunctionDelegate)
+                                delegate (object[] parameters)
+                                {
+                                    return engine.InvokeMethod(func.Name, parameters);
+                                });
                             resPoolDict.Add(func.Name, punchthrough);
                         }
                         else
@@ -693,7 +696,8 @@ namespace GTANetworkServer
 
                             resPoolDict.Add(func.EventName, null);
 
-                            ExportedEventDelegate punchthrough = parameters =>
+                            ExportedEventDelegate punchthrough = new ExportedEventDelegate((ExportedEventDelegate)
+                                delegate (dynamic[] parameters)
                             {
                                 ExportedEventDelegate e = resPoolDict[func.EventName] as ExportedEventDelegate;
 
@@ -701,7 +705,7 @@ namespace GTANetworkServer
                                 {
                                     e.Invoke(parameters);
                                 }
-                            };
+                            });
 
                             eventInfo.AddEventHandler(engine._compiledScript, punchthrough);
                         }

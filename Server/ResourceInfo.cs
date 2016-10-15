@@ -214,12 +214,33 @@ namespace GTANetworkServer
 
         public void InvokeResourceStart()
         {
+            /*
+            // Sync resourceStart to make sure dependencies are ready?
+            Task shutdownTask = new Task(() =>
+            {
+                try
+                {
+                    if (Language == ScriptingEngineLanguage.compiled)
+                        _compiledScript.API.invokeResourceStart();
+                }
+                catch (Exception ex)
+                {
+                    Program.Output("Unhandled exception caught in " + Filename + " from resource " +
+                                   ResourceParent.DirectoryName + "\r\n" + ex.ToString());
+                }
+            });
+
+            shutdownTask.Start();
+            shutdownTask.Wait(20000);
+            */
+            //*
             lock (_mainQueue.SyncRoot)
             _mainQueue.Enqueue(new Action(() =>
             {
                 if (Language == ScriptingEngineLanguage.compiled)
                     _compiledScript.API.invokeResourceStart();
             }));
+            //*/
         }
 
         public void InvokeEntityDataChange(NetHandle ent, string key, object oldValue)
