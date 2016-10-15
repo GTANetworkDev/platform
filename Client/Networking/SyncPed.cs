@@ -2291,7 +2291,7 @@ namespace GTANetwork.Networking
 
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
             var animDict = GetAnimDictionary(ourAnim);
-            if (IsInCover)
+            if (ourAnim != null)
             {
                 var flag = GetAnimFlag();
 
@@ -2303,15 +2303,16 @@ namespace GTANetwork.Networking
                     Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,
                         8f, 10f, -1, flag, -8f, 1, 1, 1);
                 }
-                return;
             }
             else
             {
+                /*
                 if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
                     3))
                 {
                     Character.Task.ClearAnimation(animDict, ourAnim);
                 }
+                */
 
                 Vector3 tmpposition = this.Position + ((this.Position - Character.Position)*0.75f) + PedVelocity*0.75f;
 
@@ -2564,15 +2565,16 @@ namespace GTANetwork.Networking
 
             if (GetAnimalAnimationDictionary(ModelHash) != null)
                 return GetAnimalAnimationDictionary(ModelHash);
-
+            /*
             string dict = "move_m@generic";
 
             if (Character.Gender == Gender.Female)
                 dict = "move_f@generic";
 
             dict = Character.SubmersionLevel >= 0.8f ? ourAnim == "idle" ? "swimming@base" : "swimming@swim" : dict;
+            */
 
-            return dict;
+            return null;
         }
 
         public uint GetAnimFlag()
@@ -2807,12 +2809,12 @@ namespace GTANetwork.Networking
 
             if (GetAnimalAnimationName(ModelHash,speed) != null)
                 return GetAnimalAnimationName(ModelHash,speed);
-
+            /*
             if (speed == 0) return "idle";
             if (speed == 1) return "walk";
             if (speed == 2) return "run";
-            if (speed == 3) return "sprint";
-            return "";
+            if (speed == 3) return "sprint";*/
+            return null;
         }
 
         public static bool IsAnimal(int model)
