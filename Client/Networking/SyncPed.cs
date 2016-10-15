@@ -2291,7 +2291,7 @@ namespace GTANetwork.Networking
 
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
             var animDict = GetAnimDictionary(ourAnim);
-            if (ourAnim != null)
+            if (ourAnim != null && animDict != null)
             {
                 var flag = GetAnimFlag();
 
@@ -2300,9 +2300,11 @@ namespace GTANetwork.Networking
                 if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
                     3))
                 {
+                    Character.Task.ClearAll();
                     Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,
                         8f, 10f, -1, flag, -8f, 1, 1, 1);
                 }
+
             }
             else
             {
@@ -2579,7 +2581,7 @@ namespace GTANetwork.Networking
 
         public uint GetAnimFlag()
         {
-            if (IsVaulting)
+            if (IsVaulting && !IsOnLadder)
                 return 2 | 2147483648;
             return 1 | 2147483648; // Loop + dont move
         }
