@@ -3666,19 +3666,16 @@ namespace GTANetworkServer
             }
         }
 
-        public void getMarkerColor(NetHandle marker, out int alpha, out int red, out int green, out int blue)
+        public Color getMarkerColor(NetHandle marker)
         {
-            alpha = 0;
-            red = 0;
-            green = 0;
-            blue = 0;
+            Color output = new Color();
 
             if (doesEntityExist(marker))
             {
-                alpha = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Alpha;
-                red = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Red;
-                green = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Green;
-                blue = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Blue;
+                output.alpha = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Alpha;
+                output.red = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Red;
+                output.green = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Green;
+                output.blue = ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).Blue;
             }
         }
 
