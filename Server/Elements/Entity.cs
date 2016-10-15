@@ -11,6 +11,12 @@ namespace GTANetworkServer
         }
 
         public NetHandle handle { get; protected set; }
+
+        public int Value
+        {
+            get { return handle.Value; }
+        }
+
         protected API Base { get; set; }
 
         public static implicit operator NetHandle(Entity c)
@@ -88,7 +94,7 @@ namespace GTANetworkServer
             get { return Base.getEntityType(this); }
         }
 
-        public int transparency
+        public virtual int transparency
         {
             set
             {

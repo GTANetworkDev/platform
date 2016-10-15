@@ -374,7 +374,12 @@ namespace GTANetwork.GUI
                                             var bmOut = new FastBitmap(doubleBuffer);
                                             var ourText = new FastBitmap(bitmap);
 
-                                            QuadDistort.DrawBitmap(ourText, browser.Pinned[0].Floor(), browser.Pinned[1].Floor(), browser.Pinned[2].Floor(), browser.Pinned[3].Floor(), bmOut);
+                                            QuadDistort.DrawBitmap(ourText,
+                                                browser.Pinned[0].Floor(),
+                                                browser.Pinned[1].Floor(),
+                                                browser.Pinned[2].Floor(),
+                                                browser.Pinned[3].Floor(),
+                                                bmOut);
 
                                             graphics.DrawImageUnscaled(bmOut, 0, 0);
                                         }
