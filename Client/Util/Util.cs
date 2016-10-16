@@ -276,15 +276,23 @@ namespace GTANetwork.Util
 					Handle = Function.Call<int>(Hash.GET_NEXT_BLIP_INFO_ID, i);
 			    }
 		    }
-		} 
+		}
 
         public static void SetPlayerSkin(PedHash skin)
         {
+
             var model = new Model(skin);
 
             model.Request(1000);
 
-            Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
+            if (model.IsInCdImage && model.IsValid)
+            {
+                while (!model.IsLoaded)
+                    Script.Wait(15);
+
+                Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
+                Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Game.Player.Character);
+            }
 
             model.MarkAsNoLongerNeeded();
         }
