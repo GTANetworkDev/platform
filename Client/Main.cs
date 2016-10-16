@@ -207,8 +207,10 @@ namespace GTANetwork
 
             _debug = new DebugWindow();
 
-            Function.Call((Hash)0x0888C3502DBBEEF5); // _LOAD_MP_DLC_MAPS
-            Function.Call((Hash)0x9BAE5AD2508DF078, true); // _ENABLE_MP_DLC_MAPS
+            Function.Call(Hash._ENABLE_MP_DLC_MAPS, true); // _ENABLE_MP_DLC_MAPS
+            Function.Call(Hash._LOAD_MP_DLC_MAPS); // _LOAD_MP_DLC_MAPS
+
+ 
             
             MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(),
                 GameplayCamera.FieldOfView);
@@ -2168,7 +2170,6 @@ namespace GTANetwork
                     if (ped.Velocity.Length() > 0.5) output = 2;
                 }
             }
-
             if (Function.Call<bool>(Hash.IS_PED_WALKING, ped))
                 output = 1;
             if (Function.Call<bool>(Hash.IS_PED_RUNNING, ped))
@@ -2177,12 +2178,12 @@ namespace GTANetwork
                 output = 3;
             if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
 
-            // The natives above dont work if player is aiming
-            if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
+            /*if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
             {
                 if (ped.Velocity.LengthSquared() > 0.1f*0.1f)
                     output = 1;
             }
+            */
 
             return output;
         }

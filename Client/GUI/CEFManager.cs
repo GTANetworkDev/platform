@@ -359,6 +359,7 @@ namespace GTANetwork.GUI
                             using (var graphics = Graphics.FromImage(doubleBuffer))
                             {
 #if !DISABLE_CEF
+                                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
                                 lock (Browsers)
                                     foreach (var browser in Browsers)
                                     {

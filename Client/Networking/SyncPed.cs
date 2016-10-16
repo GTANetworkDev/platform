@@ -2188,7 +2188,7 @@ namespace GTANetwork.Networking
             }
 
             // Prediction de la position du joueur (évite qu'il s'arrête de viser et remarche)
-            Vector3 predictPosition = Position + (Position - Character.Position) + PedVelocity * 0.75f;
+            Vector3 predictPosition = Position + (Position - Character.Position) + PedVelocity * 1.50f;
 
             bool isAiming = Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, Character, (int)290);
 
@@ -2196,32 +2196,19 @@ namespace GTANetwork.Networking
 
             // Game doesnt detect IsWalking/IsRunning/IsSprinting when aiming
 
-            delta = 1000;
-
             if ((!isAiming || count % 50 == 0) && OnFootSpeed == 0)
             {
                 Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _aimingProp, -1, false);
                 _lastAimCoords = AimCoords;
             }
-            else if (OnFootSpeed == 1 && (!isAiming || !Character.IsWalking) && delta > 500)
+            if ((!isAiming || count % 50 == 0) && OnFootSpeed > 0)
             {
-                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, 1f, false, 1f, 1f, true, 1, false, (uint)FiringPattern.FullAuto);
+                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, (float)OnFootSpeed, false, (float)OnFootSpeed, (float)OnFootSpeed, true, 1, false, (uint)FiringPattern.FullAuto);
                 lastAimSet = Util.Util.TickCount;
 
                 _lastAimCoords = AimCoords;
             }
-            else if (OnFootSpeed == 2 && (!isAiming || !Character.IsRunning) && delta > 500)
-            {
-                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, 2f, false, 2f, 2f, true, 1, false, (uint)FiringPattern.FullAuto);
-                lastAimSet = Util.Util.TickCount;
-                _lastAimCoords = AimCoords;
-            }
-            else if (OnFootSpeed == 3 && (!isAiming || !Character.IsSprinting) && delta > 500)
-            {
-                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, 3f, false, 3f, 3f, true, 1, false, (uint)FiringPattern.FullAuto);
-                lastAimSet = Util.Util.TickCount;
-                _lastAimCoords = AimCoords;
-            }
+            
         }
 
         private byte count = 0;
@@ -2238,9 +2225,9 @@ namespace GTANetwork.Networking
      
             float lerpValue = 0f;
             var length = Position.DistanceToSquared(Character.Position);
-            if (length > 0.1f*0.1f) // 
+            if (length > 0.1f) // 
             {
-                if (length > 0.5f*0.5f) // 
+                if (length > 0.5f) // 
                 {
                     lerpValue = 0.02f;
                 }
@@ -2248,11 +2235,11 @@ namespace GTANetwork.Networking
                 {
                     lerpValue = 0.15f;
                 }
-                else if (length > 2f*2f) // 
+                else if (length > 2f) // 
                 {
                     lerpValue = 0.30f;
                 }
-                else if (length > 3f*3f) // 
+                else if (length > 3f) // 
                 {
                     lerpValue = 0.50f;
                 }
@@ -2286,7 +2273,7 @@ namespace GTANetwork.Networking
                 }
             }
 
-            Character.Quaternion = GTA.Math.Quaternion.Lerp(Character.Quaternion, Rotation.ToQuaternion(), 0.10f + (tServer / 5000f)); // mise à jours de la rotation
+            Character.Quaternion = GTA.Math.Quaternion.Lerp(Character.Quaternion, Rotation.ToQuaternion(), 0.10f); // mise à jours de la rotation
             Character.Velocity = PedVelocity; // Mise à jours de la vitesse
 
             var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
@@ -2315,39 +2302,33 @@ namespace GTANetwork.Networking
                     Character.Task.ClearAnimation(animDict, ourAnim);
                 }
                 */
-
-                Vector3 tmpposition = this.Position + ((this.Position - Character.Position)*0.75f) + PedVelocity*0.75f;
+                
+                Vector3 tmpposition = this.Position + ((this.Position - Character.Position)) + PedVelocity*0.75f;
 
                 var range = tmpposition.DistanceToSquared(Character.Position);
 
-                if (OnFootSpeed == 1 || (range > 0.75f*0.75f && range < 3.50f*3.5f))
+                if (OnFootSpeed == 1 || (range > 0.75f && range < 2.0f))
                 {
-                    if (!Character.IsWalking || (count%75 == 0 || range > 0.75f*0.75f))
+                    if (!Character.IsWalking || (count%75 == 0 || range > 0.50f))
                     {
-                        //GTA.UI.Screen.ShowSubtitle("Walking");
                         Character.Task.GoTo(tmpposition, true);
                     }
-
                     lastMoving = true;
                 }
                 else if (OnFootSpeed == 2)
                 {
-                    if (!Character.IsRunning || (count%75 == 0 || range > 1.25f))
+                    if (!Character.IsRunning || (count%75 == 0 || range > 1.0f))
                     {
-                        //GTA.UI.Screen.ShowSubtitle("Running", 500);
-                        Character.Task.ClearAll();
                         Character.Task.RunTo(tmpposition, true);
                     }
+                   
                     lastMoving = true;
                 }
                 else if (OnFootSpeed == 3)
                 {
-                    if (!Character.IsSprinting || (count%75 == 0 || range > 2.5f*2.5f))
+                    if (!Character.IsSprinting || (count%75 == 0 || range > 2.0f))
                     {
-                        //GTA.UI.Screen.ShowSubtitle("Sprinting", 500);
-                        Character.Task.ClearAll();
-                        Function.Call(Hash.TASK_GO_STRAIGHT_TO_COORD, Character, tmpposition.X, tmpposition.Y,
-                            tmpposition.Z, 3.0f, -1, 0.0f, 0.0f);
+                        Function.Call(Hash.TASK_GO_STRAIGHT_TO_COORD, Character, tmpposition.X, tmpposition.Y,tmpposition.Z, 3.0f, -1, 0.0f, 0.0f);
 
 
                         Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Character, 1.49f);
