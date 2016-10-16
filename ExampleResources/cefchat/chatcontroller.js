@@ -5,7 +5,7 @@ var mainBrowser = null;
 API.onResourceStart.connect(function() {
 	var res = API.getScreenResolution();
 	mainBrowser = API.createCefBrowser(res.Width, res.Height);
-	API.waitUntilCefBrowserInitalization(mainBrowser);
+	API.waitUntilCefBrowserInit(mainBrowser);
 	API.setCefBrowserPosition(mainBrowser, 0, 0);
 	API.loadPageCefBrowser(mainBrowser, "chat.html");
 

@@ -6,7 +6,7 @@ API.onResourceStart.connect(function() {
 	mainBrowser = API.createCefBrowser(res.Width, res.Height);
 	API.setCefBrowserPosition(mainBrowser, 0, 0);
 	API.setCefBrowserHeadless(mainBrowser, true);
-	API.waitUntilCefBrowserInitalization(mainBrowser);
+	API.waitUntilCefBrowserInit(mainBrowser);
 	API.loadPageCefBrowser(mainBrowser, "index.html");
 });
 

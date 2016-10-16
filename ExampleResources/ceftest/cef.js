@@ -10,7 +10,7 @@ API.onChatCommand.connect(function(msg) {
 			API.sendNotification("Creating new browser...");
 			var res = API.getScreenResolution();
 			mainBrowser = API.createCefBrowser(500, 282, false);
-			API.waitUntilCefBrowserInitalization(mainBrowser);
+			API.waitUntilCefBrowserInit(mainBrowser);
 			API.setCefBrowserPosition(mainBrowser, res.Width - 505, 0);
 			API.sendNotification("Browser created!");
 		}
