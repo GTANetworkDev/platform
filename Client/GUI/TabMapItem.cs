@@ -223,7 +223,7 @@ namespace GTANetwork.GUI
                 }
 
                 var newPos = new PointF(center.X - Position.X*Zoom, center.Y - Position.Y*Zoom);
-                var newSize = new SizeF(1024*Zoom, 1024*Zoom);
+                var newSize = new SizeF(1024.5f*Zoom, 1024.5f*Zoom);
 
                 DrawSprite("minimap_sea_0_0", "minimap_sea_0_0", newPos, newSize);
                 DrawSprite("minimap_sea_0_1", "minimap_sea_0_1", newPos + new SizeF(1024 * Zoom, 0), newSize);
