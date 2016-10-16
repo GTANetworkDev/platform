@@ -688,7 +688,8 @@ namespace GTANetwork
             List<SyncPed> list = null;
             lock (NetEntityHandler)
             {
-                list = new List<SyncPed>(NetEntityHandler.ClientMap.Where(pair => pair is SyncPed).Cast<SyncPed>().Take(20));
+                list = new List<SyncPed>(NetEntityHandler.ClientMap.Where(pair => pair.Value is SyncPed)
+                    .Select(pair => pair.Value).Cast<SyncPed>().Take(20));
             }
             
             _serverPlayers.Dictionary.Add("Total Players", (list.Count + 1).ToString());
