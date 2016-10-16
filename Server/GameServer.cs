@@ -893,6 +893,24 @@ namespace GTANetworkServer
                 res.MapEntities.Add(ent);
             }
 
+            var peds = map.getElementsByType("ped");
+            foreach (var vehicle in peds)
+            {
+                var ent = PublicAPI.createPed((PedHash)vehicle.getElementData<int>("model"),
+                    new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
+                        vehicle.getElementData<float>("posZ")),vehicle.getElementData<float>("heading"), dimension);
+                res.MapEntities.Add(ent);
+            }
+
+            var labels = map.getElementsByType("textlabel");
+            foreach (var vehicle in labels)
+            {
+                var ent = PublicAPI.createTextLabel(vehicle.getElementData<string>("text"),
+                    new Vector3(vehicle.getElementData<float>("posX"), vehicle.getElementData<float>("posY"),
+                        vehicle.getElementData<float>("posZ")), vehicle.getElementData<float>("range"), vehicle.getElementData<float>("size"), dimension: dimension);
+                res.MapEntities.Add(ent);
+            }
+
             var neededInteriors = map.getElementsByType("ipl");
             foreach (var point in neededInteriors)
             {
