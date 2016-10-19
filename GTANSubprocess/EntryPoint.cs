@@ -402,6 +402,7 @@ namespace GTANetwork
 
             foreach (var path in Directory.GetFiles("bin"))
             {
+                NoReadonly(InstallFolder + "\\" + Path.GetFileName(path));
                 File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
                 OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
             }
@@ -410,12 +411,14 @@ namespace GTANetwork
 
             foreach (var path in Directory.GetFiles("bin\\scripts"))
             {
+                NoReadonly(InstallFolder + "\\scripts\\" + Path.GetFileName(path));
                 File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
                 OurFiles.Add(InstallFolder + "\\scripts\\" + Path.GetFileName(path));
             }
             
             foreach (var path in Directory.GetFiles("cef"))
             {
+                NoReadonly(InstallFolder + "\\" + Path.GetFileName(path));
                 File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
                 OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
             }
@@ -433,6 +436,7 @@ namespace GTANetwork
             {
                 try
                 {
+                    NoReadonly(file);
                     File.Delete(file);
                 }
                 catch
@@ -476,6 +480,7 @@ namespace GTANetwork
 
             foreach (string file in files)
             {
+                NoReadonly(file);
                 File.SetAttributes(file, FileAttributes.Normal);
                 File.Delete(file);
             }
@@ -497,6 +502,7 @@ namespace GTANetwork
             {
                 string name = Path.GetFileName(file);
                 string dest = Path.Combine(destFolder, name);
+                NoReadonly(dest);
                 File.Copy(file, dest, true);
             }
             string[] folders = Directory.GetDirectories(sourceFolder);
@@ -510,6 +516,8 @@ namespace GTANetwork
 
         public static void MoveFile(string sourceFile, string destFile)
         {
+            NoReadonly(destFile);
+            NoReadonly(sourceFile);
             File.Copy(sourceFile, destFile);
             File.SetAttributes(sourceFile, FileAttributes.Normal);
             File.Delete(sourceFile);
@@ -519,6 +527,12 @@ namespace GTANetwork
         {
             CopyFolder(sourceDir, destDir);
             DeleteDirectory(sourceDir);
+        }
+
+        public static void NoReadonly(string path)
+        {
+            if (File.Exists(path))
+                new FileInfo(path).IsReadOnly = false;
         }
     }
 
