@@ -1417,6 +1417,16 @@ namespace GTANetwork.Javascript
             Function.Call((Hash)0x172AA1B624FA1013, owner.Value, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
         }
 
+        public void createProjectile(int weapon, Vector3 start, Vector3 target, int damage, float speed = -1, int dimension = 0)
+        {
+            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, (int)weapon, null, true, false, speed);
+        }
+
+        public void createOwnedProjectile(LocalHandle owner, int weapon, Vector3 start, Vector3 target, int damage, float speed = -1, int dimension = 0)
+        {
+            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, (int)weapon, owner.Value, true, false, speed);
+        }
+
         public void setVehicleLivery(LocalHandle vehicle, int livery)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
