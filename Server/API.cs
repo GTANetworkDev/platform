@@ -1100,6 +1100,16 @@ namespace GTANetworkServer
             sendNativeToPlayersInRangeInDimension(position, 50f, dimension, 0x172AA1B624FA1013, owner.CharacterHandle, position.X, position.Y, position.Z, (int)explosionType, damageScale, true, false, 1f);
         }
 
+        public void createProjectile(WeaponHash weapon, Vector3 start, Vector3 target, int damage, float speed = -1, int dimension = 0)
+        {
+            sendNativeToPlayersInDimension(dimension, Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, (int)weapon, null, true, false, speed);
+        }
+
+        public void createOwnedProjectile(Client owner, WeaponHash weapon, Vector3 start, Vector3 target, int damage, float speed = -1, int dimension = 0)
+        {
+            sendNativeToPlayersInDimension(dimension, Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, (int)weapon, owner.CharacterHandle.handle.Value, true, false, speed);
+        }
+
         public void setPlayerNametag(Client player, string text)
         {
             player.Properties.NametagText = text;
