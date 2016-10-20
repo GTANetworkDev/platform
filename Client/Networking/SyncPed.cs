@@ -1693,7 +1693,7 @@ namespace GTANetwork.Networking
                     Character.Task.AimAt(AimCoords, -1);
                 }
                 */
-            
+            /*
                 long tServer = DataLatency;
 
                 float lerpValue = 0f;
@@ -1745,11 +1745,11 @@ namespace GTANetwork.Networking
                         Character.PositionNoOffset = tmpPosition;
                     }
                 }
-
+                */
+                UpdatePlayerPedPos(false);
                 VMultiAiming();
             }
 
-            //UpdatePlayerPedPos(false);
         }
 
 	    void DisplayMeleeAnimation(int hands)
@@ -2362,7 +2362,6 @@ namespace GTANetwork.Networking
             float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
                                 PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
 
-            // There is a reason to have this condition this way: To prevent NaNs generating new NaNs after interpolating (Comparing with NaNs always results to false).
             if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold
                 /* || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25*/)
             {
