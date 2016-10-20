@@ -2945,8 +2945,8 @@ namespace GTANetwork
                     {
                         playerCar.IsInvincible = cc?.IsInvincible ?? false;
                     }
-
-                    JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerEnterVehicle(new LocalHandle(playerCar.Handle)));
+                    LocalHandle handle = new LocalHandle(playerCar.Handle);
+                    JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerEnterVehicle(handle));
                 }
 
                 LastCarEnter = DateTime.Now;
@@ -4848,7 +4848,6 @@ namespace GTANetwork
             var syncPed = NetEntityHandler.GetPlayer(nethandle);
 
             syncPed.Position = position;
-            syncPed.VehiclePosition = position;
 
             syncPed.LastUpdateReceived = Util.Util.TickCount;
 
@@ -4876,7 +4875,7 @@ namespace GTANetwork
 
             if (fullData.Position != null)
             {
-                syncPed.VehiclePosition = fullData.Position.ToVector();
+                syncPed.Position = fullData.Position.ToVector();
             }
 
             if (fullData.VehicleHandle != null) syncPed.VehicleNetHandle = fullData.VehicleHandle.Value;
@@ -4931,7 +4930,6 @@ namespace GTANetwork
                 if (car != null)
                 {
                     syncPed.Position = car.Position.ToVector();
-                    syncPed.VehiclePosition = car.Position.ToVector();
                     syncPed.VehicleRotation = car.Rotation.ToVector();
                 }
             }
@@ -5299,7 +5297,7 @@ namespace GTANetwork
                         _debugSyncPed.LastUpdateReceived = Util.Util.TickCount;
 
                         _debugSyncPed.VehicleNetHandle = data.VehicleHandle.Value;
-                        _debugSyncPed.VehiclePosition = data.Position.ToVector();
+                        _debugSyncPed.Position = data.Position.ToVector();
                         _debugSyncPed.VehicleVelocity = data.Velocity.ToVector();
                         _debugSyncPed.ModelHash = data.PedModelHash.Value;
                         if (Game.Player.Character.IsInVehicle())

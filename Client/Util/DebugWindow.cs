@@ -39,7 +39,7 @@ namespace GTANetwork.Util
             output += "Name: " + player.Name + "\n";
             output += "IsInVehicle: " + player.IsInVehicle + "\n";
             output += "Position: " + player.Position + "\n";
-            output += "VehiclePosition: " + player.VehiclePosition + "\n";
+            output += "VehiclePosition: " + player.Position + "\n";
             output += "Character Pos: " + player.Character?.Position + "\n";
             output += "BlipPos: " + player.Character?.AttachedBlip?.Position + "\n";
             output += "AL: " + player.AverageLatency + "\n";
