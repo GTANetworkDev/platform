@@ -2223,8 +2223,6 @@ namespace GTANetwork.Networking
             float lerpValue = 0f;
             var length = Position.DistanceToSquared(Character.Position);
 
-            string txt = "";
-
             if (length > 0.05f*0.05f) // 
             {
                 if (length > 0.5f) // 
@@ -2273,7 +2271,6 @@ namespace GTANetwork.Networking
                 }
 
 
-                txt = "normal";
                 _carPosOnUpdate = Character.Position;
                 _stopTime = DateTime.Now;
             }
@@ -2283,16 +2280,12 @@ namespace GTANetwork.Networking
                     (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
                 Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y,
                     posTarget.Z, 0, 0, 0);
-                txt = "lerp";
             }
             else
             {
                 Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
                     Position.Z, 0, 0, 0);
-                txt = "fixed";
             }
-
-            GTA.UI.Screen.ShowSubtitle(txt + " " + length.ToString("F3"));
 
             Character.Quaternion = GTA.Math.Quaternion.Lerp(Character.Quaternion, Rotation.ToQuaternion(), 0.10f); // mise à jours de la rotation
             Character.Velocity = PedVelocity; // Mise à jours de la vitesse
