@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
@@ -16,7 +17,7 @@ namespace GTANetwork
 {
     public class MainBehaviour : ISubprocessBehaviour
     {
-        public void Start()
+        public void Start(params string[] args)
         {
             /*
             WE START HERE:
@@ -31,7 +32,6 @@ namespace GTANetwork
                 8. Delete our mod files.
                 9. Move the temporary mod files back
                 10. Terminate
-
             */
 
             var settings = ReadSettings("settings.xml");
@@ -211,6 +211,7 @@ namespace GTANetwork
             MoveStuffIn();
 
 
+            
             if (!settings.SteamPowered)
             {
                 Process.Start(InstallFolder + "\\GTAVLauncher.exe");
@@ -533,6 +534,18 @@ namespace GTANetwork
         {
             if (File.Exists(path))
                 new FileInfo(path).IsReadOnly = false;
+        }
+
+        public static void InjectOurselves(Process gta)
+        {
+            Inject(gta, Path.GetFullPath("bin\\scripthookv.dll"));
+            Inject(gta, Path.GetFullPath("bin\\ScriptHookVDotNet.asi"));
+            
+        }
+
+        public static void Inject(Process target, string path)
+        {
+            DllInjector.GetInstance.Inject(target, Path.GetFullPath(path));
         }
     }
 
