@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="EntryPoint.cs" />
     <Compile Include="GameSettings.cs" />
+    <Compile Include="Injector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
       <AutoGen>True</AutoGen>

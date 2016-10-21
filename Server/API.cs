@@ -335,7 +335,7 @@ namespace GTANetworkServer
                 throw new NullReferenceException("Illegal call to function inside constructor.");
             }
 
-            return Path.GetFullPath("resources\\" + ResourceParent.ResourceParent.DirectoryName);
+            return Path.GetFullPath("resources" + Path.DirectorySeparatorChar + ResourceParent.ResourceParent.DirectoryName);
         }
 
         public string getResourceName(string resource)

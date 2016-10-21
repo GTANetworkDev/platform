@@ -22,7 +22,7 @@ namespace PlayGTANetwork
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             ParseableVersion subprocessVersion = new ParseableVersion(0, 0, 0, 0);
 
@@ -119,7 +119,7 @@ namespace PlayGTANetwork
 
             try
             {
-                mainBehaviour.Start();
+                mainBehaviour.Start(args);
             }
             catch (Exception ex)
             {
@@ -134,6 +134,6 @@ namespace PlayGTANetwork
 
     public interface ISubprocessBehaviour
     {
-        void Start();
+        void Start(string[] args);
     }
 }
