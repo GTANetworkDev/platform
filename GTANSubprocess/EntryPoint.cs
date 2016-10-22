@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -33,7 +34,7 @@ namespace GTANetwork
                 9. Move the temporary mod files back
                 10. Terminate
             */
-
+            
             var settings = ReadSettings("settings.xml");
 
             if (settings == null)
@@ -106,8 +107,10 @@ namespace GTANetwork
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
             var steamDictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\GTAV";
+
             var keyName = "InstallFolder";
             var keyNameSteam = "InstallFolderSteam";
+            var instajoinKey = "Instajoin";
 
             InstallFolder = (string)Registry.GetValue(dictPath, keyName, null);
 
@@ -210,8 +213,6 @@ namespace GTANetwork
 
             MoveStuffIn();
 
-
-            
             if (!settings.SteamPowered)
             {
                 Process.Start(InstallFolder + "\\GTAVLauncher.exe");
@@ -250,6 +251,26 @@ namespace GTANetwork
 
             splashScreen.Stop();
 
+            // Did the user want to immediately join a server?
+
+            if (args != null && args.Length > 0 && args[0].StartsWith("gtan://"))
+            {
+                //Registry.SetValue(dictPath, instajoinKey, args[0].Substring(7));
+
+                var software = Registry.CurrentUser.OpenSubKey("SOFTWARE");
+
+                if (software != null)
+                {
+                    if (!software.GetSubKeyNames().Contains("GTANetwork"))
+                    {
+                        software.CreateSubKey("GTANetwork");
+                    }
+
+                    software.OpenSubKey("GTANetwork")?.SetValue(instajoinKey, args[0].Substring(7));
+                }
+            }
+
+
             // Wait for GTA5 to exit
 
             var launcherProcess = Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null);
@@ -269,6 +290,20 @@ namespace GTANetwork
             mySettings.Video.Windowed.Value = _windowedMode;
 
             GameSettings.SaveSettings(mySettings);
+
+            //Registry.SetValue(dictPath, instajoinKey, "");
+
+            var sw = Registry.CurrentUser.OpenSubKey("SOFTWARE");
+
+            if (sw != null)
+            {
+                if (sw.GetSubKeyNames().Contains("GTANetwork"))
+                {
+                    sw.OpenSubKey("GTANetwork").SetValue(instajoinKey, "");
+                }
+
+            }
+
 
             var scSubfilePath =
                 Environment.GetFolderPath(
