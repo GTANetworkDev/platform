@@ -60,7 +60,7 @@ namespace GTANetworkServer
     }
 
     public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
-    public delegate void ExportedEventDelegate(dynamic[] parameters);
+    public delegate void ExportedEvent(params dynamic[] parameters);
 
     internal class GameServer
     {
@@ -497,6 +497,13 @@ namespace GTANetworkServer
                 var cSharp = new List<string>();
                 var vBasic = new List<string>();
 
+                bool multithreaded = false;
+
+                if (ourResource.Info.Info != null)
+                {
+                    multithreaded = ourResource.Info.Info.Multithreaded;
+                }
+
                 foreach (var script in currentResInfo.Scripts)
                 {
                     if (script.Language == ScriptingEngineLanguage.javascript)
@@ -545,7 +552,7 @@ namespace GTANetworkServer
 
                         var ass = Assembly.LoadFrom(baseDir + script.Path);
                         var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, ourResource.Info.Info.Multithreaded)));
+                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                     }
                     else if (script.Language == ScriptingEngineLanguage.csharp)
                     {
@@ -559,16 +566,18 @@ namespace GTANetworkServer
                     }
                 }
 
+
+
                 if (cSharp.Count > 0)
                 {
                     var csharpAss = CompileScript(cSharp.ToArray(), currentResInfo.References.Select(r => r.Name).ToArray(), false);
-                    ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, ourResource.Info.Info.Multithreaded)));
+                    ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                 }
 
                 if (vBasic.Count > 0)
                 {
                     var vbasicAss = CompileScript(vBasic.ToArray(), currentResInfo.References.Select(r => r.Name).ToArray(), true);
-                    ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, ourResource.Info.Info.Multithreaded)));
+                    ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                 }
 
                 CommandHandler.Register(ourResource);
@@ -694,20 +703,33 @@ namespace GTANetworkServer
                         {
                             var eventInfo = engine._compiledScript.GetType().GetEvent(func.EventName);
 
-                            resPoolDict.Add(func.EventName, null);
-
-                            ExportedEventDelegate punchthrough = new ExportedEventDelegate((ExportedEventDelegate)
-                                delegate (dynamic[] parameters)
+                            if (eventInfo == null)
                             {
-                                ExportedEventDelegate e = resPoolDict[func.EventName] as ExportedEventDelegate;
-
-                                if (e != null)
+                                Program.Output("WARN: Exported event " + func.EventName + " has not been found!");
+                                if (LogLevel > 1)
                                 {
-                                    e.Invoke(parameters);
+                                    Program.Output("Available events:");
+                                    Program.Output(string.Join(", ", engine._compiledScript.GetType().GetEvents().Select(ev => ev.Name)));
                                 }
-                            });
+                            }
+                            else
+                            {
 
-                            eventInfo.AddEventHandler(engine._compiledScript, punchthrough);
+                                resPoolDict.Add(func.EventName, null);
+
+                                ExportedEvent punchthrough = new ExportedEvent((ExportedEvent)
+                                    delegate(dynamic[] parameters)
+                                    {
+                                        ExportedEvent e = resPoolDict[func.EventName] as ExportedEvent;
+
+                                        if (e != null)
+                                        {
+                                            e.Invoke(parameters);
+                                        }
+                                    });
+
+                                eventInfo.AddEventHandler(engine._compiledScript, punchthrough);
+                            }
                         }
                     }
 
