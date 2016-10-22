@@ -777,7 +777,7 @@ namespace GTANetwork.GUI
         {
 #if !DISABLE_CEF
             //_browser.GetBrowser().CloseBrowser(true);
-            _browser.Dispose();
+            //_browser.Dispose();
 #endif
         }
 
@@ -855,7 +855,7 @@ namespace GTANetwork.GUI
         public void Dispose()
         {
 #if !DISABLE_CEF
-            //_browser = null;
+            _browser = null;
 #endif
         }
     }
