@@ -3683,7 +3683,16 @@ namespace GTANetwork
             msg.Write(bin.Length);
             msg.Write(bin);
 
-            Client.Connect(ip, port == 0 ? Port : port, msg);
+            try
+            {
+                Client.Connect(ip, port == 0 ? Port : port, msg);
+            }
+            catch (NetException ex)
+            {
+                GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~" + ex.Message);
+                OnLocalDisconnect();
+                return;
+            }
 
             var pos = Game.Player.Character.Position;
             Function.Call(Hash.CLEAR_AREA_OF_PEDS, pos.X, pos.Y, pos.Z, 100f, 0);
