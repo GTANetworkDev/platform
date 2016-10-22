@@ -410,7 +410,6 @@ namespace GTANetwork.GUI
             {
                 foreach (var browser in CEFManager.Browsers)
                 {
-                    browser.Close();
                     browser.Dispose();
                 }
 
@@ -856,11 +855,6 @@ namespace GTANetwork.GUI
         public void Dispose()
         {
 #if !DISABLE_CEF
-            //LoadHtml("<html></html>");
-            //GoToPage("http://localhost");
-
-            //LogManager.SimpleLog("directx", "DIPOSED OF CEFBROWSER2");
-
             _browser = null;
 #endif
         }
