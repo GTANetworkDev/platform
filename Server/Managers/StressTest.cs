@@ -46,7 +46,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Name = data.Name;
-            Program.ServerInstance.UpdateEntityInfo(data.CharacterHandle.handle.Value, EntityType.Player, delta, data);
+            Program.ServerInstance.UpdateEntityInfo(data.handle.Value, EntityType.Player, delta, data);
 
             Program.Output("Adding player " + data.Name);
         }
@@ -59,7 +59,7 @@ namespace GTANetworkServer
             data.Position = player.Position;
             player.LastUpdate = DateTime.Now;
 
-            data.NetHandle = player.CharacterHandle.handle.Value;
+            data.NetHandle = player.handle.Value;
             data.PedArmor = 0;
             data.Flag = 0;
             data.PedModelHash = (int) PedHash.Michael;

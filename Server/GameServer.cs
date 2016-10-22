@@ -1068,7 +1068,7 @@ namespace GTANResource
                     if (client.Position == null) continue;
                     if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1km
                     {
-                        var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.handle.Value);
+                        var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
                         if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
                         { 
@@ -1079,7 +1079,7 @@ namespace GTANResource
                                 NetDeliveryMethod.UnreliableSequenced,
                                 (int) ConnectionChannel.BasicSync);
 
-                            client.LastPacketReceived.Set(exception.CharacterHandle.handle.Value, Program.GetTicks());
+                            client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
                         }
                     }
                     else
@@ -1112,7 +1112,7 @@ namespace GTANResource
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (pure)
                 {
-                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.handle.Value);
+                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
                     if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
                     {
@@ -1123,7 +1123,7 @@ namespace GTANResource
                             NetDeliveryMethod.UnreliableSequenced,
                             (int)ConnectionChannel.BasicSync);
 
-                        client.LastPacketReceived.Set(exception.CharacterHandle.handle.Value, Program.GetTicks());
+                        client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
                     }
                 }
             }
@@ -1185,7 +1185,7 @@ namespace GTANResource
                     if (client.Position == null) continue;
                     if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1 km
                     {
-                        var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.handle.Value);
+                        var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
                         if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
                         {
@@ -1196,7 +1196,7 @@ namespace GTANResource
                                 NetDeliveryMethod.UnreliableSequenced,
                                 (int) ConnectionChannel.BasicSync);
 
-                            client.LastPacketReceived.Set(exception.CharacterHandle.handle.Value, Program.GetTicks());
+                            client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
                         }
                     }
                     else
@@ -1228,7 +1228,7 @@ namespace GTANResource
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (pure)
                 {
-                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.CharacterHandle.handle.Value);
+                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
                     if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
                     {
@@ -1239,7 +1239,7 @@ namespace GTANResource
                             NetDeliveryMethod.UnreliableSequenced,
                             (int)ConnectionChannel.BasicSync);
 
-                        client.LastPacketReceived.Set(exception.CharacterHandle.handle.Value, Program.GetTicks());
+                        client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
                     }
                 }
             }
@@ -1428,11 +1428,11 @@ namespace GTANResource
                                     client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
                                     client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
                                     client.GameVersion = connReq.GameVersion;
-                                    ((PlayerProperties)NetEntityHandler.ToDict()[client.CharacterHandle.handle.Value]).Name = client.Name;
+                                    ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
 
                                     var respObj = new ConnectionResponse();
 
-                                    respObj.CharacterHandle = client.CharacterHandle.handle.Value;
+                                    respObj.CharacterHandle = client.handle.Value;
                                     respObj.Settings = new SharedSettings()
                                     {
                                         OnFootLagCompensation = OnFootLagComp,
@@ -1496,7 +1496,7 @@ namespace GTANResource
                                         {
                                             var dcObj = new PlayerDisconnect()
                                             {
-                                                Id = client.CharacterHandle.handle.Value,
+                                                Id = client.handle.Value,
                                             };
 
                                             SendToAll(dcObj, PacketType.PlayerDisconnect, true, ConnectionChannel.EntityBackend);
@@ -1505,7 +1505,7 @@ namespace GTANResource
                                                             client.Name + ")");
                                             
                                             Clients.Remove(client);
-                                            NetEntityHandler.DeleteEntityQuiet(client.CharacterHandle.handle.Value);
+                                            NetEntityHandler.DeleteEntityQuiet(client.handle.Value);
                                             if (ACLEnabled) ACL.LogOutClient(client);
 
                                             Downloads.RemoveAll(d => d.Parent == client);
@@ -1635,7 +1635,7 @@ namespace GTANResource
 
                                                 var fullPacket = PacketOptimization.ReadPureVehicleSync(bin);
                                                 
-                                                fullPacket.NetHandle = client.CharacterHandle.handle.Value;
+                                                fullPacket.NetHandle = client.handle.Value;
 
                                                 if (fullPacket.PlayerHealth.Value != client.Health)
                                                 {
@@ -1793,7 +1793,7 @@ namespace GTANResource
 
                                                 ResendPacket(fullPacket, client, true);
 
-                                                UpdateAttachables(client.CharacterHandle.handle.Value);
+                                                UpdateAttachables(client.handle.Value);
                                                 UpdateAttachables(client.CurrentVehicle.Value);
                                             }
                                             catch (IndexOutOfRangeException)
@@ -1810,7 +1810,7 @@ namespace GTANResource
 
                                                 var fullPacket = PacketOptimization.ReadLightVehicleSync(bin);
 
-                                                fullPacket.NetHandle = client.CharacterHandle.handle.Value;
+                                                fullPacket.NetHandle = client.handle.Value;
                                                 fullPacket.Latency = client.Latency;
 
                                                 client.IsInVehicle = true;
@@ -1932,7 +1932,7 @@ namespace GTANResource
 
                                                 var fullPacket = PacketOptimization.ReadPurePedSync(bin);
 
-                                                fullPacket.NetHandle = client.CharacterHandle.handle.Value;
+                                                fullPacket.NetHandle = client.handle.Value;
 
                                                 var oldHealth = client.Health;
                                                 var oldArmor = client.Armor;
@@ -1996,7 +1996,7 @@ namespace GTANResource
                                                 }
 
                                                 ResendPacket(fullPacket, client, true);
-                                                UpdateAttachables(client.CharacterHandle.handle.Value);
+                                                UpdateAttachables(client.handle.Value);
                                                 //SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
                                             }
                                             catch (IndexOutOfRangeException)
@@ -2013,7 +2013,7 @@ namespace GTANResource
 
                                                 var fullPacket = PacketOptimization.ReadLightPedSync(bin);
 
-                                                fullPacket.NetHandle = client.CharacterHandle.handle.Value;
+                                                fullPacket.NetHandle = client.handle.Value;
                                                 fullPacket.Latency = client.Latency;
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
@@ -2053,7 +2053,7 @@ namespace GTANResource
 
                                                 shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out aimPoint);
 
-                                                netHandle = client.CharacterHandle.handle.Value;
+                                                netHandle = client.handle.Value;
 
                                                 ResendBulletPacket(netHandle, aimPoint, shooting, client);
                                             }
@@ -2340,7 +2340,7 @@ namespace GTANResource
                                             {
                                                 var delta = new Delta_PlayerProperties();
                                                 delta.Name = client.Name;
-                                                UpdateEntityInfo(client.CharacterHandle.handle.Value, EntityType.Player, delta, client);
+                                                UpdateEntityInfo(client.handle.Value, EntityType.Player, delta, client);
 
                                                 var mapObj = new ServerMap();
                                                 mapObj.World =
@@ -3112,6 +3112,10 @@ namespace GTANResource
                 {
                     list.Add(new EntityArgument(((NetHandle) o).Value));
                 }
+                else if (o is Entity)
+                {
+                    list.Add(new EntityArgument(((Entity)o).Value));
+                }
                 else if (o is IList)
                 {
                     var larg = new ListArgument();
@@ -3344,28 +3348,28 @@ namespace GTANResource
 
         public void ChangePlayerTeam(Client target, int newTeam)
         {
-            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.handle.Value))
+            if (NetEntityHandler.ToDict().ContainsKey(target.handle.Value))
             {
-                ((PlayerProperties) NetEntityHandler.ToDict()[target.CharacterHandle.handle.Value]).Team = newTeam;
+                ((PlayerProperties) NetEntityHandler.ToDict()[target.handle.Value]).Team = newTeam;
             }
 
             var obj = new SyncEvent();
             obj.EventType = (byte) ServerEventType.PlayerTeamChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, newTeam);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, newTeam);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void ChangePlayerBlipColor(Client target, int newColor)
         {
-            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.handle.Value))
+            if (NetEntityHandler.ToDict().ContainsKey(target.handle.Value))
             {
-                ((PlayerProperties)NetEntityHandler.ToDict()[target.CharacterHandle.handle.Value]).BlipColor = newColor;
+                ((PlayerProperties)NetEntityHandler.ToDict()[target.handle.Value]).BlipColor = newColor;
             }
 
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerBlipColorChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, newColor);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, newColor);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3374,21 +3378,21 @@ namespace GTANResource
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerBlipColorChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, newColor);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, newColor);
 
             SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void ChangePlayerBlipSprite(Client target, int newSprite)
         {
-            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.handle.Value))
+            if (NetEntityHandler.ToDict().ContainsKey(target.handle.Value))
             {
-                ((PlayerProperties)NetEntityHandler.ToDict()[target.CharacterHandle.handle.Value]).BlipSprite = newSprite;
+                ((PlayerProperties)NetEntityHandler.ToDict()[target.handle.Value]).BlipSprite = newSprite;
             }
 
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerBlipSpriteChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, newSprite);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, newSprite);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3397,21 +3401,21 @@ namespace GTANResource
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerBlipSpriteChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, newSprite);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, newSprite);
 
             SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void ChangePlayerBlipAlpha(Client target, int newAlpha)
         {
-            if (NetEntityHandler.ToDict().ContainsKey(target.CharacterHandle.handle.Value))
+            if (NetEntityHandler.ToDict().ContainsKey(target.handle.Value))
             {
-                ((PlayerProperties)NetEntityHandler.ToDict()[target.CharacterHandle.handle.Value]).BlipAlpha = (byte)newAlpha;
+                ((PlayerProperties)NetEntityHandler.ToDict()[target.handle.Value]).BlipAlpha = (byte)newAlpha;
             }
 
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, newAlpha);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, newAlpha);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3420,7 +3424,7 @@ namespace GTANResource
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, newAlpha);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, newAlpha);
 
             SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3455,7 +3459,7 @@ namespace GTANResource
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, spectating);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, spectating);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3464,7 +3468,7 @@ namespace GTANResource
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
-            obj.Arguments = ParseNativeArguments(spectator.CharacterHandle.handle.Value, true, target.CharacterHandle.handle.Value);
+            obj.Arguments = ParseNativeArguments(spectator.handle.Value, true, target.handle.Value);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3473,7 +3477,7 @@ namespace GTANResource
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerAnimationStart;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value, flag, animDict, animName);
+            obj.Arguments = ParseNativeArguments(target.handle.Value, flag, animDict, animName);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3482,7 +3486,7 @@ namespace GTANResource
         {
             var obj = new SyncEvent();
             obj.EventType = (byte)ServerEventType.PlayerAnimationStop;
-            obj.Arguments = ParseNativeArguments(target.CharacterHandle.handle.Value);
+            obj.Arguments = ParseNativeArguments(target.handle.Value);
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }

@@ -105,7 +105,6 @@
     <Compile Include="Elements\ParticleEffect.cs" />
     <Compile Include="Elements\Ped.cs" />
     <Compile Include="Elements\Pickup.cs" />
-    <Compile Include="Elements\Player.cs" />
     <Compile Include="Elements\TextLabel.cs" />
     <Compile Include="Elements\Vehicle.cs" />
     <Compile Include="Managers\AccessControlList.cs" />
