@@ -398,7 +398,7 @@ namespace GTANetworkServer
                 ourResource.Engines = new List<ScriptingEngine>();
                 ourResource.ClientsideScripts = new List<ClientsideScript>();
 
-                if (ourResource.Info.Info.Type == ResourceType.gamemode)
+                if (ourResource.Info.Info != null && ourResource.Info.Info.Type == ResourceType.gamemode)
                 {
                     if (Gamemode != null)
                         StopResource(Gamemode.DirectoryName);

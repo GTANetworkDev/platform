@@ -286,6 +286,8 @@ namespace GTANetwork.Javascript
 
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
+            if (Main.Chat.IsFocused) return;
+
             lock (ScriptEngines)
             {
                 foreach (var engine in ScriptEngines)
@@ -304,6 +306,8 @@ namespace GTANetwork.Javascript
 
         public void OnKeyUp(object sender, KeyEventArgs e)
         {
+            if (Main.Chat.IsFocused) return;
+
             lock (ScriptEngines)
             {
                 foreach (var engine in ScriptEngines)
@@ -424,6 +428,7 @@ namespace GTANetwork.Javascript
             {
                 foreach (var browser in CEFManager.Browsers)
                 {
+                    browser.Close();
                     browser.Dispose();
                 }
 
@@ -533,7 +538,6 @@ namespace GTANetwork.Javascript
             shouldRunNextFrame.Add(iterator);
         }
 
-
         internal bool isPathSafe(string path)
         {
             if (ParentResourceName == null) throw new NullReferenceException("Illegal call to isPathSafe inside constructor!");
@@ -574,6 +578,88 @@ namespace GTANetwork.Javascript
         public bool isCursorShown()
         {
             return CefController.ShowCursor;
+        }
+
+        private Dictionary<string, object> Settings;
+
+        private void loadSettings()
+        {
+            if (Settings != null)
+                return;
+
+            if (!File.Exists(getResourceFilePath(".settings")))
+            {
+                Settings = new Dictionary<string, object>();
+                return;
+            }
+
+            var settings = File.ReadAllBytes(getResourceFilePath(".settings"));
+            var sets = (ClientResourceSettings)Main.DeserializeBinary<ClientResourceSettings>(settings);
+
+            Settings = sets.Settings.ToDictionary((pair) => pair.Key,
+                (pair) => Main.DecodeArgumentListPure(pair.Value).FirstOrDefault());
+        }
+
+        private void saveSettings()
+        {
+            if (Settings == null) return;
+
+            var crs = new ClientResourceSettings()
+            {
+                Settings = Settings.ToDictionary(
+                    (pair) => pair.Key,
+                    (pair) => Main.ParseNativeArguments(pair.Value).FirstOrDefault()),
+            };
+
+            var bin = Main.SerializeBinary(crs);
+
+            File.WriteAllBytes(getResourceFilePath(".settings"), bin);
+        }
+        
+
+        // TODO: Limit the number of setting the programmer can set.
+        public void setSetting(string name, object value)
+        {
+            if (Settings == null)
+            {
+                loadSettings();
+            }
+
+            Settings.Set(name, value);
+
+            saveSettings();
+        }
+
+        public object getSetting(string name)
+        {
+            if (Settings == null)
+            {
+                loadSettings();
+            }
+
+            return Settings.Get(name);
+        }
+
+        public bool doesSettingExist(string name)
+        {
+            if (Settings == null)
+            {
+                loadSettings();
+            }
+
+            return Settings.ContainsKey(name);
+        }
+
+        public void removeSetting(string name)
+        {
+            if (Settings == null)
+            {
+                loadSettings();
+            }
+
+            Settings.Remove(name);
+
+            saveSettings();
         }
 
         public JavascriptChat registerChatOverride()
@@ -935,6 +1021,7 @@ namespace GTANetwork.Javascript
             CEFManager.Browsers.Remove(browser);
             try
             {
+                browser.Close();
                 browser.Dispose();
             }
             catch (Exception ex)
@@ -3578,6 +3665,7 @@ namespace GTANetwork.Javascript
         public delegate void BoolChangeEvent(bool oldValue);
         public delegate void PlayerDamageEvent(LocalHandle attacker, int weaponUsed, int boneHit);
         public delegate void PlayerMeleeDamageEvent(LocalHandle attacker, int weaponUsed);
+        public delegate void WeaponShootEvent(int weaponUsed, Vector3 aimCoords);
 
         public event EmptyEvent onResourceStart;
         public event EmptyEvent onResourceStop;
@@ -3608,6 +3696,12 @@ namespace GTANetwork.Javascript
         public event IntChangeEvent onVehicleTyreBurst;
         public event PlayerDamageEvent onLocalPlayerDamaged;
         public event PlayerMeleeDamageEvent onLocalPlayerMeleeHit;
+        public event WeaponShootEvent onLocalPlayerShoot;
+
+        internal void invokeonLocalPlayerShoot(int weaponUsed, Vector3 target)
+        {
+            onLocalPlayerShoot?.Invoke(weaponUsed, target);
+        }
 
         internal void invokeonLocalPlayerMeleeHit(LocalHandle player, int weaponUsed)
         {
@@ -4062,4 +4156,9 @@ namespace GTANetwork.Javascript
 #endregion
     }
 
+
+    public class ClientResourceSettings
+    {
+        public Dictionary<string, NativeArgument> Settings { get; set; }
+    }
 }

@@ -2851,6 +2851,15 @@ namespace GTANetwork
 
             _playerGodMode = Game.Player.IsInvincible;
 
+            //invokeonLocalPlayerShoot
+            if (player != null && player.IsShooting)
+            {
+                JavascriptHook.InvokeCustomEvent(
+                    api =>
+                        api?.invokeonLocalPlayerShoot((int) (player.Weapons.Current?.Hash ?? 0),
+                            RaycastEverything(new Vector2(0, 0)).ToLVector()));
+            }
+
             int netPlayerCar = 0;
             RemoteVehicle cc = null;
             if (playerCar != null && (netPlayerCar = NetEntityHandler.EntityToNet(playerCar.Handle)) != 0)
@@ -5186,6 +5195,7 @@ namespace GTANetwork
             VehicleSyncManager.StopAll();
 		    HasFinishedDownloading = false;
 		    ScriptChatVisible = true;
+		    CanOpenChatbox = true;
 
             Main.UIColor = Color.White;
 		    
@@ -5197,6 +5207,7 @@ namespace GTANetwork
 		    {
                 foreach (var browser in CEFManager.Browsers)
                 {
+                    browser.Close();
                     browser.Dispose();
                 }
 
