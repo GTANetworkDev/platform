@@ -5525,7 +5525,20 @@ namespace GTANetwork
                 }
                 else if (arg is EntityArgument)
                 {
-                    list.Add(new LocalHandle(NetEntityHandler.NetToEntity(((EntityArgument)arg).NetHandle)?.Handle ?? 0));
+                    var ent = NetEntityHandler.NetToStreamedItem(((EntityArgument) arg).NetHandle);
+
+                    if (ent == null)
+                    {
+                        list.Add(new LocalHandle(0));
+                    }
+                    else if (ent is ILocalHandleable)
+                    {
+                        list.Add(new LocalHandle(NetEntityHandler.NetToEntity(ent)?.Handle ?? 0));
+                    }
+                    else
+                    {
+                        list.Add(new LocalHandle(ent.RemoteHandle, HandleType.NetHandle));
+                    }
                 }
                 else if (arg is EntityPointerArgument)
                 {
