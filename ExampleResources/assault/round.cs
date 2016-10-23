@@ -35,6 +35,7 @@ public class Objective
 	public List<int> RequiredObjectives { get; set; }
     public int Timer { get; set; }
 
+    public long LastLabelUpdate { get; set; }
     public bool Spawned { get; set; }
     public int TimeLeft { get; set; }
     public long LastActiveUpdate { get; set; }
@@ -42,13 +43,21 @@ public class Objective
 	public bool Captured { get; set; }
     public Blip Blip;
     public Marker Marker;
+    public TextLabel TextLabel;
 }
 
 public class Spawnpoint
 {
+    public Spawnpoint()
+    {
+        RequiredObjectives = new int[0];
+    }
+
 	public int Team { get; set; }
 	public Vector3 Position { get; set; }
 	public float Heading { get; set; }
+
+    public int[] RequiredObjectives { get; set; }
 
 	public PedHash[] Skins { get; set; }
 	public WeaponHash[] Weapons { get; set; }

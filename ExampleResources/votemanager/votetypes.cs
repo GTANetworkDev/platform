@@ -128,6 +128,7 @@ namespace Votemanager
 
             if (cr.c.doesResourceExist(mapName))
             {
+                cr.c.stopResource(mapName);
                 cr.c.startResource(mapName);
             }
         }

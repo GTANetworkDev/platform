@@ -399,7 +399,7 @@ namespace GTANetwork.GUI
 
         public static Color GetBlipcolor(BlipColor col, int a)
         {
-            switch ((int)col - 1)
+            switch ((int)col)
             {
                 default: return Color.FromArgb(a, 255, 255, 255); // (21, 27)
                 case 1: return Color.FromArgb(a, 224, 50, 50); // (54, 27)

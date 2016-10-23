@@ -7,6 +7,8 @@
 
 	<spawnpoint team="1" posX="1048.766" posY="705.3881" posZ="158.5015" heading="-7.153304" weapons="Pistol,AssaultRifle" ammo="50,500" skins="ExArmy01"/>
 
+	<spawnpoint team="1" objectives="1" posX="1309.75" posY="1089.66" posZ="105.55" heading="336.35" weapons="Pistol,AssaultRifle" ammo="50,500" skins="ExArmy01"/>
+
 	<vehicle model="-2064372143" posX="1040.264" posY="691.5898" posZ="158.955" rotZ="52.53782" rotX="0" rotY="0" color1="0" color2="0" />
 	<vehicle model="-2064372143" posX="1034.528" posY="684.6589" posZ="159.5418" rotZ="21.70925" rotX="0" rotY="0" color1="0" color2="0"/>
 

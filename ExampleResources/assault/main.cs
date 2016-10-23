@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using GTANetworkServer;
+using GTANetworkServer.Constant;
 using GTANetworkShared;
 
 /*
@@ -141,6 +142,16 @@ public class Assault : Script
 	        sp.Weapons = guns.ToArray();
 	        sp.Ammo = ammos.ToArray();
 
+	        if (element.hasElementData("objectives"))
+	        {
+                var objectives =
+                    element.getElementData<string>("objectives")
+                    .Split(',')
+                    .Select(w => int.Parse(w, CultureInfo.InvariantCulture));
+
+	            sp.RequiredObjectives = objectives.ToArray();
+	        }
+
 	        round.Spawnpoints.Add(sp);
 	    }
         #endregion
@@ -152,22 +163,26 @@ public class Assault : Script
     {
         if (CurrentRound == null) return;
 
-        // Assume team is assigned
+        if (player.team == 0)
+            player.team = _rand.Next(1, 3);
 
-        var availablePoints = CurrentRound.Spawnpoints.Where(sp => sp.Team == player.team).ToArray();
+        Spawnpoint[] availablePoints;
 
-        API.consoleOutput("Available Points: " + availablePoints.Length);
-        API.consoleOutput("Team: " + player.team);
+        var groups =
+            CurrentRound.Spawnpoints.Where(
+                sp =>
+                    sp.Team == player.team &&
+                    (sp.RequiredObjectives.Length == 0 || AreAllObjectivesMet(sp.RequiredObjectives)))
+                .GroupBy(sp => sp.RequiredObjectives.Sum());
 
+        var max = groups.Max(grp => grp.Key);
+        availablePoints = groups.First(grp => grp.Key == max).ToArray();
+        
         var spawnpoint = availablePoints[_rand.Next(availablePoints.Length)];
-
-        API.consoleOutput("Available Skins: " + spawnpoint.Skins.Length);
+        
         player.removeAllWeapons();
         player.setSkin(spawnpoint.Skins[_rand.Next(spawnpoint.Skins.Length)]);
-
-        API.consoleOutput("Available Guns: " + spawnpoint.Weapons.Length);
-        API.consoleOutput("Available Ammo: " + spawnpoint.Ammo.Length);
-
+        
         for (int i = 0; i < spawnpoint.Weapons.Length; i++)
         {
             player.giveWeapon(spawnpoint.Weapons[i], spawnpoint.Ammo[i], true, true);
@@ -179,12 +194,22 @@ public class Assault : Script
 
         if (player.team == ATTACKER_TEAM)
         {
-            API.triggerClientEvent(player, "display_subtitle", "Attack the ~r~objectives!", 120000);
+            API.triggerClientEvent(player, "display_subtitle", "Attack the ~r~objectives~w~!", 120000);
+            player.nametagColor = new Color(209, 25, 25);
         }
         else
         {
-            API.triggerClientEvent(player, "display_subtitle", "Defend the ~b~objectives!", 120000);
+            API.triggerClientEvent(player, "display_subtitle", "Defend the ~b~objectives~w~!", 120000);
+            player.nametagColor = new Color(101, 186, 214);
         }
+    }
+
+    public bool AreAllObjectivesMet(int[] objectives)
+    {
+        return objectives.All(
+            obj =>
+                CurrentRound.Objectives.Any(o => o.Id == obj) &&
+                CurrentRound.Objectives.First(o => o.Id == obj).Captured);
     }
 
     public void EndRound()
@@ -193,8 +218,10 @@ public class Assault : Script
 		{
 		    foreach (var ent in CurrentRound.Cleanup)
 		    {
-		        ent.delete();
+		        if (ent != null) API.deleteEntity(ent);
 		    }
+
+            CurrentRound.Cleanup.Clear();
 
             invokeEnd();
 		}
@@ -230,26 +257,30 @@ public class Assault : Script
 
     public void CreateObjective(Objective objective)
     {
-        objective.Marker = API.createMarker(1, objective.Position, new Vector3(), new Vector3(),
-                    new Vector3(objective.Range, objective.Range, 5f), 100, 255, 255, 255);
+        objective.Marker = API.createMarker(28, objective.Position - new Vector3(0, 0, 0), new Vector3(), new Vector3(),
+                    new Vector3(objective.Range, objective.Range, 5f), 30, 255, 255, 255);
 
         objective.Blip = API.createBlip(objective.Position);
         objective.Blip.color = 1;
-        /*
+        
+        objective.TextLabel = API.createTextLabel("", objective.Position + new Vector3(0, 0, 1.5f), 30f, 1f);
+        
         foreach (var player in API.getAllPlayers())
         {
             if (player.team == ATTACKER_TEAM)
             {
                 API.triggerClientEvent(player, "set_blip_color", objective.Blip.handle, 1);
                 API.triggerClientEvent(player, "set_marker_color", objective.Marker.handle, 240, 10, 10);
+                API.triggerClientEvent(player, "display_subtitle", "Attack the ~r~objectives~w~!", 120000);
             }
             else
             {
                 API.triggerClientEvent(player, "set_blip_color", objective.Blip.handle, 67);
-                API.triggerClientEvent(player, "set_marker_color", objective.Marker.handle, 10, 10, 200);
+                API.triggerClientEvent(player, "set_marker_color", objective.Marker.handle, 19, 201, 237);
+                API.triggerClientEvent(player, "display_subtitle", "Defend the ~b~objectives~w~!", 120000);
             }
         }
-        */
+        
         objective.Spawned = true;
 
         CurrentRound.Cleanup.Add(objective.Marker);
@@ -293,10 +324,14 @@ public class Assault : Script
             int attackersOnObjective = 0;
             int defendersOnObjective = 0;
 
+            List<Client> OnPoint = new List<Client>();
+
             foreach (var player in players)
             {
                 if (player.position.DistanceToSquared(objective.Position) > objective.Range*objective.Range)
                     continue;
+
+                OnPoint.Add(player);
 
                 if (player.team == ATTACKER_TEAM) attackersOnObjective++;
                 else defendersOnObjective++;
@@ -311,12 +346,22 @@ public class Assault : Script
                     objective.LastActiveUpdate = API.TickCount;
 
                     API.triggerClientEventForAll("display_subtitle", "Objective ~y~" + objective.Name + "~w~ is being captured!", objective.Timer);
+
+                    API.sendNativeToAllPlayers(Hash.SET_BLIP_FLASHES, objective.Blip, true);
+
+                    API.triggerClientEventForAll("set_marker_color", objective.Marker.handle, 7, 219, 21);
+                    
+                    API.triggerClientEventForAll("play_sound", "GTAO_FM_Events_Soundset", "Enter_1st");
                 }
 
                 objective.TimeLeft -= (int) (API.TickCount - objective.LastActiveUpdate);
                 objective.LastActiveUpdate = API.TickCount;
 
-                // TODO: Progress bar
+                if (API.TickCount - objective.LastLabelUpdate > 1000)
+                {
+                    objective.TextLabel.text = "~y~~h~" + objective.Name + "~h~~w~~n~" + (1f - ((float) objective.TimeLeft/objective.Timer)).ToString("P");
+                    objective.LastLabelUpdate = API.TickCount;
+                }
 
                 if (objective.TimeLeft < 0)
                 {
@@ -324,9 +369,16 @@ public class Assault : Script
 
                     objective.Blip.delete();
                     objective.Marker.delete();
+                    objective.TextLabel.delete();
 
-                    API.triggerClientEventForAll("display_subtitle", "Objective ~y~" + objective.Name + "~w~ captured!", 5000);
+                    API.triggerClientEventForAll("display_shard", "~y~" + objective.Name + "~w~ captured!", 5000);
+                    API.triggerClientEventForAll("play_sound", "HUD_MINI_GAME_SOUNDSET", "3_2_1");
 
+                    API.delay(5000, true, () =>
+                    {
+                        API.triggerClientEventForAll("play_sound", "GTAO_FM_Events_Soundset", "Shard_Disappear");
+                    });
+                    
                     SpawnRequiredCheckpoints();
 
                     if (CurrentRound.Objectives.All(o => o.Captured))
@@ -344,11 +396,39 @@ public class Assault : Script
             else if (attackersOnObjective > 0 && defendersOnObjective > 0)
             {
                 objective.LastActiveUpdate = API.TickCount;
+
+                API.triggerClientEventForAll("set_marker_color", objective.Marker.handle, 242, 238, 10);
+
+                foreach (var client in OnPoint)
+                {
+                    API.triggerClientEvent(client, "play_sound", "DLC_HEIST_BIOLAB_PREP_HACKING_SOUNDS", "Hack_failed");
+                }
             }
-            else
+            else if (objective.Active)
             {
                 objective.Active = false;
                 objective.LastActiveUpdate = 0;
+                objective.TextLabel.text = "";
+
+                API.sendNativeToAllPlayers(Hash.SET_BLIP_FLASHES, objective.Blip, false);
+
+                API.triggerClientEventForAll("play_sound", "GTAO_FM_Events_Soundset", "Lose_1st");
+
+                foreach (var player in API.getAllPlayers())
+                {
+                    if (player.team == ATTACKER_TEAM)
+                    {
+                        API.triggerClientEvent(player, "set_blip_color", objective.Blip.handle, 1);
+                        API.triggerClientEvent(player, "set_marker_color", objective.Marker.handle, 240, 10, 10);
+                        API.triggerClientEvent(player, "display_subtitle", "Attack the ~r~objectives~w~!", 120000);
+                    }
+                    else
+                    {
+                        API.triggerClientEvent(player, "set_blip_color", objective.Blip.handle, 67);
+                        API.triggerClientEvent(player, "set_marker_color", objective.Marker.handle, 19, 201, 237);
+                        API.triggerClientEvent(player, "display_subtitle", "Defend the ~b~objectives~w~!", 120000);
+                    }
+                }
             }
         }
     }
