@@ -38,7 +38,7 @@ public class PlayerBlips : Script
 		var pBlip = API.createBlip(API.getEntityPosition(player));
 		API.attachEntityToEntity(pBlip, player, null, new Vector3(), new Vector3());
 
-		API.setBlipName(pBlip, player.Name);
+		API.setBlipName(pBlip, player.name);
 		API.setBlipScale(pBlip, 0.8f);
 
 		API.setEntityData(player, "PLAYERBLIPS_MAIN_BLIP", pBlip);

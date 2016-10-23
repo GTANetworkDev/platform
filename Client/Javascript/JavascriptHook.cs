@@ -2196,6 +2196,11 @@ namespace GTANetwork.Javascript
             Main.LocalTeam = team;
         }
 
+        public int getPlayerTeam()
+        {
+            return Main.LocalTeam;
+        }
+
         public void playPlayerScenario(string name)
         {
             Function.Call(Hash.TASK_START_SCENARIO_IN_PLACE, Game.Player.Character, name, 0, 0);

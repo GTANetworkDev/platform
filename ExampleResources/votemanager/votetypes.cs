@@ -162,7 +162,7 @@ namespace Votemanager
 
         public override string Name
         {
-            get { return string.Format("KICK ~r~{0}~w~ FROM THE GAME?", Target.Name); }
+            get { return string.Format("KICK ~r~{0}~w~ FROM THE GAME?", Target.name); }
         }
     }
 }

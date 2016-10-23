@@ -1,0 +1,25 @@
+<map>
+	<!--
+	<spawnpoint team="1" posX="" posY="" posZ="" heading="" objective="*" weapons="AssaultRifle,Pistol" ammo="500,50" skins="Gangster" />
+
+	<objective id="1" posX="" posY="" posZ="" range="" name="" required="1,2" color="#FFFFFFFF" timer="5000" />
+	-->
+
+	<spawnpoint team="1" posX="1048.766" posY="705.3881" posZ="158.5015" heading="-7.153304" weapons="Pistol,AssaultRifle" ammo="50,500" skins="ExArmy01"/>
+
+	<vehicle model="-2064372143" posX="1040.264" posY="691.5898" posZ="158.955" rotZ="52.53782" rotX="0" rotY="0" color1="0" color2="0" />
+	<vehicle model="-2064372143" posX="1034.528" posY="684.6589" posZ="159.5418" rotZ="21.70925" rotX="0" rotY="0" color1="0" color2="0"/>
+
+	<vehicle model="-2064372143" posX="1023.03" posY="678.6723" posZ="160.057" rotZ="18.14038" rotX="0" rotY="0" color1="0" color2="0" />
+	<vehicle model="-2064372143" posX="1018.95" posY="666.034" posZ="160.5328" rotZ="52.7244" rotX="0" rotY="0" color1="0" color2="0" />
+	<vehicle model="-2064372143" posX="1015.864" posY="663.5819" posZ="160.7896" rotZ="42.7093" rotX="0" rotY="0" color1="0" color2="0"/>
+	<vehicle model="-2064372143" posX="1012.614" posY="661.0857" posZ="160.9932" rotZ="42.60994" rotX="0" rotY="0" color1="0" color2="0"/>
+	<vehicle model="-2064372143" posX="1009.42" posY="656.0676" posZ="161.3189" rotZ="28.41134" rotX="0" rotY="0" color1="0" color2="0"/>
+
+	<spawnpoint team="2" posX="1481.231" posY="1115.881" posZ="114.3344" heading="85.83113" weapons="Pistol,AssaultRifle" ammo="50,500" skins="Hillbilly01AMM" />
+
+	<objective id="1" posX="1360.229" posY="1148.156" posZ="114.3129" name="Entrance" timer="15000" />
+	<objective id="2" required="1" posX="1421.076" posY="1139.248" posZ="114.334" name="House" />
+	<objective id="3" required="2" posX="1489.435" posY="1146.231" posZ="114.4651" name="Water Tower" timer="30000" />
+	<objective id="4" required="2" posX="1459.871" posY="1111.76" posZ="114.334" name="Ranch" />
+</map>

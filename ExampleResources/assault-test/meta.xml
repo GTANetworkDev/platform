@@ -1,0 +1,5 @@
+<meta>
+	<info name="Test Map" type="map" gamemodes="assault" />
+
+	<map src="test.map"	/>
+</meta>

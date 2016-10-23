@@ -436,6 +436,181 @@ namespace GTANetworkServer
         {
             API.Public.unspectatePlayer(this);
         }
+
         #endregion
+
+        /* *INHERITS* ENTITY */
+
+
+        public bool freezePosition
+        {
+            set
+            {
+                API.Public.setEntityPositionFrozen(this, value);
+            }
+        }
+
+        public virtual Vector3 position
+        {
+            set
+            {
+                API.Public.setEntityPosition(this, value);
+            }
+            get
+            {
+                return API.Public.getEntityPosition(this);
+            }
+        }
+
+        public virtual Vector3 rotation
+        {
+            set
+            {
+                API.Public.setEntityRotation(this, value);
+            }
+            get
+            {
+                return API.Public.getEntityRotation(this);
+            }
+        }
+
+        public bool IsNull
+        {
+            get { return handle.IsNull; }
+        }
+
+        public bool exists
+        {
+            get { return API.Public.doesEntityExist(this); }
+        }
+
+        public EntityType type
+        {
+            get { return API.Public.getEntityType(this); }
+        }
+
+        public virtual int transparency
+        {
+            set
+            {
+                API.Public.setEntityTransparency(this, value);
+            }
+            get { return API.Public.getEntityTransparency(this); }
+        }
+
+        public int dimension
+        {
+            set
+            {
+                API.Public.setEntityDimension(this, value);
+            }
+            get { return API.Public.getEntityDimension(this); }
+        }
+
+        public bool invincible
+        {
+            set
+            {
+                API.Public.setEntityInvincible(this, value);
+            }
+            get { return API.Public.getEntityInvincible(this); }
+        }
+
+        public bool collisionless
+        {
+            set
+            {
+                API.Public.setEntityCollisionless(this, value);
+            }
+            get { return API.Public.getEntityCollisionless(this); }
+        }
+
+        public int model
+        {
+            get { return API.Public.getEntityModel(this); }
+        }
+
+
+        #region Methods
+
+        public void delete()
+        {
+            API.Public.deleteEntity(this);
+        }
+
+        public void movePosition(Vector3 target, int duration)
+        {
+            API.Public.moveEntityPosition(this, target, duration);
+        }
+
+        public void moveRotation(Vector3 target, int duration)
+        {
+            API.Public.moveEntityRotation(this, target, duration);
+        }
+
+        public void attachTo(NetHandle entity, string bone, Vector3 offset, Vector3 rotation)
+        {
+            API.Public.attachEntityToEntity(this, entity, bone, offset, rotation);
+        }
+
+        public void detach()
+        {
+            API.Public.detachEntity(this);
+        }
+
+        public void detach(bool resetCollision)
+        {
+            API.Public.detachEntity(this, resetCollision);
+        }
+
+        public void createParticleEffect(string ptfxLib, string ptfxName, Vector3 offset, Vector3 rotation, float scale, int bone = -1)
+        {
+            API.Public.createParticleEffectOnEntity(ptfxLib, ptfxName, this, offset, rotation, scale, bone, dimension);
+        }
+
+        public void setData(string key, object value)
+        {
+            API.Public.setEntityData(this, key, value);
+        }
+
+        public dynamic getData(string key)
+        {
+            return API.Public.getEntityData(this, key);
+        }
+
+        public void resetData(string key)
+        {
+            API.Public.resetEntityData(this, key);
+        }
+
+        public bool hasData(string key)
+        {
+            return API.Public.hasEntityData(this, key);
+        }
+
+        public void setLocalData(string key, object value)
+        {
+            API.Public.setLocalEntityData(this, key, value);
+        }
+
+        public dynamic getLocalData(string key)
+        {
+            return API.Public.getLocalEntityData(this, key);
+        }
+
+        public void resetLocalData(string key)
+        {
+            API.Public.resetLocalEntityData(this, key);
+        }
+
+        public bool hasLocalData(string key)
+        {
+            return API.Public.hasLocalEntityData(this, key);
+        }
+
+        #endregion
+
+
+
     }
 }

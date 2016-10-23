@@ -1,0 +1,14 @@
+<meta>
+	<info name="Assault" type="gamemode" author="Guadmaz" version="1.0" description="An attack and defense gamemode" />
+
+	<script src="main.cs" type="server" lang="csharp" />
+	<script src="round.cs" type="server" lang="csharp" />
+    
+    <script src="server_subtitle.js" type="client" lang="javascript" />
+
+    <include resource="mapcycler" />
+    
+    <export event="onRoundStart" class="Assault" />
+    <export event="onRoundEnd" class="Assault" />
+    <export event="onObjectiveCaptured" class="Assault" />
+</meta>

@@ -84,7 +84,7 @@ namespace Votemanager
 
             if (API.TickCount - TimeSinceLastVote > API.getSetting<int>("votecooldown"))
             {
-                API.sendChatMessageToAll("~b~~h~" + sender.Name + "~h~~w~ has started a vote map!");
+                API.sendChatMessageToAll("~b~~h~" + sender.name + "~h~~w~ has started a vote map!");
                 var result = startMapVote(null);
             }
             else
@@ -108,7 +108,7 @@ namespace Votemanager
 
             if (API.TickCount - TimeSinceLastVote > API.getSetting<int>("votecooldown"))
             {
-                API.sendChatMessageToAll("~b~~h~" + sender.Name + "~h~~w~ has started a vote to kick ~r~~h~" + target.Name + "~h~~w~!");
+                API.sendChatMessageToAll("~b~~h~" + sender.name + "~h~~w~ has started a vote to kick ~r~~h~" + target.name + "~h~~w~!");
                 startKickVote(target);
             }
             else

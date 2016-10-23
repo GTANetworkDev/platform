@@ -2953,9 +2953,11 @@ namespace GTANetwork
                     else
                     {
                         playerCar.IsInvincible = cc?.IsInvincible ?? false;
+
+                        LocalHandle handle = new LocalHandle(playerCar.Handle);
+                        JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerEnterVehicle(handle));
                     }
-                    LocalHandle handle = new LocalHandle(playerCar.Handle);
-                    JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerEnterVehicle(handle));
+
                 }
 
                 LastCarEnter = DateTime.Now;
