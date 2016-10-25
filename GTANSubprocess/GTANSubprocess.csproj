@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="GTANetwork">
+      <HintPath>..\FirstFloor.ModernUI\FirstFloor.ModernUI.App\bin\Release\GTANetwork.exe</HintPath>
+    </Reference>
     <Reference Include="Ionic.Zip, Version=1.9.8.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\Ionic.Zip.dll</HintPath>
@@ -72,10 +75,6 @@
     <ProjectReference Include="..\MultiTheftAutoShared\GTANetworkShared.csproj">
       <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
       <Name>GTANetworkShared</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\PlayGTANetwork\PlayGTANetwork.csproj">
-      <Project>{46b260b6-37b5-4089-ad88-90be463804e2}</Project>
-      <Name>PlayGTANetwork</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
