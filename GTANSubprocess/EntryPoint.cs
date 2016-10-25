@@ -11,7 +11,6 @@ using System.Xml.Serialization;
 using GTANetworkShared;
 using Microsoft.Win32;
 using Ionic.Zip;
-using FirstFloor.ModernUI.App.Pages;
 
 namespace GTANetwork
 {
@@ -588,5 +587,9 @@ namespace GTANetwork
             SplashScreen = new SplashScreen();
             SplashScreen.ShowDialog();
         }
+    }
+    public interface ISubprocessBehaviour
+    {
+        void Start(string[] args);
     }
 }
