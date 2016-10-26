@@ -14,8 +14,13 @@ using Ionic.Zip;
 
 namespace GTANetwork
 {
-    public class MainBehaviour : ISubprocessBehaviour
+    public class MainBehaviour : LauncherSettings.ISubprocessBehaviour
     {
+
+        public static void EntryPoint(params string[] args)
+        {
+            new MainBehaviour().Start(args);
+        }
         public void Start(params string[] args)
         {
             /*
@@ -587,9 +592,5 @@ namespace GTANetwork
             SplashScreen = new SplashScreen();
             SplashScreen.ShowDialog();
         }
-    }
-    public interface ISubprocessBehaviour
-    {
-        void Start(string[] args);
     }
 }

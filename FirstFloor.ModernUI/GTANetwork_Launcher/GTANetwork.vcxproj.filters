@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="SharedUtils.h">
+      <Filter>Vendor\Injector</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Vendor</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Vendor</Filter>
+    </ClInclude>
+    <ClInclude Include="InjectBase.h">
+      <Filter>Vendor\Injector</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SharedUtils.cpp">
+      <Filter>Vendor\Injector</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Vendor</Filter>
+    </ClCompile>
+    <ClCompile Include="InjectBase.cpp">
+      <Filter>Vendor\Injector</Filter>
+    </ClCompile>
+    <ClCompile Include="GTANetwork.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Vendor">
+      <UniqueIdentifier>{b0ae9b2f-73f5-4745-92e9-bb6404a1ad15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vendor\Injector">
+      <UniqueIdentifier>{4b93802e-55d5-4627-9335-730e510c6ecf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="favicon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GTANetwork_Launcher.rc" />
+  </ItemGroup>
+</Project>

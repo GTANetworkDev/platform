@@ -152,6 +152,7 @@ namespace GTANetwork
       
         public Main()
         {
+
             World.DestroyAllCameras();
 
             CrossReference.EntryPoint = this;

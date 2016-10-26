@@ -8,6 +8,8 @@ namespace GTANetwork
 {
     public class GameSettings
     {
+
+
         public static Settings LoadGameSettings()
         {
             var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
