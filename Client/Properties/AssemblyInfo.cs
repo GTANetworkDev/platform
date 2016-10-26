@@ -5,5 +5,10 @@
 
 using System.Reflection;
 
+<<<<<<< HEAD
 [assembly: AssemblyVersion("0.1.298.571")]
 [assembly: AssemblyFileVersion("0.1.298.571")]
+=======
+[assembly: AssemblyVersion("0.1.299.422")]
+[assembly: AssemblyFileVersion("0.1.299.422")]
+>>>>>>> master

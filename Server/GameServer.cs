@@ -100,20 +100,7 @@ namespace GTANetworkServer
             config.ConnectionTimeout = 30f; // 30 second timeout
             
             Server = new NetServer(config);
-
-            if (conf.UseUPnP)
-            {
-                try
-                {
-                    Server.UPnP.ForwardPort(conf.Port, "GTA Network Server");
-                }
-                catch (Exception ex)
-                {
-                    Program.Output("UNHANDLED EXCEPTION DURING UPNP PORT FORWARDING. YOUR ROUTER MAY NOT SUPPORT UPNP.");
-                    Program.Output(ex.ToString());
-                }
-            }
-
+            
             PasswordProtected = !string.IsNullOrWhiteSpace(conf.Password);
             Password = conf.Password;
             AnnounceSelf = conf.Announce;
@@ -221,7 +208,20 @@ namespace GTANetworkServer
                 _lastAnnounceDateTime = DateTime.Now;
                 AnnounceSelfToMaster();
             }
-            
+
+            if (UseUPnP)
+            {
+                try
+                {
+                    Server.UPnP.ForwardPort(Port, "GTA Network Server");
+                }
+                catch (Exception ex)
+                {
+                    Program.Output("UNHANDLED EXCEPTION DURING UPNP PORT FORWARDING. YOUR ROUTER MAY NOT SUPPORT UPNP.");
+                    Program.Output(ex.ToString());
+                }
+            }
+
             NetEntityHandler.CreateWorld();
             ColShapeManager = new ColShapeManager();
 
