@@ -2109,6 +2109,11 @@ namespace GTANetworkServer
             Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Weather = weather;
         }
 
+        public string getWeather()
+        {
+            return Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Weather;
+        }
+
         public void setPlayerTeam(Client player, int team)
         {
             Program.ServerInstance.ChangePlayerTeam(player, team);
@@ -2187,6 +2192,13 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToAllPlayers(0x47C3B5848C3E45D8, hours, minutes, 0);
             Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Hours = (byte)hours;
             Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Minutes = (byte) minutes;
+        }
+
+        public TimeSpan getTime()
+        {
+            var prop = Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
+
+            return new TimeSpan(prop.Hours, prop.Minutes, 0);
         }
 
         public void freezePlayerTime(Client client, bool freeze)
