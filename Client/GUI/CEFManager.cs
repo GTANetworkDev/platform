@@ -67,7 +67,7 @@ namespace GTANetwork.GUI
             {
                 GameFPS = (int)Game.FPS;
                 
-                if (ShowCursor && !Main.Chat.IsFocused)
+                if (ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
                     if (CEFManager.D3D11_DISABLED)
@@ -163,7 +163,7 @@ namespace GTANetwork.GUI
 
             KeyDown += (sender, args) =>
             {
-                if (!ShowCursor || Main.Chat.IsFocused) return;
+                if (!ShowCursor) return;
 
                 if (_justShownCursor && Util.Util.TickCount - _lastShownCursor < 500)
                 {
@@ -223,7 +223,7 @@ namespace GTANetwork.GUI
             KeyUp += (sender, args) =>
             {
                 #if !DISABLE_CEF
-                if (!ShowCursor || Main.Chat.IsFocused) return;
+                if (!ShowCursor) return;
                 foreach (var browser in CEFManager.Browsers)
                 {
                     if (!browser.IsInitialized()) continue;

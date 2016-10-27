@@ -4098,6 +4098,11 @@ namespace GTANetwork.Javascript
             Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, weather);
         }
 
+        public string getWeather()
+        {
+            return Main.Weather;
+        }
+
         public void resetWeather()
         {
             Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Main.Weather);
@@ -4108,6 +4113,11 @@ namespace GTANetwork.Javascript
             World.CurrentDayTime = new TimeSpan((int) hours, (int) minutes, 00);
         }
 
+        public TimeSpan getTime()
+        {
+            return World.CurrentDayTime;
+        }
+        
         public void resetTime()
         {
             if (Main.Time != null)
