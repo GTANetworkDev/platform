@@ -2114,6 +2114,32 @@ namespace GTANetworkServer
             return Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Weather;
         }
 
+        public int getMaxPlayers()
+        {
+            return Program.ServerInstance.MaxPlayers;
+        }
+
+        public int getServerPort()
+        {
+            return Program.ServerInstance.Port;
+        }
+
+        public string getServerName()
+        {
+            return Program.ServerInstance.Name;
+        }
+
+        public bool isPasswordProtected()
+        {
+            return Program.ServerInstance.PasswordProtected;
+        }
+
+        public void setServerPassword(string password)
+        {
+            Program.ServerInstance.Password = password;
+            Program.ServerInstance.PasswordProtected = !string.IsNullOrWhiteSpace(password);
+        }
+
         public void setPlayerTeam(Client player, int team)
         {
             Program.ServerInstance.ChangePlayerTeam(player, team);
