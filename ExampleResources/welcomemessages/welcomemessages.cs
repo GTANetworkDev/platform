@@ -13,13 +13,13 @@ public class WelcomeMsgs : Script
 
 	public void onPlayerConnect(Client player)
 	{
-		API.sendNotificationToAll("~b~~h~" + player.Name + "~h~ ~w~joined.");
-    	API.sendChatMessageToAll("~b~~h~" + player.Name + "~h~~w~ has joined the server.");
+		API.sendNotificationToAll("~b~~h~" + player.name + "~h~ ~w~joined.");
+    	API.sendChatMessageToAll("~b~~h~" + player.name + "~h~~w~ has joined the server.");
 	}
 
 	public void onPlayerDisconnect(Client player, string reason)
 	{
-		API.sendNotificationToAll("~b~~h~" + player.Name + "~h~ ~w~quit.");
-    	API.sendChatMessageToAll("~b~~h~" + player.Name + "~h~~w~ has quit the server. (" + reason + ")");
+		API.sendNotificationToAll("~b~~h~" + player.name + "~h~ ~w~quit.");
+    	API.sendChatMessageToAll("~b~~h~" + player.name + "~h~~w~ has quit the server. (" + reason + ")");
 	}
 }

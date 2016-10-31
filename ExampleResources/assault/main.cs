@@ -95,7 +95,7 @@ public class Assault : Script
 	        if (element.hasElementData("range"))
 	            obj.Range = element.getElementData<float>("range");
 
-	        obj.Name = element.getElementData<string>("name");
+	        obj.name = element.getElementData<string>("name");
 
 	        if (element.hasElementData("timer"))
 	            obj.Timer = element.getElementData<int>("timer");
@@ -345,7 +345,7 @@ public class Assault : Script
                     objective.TimeLeft = objective.Timer;
                     objective.LastActiveUpdate = API.TickCount;
 
-                    API.triggerClientEventForAll("display_subtitle", "Objective ~y~" + objective.Name + "~w~ is being captured!", objective.Timer);
+                    API.triggerClientEventForAll("display_subtitle", "Objective ~y~" + objective.name + "~w~ is being captured!", objective.Timer);
 
                     API.sendNativeToAllPlayers(Hash.SET_BLIP_FLASHES, objective.Blip, true);
 
@@ -359,7 +359,7 @@ public class Assault : Script
 
                 if (API.TickCount - objective.LastLabelUpdate > 1000)
                 {
-                    objective.TextLabel.text = "~y~~h~" + objective.Name + "~h~~w~~n~" + (1f - ((float) objective.TimeLeft/objective.Timer)).ToString("P");
+                    objective.TextLabel.text = "~y~~h~" + objective.name + "~h~~w~~n~" + (1f - ((float) objective.TimeLeft/objective.Timer)).ToString("P");
                     objective.LastLabelUpdate = API.TickCount;
                 }
 
@@ -371,7 +371,7 @@ public class Assault : Script
                     objective.Marker.delete();
                     objective.TextLabel.delete();
 
-                    API.triggerClientEventForAll("display_shard", "~y~" + objective.Name + "~w~ captured!", 5000);
+                    API.triggerClientEventForAll("display_shard", "~y~" + objective.name + "~w~ captured!", 5000);
                     API.triggerClientEventForAll("play_sound", "HUD_MINI_GAME_SOUNDSET", "3_2_1");
 
                     API.delay(5000, true, () =>

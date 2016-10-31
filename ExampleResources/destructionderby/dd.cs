@@ -125,7 +125,7 @@ public class DDGamemode : Script
                 {
                     EndRace();
                     var raceWon = AvailableChoices[Votes.OrderByDescending(pair => pair.Value).ToList()[0].Key];
-                    API.sendChatMessageToAll("Race ~b~" + raceWon.Name + "~w~ has won the vote!");
+                    API.sendChatMessageToAll("Race ~b~" + raceWon.name + "~w~ has won the vote!");
 
                     API.sleep(1000);
                     StartRace(raceWon);
@@ -155,7 +155,7 @@ public class DDGamemode : Script
                 var winner = Opponents.FirstOrDefault(op => op.IsAlive);
                 if (winner != null)
                 {
-                    API.sendChatMessageToAll("The winner is ~b~" + winner.Client.Name + "~w~!");
+                    API.sendChatMessageToAll("The winner is ~b~" + winner.Client.name + "~w~!");
                 }
                 else API.sendChatMessageToAll("There are no winners!");                
 
@@ -210,7 +210,7 @@ public class DDGamemode : Script
             }
 
             Votes[choice]++;
-            API.sendChatMessageToPlayer(sender, "You have voted for " + AvailableChoices[choice].Name);
+            API.sendChatMessageToPlayer(sender, "You have voted for " + AvailableChoices[choice].name);
             Voters.Add(sender);
             return;
         }
@@ -234,7 +234,7 @@ public class DDGamemode : Script
             argumentList[0] = AvailableChoices.Count;
             for (var i = 0; i < AvailableChoices.Count; i++)
             {
-                argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
+                argumentList[i+1] = AvailableChoices.ElementAt(i).Value.name;
             }
 
             API.triggerClientEvent(player, "race_startVotemap", argumentList);
@@ -296,7 +296,7 @@ public class DDGamemode : Script
         CurrentRaceCheckpoints = race.Checkpoints.ToList();
         RaceStart = DateTime.UtcNow;
 
-        API.consoleOutput("RACE: Starting race " + race.Name);
+        API.consoleOutput("RACE: Starting race " + race.name);
 
         RaceStartCountdown = 13;
     }
@@ -324,7 +324,7 @@ public class DDGamemode : Script
         var position = race.SpawnPoints[spawnpoint % race.SpawnPoints.Length].Position;
         var heading = race.SpawnPoints[spawnpoint % race.SpawnPoints.Length].Heading;
 
-        API.setEntityPosition(client.CharacterHandle, position);
+        API.setEntityPosition(client.handle, position);
 
         var playerVehicle = API.createVehicle(selectedModel, position, new Vector3(0, 0, heading), 0, 0);
         Thread.Sleep(500);
@@ -379,7 +379,7 @@ public class DDGamemode : Script
         argumentList[0] = AvailableChoices.Count;
         for (var i = 0; i < AvailableChoices.Count; i++)
         {
-            argumentList[i+1] = AvailableChoices.ElementAt(i).Value.Name;
+            argumentList[i+1] = AvailableChoices.ElementAt(i).Value.name;
         }
 
         API.triggerClientEventForAll("race_startVotemap", argumentList);
@@ -457,7 +457,7 @@ public class Race
         Trigger = copyFrom.Trigger;
         DecorativeProps = copyFrom.DecorativeProps;
 
-        Name = copyFrom.Name;
+        Name = copyFrom.name;
         Description = copyFrom.Description;
     }
 }

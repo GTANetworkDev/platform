@@ -88,7 +88,7 @@ public class Cashgrab
 		foreach (var c in playerList)
 		{
 			bool isOwner = c == owner;
-			HeistScript.CAPI.triggerClientEvent(c, "cashgrab_intro", owner.CharacterHandle, startPos, _bagProp, isOwner, _id);
+			HeistScript.CAPI.triggerClientEvent(c, "cashgrab_intro", owner.handle, startPos, _bagProp, isOwner, _id);
 		}
 	}
 

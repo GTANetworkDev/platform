@@ -288,7 +288,7 @@ public class RaceGamemode : Script
             foreach (var opponent in Opponents)
                 {
                     if (opponent.HasFinished || !opponent.HasStarted) continue;
-                    if (CurrentRaceCheckpoints.Any() && opponent.Client.Position.IsInRangeOf(CurrentRaceCheckpoints[opponent.CheckpointsPassed], 10f))
+                    if (CurrentRaceCheckpoints.Any() && opponent.Client.position.IsInRangeOf(CurrentRaceCheckpoints[opponent.CheckpointsPassed], 10f))
                     {
                         opponent.CheckpointsPassed++;
                         if (opponent.CheckpointsPassed >= CurrentRaceCheckpoints.Count)
@@ -304,7 +304,7 @@ public class RaceGamemode : Script
                                 ? "st"
                                 : pos.ToString().EndsWith("2") ? "nd" : pos.ToString().EndsWith("3") ? "rd" : "th";
                             var timeElapsed = DateTime.Now.Subtract(RaceTimer);
-                            API.sendChatMessageToAll("~h~" + opponent.Client.Name + "~h~ has finished " + pos + suffix + " (" + timeElapsed.ToString("mm\\:ss\\.fff") + ")");
+                            API.sendChatMessageToAll("~h~" + opponent.Client.name + "~h~ has finished " + pos + suffix + " (" + timeElapsed.ToString("mm\\:ss\\.fff") + ")");
                             opponent.TimeFinished = timeElapsed.ToString("mm\\:ss\\.fff");
                             API.triggerClientEvent(opponent.Client, "finishRace");
                             continue;
@@ -411,7 +411,7 @@ public class RaceGamemode : Script
         var position = race.SpawnPoints[spawnpoint % race.SpawnPoints.Length].Position;
         var heading = race.SpawnPoints[spawnpoint % race.SpawnPoints.Length].Heading;
 
-        API.setEntityPosition(client.CharacterHandle, position);
+        API.setEntityPosition(client.handle, position);
 
         Vector3 newDir = null;
 
@@ -497,7 +497,7 @@ public class RaceGamemode : Script
 
         heading = (float)(radAtan * 180f / Math.PI);
 
-        API.setEntityPosition(client.CharacterHandle, position);
+        API.setEntityPosition(client.handle, position);
 
         Vector3 newDir = null;
 
@@ -554,8 +554,8 @@ public class RaceGamemode : Script
         output +=
             samePosAsYou.Count(
                 tuple =>
-                    (CurrentRace.Checkpoints[playerCheckpoint].Subtract(tuple.Client.Position)).Length() <
-                    (CurrentRace.Checkpoints[playerCheckpoint].Subtract(player.Client.Position)).Length());
+                    (CurrentRace.Checkpoints[playerCheckpoint].Subtract(tuple.Client.position)).Length() <
+                    (CurrentRace.Checkpoints[playerCheckpoint].Subtract(player.Client.position)).Length());
         return output;
     }
 }

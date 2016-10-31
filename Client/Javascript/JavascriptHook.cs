@@ -1315,14 +1315,14 @@ namespace GTANetwork.Javascript
 
         public Vector3 getEntityPosition(LocalHandle entity)
         {
-            if (entity.Properties<IStreamedItem>().StreamedIn)
+            if (entity.Properties<IStreamedItem>() == null || entity.Properties<IStreamedItem>().StreamedIn)
                 return new Prop(entity.Value).Position.ToLVector();
             else return entity.Properties<IStreamedItem>().Position;
         }
 
         public Vector3 getEntityRotation(LocalHandle entity)
         {
-            if (entity.Properties<IStreamedItem>().StreamedIn)
+            if (entity.Properties<IStreamedItem>() == null || entity.Properties<IStreamedItem>().StreamedIn)
                 return new Prop(entity.Value).Rotation.ToLVector();
             else return ((EntityProperties)entity.Properties<IStreamedItem>()).Rotation;
         }
@@ -1334,7 +1334,7 @@ namespace GTANetwork.Javascript
 
         public float getVehicleHealth(LocalHandle entity)
         {
-            if (entity.Properties<RemoteVehicle>().StreamedIn)
+            if (entity.Properties<IStreamedItem>() == null || entity.Properties<RemoteVehicle>().StreamedIn)
                 return new Vehicle(entity.Value).EngineHealth;
             else return entity.Properties<RemoteVehicle>().Health;
         }
@@ -1865,14 +1865,25 @@ namespace GTANetwork.Javascript
 
         public void setEntityCollissionless(LocalHandle entity, bool status)
         {
-            if (status)
-                entity.Properties<EntityProperties>().Flag =
-                    (byte) PacketOptimization.SetBit(entity.Properties<EntityProperties>().Flag, EntityFlag.Collisionless);
-            else
-                entity.Properties<EntityProperties>().Flag =
-                    (byte) PacketOptimization.ResetBit(entity.Properties<EntityProperties>().Flag, EntityFlag.Collisionless);
+            if (entity.Properties<IStreamedItem>() != null)
+            {
+                if (status)
+                    entity.Properties<EntityProperties>().Flag =
+                        (byte)
+                            PacketOptimization.SetBit(entity.Properties<EntityProperties>().Flag,
+                                EntityFlag.Collisionless);
+                else
+                    entity.Properties<EntityProperties>().Flag =
+                        (byte)
+                            PacketOptimization.ResetBit(entity.Properties<EntityProperties>().Flag,
+                                EntityFlag.Collisionless);
 
-            if (entity.Properties<IStreamedItem>().StreamedIn)
+                if (entity.Properties<IStreamedItem>().StreamedIn)
+                {
+                    new Prop(entity.Value).IsCollisionEnabled = !status;
+                }
+            }
+            else
             {
                 new Prop(entity.Value).IsCollisionEnabled = !status;
             }
@@ -3102,9 +3113,20 @@ namespace GTANetwork.Javascript
 
         public void setBlipPosition(LocalHandle blip, Vector3 pos)
         {
-            if (blip.Properties<RemoteBlip>().StreamedIn)
+            var prop = blip.Properties<IStreamedItem>();
+
+            if (prop != null)
+            {
+                if (blip.Properties<RemoteBlip>().StreamedIn)
+                {
+                    new Blip(blip.Value).Position = pos.ToVector();
+                }
+                blip.Properties<RemoteBlip>().Position = pos;
+            }
+            else
+            {
                 new Blip(blip.Value).Position = pos.ToVector();
-            blip.Properties<RemoteBlip>().Position = pos;
+            }
         }
 
         public Vector3 getBlipPosition(LocalHandle blip)
@@ -3143,6 +3165,12 @@ namespace GTANetwork.Javascript
 
         public void setBlipColor(LocalHandle blip, int color)
         {
+            if (blip.Properties<IStreamedItem>() == null)
+            {
+                new Blip(blip.Value).Color = (BlipColor)color;
+                return;
+            }
+
             if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Color = (BlipColor) color;
             blip.Properties<RemoteBlip>().Color = color;
@@ -3160,6 +3188,12 @@ namespace GTANetwork.Javascript
 
         public void setBlipSprite(LocalHandle blip, int sprite)
         {
+            if (blip.Properties<IStreamedItem>() == null)
+            {
+                new Blip(blip.Value).Sprite = (BlipSprite)sprite;
+                return;
+            }
+
             if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Sprite = (BlipSprite) sprite;
             blip.Properties<RemoteBlip>().Sprite = sprite;
@@ -3198,6 +3232,12 @@ namespace GTANetwork.Javascript
 
         public void setBlipShortRange(LocalHandle blip, bool shortRange)
         {
+            if (blip.Properties<IStreamedItem>() == null)
+            {
+                new Blip(blip.Value).IsShortRange = shortRange;
+                return;
+            }
+
             if (blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).IsShortRange = shortRange;
             blip.Properties<RemoteBlip>().IsShortRange = shortRange;
@@ -3210,7 +3250,7 @@ namespace GTANetwork.Javascript
 
         public void showBlipRoute(LocalHandle blip, bool show)
         {
-            if (blip.Properties<RemoteBlip>().StreamedIn)
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
             {
                 new Blip(blip.Value).ShowRoute = show;
             }
@@ -3223,7 +3263,7 @@ namespace GTANetwork.Javascript
 
         public void setBlipScale(LocalHandle blip, float scale)
         {
-            if (blip.Properties<RemoteBlip>().StreamedIn)
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
                 new Blip(blip.Value).Scale = scale;
             blip.Properties<RemoteBlip>().Scale = scale;
         }

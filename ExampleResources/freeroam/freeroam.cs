@@ -50,7 +50,7 @@ public class FreeroamScript : Script
     [Command("me", GreedyArg = true)]
     public void MeCommand(Client sender, string text)
     {
-        API.sendChatMessageToAll("~#C2A2DA~", sender.Name + " " + text);
+        API.sendChatMessageToAll("~#C2A2DA~", sender.name + " " + text);
     }
 
     [Command("spec")]
@@ -90,15 +90,15 @@ public class FreeroamScript : Script
     [Command("dimension")]
     public void ChangeDimension(Client sender, int dimension)
     {
-        API.setEntityDimension(sender.CharacterHandle, dimension);
+        API.setEntityDimension(sender.handle, dimension);
     }
 
     [Command("mod")]
     public void SetCarModificationCommand(Client sender, int modIndex, int modVar)
     {
-        if (!sender.CurrentVehicle.IsNull)
+        if (!sender.vehicle.IsNull)
         {
-                API.setVehicleMod(sender.CurrentVehicle, modIndex, modVar);
+                API.setVehicleMod(sender.vehicle, modIndex, modVar);
                 API.sendChatMessageToPlayer(sender, "Mod applied successfully!");
         }
         else
@@ -124,10 +124,10 @@ public class FreeroamScript : Script
     [Command("colors")]
     public void GameVehicleColorsCommand(Client sender, int primaryColor, int secondaryColor)
     {
-        if (!sender.CurrentVehicle.IsNull)
+        if (!sender.vehicle.IsNull)
         {
-                API.setVehiclePrimaryColor(sender.CurrentVehicle, primaryColor);
-                API.setVehicleSecondaryColor(sender.CurrentVehicle, secondaryColor);
+                API.setVehiclePrimaryColor(sender.vehicle, primaryColor);
+                API.setVehicleSecondaryColor(sender.vehicle, secondaryColor);
                 API.sendChatMessageToPlayer(sender, "Colors applied successfully!");
         }
         else
@@ -170,8 +170,8 @@ public class FreeroamScript : Script
             cars.Remove(sender);
         }
 
-        var prop = API.createVehicle(veh, API.getEntityPosition(sender.CharacterHandle), new Vector3(), 0, 0);
-        API.attachEntityToEntity(prop, sender.CharacterHandle, null,
+        var prop = API.createVehicle(veh, API.getEntityPosition(sender.handle), new Vector3(), 0, 0);
+        API.attachEntityToEntity(prop, sender.handle, null,
                     new Vector3(), new Vector3());
 
         cars.Add(sender, prop);
@@ -188,9 +188,9 @@ public class FreeroamScript : Script
             labels.Remove(sender);
         }
 
-        var prop = API.createTextLabel(message, API.getEntityPosition(sender.CharacterHandle), 50f, 0.4f, true);
+        var prop = API.createTextLabel(message, API.getEntityPosition(sender.handle), 50f, 0.4f, true);
 
-        API.attachEntityToEntity(prop, sender.CharacterHandle, null,
+        API.attachEntityToEntity(prop, sender.handle, null,
                     new Vector3(0, 0, 1f), new Vector3());
 
         labels.Add(sender, prop);
@@ -199,8 +199,8 @@ public class FreeroamScript : Script
     [Command("attachmarker")]
     public void attachtest4(Client sender)
     {
-        var prop = API.createMarker(0, API.getEntityPosition(sender.CharacterHandle), new Vector3(), new Vector3(), new Vector3(1f, 1f, 1f), 255, 255, 255, 255);
-        API.attachEntityToEntity(prop, sender.CharacterHandle, null,
+        var prop = API.createMarker(0, API.getEntityPosition(sender.handle), new Vector3(), new Vector3(), new Vector3(1f, 1f, 1f), 255, 255, 255, 255);
+        API.attachEntityToEntity(prop, sender.handle, null,
                     new Vector3(), new Vector3());
     }
 
@@ -213,8 +213,8 @@ public class FreeroamScript : Script
             shields.Remove(sender);
         }
 
-        var prop = API.createObject(API.getHashKey("prop_riot_shield"), API.getEntityPosition(sender.CharacterHandle), new Vector3());
-        API.attachEntityToEntity(prop, sender.CharacterHandle, "SKEL_L_Hand",
+        var prop = API.createObject(API.getHashKey("prop_riot_shield"), API.getEntityPosition(sender.handle), new Vector3());
+        API.attachEntityToEntity(prop, sender.handle, "SKEL_L_Hand",
             new Vector3(0, 0, 0), new Vector3(0f, 0f, 0f)); 
 
         shields.Add(sender, prop);
@@ -223,18 +223,18 @@ public class FreeroamScript : Script
     [Command("attachrpg")]
     public void attachtest1(Client sender)
     {
-        var prop = API.createObject(API.getHashKey("w_lr_rpg"), API.getEntityPosition(sender.CharacterHandle), new Vector3());
-        API.attachEntityToEntity(prop, sender.CharacterHandle, "SKEL_SPINE3",
+        var prop = API.createObject(API.getHashKey("w_lr_rpg"), API.getEntityPosition(sender.handle), new Vector3());
+        API.attachEntityToEntity(prop, sender.handle, "SKEL_SPINE3",
             new Vector3(-0.13f, -0.231f, 0.07f), new Vector3(0f, 200f, 10f));
     }
 
     [Command("colorsrgb")]
     public void CustomVehicleColorsCommand(Client sender, int primaryRed, int primaryGreen, int primaryBlue, int secondaryRed, int secondaryGreen, int secondaryBlue)
     {
-        if (!sender.CurrentVehicle.IsNull)
+        if (!sender.vehicle.IsNull)
         {
-                API.setVehicleCustomPrimaryColor(sender.CurrentVehicle, primaryRed, primaryGreen, primaryBlue);
-                API.setVehicleCustomSecondaryColor(sender.CurrentVehicle, secondaryRed, secondaryGreen, secondaryBlue);
+                API.setVehicleCustomPrimaryColor(sender.vehicle, primaryRed, primaryGreen, primaryBlue);
+                API.setVehicleCustomSecondaryColor(sender.vehicle, secondaryRed, secondaryGreen, secondaryBlue);
                 API.sendChatMessageToPlayer(sender, "Colors applied successfully!");
         }
         else
@@ -291,8 +291,8 @@ public class FreeroamScript : Script
     [Command("car")]
     public void SpawnCarCommand(Client sender, VehicleHash model)
     {
-        var rot = API.getEntityRotation(sender.CharacterHandle);
-        var veh = API.createVehicle(model, sender.Position, new Vector3(0, 0, rot.Z), 0, 0);
+        var rot = API.getEntityRotation(sender.handle);
+        var veh = API.createVehicle(model, sender.position, new Vector3(0, 0, rot.Z), 0, 0);
 
         if (VehicleHistory.ContainsKey(sender))
         {
@@ -315,13 +315,13 @@ public class FreeroamScript : Script
     public void ChangeSkinCommand(Client sender, PedHash model)
     {
         API.setPlayerSkin(sender, model);
-        API.sendNativeToPlayer(sender, 0x45EEE61580806D63, sender.CharacterHandle);        
+        API.sendNativeToPlayer(sender, 0x45EEE61580806D63, sender.handle);        
     }
 
     [Command("pic")]
     public void SpawnPickupCommand(Client sender, PickupHash pickup)
     {
-        API.createPickup(pickup, new Vector3(sender.Position.X + 10, sender.Position.Y, sender.Position.Z), new Vector3(), 100, 0);
+        API.createPickup(pickup, new Vector3(sender.position.X + 10, sender.position.Y, sender.position.Z), new Vector3(), 100, 0);
     }
 
     [Command("countdown")]
@@ -333,11 +333,11 @@ public class FreeroamScript : Script
     [Command("tp")]
     public void TeleportPlayerToPlayerCommand(Client sender, Client target)
     {
-        var pos = API.getEntityPosition(sender.CharacterHandle);
+        var pos = API.getEntityPosition(sender.handle);
 
         API.createParticleEffectOnPosition("scr_rcbarry1", "scr_alien_teleport", pos, new Vector3(), 1f);
 
-        API.setEntityPosition(sender.CharacterHandle, API.getEntityPosition(target.CharacterHandle));
+        API.setEntityPosition(sender.handle, API.getEntityPosition(target.handle));
     }
 
     [Command("weapon", Alias="w,gun")]

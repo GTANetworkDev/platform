@@ -5697,6 +5697,7 @@ namespace GTANetwork
 
             var nativeType = CheckNativeHash(obj.Hash);
             LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
+            int playerHealth = Game.Player.Character.Health;
 
             if (((int)nativeType & (int)NativeType.VehicleWarp) > 0)
             {
@@ -5850,6 +5851,8 @@ namespace GTANetwork
             if (((int) nativeType & (int) NativeType.PlayerSkinChange) > 0)
             {
                 Game.Player.Character.SetDefaultClothes();
+                Game.Player.Character.MaxHealth = 200;
+                Game.Player.Character.Health = playerHealth;
             }
         }
 

@@ -26,17 +26,17 @@ public class MinesTest : Script
         
         bool mineArmed = false;
         
-        shape.onEntityEnterColShape += (shape, ent) =>
+        shape.onEntityEnterColShape += (s, ent) =>
         {
             if (!mineArmed) return;
-            API.createOwnedExplosion(sender, ExplosionType.EXPLOSION_HI_OCTANE, pos, 1f, playerDimension);
+            API.createOwnedExplosion(sender, ExplosionType.HiOctane, pos, 1f, playerDimension);
             API.deleteEntity(prop);
             API.deleteColShape(shape);
         };
 
-        shape.onEntityExitColShape += (shape, ent) =>
+        shape.onEntityExitColShape += (s, ent) =>
         {
-            if (ent == sender.CharacterHandle && !mineArmed)
+            if (ent == sender.handle && !mineArmed)
             {
                 mineArmed = true;
                 API.sendNotificationToPlayer(sender, "Mine has been ~r~armed~w~!", true);

@@ -4008,7 +4008,8 @@ namespace GTANetworkServer
 
         public void deleteEntity(NetHandle netHandle)
         {
-            if (Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(netHandle.Value).EntityType ==
+            if (!netHandle.IsNull &&
+                Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(netHandle.Value)?.EntityType ==
                 (byte) EntityType.Player)
                 return;
 

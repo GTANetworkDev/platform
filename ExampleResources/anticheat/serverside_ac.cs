@@ -77,7 +77,7 @@ public class AntiCheat : Script
         switch(API.getSetting<int>(cheat))
         {
             case 1:
-                API.consoleOutput("[ANTICHEAT] Player " + player.Name + " is cheating with " + cheat + "!");
+                API.consoleOutput("[ANTICHEAT] Player " + player.name + " is cheating with " + cheat + "!");
                 break;
             case 2:
                 API.kickPlayer(player, "Cheating: " + cheat);

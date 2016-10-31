@@ -13,20 +13,20 @@ public class KillchatUtility : Script
 	public void onPlayerDeath(Client player, NetHandle reason, int weapon)
 	{
 		var killer = "";
-	    API.consoleOutput("killed: " + player.Name + " reason: " + reason.Value + " weapon: " + weapon);
+	    API.consoleOutput("killed: " + player.name + " reason: " + reason.Value + " weapon: " + weapon);
 
 	    if (!reason.IsNull)	    
 	    {
 	        var players = API.getAllPlayers();
 	        for (var i = 0; i < players.Count; i++)
 	        {
-	            if (players[i].CharacterHandle == reason) {
-	                killer = players[i].Name;
+	            if (players[i].handle == reason) {
+	                killer = players[i].name;
 	                break;
 	            }            
 	        }        
 	    }
 	    
-	    API.triggerClientEventForAll("addKillToKillchat", player.Name, killer, weapon);
+	    API.triggerClientEventForAll("addKillToKillchat", player.name, killer, weapon);
 	}	    
 }

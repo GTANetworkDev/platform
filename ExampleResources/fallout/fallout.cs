@@ -45,7 +45,7 @@ public class Fallout : Script
         if (Survivors.Count == 1)
         {
             var winner = Survivors[0];
-            API.sendNotificationToAll("~b~~h~" + winner.Name + "~h~ ~w~has won! Restarting round in 15 seconds...");
+            API.sendNotificationToAll("~b~~h~" + winner.name + "~h~ ~w~has won! Restarting round in 15 seconds...");
             foreach (var c in API.getAllPlayers())
             {
                 API.unspectatePlayer(c);
@@ -96,7 +96,7 @@ public class Fallout : Script
 
             for (int i = Survivors.Count - 1; i >= 0; i--)
             {
-                if (API.getEntityPosition(Survivors[i].CharacterHandle).Z < 327f)
+                if (API.getEntityPosition(Survivors[i].handle).Z < 327f)
                 {
                     API.setPlayerHealth(Survivors[i], -1);
                     Survivors.Remove(Survivors[i]);
@@ -138,7 +138,7 @@ public class Fallout : Script
         Survivors = new List<Client>(players);
         for (var i = 0; i < players.Count; i++) {
             Survivors.Add(players[i]);
-            API.setEntityPosition(players[i].CharacterHandle, new Vector3(-77.02, -780.12, 344.64));
+            API.setEntityPosition(players[i].handle, new Vector3(-77.02, -780.12, 344.64));
         }
         
         API.sleep(3000);
