@@ -1193,7 +1193,11 @@ namespace GTANetwork.Javascript
         {
             Hash ourHash;
             if (!parseHash(hash, out ourHash))
+                throw new ArgumentException("Hash \"" + hash + "\" has not been found!");
+
+            if (!NativeWhitelist.IsAllowed((ulong) ourHash))
                 return;
+
             Function.Call(ourHash, args.Select(o =>
             {
                 if (o is LocalHandle)
@@ -1209,6 +1213,10 @@ namespace GTANetwork.Javascript
             Hash ourHash;
             if (!parseHash(hash, out ourHash))
                 throw new ArgumentException("Hash \"" + hash + "\" has not been found!");
+
+            if (!NativeWhitelist.IsAllowed((ulong) ourHash))
+                throw new ArgumentException("Hash \"" + hash + "\" is not allowed!");
+
             var fArgs = args.Select(o =>
             {
                 if (o is LocalHandle)
