@@ -104,41 +104,41 @@ namespace GTANetworkServer
         {
             get
             {
-                var nh = API.Public.getPlayerVehicle(this);
+                var nh = API.shared.getPlayerVehicle(this);
                 if (nh.IsNull) return null;
-                return new Vehicle(API.Public, nh);
+                return new Vehicle(API.shared, nh);
             }
         }
 
         public int vehicleSeat
         {
-            get { return API.Public.getPlayerVehicleSeat(this); }
+            get { return API.shared.getPlayerVehicleSeat(this); }
         }
 
         public int team
         {
             set
             {
-                API.Public.setPlayerTeam(this, value);
+                API.shared.setPlayerTeam(this, value);
             }
-            get { return API.Public.getPlayerTeam(this); }
+            get { return API.shared.getPlayerTeam(this); }
         }
 
         public int ping
         {
-            get { return API.Public.getPlayerPing(this); }
+            get { return API.shared.getPlayerPing(this); }
         }
 
         public int wantedLevel
         {
-            get { return API.Public.getPlayerWantedLevel(this); }
-            set { API.Public.setPlayerWantedLevel(this, value); }
+            get { return API.shared.getPlayerWantedLevel(this); }
+            set { API.shared.setPlayerWantedLevel(this, value); }
         }
 
         public string name
         {
-            get { return API.Public.getPlayerName(this); }
-            set { API.Public.setPlayerName(this, value); }
+            get { return API.shared.getPlayerName(this); }
+            set { API.shared.setPlayerName(this, value); }
         }
 
         public string socialClubName
@@ -148,305 +148,314 @@ namespace GTANetworkServer
 
         public Vector3 velocity
         {
-            get { return API.Public.getPlayerVelocity(this); }
-            set { API.Public.setPlayerVelocity(this, value); }
+            get { return API.shared.getPlayerVelocity(this); }
+            set { API.shared.setPlayerVelocity(this, value); }
         }
 
         public WeaponHash[] weapons
         {
-            get { return API.Public.getPlayerWeapons(this); }
+            get { return API.shared.getPlayerWeapons(this); }
         }
 
         public WeaponHash currentWeapon
         {
-            get { return API.Public.getPlayerCurrentWeapon(this); }
+            get { return API.shared.getPlayerCurrentWeapon(this); }
         }
 
         public string address
         {
-            get { return API.Public.getPlayerAddress(this); }
+            get { return API.shared.getPlayerAddress(this); }
         }
 
         public bool seatbelt
         {
-            get { return API.Public.getPlayerSeatbelt(this); }
-            set { API.Public.setPlayerSeatbelt(this, value); }
+            get { return API.shared.getPlayerSeatbelt(this); }
+            set { API.shared.setPlayerSeatbelt(this, value); }
         }
 
         public int health
         {
-            get { return API.Public.getPlayerHealth(this); }
-            set { API.Public.setPlayerHealth(this, value); }
+            get { return API.shared.getPlayerHealth(this); }
+            set { API.shared.setPlayerHealth(this, value); }
         }
 
         public int armor
         {
-            get { return API.Public.getPlayerArmor(this); }
-            set { API.Public.setPlayerArmor(this, value); }
+            get { return API.shared.getPlayerArmor(this); }
+            set { API.shared.setPlayerArmor(this, value); }
         }
 
         public bool onFire
         {
-            get { return API.Public.isPlayerOnFire(this); }
+            get { return API.shared.isPlayerOnFire(this); }
         }
 
         public bool isParachuting
         {
-            get { return API.Public.isPlayerParachuting(this); }
+            get { return API.shared.isPlayerParachuting(this); }
         }
 
         public bool inFreefall
         {
-            get { return API.Public.isPlayerInFreefall(this); }
+            get { return API.shared.isPlayerInFreefall(this); }
         }
 
         public bool isAiming
         {
-            get { return API.Public.isPlayerAiming(this); }
+            get { return API.shared.isPlayerAiming(this); }
         }
 
         public bool isShooting
         {
-            get { return API.Public.isPlayerShooting(this); }
+            get { return API.shared.isPlayerShooting(this); }
         }
 
         public bool isReloading
         {
-            get { return API.Public.isPlayerReloading(this); }
+            get { return API.shared.isPlayerReloading(this); }
         }
 
         public bool isInCover
         {
-            get { return API.Public.isPlayerInCover(this); }
+            get { return API.shared.isPlayerInCover(this); }
         }
 
         public bool isOnLadder
         {
-            get { return API.Public.isPlayerOnLadder(this); }
+            get { return API.shared.isPlayerOnLadder(this); }
         }
 
         public Vector3 aimingPoint
         {
-            get { return API.Public.getPlayerAimingPoint(this); }
+            get { return API.shared.getPlayerAimingPoint(this); }
         }
 
         public bool dead
         {
-            get { return API.Public.isPlayerDead(this); }
+            get { return API.shared.isPlayerDead(this); }
         }
 
         public string nametag
         {
-            get { return API.Public.getPlayerNametag(this); }
-            set { API.Public.setPlayerNametag(this, value); }
+            get { return API.shared.getPlayerNametag(this); }
+            set { API.shared.setPlayerNametag(this, value); }
         }
 
         public bool nametagVisible
         {
-            get { return API.Public.getPlayerNametagVisible(this); }
-            set { API.Public.setPlayerNametagVisible(this, value); }
+            get { return API.shared.getPlayerNametagVisible(this); }
+            set { API.shared.setPlayerNametagVisible(this, value); }
         }
 
         public Color nametagColor
         {
-            get { return API.Public.getPlayerNametagColor(this); }
-            set { API.Public.setPlayerNametagColor(this, (byte)value.red, (byte)value.green, (byte)value.blue); }
+            get { return API.shared.getPlayerNametagColor(this); }
+            set { API.shared.setPlayerNametagColor(this, (byte)value.red, (byte)value.green, (byte)value.blue); }
         }
 
         public bool spectating
         {
-            get { return API.Public.isPlayerSpectating(this); }
+            get { return API.shared.isPlayerSpectating(this); }
         }
 
         #endregion
 
         #region Methods
 
+        public void sendChatMessage(string message)
+        {
+            API.shared.sendChatMessageToPlayer(this, message);
+        }
+
+        public void sendChatMessage(string sender, string message)
+        {
+            API.shared.sendChatMessageToPlayer(this, sender, message);
+        }
+
         public void setIntoVehicle(NetHandle car, int seat)
         {
-            API.Public.setPlayerIntoVehicle(this, car, seat);
+            API.shared.setPlayerIntoVehicle(this, car, seat);
         }
 
         public void warpOutOfVehicle(NetHandle car)
         {
-            API.Public.warpPlayerOutOfVehicle(this, car);
+            API.shared.warpPlayerOutOfVehicle(this, car);
         }
 
         public void setSkin(PedHash newSkin)
         {
-            API.Public.setPlayerSkin(this, newSkin);
+            API.shared.setPlayerSkin(this, newSkin);
         }
 
         public void setDefaultClothes()
         {
-            API.Public.setPlayerDefaultClothes(this);
+            API.shared.setPlayerDefaultClothes(this);
         }
 
         public void playAnimation(string animDict, string animName, int flag)
         {
-            API.Public.playPlayerAnimation(this, flag, animDict, animName);
+            API.shared.playPlayerAnimation(this, flag, animDict, animName);
         }
 
         public void playScenario(string scenarioName)
         {
-            API.Public.playPlayerScenario(this, scenarioName);
+            API.shared.playPlayerScenario(this, scenarioName);
         }
 
         public void stopAnimation()
         {
-            API.Public.stopPlayerAnimation(this);
+            API.shared.stopPlayerAnimation(this);
         }
 
         public void setClothes(int slot, int drawable, int texture)
         {
-            API.Public.setPlayerClothes(this, slot, drawable, texture);
+            API.shared.setPlayerClothes(this, slot, drawable, texture);
         }
 
         public void setAccessories(int slot, int drawable, int texture)
         {
-            API.Public.setPlayerAccessory(this, slot, drawable, texture);
+            API.shared.setPlayerAccessory(this, slot, drawable, texture);
         }
 
         public int getClothesDrawable(int slot)
         {
-            return API.Public.getPlayerClothesDrawable(this, slot);
+            return API.shared.getPlayerClothesDrawable(this, slot);
         }
 
         public int getClothesTexture(int slot)
         {
-            return API.Public.getPlayerClothesTexture(this, slot);
+            return API.shared.getPlayerClothesTexture(this, slot);
         }
 
         public int getAccessoryDrawable(int slot)
         {
-            return API.Public.getPlayerAccessoryDrawable(this, slot);
+            return API.shared.getPlayerAccessoryDrawable(this, slot);
         }
 
         public int getAccessoryTexture(int slot)
         {
-            return API.Public.getPlayerAccessoryTexture(this, slot);
+            return API.shared.getPlayerAccessoryTexture(this, slot);
         }
 
         public void clearAccessory(int slot)
         {
-            API.Public.clearPlayerAccessory(this, slot);
+            API.shared.clearPlayerAccessory(this, slot);
         }
 
         public void giveWeapon(WeaponHash weapon, int ammo, bool equipNow, bool ammoLoaded)
         {
-            API.Public.givePlayerWeapon(this, weapon, ammo, equipNow, ammoLoaded);
+            API.shared.givePlayerWeapon(this, weapon, ammo, equipNow, ammoLoaded);
         }
 
         public void removeWeapon(WeaponHash weapon)
         {
-            API.Public.removePlayerWeapon(this, weapon);
+            API.shared.removePlayerWeapon(this, weapon);
         }
 
         public void removeAllWeapons()
         {
-            API.Public.removeAllPlayerWeapons(this);
+            API.shared.removeAllPlayerWeapons(this);
         }
 
         public void setWeaponTint(WeaponHash weapon, WeaponTint tint)
         {
-            API.Public.setPlayerWeaponTint(this, weapon, tint);
+            API.shared.setPlayerWeaponTint(this, weapon, tint);
         }
 
         public WeaponTint getWeaponTint(WeaponHash weapon)
         {
-            return API.Public.getPlayerWeaponTint(this, weapon);
+            return API.shared.getPlayerWeaponTint(this, weapon);
         }
 
         public void setWeaponComponent(WeaponHash weapon, WeaponComponent component)
         {
-            API.Public.givePlayerWeaponComponent(this, weapon, component);
+            API.shared.givePlayerWeaponComponent(this, weapon, component);
         }
 
         public void removeWeaponComponent(WeaponHash weapon, WeaponComponent component)
         {
-            API.Public.removePlayerWeaponComponent(this, weapon, component);
+            API.shared.removePlayerWeaponComponent(this, weapon, component);
         }
 
         public bool hasGotWeaponComponent(WeaponHash weapon, WeaponComponent component)
         {
-            return API.Public.hasPlayerGotWeaponComponent(this, weapon, component);
+            return API.shared.hasPlayerGotWeaponComponent(this, weapon, component);
         }
 
         public WeaponComponent[] GetAllWeaponComponents(WeaponHash weapon)
         {
-            return API.Public.getPlayerWeaponComponents(this, weapon);
+            return API.shared.getPlayerWeaponComponents(this, weapon);
         }
 
         public void kick(string reason)
         {
-            API.Public.kickPlayer(this, reason);
+            API.shared.kickPlayer(this, reason);
         }
 
         public void kick()
         {
-            API.Public.kickPlayer(this);
+            API.shared.kickPlayer(this);
         }
 
         public void ban(string reason)
         {
-            API.Public.banPlayer(this, reason);
+            API.shared.banPlayer(this, reason);
         }
 
         public void ban()
         {
-            API.Public.banPlayer(this);
+            API.shared.banPlayer(this);
         }
 
         public void freeze(bool freeze)
         {
-            API.Public.freezePlayer(this, freeze);
+            API.shared.freezePlayer(this, freeze);
         }
 
         public void kill()
         {
-            API.Public.setPlayerHealth(this, -1);
+            API.shared.setPlayerHealth(this, -1);
         }
 
         public void detonateStickies()
         {
-            API.Public.detonatePlayerStickies(this);
+            API.shared.detonatePlayerStickies(this);
         }
 
         public void resetNametag()
         {
-            API.Public.resetPlayerNametag(this);
+            API.shared.resetPlayerNametag(this);
         }
 
         public void resetNametagColor()
         {
-            API.Public.resetPlayerNametagColor(this);
+            API.shared.resetPlayerNametagColor(this);
         }
 
         public void spectate()
         {
-            API.Public.setPlayerToSpectator(this);
+            API.shared.setPlayerToSpectator(this);
         }
 
         public void spectate(Client player)
         {
-            API.Public.setPlayerToSpectatePlayer(this, player);
+            API.shared.setPlayerToSpectatePlayer(this, player);
         }
 
         public void stopSpectating()
         {
-            API.Public.unspectatePlayer(this);
+            API.shared.unspectatePlayer(this);
         }
 
         #endregion
 
-        /* *INHERITS* ENTITY */
-
+        #region Entity Inheritance
 
         public bool freezePosition
         {
             set
             {
-                API.Public.setEntityPositionFrozen(this, value);
+                API.shared.setEntityPositionFrozen(this, value);
             }
         }
 
@@ -454,11 +463,11 @@ namespace GTANetworkServer
         {
             set
             {
-                API.Public.setEntityPosition(this, value);
+                API.shared.setEntityPosition(this, value);
             }
             get
             {
-                return API.Public.getEntityPosition(this);
+                return API.shared.getEntityPosition(this);
             }
         }
 
@@ -466,11 +475,11 @@ namespace GTANetworkServer
         {
             set
             {
-                API.Public.setEntityRotation(this, value);
+                API.shared.setEntityRotation(this, value);
             }
             get
             {
-                return API.Public.getEntityRotation(this);
+                return API.shared.getEntityRotation(this);
             }
         }
 
@@ -481,53 +490,53 @@ namespace GTANetworkServer
 
         public bool exists
         {
-            get { return API.Public.doesEntityExist(this); }
+            get { return API.shared.doesEntityExist(this); }
         }
 
         public EntityType type
         {
-            get { return API.Public.getEntityType(this); }
+            get { return API.shared.getEntityType(this); }
         }
 
         public virtual int transparency
         {
             set
             {
-                API.Public.setEntityTransparency(this, value);
+                API.shared.setEntityTransparency(this, value);
             }
-            get { return API.Public.getEntityTransparency(this); }
+            get { return API.shared.getEntityTransparency(this); }
         }
 
         public int dimension
         {
             set
             {
-                API.Public.setEntityDimension(this, value);
+                API.shared.setEntityDimension(this, value);
             }
-            get { return API.Public.getEntityDimension(this); }
+            get { return API.shared.getEntityDimension(this); }
         }
 
         public bool invincible
         {
             set
             {
-                API.Public.setEntityInvincible(this, value);
+                API.shared.setEntityInvincible(this, value);
             }
-            get { return API.Public.getEntityInvincible(this); }
+            get { return API.shared.getEntityInvincible(this); }
         }
 
         public bool collisionless
         {
             set
             {
-                API.Public.setEntityCollisionless(this, value);
+                API.shared.setEntityCollisionless(this, value);
             }
-            get { return API.Public.getEntityCollisionless(this); }
+            get { return API.shared.getEntityCollisionless(this); }
         }
 
         public int model
         {
-            get { return API.Public.getEntityModel(this); }
+            get { return API.shared.getEntityModel(this); }
         }
 
 
@@ -535,82 +544,82 @@ namespace GTANetworkServer
 
         public void delete()
         {
-            API.Public.deleteEntity(this);
+            API.shared.deleteEntity(this);
         }
 
         public void movePosition(Vector3 target, int duration)
         {
-            API.Public.moveEntityPosition(this, target, duration);
+            API.shared.moveEntityPosition(this, target, duration);
         }
 
         public void moveRotation(Vector3 target, int duration)
         {
-            API.Public.moveEntityRotation(this, target, duration);
+            API.shared.moveEntityRotation(this, target, duration);
         }
 
         public void attachTo(NetHandle entity, string bone, Vector3 offset, Vector3 rotation)
         {
-            API.Public.attachEntityToEntity(this, entity, bone, offset, rotation);
+            API.shared.attachEntityToEntity(this, entity, bone, offset, rotation);
         }
 
         public void detach()
         {
-            API.Public.detachEntity(this);
+            API.shared.detachEntity(this);
         }
 
         public void detach(bool resetCollision)
         {
-            API.Public.detachEntity(this, resetCollision);
+            API.shared.detachEntity(this, resetCollision);
         }
 
         public void createParticleEffect(string ptfxLib, string ptfxName, Vector3 offset, Vector3 rotation, float scale, int bone = -1)
         {
-            API.Public.createParticleEffectOnEntity(ptfxLib, ptfxName, this, offset, rotation, scale, bone, dimension);
+            API.shared.createParticleEffectOnEntity(ptfxLib, ptfxName, this, offset, rotation, scale, bone, dimension);
         }
 
         public void setData(string key, object value)
         {
-            API.Public.setEntityData(this, key, value);
+            API.shared.setEntityData(this, key, value);
         }
 
         public dynamic getData(string key)
         {
-            return API.Public.getEntityData(this, key);
+            return API.shared.getEntityData(this, key);
         }
 
         public void resetData(string key)
         {
-            API.Public.resetEntityData(this, key);
+            API.shared.resetEntityData(this, key);
         }
 
         public bool hasData(string key)
         {
-            return API.Public.hasEntityData(this, key);
+            return API.shared.hasEntityData(this, key);
         }
 
         public void setLocalData(string key, object value)
         {
-            API.Public.setLocalEntityData(this, key, value);
+            API.shared.setLocalEntityData(this, key, value);
         }
 
         public dynamic getLocalData(string key)
         {
-            return API.Public.getLocalEntityData(this, key);
+            return API.shared.getLocalEntityData(this, key);
         }
 
         public void resetLocalData(string key)
         {
-            API.Public.resetLocalEntityData(this, key);
+            API.shared.resetLocalEntityData(this, key);
         }
 
         public bool hasLocalData(string key)
         {
-            return API.Public.hasLocalEntityData(this, key);
+            return API.shared.hasLocalEntityData(this, key);
         }
 
         #endregion
 
-
+        #endregion
 
     }
 }

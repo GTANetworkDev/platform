@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<meta>
+    <info name="Generic RPG" author="Guadmaz" type="gamemode"/>
+    
+    <config src="vehicles.xml" />
+    
+    <assembly ref="System.Xml.dll"/>
+
+    <script src="ConnectionManager.cs" type="server" lang="csharp" />
+    <script src="Database.cs" type="server" lang="csharp" />
+    <script src="DimensionManager.cs" type="server" lang="csharp" />
+    <script src="LoginManager.cs" type="server" lang="csharp" />
+    <script src="SpawnManager.cs" type="server" lang="csharp" />
+    <script src="AutoCrimeReporter.cs" type="server" lang="csharp" />
+
+    <script src="Debug.cs" type="server" lang="csharp" />
+
+    <script src="ServersideCamera.js" type="client" lang="javascript" />
+    <script src="SkinSelector.js" type="client" lang="javascript" />
+    <script src="MoneyDisplay.js" type="client" lang="javascript" />
+
+    <script src="Citizen/CitizenCommands.cs" type="server" lang="csharp" />
+
+    <script src="Cops/CopCommands.cs" type="server" lang="csharp" />
+    <script src="Cops/CopUtil.cs" type="server" lang="csharp" />
+    <script src="Cops/JailController.cs" type="server" lang="csharp" />
+    <script src="Cops/WantedLevelDataProvider.cs" type="server" lang="csharp" />
+    <script src="Cops/PoliceStation.cs" type="server" lang="csharp" />
+
+    <script src="Global/GlobalCommands.cs" type="server" lang="csharp" />
+    <script src="Global/Util.cs" type="server" lang="csharp" />
+    <script src="Global/RespawnManager.cs" type="server" lang="csharp" />
+    
+    <script src="Vehicles/VehicleSpawner.cs" type="server" lang="csharp" />
+</meta>

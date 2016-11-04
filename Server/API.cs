@@ -318,7 +318,7 @@ namespace GTANetworkServer
 
         #region Functions
 
-        public static API Public
+        public static API shared
         {
             get { return Program.ServerInstance.PublicAPI; }
         }
