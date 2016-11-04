@@ -252,7 +252,13 @@ namespace GTANetwork.GUI
 #if !DISABLE_CEF
             var settings = new CefSharp.CefSettings();
             settings.SetOffScreenRenderingBestPerformanceArgs();
-                
+            
+            settings.BrowserSubprocessPath = Main.GTANInstallDir + "\\cef\\CefSharp.BrowserSubprocess.exe";
+            settings.CachePath = Main.GTANInstallDir + "\\cef\\cache";
+            settings.LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales";
+            settings.ResourcesDirPath = Main.GTANInstallDir + "\\cef";
+            settings.UserDataPath = Main.GTANInstallDir + "\\cef\\cookies";
+
             settings.RegisterScheme(new CefCustomScheme()
             {
                 SchemeHandlerFactory = new ResourceFilePathHandler(),
