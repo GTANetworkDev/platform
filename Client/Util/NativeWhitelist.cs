@@ -10,7 +10,7 @@ namespace GTANetwork.Util
         {
             var list = new List<ulong>();
 
-            using (var file = new StreamReader(File.OpenRead(Main.GTANInstallDir + "\\natives.txt")))
+            using (var file = new StreamReader(File.OpenRead(Main.GTANInstallDir + "\\bin\\natives.txt")))
             {
                 string currentLine;
                 while (!string.IsNullOrEmpty((currentLine = file.ReadLine())))
