@@ -61,6 +61,9 @@ namespace GTANetworkShared
         [XmlElement("httpserver")]
         public bool UseHTTPServer { get; set; }
 
+        [XmlElement("trust_client_entity_properties")]
+        public bool EnableClientsideEntityProperties { get; set; }
+
         public WhitelistCollection whitelist { get; set; }
 
         [XmlRoot("resource")]
@@ -89,6 +92,7 @@ namespace GTANetworkShared
             UseHTTPServer = false;
             RefreshHz = 120;
             LogLevel = 0;
+            EnableClientsideEntityProperties = false;
         }
 
         public static ServerSettings ReadSettings(string path)

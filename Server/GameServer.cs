@@ -113,6 +113,8 @@ namespace GTANetworkServer
             VehLagComp = conf.VehicleLagCompensation;
             LogLevel = conf.LogLevel;
             UseHTTPFileServer = conf.UseHTTPServer;
+            TrustClientProperties = conf.EnableClientsideEntityProperties;
+
             if (conf.whitelist != null && conf.whitelist != null)
             {
                 ModWhitelist = conf.whitelist.Items.Select(item => item.Hash).ToList();
@@ -160,6 +162,7 @@ namespace GTANetworkServer
         public bool OnFootLagComp { get; set; }
         public List<string> ModWhitelist { get; set; }
         public bool UseHTTPFileServer { get; set; }
+        public bool TrustClientProperties { get; set; }
 
         public BanManager BanManager;
         public ColShapeManager ColShapeManager;
@@ -2537,39 +2540,49 @@ namespace GTANResource
                                         break;
                                     case PacketType.UpdateEntityProperties:
                                         {
-                                            var len = msg.ReadInt32();
-                                            var data = DeserializeBinary<UpdateEntity>(msg.ReadBytes(len)) as UpdateEntity;
-                                            if (data != null && data.Properties != null)
+                                            if (TrustClientProperties)
                                             {
-                                                var item = NetEntityHandler.NetToProp<EntityProperties>(data.NetHandle);
-
-                                                if (item != null)
+                                                var len = msg.ReadInt32();
+                                                var data =
+                                                    DeserializeBinary<UpdateEntity>(msg.ReadBytes(len)) as UpdateEntity;
+                                                if (data != null && data.Properties != null)
                                                 {
-                                                    if (data.Properties.SyncedProperties != null)
+                                                    var item =
+                                                        NetEntityHandler.NetToProp<EntityProperties>(data.NetHandle);
+
+                                                    if (item != null)
                                                     {
-                                                        if (item.SyncedProperties == null) item.SyncedProperties = new Dictionary<string, NativeArgument>();
-                                                        foreach (var pair in data.Properties.SyncedProperties)
+                                                        if (data.Properties.SyncedProperties != null)
                                                         {
-                                                            if (pair.Value is LocalGamePlayerArgument)
-                                                                item.SyncedProperties.Remove(pair.Key);
-                                                            else
+                                                            if (item.SyncedProperties == null)
+                                                                item.SyncedProperties =
+                                                                    new Dictionary<string, NativeArgument>();
+                                                            foreach (var pair in data.Properties.SyncedProperties)
                                                             {
-                                                                object oldValue =
-                                                                    DecodeArgumentListPure(
-                                                                        item.SyncedProperties.Get(pair.Key));
-                                                                item.SyncedProperties.Set(pair.Key, pair.Value);
-                                                                NetHandle ent = new NetHandle(data.NetHandle);
-                                                                lock (RunningResources)
-                                                                    RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                                    {
-                                                                        en.InvokeEntityDataChange(ent, pair.Key, oldValue);
-                                                                    }));
+                                                                if (pair.Value is LocalGamePlayerArgument)
+                                                                    item.SyncedProperties.Remove(pair.Key);
+                                                                else
+                                                                {
+                                                                    object oldValue =
+                                                                        DecodeArgumentListPure(
+                                                                            item.SyncedProperties.Get(pair.Key));
+                                                                    item.SyncedProperties.Set(pair.Key, pair.Value);
+                                                                    NetHandle ent = new NetHandle(data.NetHandle);
+                                                                    lock (RunningResources)
+                                                                        RunningResources.ForEach(
+                                                                            fs => fs.Engines.ForEach(en =>
+                                                                            {
+                                                                                en.InvokeEntityDataChange(ent, pair.Key,
+                                                                                    oldValue);
+                                                                            }));
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                }
 
-                                                UpdateEntityInfo(data.NetHandle, (EntityType)data.EntityType, data.Properties, client);
+                                                    UpdateEntityInfo(data.NetHandle, (EntityType) data.EntityType,
+                                                        data.Properties, client);
+                                                }
                                             }
 
                                         }
