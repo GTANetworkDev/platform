@@ -212,10 +212,6 @@ namespace GTANetwork
 
             splashScreen.SetPercent(65);
 
-            MoveStuffIn();
-
-
-            
             if (!settings.SteamPowered)
             {
                 Process.Start(InstallFolder + "\\GTAVLauncher.exe");
@@ -250,9 +246,12 @@ namespace GTANetwork
 
             // Close the splashscreen here.
 
-            Thread.Sleep(1000);
 
             splashScreen.Stop();
+
+            Thread.Sleep(15000);
+
+            InjectOurselves(gta5Process);
 
             // Wait for GTA5 to exit
 
@@ -298,8 +297,6 @@ namespace GTANetwork
                 }
                 catch { }
             }
-
-            MoveStuffOut();
         }
 
         public static PlayerSettings ReadSettings(string path)
@@ -543,8 +540,7 @@ namespace GTANetwork
         public static void InjectOurselves(Process gta)
         {
             Inject(gta, Path.GetFullPath("bin\\scripthookv.dll"));
-            Inject(gta, Path.GetFullPath("bin\\ScriptHookVDotNet.asi"));
-            
+            Inject(gta, Path.GetFullPath("bin\\ScriptHookVDotNet.dll"));
         }
 
         public static void Inject(Process target, string path)

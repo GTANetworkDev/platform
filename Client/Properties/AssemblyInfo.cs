@@ -6,9 +6,14 @@
 using System.Reflection;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 [assembly: AssemblyVersion("0.1.298.571")]
 [assembly: AssemblyFileVersion("0.1.298.571")]
 =======
 [assembly: AssemblyVersion("0.1.299.422")]
 [assembly: AssemblyFileVersion("0.1.299.422")]
+>>>>>>> master
+=======
+[assembly: AssemblyVersion("0.1.308.550")]
+[assembly: AssemblyFileVersion("0.1.308.550")]
 >>>>>>> master

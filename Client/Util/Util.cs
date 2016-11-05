@@ -97,7 +97,13 @@ namespace GTANetwork.Util
             return Value.ToString();
         }
 
-        public bool IsNull { get { return Value == 0; } }
+        public bool IsNull
+        {
+            get
+            {
+                return Value == 0;
+            }
+        }
     }
 
     public static class Util
@@ -280,7 +286,7 @@ namespace GTANetwork.Util
 
         public static void SetPlayerSkin(PedHash skin)
         {
-
+            var health = Game.Player.Character.Health;
             var model = new Model(skin);
 
             model.Request(1000);
@@ -295,6 +301,9 @@ namespace GTANetwork.Util
             }
 
             model.MarkAsNoLongerNeeded();
+
+            Game.Player.Character.MaxHealth = 200;
+            Game.Player.Character.Health = health;
         }
 
         public static float Denormalize(this float h)

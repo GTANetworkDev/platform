@@ -32,7 +32,7 @@ public class ScoreboardScript : Script
         {
             foreach (var player in players)
             {
-                API.resetEntityData(player.CharacterHandle, col);
+                API.resetEntityData(player.handle, col);
             }
         }
 
@@ -84,7 +84,7 @@ public class ScoreboardScript : Script
 
     public void setPlayerScoreboardData(Client player, string columnName, string data)
     {
-        API.setEntityData(player.CharacterHandle, "scoreboard_" + columnName, data);
+        API.setEntityData(player.handle, "scoreboard_" + columnName, data);
     }
 
     public void resetColumnData(string columnName)
@@ -93,7 +93,7 @@ public class ScoreboardScript : Script
 
         foreach (var player in players)
         {
-            API.resetEntityData(player.CharacterHandle, "scoreboard_" + columnName);
+            API.resetEntityData(player.handle, "scoreboard_" + columnName);
         }
     }
 
@@ -105,7 +105,7 @@ public class ScoreboardScript : Script
         {
             foreach (var player in players)
             {
-                API.resetEntityData(player.CharacterHandle, col);
+                API.resetEntityData(player.handle, col);
             }
         }
 

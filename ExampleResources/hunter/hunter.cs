@@ -154,7 +154,7 @@ public class HunterScript : Script
 		API.setBlipTransparency(aBlip, 0);
 		API.setEntityInvincible(animal, false);
 		var spawnp = _animalSpawnpoints[r.Next(_animalSpawnpoints.Count)];
-		API.setEntityPosition(animal.CharacterHandle, spawnp);
+		API.setEntityPosition(animal.handle, spawnp);
 		API.setBlipSprite(aBlip, 141);
 		API.setBlipColor(aBlip, 1);
 
@@ -202,8 +202,8 @@ public class HunterScript : Script
 			API.setBlipSprite(pBlip, 422);
 		}
 		API.setBlipColor(pBlip, 0);
-		API.setEntityPosition(player.CharacterHandle, _hunterSpawnpoints[r.Next(_hunterSpawnpoints.Count)]);
-		if (animal != null) API.sendChatMessageToPlayer(player, "~r~" + animal.Name + "~w~ is the animal! ~r~Hunt~w~ it!");		
+		API.setEntityPosition(player.handle, _hunterSpawnpoints[r.Next(_hunterSpawnpoints.Count)]);
+		if (animal != null) API.sendChatMessageToPlayer(player, "~r~" + animal.name + "~w~ is the animal! ~r~Hunt~w~ it!");		
 		API.setPlayerTeam(player, TEAM_HUNTER);
 		API.setEntityInvincible(player, false);
 	}
@@ -214,7 +214,7 @@ public class HunterScript : Script
 		{
 			var killer = API.getPlayerFromHandle(reason);
 			roundstarted = false;			
-			API.sendChatMessageToAll("The animal has been killed" + (killer == null ? "!" : " by " + killer.Name + "!") + " The hunters win!");
+			API.sendChatMessageToAll("The animal has been killed" + (killer == null ? "!" : " by " + killer.name + "!") + " The hunters win!");
 			API.sendChatMessageToAll("Starting next round in 15 seconds...");
 			animal = null;
 			roundstarted = false;
@@ -239,7 +239,7 @@ public class HunterScript : Script
 			for(int i = 0; i < _checkpoints.Count; i++)
 			{
 				var pos = API.getEntityPosition(_checkpoints[i]);
-				if (API.getEntityPosition(animal.CharacterHandle).DistanceToSquared(pos) < 100f)
+				if (API.getEntityPosition(animal.handle).DistanceToSquared(pos) < 100f)
 				{
 					API.deleteEntity(_checkpoints[i]);
 					API.deleteEntity(_checkpointBlips[i]);
@@ -250,7 +250,7 @@ public class HunterScript : Script
 					if (_checkpoints.Count == 0)
 					{
 						roundstarted = false;
-						API.sendChatMessageToAll("The animal has collected all checkpoints! " + animal.Name + " has won!");
+						API.sendChatMessageToAll("The animal has collected all checkpoints! " + animal.name + " has won!");
 						API.sendChatMessageToAll("Starting next round in 15 seconds...");
 						animal = null;
 						roundstarted = false;
@@ -271,7 +271,7 @@ public class HunterScript : Script
 			{
 				lastIdleCheck = API.TickCount;
 
-				if (API.getEntityPosition(animal.CharacterHandle).DistanceToSquared(lastIdlePosition) < 5f)
+				if (API.getEntityPosition(animal.handle).DistanceToSquared(lastIdlePosition) < 5f)
 				{
 					API.setBlipTransparency(pBlip, 255);
 					API.sleep(1000);
@@ -293,7 +293,7 @@ public class HunterScript : Script
 					lastBreadcrumb = API.TickCount;					
 				}
 				if (animal != null)
-					lastIdlePosition = API.getEntityPosition(animal.CharacterHandle);
+					lastIdlePosition = API.getEntityPosition(animal.handle);
 			}
 
 			if (API.TickCount - lastBreadcrumb > 15000 && breadcrumbLock)

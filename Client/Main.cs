@@ -237,6 +237,11 @@ namespace GTANetwork
             Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
 
             GlobalVariable.Get(2576573).Write(1);
+
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                NativeWhitelist.Init();
+            });
         }
 
         public static void ChatOnComplete(object sender,EventArgs args)
@@ -5686,10 +5691,14 @@ namespace GTANetwork
 
         public void DecodeNativeCall(NativeData obj)
         {
+            if (!NativeWhitelist.IsAllowed(obj.Hash))
+                throw new ArgumentException("Hash \"" + obj.Hash.ToString("X") + "\" is not allowed!");
+
             var list = new List<InputArgument>();
 
             var nativeType = CheckNativeHash(obj.Hash);
             LogManager.DebugLog("NATIVE TYPE IS " + nativeType);
+            int playerHealth = Game.Player.Character.Health;
 
             if (((int)nativeType & (int)NativeType.VehicleWarp) > 0)
             {
@@ -5843,6 +5852,8 @@ namespace GTANetwork
             if (((int) nativeType & (int) NativeType.PlayerSkinChange) > 0)
             {
                 Game.Player.Character.SetDefaultClothes();
+                Game.Player.Character.MaxHealth = 200;
+                Game.Player.Character.Health = playerHealth;
             }
         }
 

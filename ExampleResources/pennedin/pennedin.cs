@@ -78,7 +78,7 @@ public class PennedInMaster : Script
 			//var ourCar = availableCars[randgen.Next(availableCars.Count)];
 			var ourCar = VehicleHash.Blista2;
 
-			API.setEntityPosition(player.CharacterHandle, pos);
+			API.setEntityPosition(player.handle, pos);
 
 			var veh = API.createVehicle(ourCar, pos, new Vector3(), randgen.Next(160), randgen.Next(160));
 
@@ -145,7 +145,7 @@ public class PennedInMaster : Script
 				{
 					if (Survivors.Any())
 					{
-						API.sendChatMessageToAll("Round has ended! The winners are: " + Survivors.Select(c => c.Name).Aggregate((prev, next) => prev + ", " + next));
+						API.sendChatMessageToAll("Round has ended! The winners are: " + Survivors.Select(c => c.name).Aggregate((prev, next) => prev + ", " + next));
 					}
 					API.triggerClientEventForAll("pennedin_roundend");
 					API.sendChatMessageToAll("Next round starts in 30 seconds...");
@@ -192,12 +192,12 @@ public class PennedInMaster : Script
 	public void onPlayerDeath(Client player, NetHandle killer, int weapon)
 	{
 		if (roundrestart > 0) return;
-		API.sendNotificationToAll("~b~~h~" + player.Name + "~h~~w~ has died!");
+		API.sendNotificationToAll("~b~~h~" + player.name + "~h~~w~ has died!");
 		Survivors.Remove(player);		
 
 		if (Survivors.Count == 1)
 		{
-			API.sendChatMessageToAll(Survivors[0].Name + " has won! Restarting round in 30 seconds...");			
+			API.sendChatMessageToAll(Survivors[0].name + " has won! Restarting round in 30 seconds...");			
 
 			var players = API.getAllPlayers();
 

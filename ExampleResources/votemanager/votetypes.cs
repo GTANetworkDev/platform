@@ -45,7 +45,7 @@ namespace Votemanager
         public void SendVoteToClient(VoteDescriptor description, Client target)
         {
             List<object> objParam = new List<object>();
-            objParam.Add(description.Name);
+            objParam.Add(description.name);
             objParam.Add(description.Options.Length);
             objParam.AddRange(description.Options);
 
@@ -55,7 +55,7 @@ namespace Votemanager
         public void SendVoteToAll(VoteDescriptor description)
         {
             List<object> objParam = new List<object>();
-            objParam.Add(description.Name);
+            objParam.Add(description.name);
             objParam.Add(description.Options.Length);
             objParam.AddRange(description.Options);
 
@@ -117,7 +117,7 @@ namespace Votemanager
         public abstract void Finish(int winning, string optionWon);
 
         public virtual string[] Options { get; set; }
-        public abstract string Name { get; }
+        public abstract string name { get; }
     }
 
     public class MapVote : VoteDescriptor
@@ -133,7 +133,7 @@ namespace Votemanager
             }
         }
 
-        public override string Name
+        public override string name
         {
             get { return "VOTE FOR NEXT MAP"; }
         }
@@ -161,7 +161,7 @@ namespace Votemanager
             }
         }
 
-        public override string Name
+        public override string name
         {
             get { return string.Format("KICK ~r~{0}~w~ FROM THE GAME?", Target.name); }
         }

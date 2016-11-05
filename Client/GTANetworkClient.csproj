@@ -185,6 +185,7 @@
     <Compile Include="Util\MemoryScan.cs" />
     <Compile Include="Util\MimeSniffer.cs" />
     <Compile Include="Util\ModelSpoofer.cs" />
+    <Compile Include="Util\NativeWhitelist.cs" />
     <Compile Include="Util\StickyBombTracker.cs" />
     <Compile Include="Networking\Streamer.cs" />
     <Compile Include="Networking\PedThread.cs" />

@@ -117,7 +117,7 @@ public class CopsNCrooks : Script
 		}
 		else
 		{
-			if (IsInRangeOf(CrookBoss.Position, _targetPos, 10f))
+			if (IsInRangeOf(CrookBoss.position, _targetPos, 10f))
 			{
 				API.sendNotificationToAll("The boss has arrived to the destination. The ~r~Crooks~w~ win!");
 				isRoundOngoing = false;
@@ -155,7 +155,7 @@ public class CopsNCrooks : Script
 		foreach (var c in Cops)
 		{
 			Respawn(c);
-			API.consoleOutput(c.Name + " is a cop!");
+			API.consoleOutput(c.name + " is a cop!");
 		}
 
 		foreach (var c in Crooks)
@@ -174,7 +174,7 @@ public class CopsNCrooks : Script
 			API.setPlayerTeam(c, CrookTeam);			
 		}
 
-		API.sendNotificationToAll("The crook boss is " + CrookBoss.Name + "!");
+		API.sendNotificationToAll("The crook boss is " + CrookBoss.name + "!");
 		
 		
 	}
@@ -198,7 +198,7 @@ public class CopsNCrooks : Script
 		API.setPlayerHealth(player, 100);
 
 		API.sendNotificationToPlayer(player, "Apprehend the ~r~crooks!");
-		API.setEntityPosition(player.CharacterHandle, _copRespawn);			
+		API.setEntityPosition(player.handle, _copRespawn);			
 
 		API.setPlayerTeam(player, CopTeam);
 	}
@@ -210,7 +210,7 @@ public class CopsNCrooks : Script
 		API.givePlayerWeapon(player, WeaponHash.VintagePistol, 100, true, true);
 		API.givePlayerWeapon(player, WeaponHash.Gusenberg, 700, true, true);
 		API.setPlayerHealth(player, 100);
-		API.setEntityPosition(player.CharacterHandle, _crookRespawn);
+		API.setEntityPosition(player.handle, _crookRespawn);
 	}
 
 	public void onDeath(Client player)

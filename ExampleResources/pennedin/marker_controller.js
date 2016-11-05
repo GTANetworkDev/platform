@@ -66,7 +66,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
 		currentSpherePos = args[0];
 		destinationPos = args[1];
 
-		API.setMarkerPosition(marker, currentSpherePos);
+		API.setEntityPosition(marker, currentSpherePos);
 
 		interpolatingPos = true;
 		interpolation = 0;
@@ -113,7 +113,7 @@ API.onUpdate.connect(function(sender, e) {
 
     	if (interpolatingPos) {
     		newPos = API.lerpVector(currentSpherePos, destinationPos, cTime, dur);
-    		API.setMarkerPosition(marker, newPos);
+    		API.setEntityPosition(marker, newPos);
     	} else {
     		newScale = API.lerpFloat(currentSphereScale, destinationScale, cTime, dur);
     		API.setMarkerScale(marker, new Vector3(newScale, newScale, newScale));

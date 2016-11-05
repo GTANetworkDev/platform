@@ -45,16 +45,16 @@ public class HeligrabScript : Script
 
 				ourchopper.Hangers.Add(sender);
 
-				API.setEntityPosition(sender.CharacterHandle, API.getEntityPosition(chopperHandle));
+				API.setEntityPosition(sender.handle, API.getEntityPosition(chopperHandle));
 
 				if (right)
 				{
-					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
+					API.attachEntityToEntity(sender.handle, chopperHandle, null,
 						new Vector3(1.0402, 0.91039, -2.25), new Vector3(0, 0, 270));
 				}
 				else	
 				{
-					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
+					API.attachEntityToEntity(sender.handle, chopperHandle, null,
 						new Vector3(-1.0402, 0.91039, -2.25), new Vector3(0, 0, 90));
 				}
 
@@ -66,12 +66,12 @@ public class HeligrabScript : Script
 
 				if (right)
 				{
-					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
+					API.attachEntityToEntity(sender.handle, chopperHandle, null,
 						new Vector3(1.0402, 0.91039, -2.25), new Vector3(0, 0, 270));
 				}
 				else	
 				{
-					API.attachEntityToEntity(sender.CharacterHandle, chopperHandle, null,
+					API.attachEntityToEntity(sender.handle, chopperHandle, null,
 						new Vector3(-1.0402, 0.91039, -2.25), new Vector3(0, 0, 90));
 				}
 			}
@@ -89,7 +89,7 @@ public class HeligrabScript : Script
 			}
 
 			API.stopPlayerAnimation(sender);
-			API.detachEntity(sender.CharacterHandle, true);
+			API.detachEntity(sender.handle, true);
 		}
 	}
 }
