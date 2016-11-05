@@ -30,7 +30,7 @@ public class Objective
 
 	public Vector3 Position { get; set; }
 	public float Range { get; set; }
-	public string Name { get; set; }
+	public string name { get; set; }
 	public int Id { get; set; }
 	public List<int> RequiredObjectives { get; set; }
     public int Timer { get; set; }
