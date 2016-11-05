@@ -162,6 +162,8 @@ namespace FirstFloor.ModernUI.App.Pages
 
         private void StartGame()
         {
+
+            settings.SteamPowered = false;
             if (Process.GetProcessesByName("GTA5").Any())
             {
                 MessageBox.Show("GTA V is already running. Please shut down the game before starting GTA Network.");
@@ -178,7 +180,6 @@ namespace FirstFloor.ModernUI.App.Pages
             if (string.IsNullOrEmpty(InstallFolder))
             {
                 InstallFolder = (string)Registry.GetValue(steamDictPath, keyNameSteam, null);
-                settings.SteamPowered = true;
 
                 try
                 {
@@ -200,11 +201,11 @@ namespace FirstFloor.ModernUI.App.Pages
 
                     if (diag.ShowDialog() == true)
                     {
-                        settings.SteamPowered = false;
                         InstallFolder = Path.GetDirectoryName(diag.FileName);
                         try
                         {
                             Registry.SetValue(dictPath, keyName, InstallFolder);
+                            settings.SteamPowered = false;
                         }
                         catch (UnauthorizedAccessException)
                         {
@@ -218,7 +219,12 @@ namespace FirstFloor.ModernUI.App.Pages
                 else
                 {
                     InstallFolder = InstallFolder.Replace("Grand Theft Auto V\\GTAV", "Grand Theft Auto V");
+                    settings.SteamPowered = true;
                 }
+            }
+            else
+            {
+                settings.SteamPowered = false;
             }
 
             if ((string)Registry.GetValue(dictPath, "GTANetworkInstallDir", null) != AppDomain.CurrentDomain.BaseDirectory)

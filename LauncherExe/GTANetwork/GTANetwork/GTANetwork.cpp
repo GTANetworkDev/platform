@@ -94,7 +94,11 @@ int main(int argc, char * argv[])
 	}
 	else
 	{
-		if (!CreateProcess(GameFullPath, Params, NULL, NULL, true, CREATE_SUSPENDED, NULL, "", &siStartupInfo, &piProcessInfo))
+		if (CreateProcess(GameFullPath, Params,NULL, NULL, FALSE, 0, NULL,NULL, &siStartupInfo, &piProcessInfo))
+		{
+			WaitForSingleObject(piProcessInfo.hProcess, 5000);
+		}
+		else
 		{
 			return 0;
 		}
