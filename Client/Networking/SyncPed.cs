@@ -2192,12 +2192,12 @@ namespace GTANetwork.Networking
 
             // Game doesnt detect IsWalking/IsRunning/IsSprinting when aiming
 
-            if ((!isAiming || count % 50 == 0) && OnFootSpeed == 0)
+            if ((!isAiming || Main.TickCount % 50 == 0) && OnFootSpeed == 0)
             {
                 Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _aimingProp, -1, false);
                 _lastAimCoords = AimCoords;
             }
-            if ((!isAiming || count % 50 == 0) && OnFootSpeed > 0)
+            if ((!isAiming || Main.TickCount % 50 == 0) && OnFootSpeed > 0)
             {
                 Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, (float)OnFootSpeed, false, (float)OnFootSpeed, (float)OnFootSpeed, true, 1, false, (uint)FiringPattern.FullAuto);
                 lastAimSet = Util.Util.TickCount;
@@ -2206,8 +2206,6 @@ namespace GTANetwork.Networking
             }
             
         }
-
-        private byte count = 0;
         private bool lastMoving;
         public void VMultiOnfootPosition()
         {
@@ -2323,7 +2321,7 @@ namespace GTANetwork.Networking
 
                 if (OnFootSpeed == 1 || (range > 0.75f && range < 2.0f))
                 {
-                    if (!Character.IsWalking || (count%75 == 0 || range > 0.50f))
+                    if (!Character.IsWalking || (Main.TickCount % 75 == 0 || range > 0.50f))
                     {
                         Character.Task.GoTo(tmpposition, true);
                     }
@@ -2331,20 +2329,17 @@ namespace GTANetwork.Networking
                 }
                 else if (OnFootSpeed == 2)
                 {
-                    if (!Character.IsRunning || (count%75 == 0 || range > 1.0f))
+                    if (!Character.IsRunning || (Main.TickCount % 75 == 0 || range > 1.0f))
                     {
                         Character.Task.RunTo(tmpposition, true);
                     }
-                   
                     lastMoving = true;
                 }
                 else if (OnFootSpeed == 3)
                 {
-                    if (!Character.IsSprinting || (count%75 == 0 || range > 2.0f))
+                    if (!Character.IsSprinting || (Main.TickCount % 75 == 0 || range > 2.0f))
                     {
                         Function.Call(Hash.TASK_GO_STRAIGHT_TO_COORD, Character, tmpposition.X, tmpposition.Y,tmpposition.Z, 3.0f, -1, 0.0f, 0.0f);
-
-
                         Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Character, 1.49f);
                         Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, 3.0f);
 
@@ -2352,8 +2347,7 @@ namespace GTANetwork.Networking
                     lastMoving = true;
                 }
                 else
-                {
-                    //Character.Task.StandStill(2000);
+                { 
                     Character.Task.AchieveHeading(Rotation.Z);
                     if (lastMoving == true)
                     {
@@ -2514,7 +2508,7 @@ namespace GTANetwork.Networking
                 }
                 DEBUG_STEP = 120;
 
-                count++;
+                Main.TickCount++;
 
                 UpdatePosition();
 

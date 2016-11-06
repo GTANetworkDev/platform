@@ -38,8 +38,7 @@ namespace GTANetwork.Util
             CreateLogDirectory();
             lock (errorLogLock)
             {
-                File.AppendAllText(LogDirectory + "\\error.log",
-                    ">> EXCEPTION OCCURED AT " + DateTime.Now + " FROM " + source + "\r\n" + ex.ToString() + "\r\n\r\n");
+                File.AppendAllText(LogDirectory + "\\error.log", ">> EXCEPTION OCCURED AT " + DateTime.Now + " FROM " + source + "\r\n" + ex.ToString() + "\r\n\r\n");
             }
         }
     }
