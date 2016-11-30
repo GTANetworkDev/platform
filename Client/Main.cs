@@ -372,14 +372,38 @@ namespace GTANetwork
             }
         }
 
-        public bool VerifyGameOwnership()
-        {
-            // simple memory edit can circumvent this.
-            // the idea is to connect to our master server
-            // and look at the player's public profile, and see whether
-            // it has GTA5 purchased.
 
-            return Game.Version > (GameVersion) 25;
+        // We want to check whether the player has the latest game version and the DLC content installed.
+        public bool VerifyGameIntegrity()
+        {
+            bool legit = true;
+            
+            legit = legit && (Game.Version > (GameVersion)25);
+
+            GTANetworkShared.VehicleHash[] dlcCars = new GTANetworkShared.VehicleHash[]
+            {
+                GTANetworkShared.VehicleHash.Trophytruck,GTANetworkShared.VehicleHash.Cliffhanger,
+                GTANetworkShared.VehicleHash.Lynx,GTANetworkShared.VehicleHash.Contender,
+                GTANetworkShared.VehicleHash.Gargoyle,GTANetworkShared.VehicleHash.Sheava,
+                GTANetworkShared.VehicleHash.Brioso,GTANetworkShared.VehicleHash.Tropos,
+                GTANetworkShared.VehicleHash.Tyrus,GTANetworkShared.VehicleHash.Rallytruck,
+                GTANetworkShared.VehicleHash.le7b,GTANetworkShared.VehicleHash.Tampa2,
+                GTANetworkShared.VehicleHash.Omnis,GTANetworkShared.VehicleHash.Trophytruck2,
+                GTANetworkShared.VehicleHash.Avarus,GTANetworkShared.VehicleHash.Blazer4,
+                GTANetworkShared.VehicleHash.Chimera,GTANetworkShared.VehicleHash.Daemon2,
+                GTANetworkShared.VehicleHash.Defiler,GTANetworkShared.VehicleHash.Esskey,
+                GTANetworkShared.VehicleHash.Faggio,GTANetworkShared.VehicleHash.Faggio3,
+                GTANetworkShared.VehicleHash.Hakuchou2,GTANetworkShared.VehicleHash.Manchez,
+                GTANetworkShared.VehicleHash.Nightblade,GTANetworkShared.VehicleHash.Raptor,
+                GTANetworkShared.VehicleHash.Ratbike,GTANetworkShared.VehicleHash.Sanctus,
+                GTANetworkShared.VehicleHash.Shotaro,GTANetworkShared.VehicleHash.Tornado6,
+                GTANetworkShared.VehicleHash.Vortex,GTANetworkShared.VehicleHash.Wolfsbane,
+                GTANetworkShared.VehicleHash.Youga2,GTANetworkShared.VehicleHash.Zombiea,
+                GTANetworkShared.VehicleHash.Zombieb,
+            };
+
+
+            return dlcCars.Aggregate(legit, (current, car) => current && new Model((int) car).IsValid);
         }
 
         private void AddToFavorites(string server)
@@ -2315,7 +2339,7 @@ namespace GTANetwork
                 {
                     RebuildServerBrowser();
 
-                    if (!VerifyGameOwnership())
+                    if (!VerifyGameIntegrity())
                     {
                         _mainWarning = new Warning("alert", "Could not verify game ownership.\nPlease restart your game, or purchase Grand Theft Auto V.");
                         _mainWarning.OnAccept = () =>
