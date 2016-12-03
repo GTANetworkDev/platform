@@ -159,6 +159,7 @@ namespace GTANetwork
             CrossReference.EntryPoint = this;
 
             PlayerSettings = Util.Util.ReadSettings(GTANInstallDir + "\\settings.xml");
+            CEFManager.FPS = PlayerSettings.CefFps;
 
             GameSettings = Misc.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
@@ -236,6 +237,10 @@ namespace GTANetwork
 
             CEFManager.InitializeCef();
             Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
+            Audio.SetAudioFlag(AudioFlag.DisableBarks, true);
+            Audio.SetAudioFlag(AudioFlag.PoliceScannerDisabled, true);
+            Function.Call((Hash)0x552369F549563AD5, false);
+            
 
             GlobalVariable.Get(2576573).Write(1);
 
@@ -988,6 +993,8 @@ namespace GTANetwork
                             if (newName.Length > 32)
                                 newName = newName.Substring(0, 32);
 
+                            newName = newName.Replace(' ', '_');
+
                             PlayerSettings.DisplayName = newName;
                             SaveSettings();
                             nameItem.SetRightLabel(newName);
@@ -1224,6 +1231,29 @@ namespace GTANetwork
                         }
 
                         GameSettings.Video.VSync.Value = newSetting;
+                        Misc.GameSettings.SaveSettings(GameSettings);
+                    };
+                }
+
+                {
+                    var cityDen = new UIMenuItem("Chrome Embedded Framework Framerate");
+                    cityDen.SetRightLabel(PlayerSettings.CefFps.ToString());
+                    favServers.Items.Add(cityDen);
+
+                    cityDen.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(GameSettings.Video.Windowed.Value.ToString(),
+                            10, TickSpinner);
+
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting))
+                        {
+                            Util.Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        PlayerSettings.CefFps = newSetting;
+                        CEFManager.FPS = newSetting;
                         Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
@@ -3748,6 +3778,8 @@ namespace GTANetwork
             Function.Call(Hash.SET_GARBAGE_TRUCKS, 0);
             Function.Call(Hash.SET_RANDOM_BOATS, 0);
             Function.Call(Hash.SET_RANDOM_TRAINS, 0);
+
+            Function.Call(Hash.CLEAR_ALL_BROKEN_GLASS);
 
             TerminateGameScripts();
             

@@ -76,6 +76,7 @@ namespace GTANetworkShared
         public string UpdateChannel { get; set; }
         public bool DisableRockstarEditor { get; set; }
         public Keys ScreenshotKey { get; set; }
+        public int CefFps { get; set; }
         
         public PlayerSettings()
         {
@@ -87,6 +88,7 @@ namespace GTANetworkShared
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
             ScreenshotKey = Keys.F8;
+            CefFps = 30;
         }
     }
 

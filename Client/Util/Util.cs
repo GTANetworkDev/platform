@@ -866,6 +866,8 @@ namespace GTANetwork.Util
                     settings.DisplayName = settings.DisplayName.Substring(0, 32);
                 }
 
+                settings.DisplayName = settings.DisplayName.Replace(' ', '_');
+
                 using (var stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite)) ser.Serialize(stream, settings);
             }
             else

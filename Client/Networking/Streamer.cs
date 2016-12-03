@@ -2203,6 +2203,7 @@ namespace GTANetwork.Networking
             var veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
             Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, veh, true);
             Function.Call(Hash.TRACK_VEHICLE_VISIBILITY, veh);
+            Function.Call(Hash.SET_SIREN_WITH_NO_DRIVER, veh, true);
             Function.Call((Hash)0x068F64F2470F9656, false);
             LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null));
 

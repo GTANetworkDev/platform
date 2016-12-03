@@ -760,7 +760,7 @@ namespace GTANetwork.GUI
             settings.OffScreenTransparentBackground = true;
             settings.JavascriptAccessClipboard = CefState.Disabled;
             settings.JavascriptOpenWindows = CefState.Disabled;
-            settings.WindowlessFrameRate = 30;
+            settings.WindowlessFrameRate = CEFManager.FPS;
 
             _browser = new ChromiumWebBrowser(browserSettings: settings);
             _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father, this), false);
