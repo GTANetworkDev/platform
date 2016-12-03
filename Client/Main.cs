@@ -4718,9 +4718,14 @@ namespace GTANetwork
                             confirmObj.Write(false);
                             Client.SendMessage(confirmObj, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
                             JustJoinedServer = true;
-                            MainMenu.Tabs.RemoveAt(0);
-                            MainMenu.Tabs.Insert(0, _serverItem);
-                            MainMenu.Tabs.Insert(0, _mainMapItem);
+
+                            MainMenu.Tabs.Remove(_welcomePage);
+
+                            if (!MainMenu.Tabs.Contains(_serverItem))
+                                MainMenu.Tabs.Insert(0, _serverItem);
+                            if (!MainMenu.Tabs.Contains(_mainMapItem))
+                                MainMenu.Tabs.Insert(0, _mainMapItem);
+
                             MainMenu.RefreshIndex();
 
                             if (respObj.Settings != null)
