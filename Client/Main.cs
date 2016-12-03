@@ -2342,6 +2342,8 @@ namespace GTANetwork
 
         public void OnTick(object sender, EventArgs e)
         {
+            Main.TickCount++;
+
             try
             {
                 Ped player = Game.Player.Character;

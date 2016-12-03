@@ -63,6 +63,7 @@ namespace GTANetwork.Networking
         public bool IsShooting;
         public bool IsInBurnout;
         private bool _lastBurnout;
+        private bool _lastSwimming;
         public float VehicleRPM;
 	    public float SteeringScale;
         public bool EnteringVehicle;
@@ -2268,7 +2269,12 @@ namespace GTANetwork.Networking
                     Character.PositionNoOffset = tmpPosition;
                 }
 
+                if (!Character.IsSwimming && _lastSwimming)
+                {
+                    Character.Task.ClearAllImmediately();
+                }
 
+                _lastSwimming = Character.IsSwimming;
                 _carPosOnUpdate = Character.Position;
                 _stopTime = DateTime.Now;
             }
@@ -2507,8 +2513,6 @@ namespace GTANetwork.Networking
                     Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
                 DEBUG_STEP = 120;
-
-                Main.TickCount++;
 
                 UpdatePosition();
 

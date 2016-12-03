@@ -77,6 +77,7 @@ namespace GTANetworkShared
         public bool DisableRockstarEditor { get; set; }
         public Keys ScreenshotKey { get; set; }
         public int CefFps { get; set; }
+        public bool StartGameInOfflineMode { get; set; }
         
         public PlayerSettings()
         {
@@ -85,6 +86,7 @@ namespace GTANetworkShared
             RecentServers = new List<string>();
             ScaleChatWithSafezone = true;
             SteamPowered = false;
+            StartGameInOfflineMode = true;
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
             ScreenshotKey = Keys.F8;
