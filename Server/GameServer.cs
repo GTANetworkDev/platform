@@ -91,6 +91,7 @@ namespace GTANetworkServer
             Name = conf.Name;
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
+            config.LocalAddress = IPAddress.Parse(conf.LocalAddress);
             config.Port = conf.Port;
             config.EnableUPnP = conf.UseUPnP;
             config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);

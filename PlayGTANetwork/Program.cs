@@ -86,7 +86,7 @@ namespace PlayGTANetwork
                 validTypes = types.Where(t =>
                     !t.IsInterface &&
                     !t.IsAbstract)
-                    .Where(t => typeof (ISubprocessBehaviour).IsAssignableFrom(t));
+                    .Where(t => typeof (LauncherSettings.ISubprocessBehaviour).IsAssignableFrom(t));
             }
             catch (Exception e)
             {
@@ -102,10 +102,10 @@ namespace PlayGTANetwork
                 goto end;
             }
 
-            ISubprocessBehaviour mainBehaviour = null;
+            LauncherSettings.ISubprocessBehaviour mainBehaviour = null;
             foreach (var type in validTypes)
             {
-                mainBehaviour = Activator.CreateInstance(type) as ISubprocessBehaviour;
+                mainBehaviour = Activator.CreateInstance(type) as LauncherSettings.ISubprocessBehaviour;
                 if (mainBehaviour != null)
                     break;
             }
@@ -130,10 +130,5 @@ namespace PlayGTANetwork
             end:
             {}
         }
-    }
-
-    public interface ISubprocessBehaviour
-    {
-        void Start(string[] args);
     }
 }

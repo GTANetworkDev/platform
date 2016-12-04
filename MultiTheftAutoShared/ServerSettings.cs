@@ -64,6 +64,9 @@ namespace GTANetworkShared
         [XmlElement("trust_client_entity_properties")]
         public bool EnableClientsideEntityProperties { get; set; }
 
+        [XmlElement("local_address")]
+        public string LocalAddress { get; set; }
+
         public WhitelistCollection whitelist { get; set; }
 
         [XmlRoot("resource")]
@@ -93,6 +96,7 @@ namespace GTANetworkShared
             RefreshHz = 120;
             LogLevel = 0;
             EnableClientsideEntityProperties = false;
+            LocalAddress = "0.0.0.0";
         }
 
         public static ServerSettings ReadSettings(string path)

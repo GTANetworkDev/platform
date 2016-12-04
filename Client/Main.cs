@@ -1241,7 +1241,7 @@ namespace GTANetwork
 
                     cityDen.Activated += (sender, item) =>
                     {
-                        var strInput = InputboxThread.GetUserInput(GameSettings.Video.Windowed.Value.ToString(),
+                        var strInput = InputboxThread.GetUserInput(PlayerSettings.CefFps.ToString(),
                             10, TickSpinner);
 
                         int newSetting;
@@ -1254,6 +1254,7 @@ namespace GTANetwork
                         PlayerSettings.CefFps = newSetting;
                         CEFManager.FPS = newSetting;
                         Misc.GameSettings.SaveSettings(GameSettings);
+                        cityDen.SetRightLabel(PlayerSettings.CefFps.ToString());
                     };
                 }
 
