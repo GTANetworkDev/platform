@@ -915,7 +915,6 @@ namespace GTANetwork
                                     ConnectToServer(splt[0], port);
                                     MainMenu.TemporarilyHidden = true;
                                     _connectTab.RefreshIndex();
-                                    AddServerToRecent(selectedServer);
                                 };
                                 _favBrowser.Items.Add(item);
                             }
@@ -4700,6 +4699,7 @@ namespace GTANetwork
                             StringCache = new StringCache();
                             break;
                         case NetConnectionStatus.Connected:
+                            AddServerToRecent(_currentServerIp, "");
                             Util.Util.SafeNotify("Connection successful!");
                             var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
                             var respObj =
@@ -4836,7 +4836,6 @@ namespace GTANetwork
                             _connectTab.RefreshIndex();
                             ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
                             MainMenu.TemporarilyHidden = true;
-                            AddServerToRecent(item);
                         };
 
                         _lanBrowser.Items.Add(item);
@@ -4888,7 +4887,6 @@ namespace GTANetwork
                             ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data1.Port);
                             MainMenu.TemporarilyHidden = true;
                             _connectTab.RefreshIndex();
-                            AddServerToRecent(ourItem);
                         };
 
 
