@@ -463,7 +463,8 @@ namespace GTANetwork.Networking
                             return ClientMap[HandleMap.Reverse[-2]];
                     }
 
-                    return ClientMap.OfType<ILocalHandleable>().FirstOrDefault(item => item.LocalHandle == netId) as IStreamedItem;
+                    //return ClientMap.OfType<ILocalHandleable>().FirstOrDefault(item => item.LocalHandle == netId) as IStreamedItem;
+                    return null;
                 }
             }
         }
@@ -1810,6 +1811,7 @@ namespace GTANetwork.Networking
 
             if (item.Dimension != Main.LocalDimension && item.Dimension != 0) return;
 
+            item.StreamedIn = true;
             LogManager.DebugLog("STREAMING IN " + (EntityType) item.EntityType);
 
             switch ((EntityType) item.EntityType)
@@ -1847,13 +1849,16 @@ namespace GTANetwork.Networking
 
                 if (han.LocalHandle != 0)
                 {
-                    if (HandleMap.ContainsKey(item.RemoteHandle))
+                    lock (HandleMap)
                     {
-                        HandleMap[item.RemoteHandle] = han.LocalHandle;
-                    }
-                    else
-                    {
-                        HandleMap.Add(item.RemoteHandle, han.LocalHandle);
+                        if (HandleMap.ContainsKey(item.RemoteHandle))
+                        {
+                            HandleMap[item.RemoteHandle] = han.LocalHandle;
+                        }
+                        else
+                        {
+                            HandleMap.Add(item.RemoteHandle, han.LocalHandle);
+                        }
                     }
                 }
             }
@@ -2092,7 +2097,11 @@ namespace GTANetwork.Networking
             var ped = World.CreatePed(model, data.Position.ToVector(), data.Rotation.Z);
             model.MarkAsNoLongerNeeded();
 
-            if (ped == null) return;
+            if (ped == null)
+            {
+                data.StreamedIn = false;
+                return;
+            }
 
             ped.PositionNoOffset = data.Position.ToVector();
 
@@ -2210,6 +2219,7 @@ namespace GTANetwork.Networking
             if (veh == null || !veh.Exists())
             {
                 LogManager.LogException(new Exception("Vehicle was null"), "StreamInVehicle");
+                data.StreamedIn = false;
                 return;
             }
 

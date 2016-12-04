@@ -3466,7 +3466,7 @@ namespace GTANetwork
                 DEBUG_STEP = 30;
 
 
-                GameScript.Pulse(); // TODO Need to check if we can optimize this function
+                GameScript.Pulse();
 
                 if ((Game.Player.Character.Position - _lastWaveReset).LengthSquared() > 10000f) // 100f * 100f
                 {

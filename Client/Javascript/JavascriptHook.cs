@@ -286,7 +286,7 @@ namespace GTANetwork.Javascript
 
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (Main.Chat.IsFocused) return;
+            if (Main.Chat == null || Main.Chat.IsFocused) return;
 
             lock (ScriptEngines)
             {
@@ -306,7 +306,7 @@ namespace GTANetwork.Javascript
 
         public void OnKeyUp(object sender, KeyEventArgs e)
         {
-            if (Main.Chat.IsFocused) return;
+            if (Main.Chat == null || Main.Chat.IsFocused) return;
 
             lock (ScriptEngines)
             {
