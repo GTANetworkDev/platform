@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define WHITELIST_ACTIVE
+
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -53,6 +56,7 @@ namespace GTANMasterServer
                         CoopServerWorker.Work();
                         foreach (var pair in UpdateChannels) pair.Value.Work();
                         WelcomeMessageWorker.Work();
+                        Whitelist.Work();
                     }
                     catch {}
                     finally
@@ -361,6 +365,41 @@ namespace GTANMasterServer
         }
     }
 
+    public static class Whitelist
+    {
+        private static DateTime _lastWhitelistUpdate;
+        private static string[] _whitelist = new string[0];
+
+        private static object _syncList = new object();
+
+        public static bool IsWhitelisted(string ip)
+        {
+            lock (_syncList)
+            {
+                return Array.IndexOf(_whitelist, ip) != -1;
+            }
+        }
+
+
+        private const string _whitelistPath = "whitelist.txt";
+        
+        public static void Work()
+        {
+            if (DateTime.Now.Subtract(_lastWhitelistUpdate).TotalMinutes > 30)
+            {
+                _lastWhitelistUpdate = DateTime.Now;
+
+                if (File.Exists(_whitelistPath))
+                {
+                    lock (_syncList)
+                    {
+                        _whitelist = File.ReadAllLines(_whitelistPath);
+                    }
+                }
+            }
+        }
+    }
+
     public class VersioningUpdaterWorker
     {
         public ParseableVersion LastClientVersion;
@@ -558,6 +597,9 @@ namespace GTANMasterServer
         {
             try
             {
+            #if WHITELIST_ACTIVE
+                if (!Whitelist.IsWhitelisted(ip)) return;
+            #endif
                 var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
 
                 var finalAddr = ip + ":" + newServObj.Port;
