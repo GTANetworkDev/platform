@@ -60,6 +60,7 @@ public class Assault : Script
     public const int DEFENDER_TEAM = 2;
 
     private Random _rand;
+    private bool _lastContesting;
 
 	public void Start()
 	{
@@ -180,6 +181,8 @@ public class Assault : Script
         
         var spawnpoint = availablePoints[_rand.Next(availablePoints.Length)];
         
+        player.health = 100;
+        player.armor = 0;
         player.removeAllWeapons();
         player.setSkin(spawnpoint.Skins[_rand.Next(spawnpoint.Skins.Length)]);
         
@@ -233,6 +236,8 @@ public class Assault : Script
 	{
 		if (CurrentRound != null) EndRound();
         CurrentRound = round;
+
+        _lastContesting = false;
 
         var players = API.getAllPlayers();
 
@@ -339,6 +344,8 @@ public class Assault : Script
 
             if (attackersOnObjective > 0 && defendersOnObjective == 0)
             {
+                _lastContesting = false;
+
                 if (!objective.Active)
                 {
                     objective.Active = true;
@@ -397,15 +404,21 @@ public class Assault : Script
             {
                 objective.LastActiveUpdate = API.TickCount;
 
-                API.triggerClientEventForAll("set_marker_color", objective.Marker.handle, 242, 238, 10);
-
-                foreach (var client in OnPoint)
+                if (!_lastContesting)
                 {
-                    API.triggerClientEvent(client, "play_sound", "DLC_HEIST_BIOLAB_PREP_HACKING_SOUNDS", "Hack_failed");
+                    API.triggerClientEventForAll("set_marker_color", objective.Marker.handle, 242, 238, 10);
+
+                    foreach (var client in OnPoint)
+                    {
+                        API.triggerClientEvent(client, "play_sound", "DLC_HEIST_BIOLAB_PREP_HACKING_SOUNDS", "Hack_failed");
+                    }
                 }
+
+                _lastContesting = true;
             }
             else if (objective.Active)
             {
+                _lastContesting = false;
                 objective.Active = false;
                 objective.LastActiveUpdate = 0;
                 objective.TextLabel.text = "";
