@@ -202,7 +202,7 @@ namespace GTANetwork
                 mySettings.Video.Windowed.Value = 2;
             }
 
-            
+            MoveAuxilliaryStuffIn();
 
             GameSettings.SaveSettings(mySettings);
 
@@ -267,6 +267,8 @@ namespace GTANetwork
             // Move everything back
 
             PatchStartup(_startupFlow, _landingPage);
+
+            MoveStuffOut();
 
             mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
             mySettings.Video.Windowed.Value = _windowedMode;
@@ -366,6 +368,32 @@ namespace GTANetwork
                     stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
                     stream.Write(new byte[] { landingPage }, 0, 1);
                 }
+            }
+        }
+
+        public void MoveAuxilliaryStuffIn()
+        {
+            string[] aux = new[]
+            {"ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "v8-ia32.dll", "v8-x64.dll"};
+
+            foreach (var path in aux)
+            {
+                NoReadonly(InstallFolder + "\\" + path);
+                File.Copy("bin\\" + path, InstallFolder + "\\" + path, true);
+                OurFiles.Add(InstallFolder + "\\" + path);
+            }
+
+            foreach (var path in Directory.GetFiles("cef"))
+            {
+                NoReadonly(InstallFolder + "\\" + Path.GetFileName(path));
+                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
+                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
+            }
+
+            foreach (var path in Directory.GetDirectories("cef"))
+            {
+                CopyFolder(path, InstallFolder + "\\" + Path.GetFileName(path));
+                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
             }
         }
 
