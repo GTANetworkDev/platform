@@ -374,7 +374,7 @@ namespace GTANetwork
         public void MoveAuxilliaryStuffIn()
         {
             string[] aux = new[]
-            {"ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "v8-ia32.dll", "v8-x64.dll"};
+            { "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "v8-ia32.dll", "v8-x64.dll", "EasyHook64.dll"};
 
             foreach (var path in aux)
             {
