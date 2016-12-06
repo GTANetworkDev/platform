@@ -306,7 +306,7 @@ namespace GTANetwork.GUI
 					}
                 }
                 
-                foreach (var blip in localCopy.Where(item => item is RemoteBlip && !item.StreamedIn).Cast<RemoteBlip>()) // draw the unstreamed blips
+                foreach (var blip in localCopy.Where(item => item is RemoteBlip && !item.StreamedIn && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).Cast<RemoteBlip>()) // draw the unstreamed blips
                 {
                     if (File.Exists(BLIP_PATH + ((int)blip.Sprite) + ".png"))
                     {
@@ -321,7 +321,7 @@ namespace GTANetwork.GUI
                     }
                 }
 
-                foreach (var opp in Main.NetEntityHandler.ClientMap.Where(item => item is SyncPed).Cast<SyncPed>())
+                foreach (var opp in Main.NetEntityHandler.ClientMap.Where(item => item.Value is SyncPed && (item.Value.Dimension == Main.LocalDimension || item.Value.Dimension == 0)).Select(pair => pair.Value).Cast<SyncPed>())
                 {
                     if (opp.Character?.AttachedBlip == null || string.IsNullOrWhiteSpace(opp.Name) || opp.Character.AttachedBlip.Alpha == 0) continue;
 
