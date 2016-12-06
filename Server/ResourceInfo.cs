@@ -546,14 +546,16 @@ namespace GTANetworkServer
 
         public void InvokeChatCommand(Client sender, string command, CancelEventArgs ce)
         {
-            lock (_mainQueue.SyncRoot)
-            _mainQueue.Enqueue(new Action(() =>
+            Task cmdTask = new Task(() =>
             {
                 if (Language == ScriptingEngineLanguage.compiled)
                 {
                     _compiledScript.API.invokeChatCommand(sender, command, ce);
                 }
-            }));
+            });
+
+            cmdTask.Start();
+            cmdTask.Wait(5000);
         }
 
         public bool InvokeChatMessage(Client sender, string cmd)

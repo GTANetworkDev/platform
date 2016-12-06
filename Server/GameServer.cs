@@ -1595,20 +1595,27 @@ namespace GTANResource
 
                                                         if (pass)
                                                         {
-                                                            var cancelArg = new CancelEventArgs();
-
-                                                            lock (RunningResources)
-                                                                RunningResources.ForEach(
-                                                                    fs =>
-                                                                        fs.Engines.ForEach(
-                                                                            en => en.InvokeChatCommand(client, data.Message, cancelArg)));
-
-                                                            if (!cancelArg.Cancel)
+                                                            ThreadPool.QueueUserWorkItem((WaitCallback) delegate
                                                             {
-                                                                if (!CommandHandler.Parse(client, data.Message))
-                                                                    PublicAPI.sendChatMessageToPlayer(client,
-                                                                        "~r~ERROR:~w~ Command not found.");
-                                                            }
+                                                                var cancelArg = new CancelEventArgs();
+
+                                                                lock (RunningResources)
+                                                                {
+                                                                    RunningResources.ForEach(
+                                                                        fs =>
+                                                                            fs.Engines.ForEach(
+                                                                                en =>
+                                                                                    en.InvokeChatCommand(client,
+                                                                                        data.Message, cancelArg)));
+                                                                }
+
+                                                                if (!cancelArg.Cancel)
+                                                                {
+                                                                    if (!CommandHandler.Parse(client, data.Message))
+                                                                        PublicAPI.sendChatMessageToPlayer(client,
+                                                                            "~r~ERROR:~w~ Command not found.");
+                                                                }
+                                                            });
                                                         }
                                                         else
                                                         {
@@ -1630,21 +1637,27 @@ namespace GTANResource
                                                         continue;
                                                     }
 
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(
-                                                            fs =>
-                                                                fs.Engines.ForEach(
-                                                                    en =>
-                                                                        pass =
-                                                                            pass && en.InvokeChatMessage(client, data.Message)));
-
-                                                    if (pass)
+                                                    ThreadPool.QueueUserWorkItem((WaitCallback) delegate
                                                     {
-                                                        data.Id = client.NetConnection.RemoteUniqueIdentifier;
-                                                        data.Sender = client.Name;
-                                                        SendToAll(data, PacketType.ChatData, true, ConnectionChannel.Chat);
-                                                        Program.Output(data.Sender + ": " + data.Message);
-                                                    }
+                                                        lock (RunningResources)
+                                                            RunningResources.ForEach(
+                                                                fs =>
+                                                                    fs.Engines.ForEach(
+                                                                        en =>
+                                                                            pass =
+                                                                                pass &&
+                                                                                en.InvokeChatMessage(client,
+                                                                                    data.Message)));
+
+                                                        if (pass)
+                                                        {
+                                                            data.Id = client.NetConnection.RemoteUniqueIdentifier;
+                                                            data.Sender = client.Name;
+                                                            SendToAll(data, PacketType.ChatData, true,
+                                                                ConnectionChannel.Chat);
+                                                            Program.Output(data.Sender + ": " + data.Message);
+                                                        }
+                                                    });
                                                 }
                                             }
                                             catch (IndexOutOfRangeException)
