@@ -582,22 +582,23 @@ namespace GTANetwork.GUI
                 {
                     string callString = functionName + "(";
 
-                    for (int i = 0; i < arguments.Length; i++)
-                    {
-                        string comma = ", ";
-
-                        if (i == arguments.Length - 1)
-                            comma = "";
-
-                        if (arguments[i] is string)
+                    if (arguments != null)
+                        for (int i = 0; i < arguments.Length; i++)
                         {
-                            callString += System.Web.HttpUtility.JavaScriptStringEncode(arguments[i].ToString(), true) + comma;
+                            string comma = ", ";
+
+                            if (i == arguments.Length - 1)
+                                comma = "";
+
+                            if (arguments[i] is string)
+                            {
+                                callString += System.Web.HttpUtility.JavaScriptStringEncode(arguments[i].ToString(), true) + comma;
+                            }
+                            else
+                            {
+                                callString += arguments[i] + comma;
+                            }
                         }
-                        else
-                        {
-                            callString += arguments[i] + comma;
-                        }
-                    }
 
                     callString += ");";
 
