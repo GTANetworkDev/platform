@@ -213,7 +213,8 @@ namespace GTANetwork.Util
 
         public static void LoadWeapon(int model)
         {
-            if (model == (int) GTANetworkShared.WeaponHash.Unarmed) return;
+            if (model == (int) GTANetworkShared.WeaponHash.Unarmed ||
+                model == 0) return;
 
             var start = Util.TickCount;
             while (!Function.Call<bool>(Hash.HAS_WEAPON_ASSET_LOADED, model))

@@ -110,6 +110,14 @@ namespace GTANetworkServer
             }
         }
 
+        public bool isInVehicle
+        {
+            get
+            {
+                return IsInVehicle;
+            }
+        }
+
         public int vehicleSeat
         {
             get { return API.shared.getPlayerVehicleSeat(this); }

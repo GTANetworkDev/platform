@@ -136,6 +136,10 @@ namespace GTANetwork.GUI
             {
                 return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
             }
+            else if (Math.Abs(aspectRatio - 1.55555f) < 0.001f)
+            {
+                return new PointF(((safezone.X - 1200 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+            }
 
             return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
         }

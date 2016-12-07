@@ -3654,6 +3654,13 @@ namespace GTANetwork
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
             Chat.OnKeyDown(e.KeyCode);
+            
+            if (e.KeyCode == Keys.Escape && Client != null &&
+                Client.ConnectionStatus == NetConnectionStatus.Disconnected)
+            {
+                Client.Disconnect("Connection canceled.");
+            }
+
             if (e.KeyCode == Keys.F10 && !Chat.IsFocused)
             {
                 MainMenu.Visible = !MainMenu.Visible;
@@ -3716,6 +3723,12 @@ namespace GTANetwork
 
         public void ConnectToServer(string ip, int port = 0)
         {
+            if (IsOnServer())
+            {
+                Client.Disconnect("Switching servers");
+                Wait(1000);
+            }
+
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
 
             if (!_minimapSet)
