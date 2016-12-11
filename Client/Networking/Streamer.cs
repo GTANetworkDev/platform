@@ -1778,7 +1778,7 @@ namespace GTANetwork.Networking
 
 
 
-        public int CreateLocalLabel(string text, Vector3 pos, float range, float size, int dimension = 0)
+        public int CreateLocalLabel(string text, Vector3 pos, float range, float size, bool entitySeethrough, int dimension = 0)
         {
             var newId = --_localHandleCounter;
             RemoteTextLabel label;
@@ -1796,7 +1796,7 @@ namespace GTANetwork.Networking
                 RemoteHandle = newId,
                 Text = text,
                 Range = range,
-                EntitySeethrough = false,
+                EntitySeethrough = entitySeethrough,
             });
 
             if (Count(typeof(RemoteTextLabel)) < StreamerThread.MAX_LABELS)

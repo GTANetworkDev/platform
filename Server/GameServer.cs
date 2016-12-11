@@ -87,7 +87,9 @@ namespace GTANetworkServer
             {
                 ACL = new AccessControlList("acl.xml");
             }
-            
+
+            ConstantVehicleDataOrganizer.Initialize();
+
             Name = conf.Name;
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");

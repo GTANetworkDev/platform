@@ -112,6 +112,26 @@ namespace GTANetworkShared
             }
         }
 
+        public Vector3 Add(Vector3 right)
+        {
+            return this + right;
+        }
+
+        public Vector3 Subtract(Vector3 right)
+        {
+            return this - right;
+        }
+
+        public Vector3 Multiply(float right)
+        {
+            return this*right;
+        }
+
+        public Vector3 Divide(float right)
+        {
+            return this/right;
+        }
+
         public static Vector3 RandomXY()
         {
             Vector3 v = new Vector3();
