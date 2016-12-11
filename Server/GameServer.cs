@@ -100,7 +100,7 @@ namespace GTANetworkServer
             config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
             config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
-            config.ConnectionTimeout = 30f; // 30 second timeout
+            config.ConnectionTimeout = 120f; // 30 second timeout
             
             Server = new NetServer(config);
             
@@ -2769,7 +2769,7 @@ namespace GTANResource
             {
                 for (int i = Clients.Count - 1; i >= 0; i--) // Kick AFK players
                 {
-                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 30)
+                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 60)
                     {
                         Clients[i].NetConnection.Disconnect("Time out");
                     }

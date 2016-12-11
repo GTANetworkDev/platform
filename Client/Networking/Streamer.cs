@@ -2218,7 +2218,7 @@ namespace GTANetwork.Networking
 
             if (veh == null || !veh.Exists())
             {
-                LogManager.LogException(new Exception("Vehicle was null"), "StreamInVehicle");
+                LogManager.LogException(new Exception("Vehicle was null, model=" + model.Hash), "StreamInVehicle");
                 data.StreamedIn = false;
                 return;
             }
