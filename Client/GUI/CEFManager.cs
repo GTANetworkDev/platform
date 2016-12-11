@@ -1,5 +1,5 @@
-﻿//#define DISABLE_HOOK
-//#define DISABLE_CEF
+﻿#define DISABLE_HOOK
+#define DISABLE_CEF
 
 #if true
 using System;
@@ -11,8 +11,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using CefSharp;
-using CefSharp.OffScreen;
+//using CefSharp;
+//using CefSharp.OffScreen;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
@@ -22,6 +22,7 @@ using GTANetwork.Util;
 using Microsoft.ClearScript.V8;
 using SharpDX;
 using SharpDX.Diagnostics;
+using Xilium.CefGlue;
 using Point = System.Drawing.Point;
 
 
@@ -60,7 +61,7 @@ namespace GTANetwork.GUI
 
             return mod;
         }
-
+        /*
         public CefController()
         {
             Tick += (sender, args) =>
@@ -99,7 +100,6 @@ namespace GTANetwork.GUI
                 var wdmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollDown);
 
                 #if !DISABLE_CEF
-
                 foreach (var browser in CEFManager.Browsers)
                 {
                     if (!browser.IsInitialized()) continue;
@@ -236,8 +236,176 @@ namespace GTANetwork.GUI
                 #endif
             };
         }
+        */
     }
-    
+
+    internal class DemoCefApp : CefApp
+    {
+    }
+
+    internal class DemoCefLoadHandler : CefLoadHandler
+    {
+        protected override void OnLoadStart(CefBrowser browser, CefFrame frame)
+        {
+            // A single CefBrowser instance can handle multiple requests
+            //   for a single URL if there are frames (i.e. <FRAME>, <IFRAME>).
+            if (frame.IsMain)
+            {
+                //Console.WriteLine("START: {0}", browser.GetMainFrame().Url);
+            }
+        }
+
+        protected override void OnLoadEnd(CefBrowser browser, CefFrame frame, int httpStatusCode)
+        {
+            if (frame.IsMain)
+            {
+                //Console.WriteLine("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode);
+            }
+        }
+    }
+
+    internal class DemoLifeSpanHandler : CefLifeSpanHandler
+    {
+        private DemoCefClient bClient;
+
+        internal DemoLifeSpanHandler(DemoCefClient bc)
+        {
+            this.bClient = bc;
+        }
+
+        protected override void OnAfterCreated(CefBrowser browser)
+        {
+            base.OnAfterCreated(browser);
+            this.bClient.Created(browser);
+        }
+    }
+
+    internal class DemoCefRenderHandler : CefRenderHandler
+    {
+        private int _windowHeight;
+        private int _windowWidth;
+
+        public Bitmap LastBitmap;
+        public readonly object BitmapLock = new object();
+
+        public DemoCefRenderHandler(int windowWidth, int windowHeight)
+        {
+            _windowWidth = windowWidth;
+            _windowHeight = windowHeight;
+        }
+
+        public void SetSize(int width, int height)
+        {
+            _windowHeight = height;
+            _windowWidth = width;
+        }
+
+        protected override void OnCursorChange(CefBrowser browser, IntPtr cursorHandle, CefCursorType type, CefCursorInfo customCursorInfo)
+        {
+            
+        }
+
+        protected override bool GetRootScreenRect(CefBrowser browser, ref CefRectangle rect)
+        {
+            return GetViewRect(browser, ref rect);
+        }
+
+        protected override bool GetScreenPoint(CefBrowser browser, int viewX, int viewY, ref int screenX, ref int screenY)
+        {
+            screenX = viewX;
+            screenY = viewY;
+            return true;
+        }
+
+        protected override bool GetViewRect(CefBrowser browser, ref CefRectangle rect)
+        {
+            rect.X = 0;
+            rect.Y = 0;
+            rect.Width = _windowWidth;
+            rect.Height = _windowHeight;
+            return true;
+        }
+
+        protected override bool GetScreenInfo(CefBrowser browser, CefScreenInfo screenInfo)
+        {
+            return false;
+        }
+
+        protected override void OnPopupSize(CefBrowser browser, CefRectangle rect)
+        {
+        }
+
+        protected override void OnPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr buffer, int width, int height)
+        {
+            lock (BitmapLock)
+            {
+                LogManager.SimpleLog("cef", "Rendering browser...");
+                if (LastBitmap != null) LastBitmap.Dispose();
+                LogManager.SimpleLog("cef", "Rendered. Saving....");
+                LastBitmap = new Bitmap(width, height, width*4, PixelFormat.Format32bppRgb, buffer);
+                LogManager.SimpleLog("cef", "Saved!");
+                LastBitmap.Save("LastBitmap.png");
+                LogManager.SimpleLog("cef", "Saved again.");
+            }
+        }
+
+        protected override void OnScrollOffsetChanged(CefBrowser browser)
+        {
+        }
+    }
+
+    internal class DemoCefClient : CefClient
+    {
+        private readonly DemoCefLoadHandler _loadHandler;
+        private readonly DemoCefRenderHandler _renderHandler;
+        private readonly DemoLifeSpanHandler _lifeSpanHandler;
+
+        public event EventHandler OnCreated;
+
+        public DemoCefClient(int windowWidth, int windowHeight)
+        {
+            _renderHandler = new DemoCefRenderHandler(windowWidth, windowHeight);
+            _loadHandler = new DemoCefLoadHandler();
+            _lifeSpanHandler = new DemoLifeSpanHandler(this);
+        }
+
+        public void SetSize(int w, int h)
+        {
+            _renderHandler.SetSize(w, h);
+        }
+
+        public Bitmap GetLastBitmap()
+        {
+            lock (_renderHandler.BitmapLock)
+            {
+                return _renderHandler.LastBitmap;
+            }
+        }
+
+        public void Created(CefBrowser bs)
+        {
+            if (this.OnCreated != null)
+            {
+                this.OnCreated(bs, EventArgs.Empty);
+            }
+        }
+
+        protected override CefRenderHandler GetRenderHandler()
+        {
+            return _renderHandler;
+        }
+
+        protected override CefLoadHandler GetLoadHandler()
+        {
+            return _loadHandler;
+        }
+
+        protected override CefLifeSpanHandler GetLifeSpanHandler()
+        {
+            return _lifeSpanHandler;
+        }
+    }
+
     public static class CEFManager
     {
         #if DISABLE_HOOK
@@ -250,54 +418,33 @@ namespace GTANetwork.GUI
         public static void InitializeCef()
         {
 #if !DISABLE_CEF
-            var settings = new CefSharp.CefSettings();
-            settings.SetOffScreenRenderingBestPerformanceArgs();
-            
-            settings.BrowserSubprocessPath = Main.GTANInstallDir + "\\cef\\CefSharp.BrowserSubprocess.exe";
-            settings.CachePath = Main.GTANInstallDir + "\\cef\\cache";
-            settings.LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales";
-            settings.ResourcesDirPath = Main.GTANInstallDir + "\\cef";
-            settings.UserDataPath = Main.GTANInstallDir + "\\cef\\cookies";
+            CefRuntime.Load();
 
-            settings.RegisterScheme(new CefCustomScheme()
+            var args = new string[0];
+
+            var cefMainArgs = new CefMainArgs(args);
+            var cefApp = new DemoCefApp();
+
+            if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
             {
-                SchemeHandlerFactory = new ResourceFilePathHandler(),
-                SchemeName = "http",
-            });
-
-            settings.RegisterScheme(new CefCustomScheme()
-            {
-                SchemeHandlerFactory = new ResourceFilePathHandler(),
-                SchemeName = "https",
-            });
-
-            settings.RegisterScheme(new CefCustomScheme()
-            {
-                SchemeHandlerFactory = new ResourceFilePathHandler(),
-                SchemeName = "resource",
-            });
-
-            settings.CefCommandLineArgs.Add("enable-media-stream", "1");
-            settings.CefCommandLineArgs.Add("enable-speech-input", "1");
-
-
-            LogManager.DebugLog("WAITING FOR INITIALIZATION...");
-
-            try
-            {
-                Cef.Initialize(settings, true, false);
+                LogManager.SimpleLog("cef", "CefRuntime could not execute the secondary process.");
             }
-            catch (Exception ex)
+
+            var cefSettings = new CefSettings()
             {
-                LogManager.LogException(ex, "CEF INIT");
-            }
+                SingleProcess = false,
+                MultiThreadedMessageLoop = true,
+                WindowlessRenderingEnabled = true,
+            };
+
+            CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
 #endif
         }
 
         public static void DisposeCef()
         {
 #if !DISABLE_CEF
-            Cef.Shutdown();
+            CefRuntime.Shutdown();
 #endif
         }
 
@@ -454,102 +601,7 @@ namespace GTANetwork.GUI
             LogManager.LogException(threadExceptionEventArgs.ExceptionObject as Exception, "APPTHREAD");
         }
     }
-    #if !DISABLE_CEF
-    public class ResourceFilePathHandler : ISchemeHandlerFactory
-    {
-        public IResourceHandler Create(IBrowser browser, IFrame frame, string schemeName, IRequest request)
-        {
-            var browserWrapper = CEFManager.Browsers.FirstOrDefault(b => b._browser?.GetBrowser().Identifier == browser.Identifier);
-            
-            if (browserWrapper == null || browserWrapper._localMode)
-            {
-                var uri = new Uri(request.Url);
-                var path = Main.GTANInstallDir + "\\resources\\";
-
-                var requestedFile = path + uri.Host + uri.LocalPath;
-
-                if (!File.Exists(requestedFile))
-                {
-                    browser.StopLoad();
-                    return ResourceHandler.FromString(@"<!DOCTYPE html><html><body><h1>404</h1></body></html>", ".html");
-                }
-
-                return ResourceHandler.FromFileName(requestedFile, Path.GetExtension(requestedFile));
-            }
-
-            return null;
-        }
-    }
-#endif
-    public class GoBackForwardCanceller : IRequestHandler
-    {
-        bool IRequestHandler.OnResourceResponse(IWebBrowser browser, IBrowser b, IFrame frame, IRequest req, IResponse resp)
-        {
-            return false;
-        }
-
-        void IRequestHandler.OnResourceLoadComplete(IWebBrowser browser, IBrowser b, IFrame frame, IRequest req,
-            IResponse resp, UrlRequestStatus status, long unk)
-        {
-        }
-
-        bool IRequestHandler.OnBeforeBrowse(IWebBrowser browserControl, IBrowser browser, IFrame frame, IRequest request, bool isRedirect)
-        {
-            if ((request.TransitionType & TransitionType.ForwardBack) != 0)
-            {
-                return true;
-            }
-
-            return false;
-        }
-        bool IRequestHandler.OnOpenUrlFromTab(IWebBrowser browserControl, IBrowser browser, IFrame frame, string targetUrl, WindowOpenDisposition targetDisposition, bool userGesture)
-        {
-            return false;
-        }
-        bool IRequestHandler.OnCertificateError(IWebBrowser browserControl, IBrowser browser, CefErrorCode errorCode, string requestUrl, ISslInfo sslInfo, IRequestCallback callback)
-        {
-            return false;
-        }
-        void IRequestHandler.OnPluginCrashed(IWebBrowser browserControl, IBrowser browser, string pluginPath)
-        {
-        }
-        CefReturnValue IRequestHandler.OnBeforeResourceLoad(IWebBrowser browserControl, IBrowser browser, IFrame frame, IRequest request, IRequestCallback callback)
-        {
-            return CefReturnValue.Continue;
-        }
-
-        bool IRequestHandler.GetAuthCredentials(IWebBrowser browserControl, IBrowser browser, IFrame frame, bool isProxy, string host, int port, string realm, string scheme, IAuthCallback callback)
-        {
-            //NOTE: If you do not wish to implement this method returning false is the default behaviour
-            // We also suggest you explicitly Dispose of the callback as it wraps an unmanaged resource.
-
-            callback.Dispose();
-            return false;
-        }
-
-        void IRequestHandler.OnRenderProcessTerminated(IWebBrowser browserControl, IBrowser browser, CefTerminationStatus status)
-        {
-        }
-
-        bool IRequestHandler.OnQuotaRequest(IWebBrowser browserControl, IBrowser browser, string originUrl, long newSize, IRequestCallback callback)
-        {
-            return false;
-        }
-
-        void IRequestHandler.OnResourceRedirect(IWebBrowser browserControl, IBrowser browser, IFrame frame, IRequest request, ref string newUrl)
-        {
-        }
-
-        bool IRequestHandler.OnProtocolExecution(IWebBrowser browserControl, IBrowser browser, string url)
-        {
-            return false;
-        }
-
-        void IRequestHandler.OnRenderViewReady(IWebBrowser browserControl, IBrowser browser)
-        {
-
-        }
-    }
+    
 
     public class BrowserJavascriptCallback
     {
@@ -670,7 +722,8 @@ namespace GTANetwork.GUI
     public class Browser : IDisposable
     {
 #if !DISABLE_CEF
-        internal ChromiumWebBrowser _browser;
+        internal DemoCefClient _client;
+        internal CefBrowser _browser;
 #endif
         internal readonly bool _localMode;
         internal bool _hasFocused;
@@ -687,13 +740,16 @@ namespace GTANetwork.GUI
             get { return _size; }
             set
             {
-                _size = value;
                 //_browser.Size = value;
+                #if !DISABLE_CEF
+                _client.SetSize(value.Width, value.Height);
+                #endif
+                _size = value;
             }
         }
 
         private V8ScriptEngine Father;
-
+        /*
         public object eval(string code)
         {
             if (!_localMode) return null;
@@ -751,22 +807,30 @@ namespace GTANetwork.GUI
 #endif
             return null;
         }
-
+        */
         internal Browser(V8ScriptEngine father, Size browserSize, bool localMode)
         {
             Father = father;
 #if !DISABLE_CEF
-            var settings = new BrowserSettings();
-            settings.LocalStorage = CefState.Disabled;
-            settings.OffScreenTransparentBackground = true;
-            settings.JavascriptAccessClipboard = CefState.Disabled;
-            settings.JavascriptOpenWindows = CefState.Disabled;
-            settings.WindowlessFrameRate = CEFManager.FPS;
+            CefWindowInfo cefWindowinfo = CefWindowInfo.Create();
+            cefWindowinfo.SetAsWindowless(IntPtr.Zero, true);
 
-            _browser = new ChromiumWebBrowser(browserSettings: settings);
-            _browser.RegisterJsObject("resource", new BrowserJavascriptCallback(father, this), false);
-            //_browser.RequestHandler = new GoBackForwardCanceller(); // disabled for now, giving problems
-            
+            var browserSettings = new CefBrowserSettings()
+            {
+                JavaScriptCloseWindows = CefState.Disabled,
+                JavaScriptOpenWindows = CefState.Disabled,
+            };
+
+            _client = new DemoCefClient(browserSize.Width, browserSize.Height);
+
+            CefBrowserHost.CreateBrowser(cefWindowinfo, _client, browserSettings);
+
+            _client.OnCreated += (sender, args) =>
+            {
+                _browser = (CefBrowser) sender;
+                LogManager.SimpleLog("cef", "Browser ready!");
+            };
+
             Size = browserSize;
 
             _localMode = localMode;
@@ -776,30 +840,33 @@ namespace GTANetwork.GUI
         internal void GoToPage(string page)
         {
 #if !DISABLE_CEF
-            _browser.Load(page);
+            if (_browser != null)
+                _browser.GetMainFrame().LoadUrl(page);
 #endif
         }
 
         internal void Close()
         {
 #if !DISABLE_CEF
-            //_browser.GetBrowser().CloseBrowser(true);
-            //_browser.Dispose();
+            if (_browser == null) return;
+            _browser.GetHost().CloseBrowser(true);
+            _browser.Dispose();
 #endif
         }
 
         internal void LoadHtml(string html)
         {
 #if !DISABLE_CEF
-            _browser.LoadHtml(html, "localhost", Encoding.UTF8);
+            if (_browser == null) return;
+            _browser.GetMainFrame().LoadString(html, "localhost");
 #endif            
         }
 
         internal string GetAddress()
         {
 #if !DISABLE_CEF
-            if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
-            return _browser.Address;
+            if (_browser == null) return null;
+            return _browser.GetMainFrame().Url;
 #else
             return null;
 #endif
@@ -808,7 +875,6 @@ namespace GTANetwork.GUI
         internal bool IsLoading()
         {
 #if !DISABLE_CEF
-            if (!_browser.IsBrowserInitialized) Thread.Sleep(0);
             return _browser.IsLoading;
 #else
             return false;
@@ -818,7 +884,7 @@ namespace GTANetwork.GUI
         internal bool IsInitialized()
         {
 #if !DISABLE_CEF
-            return _browser.IsBrowserInitialized;
+            return _browser != null;
 #else
             return true;
 #endif
@@ -827,14 +893,15 @@ namespace GTANetwork.GUI
         internal Bitmap GetRawBitmap()
         {
 #if !DISABLE_CEF
-            if (!_browser.IsBrowserInitialized) return null;
+            //if (!_browser.IsBrowserInitialized) return null;
 
-            if (_browser.Size.Width != Size.Width && _browser.Size.Height != Size.Height)
-                _browser.Size = Size;
+            //if (_browser.Size.Width != Size.Width && _browser.Size.Height != Size.Height)
+                //_browser.Size = Size;
 
-            Bitmap output = _browser.ScreenshotOrNull();
-            _browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
-            return output;
+            //Bitmap output = _browser.ScreenshotOrNull();
+            //_browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
+            //return output;
+            return _client.GetLastBitmap();
 #else
             return null;
 #endif
@@ -853,7 +920,7 @@ namespace GTANetwork.GUI
                 graphics.DrawImage(bmp, new Point(0, 0));
             }
 #if !DISABLE_CEF
-            _browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
+            //_browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
 #endif
 
             return doubleBuffer;
