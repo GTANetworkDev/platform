@@ -1614,7 +1614,7 @@ namespace GTANetwork.Networking
 
 			var animDict = GetAnimDictionary();
             
-			if (
+			if (animDict != null &&
 				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
 			{
