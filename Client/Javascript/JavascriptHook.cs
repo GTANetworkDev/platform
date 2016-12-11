@@ -3434,9 +3434,9 @@ namespace GTANetwork.Javascript
             return (from.Properties<IStreamedItem>().AttachedTo?.NetHandle ?? 0) == to.Properties<IStreamedItem>().RemoteHandle;
         }
 
-        public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size)
+        public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size, bool entitySeethrough = false)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, 0), HandleType.LocalHandle);
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, entitySeethrough, 0), HandleType.LocalHandle);
         }
 
         internal string getResourceFilePath(string fileName)
