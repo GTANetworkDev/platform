@@ -382,7 +382,7 @@ namespace GTANetwork
                 File.Copy("bin\\" + path, InstallFolder + "\\" + path, true);
                 OurFiles.Add(InstallFolder + "\\" + path);
             }
-
+            /*
             foreach (var path in Directory.GetFiles("cef"))
             {
                 NoReadonly(InstallFolder + "\\" + Path.GetFileName(path));
@@ -395,6 +395,7 @@ namespace GTANetwork
                 CopyFolder(path, InstallFolder + "\\" + Path.GetFileName(path));
                 OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
             }
+            */
         }
 
         public void MoveStuffIn()

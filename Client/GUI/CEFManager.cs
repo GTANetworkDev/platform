@@ -249,17 +249,17 @@ namespace GTANetwork.GUI
         {
             // A single CefBrowser instance can handle multiple requests
             //   for a single URL if there are frames (i.e. <FRAME>, <IFRAME>).
-            if (frame.IsMain)
+            //if (frame.IsMain)
             {
-                //Console.WriteLine("START: {0}", browser.GetMainFrame().Url);
+                LogManager.SimpleLog("cef", "START: " + browser.GetMainFrame().Url);
             }
         }
 
         protected override void OnLoadEnd(CefBrowser browser, CefFrame frame, int httpStatusCode)
         {
-            if (frame.IsMain)
+            //if (frame.IsMain)
             {
-                //Console.WriteLine("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode);
+                LogManager.SimpleLog("cef", string.Format("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
             }
         }
     }
@@ -312,6 +312,7 @@ namespace GTANetwork.GUI
 
         protected override bool GetScreenPoint(CefBrowser browser, int viewX, int viewY, ref int screenX, ref int screenY)
         {
+            LogManager.SimpleLog("cef", "Enter GetScreenPoint");
             screenX = viewX;
             screenY = viewY;
             return true;
@@ -319,6 +320,7 @@ namespace GTANetwork.GUI
 
         protected override bool GetViewRect(CefBrowser browser, ref CefRectangle rect)
         {
+            LogManager.SimpleLog("cef", "Enter GetViewRect");
             rect.X = 0;
             rect.Y = 0;
             rect.Width = _windowWidth;
@@ -337,14 +339,17 @@ namespace GTANetwork.GUI
 
         protected override void OnPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr buffer, int width, int height)
         {
-            lock (BitmapLock)
+            LogManager.SimpleLog("cef", "Enter OnPaint...");
+            //lock (BitmapLock)
             {
                 LogManager.SimpleLog("cef", "Rendering browser...");
-                if (LastBitmap != null) LastBitmap.Dispose();
+                //if (LastBitmap != null) LastBitmap.Dispose();
                 LogManager.SimpleLog("cef", "Rendered. Saving....");
                 LastBitmap = new Bitmap(width, height, width*4, PixelFormat.Format32bppRgb, buffer);
+                if (CEFManager._box != null)
+                    CEFManager._box.Image = LastBitmap;
                 LogManager.SimpleLog("cef", "Saved!");
-                LastBitmap.Save("LastBitmap.png");
+                //LastBitmap.Save("LastBitmap.png");
                 LogManager.SimpleLog("cef", "Saved again.");
             }
         }
@@ -392,6 +397,7 @@ namespace GTANetwork.GUI
 
         protected override CefRenderHandler GetRenderHandler()
         {
+            LogManager.SimpleLog("cef", "Renderer requested.");
             return _renderHandler;
         }
 
@@ -418,28 +424,81 @@ namespace GTANetwork.GUI
         public static void InitializeCef()
         {
 #if !DISABLE_CEF
-            CefRuntime.Load();
+            //ThreadPool.QueueUserWorkItem((WaitCallback) delegate
+            //{
+                CefRuntime.Load(Main.GTANInstallDir + "\\cef");
 
-            var args = new string[0];
+                var args = new string[0];
 
-            var cefMainArgs = new CefMainArgs(args);
-            var cefApp = new DemoCefApp();
+                var cefMainArgs = new CefMainArgs(args);
+                var cefApp = new DemoCefApp();
+                
+                if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
+                {
+                    LogManager.SimpleLog("cef", "CefRuntime could not execute the secondary process.");
+                }
 
-            if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
+                var cefSettings = new CefSettings()
+                {
+                    SingleProcess = false,
+                    MultiThreadedMessageLoop = true,
+                    WindowlessRenderingEnabled = true,
+                    /*
+                    CachePath = Main.GTANInstallDir + "\\cef",
+                    ResourcesDirPath = Main.GTANInstallDir + "\\cef",
+                    LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales",
+                    BrowserSubprocessPath = Main.GTANInstallDir + "\\cef",
+                    */
+                    NoSandbox = true,
+                };
+
+                CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
+
+
+                var form = new Form();
+
+                _box = new PictureBox();
+                _box.Dock = DockStyle.Fill;
+                form.Controls.Add(_box);
+
+                ThreadPool.QueueUserWorkItem((WaitCallback)delegate
+                {
+                    form.ShowDialog();
+                });
+            /*
+            // Instruct CEF to not render to a window at all.
+            CefWindowInfo cefWindowInfo = CefWindowInfo.Create();
+            cefWindowInfo.SetAsWindowless(IntPtr.Zero, true);
+
+            // Settings for the browser window itself (e.g. should JavaScript be enabled?).
+            var cefBrowserSettings = new CefBrowserSettings()
             {
-                LogManager.SimpleLog("cef", "CefRuntime could not execute the secondary process.");
-            }
-
-            var cefSettings = new CefSettings()
-            {
-                SingleProcess = false,
-                MultiThreadedMessageLoop = true,
-                WindowlessRenderingEnabled = true,
+                JavaScriptCloseWindows = CefState.Disabled,
+                JavaScriptOpenWindows = CefState.Disabled,
             };
 
-            CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
+            // Initialize some the cust interactions with the browser process.
+            // The browser window will be 1280 x 720 (pixels).
+            var cefClient = new DemoCefClient(1280, 720);
+
+            // Start up the browser instance.
+            string url = "http://www.reddit.com/";
+            //var browser = CefBrowserHost.CreateBrowserSync(cefWindowInfo, cefClient, cefBrowserSettings, url);
+            CefBrowserHost.CreateBrowser(cefWindowInfo, cefClient, cefBrowserSettings, url);
+
+            CefBrowser browser = null;
+
+            cefClient.OnCreated += (sender, eventArgs) =>
+            {
+                browser = (CefBrowser)sender;
+                LogManager.SimpleLog("cef", "Ready!");
+            };
+            */
+            //});
 #endif
         }
+
+        public static PictureBox _box;
 
         public static void DisposeCef()
         {
@@ -822,9 +881,7 @@ namespace GTANetwork.GUI
             };
 
             _client = new DemoCefClient(browserSize.Width, browserSize.Height);
-
-            CefBrowserHost.CreateBrowser(cefWindowinfo, _client, browserSettings);
-
+            
             _client.OnCreated += (sender, args) =>
             {
                 _browser = (CefBrowser) sender;
@@ -832,8 +889,11 @@ namespace GTANetwork.GUI
             };
 
             Size = browserSize;
-
             _localMode = localMode;
+            //ThreadPool.QueueUserWorkItem((WaitCallback) delegate
+            //{
+                CefBrowserHost.CreateBrowser(cefWindowinfo, _client, browserSettings);
+            //});
 #endif
         }
         
@@ -841,7 +901,10 @@ namespace GTANetwork.GUI
         {
 #if !DISABLE_CEF
             if (_browser != null)
+            {
+                LogManager.SimpleLog("cef", "Trying to load page " + page + "...");
                 _browser.GetMainFrame().LoadUrl(page);
+            }
 #endif
         }
 
@@ -901,7 +964,10 @@ namespace GTANetwork.GUI
             //Bitmap output = _browser.ScreenshotOrNull();
             //_browser.InvokeRenderAsync(_browser.BitmapFactory.CreateBitmap(false, 1));
             //return output;
-            return _client.GetLastBitmap();
+            Bitmap lbmp = _client.GetLastBitmap();
+
+            LogManager.SimpleLog("cef", "Requesting bitmap. Null? " + (lbmp == null));
+            return lbmp;
 #else
             return null;
 #endif
