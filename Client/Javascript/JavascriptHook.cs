@@ -375,6 +375,8 @@ namespace GTANetwork.Javascript
             scriptEngine.AddHostType("String", typeof(string));
             scriptEngine.AddHostType("Int32", typeof(int));
             scriptEngine.AddHostType("Bool", typeof(bool));
+            scriptEngine.AddHostType("Double", typeof(double));
+            scriptEngine.AddHostType("Float", typeof(float));
             scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
             scriptEngine.AddHostType("Keys", typeof(Keys));
             scriptEngine.AddHostType("Point", typeof(Point));
