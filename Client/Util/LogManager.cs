@@ -17,7 +17,12 @@ namespace GTANetwork.Util
         public static void SimpleLog(string filename, string text)
         {
             CreateLogDirectory();
-            File.AppendAllText(LogDirectory + "\\" + filename + ".log", text + "\r\n");
+            try
+            {
+                lock (errorLogLock)
+                    File.AppendAllText(LogDirectory + "\\" + filename + ".log", text + "\r\n");
+            }
+            catch{}
         }
 
         public static void DebugLog(string text)

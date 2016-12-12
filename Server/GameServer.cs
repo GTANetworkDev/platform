@@ -257,7 +257,9 @@ namespace GTANetworkServer
 
         public void AnnounceSelfToMaster()
         {
-            Program.Output("Announcing self to master server...");
+            if (LogLevel > 0)
+                Program.Output("Announcing self to master server...");
+
             var annThread = new Thread((ThreadStart) delegate
             {
                 using (var wb = new WebClient())
