@@ -1810,17 +1810,16 @@ namespace GTANetwork.Networking
             //var playerHealth = BitConverter.GetBytes(Game.Player.Character.Health);
             //var playerArmor = BitConverter.GetBytes(Game.Player.Character.Armor);
 
-
             if (!IsInCover)
 	        {
                 Character.Task.ClearSecondary();
 
-	            if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
+	            if (animDict != null && Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
 	            {
 	                Character.Task.ClearAnimation(animDict, ourAnim);
 	            }
 	        }
-	        else
+	        else if (animDict != null)
 	        {
                 Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,
                     8f, 10f, -1, 2, -8f, 1, 1, 1);
@@ -1933,7 +1932,7 @@ namespace GTANetwork.Networking
 
 			DEBUG_STEP = 34;
 
-			if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
+			if (animDict != null && !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
 					3))
 			{
 			    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,

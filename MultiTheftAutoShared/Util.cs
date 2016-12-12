@@ -144,9 +144,9 @@ namespace GTANetworkShared
             return CreateComparableInteger().CompareTo(right.CreateComparableInteger());
         }
 
-        public long CreateComparableInteger()
+        public ulong CreateComparableInteger()
         {
-            return (long)((Revision) + (Build * Math.Pow(10, 4)) + (Minor * Math.Pow(10, 8)) + (Major * Math.Pow(10, 12)));
+            return (ulong)((Revision) + (Build * Math.Pow(10, 4)) + (Minor * Math.Pow(10, 8)) + (Major * Math.Pow(10, 12)));
         }
 
         public static bool operator >(ParseableVersion left, ParseableVersion right)

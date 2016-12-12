@@ -2429,6 +2429,7 @@ namespace GTANetwork
                 Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
+                Game.DisableControlThisFrame(0, Control.MeleeAttack1);
 
                 Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
 
