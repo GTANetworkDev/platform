@@ -1710,19 +1710,16 @@ namespace GTANetworkServer
 
         public bool setLocalEntityData(NetHandle entity, string key, object value)
         {
-            if (doesEntityExist(entity))
+            lock (Program.ServerInstance.EntityProperties)
             {
-                lock (Program.ServerInstance.EntityProperties)
+                if (Program.ServerInstance.EntityProperties.ContainsKey(entity))
                 {
-                    if (Program.ServerInstance.EntityProperties.ContainsKey(entity))
-                    {
-                        Program.ServerInstance.EntityProperties[entity].Set(key, value);
-                    }
-                    else
-                    {
-                        Program.ServerInstance.EntityProperties.Add(entity, new Dictionary<string, object>());
-                        Program.ServerInstance.EntityProperties[entity].Set(key, value);
-                    }
+                    Program.ServerInstance.EntityProperties[entity].Set(key, value);
+                }
+                else
+                {
+                    Program.ServerInstance.EntityProperties.Add(entity, new Dictionary<string, object>());
+                    Program.ServerInstance.EntityProperties[entity].Set(key, value);
                 }
             }
             return false;
@@ -1730,14 +1727,11 @@ namespace GTANetworkServer
 
         public dynamic getLocalEntityData(NetHandle entity, string key)
         {
-            if (doesEntityExist(entity))
+            lock (Program.ServerInstance.EntityProperties)
             {
-                lock (Program.ServerInstance.EntityProperties)
+                if (Program.ServerInstance.EntityProperties.ContainsKey(entity))
                 {
-                    if (Program.ServerInstance.EntityProperties.ContainsKey(entity))
-                    {
-                        return Program.ServerInstance.EntityProperties[entity].Get(key);
-                    }
+                    return Program.ServerInstance.EntityProperties[entity].Get(key);
                 }
             }
             return null;
@@ -1745,30 +1739,25 @@ namespace GTANetworkServer
 
         public void resetLocalEntityData(NetHandle entity, string key)
         {
-            if (doesEntityExist(entity))
+            lock (Program.ServerInstance.EntityProperties)
             {
-                lock (Program.ServerInstance.EntityProperties)
+                if (Program.ServerInstance.EntityProperties.ContainsKey(entity) && Program.ServerInstance.EntityProperties[entity].ContainsKey(key))
                 {
-                    if (Program.ServerInstance.EntityProperties.ContainsKey(entity) && Program.ServerInstance.EntityProperties[entity].ContainsKey(key))
-                    {
-                        Program.ServerInstance.EntityProperties[entity].Remove(key);
-                    }
+                    Program.ServerInstance.EntityProperties[entity].Remove(key);
                 }
             }
         }
 
         public bool hasLocalEntityData(NetHandle entity, string key)
         {
-            if (doesEntityExist(entity))
+            lock (Program.ServerInstance.EntityProperties)
             {
-                lock (Program.ServerInstance.EntityProperties)
+                if (Program.ServerInstance.EntityProperties.ContainsKey(entity))
                 {
-                    if (Program.ServerInstance.EntityProperties.ContainsKey(entity))
-                    {
-                        return Program.ServerInstance.EntityProperties[entity].ContainsKey(key);
-                    }
+                    return Program.ServerInstance.EntityProperties[entity].ContainsKey(key);
                 }
             }
+
             return false;
         }
 
@@ -4004,6 +3993,8 @@ namespace GTANetworkServer
         private void deleteEntityInternal(NetHandle netHandle)
         {
             Program.ServerInstance.NetEntityHandler.DeleteEntity(netHandle.Value);
+            if (Program.ServerInstance.EntityProperties.ContainsKey(netHandle))
+                Program.ServerInstance.EntityProperties.Remove(netHandle);
         }
 
         public void deleteEntity(NetHandle netHandle)
