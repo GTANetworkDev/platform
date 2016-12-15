@@ -388,6 +388,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x768 : 0x758;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 MemoryAccess.WriteFloat(MemoryAddress + offset, value);
 			}
@@ -457,6 +458,7 @@ namespace GTA
 				//old game version hasnt been tested, just following the patterns above for old game ver
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x9A4 : 0x994;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
@@ -487,6 +489,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 2004 : 1988;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+			    if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
@@ -499,6 +502,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 2004 : 1988;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 MemoryAccess.WriteFloat(MemoryAddress + offset, value);
 			}
@@ -515,6 +519,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7A6 : 0x796;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return (int)MemoryAccess.ReadByte(MemoryAddress + offset);
 			}
@@ -532,6 +537,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7A6 : 0x796;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 MemoryAccess.WriteByte(MemoryAddress + offset, (byte)value);
 			}
@@ -547,6 +553,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7A0 : 0x790;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return (int)MemoryAccess.ReadByte(MemoryAddress + offset);
 			}
@@ -563,6 +570,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8AC : 0x89C;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return (float)(MemoryAccess.ReadFloat(MemoryAddress + offset) * (180.0 / System.Math.PI));
 			}
@@ -575,6 +583,7 @@ namespace GTA
 
                 int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8AC : 0x89C;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 MemoryAccess.WriteFloat(MemoryAddress + offset, value);
 		    }
@@ -590,6 +599,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8A4 : 0x894;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
@@ -602,6 +612,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8A4 : 0x894;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 MemoryAccess.WriteFloat(MemoryAddress + offset, value);
 			}
@@ -676,6 +687,7 @@ namespace GTA
 				//Unsure of the exact version this switched, but all others in the rangs are the same
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x84C : 0x83C;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
 
                 return MemoryAccess.IsBitSet(MemoryAddress + offset, 3);
@@ -698,6 +710,7 @@ namespace GTA
 				//Unsure of the exact version this switched, but all others in the rangs are the same
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x83C : 0x82C;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return MemoryAccess.IsBitSet(MemoryAddress + offset, 2);
 			}
@@ -720,6 +733,7 @@ namespace GTA
 				//as its shifted by 0x20 bytes where as rest are only 0x10 bytes
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0xA98 : 0xA78;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 if (MemoryAccess.ReadInt(memoryAddress + offset) <= 8)
 				{
@@ -744,6 +758,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x844 : 0x834;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return MemoryAccess.IsBitSet(MemoryAddress + offset, 1);
 			}
@@ -764,6 +779,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x844 : 0x834;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return MemoryAccess.IsBitSet(MemoryAddress + offset, 2);
 			}
@@ -814,6 +830,7 @@ namespace GTA
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x841 : 0x831;
                 if (Game.Version > (GameVersion)25) offset += 0x20;
+                if (Game.Version > (GameVersion)27) offset += 0x20;
 
                 return MemoryAccess.IsBitSet(MemoryAddress + offset, 6);
 			}
@@ -928,6 +945,7 @@ namespace GTA
 
 				IntPtr address = MemoryAddress + 1916;
                 if (Game.Version > (GameVersion)25) address += 0x20;
+                if (Game.Version > (GameVersion)27) address += 0x20;
 
 
                 if (value)
@@ -955,6 +973,7 @@ namespace GTA
 
 				IntPtr address = MemoryAddress + 1916;
                 if (Game.Version > (GameVersion)25) address += 0x20;
+                if (Game.Version > (GameVersion)27) address += 0x20;
 
 
                 if (value)

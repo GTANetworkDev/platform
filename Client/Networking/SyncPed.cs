@@ -752,7 +752,7 @@ namespace GTANetwork.Networking
 			DEBUG_STEP = 17;
 			//MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
 			//MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
-
+            /*
 			if (VehicleMods != null && _modSwitch % 50 == 0 &&
 				Game.Player.Character.IsInRangeOfEx(Position, 30f))
 			{
@@ -766,10 +766,10 @@ namespace GTANetwork.Networking
 				}
 			}
 			_modSwitch++;
-
+            
 			if (_modSwitch >= 2500)
 				_modSwitch = 0;
-
+                */
 	        Function.Call(Hash.USE_SIREN_AS_HORN, MainVehicle, Siren); // No difference?
 
 			if (IsHornPressed && !_lastHorn)

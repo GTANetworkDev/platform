@@ -383,7 +383,7 @@ namespace GTANetwork
         {
             bool legit = true;
             
-            legit = legit && (Game.Version > (GameVersion)25);
+            legit = legit && (Game.Version > (GameVersion)27);
 
             GTANetworkShared.VehicleHash[] dlcCars = new GTANetworkShared.VehicleHash[]
             {

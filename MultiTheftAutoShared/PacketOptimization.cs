@@ -169,9 +169,9 @@ namespace GTANetworkShared
                 // Write engine stuff
                 byte rpm = (byte) (data.RPM.Value*byte.MaxValue);
 
-                float angle = Extensions.Clamp(data.Steering.Value, -45f, 45f);
-                angle += 45f;
-                byte angleCrammed = (byte) ((angle/90f)*byte.MaxValue);
+                float angle = Extensions.Clamp(data.Steering.Value, -60f, 60f);
+                angle += 60f;
+                byte angleCrammed = (byte) ((angle/120f)*byte.MaxValue);
 
                 byteArray.Add(rpm);
                 byteArray.Add(angleCrammed);
@@ -523,8 +523,8 @@ namespace GTANetworkShared
                 data.RPM = rpmCompressed/(float) byte.MaxValue;
 
                 byte angleCompressed = r.ReadByte();
-                var angleDenorm = 90f*(angleCompressed/(float) byte.MaxValue);
-                data.Steering = angleDenorm - 45f;
+                var angleDenorm = 120f*(angleCompressed/(float) byte.MaxValue);
+                data.Steering = angleDenorm - 60f;
             }
 
             return data;

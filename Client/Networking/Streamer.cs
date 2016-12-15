@@ -2210,6 +2210,9 @@ namespace GTANetwork.Networking
             LogManager.DebugLog("POSITION: " + data.Position?.ToVector());
 
             var veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
+            data.LocalHandle = veh.Handle;
+
+            
             Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, veh, true);
             Function.Call(Hash.TRACK_VEHICLE_VISIBILITY, veh);
             Function.Call(Hash.SET_SIREN_WITH_NO_DRIVER, veh, true);
@@ -2224,7 +2227,6 @@ namespace GTANetwork.Networking
             }
 
             veh.Rotation = data.Rotation.ToVector();
-            data.LocalHandle = veh.Handle;
             veh.Mods.Livery = data.Livery;
 
             LogManager.DebugLog("LOCAL HANDLE: " + veh.Handle);
@@ -2388,6 +2390,7 @@ namespace GTANetwork.Networking
             {
                 veh.LockStatus = VehicleLockStatus.Locked;
             }
+            
 
             LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;
