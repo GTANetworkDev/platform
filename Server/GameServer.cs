@@ -968,7 +968,7 @@ namespace GTANetworkServer
             }
             foreach (var type in validTypes)
             {
-                var obj = Activator.CreateInstance(type, BindingFlags.NonPublic) as Script;
+                var obj = Activator.CreateInstance(type) as Script;
                 if (obj != null)
                     yield return obj;
             }
