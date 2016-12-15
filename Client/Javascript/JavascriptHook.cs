@@ -2381,35 +2381,25 @@ namespace GTANetwork.Javascript
 
             pl.Accessories.Remove((byte) slot);
         }
-
+        
         public int vehicleNameToModel(string modelName)
         {
-            int model = 0;
-
-            if (VehicleHash.TryParse(modelName, out model))
-                return model;
-
-            return 0;
+            return (from object value in Enum.GetValues(typeof(VehicleHash)) where modelName.ToLower() == ((VehicleHash)value).ToString().ToLower() select ((int)(VehicleHash)value)).FirstOrDefault();
         }
 
         public int pedNameToModel(string modelName)
         {
-            int model = 0;
-
-            if (PedHash.TryParse(modelName, out model))
-                return model;
-
-            return 0;
+            return (from object value in Enum.GetValues(typeof(PedHash)) where modelName.ToLower() == ((PedHash)value).ToString().ToLower() select ((int)(PedHash)value)).FirstOrDefault();
         }
-        
+
+        public int pickupNameToModel(string modelName)
+        {
+            return (from object value in Enum.GetValues(typeof(PickupHash)) where modelName.ToLower() == ((PickupHash)value).ToString().ToLower() select ((int)(PickupHash)value)).FirstOrDefault();
+        }
+
         public int weaponNameToModel(string modelName)
         {
-            int model = 0;
-
-            if (WeaponHash.TryParse(modelName, out model))
-                return model;
-
-            return 0;
+            return (from object value in Enum.GetValues(typeof(WeaponHash)) where modelName.ToLower() == ((WeaponHash)value).ToString().ToLower() select ((int)(WeaponHash)value)).FirstOrDefault();
         }
 
         public void loadInterior(Vector3 pos)

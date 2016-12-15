@@ -956,7 +956,8 @@ namespace GTANetworkServer
         
         private IEnumerable<Script> InstantiateScripts(Assembly targetAssembly)
         {
-            var types = targetAssembly.GetExportedTypes();
+            //var types = targetAssembly.GetExportedTypes();
+            var types = targetAssembly.GetTypes();
             var validTypes = types.Where(t =>
                 !t.IsInterface &&
                 !t.IsAbstract)
@@ -967,7 +968,7 @@ namespace GTANetworkServer
             }
             foreach (var type in validTypes)
             {
-                var obj = Activator.CreateInstance(type) as Script;
+                var obj = Activator.CreateInstance(type, BindingFlags.NonPublic) as Script;
                 if (obj != null)
                     yield return obj;
             }
@@ -996,7 +997,7 @@ namespace GTANetworkServer
                     compParams.ReferencedAssemblies.Add(AssemblyReferences[s]);
                 else compParams.ReferencedAssemblies.Add(s);
             }
-
+            
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
             
