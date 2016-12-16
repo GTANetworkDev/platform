@@ -1375,7 +1375,7 @@ namespace GTANetwork.Javascript
             }
             else
             {
-                return handleToSyncPed(player).IsAiming;
+                return findPlayer(player).IsAiming;
             }
         }
 
@@ -1387,7 +1387,7 @@ namespace GTANetwork.Javascript
             }
             else
             {
-                return handleToSyncPed(player).IsShooting;
+                return findPlayer(player).IsShooting;
             }
         }
 
@@ -1399,7 +1399,7 @@ namespace GTANetwork.Javascript
             }
             else
             {
-                return handleToSyncPed(player).IsReloading;
+                return findPlayer(player).IsReloading;
             }
         }
 
@@ -1411,7 +1411,7 @@ namespace GTANetwork.Javascript
             }
             else
             {
-                return handleToSyncPed(player).IsInCover;
+                return findPlayer(player).IsInCover;
             }
         }
 
@@ -1423,7 +1423,7 @@ namespace GTANetwork.Javascript
             }
             else
             {
-                return handleToSyncPed(player).IsOnLadder;
+                return findPlayer(player).IsOnLadder;
             }
         }
 
@@ -1435,7 +1435,7 @@ namespace GTANetwork.Javascript
             }
             else
             {
-                return handleToSyncPed(player).AimCoords.ToLVector();
+                return findPlayer(player).AimCoords.ToLVector();
             }
         }
 
@@ -1447,7 +1447,7 @@ namespace GTANetwork.Javascript
             }
             else
             {
-                return handleToSyncPed(player).IsPlayerDead;
+                return findPlayer(player).IsPlayerDead;
             }
         }
 
@@ -2761,7 +2761,7 @@ namespace GTANetwork.Javascript
         {
             if (player.Value == Game.Player.Character.Handle)
                 return Game.Player.Character.Health;
-            else return handleToSyncPed(player).PedHealth;
+            else return findPlayer(player).PedHealth;
         }
 
         public void setTextLabelText(LocalHandle label, string text)
@@ -2923,7 +2923,7 @@ namespace GTANetwork.Javascript
         {
             if (player.Value == Game.Player.Character.Handle)
                 return Game.Player.Character.Armor;
-            else return handleToSyncPed(player).PedArmor;
+            else return findPlayer(player).PedArmor;
         }
 
         public LocalHandle[] getStreamedPlayers()
@@ -2973,7 +2973,7 @@ namespace GTANetwork.Javascript
         public LocalHandle[] getAllPlayers()
         {
             return Main.NetEntityHandler.ClientMap.Values.Where(item => item is SyncPed).Cast<SyncPed>()
-                .Select(op => new LocalHandle(op.Character?.Handle ?? 0)).ToArray();
+                .Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllVehicles()
@@ -3026,11 +3026,27 @@ namespace GTANetwork.Javascript
             new Vehicle(vehicle.Value).Explode();
         }
 
+        private SyncPed findPlayer(LocalHandle player)
+        {
+            lock (Main.NetEntityHandler.ClientMap)
+                foreach (var p in Main.NetEntityHandler.ClientMap.Values.Where(op => op is SyncPed).Cast<SyncPed>())
+                {
+                    if (player.HandleType == HandleType.GameHandle &&
+                        p.Character != null && p.Character.Handle == player.Value)
+                        return p;
+                    else if (player.HandleType == HandleType.NetHandle &&
+                             p.RemoteHandle == player.Value)
+                        return p;
+                }
+
+            return null;
+        }
+
         public LocalHandle getPlayerByName(string name)
         {
             var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed) op).Name == name) as SyncPed;
             if (opp != null && opp.Character != null)
-                return new LocalHandle(opp.Character.Handle);
+                return new LocalHandle(opp.RemoteHandle, HandleType.NetHandle);
             return new LocalHandle(0);
         }
 
@@ -3044,7 +3060,7 @@ namespace GTANetwork.Javascript
                             op => op is RemotePlayer && ((RemotePlayer) op).LocalHandle == -2)).Name;
             }
 
-            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = findPlayer(player);
             if (opp != null)
                 return opp.Name;
             return null;
@@ -3064,22 +3080,18 @@ namespace GTANetwork.Javascript
         {
             if (player == getLocalPlayer()) return Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
 
-            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = findPlayer(player);
             if (opp != null)
                 return opp.AimCoords.ToLVector();
             return new Vector3();
         }
-
-        private SyncPed handleToSyncPed(LocalHandle handle)
-        {
-            return Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == handle.Value) as SyncPed;
-        }
+        
 
         public int getPlayerPing(LocalHandle player)
         {
             if (player == getLocalPlayer()) return (int)(Main.Latency*1000f);
 
-            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = findPlayer(player);
             if (opp != null)
                 return (int)(opp.Latency * 1000f);
             return 0;
@@ -3297,7 +3309,7 @@ namespace GTANetwork.Javascript
 
         public void requestControlOfPlayer(LocalHandle player)
         {
-            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = findPlayer(player);
             if (opp != null)
             {
                 opp.IsBeingControlledByScript = true;
@@ -3306,7 +3318,7 @@ namespace GTANetwork.Javascript
 
         public void stopControlOfPlayer(LocalHandle player)
         {
-            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Character.Handle == player.Value) as SyncPed;
+            var opp = findPlayer(player);
             if (opp != null)
             {
                 opp.IsBeingControlledByScript = false;

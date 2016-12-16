@@ -517,7 +517,7 @@ namespace GTA
 
 			_executingScript = script;
 
-			while ((script->_running = SignalAndWait(script->_continueEvent, script->_waitEvent, 5000)) && _taskQueue->Count > 0)
+			while ((script->_running = SignalAndWait(script->_continueEvent, script->_waitEvent, 30000)) && _taskQueue->Count > 0)
 			{
 				_taskQueue->Dequeue()->Run();
 			}

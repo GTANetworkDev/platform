@@ -2210,24 +2210,26 @@ namespace GTANetwork.Networking
             LogManager.DebugLog("POSITION: " + data.Position?.ToVector());
 
             var veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
-            data.LocalHandle = veh.Handle;
 
+            LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null) + " EXISTS? " + (veh?.Exists()));
+
+            if (veh == null || !veh.Exists())
+            {
+                LogManager.LogException(
+                    new Exception("Vehicle was null or didnt spawn, model=" + model.Hash + ", loaded=" + model.IsLoaded +
+                                  ", vehicleHandle=" + (veh?.Handle)), "StreamInVehicle");
+                data.StreamedIn = false;
+                return;
+            }
             
+            data.LocalHandle = veh.Handle;
+            veh.Rotation = data.Rotation.ToVector();
+            veh.Mods.Livery = data.Livery;
+
             Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, veh, true);
             Function.Call(Hash.TRACK_VEHICLE_VISIBILITY, veh);
             Function.Call(Hash.SET_SIREN_WITH_NO_DRIVER, veh, true);
             Function.Call((Hash)0x068F64F2470F9656, false);
-            LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null));
-
-            if (veh == null || !veh.Exists())
-            {
-                LogManager.LogException(new Exception("Vehicle was null, model=" + model.Hash), "StreamInVehicle");
-                data.StreamedIn = false;
-                return;
-            }
-
-            veh.Rotation = data.Rotation.ToVector();
-            veh.Mods.Livery = data.Livery;
 
             LogManager.DebugLog("LOCAL HANDLE: " + veh.Handle);
             LogManager.DebugLog("POS: " + veh.Position);

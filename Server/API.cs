@@ -3648,7 +3648,7 @@ namespace GTANetworkServer
             Program.ServerInstance.SendNativeCallToPlayer(player, 0xF020C96915705B3A, false, true);
         }
         
-        public  void sendPictureNotificationToAll(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
+        public  void sendPictureNotificationToAll(string body, string pic, int flash, int iconType, string sender, string subject)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
             Program.ServerInstance.SendNativeCallToAllPlayers(0x6C188BE134E074AA, body);
