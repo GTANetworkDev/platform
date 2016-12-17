@@ -383,7 +383,7 @@ namespace GTANetwork
         {
             bool legit = true;
             
-            legit = legit && (Game.Version > (GameVersion)27);
+            legit = legit && (Game.Version >= (GameVersion)27);
 
             GTANetworkShared.VehicleHash[] dlcCars = new GTANetworkShared.VehicleHash[]
             {
@@ -2373,7 +2373,7 @@ namespace GTANetwork
 
                     if (!VerifyGameIntegrity())
                     {
-                        _mainWarning = new Warning("alert", "Could not verify game ownership.\nPlease restart your game, or purchase Grand Theft Auto V.");
+                        _mainWarning = new Warning("alert", "Could not verify game integrity.\nPlease restart your game, or update Grand Theft Auto V.");
                         _mainWarning.OnAccept = () =>
                         {
                             if (Client != null && IsOnServer()) Client.Disconnect("Quit");
@@ -5320,7 +5320,6 @@ namespace GTANetwork
                 }
 
                 CEFManager.Browsers.Clear();
-		        CefUtil._cachedReferences.Clear();
 		    }
 
             ClearStats();
