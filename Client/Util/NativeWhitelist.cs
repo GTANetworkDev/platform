@@ -28,7 +28,7 @@ namespace GTANetwork.Util
 
         public static bool IsAllowed(ulong native)
         {
-            return Array.BinarySearch(_list, native) != -1;
+            return Array.BinarySearch(_list, native) >= 0;
         }
     }
 }
