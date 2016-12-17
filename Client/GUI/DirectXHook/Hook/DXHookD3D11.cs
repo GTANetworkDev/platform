@@ -235,11 +235,27 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             if (OverlayEngine.Overlays.Count == 0)
                 OverlayEngine.Overlays.Add(new Overlay());
 
-            if (this.OverlayEngine.Overlays[0].Elements.Count <= 1)
+            if (this.OverlayEngine.Overlays[0].Elements.Count == 1)
                 OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(new Bitmap(Width, Height))
                 {
                     Location = new System.Drawing.Point(0, 0)
                 });
+            else if (OverlayEngine.Overlays[0].Elements.Count == 0)
+            {
+                OverlayEngine.Overlays[0].Elements.Add(
+                    new Common.TextElement(new System.Drawing.Font("Times New Roman", 22))
+                    {
+                        Text = "*",
+                        Location = new System.Drawing.Point(0, 0),
+                        Color = System.Drawing.Color.Red,
+                        AntiAliased = false
+                    });
+
+                OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(new Bitmap(Width, Height))
+                {
+                    Location = new System.Drawing.Point(0, 0)
+                });
+            }
 
             ((ImageElement) this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = null;
             ((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = bt;

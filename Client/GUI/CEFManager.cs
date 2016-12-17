@@ -1,5 +1,5 @@
-﻿#define DISABLE_HOOK
-#define DISABLE_CEF
+﻿//#define DISABLE_HOOK
+//#define DISABLE_CEF
 
 #if true
 using System;
@@ -61,7 +61,7 @@ namespace GTANetwork.GUI
 
             return mod;
         }
-        /*
+        
         public CefController()
         {
             Tick += (sender, args) =>
@@ -106,8 +106,10 @@ namespace GTANetwork.GUI
 
                     if (!browser._hasFocused)
                     {
-                        browser._browser.GetBrowser().GetHost().SetFocus(true);
-                        browser._browser.GetBrowser().GetHost().SendFocusEvent(true);
+                        browser._browser.GetHost().SetFocus(true);
+
+                        browser._browser.GetHost().SetFocus(true);
+                        browser._browser.GetHost().SendFocusEvent(true);
                         browser._hasFocused = true;
                     }
 
@@ -115,46 +117,42 @@ namespace GTANetwork.GUI
                         mouseX < browser.Position.X + browser.Size.Width &&
                         mouseY < browser.Position.Y + browser.Size.Height)
                     {
-                        browser._browser.GetBrowser()
+                        var ev = new CefMouseEvent((int)(mouseX - browser.Position.X), (int)(mouseY - browser.Position.Y),
+                                GetMouseModifiers(mouseDownRN, rmouseDownRN));
+
+                        browser._browser
                             .GetHost()
-                            .SendMouseMoveEvent((int)(mouseX - browser.Position.X), (int)(mouseY - browser.Position.Y),
-                                false, GetMouseModifiers(mouseDownRN, rmouseDownRN));
+                            .SendMouseMoveEvent(ev, false);
 
                         if (mouseDown)
-                            browser._browser.GetBrowser()
+                            browser._browser
                                 .GetHost()
-                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, false, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
+                                .SendMouseClickEvent(ev, CefMouseButtonType.Left, false, 1);
 
                         if (mouseUp)
-                            browser._browser.GetBrowser()
+                            browser._browser
                                 .GetHost()
-                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Left, true, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
+                                .SendMouseClickEvent(ev, CefMouseButtonType.Left, true, 1);
 
                         if (rmouseDown)
-                            browser._browser.GetBrowser()
+                            browser._browser
                                 .GetHost()
-                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, false, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
+                                .SendMouseClickEvent(ev, CefMouseButtonType.Right, false, 1);
 
                         if (rmouseUp)
-                            browser._browser.GetBrowser()
+                            browser._browser
                                 .GetHost()
-                                .SendMouseClickEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), MouseButtonType.Right, true, 1, GetMouseModifiers(mouseDownRN, rmouseDownRN));
+                                .SendMouseClickEvent(ev, CefMouseButtonType.Right, true, 1);
 
                         if (wdmouseDown)
-                            browser._browser.GetBrowser()
+                            browser._browser
                                 .GetHost()
-                                .SendMouseWheelEvent((int) (mouseX - browser.Position.X),
-                                    (int) (mouseY - browser.Position.Y), 0, -30, GetMouseModifiers(mouseDownRN, rmouseDownRN));
+                                .SendMouseWheelEvent(ev, 0, -30);
 
                         if (wumouseDown)
-                            browser._browser.GetBrowser()
+                            browser._browser
                                 .GetHost()
-                                .SendMouseWheelEvent((int)(mouseX - browser.Position.X),
-                                    (int)(mouseY - browser.Position.Y), 0, 30, GetMouseModifiers(mouseDownRN, rmouseDownRN));
+                                .SendMouseWheelEvent(ev, 0, 30);
                     }
                 }
 
@@ -182,15 +180,15 @@ namespace GTANetwork.GUI
                     if (args.Shift) mod |= CefEventFlags.ShiftDown;
                     if (args.Alt) mod |= CefEventFlags.AltDown;
                     
-                    KeyEvent kEvent = new KeyEvent();
-                    kEvent.Type = KeyEventType.KeyDown;
+                    CefKeyEvent kEvent = new CefKeyEvent();
+                    kEvent.EventType = CefKeyEventType.KeyDown;
                     kEvent.Modifiers = mod;
                     kEvent.WindowsKeyCode = (int) args.KeyCode;
                     kEvent.NativeKeyCode = (int)args.KeyValue;
-                    browser._browser.GetBrowser().GetHost().SendKeyEvent(kEvent);
+                    browser._browser.GetHost().SendKeyEvent(kEvent);
 
-                    KeyEvent charEvent = new KeyEvent();
-                    charEvent.Type = KeyEventType.Char;
+                    CefKeyEvent charEvent = new CefKeyEvent();
+                    charEvent.EventType = CefKeyEventType.Char;
                     
                     var key = args.KeyCode;
 
@@ -214,7 +212,7 @@ namespace GTANetwork.GUI
                     
                     charEvent.WindowsKeyCode = keyChar[0];
                     charEvent.Modifiers = mod;
-                    browser._browser.GetBrowser().GetHost().SendKeyEvent(charEvent);
+                    browser._browser.GetHost().SendKeyEvent(charEvent);
                 }
 
 #endif
@@ -228,15 +226,15 @@ namespace GTANetwork.GUI
                 {
                     if (!browser.IsInitialized()) continue;
 
-                    KeyEvent kEvent = new KeyEvent();
-                    kEvent.Type = KeyEventType.KeyUp;
+                    CefKeyEvent kEvent = new CefKeyEvent();
+                    kEvent.EventType = CefKeyEventType.KeyUp;
                     kEvent.WindowsKeyCode = (int)args.KeyCode;
-                    browser._browser.GetBrowser().GetHost().SendKeyEvent(kEvent);
+                    browser._browser.GetHost().SendKeyEvent(kEvent);
                 }
                 #endif
             };
         }
-        */
+        
     }
 
     internal class DemoCefApp : CefApp
@@ -251,7 +249,7 @@ namespace GTANetwork.GUI
             //   for a single URL if there are frames (i.e. <FRAME>, <IFRAME>).
             //if (frame.IsMain)
             {
-                LogManager.SimpleLog("cef", "START: " + browser.GetMainFrame().Url);
+                LogManager.AlwaysDebugLog("START: " + browser.GetMainFrame().Url);
             }
         }
 
@@ -259,7 +257,7 @@ namespace GTANetwork.GUI
         {
             //if (frame.IsMain)
             {
-                LogManager.SimpleLog("cef", string.Format("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
+                LogManager.AlwaysDebugLog(string.Format("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
             }
         }
     }
@@ -286,7 +284,7 @@ namespace GTANetwork.GUI
         private int _windowWidth;
 
         public Bitmap LastBitmap;
-        public readonly object BitmapLock = new object();
+        //public readonly object BitmapLock = new object();
 
         public DemoCefRenderHandler(int windowWidth, int windowHeight)
         {
@@ -312,7 +310,6 @@ namespace GTANetwork.GUI
 
         protected override bool GetScreenPoint(CefBrowser browser, int viewX, int viewY, ref int screenX, ref int screenY)
         {
-            LogManager.SimpleLog("cef", "Enter GetScreenPoint");
             screenX = viewX;
             screenY = viewY;
             return true;
@@ -320,7 +317,6 @@ namespace GTANetwork.GUI
 
         protected override bool GetViewRect(CefBrowser browser, ref CefRectangle rect)
         {
-            LogManager.SimpleLog("cef", "Enter GetViewRect");
             rect.X = 0;
             rect.Y = 0;
             rect.Width = _windowWidth;
@@ -339,19 +335,10 @@ namespace GTANetwork.GUI
 
         protected override void OnPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr buffer, int width, int height)
         {
-            LogManager.SimpleLog("cef", "Enter OnPaint...");
-            //lock (BitmapLock)
-            {
-                LogManager.SimpleLog("cef", "Rendering browser...");
-                //if (LastBitmap != null) LastBitmap.Dispose();
-                LogManager.SimpleLog("cef", "Rendered. Saving....");
-                LastBitmap = new Bitmap(width, height, width*4, PixelFormat.Format32bppRgb, buffer);
-                if (CEFManager._box != null)
-                    CEFManager._box.Image = LastBitmap;
-                LogManager.SimpleLog("cef", "Saved!");
-                //LastBitmap.Save("LastBitmap.png");
-                LogManager.SimpleLog("cef", "Saved again.");
-            }
+            var oldBitmap = LastBitmap;
+            var newBitmap = new Bitmap(width, height, width * 4, PixelFormat.Format32bppRgb, buffer);
+            LastBitmap = newBitmap;
+            if (oldBitmap != null) oldBitmap.Dispose();
         }
 
         protected override void OnScrollOffsetChanged(CefBrowser browser)
@@ -381,10 +368,7 @@ namespace GTANetwork.GUI
 
         public Bitmap GetLastBitmap()
         {
-            lock (_renderHandler.BitmapLock)
-            {
-                return _renderHandler.LastBitmap;
-            }
+            return _renderHandler.LastBitmap;
         }
 
         public void Created(CefBrowser bs)
@@ -397,7 +381,7 @@ namespace GTANetwork.GUI
 
         protected override CefRenderHandler GetRenderHandler()
         {
-            LogManager.SimpleLog("cef", "Renderer requested.");
+            LogManager.AlwaysDebugLog("Renderer requested.");
             return _renderHandler;
         }
 
@@ -433,72 +417,28 @@ namespace GTANetwork.GUI
                 var cefMainArgs = new CefMainArgs(args);
                 var cefApp = new DemoCefApp();
                 
-                if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
+                if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp) != -1)
                 {
-                    LogManager.SimpleLog("cef", "CefRuntime could not execute the secondary process.");
+                    LogManager.AlwaysDebugLog("CefRuntime could not execute the secondary process.");
                 }
 
                 var cefSettings = new CefSettings()
                 {
-                    SingleProcess = false,
+                    SingleProcess = true,
                     MultiThreadedMessageLoop = true,
                     WindowlessRenderingEnabled = true,
-                    /*
+                    
                     CachePath = Main.GTANInstallDir + "\\cef",
                     ResourcesDirPath = Main.GTANInstallDir + "\\cef",
                     LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales",
                     BrowserSubprocessPath = Main.GTANInstallDir + "\\cef",
-                    */
+                    
                     NoSandbox = true,
                 };
 
-                CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
-
-
-                var form = new Form();
-
-                _box = new PictureBox();
-                _box.Dock = DockStyle.Fill;
-                form.Controls.Add(_box);
-
-                ThreadPool.QueueUserWorkItem((WaitCallback)delegate
-                {
-                    form.ShowDialog();
-                });
-            /*
-            // Instruct CEF to not render to a window at all.
-            CefWindowInfo cefWindowInfo = CefWindowInfo.Create();
-            cefWindowInfo.SetAsWindowless(IntPtr.Zero, true);
-
-            // Settings for the browser window itself (e.g. should JavaScript be enabled?).
-            var cefBrowserSettings = new CefBrowserSettings()
-            {
-                JavaScriptCloseWindows = CefState.Disabled,
-                JavaScriptOpenWindows = CefState.Disabled,
-            };
-
-            // Initialize some the cust interactions with the browser process.
-            // The browser window will be 1280 x 720 (pixels).
-            var cefClient = new DemoCefClient(1280, 720);
-
-            // Start up the browser instance.
-            string url = "http://www.reddit.com/";
-            //var browser = CefBrowserHost.CreateBrowserSync(cefWindowInfo, cefClient, cefBrowserSettings, url);
-            CefBrowserHost.CreateBrowser(cefWindowInfo, cefClient, cefBrowserSettings, url);
-
-            CefBrowser browser = null;
-
-            cefClient.OnCreated += (sender, eventArgs) =>
-            {
-                browser = (CefBrowser)sender;
-                LogManager.SimpleLog("cef", "Ready!");
-            };
-            */
-            //});
+                CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp);
 #endif
         }
-
-        public static PictureBox _box;
 
         public static void DisposeCef()
         {
@@ -550,7 +490,7 @@ namespace GTANetwork.GUI
             Application.ThreadException += ApplicationOnThreadException;
             AppDomain.CurrentDomain.UnhandledException += AppDomainException;
             
-            LogManager.DebugLog("STARTING MAIN LOOP");
+            LogManager.AlwaysDebugLog("STARTING MAIN LOOP");
 
 
             var cursor = new Bitmap(Main.GTANInstallDir + "\\images\\cef\\cursor.png");
@@ -576,12 +516,14 @@ namespace GTANetwork.GUI
                                     foreach (var browser in Browsers)
                                     {
                                         if (browser.Headless) continue;
-                                        var bitmap = browser.GetRawBitmap();
+                                        var bitmap = new Bitmap(browser.GetRawBitmap());
 
                                         if (bitmap == null) continue;
 
                                         if (browser.Pinned == null || browser.Pinned.Length != 4)
+                                        {
                                             graphics.DrawImageUnscaled(bitmap, browser.Position);
+                                        }
                                         else
                                         {
                                             var bmOut = new FastBitmap(doubleBuffer);
@@ -596,6 +538,7 @@ namespace GTANetwork.GUI
 
                                             graphics.DrawImageUnscaled(bmOut, 0, 0);
                                         }
+
                                         bitmap.Dispose();
                                     }
 #endif
@@ -885,7 +828,7 @@ namespace GTANetwork.GUI
             _client.OnCreated += (sender, args) =>
             {
                 _browser = (CefBrowser) sender;
-                LogManager.SimpleLog("cef", "Browser ready!");
+                LogManager.AlwaysDebugLog("Browser ready!");
             };
 
             Size = browserSize;
@@ -902,7 +845,7 @@ namespace GTANetwork.GUI
 #if !DISABLE_CEF
             if (_browser != null)
             {
-                LogManager.SimpleLog("cef", "Trying to load page " + page + "...");
+                LogManager.AlwaysDebugLog("Trying to load page " + page + "...");
                 _browser.GetMainFrame().LoadUrl(page);
             }
 #endif
@@ -912,7 +855,9 @@ namespace GTANetwork.GUI
         {
 #if !DISABLE_CEF
             if (_browser == null) return;
-            _browser.GetHost().CloseBrowser(true);
+            var host = _browser.GetHost();
+            host.CloseBrowser(true);
+            host.Dispose();
             _browser.Dispose();
 #endif
         }
@@ -966,7 +911,7 @@ namespace GTANetwork.GUI
             //return output;
             Bitmap lbmp = _client.GetLastBitmap();
 
-            LogManager.SimpleLog("cef", "Requesting bitmap. Null? " + (lbmp == null));
+            LogManager.AlwaysDebugLog("Requesting bitmap. Null? " + (lbmp == null));
             return lbmp;
 #else
             return null;

@@ -32,6 +32,15 @@ namespace GTANetwork.Util
             catch (Exception) { }
         }
 
+        public static void AlwaysDebugLog(string text)
+        {
+            try
+            {
+                Debug.WriteLine(text);
+            }
+            catch (Exception) { }
+        }
+
         public static object errorLogLock = new object();
         public static void LogException(Exception ex, string source)
         {
