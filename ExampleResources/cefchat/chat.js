@@ -2,8 +2,9 @@ var False = false;
 var True = true;
 
 function updateScroll() {
-	if ($("#chat-body").scrollTop() >= $("#chat-body")[0].scrollHeight - 400) {
-		$("#chat-body").scrollTop($("#chat-body")[0].scrollHeight);
+	var body = $("#chat-body");
+	if (body.scrollTop() >= body[0].scrollHeight - 400) {
+		body.scrollTop(body[0].scrollHeight);
 	}		
 }
 
@@ -38,27 +39,31 @@ function addColoredMessage(msg, r,g,b) {
 }
 
 function setFocus(focus) {
-	if (focus) {
-		$("#main-input").show();
-		$("#main-input").val("");
-		$("#main-input").focus();
+	var mainInput = $("#main-input");
+	if (focus) {		
+		mainInput.show();
+		mainInput.val("");
+		mainInput.focus();
 	} else {
-		$("#main-input").hide();
-		$("#main-input").val("");
+		mainInput.hide();
+		mainInput.val("");
 	}
 }
 
 function onKeyUp(event) {
 	if (event.keyCode == 13) {
 		var m = $("#main-input").val();
-		try
+		if (m)		
 		{
-			resource.call("commitMessage", [m]);
+			try
+			{
+				resourceCall("commitMessage", m+"");
+			}
+			catch(err) {
+				$("body").text(err);
+			}
 		}
-		catch(err) {
-			$("body").text(err);
-		}
-		setFocus(false);		
+		setFocus(false);	
 	}
 }
 /*

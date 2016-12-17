@@ -70,6 +70,10 @@ namespace GTA
 
 		_scriptdomain->AbortScript(this);
 	}
+    void Script::D3DHook(void *swapchain)
+    {
+        Present(gcnew IntPtr(swapchain), EventArgs::Empty);
+    }
 	void Script::Wait(int ms)
 	{
 		Script ^script = ScriptDomain::ExecutingScript;
@@ -92,6 +96,11 @@ namespace GTA
 	{
 		Wait(0);
 	}
+
+    void Script::AttachD3DHook()
+    {
+        _scriptdomain->HookD3DScript(this);
+    }
 
 	void Script::MainLoop()
 	{

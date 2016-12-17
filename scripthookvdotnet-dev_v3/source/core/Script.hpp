@@ -39,11 +39,12 @@ namespace GTA
 		Script();
 
 		static void Wait(int ms);
-		static void Yield();
+		static void Yield();        
 
 		event System::EventHandler ^Tick;
 		event System::Windows::Forms::KeyEventHandler ^KeyUp;
 		event System::Windows::Forms::KeyEventHandler ^KeyDown;
+        event System::EventHandler ^Present;
 		event System::EventHandler ^Aborted;
 
 		property System::String ^Name
@@ -79,14 +80,17 @@ namespace GTA
 			void set(int value);
 		}
 
+        void AttachD3DHook();
+
 	internal:
 		void MainLoop();
+        void D3DHook(void *swapchain);
 
 		int _interval = 0;
 		bool _running = false;
 		System::String ^_filename;
 		ScriptDomain ^_scriptdomain;
-		System::Threading::Thread ^_thread;
+		System::Threading::Thread ^_thread;        
 		System::Threading::AutoResetEvent ^_waitEvent = gcnew System::Threading::AutoResetEvent(false);
 		System::Threading::AutoResetEvent ^_continueEvent = gcnew System::Threading::AutoResetEvent(false);
 		System::Collections::Concurrent::ConcurrentQueue<System::Tuple<bool, System::Windows::Forms::KeyEventArgs ^> ^> ^_keyboardEvents = gcnew System::Collections::Concurrent::ConcurrentQueue<System::Tuple<bool, System::Windows::Forms::KeyEventArgs ^> ^>();

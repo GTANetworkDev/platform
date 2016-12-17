@@ -153,6 +153,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GUI\CefClient.cs" />
+    <Compile Include="GUI\DirectXHook\SwapchainHooker.cs" />
+    <Compile Include="GUI\SecureCefResourceHandler.cs" />
     <Compile Include="Misc\BiDictionarity.cs" />
     <Compile Include="Javascript\CameraManager.cs" />
     <Compile Include="GUI\ClassicChat.cs" />
