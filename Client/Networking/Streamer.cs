@@ -453,7 +453,8 @@ namespace GTANetwork.Networking
                     if (HandleMap.Reverse.ContainsKey(netId))
                     {
                         int remId = HandleMap.Reverse[netId];
-                        return ClientMap[remId];
+                        if (ClientMap.ContainsKey(remId))
+                            return ClientMap[remId];
                     }
 
                     if (netId == Game.Player.Character.Handle)

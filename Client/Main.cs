@@ -340,14 +340,14 @@ namespace GTANetwork
                         var rawJson = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim('/') + "/welcome.json");
                         var jsonObj = JsonConvert.DeserializeObject<WelcomeSchema>(rawJson) as WelcomeSchema;
                         if (jsonObj == null) throw new WebException();
-                        if (!File.Exists(GTANInstallDir + "\\images\\" + jsonObj.Picture))
+                        if (!File.Exists(GTANInstallDir + "images\\" + jsonObj.Picture))
                         {
                             wc.DownloadFile(PlayerSettings.MasterServerAddress.Trim('/') + "/pictures/" + jsonObj.Picture, GTANInstallDir + "\\images\\" + jsonObj.Picture);
                         }
                     
                         _welcomePage.Text = jsonObj.Message;
                         _welcomePage.TextTitle = jsonObj.Title;
-                        _welcomePage.PromoPicturePath = GTANInstallDir + "\\images\\" + jsonObj.Picture;
+                        _welcomePage.PromoPicturePath = GTANInstallDir + "images\\" + jsonObj.Picture;
                     }
                 }
                 catch (WebException ex)
@@ -367,7 +367,7 @@ namespace GTANetwork
 
                 using (var wc = new ImpatientWebClient())
                 {
-                    wc.DownloadFile(uri, GTANInstallDir + "\\images\\scavatar.png");
+                    wc.DownloadFile(uri, GTANInstallDir + "images\\scavatar.png");
                 }
                 _hasScAvatar = true;
             }
@@ -1253,7 +1253,7 @@ namespace GTANetwork
 
                         PlayerSettings.CefFps = newSetting;
                         CEFManager.FPS = newSetting;
-                        Misc.GameSettings.SaveSettings(GameSettings);
+                        SaveSettings();
                         cityDen.SetRightLabel(PlayerSettings.CefFps.ToString());
                     };
                 }
@@ -5320,6 +5320,7 @@ namespace GTANetwork
                 }
 
                 CEFManager.Browsers.Clear();
+		        CefUtil._cachedReferences.Clear();
 		    }
 
             ClearStats();
