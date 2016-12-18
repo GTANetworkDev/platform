@@ -1561,7 +1561,9 @@ namespace GTANetwork.Networking
                         LocalHandle them = new LocalHandle(Character.Handle, HandleType.GameHandle);
                         JavascriptHook.InvokeCustomEvent(api =>
                             api.invokeonLocalPlayerMeleeHit(them, CurrentWeapon));
-                        Game.Player.Character.ApplyDamage(25);
+
+                        if (!Main.NetEntityHandler.LocalCharacter.IsInvincible)
+                            Game.Player.Character.ApplyDamage(25);
 						meleeSwingDone = true;
 					}
 				}
@@ -1577,7 +1579,8 @@ namespace GTANetwork.Networking
                     LocalHandle them = new LocalHandle(Character.Handle, HandleType.GameHandle);
                     JavascriptHook.InvokeCustomEvent(api =>
                         api.invokeonLocalPlayerMeleeHit(them, CurrentWeapon));
-                    Game.Player.Character.ApplyDamage(25);
+                    if (!Main.NetEntityHandler.LocalCharacter.IsInvincible)
+                        Game.Player.Character.ApplyDamage(25);
 					meleeSwingDone = true;
 				}
 			}

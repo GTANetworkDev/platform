@@ -2473,7 +2473,7 @@ namespace GTANetwork
                     if (MainMenu.Visible && !MainMenu.TemporarilyHidden && !_mainMapItem.Focused && _hasScAvatar && File.Exists(GTANInstallDir + "\\images\\scavatar.png"))
                     {
                         var safe = new Point(300, 180);
-                        Util.Util.DxDrawTexture(0, GTANInstallDir + "\\images\\scavatar.png", res.Width - safe.X - 64, safe.Y - 80, 64, 64, 0, 255, 255, 255, 255, false);
+                        Util.Util.DxDrawTexture(0, GTANInstallDir + "images\\scavatar.png", res.Width - safe.X - 64, safe.Y - 80, 64, 64, 0, 255, 255, 255, 255, false);
                     }
 
                     if (!IsOnServer()) Game.EnableControlThisFrame(0, Control.FrontendPause);
@@ -5252,7 +5252,20 @@ namespace GTANetwork
 
 		private void OnLocalDisconnect()
 	    {
-			DEBUG_STEP = 43;
+		    if (NetEntityHandler.ServerWorld?.LoadedIpl != null)
+		    {
+		        foreach (var ipl in NetEntityHandler.ServerWorld.LoadedIpl)
+                    Function.Call(Hash.REMOVE_IPL, ipl);
+            }
+
+            if (NetEntityHandler.ServerWorld?.RemovedIpl != null)
+                foreach (var ipl in NetEntityHandler.ServerWorld.RemovedIpl)
+                {
+                    Function.Call(Hash.REQUEST_IPL, ipl);
+                }
+
+
+            DEBUG_STEP = 43;
 			
 			ClearLocalEntities();
 

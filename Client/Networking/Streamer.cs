@@ -471,11 +471,13 @@ namespace GTANetwork.Networking
             }
         }
 
+        public RemotePlayer LocalCharacter;
         public void AddLocalCharacter(int nethandle)
         {
             lock (ClientMap)
             {
-                ClientMap.Add(nethandle, new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true});
+                LocalCharacter = new RemotePlayer() {LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true};
+                ClientMap.Add(nethandle, LocalCharacter);
                 HandleMap.Add(nethandle, -2);
             }
         }
