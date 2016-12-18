@@ -75,6 +75,15 @@ void ManagedKeyboardMessage(int key, bool status, bool statusCtrl, bool statusSh
 
 	ScriptHook::Domain->DoKeyboardMessage(static_cast<WinForms::Keys>(key), status, statusCtrl, statusShift, statusAlt);
 }
+void ManagedD3DCall(void *swapchain)
+{
+    if (Object::ReferenceEquals(ScriptHook::Domain, nullptr))
+    {
+        return;
+    }
+
+    ScriptHook::Domain->DoD3DCall(swapchain);
+}
 
 #pragma unmanaged
 
@@ -125,6 +134,11 @@ void ScriptKeyboardMessage(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtend
 	ManagedKeyboardMessage(static_cast<int>(key), isUpNow == FALSE, (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0, (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0, isWithAlt != FALSE);
 }
 
+void DXGIPresent(void *swapChain)
+{
+    ManagedD3DCall(swapChain);
+}
+
 BOOL WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
 {
 	switch (fdwReason)
@@ -133,11 +147,13 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
 			DisableThreadLibraryCalls(hModule);
 			scriptRegister(hModule, &ScriptMain);
 			keyboardHandlerRegister(&ScriptKeyboardMessage);
+            presentCallbackRegister(&DXGIPresent);
 			break;
 		case DLL_PROCESS_DETACH:
 			DeleteFiber(sScriptFib);
 			scriptUnregister(hModule);
 			keyboardHandlerUnregister(&ScriptKeyboardMessage);
+            presentCallbackUnregister(&DXGIPresent);
 			break;
 	}
 

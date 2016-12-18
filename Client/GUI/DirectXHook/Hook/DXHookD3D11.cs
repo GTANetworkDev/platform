@@ -235,12 +235,28 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             if (OverlayEngine.Overlays.Count == 0)
                 OverlayEngine.Overlays.Add(new Overlay());
 
-            if (this.OverlayEngine.Overlays[0].Elements.Count <= 1)
+            if (this.OverlayEngine.Overlays[0].Elements.Count == 1)
                 OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(new Bitmap(Width, Height))
                 {
                     Location = new System.Drawing.Point(0, 0)
                 });
+            else if (OverlayEngine.Overlays[0].Elements.Count == 0)
+            {
+                OverlayEngine.Overlays[0].Elements.Add(
+                    new Common.TextElement(new System.Drawing.Font("Times New Roman", 22))
+                    {
+                        Text = "*",
+                        Location = new System.Drawing.Point(0, 0),
+                        Color = System.Drawing.Color.Red,
+                        AntiAliased = false
+                    });
 
+                OverlayEngine.Overlays[0].Elements.Add(new Common.ImageElement(new Bitmap(Width, Height))
+                {
+                    Location = new System.Drawing.Point(0, 0)
+                });
+            }
+            // TODO: Dispose of old bitmap, dont dispose doublebuffer b4
             ((ImageElement) this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = null;
             ((ImageElement)this.OverlayEngine.Overlays[0].Elements[1]).Bitmap = bt;
             this.OverlayEngine.FlushCache();
@@ -326,6 +342,67 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             // As always we need to call the original method, note that EasyHook will automatically skip the hook and call the original method
             // i.e. calling it here will not cause a stack overflow into this function
             return DXGISwapChain_PresentHook.Original(swapChainPtr, syncInterval, flags);
+        }
+
+        public void ManualPresentHook(IntPtr swapChainPtr)
+        {
+            SwapChain swapChain = (SharpDX.DXGI.SwapChain)swapChainPtr;
+
+            if (swapChainPtr != IntPtr.Zero)
+            {
+                try
+                {
+                    #region Draw overlay (after screenshot so we don't capture overlay as well)
+
+                    // Initialise Overlay Engine
+                    if (_swapChainPointer != swapChain.NativePointer || OverlayEngine == null)
+                    {
+                        NewSwapchain = true;
+
+                        if (OverlayEngine != null)
+                            OverlayEngine.Dispose();
+                        OverlayEngine = new DX11.DXOverlayEngine();
+                        OverlayEngine.Overlays.Add(new DirectXHook.Hook.Common.Overlay
+                        {
+                            Elements =
+                            {
+                                new Common.TextElement(new System.Drawing.Font("Times New Roman", 22))
+                                {
+                                    Text = "*",
+                                    Location = new System.Drawing.Point(0, 0),
+                                    Color = System.Drawing.Color.Red,
+                                    AntiAliased = false
+                                },
+                                new Common.ImageElement(new Bitmap(Width, Height))
+                                {
+                                    Location = new System.Drawing.Point(0, 0)
+                                },
+                            }
+                        });
+                        OverlayEngine.Initialise(swapChain);
+
+                        _swapChainPointer = swapChain.NativePointer;
+                    }
+
+                    // Draw Overlay(s)
+
+                    if (OverlayEngine != null)
+                    {
+                        foreach (var overlay in OverlayEngine.Overlays)
+                            overlay.Frame();
+                        OverlayEngine.Draw();
+                    }
+
+                    #endregion
+                }
+                catch (Exception e)
+                {
+                    // If there is an error we do not want to crash the hooked application, so swallow the exception
+                    LogManager.DebugLog("PresentHook: Exeception: " + e.GetType().FullName + ": " + e.ToString());
+                    LogManager.LogException(e, "PresentHook");
+                    //return unchecked((int)0x8000FFFF); //E_UNEXPECTED
+                }
+            }
         }
 
         public DXOverlayEngine OverlayEngine;

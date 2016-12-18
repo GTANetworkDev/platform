@@ -1023,6 +1023,7 @@ namespace GTANetwork.Javascript
             CEFManager.Browsers.Remove(browser);
             try
             {
+                CefUtil._cachedReferences.Remove(CefUtil._cachedReferences.FirstOrDefault(pair => pair.Value == browser).Key);
                 browser.Close();
                 browser.Dispose();
             }

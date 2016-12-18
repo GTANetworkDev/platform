@@ -30,6 +30,7 @@ namespace GTA
 	public:
 		ScriptDomain();
 		~ScriptDomain();
+        void DoD3DCall(void *swapchain);        
 		
 		static property Script ^ExecutingScript
 		{
@@ -69,6 +70,7 @@ namespace GTA
 			}
 		}
 
+        void HookD3DScript(Script ^script);
 		void Start();
 		void Abort();
 		static void AbortScript(Script ^script);
@@ -100,6 +102,7 @@ namespace GTA
 		System::AppDomain ^_appdomain;
 		int _executingThreadId;
 		Script ^_executingScript;
+        System::Collections::Generic::List<Script ^> ^_hookedScripts = gcnew System::Collections::Generic::List<Script ^>();
 		System::Collections::Generic::List<Script ^> ^_runningScripts = gcnew System::Collections::Generic::List<Script ^>();
 		System::Collections::Generic::Queue<IScriptTask ^> ^_taskQueue = gcnew System::Collections::Generic::Queue<IScriptTask ^>();
 		System::Collections::Generic::List<System::IntPtr> ^_pinnedStrings = gcnew System::Collections::Generic::List<System::IntPtr>();

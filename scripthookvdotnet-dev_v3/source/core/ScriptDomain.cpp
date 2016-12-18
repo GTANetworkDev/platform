@@ -414,7 +414,8 @@ namespace GTA
 
 		return true;
 	}
-	void ScriptDomain::Start()
+    
+    void ScriptDomain::Start()
 	{
 		if (_runningScripts->Count != 0 || _scriptTypes->Count == 0)
 		{
@@ -572,6 +573,15 @@ namespace GTA
 		}
 	}
 
+    void ScriptDomain::DoD3DCall(void *swapchain)
+    {
+        int count = _hookedScripts->Count;
+        for (int i = 0; i < count; i++)
+        {
+            _hookedScripts[i]->D3DHook(swapchain);
+        }
+    }
+
 	void ScriptDomain::PauseKeyboardEvents(bool pause)
 	{
 		_recordKeyboardEvents = !pause;
@@ -589,6 +599,13 @@ namespace GTA
 			SignalAndWait(ExecutingScript->_waitEvent, ExecutingScript->_continueEvent);
 		}
 	}
+    void ScriptDomain::HookD3DScript(Script ^script)
+    {        
+        if (!_hookedScripts->Contains(script))
+        {
+            _hookedScripts->Add(script);
+        }
+    }
 	IntPtr ScriptDomain::PinString(String ^string)
 	{
 		const int size = Text::Encoding::UTF8->GetByteCount(string);
