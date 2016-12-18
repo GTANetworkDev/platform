@@ -101,7 +101,7 @@ namespace GTANetworkServer
             obj.EntityType = 255;
             obj.Hours = (byte)DateTime.Now.Hour;
             obj.Minutes = (byte)DateTime.Now.Minute;
-            obj.Weather = "CLEAR";
+            obj.Weather = 0;
             obj.LoadedIpl = new List<string>();
             obj.RemovedIpl = new List<string>();
 
