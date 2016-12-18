@@ -1776,9 +1776,11 @@ namespace GTANetwork.Networking
             pp.Rotation = new GTANetworkShared.Vector3(0, 0, heading);
             pp.Dimension = 0;
 
-            var p = CreatePed(model, pp);
+            var handle = --_localHandleCounter;
+
+            var p = CreatePed(handle, pp);
             p.LocalOnly = true;
-            p.RemoteHandle = --_localHandleCounter;
+            p.RemoteHandle = handle;
 
             if (Count(typeof(RemotePed)) < StreamerThread.MAX_PEDS)
                 StreamIn(p);

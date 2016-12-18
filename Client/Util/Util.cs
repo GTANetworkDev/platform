@@ -199,16 +199,21 @@ namespace GTANetwork.Util
         public static bool ModelRequest;
         public static void LoadModel(Model model)
         {
+            if (!model.IsValid) return;
+
             LogManager.DebugLog("REQUESTING MODEL " + model.Hash);
             ModelRequest = true;
+            DateTime start = DateTime.Now;
             while (!model.IsLoaded)
             {
                 model.Request();
                 //Function.Call(Hash.REQUEST_COLLISION_FOR_MODEL, model.Hash);
                 Script.Yield();
+
+                if (DateTime.Now.Subtract(start).TotalMilliseconds > 1000) break;
             }
             ModelRequest = false;
-            LogManager.DebugLog("MODEL REQUESTED!");
+            LogManager.DebugLog("MODEL REQUESTED: " + model.IsLoaded);
         }
 
         public static void LoadWeapon(int model)

@@ -53,7 +53,7 @@ public class AdminScript : Script
     }
 
     [Command(ACLRequired = true)]
-    public void SetWeather(Client sender, string newWeather)
+    public void SetWeather(Client sender, int newWeather)
     {
         API.setWeather(newWeather);
     }

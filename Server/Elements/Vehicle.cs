@@ -62,7 +62,7 @@ namespace GTANetworkServer
             get { return Base.getVehicleSirenState(this); }
         }
 
-        public string numerPlate
+        public string numberPlate
         {
             get { return Base.getVehicleNumberPlate(this); }
             set { Base.setVehicleNumberPlate(this, value); }
