@@ -357,7 +357,7 @@ namespace GTANetworkShared
         public byte Minutes { get; set; }
 
         [ProtoMember(3)]
-        public string Weather { get; set; }
+        public int Weather { get; set; }
 
         [ProtoMember(4)]
         public List<string> LoadedIpl { get; set; }

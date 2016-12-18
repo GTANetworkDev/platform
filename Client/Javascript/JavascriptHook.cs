@@ -1266,42 +1266,42 @@ namespace GTANetwork.Javascript
             return Game.GenerateHash(input);
         }
 
-        public bool setEntityData(LocalHandle entity, string key, object data)
+        public bool setEntitySyncedData(LocalHandle entity, string key, object data)
         {
             return Main.SetEntityProperty(entity, key, data);
         }
 
-        public void resetEntityData(LocalHandle entity, string key)
+        public void resetEntitySyncedData(LocalHandle entity, string key)
         {
             Main.ResetEntityProperty(entity, key);
         }
 
-        public bool hasEntityData(LocalHandle entity, string key)
+        public bool hasEntitySyncedData(LocalHandle entity, string key)
         {
             return Main.HasEntityProperty(entity, key);
         }
 
-        public object getEntityData(LocalHandle entity, string key)
+        public object getEntitySyncedData(LocalHandle entity, string key)
         {
             return Main.GetEntityProperty(entity, key);
         }
 
-        public bool setWorldData(string key, object data)
+        public bool setWorldSyncedData(string key, object data)
         {
             return Main.SetWorldData(key, data);
         }
 
-        public void resetWorldData(string key)
+        public void resetWorldSyncedData(string key)
         {
             Main.ResetWorldData(key);
         }
 
-        public bool hasWorldData(string key)
+        public bool hasWorldSyncedData(string key)
         {
             return Main.HasWorldData(key);
         }
 
-        public object getWorldData(string key)
+        public object getWorldSyncedData(string key)
         {
             return Main.GetWorldData(key);
         }
@@ -4146,14 +4146,15 @@ namespace GTANetwork.Javascript
             CrossReference.EntryPoint.WeaponInventoryManager.Deny((WeaponHash) weapon);
         }
 
-        public void setWeather(string weather)
+        public void setWeather(int weather)
         {
-            Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, weather);
+            if (weather >= 0 && weather < Main._weather.Length)
+                Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Main._weather[weather]);
         }
 
-        public string getWeather()
+        public int getWeather()
         {
-            return Main.Weather;
+            return Array.IndexOf(Main._weather, Main.Weather.ToUpper());
         }
 
         public void resetWeather()

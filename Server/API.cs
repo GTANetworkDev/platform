@@ -788,8 +788,8 @@ namespace GTANetworkServer
 
         public bool isPlayerRespawning(Client player)
         {
-            var lastLegitDeath = getLocalEntityData(player, "__LAST_PLAYER_DEATH") ?? 0;
-            var lastLegitRespawn = getLocalEntityData(player, "__LAST_PLAYER_RESPAWN") ?? 0;
+            var lastLegitDeath = getEntityData(player, "__LAST_PLAYER_DEATH") ?? 0;
+            var lastLegitRespawn = getEntityData(player, "__LAST_PLAYER_RESPAWN") ?? 0;
             return lastLegitRespawn < lastLegitDeath;
         }
 
@@ -1517,7 +1517,7 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).NumberPlate = plate;
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x95A88F0B409CDA47, new EntityArgument(vehicle.Value), plate);
+                //Program.ServerInstance.SendNativeCallToAllPlayers(0x95A88F0B409CDA47, new EntityArgument(vehicle.Value), plate);
 
                 var delta = new Delta_VehicleProperties();
                 delta.NumberPlate = plate;
@@ -1653,7 +1653,7 @@ namespace GTANetworkServer
             return 0;
         }
 
-        public bool setEntityData(NetHandle entity, string key, object value)
+        public bool setEntitySyncedData(NetHandle entity, string key, object value)
         {
             if (doesEntityExist(entity))
             {
@@ -1662,7 +1662,7 @@ namespace GTANetworkServer
             return false;
         }
 
-        public dynamic getEntityData(NetHandle entity, string key)
+        public dynamic getEntitySyncedData(NetHandle entity, string key)
         {
             if (doesEntityExist(entity))
             {
@@ -1671,7 +1671,7 @@ namespace GTANetworkServer
             return null;
         }
 
-        public void resetEntityData(NetHandle entity, string key)
+        public void resetEntitySyncedData(NetHandle entity, string key)
         {
             if (doesEntityExist(entity))
             {
@@ -1679,7 +1679,7 @@ namespace GTANetworkServer
             }
         }
 
-        public bool hasEntityData(NetHandle entity, string key)
+        public bool hasEntitySyncedData(NetHandle entity, string key)
         {
             if (doesEntityExist(entity))
             {
@@ -1688,27 +1688,27 @@ namespace GTANetworkServer
             return false;
         }
         
-        public bool setWorldData(string key, object value)
+        public bool setWorldSyncedData(string key, object value)
         {
             return Program.ServerInstance.SetEntityProperty(1, key, value, true);
         }
 
-        public dynamic getWorldData(string key)
+        public dynamic getWorldSyncedData(string key)
         {
             return Program.ServerInstance.GetEntityProperty(1, key);
         }
 
-        public void resetWorldData(string key)
+        public void resetWorldSyncedData(string key)
         {
             Program.ServerInstance.ResetEntityProperty(1, key, true);
         }
 
-        public bool hasWorldData(string key)
+        public bool hasWorldSyncedData(string key)
         {
             return Program.ServerInstance.HasEntityProperty(1, key);
         }
 
-        public bool setLocalEntityData(NetHandle entity, string key, object value)
+        public bool setEntityData(NetHandle entity, string key, object value)
         {
             lock (Program.ServerInstance.EntityProperties)
             {
@@ -1725,7 +1725,7 @@ namespace GTANetworkServer
             return false;
         }
 
-        public dynamic getLocalEntityData(NetHandle entity, string key)
+        public dynamic getEntityData(NetHandle entity, string key)
         {
             lock (Program.ServerInstance.EntityProperties)
             {
@@ -1737,7 +1737,7 @@ namespace GTANetworkServer
             return null;
         }
 
-        public void resetLocalEntityData(NetHandle entity, string key)
+        public void resetEntityData(NetHandle entity, string key)
         {
             lock (Program.ServerInstance.EntityProperties)
             {
@@ -1748,7 +1748,7 @@ namespace GTANetworkServer
             }
         }
 
-        public bool hasLocalEntityData(NetHandle entity, string key)
+        public bool hasEntityData(NetHandle entity, string key)
         {
             lock (Program.ServerInstance.EntityProperties)
             {
@@ -1761,7 +1761,7 @@ namespace GTANetworkServer
             return false;
         }
 
-        public string[] getAllLocalEntityData(NetHandle entity)
+        public string[] getAllEntityData(NetHandle entity)
         {
             if (doesEntityExist(entity) && Program.ServerInstance.EntityProperties.ContainsKey(entity))
             {
@@ -1771,7 +1771,7 @@ namespace GTANetworkServer
             return new string[0];
         }
 
-        public bool setLocalWorldData(string key, object value)
+        public bool setWorldData(string key, object value)
         {
             lock (Program.ServerInstance.WorldProperties)
             {
@@ -1781,7 +1781,7 @@ namespace GTANetworkServer
             return true;
         }
 
-        public dynamic getLocalWorldData(string key)
+        public dynamic getWorldData(string key)
         {
             lock (Program.ServerInstance.WorldProperties)
             {
@@ -1789,7 +1789,7 @@ namespace GTANetworkServer
             }
         }
 
-        public void resetLocalWorldData(string key)
+        public void resetWorldData(string key)
         {
             lock (Program.ServerInstance.WorldProperties)
             {
@@ -1797,7 +1797,7 @@ namespace GTANetworkServer
             }
         }
 
-        public bool hasLocalWorldData(string key)
+        public bool hasWorldData(string key)
         {
             lock (Program.ServerInstance.WorldProperties)
             {
@@ -2092,13 +2092,13 @@ namespace GTANetworkServer
             }
         }
 
-        public void setWeather(string weather)
+        public void setWeather(int weather)
         {
             Program.ServerInstance.SendNativeCallToAllPlayers(0xED712CA327900C8A, weather);
             Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Weather = weather;
         }
 
-        public string getWeather()
+        public int getWeather()
         {
             return Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Weather;
         }
@@ -3202,7 +3202,7 @@ namespace GTANetworkServer
 	            delta.Position = newPosition;
                 Program.ServerInstance.UpdateEntityInfo(netHandle.Value, EntityType.Prop, delta);
 
-	            setLocalEntityData(netHandle, "__LAST_POSITION_SET", TickCount);
+	            setEntityData(netHandle, "__LAST_POSITION_SET", TickCount);
 	        }
         }
 
@@ -3361,7 +3361,7 @@ namespace GTANetworkServer
             player.IsInVehicle = true;
             player.CurrentVehicle = vehicle;
 
-            setLocalEntityData(player, "__LAST_POSITION_SET", TickCount);
+            setEntityData(player, "__LAST_POSITION_SET", TickCount);
         }
 
         public void warpPlayerOutOfVehicle(Client player, NetHandle vehicle)

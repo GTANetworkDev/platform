@@ -838,7 +838,7 @@ namespace GTANetworkServer
 
                 if (world.hasElementData("weather")) // TODO: Change to integer w/ an array of possible weathers
                 {
-                    PublicAPI.setWeather(world.getElementData<string>("weather"));
+                    PublicAPI.setWeather(world.getElementData<int>("weather"));
                 }
             }
 
@@ -2540,7 +2540,7 @@ namespace GTANResource
                                                 }));
                                             }
 
-                                            PublicAPI.setLocalEntityData(client, "__LAST_PLAYER_DEATH", PublicAPI.TickCount);
+                                            PublicAPI.setEntityData(client, "__LAST_PLAYER_DEATH", PublicAPI.TickCount);
                                         }
                                         break;
                                     case PacketType.PlayerRespawned:
@@ -2554,7 +2554,7 @@ namespace GTANResource
                                                     en.InvokePlayerRespawn(client);
                                                 }));
 
-                                            PublicAPI.setLocalEntityData(client, "__LAST_PLAYER_RESPAWN", PublicAPI.TickCount);
+                                            PublicAPI.setEntityData(client, "__LAST_PLAYER_RESPAWN", PublicAPI.TickCount);
                                         }
                                         break;
                                     case PacketType.UpdateEntityProperties:

@@ -1687,7 +1687,8 @@ namespace GTANetwork
             Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, map.World.Weather);
 
             Time = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
-            Weather = map.World.Weather;
+            if (map.World.Weather >= 0 && map.World.Weather < _weather.Length)
+                Weather = _weather[map.World.Weather];
 
             Function.Call(Hash.PAUSE_CLOCK, true);
         }
@@ -5780,6 +5781,24 @@ namespace GTANetwork
             Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
         }
 
+        internal static readonly string[] _weather = new string[]
+        {
+            "EXTRASUNNY",
+            "CLEAR",
+            "CLOUDS",
+            "SMOG",
+            "FOGGY",
+            "OVERCAST",
+            "RAIN",
+            "THUNDER",
+            "CLEARING",
+            "NEUTRAL",
+            "SNOW",
+            "BLIZZARD",
+            "SNOWLIGHT",
+            "XMAS "
+        };
+
         public void DecodeNativeCall(NativeData obj)
         {
             if (!NativeWhitelist.IsAllowed(obj.Hash))
@@ -5904,8 +5923,13 @@ namespace GTANetwork
 
             if (((int)nativeType & (int)NativeType.WeatherSet) > 0)
             {
-                var newWeather = ((StringArgument)obj.Arguments[0]).Data;
-                Weather = newWeather;
+                var newWeather = ((IntArgument)obj.Arguments[0]).Data;
+                if (newWeather >= 0 && newWeather < _weather.Length)
+                {
+                    Weather = _weather[newWeather];
+                    Function.Call((Hash)obj.Hash, _weather[newWeather]);
+                    return;
+                }
             }
 
             if (obj.ReturnType == null)

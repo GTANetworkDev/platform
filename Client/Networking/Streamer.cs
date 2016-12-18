@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Text.RegularExpressions;
 using GTA;
 using GTA.Native;
 using GTANetwork.Javascript;
@@ -659,7 +660,15 @@ namespace GTANetwork.Networking
             if (prop.TraileredBy != null) veh.TraileredBy = prop.TraileredBy.Value;
             if (prop.Tires != null) veh.Tires = prop.Tires.Value;
             if (prop.Livery != null) veh.Livery = prop.Livery.Value;
-            if (prop.NumberPlate != null) veh.NumberPlate = prop.NumberPlate;
+            if (prop.NumberPlate != null)
+            {
+                veh.NumberPlate = prop.NumberPlate;
+
+                if (veh.StreamedIn && Regex.IsMatch(prop.NumberPlate, "^[a-zA-Z0-9]{0,9}$"))
+                {
+                    new Vehicle(veh.LocalHandle).Mods.LicensePlate = prop.NumberPlate;
+                }
+            }
             if (prop.Position != null) veh.Position = prop.Position;
             if (prop.Rotation != null) veh.Rotation = prop.Rotation;
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
