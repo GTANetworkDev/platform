@@ -5932,6 +5932,11 @@ namespace GTANetwork
                 }
             }
 
+            var tmpArgs = obj.Arguments;
+
+            if (!ReplacePointerNatives(obj.Hash, ref list, ref tmpArgs))
+                return;
+
             if (obj.ReturnType == null)
             {
                 Function.Call((Hash)obj.Hash, list.ToArray());
@@ -6015,7 +6020,23 @@ namespace GTANetwork
             msg.Write(bin);
             Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
         }
-        
+
+        private bool ReplacePointerNatives(ulong hash, ref List<InputArgument> list, ref List<NativeArgument> args)
+        {
+            if (hash == 0x202709F4C58A0424) // _SET_NOTIFICATION_TEXT_ENTRY
+            {
+                list[0] = new InputArgument("STRING");
+                return true;
+            }
+            
+            if (hash == 0x6C188BE134E074AA && ((StringArgument)args[0]).Data.Length > 99) // ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME
+            {
+                list[0] = ((StringArgument) args[0]).Data.Substring(0, 99);
+            }
+
+            return true;
+        }
+
         private enum NativeType
         {
             Unknown = 0,

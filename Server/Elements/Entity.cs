@@ -181,42 +181,42 @@ namespace GTANetworkServer
 
         public void setData(string key, object value)
         {
-            Base.setEntityData(this, key, value);
+            Base.setEntitySyncedData(this, key, value);
         }
 
         public dynamic getData(string key)
         {
-            return Base.getEntityData(this, key);
+            return Base.getEntitySyncedData(this, key);
         }
 
         public void resetData(string key)
         {
-            Base.resetEntityData(this, key);
+            Base.resetEntitySyncedData(this, key);
         }
 
         public bool hasData(string key)
         {
-            return Base.hasEntityData(this, key);
+            return Base.hasEntitySyncedData(this, key);
         }
 
         public void setLocalData(string key, object value)
         {
-            Base.setLocalEntityData(this, key, value);
+            Base.setEntityData(this, key, value);
         }
 
         public dynamic getLocalData(string key)
         {
-            return Base.getLocalEntityData(this, key);
+            return Base.getEntityData(this, key);
         }
 
         public void resetLocalData(string key)
         {
-            Base.resetLocalEntityData(this, key);
+            Base.resetEntityData(this, key);
         }
 
         public bool hasLocalData(string key)
         {
-            return Base.hasLocalEntityData(this, key);
+            return Base.hasEntityData(this, key);
         }
 
         #endregion

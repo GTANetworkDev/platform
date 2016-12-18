@@ -17,9 +17,9 @@ public class ScoreboardScript : Script
 
     private void startResourceHandler()
     {
-        API.setWorldData("scoreboard_column_names", new List<string>());
-        API.setWorldData("scoreboard_column_friendlynames", new List<string>());
-        API.setWorldData("scoreboard_column_widths", new List<int>());
+        API.setWorldSyncedData("scoreboard_column_names", new List<string>());
+        API.setWorldSyncedData("scoreboard_column_friendlynames", new List<string>());
+        API.setWorldSyncedData("scoreboard_column_widths", new List<int>());
 
         addScoreboardColumn("ping", "Ping", 60);
     }
@@ -28,17 +28,17 @@ public class ScoreboardScript : Script
     {
         var players = API.getAllPlayers();
 
-        foreach (var col in API.getWorldData("scoreboard_column_names"))
+        foreach (var col in API.getWorldSyncedData("scoreboard_column_names"))
         {
             foreach (var player in players)
             {
-                API.resetEntityData(player.handle, col);
+                API.resetEntitySyncedData(player.handle, col);
             }
         }
 
-        API.resetWorldData("scoreboard_column_names");
-        API.resetWorldData("scoreboard_column_friendlynames");
-        API.resetWorldData("scoreboard_column_widths");
+        API.resetWorldSyncedData("scoreboard_column_names");
+        API.resetWorldSyncedData("scoreboard_column_friendlynames");
+        API.resetWorldSyncedData("scoreboard_column_widths");
     }
 
 
@@ -46,9 +46,9 @@ public class ScoreboardScript : Script
 
     public void addScoreboardColumn(string name, string friendlyName, int width)
     {
-        var currentNames = API.getWorldData("scoreboard_column_names");
-        var currentFNames = API.getWorldData("scoreboard_column_friendlynames");
-        var currentWidths = API.getWorldData("scoreboard_column_widths");
+        var currentNames = API.getWorldSyncedData("scoreboard_column_names");
+        var currentFNames = API.getWorldSyncedData("scoreboard_column_friendlynames");
+        var currentWidths = API.getWorldSyncedData("scoreboard_column_widths");
 
         if (!currentNames.Contains("scoreboard_" + name))
         {
@@ -57,16 +57,16 @@ public class ScoreboardScript : Script
             currentWidths.Add(width);
         }
 
-        API.setWorldData("scoreboard_column_names", currentNames);
-        API.setWorldData("scoreboard_column_friendlynames", currentFNames);
-        API.setWorldData("scoreboard_column_widths", currentWidths);
+        API.setWorldSyncedData("scoreboard_column_names", currentNames);
+        API.setWorldSyncedData("scoreboard_column_friendlynames", currentFNames);
+        API.setWorldSyncedData("scoreboard_column_widths", currentWidths);
     }
 
     public void removeScoreboardColumn(string name)
     {
-        var currentNames = API.getWorldData("scoreboard_column_names");
-        var currentFNames = API.getWorldData("scoreboard_column_friendlynames");
-        var currentWidths = API.getWorldData("scoreboard_column_widths");
+        var currentNames = API.getWorldSyncedData("scoreboard_column_names");
+        var currentFNames = API.getWorldSyncedData("scoreboard_column_friendlynames");
+        var currentWidths = API.getWorldSyncedData("scoreboard_column_widths");
 
         var indx = currentNames.IndexOf("scoreboard_" + name);
 
@@ -76,15 +76,15 @@ public class ScoreboardScript : Script
             currentFNames.RemoveAt(indx);
             currentWidths.RemoveAt(indx);
 
-            API.setWorldData("scoreboard_column_names", currentNames);
-            API.setWorldData("scoreboard_column_friendlynames", currentFNames);
-            API.setWorldData("scoreboard_column_widths", currentWidths);
+            API.setWorldSyncedData("scoreboard_column_names", currentNames);
+            API.setWorldSyncedData("scoreboard_column_friendlynames", currentFNames);
+            API.setWorldSyncedData("scoreboard_column_widths", currentWidths);
         }
     }
 
     public void setPlayerScoreboardData(Client player, string columnName, string data)
     {
-        API.setEntityData(player.handle, "scoreboard_" + columnName, data);
+        API.setEntitySyncedData(player.handle, "scoreboard_" + columnName, data);
     }
 
     public void resetColumnData(string columnName)
@@ -93,7 +93,7 @@ public class ScoreboardScript : Script
 
         foreach (var player in players)
         {
-            API.resetEntityData(player.handle, "scoreboard_" + columnName);
+            API.resetEntitySyncedData(player.handle, "scoreboard_" + columnName);
         }
     }
 
@@ -101,16 +101,16 @@ public class ScoreboardScript : Script
     {
         var players = API.getAllPlayers();
 
-        foreach (var col in API.getWorldData("scoreboard_column_names"))
+        foreach (var col in API.getWorldSyncedData("scoreboard_column_names"))
         {
             foreach (var player in players)
             {
-                API.resetEntityData(player.handle, col);
+                API.resetEntitySyncedData(player.handle, col);
             }
         }
 
-        API.setWorldData("scoreboard_column_names", new List<string>());
-        API.setWorldData("scoreboard_column_friendlynames", new List<string>());
-        API.setWorldData("scoreboard_column_widths", new List<int>());
+        API.setWorldSyncedData("scoreboard_column_names", new List<string>());
+        API.setWorldSyncedData("scoreboard_column_friendlynames", new List<string>());
+        API.setWorldSyncedData("scoreboard_column_widths", new List<int>());
     }
 }

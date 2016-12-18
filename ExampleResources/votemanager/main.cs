@@ -37,7 +37,7 @@ namespace Votemanager
             {
                 foreach (var p in API.getAllPlayers())
                 {
-                    API.setEntityData(p, "VOTEMANAGER_PLAYER_JOINED", true);
+                    API.setEntitySyncedData(p, "VOTEMANAGER_PLAYER_JOINED", true);
                 }
             };
 
@@ -46,12 +46,12 @@ namespace Votemanager
 
         private void playerJoin(Client player)
         {
-            if (CurrentVote != null && API.getEntityData(player, "VOTEMANAGER_PLAYER_JOINED") != true)
+            if (CurrentVote != null && API.getEntitySyncedData(player, "VOTEMANAGER_PLAYER_JOINED") != true)
             {
                 CurrentVote.SendVoteToClient(CurrentVote.Type, player);                
             }
 
-            API.setEntityData(player, "VOTEMANAGER_PLAYER_JOINED", true);
+            API.setEntitySyncedData(player, "VOTEMANAGER_PLAYER_JOINED", true);
         }
 
         private void eventReceived(Client sender, string name, object[] args)

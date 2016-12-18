@@ -28,8 +28,8 @@ public class PlayerBlips : Script
 	{
 		foreach (var player in API.getAllPlayers())
 		{
-			API.resetEntityData(player, "PLAYERBLIPS_HAS_BLIP_RECEIVED");
-			API.resetEntityData(player, "PLAYERBLIPS_MAIN_BLIP");
+			API.resetEntitySyncedData(player, "PLAYERBLIPS_HAS_BLIP_RECEIVED");
+			API.resetEntitySyncedData(player, "PLAYERBLIPS_MAIN_BLIP");
 		}
 	}
 
@@ -41,21 +41,21 @@ public class PlayerBlips : Script
 		API.setBlipName(pBlip, player.name);
 		API.setBlipScale(pBlip, 0.8f);
 
-		API.setEntityData(player, "PLAYERBLIPS_MAIN_BLIP", pBlip);
+		API.setEntitySyncedData(player, "PLAYERBLIPS_MAIN_BLIP", pBlip);
 	}
 
 	private void PlayerJavascriptDownloadComplete(Client player)
 	{
-		if (API.getEntityData(player, "PLAYERBLIPS_HAS_BLIP_RECEIVED") != true)
+		if (API.getEntitySyncedData(player, "PLAYERBLIPS_HAS_BLIP_RECEIVED") != true)
 		{
 			API.triggerClientEvent(player, "SET_PLAYER_BLIP", getPlayerBlip(player));
-			API.setEntityData(player, "PLAYERBLIPS_HAS_BLIP_RECEIVED", true);
+			API.setEntitySyncedData(player, "PLAYERBLIPS_HAS_BLIP_RECEIVED", true);
 		}
 	}
 
 	private void PlayerLeave(Client player, string reason)
 	{
-		var ourBlip = API.getEntityData(player, "PLAYERBLIPS_MAIN_BLIP");
+		var ourBlip = API.getEntitySyncedData(player, "PLAYERBLIPS_MAIN_BLIP");
 
 		if (ourBlip != null)
 		{
@@ -67,14 +67,14 @@ public class PlayerBlips : Script
 
 	public NetHandle getPlayerBlip(Client player)
 	{
-		if (!API.hasEntityData(player, "PLAYERBLIPS_MAIN_BLIP")) return new NetHandle(0);
+		if (!API.hasEntitySyncedData(player, "PLAYERBLIPS_MAIN_BLIP")) return new NetHandle(0);
 
-		var data = API.getEntityData(player, "PLAYERBLIPS_MAIN_BLIP");
+		var data = API.getEntitySyncedData(player, "PLAYERBLIPS_MAIN_BLIP");
 		return (object)data == null ? new NetHandle(0) : data;
 	}
 
 	public void setPlayerBlip(Client player, NetHandle blip)
 	{
-		API.setEntityData(player, "PLAYERBLIPS_MAIN_BLIP", blip);
+		API.setEntitySyncedData(player, "PLAYERBLIPS_MAIN_BLIP", blip);
 	}
 }

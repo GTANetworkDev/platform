@@ -100,10 +100,10 @@ public class Deathmatch : Script
         {
             Respawn(player);
 
-            API.setEntityData(player.handle, "dm_score", 0);
-            API.setEntityData(player.handle, "dm_deaths", 0);
-            API.setEntityData(player.handle, "dm_kills", 0);
-            API.setEntityData(player.handle, "dm_kdr", 0);
+            API.setEntitySyncedData(player.handle, "dm_score", 0);
+            API.setEntitySyncedData(player.handle, "dm_deaths", 0);
+            API.setEntitySyncedData(player.handle, "dm_kills", 0);
+            API.setEntitySyncedData(player.handle, "dm_kdr", 0);
 
             API.exported.scoreboard.setPlayerScoreboardData(player, "dm_score", "0");
             API.exported.scoreboard.setPlayerScoreboardData(player, "dm_deaths", "0");
@@ -125,10 +125,10 @@ public class Deathmatch : Script
             API.setBlipSprite(pBlip, 1);
             API.setBlipColor(pBlip, 0);
 
-            API.setEntityData(player.handle, "dm_score", 0);
-            API.setEntityData(player.handle, "dm_deaths", 0);
-            API.setEntityData(player.handle, "dm_kills", 0);
-            API.setEntityData(player.handle, "dm_kdr", 0);
+            API.setEntitySyncedData(player.handle, "dm_score", 0);
+            API.setEntitySyncedData(player.handle, "dm_deaths", 0);
+            API.setEntitySyncedData(player.handle, "dm_kills", 0);
+            API.setEntitySyncedData(player.handle, "dm_kdr", 0);
 
             UpdateScoreboardData(player);
         }
@@ -155,10 +155,10 @@ public class Deathmatch : Script
     
     public void OnPlayerConnected(Client player)
     {
-        API.setEntityData(player.handle, "dm_score", 0);
-        API.setEntityData(player.handle, "dm_deaths", 0);
-        API.setEntityData(player.handle, "dm_kills", 0);
-        API.setEntityData(player.handle, "dm_kdr", 0);
+        API.setEntitySyncedData(player.handle, "dm_score", 0);
+        API.setEntitySyncedData(player.handle, "dm_deaths", 0);
+        API.setEntitySyncedData(player.handle, "dm_kills", 0);
+        API.setEntitySyncedData(player.handle, "dm_kdr", 0);
 
         UpdateScoreboardData(player);
 
@@ -177,10 +177,10 @@ public class Deathmatch : Script
 
     private void UpdateScoreboardData(Client player)
     {
-        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_score", API.getEntityData(player.handle, "dm_score").ToString());
-        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_deaths", API.getEntityData(player.handle, "dm_deaths").ToString());
-        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kills", API.getEntityData(player.handle, "dm_kills").ToString());
-        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kdr", API.getEntityData(player.handle, "dm_kdr").ToString("F2"));
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_score", API.getEntitySyncedData(player.handle, "dm_score").ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_deaths", API.getEntitySyncedData(player.handle, "dm_deaths").ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kills", API.getEntitySyncedData(player.handle, "dm_kills").ToString());
+        API.exported.scoreboard.setPlayerScoreboardData(player, "dm_kdr", API.getEntitySyncedData(player.handle, "dm_kdr").ToString("F2"));
     }
 
     public void PlayerKilled(Client player, NetHandle reason, int weapon)
@@ -199,25 +199,25 @@ public class Deathmatch : Script
             }        
         }
 
-        API.setEntityData(player.handle, "dm_score", API.getEntityData(player.handle, "dm_score") - 1);
-        API.setEntityData(player.handle, "dm_deaths", API.getEntityData(player.handle, "dm_deaths") + 1);
+        API.setEntitySyncedData(player.handle, "dm_score", API.getEntitySyncedData(player.handle, "dm_score") - 1);
+        API.setEntitySyncedData(player.handle, "dm_deaths", API.getEntitySyncedData(player.handle, "dm_deaths") + 1);
 
-        API.setEntityData(player.handle, "dm_kdr", API.getEntityData(player.handle, "dm_kills") / (float)API.getEntityData(player.handle, "dm_deaths"));
+        API.setEntitySyncedData(player.handle, "dm_kdr", API.getEntitySyncedData(player.handle, "dm_kills") / (float)API.getEntitySyncedData(player.handle, "dm_deaths"));
 
         UpdateScoreboardData(player);
 
         if (killer != null)
         {
-            API.setEntityData(killer.handle, "dm_kills", API.getEntityData(killer.handle, "dm_kills") + 1);
-            API.setEntityData(killer.handle, "dm_score", API.getEntityData(killer.handle, "dm_score") + 1);
-            if (API.getEntityData(killer.handle, "dm_deaths") != 0)
-            API.setEntityData(killer.handle, "dm_kdr", API.getEntityData(killer.handle, "dm_kills") / (float)API.getEntityData(killer.handle, "dm_deaths"));
+            API.setEntitySyncedData(killer.handle, "dm_kills", API.getEntitySyncedData(killer.handle, "dm_kills") + 1);
+            API.setEntitySyncedData(killer.handle, "dm_score", API.getEntitySyncedData(killer.handle, "dm_score") + 1);
+            if (API.getEntitySyncedData(killer.handle, "dm_deaths") != 0)
+            API.setEntitySyncedData(killer.handle, "dm_kdr", API.getEntitySyncedData(killer.handle, "dm_kills") / (float)API.getEntitySyncedData(killer.handle, "dm_deaths"));
 
             UpdateScoreboardData(killer);
 
-            /*if (API.getEntityData(killer.handle, "dm_kills") >= killTarget)
+            /*if (API.getEntitySyncedData(killer.handle, "dm_kills") >= killTarget)
             {
-                API.sendChatMessageToAll("~b~~h~" + killer.name + "~h~~w~ has won the round with " + killTarget + " kills and " + API.getEntityData(player.handle, "dm_deaths") + " deaths!");
+                API.sendChatMessageToAll("~b~~h~" + killer.name + "~h~~w~ has won the round with " + killTarget + " kills and " + API.getEntitySyncedData(player.handle, "dm_deaths") + " deaths!");
                 API.exported.mapcycler.endRound();
             }
 */

@@ -15,10 +15,10 @@ API.onUpdate.connect(function(s,e) {
 		var res = API.getScreenResolutionMantainRatio();
 		var players = API.getAllPlayers();
 
-		var columnList = API.getWorldData("scoreboard_column_names");
+		var columnList = API.getWorldSyncedData("scoreboard_column_names");
 		if (columnList == null) return;
-		var columnNames = API.getWorldData("scoreboard_column_friendlynames");
-		var columnWidths = API.getWorldData("scoreboard_column_widths");
+		var columnNames = API.getWorldSyncedData("scoreboard_column_friendlynames");
+		var columnWidths = API.getWorldSyncedData("scoreboard_column_widths");
 
 		var columnLen = columnList.Count;
 		var totalWidth = 300;
@@ -54,7 +54,7 @@ API.onUpdate.connect(function(s,e) {
 
 		currentCW = 0;
 		for (var j = 0; j < columnList.Count; j++) {
-			var columnData = API.getEntityData(API.getLocalPlayer(), columnList[j]);
+			var columnData = API.getEntitySyncedData(API.getLocalPlayer(), columnList[j]);
 
 			if (columnList[j] == "scoreboard_ping")
 				columnData = API.toString(API.getPlayerPing(API.getLocalPlayer()));
@@ -78,7 +78,7 @@ API.onUpdate.connect(function(s,e) {
 
 			currentCW = 0;
 			for (var j = 0; j < columnList.Count; j++) {
-				var columnData = API.getEntityData(players[i], columnList[j]);
+				var columnData = API.getEntitySyncedData(players[i], columnList[j]);
 
 				if (columnList[j] == "scoreboard_ping")
 					columnData = API.toString(API.getPlayerPing(players[i]));
