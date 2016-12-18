@@ -3493,61 +3493,39 @@ namespace GTANetwork
                 DEBUG_STEP = 32;
 
 
-                if (Main.TickCount % 25 == 0) // Save ressource
+                if (Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
                 {
-                    if (RemoveGameEntities)
+                    _lastEntityRemoval = Util.Util.TickCount;
+                    foreach (var entity in World.GetAllPeds())
                     {
-                        //if (_whoseturnisitanyways)
+                        if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.Player.Character)
                         {
-                            foreach (var entity in World.GetAllPeds())
+                            entity.Kill();
+                            entity.Delete();
+                        }
+                    }
+
+                    foreach (var entity in World.GetAllVehicles())
+                    {
+                        if (entity == null) continue;
+                        var veh = NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteVehicle;
+                        if (veh == null)
+                        {
+                            entity.Delete();
+                            continue;
+                        }
+
+                        if (Util.Util.IsVehicleEmpty(entity) && !VehicleSyncManager.IsInterpolating(entity.Handle) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
+                        {
+                            if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)
                             {
-                                if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.Player.Character)
-                                {
-                                    entity.Kill();
-                                    entity.Delete();
-                                }
+                                entity.PositionNoOffset = veh.Position.ToVector();
+                                entity.Quaternion = veh.Rotation.ToVector().ToQuaternion();
                             }
                         }
-                        //else
-                        {
-                            foreach (var entity in World.GetAllVehicles())
-                            {
-                                if (entity == null) continue;
-                                var veh = NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteVehicle;
-                                if (veh == null)
-                                {
-                                    entity.Delete();
-                                    continue;
-                                }
 
-                                if (Util.Util.IsVehicleEmpty(entity) && !VehicleSyncManager.IsInterpolating(entity.Handle) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
-                                {
-                                    if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)
-                                    {
-                                        entity.PositionNoOffset = veh.Position.ToVector();
-                                        entity.Quaternion = veh.Rotation.ToVector().ToQuaternion();
-                                    }
-                                }
-
-                                //veh.Position = entity.Position.ToLVector();
-                                //veh.Rotation = entity.Rotation.ToLVector();
-                            }
-                        }
-                        //else
-                        {
-                            /*foreach (var entity in World.GetAllProps())
-                            {
-                                if (entity == null) continue;
-                                var veh = NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteProp;
-                                if (veh == null)
-                                {
-                                    entity.Delete();
-                                    continue;
-                                }
-                                veh.Position = entity.Position.ToLVector();
-                                veh.Rotation = entity.Rotation.ToLVector();
-                            }*/
-                        }
+                        //veh.Position = entity.Position.ToLVector();
+                        //veh.Rotation = entity.Rotation.ToLVector();
                     }
                 }
                 DEBUG_STEP = 34;
@@ -3584,6 +3562,8 @@ namespace GTANetwork
                 LogManager.LogException(ex, "MAIN OnTick: STEP : " + DEBUG_STEP);
             }
         }
+
+        private long _lastEntityRemoval;
 
         public static bool IsOnServer()
         {
