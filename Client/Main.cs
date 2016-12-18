@@ -155,7 +155,7 @@ namespace GTANetwork
         {
 
             World.DestroyAllCameras();
-
+            
             CrossReference.EntryPoint = this;
 
             PlayerSettings = Util.Util.ReadSettings(GTANInstallDir + "\\settings.xml");
@@ -2420,6 +2420,8 @@ namespace GTANetwork
                     {
                         Util.Util.WriteMemory(address, 0x90, 24);
                     }
+
+                    TerminateGameScripts();
 
                     GTA.UI.Screen.FadeIn(1000);
                 }

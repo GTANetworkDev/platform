@@ -27,7 +27,9 @@ namespace GTANetwork.Util
             });
 
             Main.BlockControls = true;
-            
+
+            Script.Yield();
+
             while (output == null)
             {
                 spinner.Invoke();
