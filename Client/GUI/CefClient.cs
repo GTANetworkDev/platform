@@ -264,6 +264,7 @@ namespace GTANetwork.GUI
         {
             _windowWidth = windowWidth;
             _windowHeight = windowHeight;
+            LogManager.AlwaysDebugLog("Instantiated Renderer");
         }
 
         public void SetSize(int width, int height)
@@ -309,13 +310,20 @@ namespace GTANetwork.GUI
 
         protected override void OnPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr buffer, int width, int height)
         {
+            lock (BitmapLock)
+            {
+                LastBitmap?.Dispose();
+                LastBitmap = null;
+                LastBitmap = new Bitmap(width, height, width*4, PixelFormat.Format32bppArgb, buffer);
+            }
+            /*
             var oldBitmap = LastBitmap;
             var newBitmap = new Bitmap(width, height, width * 4, PixelFormat.Format32bppArgb, buffer);
             lock (BitmapLock)
             {
                 LastBitmap = newBitmap;
                 if (oldBitmap != null) oldBitmap.Dispose();
-            }
+            }*/
             // TODO: Check mem usage
         }
         
@@ -377,10 +385,8 @@ namespace GTANetwork.GUI
 
         protected override CefRenderHandler GetRenderHandler()
         {
-            //LogManager.AlwaysDebugLog("Renderer requested.");
+            LogManager.AlwaysDebugLog("Requested Renderer");
             return _renderHandler;
-            //return null;
-            //return base.GetRenderHandler();
         }
 
         protected override CefLoadHandler GetLoadHandler()
