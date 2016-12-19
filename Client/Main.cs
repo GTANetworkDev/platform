@@ -1265,170 +1265,187 @@ namespace GTANetwork
             {
                 #if ATTACHSERVER
                 var settingsPath = GTANInstallDir + "\\server\\settings.xml";
-                var settingsFile = ServerSettings.ReadSettings(settingsPath);
 
-                var hostStart = new TabTextItem("Start Server", "Host a Session", "Press [ENTER] to start your own server!");
-                hostStart.CanBeFocused = false;
-
-                hostStart.Activated += (sender, args) =>
+                if (File.Exists(settingsPath) && Directory.Exists(GTANInstallDir + "\\server\\resources"))
                 {
-                    if (IsOnServer() || _serverProcess != null)
+                    var settingsFile = ServerSettings.ReadSettings(settingsPath);
+
+                    var hostStart = new TabTextItem("Start Server", "Host a Session",
+                        "Press [ENTER] to start your own server!");
+                    hostStart.CanBeFocused = false;
+
+                    hostStart.Activated += (sender, args) =>
                     {
-                        GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Leave the current server first!");
-                        return;
-                    }
-
-                    GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Starting server...");
-                    var startSettings = new ProcessStartInfo(GTANInstallDir + "\\server\\GTANetworkServer.exe");
-                    startSettings.CreateNoWindow = true;
-                    startSettings.RedirectStandardOutput = true;
-                    startSettings.UseShellExecute = false;
-                    startSettings.WorkingDirectory = GTANInstallDir + "\\server";
-                    
-                    _serverProcess = Process.Start(startSettings);
-                    
-                    Script.Wait(5000);
-                    ConnectToServer("127.0.0.1", settingsFile.Port);
-                };
-
-                var settingsList = new List<UIMenuItem>();
-
-                {
-                    var serverName = new UIMenuItem("Server Name");
-                    settingsList.Add(serverName);
-                    serverName.SetRightLabel(settingsFile.Name);
-                    serverName.Activated += (sender, item) =>
-                    {
-                        var newName = InputboxThread.GetUserInput(settingsFile.Name, 40, TickSpinner);
-                        if (string.IsNullOrWhiteSpace(newName))
+                        if (IsOnServer() || _serverProcess != null)
                         {
-                            GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Server name must not be empty!");
-                            return;
-                        }
-                        serverName.SetRightLabel(newName);
-                        settingsFile.Name = newName;
-                        ServerSettings.WriteSettings(settingsPath, settingsFile);
-                    };
-                }
-
-                {
-                    var serverName = new UIMenuItem("Password");
-                    settingsList.Add(serverName);
-                    serverName.SetRightLabel(settingsFile.Password);
-                    serverName.Activated += (sender, item) =>
-                    {
-                        var newName = InputboxThread.GetUserInput(settingsFile.Password, 40, TickSpinner);
-                        serverName.SetRightLabel(newName);
-                        settingsFile.Password = newName;
-                        ServerSettings.WriteSettings(settingsPath, settingsFile);
-                    };
-                }
-
-                {
-                    var serverName = new UIMenuItem("Player Limit");
-                    settingsList.Add(serverName);
-                    serverName.SetRightLabel(settingsFile.MaxPlayers.ToString());
-                    serverName.Activated += (sender, item) =>
-                    {
-                        var newName = InputboxThread.GetUserInput(settingsFile.MaxPlayers.ToString(), 40, TickSpinner);
-                        int newLimit;
-                        if (string.IsNullOrWhiteSpace(newName) || !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit))
-                        {
-                            GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Invalid input for player limit!");
+                            GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Leave the current server first!");
                             return;
                         }
 
-                        serverName.SetRightLabel(newName);
-                        settingsFile.MaxPlayers = newLimit;
-                        ServerSettings.WriteSettings(settingsPath, settingsFile);
-                    };
-                }
+                        GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Starting server...");
+                        var startSettings = new ProcessStartInfo(GTANInstallDir + "\\server\\GTANetworkServer.exe");
+                        startSettings.CreateNoWindow = true;
+                        startSettings.RedirectStandardOutput = true;
+                        startSettings.UseShellExecute = false;
+                        startSettings.WorkingDirectory = GTANInstallDir + "\\server";
 
-                {
-                    var serverName = new UIMenuItem("Port");
-                    settingsList.Add(serverName);
-                    serverName.SetRightLabel(settingsFile.Port.ToString());
-                    serverName.Activated += (sender, item) =>
+                        _serverProcess = Process.Start(startSettings);
+
+                        Script.Wait(5000);
+                        ConnectToServer("127.0.0.1", settingsFile.Port);
+                    };
+
+                    var settingsList = new List<UIMenuItem>();
+
                     {
-                        var newName = InputboxThread.GetUserInput(settingsFile.Port.ToString(), 40, TickSpinner);
-                        int newLimit;
-                        if (string.IsNullOrWhiteSpace(newName) || !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit) || newLimit < 1024)
+                        var serverName = new UIMenuItem("Server Name");
+                        settingsList.Add(serverName);
+                        serverName.SetRightLabel(settingsFile.Name);
+                        serverName.Activated += (sender, item) =>
                         {
-                            GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Invalid input for server port!");
-                            return;
-                        }
-
-                        serverName.SetRightLabel(newName);
-                        settingsFile.Port = newLimit;
-                        ServerSettings.WriteSettings(settingsPath, settingsFile);
-                    };
-                }
-
-                {
-                    var serverName = new UIMenuCheckboxItem("Announce to Master Server", settingsFile.Announce);
-                    settingsList.Add(serverName);
-                    serverName.CheckboxEvent += (sender, item) =>
-                    {
-                        settingsFile.Announce = item;
-                        ServerSettings.WriteSettings(settingsPath, settingsFile);
-                    };
-                }
-
-                {
-                    var serverName = new UIMenuCheckboxItem("Auto Portforward (UPnP)", settingsFile.UseUPnP);
-                    settingsList.Add(serverName);
-                    serverName.CheckboxEvent += (sender, item) =>
-                    {
-                        settingsFile.UseUPnP = item;
-                        ServerSettings.WriteSettings(settingsPath, settingsFile);
-                    };
-                }
-
-                {
-                    var serverName = new UIMenuCheckboxItem("Use Access Control List", settingsFile.UseACL);
-                    settingsList.Add(serverName);
-                    serverName.CheckboxEvent += (sender, item) =>
-                    {
-                        settingsFile.UseACL = item;
-                        ServerSettings.WriteSettings(settingsPath, settingsFile);
-                    };
-                }
-
-                var serverSettings = new TabInteractiveListItem("Server Settings", settingsList);
-
-                var resourcesList = new List<UIMenuItem>();
-                {
-                    var resourceRoot = GTANInstallDir + "\\server\\resources";
-                    var folders = Directory.GetDirectories(resourceRoot);
-
-                    foreach (var folder in folders)
-                    {
-                        var resourceName = Path.GetFileName(folder);
-
-                        var item = new UIMenuCheckboxItem(resourceName, settingsFile.Resources.Any(res => res.Path == resourceName));
-                        resourcesList.Add(item);
-                        item.CheckboxEvent += (sender, @checked) =>
-                        {
-                            if (@checked)
+                            var newName = InputboxThread.GetUserInput(settingsFile.Name, 40, TickSpinner);
+                            if (string.IsNullOrWhiteSpace(newName))
                             {
-                                settingsFile.Resources.Add(new ServerSettings.SettingsResFilepath() { Path = resourceName });
+                                GTA.UI.Screen.ShowNotification(
+                                    "~b~~h~GTA Network~h~~w~~n~Server name must not be empty!");
+                                return;
                             }
-                            else
-                            {
-                                settingsFile.Resources.Remove(
-                                    settingsFile.Resources.FirstOrDefault(r => r.Path == resourceName));
-                            }
+                            serverName.SetRightLabel(newName);
+                            settingsFile.Name = newName;
                             ServerSettings.WriteSettings(settingsPath, settingsFile);
                         };
                     }
+
+                    {
+                        var serverName = new UIMenuItem("Password");
+                        settingsList.Add(serverName);
+                        serverName.SetRightLabel(settingsFile.Password);
+                        serverName.Activated += (sender, item) =>
+                        {
+                            var newName = InputboxThread.GetUserInput(settingsFile.Password, 40, TickSpinner);
+                            serverName.SetRightLabel(newName);
+                            settingsFile.Password = newName;
+                            ServerSettings.WriteSettings(settingsPath, settingsFile);
+                        };
+                    }
+
+                    {
+                        var serverName = new UIMenuItem("Player Limit");
+                        settingsList.Add(serverName);
+                        serverName.SetRightLabel(settingsFile.MaxPlayers.ToString());
+                        serverName.Activated += (sender, item) =>
+                        {
+                            var newName = InputboxThread.GetUserInput(settingsFile.MaxPlayers.ToString(), 40,
+                                TickSpinner);
+                            int newLimit;
+                            if (string.IsNullOrWhiteSpace(newName) ||
+                                !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit))
+                            {
+                                GTA.UI.Screen.ShowNotification(
+                                    "~b~~h~GTA Network~h~~w~~n~Invalid input for player limit!");
+                                return;
+                            }
+
+                            serverName.SetRightLabel(newName);
+                            settingsFile.MaxPlayers = newLimit;
+                            ServerSettings.WriteSettings(settingsPath, settingsFile);
+                        };
+                    }
+
+                    {
+                        var serverName = new UIMenuItem("Port");
+                        settingsList.Add(serverName);
+                        serverName.SetRightLabel(settingsFile.Port.ToString());
+                        serverName.Activated += (sender, item) =>
+                        {
+                            var newName = InputboxThread.GetUserInput(settingsFile.Port.ToString(), 40, TickSpinner);
+                            int newLimit;
+                            if (string.IsNullOrWhiteSpace(newName) ||
+                                !int.TryParse(newName, NumberStyles.Integer, CultureInfo.InvariantCulture, out newLimit) ||
+                                newLimit < 1024)
+                            {
+                                GTA.UI.Screen.ShowNotification(
+                                    "~b~~h~GTA Network~h~~w~~n~Invalid input for server port!");
+                                return;
+                            }
+
+                            serverName.SetRightLabel(newName);
+                            settingsFile.Port = newLimit;
+                            ServerSettings.WriteSettings(settingsPath, settingsFile);
+                        };
+                    }
+
+                    {
+                        var serverName = new UIMenuCheckboxItem("Announce to Master Server", settingsFile.Announce);
+                        settingsList.Add(serverName);
+                        serverName.CheckboxEvent += (sender, item) =>
+                        {
+                            settingsFile.Announce = item;
+                            ServerSettings.WriteSettings(settingsPath, settingsFile);
+                        };
+                    }
+
+                    {
+                        var serverName = new UIMenuCheckboxItem("Auto Portforward (UPnP)", settingsFile.UseUPnP);
+                        settingsList.Add(serverName);
+                        serverName.CheckboxEvent += (sender, item) =>
+                        {
+                            settingsFile.UseUPnP = item;
+                            ServerSettings.WriteSettings(settingsPath, settingsFile);
+                        };
+                    }
+
+                    {
+                        var serverName = new UIMenuCheckboxItem("Use Access Control List", settingsFile.UseACL);
+                        settingsList.Add(serverName);
+                        serverName.CheckboxEvent += (sender, item) =>
+                        {
+                            settingsFile.UseACL = item;
+                            ServerSettings.WriteSettings(settingsPath, settingsFile);
+                        };
+                    }
+
+                    var serverSettings = new TabInteractiveListItem("Server Settings", settingsList);
+
+                    var resourcesList = new List<UIMenuItem>();
+                    {
+                        var resourceRoot = GTANInstallDir + "\\server\\resources";
+                        var folders = Directory.GetDirectories(resourceRoot);
+
+                        foreach (var folder in folders)
+                        {
+                            var resourceName = Path.GetFileName(folder);
+
+                            var item = new UIMenuCheckboxItem(resourceName,
+                                settingsFile.Resources.Any(res => res.Path == resourceName));
+                            resourcesList.Add(item);
+                            item.CheckboxEvent += (sender, @checked) =>
+                            {
+                                if (@checked)
+                                {
+                                    settingsFile.Resources.Add(new ServerSettings.SettingsResFilepath()
+                                    {
+                                        Path = resourceName
+                                    });
+                                }
+                                else
+                                {
+                                    settingsFile.Resources.Remove(
+                                        settingsFile.Resources.FirstOrDefault(r => r.Path == resourceName));
+                                }
+                                ServerSettings.WriteSettings(settingsPath, settingsFile);
+                            };
+                        }
+                    }
+
+                    var resources = new TabInteractiveListItem("Resources", resourcesList);
+
+
+                    var welcomeItem = new TabSubmenuItem("host",
+                        new List<TabItem> {hostStart, serverSettings, resources});
+                    MainMenu.AddTab(welcomeItem);
                 }
-
-                var resources = new TabInteractiveListItem("Resources", resourcesList);
-
-                
-                var welcomeItem = new TabSubmenuItem("host", new List<TabItem> { hostStart, serverSettings, resources });
-                MainMenu.AddTab(welcomeItem);
-                #endif
+#endif
             }
             #endregion
 
