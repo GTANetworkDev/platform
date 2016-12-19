@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 using GTA;
+using GTA.Native;
 using GTANetwork.Javascript;
 using NativeUI;
 using Control = GTA.Control;
@@ -168,25 +169,26 @@ namespace GTANetwork.GUI
             for (int indx = Math.Min(_messagesPerPage + _pagingIndex, _messages.Count-1); indx >= (_messages.Count <= _messagesPerPage ? 0 : _pagingIndex); indx--)
             {
                 var msg = _messages[indx];
-
+                Point position = Main.PlayerSettings.ScaleChatWithSafezone
+                    ? UIMenu.GetSafezoneBounds() + new Size(0, 25*c)
+                    : new Point(0, 25*c);
                 string output = msg.Item1;
+                var res = GTA.UI.Screen.Resolution;
 
-                if (Main.PlayerSettings.ScaleChatWithSafezone)
+                int length = NativeUI.StringMeasurer.MeasureString(output);
+
+                while (length > res.Width - 10 - position.X && output.Length > 10)
                 {
-                    new UIResText(output, UIMenu.GetSafezoneBounds() + new Size(0, 25*c), 0.35f,
-                        Color.FromArgb((int) textAlpha, msg.Item2))
-                    {
-                        Outline = true,
-                    }.Draw();
-                }
-                else
+                    output = output.Substring(0, Math.Max(10, output.Length - 10));
+                    length = NativeUI.StringMeasurer.MeasureString(output);
+                } 
+
+                new UIResText(output, position, 0.35f,
+                    Color.FromArgb((int) textAlpha, msg.Item2))
                 {
-                    new UIResText(output, new Point(0, 25 * c), 0.35f,
-                        Color.FromArgb((int)textAlpha, msg.Item2))
-                    {
-                        Outline = true,
-                    }.Draw();
-                }
+                    Outline = true,
+                }.Draw();
+
                 c++;
             }
 
@@ -221,10 +223,17 @@ namespace GTANetwork.GUI
                 if (sender.Length == 9) sender = null;
             }
 
+            msg = msg.Replace("\n", "");
+            msg = msg.Replace("~n~", "");
+
             if (string.IsNullOrEmpty(sender))
                 _messages.Insert(0, new Tuple<string, Color>(msg, textColor));
             else
+            {
+                sender = sender.Replace("\n", "");
+                sender = sender.Replace("~n~", "");
                 _messages.Insert(0, new Tuple<string, Color>(sender + ": " + msg, textColor));
+            }
 
             if (_messages.Count > 50)
                 _messages.RemoveAt(50);
@@ -238,6 +247,8 @@ namespace GTANetwork.GUI
             input = Regex.Replace(input, "~.~", "", RegexOptions.IgnoreCase);
             return input;
         }
+
+        public const int MAX_CHAT_MESSAGE = 200;
         
         public void OnKeyDown(Keys key)
         {
@@ -303,7 +314,9 @@ namespace GTANetwork.GUI
                 if (!string.IsNullOrWhiteSpace(str))
                 {
                     CurrentInput += str;
-                    _mainScaleform.CallFunction("ADD_TEXT", str);
+                    if (CurrentInput.Length > MAX_CHAT_MESSAGE)
+                        CurrentInput = CurrentInput.Substring(0, MAX_CHAT_MESSAGE);
+                    else _mainScaleform.CallFunction("ADD_TEXT", str);
                 }
 
                 return;
@@ -359,7 +372,10 @@ namespace GTANetwork.GUI
             str = keyChar;
 
             CurrentInput += str;
-            _mainScaleform.CallFunction("ADD_TEXT", str);
+            if (CurrentInput.Length > MAX_CHAT_MESSAGE)
+                CurrentInput = CurrentInput.Substring(0, MAX_CHAT_MESSAGE);
+            else
+                _mainScaleform.CallFunction("ADD_TEXT", str);
         }
 
 
