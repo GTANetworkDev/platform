@@ -1576,7 +1576,7 @@ namespace GTANetwork.Networking
             return rem;
         }
 
-        public SyncPed GetPlayer(int netHandle)
+        internal SyncPed GetPlayer(int netHandle)
         {
             SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
             if (rem == null)

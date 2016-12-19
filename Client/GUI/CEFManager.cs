@@ -28,11 +28,11 @@ using Point = System.Drawing.Point;
 
 namespace GTANetwork.GUI
 {
-    internal class CefController : Script
+    public class CefController : Script
     {
         private static bool _showCursor;
 
-        internal static bool ShowCursor
+        public static bool ShowCursor
         {
             get { return _showCursor; }
             set
@@ -48,11 +48,11 @@ namespace GTANetwork.GUI
 
         private static bool _justShownCursor;
         private static long _lastShownCursor = 0;
-        internal static PointF _lastMousePoint;
-        internal static int GameFPS = 1;
+        public static PointF _lastMousePoint;
+        public static int GameFPS = 1;
         private Keys _lastKey;
 
-        internal static CefEventFlags GetMouseModifiers(bool leftbutton, bool rightButton)
+        public static CefEventFlags GetMouseModifiers(bool leftbutton, bool rightButton)
         {
             CefEventFlags mod = CefEventFlags.None;
 
@@ -240,10 +240,10 @@ namespace GTANetwork.GUI
     internal static class CEFManager
     {
         #if DISABLE_HOOK
-        internal const bool D3D11_DISABLED = true;
+        public const bool D3D11_DISABLED = true;
         #else
-        internal const bool D3D11_DISABLED = false;
-        #endif
+        public const bool D3D11_DISABLED = false;
+#endif
 
 
         internal static void InitializeCef()
@@ -331,7 +331,7 @@ namespace GTANetwork.GUI
 
         private static long _lastCefRender = 0;
         private static Bitmap _lastCefBitmap = null;
-        
+
         internal static void RenderLoop()
         {
             Application.ThreadException += ApplicationOnThreadException;
@@ -445,13 +445,13 @@ namespace GTANetwork.GUI
     }
     
 
-    internal class BrowserJavascriptCallback
+    public class BrowserJavascriptCallback
     {
         private V8ScriptEngine _parent;
 #if !DISABLE_CEF
         private Browser _wrapper;
 #endif
-        internal BrowserJavascriptCallback(V8ScriptEngine parent, Browser wrapper)
+        public BrowserJavascriptCallback(V8ScriptEngine parent, Browser wrapper)
         {
             _parent = parent;
 #if !DISABLE_CEF
@@ -459,9 +459,9 @@ namespace GTANetwork.GUI
 #endif
         }
 
-        internal BrowserJavascriptCallback() { }
+        public BrowserJavascriptCallback() { }
 
-        internal object call(string functionName, params object[] arguments)
+        public object call(string functionName, params object[] arguments)
         {
 #if !DISABLE_CEF
             if (!_wrapper._localMode) return null;
@@ -512,7 +512,7 @@ namespace GTANetwork.GUI
 #endif
         }
 
-        internal object eval(string code)
+        public object eval(string code)
         {
 #if !DISABLE_CEF
             if (!_wrapper._localMode) return null;
@@ -542,7 +542,7 @@ namespace GTANetwork.GUI
 #endif
         }
 
-        internal void addEventHandler(string eventName, Action<object[]> action)
+        public void addEventHandler(string eventName, Action<object[]> action)
         {
 #if !DISABLE_CEF
             if (!_wrapper._localMode) return;
@@ -574,14 +574,14 @@ namespace GTANetwork.GUI
         internal readonly bool _localMode;
         internal bool _hasFocused;
         
-        internal bool Headless = false;
+        public bool Headless = false;
 
-        internal Point Position { get; set; }
+        public Point Position { get; set; }
 
-        internal PointF[] Pinned { get; set; }
+        public PointF[] Pinned { get; set; }
         
         private Size _size;
-        internal Size Size
+        public Size Size
         {
             get { return _size; }
             set
