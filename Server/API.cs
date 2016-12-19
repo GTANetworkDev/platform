@@ -1254,6 +1254,16 @@ namespace GTANetworkServer
             }
         }
 
+        public Client[] getVehicleOccupants(NetHandle vehicle)
+        {
+            if (Program.ServerInstance.VehicleOccupants.ContainsKey(vehicle.Value))
+            {
+                return Program.ServerInstance.VehicleOccupants[vehicle.Value].ToArray();
+            }
+
+            return new Client[0];
+        }
+
         public int getVehicleLivery(NetHandle vehicle)
         {
             if (doesEntityExist(vehicle))

@@ -78,7 +78,8 @@ namespace GTANetworkShared
         public Keys ScreenshotKey { get; set; }
         public int CefFps { get; set; }
         public bool StartGameInOfflineMode { get; set; }
-        
+        public bool AutosetBorderlessWindowed { get; set; }
+
         public PlayerSettings()
         {
             MasterServerAddress = "http://148.251.18.67:8888/";
@@ -89,6 +90,8 @@ namespace GTANetworkShared
             StartGameInOfflineMode = true;
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
+            AutosetBorderlessWindowed = true;
+            StartGameInOfflineMode = true;
             ScreenshotKey = Keys.F8;
             CefFps = 30;
         }

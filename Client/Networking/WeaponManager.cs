@@ -6,20 +6,20 @@ using WeaponHash = GTANetworkShared.WeaponHash;
 
 namespace GTANetwork.Networking
 {
-    public class WeaponManager
+    internal class WeaponManager
     {
         private List<WeaponHash> _playerInventory = new List<WeaponHash>
         {
             WeaponHash.Unarmed,
         };
 
-        public void Clear()
+        internal void Clear()
         {
             _playerInventory.Clear();
             _playerInventory.Add(WeaponHash.Unarmed);
         }
 
-        public void Update()
+        internal void Update()
         {
             var weapons = Enum.GetValues(typeof (WeaponHash)).Cast<WeaponHash>();
 
@@ -32,12 +32,12 @@ namespace GTANetwork.Networking
             }
         }
 
-        public void Allow(WeaponHash hash)
+        internal void Allow(WeaponHash hash)
         {
             if (!_playerInventory.Contains(hash)) _playerInventory.Add(hash);
         }
 
-        public void Deny(WeaponHash hash)
+        internal void Deny(WeaponHash hash)
         {
             _playerInventory.Remove(hash);
         }

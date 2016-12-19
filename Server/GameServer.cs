@@ -183,6 +183,8 @@ namespace GTANetworkServer
             new Dictionary<NetHandle, Dictionary<string, object>>();
         public Dictionary<string, object> WorldProperties = new Dictionary<string, object>();
 
+        public Dictionary<int, List<Client>> VehicleOccupants = new Dictionary<int, List<Client>>();
+
         public NetEntityHandler NetEntityHandler { get; set; }
 
         public bool AllowDisplayNames { get; set; }
@@ -1864,6 +1866,14 @@ namespace GTANResource
 
                                                 if (!client.IsInVehicleInternal || client.VehicleHandleInternal != car.Value)
                                                 {
+                                                    if (!VehicleOccupants.ContainsKey(car.Value))
+                                                    {
+                                                        VehicleOccupants.Add(car.Value, new List<Client>());
+                                                    }
+
+                                                    if (!VehicleOccupants[car.Value].Contains(client))
+                                                        VehicleOccupants[car.Value].Add(client);
+
                                                     lock (RunningResources)
                                                         RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                         {
@@ -2020,6 +2030,11 @@ namespace GTANResource
 
                                                 if (client.IsInVehicleInternal && !client.CurrentVehicle.IsNull)
                                                 {
+                                                    if (client.CurrentVehicle.Value != 0 &&
+                                                        VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) &&
+                                                        VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
+                                                        VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
+
                                                     lock (RunningResources)
                                                         RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                         {

@@ -12,11 +12,11 @@ using GTANetworkShared;
 
 namespace GTANetwork.Networking
 {
-    public static class DownloadManager
+    internal static class DownloadManager
     {
         private static ScriptCollection PendingScripts = new ScriptCollection() { ClientsideScripts = new List<ClientsideScript>()};
 
-        public static Dictionary<string, string> FileIntegrity = new Dictionary<string, string>();
+        internal static Dictionary<string, string> FileIntegrity = new Dictionary<string, string>();
 
         private static string[] _allowedFiletypes = new[]
         {
@@ -37,7 +37,7 @@ namespace GTANetwork.Networking
             "application/x-font-ttf",
         };
 
-        public static bool ValidateExternalMods(List<string> whitelist)
+        internal static bool ValidateExternalMods(List<string> whitelist)
         {
             foreach (var asiMod in Main.GetModules().Where(mod => mod.ModuleName.EndsWith(".asi")))
             {
@@ -53,7 +53,7 @@ namespace GTANetwork.Networking
             return true;
         }
 
-        public static string HashFile(string path)
+        internal static string HashFile(string path)
         {
             byte[] myData;
 
@@ -66,7 +66,7 @@ namespace GTANetwork.Networking
             return myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
         }
 
-        public static bool CheckFileIntegrity()
+        internal static bool CheckFileIntegrity()
         {
             foreach (var pair in FileIntegrity)
             {
@@ -89,7 +89,7 @@ namespace GTANetwork.Networking
         }
 
         private static FileTransferId CurrentFile;
-        public static bool StartDownload(int id, string path, FileType type, int len, string md5hash, string resource)
+        internal static bool StartDownload(int id, string path, FileType type, int len, string md5hash, string resource)
         {
             if (CurrentFile != null)
             {
@@ -128,7 +128,7 @@ namespace GTANetwork.Networking
             return true;
         }
 
-        public static ClientsideScript LoadScript(string file, string resource, string script)
+        internal static ClientsideScript LoadScript(string file, string resource, string script)
         {
             var csScript = new ClientsideScript();
 
@@ -139,12 +139,12 @@ namespace GTANetwork.Networking
             return csScript;
         }
 
-        public static void Cancel()
+        internal static void Cancel()
         {
             CurrentFile = null;
         }
 
-        public static void DownloadPart(int id, byte[] bytes)
+        internal static void DownloadPart(int id, byte[] bytes)
         {
             if (CurrentFile == null || CurrentFile.Id != id)
             {
@@ -159,7 +159,7 @@ namespace GTANetwork.Networking
                             (CurrentFile.DataWritten/(float) CurrentFile.Length).ToString("P"));
         }
 
-        public static void End(int id)
+        internal static void End(int id)
         {
             if (CurrentFile == null || CurrentFile.Id != id)
             {
@@ -246,21 +246,21 @@ namespace GTANetwork.Networking
         }
     }
 
-    public class FileTransferId : IDisposable
+    internal class FileTransferId : IDisposable
     {
-        public static string _DOWNLOADFOLDER_ = Main.GTANInstallDir + "\\resources\\";
+        internal static string _DOWNLOADFOLDER_ = Main.GTANInstallDir + "\\resources\\";
 
-        public int Id { get; set; }
-        public string Filename { get; set; }
-        public FileType Type { get; set; }
-        public FileStream Stream { get; set; }
-        public int Length { get; set; }
-        public int DataWritten { get; set; }
-        public List<byte> Data { get; set; }
-        public string Resource { get; set; }
-        public string FilePath { get; set; }
+        internal int Id { get; set; }
+        internal string Filename { get; set; }
+        internal FileType Type { get; set; }
+        internal FileStream Stream { get; set; }
+        internal int Length { get; set; }
+        internal int DataWritten { get; set; }
+        internal List<byte> Data { get; set; }
+        internal string Resource { get; set; }
+        internal string FilePath { get; set; }
 
-        public FileTransferId(int id, string name, FileType type, int len, string resource)
+        internal FileTransferId(int id, string name, FileType type, int len, string resource)
         {
             Id = id;
             Filename = name;
@@ -284,7 +284,7 @@ namespace GTANetwork.Networking
             }
         }
 
-        public void Write(byte[] data)
+        internal void Write(byte[] data)
         {
             if (Stream != null)
             {

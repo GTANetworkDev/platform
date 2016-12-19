@@ -15,7 +15,7 @@ using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Networking
 {
-    public class StreamerThread : Script
+    internal class StreamerThread : Script
     {
         private List<IStreamedItem> _itemsToStreamIn;
         private List<IStreamedItem> _itemsToStreamOut;
@@ -23,7 +23,7 @@ namespace GTANetwork.Networking
 
         public static SyncPed[] StreamedInPlayers;
 
-        public StreamerThread()
+        internal StreamerThread()
         {
             _itemsToStreamIn = new List<IStreamedItem>();
             _itemsToStreamOut = new List<IStreamedItem>();
@@ -163,9 +163,9 @@ namespace GTANetwork.Networking
         }
     }
 
-    public class Streamer
+    internal class Streamer
     {
-        public Streamer()
+        internal Streamer()
         {
             ClientMap = new BiDictionary<int, IStreamedItem>();
             HandleMap = new BiDictionary<int, int>();
@@ -461,7 +461,7 @@ namespace GTANetwork.Networking
                     if (netId == Game.Player.Character.Handle)
                     {
                         netId = -2;
-                        if (HandleMap.Reverse.ContainsKey(-2))
+                        if (HandleMap.Reverse.ContainsKey(-2) && ClientMap.ContainsKey(HandleMap.Reverse[-2]))
                             return ClientMap[HandleMap.Reverse[-2]];
                     }
 

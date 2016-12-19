@@ -30,23 +30,23 @@ using WeaponHash = GTANetworkShared.WeaponHash;
 
 namespace GTANetwork.Javascript
 {
-    public class ClientsideScriptWrapper
+    internal class ClientsideScriptWrapper
     {
-        public ClientsideScriptWrapper(V8ScriptEngine en, string rs, string filename)
+        internal ClientsideScriptWrapper(V8ScriptEngine en, string rs, string filename)
         {
             Engine = en;
             ResourceParent = rs;
             Filename = filename;
         }
 
-        public V8ScriptEngine Engine { get; set; }
-        public string ResourceParent { get; set; }
-        public string Filename { get; set; }
+        internal V8ScriptEngine Engine { get; set; }
+        internal string ResourceParent { get; set; }
+        internal string Filename { get; set; }
     }
 
-    public static class AudioThread
+    internal static class AudioThread
     {
-        public static void StartAudio(string path, bool looped)
+        internal static void StartAudio(string path, bool looped)
         {
             try
             {
@@ -102,7 +102,7 @@ namespace GTANetwork.Javascript
             */
         }
 
-        public static void DisposeAudio()
+        internal static void DisposeAudio()
         {
             var t = new Thread((ThreadStart)delegate
             {
@@ -124,9 +124,9 @@ namespace GTANetwork.Javascript
         }
     }
 
-    public class JavascriptHook : Script
+    internal class JavascriptHook : Script
     {
-        public JavascriptHook()
+        internal JavascriptHook()
         {
             Tick += OnTick;
             KeyDown += OnKeyDown;
@@ -137,21 +137,21 @@ namespace GTANetwork.Javascript
             Exported = new ExpandoObject();
         }
 
-        public static PointF MousePosition { get; set; }
-        public static bool MouseClick { get; set; }
+        internal static PointF MousePosition { get; set; }
+        internal static bool MouseClick { get; set; }
 
-        public static List<UIResText> TextElements { get; set; }
+        internal static List<UIResText> TextElements { get; set; }
 
-        public static List<ClientsideScriptWrapper> ScriptEngines;
+        internal static List<ClientsideScriptWrapper> ScriptEngines;
 
-        public static List<Action> ThreadJumper;
+        internal static List<Action> ThreadJumper;
 
-        public static WaveOutEvent AudioDevice { get; set; }
-        public static WaveStream AudioReader { get; set; }
+        internal static WaveOutEvent AudioDevice { get; set; }
+        internal static WaveStream AudioReader { get; set; }
 
         private static ExpandoObject Exported { get; set; }
 
-        public static void InvokeServerEvent(string eventName, string resource, object[] arguments)
+        internal static void InvokeServerEvent(string eventName, string resource, object[] arguments)
         {
             ThreadJumper.Add(() =>
             {
@@ -163,7 +163,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public static void InvokeMessageEvent(string msg)
+        internal static void InvokeMessageEvent(string msg)
         {
             if (msg == null) return;
             ThreadJumper.Add(() =>
@@ -185,7 +185,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public static void InvokeCustomEvent(Action<dynamic> func)
+        internal static void InvokeCustomEvent(Action<dynamic> func)
         {
             ThreadJumper.Add(() =>
             {
@@ -196,7 +196,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public static void InvokeStreamInEvent(LocalHandle handle, int type)
+        internal static void InvokeStreamInEvent(LocalHandle handle, int type)
         {
             ThreadJumper.Add(() =>
             {
@@ -207,7 +207,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public static void InvokeStreamOutEvent(LocalHandle handle, int type)
+        internal static void InvokeStreamOutEvent(LocalHandle handle, int type)
         {
             ThreadJumper.Add(() =>
             {
@@ -218,7 +218,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public static void InvokeDataChangeEvent(LocalHandle handle, string key, object oldValue)
+        internal static void InvokeDataChangeEvent(LocalHandle handle, string key, object oldValue)
         {
             ThreadJumper.Add(() =>
             {
@@ -229,7 +229,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public static void InvokeCustomDataReceived(string resource, string data)
+        internal static void InvokeCustomDataReceived(string resource, string data)
         {
             ThreadJumper.Add(() =>
             {
@@ -241,7 +241,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public void OnTick(object sender, EventArgs e)
+        internal void OnTick(object sender, EventArgs e)
         {
             var tmpList = new List<Action>(ThreadJumper);
             ThreadJumper.Clear();
@@ -284,7 +284,7 @@ namespace GTANetwork.Javascript
 
         }
 
-        public void OnKeyDown(object sender, KeyEventArgs e)
+        internal void OnKeyDown(object sender, KeyEventArgs e)
         {
             if (Main.Chat == null || Main.Chat.IsFocused) return;
 
@@ -304,7 +304,7 @@ namespace GTANetwork.Javascript
             }
         }
 
-        public void OnKeyUp(object sender, KeyEventArgs e)
+        internal void OnKeyUp(object sender, KeyEventArgs e)
         {
             if (Main.Chat == null || Main.Chat.IsFocused) return;
 
@@ -324,7 +324,7 @@ namespace GTANetwork.Javascript
             }
         }
 
-        public static void StartScripts(ScriptCollection sc)
+        internal static void StartScripts(ScriptCollection sc)
         {
             var localSc = new List<ClientsideScript>(sc.ClientsideScripts);
 
@@ -361,7 +361,7 @@ namespace GTANetwork.Javascript
             });
         }
 
-        public static ClientsideScriptWrapper StartScript(ClientsideScript script)
+        internal static ClientsideScriptWrapper StartScript(ClientsideScript script)
         {
             ClientsideScriptWrapper csWrapper = null;
             
@@ -404,7 +404,7 @@ namespace GTANetwork.Javascript
             return csWrapper;
         }
 
-        public static void StopAllScripts()
+        internal static void StopAllScripts()
         {
             for (int i = ScriptEngines.Count - 1; i >= 0; i--)
             {
@@ -438,7 +438,7 @@ namespace GTANetwork.Javascript
             }
         }
 
-        public static void StopScript(string resourceName)
+        internal static void StopScript(string resourceName)
         {
             lock (ScriptEngines)
                     for (int i = ScriptEngines.Count - 1; i >= 0; i--)

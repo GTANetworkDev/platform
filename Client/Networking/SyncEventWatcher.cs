@@ -10,11 +10,11 @@ using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Networking
 {
-    public class SyncEventWatcher
+    internal class SyncEventWatcher
     {
         private Main _instance;
 
-        public SyncEventWatcher(Main parent)
+        internal SyncEventWatcher(Main parent)
         {
             _instance = parent;
         }
@@ -31,7 +31,7 @@ namespace GTANetwork.Networking
 
         private Vehicle _lastTrailer;
 
-        public static Vehicle GetVehicleTrailerVehicle(Vehicle tanker)
+        internal static Vehicle GetVehicleTrailerVehicle(Vehicle tanker)
         {
             if (!Function.Call<bool>(Hash.IS_VEHICLE_ATTACHED_TO_TRAILER, tanker))
                 return null;
@@ -40,17 +40,17 @@ namespace GTANetwork.Networking
             return trailerArg.GetResult<Vehicle>();
         }
 
-        public static Vehicle GetVehicleTowtruckVehicle(Vehicle tanker)
+        internal static Vehicle GetVehicleTowtruckVehicle(Vehicle tanker)
         {
             return Function.Call<Vehicle>(Hash.GET_ENTITY_ATTACHED_TO_TOW_TRUCK, tanker);
         }
 
-        public static Vehicle GetVehicleCargobobVehicle(Vehicle tanker)
+        internal static Vehicle GetVehicleCargobobVehicle(Vehicle tanker)
         {
             return Function.Call<Vehicle>(Hash.GET_VEHICLE_ATTACHED_TO_CARGOBOB, tanker);
         }
 
-        public static void SendSyncEvent(SyncEventType type, params object[] args)
+        internal static void SendSyncEvent(SyncEventType type, params object[] args)
         {
             var convertedArgs = Main.ParseNativeArguments(args);
 
@@ -62,7 +62,7 @@ namespace GTANetwork.Networking
         }
 
         private int _lastCheck;
-        public void Tick()
+        internal void Tick()
         {
             if (!Main.IsOnServer()) return;
 

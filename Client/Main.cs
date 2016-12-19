@@ -36,9 +36,9 @@ using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork
 {
-    public class MessagePump : Script
+    internal class MessagePump : Script
     {
-        public MessagePump()
+        internal MessagePump()
         {
             Tick += (sender, args) =>
             {
@@ -70,59 +70,56 @@ namespace GTANetwork
         }
     }
 
-    public static class CrossReference
+    internal static class CrossReference
     {
-        public static Main EntryPoint;
+        internal static Main EntryPoint;
     }
 
-    public class Main : Script
+    internal class Main : Script
     {
-        public static PlayerSettings PlayerSettings;
+        internal static PlayerSettings PlayerSettings;
         
-        public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_0_9;
-        
+        internal static bool BlockControls;
+        internal static bool WriteDebugLog;
+        internal static bool SlowDownClientForDebug;
+        internal static bool Multithreading;
+        internal static bool HTTPFileServer;
 
-        public static bool BlockControls;
-        public static bool WriteDebugLog;
-        public static bool SlowDownClientForDebug;
-        public static bool Multithreading;
-        public static bool HTTPFileServer;
-
-        public static bool IsSpectating;
+        internal static bool IsSpectating;
         private static Vector3 _preSpectatorPos;
 
-        public static Streamer NetEntityHandler;
-        public static CameraManager CameraManager;
+        internal static Streamer NetEntityHandler;
+        internal static CameraManager CameraManager;
 
         private readonly MenuPool _menuPool;
 
         private UIResText _versionLabel = new UIResText("GTAN " + CurrentVersion.ToString(), new Point(), 0.35f, Color.FromArgb(100, 200, 200, 200));
 
         private string _clientIp;
-        public static IChat Chat;
+        internal static IChat Chat;
         private static ClassicChat _backupChat;
 
-        public static NetClient Client;
+        internal static NetClient Client;
         private static NetPeerConfiguration _config;
-        public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
-        
-        public static SynchronizationMode GlobalSyncMode;
-        public static bool LerpRotaion = true;
-        public static bool VehicleLagCompensation = true;
-        public static bool OnFootLagCompensation = true;
-        public static bool RemoveGameEntities = true;
-        public static bool ChatVisible = true;
-        public static bool CanOpenChatbox = true;
-        public static bool ScriptChatVisible = true;
-        public static bool UIVisible = true;
-        public static byte TickCount = 0;
-        public static Color UIColor = Color.White;
+        internal static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
 
-        public static StringCache StringCache;
+        internal static SynchronizationMode GlobalSyncMode;
+        internal static bool LerpRotaion = true;
+        internal static bool VehicleLagCompensation = true;
+        internal static bool OnFootLagCompensation = true;
+        internal static bool RemoveGameEntities = true;
+        internal static bool ChatVisible = true;
+        internal static bool CanOpenChatbox = true;
+        internal static bool ScriptChatVisible = true;
+        internal static bool UIVisible = true;
+        internal static byte TickCount = 0;
+        internal static Color UIColor = Color.White;
 
-        public static int LocalTeam = -1;
-        public static int LocalDimension = 0;
-        public int SpectatingEntity;
+        internal static StringCache StringCache;
+
+        internal static int LocalTeam = -1;
+        internal static int LocalDimension = 0;
+        internal int SpectatingEntity;
 
         private readonly Queue<Action> _threadJumping;
         private string _password;
@@ -130,28 +127,28 @@ namespace GTANetwork
         private bool _lastKilled;
         private bool _wasTyping;
 
-        public static TabView MainMenu;
+        internal static TabView MainMenu;
         
         private DebugWindow _debug;
         private SyncEventWatcher Watcher;
-        public UnoccupiedVehicleSync VehicleSyncManager;
-        public WeaponManager WeaponInventoryManager;
+        internal UnoccupiedVehicleSync VehicleSyncManager;
+        internal WeaponManager WeaponInventoryManager;
 
         private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
 
         // STATS
-        public static int _bytesSent = 0;
-        public static int _bytesReceived = 0;
+        internal static int _bytesSent = 0;
+        internal static int _bytesReceived = 0;
 
-        public static int _messagesSent = 0;
-        public static int _messagesReceived = 0;
+        internal static int _messagesSent = 0;
+        internal static int _messagesReceived = 0;
 
-        public static List<int> _averagePacketSize = new List<int>();
+        internal static List<int> _averagePacketSize = new List<int>();
 
         private TabTextItem _statsItem;
         //
       
-        public Main()
+        internal Main()
         {
 
             World.DestroyAllCameras();
@@ -250,7 +247,7 @@ namespace GTANetwork
             });
         }
 
-        public static void ChatOnComplete(object sender,EventArgs args)
+        internal static void ChatOnComplete(object sender,EventArgs args)
         {
             var message = GUI.Chat.SanitizeString(Chat.CurrentInput);
             if (!string.IsNullOrWhiteSpace(message))
@@ -273,10 +270,10 @@ namespace GTANetwork
             Chat.IsFocused = false;
         }
 
-        public static RelationshipGroup RelGroup;
-        public static RelationshipGroup FriendRelGroup;
-        public static bool HasFinishedDownloading;
-        public static string SocialClubName;
+        internal static RelationshipGroup RelGroup;
+        internal static RelationshipGroup FriendRelGroup;
+        internal static bool HasFinishedDownloading;
+        internal static string SocialClubName;
 
         // Debug stuff
         private bool display;
@@ -293,7 +290,7 @@ namespace GTANetwork
         private bool _isGoingToCar;
         //
 
-        public static bool JustJoinedServer { get; set; }
+        internal static bool JustJoinedServer { get; set; }
         private int _currentOnlinePlayers;
         private int _currentOnlineServers;
 
@@ -314,8 +311,8 @@ namespace GTANetwork
         private string _currentServerIp;
         private bool _debugWindow;
 
-        public static Dictionary<string, SyncPed> Npcs;
-        public static float Latency;
+        internal static Dictionary<string, SyncPed> Npcs;
+        internal static float Latency;
         private int Port = 4499;
 
         private GameSettings.Settings GameSettings;
@@ -324,12 +321,12 @@ namespace GTANetwork
         private int AnimationFlag;
 
 
-        public static Camera MainMenuCamera;
+        internal static Camera MainMenuCamera;
         
 
-        public static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
+        internal static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
         
-        public void GetWelcomeMessage()
+        internal void GetWelcomeMessage()
         {
             ThreadPool.QueueUserWorkItem(delegate
             {
@@ -357,7 +354,7 @@ namespace GTANetwork
         }
 
         private bool _hasScAvatar;
-        public void UpdateSocialClubAvatar()
+        internal void UpdateSocialClubAvatar()
         {
             try
             {
@@ -379,7 +376,7 @@ namespace GTANetwork
 
 
         // We want to check whether the player has the latest game version and the DLC content installed.
-        public bool VerifyGameIntegrity()
+        internal bool VerifyGameIntegrity()
         {
             bool legit = true;
             
@@ -552,7 +549,7 @@ namespace GTANetwork
                 }
                 else
                 {
-                    // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
+                    // IP Address is "probably" internal. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
                     return false;
                 }
             }
@@ -754,7 +751,7 @@ namespace GTANetwork
             OnTick(null, EventArgs.Empty);
         }
 
-        public static IEnumerable<ProcessModule> GetModules()
+        internal static IEnumerable<ProcessModule> GetModules()
         {
             var modules = Process.GetCurrentProcess().Modules;
             
@@ -1525,9 +1522,9 @@ namespace GTANetwork
         private Dictionary<string, NativeData> _tickNatives;
         private Dictionary<string, NativeData> _dcNatives;
 
-        public static List<int> EntityCleanup;
-        public static List<int> BlipCleanup;
-        public static Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
+        internal static List<int> EntityCleanup;
+        internal static List<int> BlipCleanup;
+        internal static Dictionary<int, MarkerProperties> _localMarkers = new Dictionary<int, MarkerProperties>();
 
         private int _markerCount;
 
@@ -1536,10 +1533,10 @@ namespace GTANetwork
         private static Dictionary<int, int> _vehMods = new Dictionary<int, int>();
         private static Dictionary<int, int> _pedClothes = new Dictionary<int, int>();
 
-        public static string Weather { get; set; }
-        public static TimeSpan? Time { get; set; }
+        internal static string Weather { get; set; }
+        internal static TimeSpan? Time { get; set; }
 
-        public static void AddMap(ServerMap map)
+        internal static void AddMap(ServerMap map)
         {
             //File.WriteAllText(GTANInstallDir + "\\logs\\map.json", JsonConvert.SerializeObject(map));
 
@@ -1693,13 +1690,13 @@ namespace GTANetwork
             Function.Call(Hash.PAUSE_CLOCK, true);
         }
 
-        public static void StartClientsideScripts(ScriptCollection scripts)
+        internal static void StartClientsideScripts(ScriptCollection scripts)
         {
             if (scripts.ClientsideScripts != null)
                 JavascriptHook.StartScripts(scripts);
         }
 
-        public static Dictionary<int, int> CheckPlayerVehicleMods()
+        internal static Dictionary<int, int> CheckPlayerVehicleMods()
         {
             if (!Game.Player.Character.IsInVehicle()) return null;
 
@@ -1725,7 +1722,7 @@ namespace GTANetwork
             return _vehMods;
         }
 
-        public static Dictionary<int, int> CheckPlayerProps()
+        internal static Dictionary<int, int> CheckPlayerProps()
         {
             if (_pedSwitch % 30 == 0)
             {
@@ -1749,14 +1746,14 @@ namespace GTANetwork
             return _pedClothes;
         }
 
-        public const NetDeliveryMethod SYNC_MESSAGE_TYPE = NetDeliveryMethod.UnreliableSequenced; // unreliable_sequenced
+        internal const NetDeliveryMethod SYNC_MESSAGE_TYPE = NetDeliveryMethod.UnreliableSequenced; // unreliable_sequenced
 	    private static bool _sendData = true;
 
         private static bool _lastPedData;
         private static int _lastLightSync;
         private static int LIGHT_SYNC_RATE = 1500;
         /*
-        public static void SendPlayerData()
+        internal static void SendPlayerData()
         {
             if (IsSpectating || !_sendData ) return; //|| !HasFinishedDownloading
             var player = Game.Player.Character;
@@ -2008,7 +2005,7 @@ namespace GTANetwork
         /// Debug use only
         /// </summary>
         /// <returns></returns>
-        public PedData PackagePedData()
+        internal PedData PackagePedData()
         {
             var player = Game.Player.Character;
 
@@ -2109,7 +2106,7 @@ namespace GTANetwork
         /// Debug use only
         /// </summary>
         /// <returns></returns>
-        public VehicleData PackageVehicleData()
+        internal VehicleData PackageVehicleData()
         {
             var player = Game.Player.Character;
 
@@ -2209,7 +2206,7 @@ namespace GTANetwork
         }
         //*/
 
-        public static byte GetPedWalkingSpeed(Ped ped)
+        internal static byte GetPedWalkingSpeed(Ped ped)
         {
             byte output = 0;
             string animd;
@@ -2251,7 +2248,7 @@ namespace GTANetwork
             return output;
         }
 
-        public static void InvokeFinishedDownload(List<string> resources)
+        internal static void InvokeFinishedDownload(List<string> resources)
         {
             var confirmObj = Client.CreateMessage();
             confirmObj.Write((byte)PacketType.ConnectionConfirmed);
@@ -2266,7 +2263,7 @@ namespace GTANetwork
             HasFinishedDownloading = true;
         }
 
-        public static int GetCurrentVehicleWeaponHash(Ped ped)
+        internal static int GetCurrentVehicleWeaponHash(Ped ped)
         {
             if (ped.IsInVehicle())
             {
@@ -2296,7 +2293,7 @@ namespace GTANetwork
 
         private static int _debugStep;
 
-        public static int DEBUG_STEP
+        internal static int DEBUG_STEP
         {
             get { return _debugStep; }
             set
@@ -2314,9 +2311,9 @@ namespace GTANetwork
         private Vehicle _debugVehicle;
         private bool _lastSpectating;
         private int _currentSpectatingPlayerIndex = 100000;
-        public SyncPed CurrentSpectatingPlayer;
+        internal SyncPed CurrentSpectatingPlayer;
         private Vector3 _lastWaveReset;
-        public static DateTime LastCarEnter;
+        internal static DateTime LastCarEnter;
         private float _debugPed;
         private Dictionary<int, int> _debugSettings = new Dictionary<int, int>();
         private bool _minimapSet;
@@ -2341,7 +2338,7 @@ namespace GTANetwork
 
         internal static bool _playerGodMode;
 
-        public void OnTick(object sender, EventArgs e)
+        internal void OnTick(object sender, EventArgs e)
         {
             Main.TickCount++;
 
@@ -2421,7 +2418,7 @@ namespace GTANetwork
                         Util.Util.WriteMemory(address, 0x90, 24);
                     }
 
-                    TerminateGameScripts();
+                    //TerminateGameScripts();
 
                     GTA.UI.Screen.FadeIn(1000);
                 }
@@ -2640,13 +2637,13 @@ namespace GTANetwork
             }
 
 
-            public void setPlayerSeatbelt(Client player, bool seatbelt)
+            internal void setPlayerSeatbelt(Client player, bool seatbelt)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x1913FE4CBF41C463,
                 new EntityArgument(player.CharacterHandle.Value), 32, !seatbelt);
         }
 
-        public bool getPlayerSeatbelt(Client player)
+        internal bool getPlayerSeatbelt(Client player)
         {
             return fetchNativeFromPlayer<bool>(player, 0x1913FE4CBF41C463, new EntityArgument(player.CharacterHandle.Value), 32, true);
         }
@@ -3567,7 +3564,7 @@ namespace GTANetwork
 
         private long _lastEntityRemoval;
 
-        public static bool IsOnServer()
+        internal static bool IsOnServer()
         {
             return Client != null && Client.ConnectionStatus == NetConnectionStatus.Connected;
         }
@@ -3635,7 +3632,7 @@ namespace GTANetwork
             });
         }
         
-        public void OnKeyDown(object sender, KeyEventArgs e)
+        internal void OnKeyDown(object sender, KeyEventArgs e)
         {
             Chat.OnKeyDown(e.KeyCode);
             
@@ -3705,7 +3702,7 @@ namespace GTANetwork
             }
         }
 
-        public void ConnectToServer(string ip, int port = 0)
+        internal void ConnectToServer(string ip, int port = 0)
         {
             if (IsOnServer())
             {
@@ -3786,7 +3783,7 @@ namespace GTANetwork
             _currentServerPort = port == 0 ? Port : port;
         }
 
-        public bool IsMessageTypeThreadsafe(NetIncomingMessageType msgType)
+        internal bool IsMessageTypeThreadsafe(NetIncomingMessageType msgType)
         {
             return false;
 
@@ -4648,7 +4645,7 @@ namespace GTANetwork
             #endregion
         }
 
-        public void ProcessMessages(NetIncomingMessage msg, bool safeThreaded)
+        internal void ProcessMessages(NetIncomingMessage msg, bool safeThreaded)
         {
             PacketType type = PacketType.WorldSharingStop;
             LogManager.DebugLog("RECEIVED MESSAGE " + msg.MessageType);
@@ -5108,7 +5105,7 @@ namespace GTANetwork
             }
         }
 
-        public void HandleUnoccupiedVehicleSync(VehicleData data)
+        internal void HandleUnoccupiedVehicleSync(VehicleData data)
         {
             var car = NetEntityHandler.NetToStreamedItem(data.VehicleHandle.Value) as RemoteVehicle;
 
@@ -5356,7 +5353,7 @@ namespace GTANetwork
         private long _debugLastSync;
 
 
-        public static int _debugInterval = 60;
+        internal static int _debugInterval = 60;
         private int _debugFluctuation = 0;
         private Camera _debugCamera;
         private Random _r = new Random();
@@ -5519,7 +5516,7 @@ namespace GTANetwork
         
         #endregion
 
-        public static IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
+        internal static IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {
             var list = new List<object>();
 
@@ -5577,7 +5574,7 @@ namespace GTANetwork
             return list;
         }
 
-        public static IEnumerable<object> DecodeArgumentListPure(params NativeArgument[] args)
+        internal static IEnumerable<object> DecodeArgumentListPure(params NativeArgument[] args)
         {
             var list = new List<object>();
 
@@ -5654,7 +5651,7 @@ namespace GTANetwork
             return list;
         }
 
-        public static void SendToServer(object newData, PacketType packetType, bool important, ConnectionChannel channel)
+        internal static void SendToServer(object newData, PacketType packetType, bool important, ConnectionChannel channel)
         {
             var data = SerializeBinary(newData);
             NetOutgoingMessage msg = Client.CreateMessage();
@@ -5664,7 +5661,7 @@ namespace GTANetwork
             Client.SendMessage(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
         }
 
-        public static List<NativeArgument> ParseNativeArguments(params object[] args)
+        internal static List<NativeArgument> ParseNativeArguments(params object[] args)
         {
             var list = new List<NativeArgument>();
             foreach (var o in args)
@@ -5759,7 +5756,7 @@ namespace GTANetwork
             return list;
         }
 
-        public static void TriggerServerEvent(string eventName, string resource, params object[] args)
+        internal static void TriggerServerEvent(string eventName, string resource, params object[] args)
         {
             if (!IsOnServer()) return;
             var packet = new ScriptEventTrigger();
@@ -5794,7 +5791,7 @@ namespace GTANetwork
             "XMAS "
         };
 
-        public void DecodeNativeCall(NativeData obj)
+        internal void DecodeNativeCall(NativeData obj)
         {
             if (!NativeWhitelist.IsAllowed(obj.Hash))
                 throw new ArgumentException("Hash \"" + obj.Hash.ToString("X") + "\" is not allowed!");
@@ -5972,7 +5969,7 @@ namespace GTANetwork
             }
         }
 
-        public void SendNativeCallResponse(uint id, object response)
+        internal void SendNativeCallResponse(uint id, object response)
         {
             var obj = new NativeResponse();
             obj.Id = id;
@@ -6096,7 +6093,7 @@ namespace GTANetwork
             }
         }
 
-        public static int GetPedSpeed(Vector3 firstVector, Vector3 secondVector)
+        internal static int GetPedSpeed(Vector3 firstVector, Vector3 secondVector)
         {
             float speed = (firstVector - secondVector).Length();
             if (speed < 0.02f)
@@ -6116,7 +6113,7 @@ namespace GTANetwork
             return 0;
         }
 
-        public static bool WorldToScreenRel(Vector3 worldCoords, out Vector2 screenCoords)
+        internal static bool WorldToScreenRel(Vector3 worldCoords, out Vector2 screenCoords)
         {
             var num1 = new OutputArgument();
             var num2 = new OutputArgument();
@@ -6130,7 +6127,7 @@ namespace GTANetwork
             return true;
         }
 
-        public static PointF WorldToScreen(Vector3 worldCoords)
+        internal static PointF WorldToScreen(Vector3 worldCoords)
         {
             var num1 = new OutputArgument();
             var num2 = new OutputArgument();
@@ -6142,7 +6139,7 @@ namespace GTANetwork
             return new PointF(num1.GetResult<float>(), num2.GetResult<float>());
         }
 
-        public static Vector3 ScreenRelToWorld(Vector3 camPos, Vector3 camRot, Vector2 coord)
+        internal static Vector3 ScreenRelToWorld(Vector3 camPos, Vector3 camRot, Vector2 coord)
         {
             var camForward = RotationToDirection(camRot);
             var rotUp = camRot + new Vector3(10, 0, 0);
@@ -6173,7 +6170,7 @@ namespace GTANetwork
             return point3Dret;
         }
 
-        public static Vector3 RotationToDirection(Vector3 rotation)
+        internal static Vector3 RotationToDirection(Vector3 rotation)
         {
             var z = DegToRad(rotation.Z);
             var x = DegToRad(rotation.X);
@@ -6186,7 +6183,7 @@ namespace GTANetwork
             };
         }
 
-        public static Vector3 DirectionToRotation(Vector3 direction)
+        internal static Vector3 DirectionToRotation(Vector3 direction)
         {
             direction.Normalize();
 
@@ -6202,17 +6199,17 @@ namespace GTANetwork
             };
         }
 
-        public static double DegToRad(double deg)
+        internal static double DegToRad(double deg)
         {
             return deg * Math.PI / 180.0;
         }
 
-        public static double RadToDeg(double deg)
+        internal static double RadToDeg(double deg)
         {
             return deg * 180.0 / Math.PI;
         }
 
-        public static double BoundRotationDeg(double angleDeg)
+        internal static double BoundRotationDeg(double angleDeg)
         {
             var twoPi = (int)(angleDeg / 360);
             var res = angleDeg - twoPi * 360;
@@ -6220,7 +6217,7 @@ namespace GTANetwork
             return res;
         }
 
-        public static Vector3 RaycastEverything(Vector2 screenCoord)
+        internal static Vector3 RaycastEverything(Vector2 screenCoord)
         {
             Vector3 camPos, camRot;
 
@@ -6262,7 +6259,7 @@ namespace GTANetwork
             return camPos + dir * raycastToDist;
         }
 
-        public static Vector3 RaycastEverything(Vector2 screenCoord, Vector3 camPos, Vector3 camRot)
+        internal static Vector3 RaycastEverything(Vector2 screenCoord, Vector3 camPos, Vector3 camRot)
         {
             const float raycastToDist = 100.0f;
             const float raycastFromDist = 1f;
@@ -6291,7 +6288,7 @@ namespace GTANetwork
             return camPos + dir * raycastToDist;
         }
 
-        public static object DeserializeBinary<T>(byte[] data)
+        internal static object DeserializeBinary<T>(byte[] data)
         {
             object output;
             using (var stream = new MemoryStream(data))
@@ -6308,7 +6305,7 @@ namespace GTANetwork
             return output;
         }
 
-        public static byte[] SerializeBinary(object data)
+        internal static byte[] SerializeBinary(object data)
         {
             using (var stream = new MemoryStream())
             {
@@ -6318,7 +6315,7 @@ namespace GTANetwork
             }
         }
 
-        public int GetOpenUdpPort()
+        internal int GetOpenUdpPort()
         {
             var startingAtPort = 6000;
             var maxNumberOfPortsToCheck = 500;
@@ -6332,7 +6329,7 @@ namespace GTANetwork
             return range.Except(portsInUse).FirstOrDefault();
         }
 
-        public static void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
+        internal static void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
         {
             var packet = new UpdateEntity();
             packet.EntityType = (byte)entity;
@@ -6341,7 +6338,7 @@ namespace GTANetwork
             SendToServer(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
         }
 
-        public static bool SetEntityProperty(LocalHandle entity, string key, object value)
+        internal static bool SetEntityProperty(LocalHandle entity, string key, object value)
         {
             var handle = NetEntityHandler.EntityToNet(entity.Value);
             var item = NetEntityHandler.NetToStreamedItem(handle);
@@ -6370,7 +6367,7 @@ namespace GTANetwork
             return true;
         }
 
-        public static void ResetEntityProperty(LocalHandle entity, string key)
+        internal static void ResetEntityProperty(LocalHandle entity, string key)
         {
             var handle = NetEntityHandler.EntityToNet(entity.Value);
             var item = NetEntityHandler.NetToStreamedItem(handle);
@@ -6391,7 +6388,7 @@ namespace GTANetwork
             }
         }
 
-        public static bool HasEntityProperty(LocalHandle entity, string key)
+        internal static bool HasEntityProperty(LocalHandle entity, string key)
         {
             var handle = NetEntityHandler.EntityToNet(entity.Value);
             var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
@@ -6401,7 +6398,7 @@ namespace GTANetwork
             return prop.SyncedProperties.ContainsKey(key);
         }
 
-        public static object GetEntityProperty(LocalHandle entity, string key)
+        internal static object GetEntityProperty(LocalHandle entity, string key)
         {
             var handle = NetEntityHandler.EntityToNet(entity.Value);
             var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
@@ -6415,7 +6412,7 @@ namespace GTANetwork
             return DecodeArgumentListPure(natArg).Single();
         }
 
-        public static bool SetWorldData(string key, object value)
+        internal static bool SetWorldData(string key, object value)
         {
             if (NetEntityHandler.ServerWorld.SyncedProperties == null) NetEntityHandler.ServerWorld.SyncedProperties = new Dictionary<string, NativeArgument>();
 
@@ -6435,7 +6432,7 @@ namespace GTANetwork
             return true;
         }
 
-        public static void ResetWorldData(string key)
+        internal static void ResetWorldData(string key)
         {
             if (NetEntityHandler.ServerWorld.SyncedProperties == null || !NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key)) return;
 
@@ -6447,14 +6444,14 @@ namespace GTANetwork
             UpdateEntityInfo(1, EntityType.Prop, delta);
         }
 
-        public static bool HasWorldData(string key)
+        internal static bool HasWorldData(string key)
         {
             if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key) || NetEntityHandler.ServerWorld.SyncedProperties == null) return false;
 
             return NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key);
         }
 
-        public static object GetWorldData(string key)
+        internal static object GetWorldData(string key)
         {
             if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key)) return null;
 
@@ -6465,21 +6462,21 @@ namespace GTANetwork
             return DecodeArgumentListPure(natArg).Single();
         }
 
-        public void TerminateGameScripts()
+        internal void TerminateGameScripts()
         {
             GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
         }
     }
 
-    public class MasterServerList
+    internal class MasterServerList
     {
-        public List<string> list { get; set; }
+        internal List<string> list { get; set; }
     }
 
-    public class WelcomeSchema
+    internal class WelcomeSchema
     {
-        public string Title { get; set; }
-        public string Message { get; set; }
-        public string Picture { get; set; }
+        internal string Title { get; set; }
+        internal string Message { get; set; }
+        internal string Picture { get; set; }
     }
 }

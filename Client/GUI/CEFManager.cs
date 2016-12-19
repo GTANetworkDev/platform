@@ -28,11 +28,11 @@ using Point = System.Drawing.Point;
 
 namespace GTANetwork.GUI
 {
-    public class CefController : Script
+    internal class CefController : Script
     {
         private static bool _showCursor;
 
-        public static bool ShowCursor
+        internal static bool ShowCursor
         {
             get { return _showCursor; }
             set
@@ -48,11 +48,11 @@ namespace GTANetwork.GUI
 
         private static bool _justShownCursor;
         private static long _lastShownCursor = 0;
-        public static PointF _lastMousePoint;
-        public static int GameFPS = 1;
+        internal static PointF _lastMousePoint;
+        internal static int GameFPS = 1;
         private Keys _lastKey;
 
-        public static CefEventFlags GetMouseModifiers(bool leftbutton, bool rightButton)
+        internal static CefEventFlags GetMouseModifiers(bool leftbutton, bool rightButton)
         {
             CefEventFlags mod = CefEventFlags.None;
 
@@ -62,7 +62,7 @@ namespace GTANetwork.GUI
             return mod;
         }
         
-        public CefController()
+        internal CefController()
         {
             Tick += (sender, args) =>
             {
@@ -237,16 +237,16 @@ namespace GTANetwork.GUI
         
     }
 
-    public static class CEFManager
+    internal static class CEFManager
     {
         #if DISABLE_HOOK
-        public const bool D3D11_DISABLED = true;
+        internal const bool D3D11_DISABLED = true;
         #else
-        public const bool D3D11_DISABLED = false;
+        internal const bool D3D11_DISABLED = false;
         #endif
 
 
-        public static void InitializeCef()
+        internal static void InitializeCef()
         {
 #if !DISABLE_CEF
             CefRuntime.Load(Main.GTANInstallDir + "\\cef");
@@ -258,7 +258,7 @@ namespace GTANetwork.GUI
             };
 
             var cefMainArgs = new CefMainArgs(args);
-            var cefApp = new DemoCefApp();
+            var cefApp = new MainCefApp();
                 
             if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
             {
@@ -287,14 +287,14 @@ namespace GTANetwork.GUI
 #endif
         }
 
-        public static void DisposeCef()
+        internal static void DisposeCef()
         {
 #if !DISABLE_CEF
             CefRuntime.Shutdown();
 #endif
         }
 
-        public static void Initialize(Size screenSize)
+        internal static void Initialize(Size screenSize)
         {
             ScreenSize = screenSize;
 #if !DISABLE_HOOK
@@ -320,19 +320,19 @@ namespace GTANetwork.GUI
             RenderThread.Start();
         }
 
-        public static readonly List<Browser> Browsers = new List<Browser>();
-        public static int FPS = 30;
-        public static Thread RenderThread;
-        public static bool StopRender;
-        public static Size ScreenSize;
-        public static bool Disposed = true;
+        internal static readonly List<Browser> Browsers = new List<Browser>();
+        internal static int FPS = 30;
+        internal static Thread RenderThread;
+        internal static bool StopRender;
+        internal static Size ScreenSize;
+        internal static bool Disposed = true;
 
         internal static DXHookD3D11 DirectXHook;
 
         private static long _lastCefRender = 0;
         private static Bitmap _lastCefBitmap = null;
         
-        public static void RenderLoop()
+        internal static void RenderLoop()
         {
             Application.ThreadException += ApplicationOnThreadException;
             AppDomain.CurrentDomain.UnhandledException += AppDomainException;
@@ -445,13 +445,13 @@ namespace GTANetwork.GUI
     }
     
 
-    public class BrowserJavascriptCallback
+    internal class BrowserJavascriptCallback
     {
         private V8ScriptEngine _parent;
 #if !DISABLE_CEF
         private Browser _wrapper;
 #endif
-        public BrowserJavascriptCallback(V8ScriptEngine parent, Browser wrapper)
+        internal BrowserJavascriptCallback(V8ScriptEngine parent, Browser wrapper)
         {
             _parent = parent;
 #if !DISABLE_CEF
@@ -459,9 +459,9 @@ namespace GTANetwork.GUI
 #endif
         }
 
-        public BrowserJavascriptCallback() { }
+        internal BrowserJavascriptCallback() { }
 
-        public object call(string functionName, params object[] arguments)
+        internal object call(string functionName, params object[] arguments)
         {
 #if !DISABLE_CEF
             if (!_wrapper._localMode) return null;
@@ -512,7 +512,7 @@ namespace GTANetwork.GUI
 #endif
         }
 
-        public object eval(string code)
+        internal object eval(string code)
         {
 #if !DISABLE_CEF
             if (!_wrapper._localMode) return null;
@@ -542,7 +542,7 @@ namespace GTANetwork.GUI
 #endif
         }
 
-        public void addEventHandler(string eventName, Action<object[]> action)
+        internal void addEventHandler(string eventName, Action<object[]> action)
         {
 #if !DISABLE_CEF
             if (!_wrapper._localMode) return;
@@ -565,7 +565,7 @@ namespace GTANetwork.GUI
     public class Browser : IDisposable
     {
 #if !DISABLE_CEF
-        internal DemoCefClient _client;
+        internal MainCefClient _client;
         internal CefBrowser _browser;
         internal BrowserJavascriptCallback _callback;
 
@@ -574,14 +574,14 @@ namespace GTANetwork.GUI
         internal readonly bool _localMode;
         internal bool _hasFocused;
         
-        public bool Headless = false;
+        internal bool Headless = false;
 
-        public Point Position { get; set; }
+        internal Point Position { get; set; }
 
-        public PointF[] Pinned { get; set; }
+        internal PointF[] Pinned { get; set; }
         
         private Size _size;
-        public Size Size
+        internal Size Size
         {
             get { return _size; }
             set
@@ -660,7 +660,7 @@ namespace GTANetwork.GUI
                 FileAccessFromFileUrls = CefState.Disabled,
             };
 
-            _client = new DemoCefClient(browserSize.Width, browserSize.Height);
+            _client = new MainCefClient(browserSize.Width, browserSize.Height);
             
             _client.OnCreated += (sender, args) =>
             {

@@ -13,12 +13,12 @@ using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Networking
 {
-    public static class SyncSender
+    internal static class SyncSender
     {
         private const int LIGHT_SYNC_RATE = 1500;
         private const int PURE_SYNC_RATE = 100;
 
-        public static void MainLoop()
+        internal static void MainLoop()
         {
             bool lastPedData = false;
             int lastLightSyncSent = 0;
@@ -171,17 +171,17 @@ namespace GTANetwork.Networking
         }
     }
 
-    public class SyncCollector : Script
+    internal class SyncCollector : Script
     {
-        public static bool ForceAimData;
-        public static object LastSyncPacket;
-        public static object Lock = new object();
+        internal static bool ForceAimData;
+        internal static object LastSyncPacket;
+        internal static object Lock = new object();
 
         private static bool _lastShooting;
         private static bool _lastBullet;
         private static DateTime _lastShot;
 
-        public SyncCollector()
+        internal SyncCollector()
         {
             var t = new Thread(SyncSender.MainLoop);
             t.IsBackground = true;
@@ -190,7 +190,7 @@ namespace GTANetwork.Networking
             Tick += OnTick;
         }
 
-        public void OnTick(object sender, EventArgs e)
+        internal void OnTick(object sender, EventArgs e)
         {
             if (!Main.IsOnServer()) return;
             var player = Game.Player.Character;

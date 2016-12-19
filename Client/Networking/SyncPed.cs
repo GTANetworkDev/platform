@@ -18,7 +18,7 @@ using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Networking
 {
-    public enum SynchronizationMode
+    internal enum SynchronizationMode
     {
         Dynamic,
         DeadReckoning,
@@ -26,61 +26,61 @@ namespace GTANetwork.Networking
         TeleportRudimentary,
     }
 
-    public class Animation
+    internal class Animation
     {
-        public string Dictionary { get; set; }
-        public string Name { get; set; }
-        public bool Loop { get; set; }
+        internal string Dictionary { get; set; }
+        internal string Name { get; set; }
+        internal bool Loop { get; set; }
     }
 
-    public class SyncPed : RemotePlayer
+    internal class SyncPed : RemotePlayer
     {
-        public SynchronizationMode SyncMode;
-        public long Host;
-        public Ped Character;
-        public Vector3 _position;
-        public int VehicleNetHandle;
-        public Vector3 _rotation;
-        public bool _isInVehicle;
-        public bool IsJumping;
-        public Animation CurrentAnimation;
-        public int ModelHash;
-        public int CurrentWeapon;
-        public bool IsAiming;
-        public Vector3 AimCoords;
-        public float Latency;
-        public bool IsHornPressed;
-        public bool _isRagdoll;
-        public Vehicle MainVehicle { get; set; }
-        public bool IsInActionMode;
-        public bool IsInCover;
-        public bool IsInLowCover;
-        public bool IsOnLadder;
-        public bool IsVaulting;
-        public bool IsCoveringToLeft;
-        public bool IsInMeleeCombat;
-        public bool IsFreefallingWithParachute;
-        public bool IsShooting;
-        public bool IsInBurnout;
+        internal SynchronizationMode SyncMode;
+        internal long Host;
+        internal Ped Character;
+        internal Vector3 _position;
+        internal int VehicleNetHandle;
+        internal Vector3 _rotation;
+        internal bool _isInVehicle;
+        internal bool IsJumping;
+        internal Animation CurrentAnimation;
+        internal int ModelHash;
+        internal int CurrentWeapon;
+        internal bool IsAiming;
+        internal Vector3 AimCoords;
+        internal float Latency;
+        internal bool IsHornPressed;
+        internal bool _isRagdoll;
+        internal Vehicle MainVehicle { get; set; }
+        internal bool IsInActionMode;
+        internal bool IsInCover;
+        internal bool IsInLowCover;
+        internal bool IsOnLadder;
+        internal bool IsVaulting;
+        internal bool IsCoveringToLeft;
+        internal bool IsInMeleeCombat;
+        internal bool IsFreefallingWithParachute;
+        internal bool IsShooting;
+        internal bool IsInBurnout;
         private bool _lastBurnout;
         private bool _lastSwimming;
-        public float VehicleRPM;
-	    public float SteeringScale;
-        public bool EnteringVehicle;
+        internal float VehicleRPM;
+	    internal float SteeringScale;
+        internal bool EnteringVehicle;
         private bool _lastEnteringVehicle;
-        public bool IsOnFire;
+        internal bool IsOnFire;
         private bool _lastFire;
-        public bool IsBeingControlledByScript;
+        internal bool IsBeingControlledByScript;
 
-        public bool ExitingVehicle;
+        internal bool ExitingVehicle;
         private bool _lastExitingVehicle;
 
-        public int VehicleSeat;
-        public int PedHealth;
+        internal int VehicleSeat;
+        internal int PedHealth;
 
-        public float VehicleHealth;
+        internal float VehicleHealth;
 
-        public int VehicleHash
+        internal int VehicleHash
         {
             get
             {
@@ -95,14 +95,14 @@ namespace GTANetwork.Networking
             }
         }
 
-        public Vector3 _vehicleRotation;
-        public int VehiclePrimaryColor;
-        public int VehicleSecondaryColor;
-        public bool Siren;
-        public int PedArmor;
-        public bool IsVehDead;
-        public bool IsPlayerDead;
-        public bool DirtyWeapons;
+        internal Vector3 _vehicleRotation;
+        internal int VehiclePrimaryColor;
+        internal int VehicleSecondaryColor;
+        internal bool Siren;
+        internal int PedArmor;
+        internal bool IsVehDead;
+        internal bool IsPlayerDead;
+        internal bool DirtyWeapons;
 
         private object _secondSnapshot;
         private object _firstSnapshot;
@@ -110,7 +110,7 @@ namespace GTANetwork.Networking
         private int _secondSnapshotTime;
         private int _firstSnapshotTime;
 
-        public object Snapshot
+        internal object Snapshot
         {
             get { return _firstSnapshot; }
             set
@@ -124,12 +124,12 @@ namespace GTANetwork.Networking
         }
 
 
-        public bool IsSpectating;
+        internal bool IsSpectating;
 
-        public bool Debug;
+        internal bool Debug;
         
         private DateTime _stopTime;
-        public float Speed
+        internal float Speed
         {
             get { return _speed; }
             set
@@ -139,16 +139,16 @@ namespace GTANetwork.Networking
             }
         }
 
-        public byte OnFootSpeed;
+        internal byte OnFootSpeed;
 
-        public bool IsParachuteOpen;
+        internal bool IsParachuteOpen;
 
-        public double AverageLatency
+        internal double AverageLatency
         {
             get { return _latencyAverager.Count == 0 ? 0 : _latencyAverager.Average(); }
         }
 
-        public long LastUpdateReceived
+        internal long LastUpdateReceived
         {
             get { return _lastUpdateReceived; }
             set
@@ -164,12 +164,12 @@ namespace GTANetwork.Networking
             }
         }
 
-        public long TicksSinceLastUpdate
+        internal long TicksSinceLastUpdate
         {
             get { return Util.Util.TickCount - LastUpdateReceived; }
         }
 
-        public int DataLatency
+        internal int DataLatency
         {
             get
             {
@@ -178,7 +178,7 @@ namespace GTANetwork.Networking
             }
         }
 
-        public Dictionary<int, int> VehicleMods
+        internal Dictionary<int, int> VehicleMods
         {
             get { return _vehicleMods; }
             set
@@ -190,7 +190,7 @@ namespace GTANetwork.Networking
         private Vector3 _carPosOnUpdate;
         /*
         private Vector3? _lastVehiclePos;
-        public Vector3 VehiclePosition
+        internal Vector3 VehiclePosition
         {
             get { return _vehiclePosition; }
             set
@@ -204,7 +204,7 @@ namespace GTANetwork.Networking
         }
         */
         private Vector3 _lastVehVel;
-        public Vector3 VehicleVelocity
+        internal Vector3 VehicleVelocity
         {
             get { return _vehicleVelocity; }
             set
@@ -216,7 +216,7 @@ namespace GTANetwork.Networking
 
         private Vector3 _lastPedVel;
         private Vector3 _pedVelocity;
-        public Vector3 PedVelocity
+        internal Vector3 PedVelocity
         {
             get { return _pedVelocity; }
             set
@@ -227,7 +227,7 @@ namespace GTANetwork.Networking
         }
 
         private Vector3? _lastPosition;
-        public new Vector3 Position
+        internal new Vector3 Position
         {
             get { return _position; }
             set
@@ -238,7 +238,7 @@ namespace GTANetwork.Networking
         }
 
         private Vector3? _lastVehicleRotation;
-        public Vector3 VehicleRotation
+        internal Vector3 VehicleRotation
         {
             get { return _vehicleRotation; }
             set
@@ -249,7 +249,7 @@ namespace GTANetwork.Networking
         }
 
         private Vector3? _lastRotation;
-        public new Vector3 Rotation
+        internal new Vector3 Rotation
         {
             get { return _rotation; }
             set
@@ -259,13 +259,13 @@ namespace GTANetwork.Networking
             }
         }
 
-        public bool IsRagdoll
+        internal bool IsRagdoll
         {
             get { return _isRagdoll; }
             set { _isRagdoll = value; }
         }
 
-        public int DEBUG_STEP
+        internal int DEBUG_STEP
         {
             get { return DEBUG_STEP_backend; }
             set
@@ -303,7 +303,7 @@ namespace GTANetwork.Networking
         private Vector3 _lastEnd;
 
         private bool _lastReloading;
-        public bool IsReloading
+        internal bool IsReloading
         {
             get { return _isReloading; }
             set
@@ -321,7 +321,7 @@ namespace GTANetwork.Networking
         private Prop _parachuteProp;
         private bool _leftSide;
 
-        public SyncPed(int hash, Vector3 pos, Vector3 rot, bool blip = true)
+        internal SyncPed(int hash, Vector3 pos, Vector3 rot, bool blip = true)
         {
             _position = pos;
             _rotation = rot;
@@ -331,7 +331,7 @@ namespace GTANetwork.Networking
             _latencyAverager = new Queue<long>();
         }
 
-        public SyncPed()
+        internal SyncPed()
         {
             _blip = true;
             _latencyAverager = new Queue<long>();
@@ -343,7 +343,7 @@ namespace GTANetwork.Networking
             set { }
         }
 
-        public bool IsInVehicle
+        internal bool IsInVehicle
         {
             get { return _isInVehicle; }
             set
@@ -358,7 +358,7 @@ namespace GTANetwork.Networking
             }
         }
 
-        public void SetBlipNameFromTextFile(Blip blip, string text)
+        internal void SetBlipNameFromTextFile(Blip blip, string text)
         {
             Function.Call((Hash)0xF9113A30DE5C6670, "STRING");
             Function.Call((Hash)0x6C188BE134E074AA, text); //_ADD_TEXT_COMPONENT_STRING
@@ -380,17 +380,17 @@ namespace GTANetwork.Networking
         private int _lastVehicleAimUpdate;
         private int _scriptFire;
 
-        public bool IsCustomScenarioPlaying;
-        public bool HasCustomScenarioStarted;
-        public bool IsCustomAnimationPlaying;
-        public string CustomAnimationDictionary;
-        public string CustomAnimationName;
-        public int CustomAnimationFlag;
-        public long CustomAnimationStartTime;
+        internal bool IsCustomScenarioPlaying;
+        internal bool HasCustomScenarioStarted;
+        internal bool IsCustomAnimationPlaying;
+        internal string CustomAnimationDictionary;
+        internal string CustomAnimationName;
+        internal int CustomAnimationFlag;
+        internal long CustomAnimationStartTime;
 
         #region NeoSyncPed
 
-        public bool CreateCharacter()
+        internal bool CreateCharacter()
         {
             float hRange = _isInVehicle ? 150f : 200f;
             var gPos = Position;
@@ -604,7 +604,7 @@ namespace GTANetwork.Networking
 			}
 		}
 
-        public int _debugVehicleHash;
+        internal int _debugVehicleHash;
 	    bool CreateVehicle()
 	    {
 	        if (_isInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 &&
@@ -813,17 +813,17 @@ namespace GTANetwork.Networking
 
         struct interpolation
         {
-            public Vector3 vecStart;
-            public Vector3 vecTarget;
-            public Vector3 vecError;
-            public long StartTime;
-            public long FinishTime;
-            public float LastAlpha;
+            internal Vector3 vecStart;
+            internal Vector3 vecTarget;
+            internal Vector3 vecError;
+            internal long StartTime;
+            internal long FinishTime;
+            internal float LastAlpha;
         }
 
         private interpolation currentInterop = new interpolation();
 
-        public void StartInterpolation()
+        internal void StartInterpolation()
         {
             currentInterop = new interpolation();
 
@@ -1050,7 +1050,7 @@ namespace GTANetwork.Networking
 
         }
 
-        public bool IsFriend()
+        internal bool IsFriend()
         {
             return (Team != -1 && Team == Main.LocalTeam);
         }
@@ -2173,7 +2173,7 @@ namespace GTANetwork.Networking
         private Vector3 _lastAimCoords;
         private Prop _aimingProp;
         private long lastAimSet;
-        public void VMultiAiming()
+        internal void VMultiAiming()
         {
             if (_aimingProp != null && _aimingProp.Exists())
             {
@@ -2210,7 +2210,7 @@ namespace GTANetwork.Networking
             
         }
         private bool lastMoving;
-        public void VMultiOnfootPosition()
+        internal void VMultiOnfootPosition()
         {
             if (IsReloading || (IsInCover && IsShooting && !IsAiming))
             {
@@ -2368,7 +2368,7 @@ namespace GTANetwork.Networking
             StuckDetection();
         }
 
-        public void StuckDetection()
+        internal void StuckDetection()
         {
 #if !DISABLE_UNDER_FLOOR_FIX
             const int PED_INTERPOLATION_WARP_THRESHOLD = 5;
@@ -2452,7 +2452,7 @@ namespace GTANetwork.Networking
         private const float hRange = 1000f; // 1km
         private const float physicsRange = 175f;
 
-        public void DisplayLocally()
+        internal void DisplayLocally()
         {
             try
             {
@@ -2539,7 +2539,7 @@ namespace GTANetwork.Networking
             }
         }
 
-        public static Ped GetResponsiblePed(Vehicle veh)
+        internal static Ped GetResponsiblePed(Vehicle veh)
         {
             if (veh == null || veh.Handle == 0 || !veh.Exists()) return new Ped(0);
 
@@ -2553,7 +2553,7 @@ namespace GTANetwork.Networking
             return new Ped(0);
         }
 
-        public string GetAnimDictionary(string ourAnim = "")
+        internal string GetAnimDictionary(string ourAnim = "")
         {
             if (IsInCover) return GetCoverIdleAnimDict();
             if (IsOnLadder) return "laddersbase";
@@ -2573,7 +2573,7 @@ namespace GTANetwork.Networking
             return null;
         }
 
-        public uint GetAnimFlag()
+        internal uint GetAnimFlag()
         {
             if (IsVaulting && !IsOnLadder)
                 return 2 | 2147483648;
@@ -2660,7 +2660,7 @@ namespace GTANetwork.Networking
             }
         }
 
-        public string GetCoverIdleAnimDict()
+        internal string GetCoverIdleAnimDict()
         {
             if (!IsInCover) return "";
             var altitude = IsInLowCover ? "low" : "high";
@@ -2679,7 +2679,7 @@ namespace GTANetwork.Networking
             return "";
         }
 
-        public string GetSecondaryAnimDict()
+        internal string GetSecondaryAnimDict()
         {
 	        if (CurrentWeapon == unchecked((int) WeaponHash.Unarmed)) return null;
             if (CurrentWeapon == unchecked((int) WeaponHash.RPG) ||
@@ -2715,7 +2715,7 @@ namespace GTANetwork.Networking
             return null;
         }
 
-        public int GetWeaponHandsHeld(int weapon)
+        internal int GetWeaponHandsHeld(int weapon)
         {
             if (weapon == unchecked((int) WeaponHash.Unarmed)) return 0;
             if (weapon == unchecked((int)WeaponHash.RPG) ||
@@ -2756,7 +2756,7 @@ namespace GTANetwork.Networking
             return 1;
         }
 
-        public static int GetPedSpeed(float speed)
+        internal static int GetPedSpeed(float speed)
         {
             if (speed < 0.5f)
             {
@@ -2775,7 +2775,7 @@ namespace GTANetwork.Networking
             return 0;
         }
 
-        public string GetMovementAnim(int speed, bool inCover, bool coverFacingLeft)
+        internal string GetMovementAnim(int speed, bool inCover, bool coverFacingLeft)
         {
             if (inCover)
             {
@@ -2813,12 +2813,12 @@ namespace GTANetwork.Networking
             return null;
         }
 
-        public static bool IsAnimal(int model)
+        internal static bool IsAnimal(int model)
         {
             return GetAnimalAnimationDictionary(model) != null;
         }
 
-        public static string GetAnimalAnimationName(int modelhash, int speed)
+        internal static string GetAnimalAnimationName(int modelhash, int speed)
         {
             var hash = (PedHash)modelhash;
 
@@ -3005,7 +3005,7 @@ namespace GTANetwork.Networking
             return null;
         }
 
-        public static string GetAnimalAnimationDictionary(int modelhash)
+        internal static string GetAnimalAnimationDictionary(int modelhash)
         {
             var hash = (PedHash)modelhash;
 
@@ -3063,7 +3063,7 @@ namespace GTANetwork.Networking
             return null;
         }
 
-        public string GetAnimalGetUpAnimation()
+        internal string GetAnimalGetUpAnimation()
         {
             var hash = (PedHash) ModelHash;
 
@@ -3074,7 +3074,7 @@ namespace GTANetwork.Networking
             return "anim@sports@ballgame@handball@ ball_get_up";
         }
 
-        public void Clear()
+        internal void Clear()
         {
             if (_aimingProp != null)
             {

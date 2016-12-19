@@ -240,6 +240,8 @@ namespace GTANetwork.GUI
         
         public void OnKeyDown(Keys key)
         {
+            string str = null;
+
             if (key == Keys.PageUp && Main.IsOnServer() && _pagingIndex + _messagesPerPage + 1 < _messages.Count)
                 _pagingIndex++;
 
@@ -280,6 +282,19 @@ namespace GTANetwork.GUI
 
             if ((key == Keys.ShiftKey && _lastKey == Keys.Menu) || (key == Keys.Menu && _lastKey == Keys.ShiftKey))
                 ActivateKeyboardLayout(1, 0);
+
+            if (key == Keys.C && _lastKey == Keys.ControlKey)
+            {
+                str = Clipboard.GetText(TextDataFormat.Text);
+
+                if (!string.IsNullOrWhiteSpace(str))
+                { 
+                    CurrentInput += str;
+                    _mainScaleform.CallFunction("ADD_TEXT", str);
+                }
+
+                return;
+            }
 
             _lastKey = key;
 
@@ -328,7 +343,7 @@ namespace GTANetwork.GUI
             {
                 return;
             }
-            var str = keyChar;
+            str = keyChar;
 
             CurrentInput += str;
             _mainScaleform.CallFunction("ADD_TEXT", str);

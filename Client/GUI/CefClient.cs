@@ -43,11 +43,11 @@ namespace GTANetwork.GUI
         }
     }
 
-    internal class DemoCefApp : CefApp
+    internal class MainCefApp : CefApp
     {
         private WebKitInjector _injector;
 
-        public DemoCefApp()
+        public MainCefApp()
         {
             _injector = new WebKitInjector();
         }
@@ -104,7 +104,7 @@ namespace GTANetwork.GUI
         }
     }
     
-    internal class DemoCefLoadHandler : CefLoadHandler
+    internal class MainCefLoadHandler : CefLoadHandler
     {
         protected override void OnLoadStart(CefBrowser browser, CefFrame frame)
         {
@@ -125,11 +125,11 @@ namespace GTANetwork.GUI
         }
     }
 
-    internal class DemoLifeSpanHandler : CefLifeSpanHandler
+    internal class MainLifeSpanHandler : CefLifeSpanHandler
     {
-        private DemoCefClient bClient;
+        private MainCefClient bClient;
 
-        internal DemoLifeSpanHandler(DemoCefClient bc)
+        internal MainLifeSpanHandler(MainCefClient bc)
         {
             this.bClient = bc;
         }
@@ -252,7 +252,7 @@ namespace GTANetwork.GUI
         }
     }
 
-    internal class DemoCefRenderHandler : CefRenderHandler
+    internal class MainCefRenderHandler : CefRenderHandler
     {
         private int _windowHeight;
         private int _windowWidth;
@@ -260,7 +260,7 @@ namespace GTANetwork.GUI
         public Bitmap LastBitmap;
         public readonly object BitmapLock = new object();
 
-        public DemoCefRenderHandler(int windowWidth, int windowHeight)
+        public MainCefRenderHandler(int windowWidth, int windowHeight)
         {
             _windowWidth = windowWidth;
             _windowHeight = windowHeight;
@@ -340,20 +340,20 @@ namespace GTANetwork.GUI
         }
     }
 
-    internal class DemoCefClient : CefClient
+    internal class MainCefClient : CefClient
     {
-        private readonly DemoCefLoadHandler _loadHandler;
-        private readonly DemoCefRenderHandler _renderHandler;
-        private readonly DemoLifeSpanHandler _lifeSpanHandler;
+        private readonly MainCefLoadHandler _loadHandler;
+        private readonly MainCefRenderHandler _renderHandler;
+        private readonly MainLifeSpanHandler _lifeSpanHandler;
         private readonly ContextMenuRemover _contextMenuHandler;
 
         public event EventHandler OnCreated;
 
-        public DemoCefClient(int windowWidth, int windowHeight)
+        public MainCefClient(int windowWidth, int windowHeight)
         {
-            _renderHandler = new DemoCefRenderHandler(windowWidth, windowHeight);
-            _loadHandler = new DemoCefLoadHandler();
-            _lifeSpanHandler = new DemoLifeSpanHandler(this);
+            _renderHandler = new MainCefRenderHandler(windowWidth, windowHeight);
+            _loadHandler = new MainCefLoadHandler();
+            _lifeSpanHandler = new MainLifeSpanHandler(this);
             _contextMenuHandler = new ContextMenuRemover();
         }
 

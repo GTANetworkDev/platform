@@ -9,7 +9,7 @@ using Vector3 = GTA.Math.Vector3;
 
 namespace GTANetwork.Networking
 {
-    public class UnoccupiedVehicleSync
+    internal class UnoccupiedVehicleSync
     {
         private List<RemoteVehicle> SyncedVehicles = new List<RemoteVehicle>();
         private const int UNOCCUPIED_VEH_RATE = 400;
@@ -17,7 +17,7 @@ namespace GTANetwork.Networking
 
         private Dictionary<int, UnoccupiedVehicleInterpolator> Interpolations = new Dictionary<int, UnoccupiedVehicleInterpolator>();
 
-        public void Interpolate(int netHandle, int gameHandle, Vector3 newPos, GTANetworkShared.Vector3 newVelocity, Vector3 newRotation)
+        internal void Interpolate(int netHandle, int gameHandle, Vector3 newPos, GTANetworkShared.Vector3 newVelocity, Vector3 newRotation)
         {
             if (!Interpolations.ContainsKey(netHandle))
             {
@@ -32,12 +32,12 @@ namespace GTANetwork.Networking
             }
         }
 
-        public bool IsInterpolating(int gameHandle)
+        internal bool IsInterpolating(int gameHandle)
         {
             return Interpolations.Any(p => p.Value.GameHandle == gameHandle);
         }
 
-        public void StartSyncing(int vehicle)
+        internal void StartSyncing(int vehicle)
         {
             var veh = Main.NetEntityHandler.NetToStreamedItem(vehicle) as RemoteVehicle;
 
@@ -59,12 +59,12 @@ namespace GTANetwork.Networking
             }
         }
 
-        public bool IsSyncing(RemoteVehicle veh)
+        internal bool IsSyncing(RemoteVehicle veh)
         {
             return SyncedVehicles.Contains(veh);
         }
 
-        public void StopSyncing(int vehicle)
+        internal void StopSyncing(int vehicle)
         {
             var veh = Main.NetEntityHandler.NetToStreamedItem(vehicle) as RemoteVehicle;
 
@@ -83,7 +83,7 @@ namespace GTANetwork.Networking
             }
         }
 
-        public void StopAll()
+        internal void StopAll()
         {
             lock (SyncedVehicles)
             {
@@ -91,7 +91,7 @@ namespace GTANetwork.Networking
             }
         }
 
-        public void Pulse()
+        internal void Pulse()
         {
             if (Util.Util.TickCount - _lastUpdate > UNOCCUPIED_VEH_RATE)
             {
@@ -214,10 +214,10 @@ namespace GTANetwork.Networking
         }
     }
 
-    public class UnoccupiedVehicleInterpolator
+    internal class UnoccupiedVehicleInterpolator
     {
-        public int GameHandle;
-        public int NetHandle;
+        internal int GameHandle;
+        internal int NetHandle;
         private Vehicle _entity;
         private RemoteVehicle _prop;
         private GTANetworkShared.Vector3 _velocity;
@@ -228,9 +228,9 @@ namespace GTANetwork.Networking
 
         private NetInterpolation NetInterpolation;
 
-        public bool HasFinished;
+        internal bool HasFinished;
 
-        public UnoccupiedVehicleInterpolator(int gameHandle, int netHandle)
+        internal UnoccupiedVehicleInterpolator(int gameHandle, int netHandle)
         {
             GameHandle = gameHandle;
             NetHandle = netHandle;
@@ -238,7 +238,7 @@ namespace GTANetwork.Networking
             _prop = Main.NetEntityHandler.NetToStreamedItem(netHandle) as RemoteVehicle;
         }
 
-        public void SetTargetPosition(Vector3 targetPos, GTANetworkShared.Vector3 velocity, Vector3 rotation)
+        internal void SetTargetPosition(Vector3 targetPos, GTANetworkShared.Vector3 velocity, Vector3 rotation)
         {
             var dir = targetPos - _prop.Position.ToVector();
 
@@ -261,7 +261,7 @@ namespace GTANetwork.Networking
             HasFinished = false;
         }
 
-        public void Pulse()
+        internal void Pulse()
         {
             if (!HasFinished)
             {
@@ -290,11 +290,11 @@ namespace GTANetwork.Networking
 
     struct NetInterpolation
     {
-        public GTA.Math.Vector3 vecStart;
-        public GTA.Math.Vector3 vecTarget;
-        public Vector3 vecError;
-        public long StartTime;
-        public long FinishTime;
-        public float LastAlpha;
+        internal GTA.Math.Vector3 vecStart;
+        internal GTA.Math.Vector3 vecTarget;
+        internal Vector3 vecError;
+        internal long StartTime;
+        internal long FinishTime;
+        internal float LastAlpha;
     }
 }

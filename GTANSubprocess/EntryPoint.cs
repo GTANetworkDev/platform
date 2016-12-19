@@ -190,7 +190,8 @@ namespace GTANetwork
                 if (mySettings.Video.Windowed != null)
                 {
                     _windowedMode = mySettings.Video.Windowed.Value;
-                    mySettings.Video.Windowed.Value = 2;
+                    if (settings.AutosetBorderlessWindowed)
+                        mySettings.Video.Windowed.Value = 2;
                 }
             }
             else
@@ -209,6 +210,9 @@ namespace GTANetwork
             ReadStartupSettings();
 
             PatchStartup();
+
+            if (settings.StartGameInOfflineMode)
+                InsertCommandline(InstallFolder);
 
             splashScreen.SetPercent(65);
 
@@ -323,6 +327,17 @@ namespace GTANetwork
         private int _pauseOnFocusLoss;
         private int _windowedMode;
 
+        public void InsertCommandline(string path)
+        {
+            try
+            {
+                using (var file = new StreamWriter(File.OpenWrite(path + "\\commandline.txt")))
+                {
+                    file.WriteLine("-scOfflineOnly");
+                }
+            }catch { }
+        }
+
         public void ReadStartupSettings()
         {
             var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
@@ -382,6 +397,33 @@ namespace GTANetwork
                 File.Copy("bin\\" + path, InstallFolder + "\\" + path, true);
                 OurFiles.Add(InstallFolder + "\\" + path);
             }
+
+            if (Directory.Exists("tempstorage"))
+            {
+                DeleteDirectory("tempstorage");
+            }
+
+            Directory.CreateDirectory("tempstorage");
+
+            var filesRoot = Directory.GetFiles(InstallFolder, "*.asi");
+
+            foreach (var s in filesRoot)
+            {
+                MoveFile(s, "tempstorage\\" + Path.GetFileName(s));
+            }
+
+            if (File.Exists(InstallFolder + "\\dinput8.dll"))
+                MoveFile(InstallFolder + "\\dinput8.dll", "tempstorage\\dinput8.dll");
+
+            if (File.Exists(InstallFolder + "\\dsound.dll"))
+                MoveFile(InstallFolder + "\\dsound.dll", "tempstorage\\dsound.dll");
+
+            if (File.Exists(InstallFolder + "\\scripthookv.dll"))
+                MoveFile(InstallFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
+
+            if (File.Exists(InstallFolder + "\\commandline.txt"))
+                MoveFile(InstallFolder + "\\commandline.txt", "tempstorage\\commandline.txt");
+
             /*
             foreach (var path in Directory.GetFiles("cef"))
             {

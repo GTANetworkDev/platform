@@ -104,6 +104,12 @@ namespace GTANetworkServer
             set { Base.setVehicleWheelType(this, value); }
         }
 
+        public bool engineStatus
+        {
+            get { return Base.getVehicleEngineStatus(this); }
+            set { Base.setVehicleEngineStatus(this, value);}
+        }
+
         public Color tyreSmokeColor
         {
             get { return Base.getVehicleTyreSmokeColor(this); }
@@ -161,6 +167,11 @@ namespace GTANetworkServer
         public string displayName
         {
             get { return Base.getVehicleDisplayName((VehicleHash) model); }
+        }
+
+        public Client[] occupants
+        {
+            get { return Base.getVehicleOccupants(this); }
         }
 
         #endregion
