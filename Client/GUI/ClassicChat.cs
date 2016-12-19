@@ -160,7 +160,7 @@ namespace GTANetwork.GUI
             
             
             var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
-            _mainScaleform.Render2DScreenSpace(new PointF(pos.X, pos.Y), new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
+            _mainScaleform.Render2DScreenSpace(new PointF(pos.X + Main.PlayerSettings.ChatboxXOffset, pos.Y + Main.PlayerSettings.ChatboxYOffset), new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
 
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;

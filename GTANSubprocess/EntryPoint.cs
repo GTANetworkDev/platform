@@ -112,23 +112,15 @@ namespace GTANetwork
             var steamDictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\GTAV";
             var keyName = "InstallFolder";
             var keyNameSteam = "InstallFolderSteam";
+            var gameVer = "GAMEVERSION";
 
             InstallFolder = (string)Registry.GetValue(dictPath, keyName, null);
+            settings.SteamPowered = ((string) Registry.GetValue(dictPath, gameVer, 0) == "2");
 
             if (string.IsNullOrEmpty(InstallFolder))
             {
                 InstallFolder = (string) Registry.GetValue(steamDictPath, keyNameSteam, null);
                 settings.SteamPowered = true;
-
-                try
-                {
-                    SaveSettings("settings.xml", settings);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    MessageBox.Show(splashScreen.SplashScreen, "We require administrative privileges to continue. Please restart as administrator.", "Unauthorized access");
-                    return;
-                }
 
                 if (string.IsNullOrEmpty(InstallFolder))
                 {
@@ -158,6 +150,16 @@ namespace GTANetwork
                 {
                     InstallFolder = InstallFolder.Replace("Grand Theft Auto V\\GTAV", "Grand Theft Auto V");
                 }
+            }
+
+            try
+            {
+                SaveSettings("settings.xml", settings);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "We require administrative privileges to continue. Please restart as administrator.", "Unauthorized access");
+                return;
             }
 
             splashScreen.SetPercent(50);

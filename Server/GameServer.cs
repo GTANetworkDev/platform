@@ -559,8 +559,8 @@ namespace GTANetworkServer
                         catch
                         {
                         }
-
-                        var ass = Assembly.LoadFrom(baseDir + script.Path);
+                        byte[] bytes = File.ReadAllBytes(baseDir + script.Path);
+                        var ass = Assembly.Load(bytes);
                         var instances = InstantiateScripts(ass);
                         ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                     }

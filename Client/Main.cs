@@ -1076,7 +1076,51 @@ namespace GTANetwork
                     };
                     internetServers.Items.Add(debugItem);
                 }
-                
+
+                {
+                    var debugItem = new UIMenuItem("Horizontal Chatbox Offset");
+                    debugItem.SetRightLabel(PlayerSettings.ChatboxXOffset.ToString());
+                    debugItem.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxXOffset.ToString(),
+                            10, TickSpinner);
+
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting))
+                        {
+                            Util.Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        PlayerSettings.ChatboxXOffset = newSetting;
+                        debugItem.SetRightLabel(PlayerSettings.ChatboxXOffset.ToString());
+                        SaveSettings();
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuItem("Vertical Chatbox Offset");
+                    debugItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
+                    debugItem.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxYOffset.ToString(),
+                            10, TickSpinner);
+
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting))
+                        {
+                            Util.Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        PlayerSettings.ChatboxYOffset = newSetting;
+                        debugItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
+                        SaveSettings();
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
                 {
                     var debugItem = new UIMenuCheckboxItem("Disable Rockstar Editor", PlayerSettings.DisableRockstarEditor);
                     debugItem.CheckboxEvent += (sender, @checked) =>
@@ -1102,6 +1146,32 @@ namespace GTANetwork
                     };
 
                     internetServers.Items.Add(nameItem);
+                }
+
+                var startupFlow = new TabInteractiveListItem("Start Up", new List<UIMenuItem>());
+
+                {
+                    var nameItem = new UIMenuCheckboxItem("Start in Borderless Windowed", PlayerSettings.AutosetBorderlessWindowed);
+                    
+                    nameItem.CheckboxEvent += (sender, chequed) =>
+                    {
+                        PlayerSettings.AutosetBorderlessWindowed = chequed;
+                        SaveSettings();
+                    };
+
+                    startupFlow.Items.Add(nameItem);
+                }
+
+                {
+                    var nameItem = new UIMenuCheckboxItem("Start in Offline Mode", PlayerSettings.StartGameInOfflineMode);
+
+                    nameItem.CheckboxEvent += (sender, chequed) =>
+                    {
+                        PlayerSettings.StartGameInOfflineMode = chequed;
+                        SaveSettings();
+                    };
+
+                    startupFlow.Items.Add(nameItem);
                 }
 
                 var localServs = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
@@ -1265,7 +1335,13 @@ namespace GTANetwork
                     };
                 }
 
-                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>() { internetServers, localServs, favServers });
+                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>()
+                {
+                    internetServers,
+                    startupFlow,
+                    localServs,
+                    favServers
+                });
                 MainMenu.AddTab(welcomeItem);
             }
 
@@ -2457,6 +2533,15 @@ namespace GTANetwork
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
                 Game.DisableControlThisFrame(0, Control.MeleeAttack1);
+                Game.DisableControlThisFrame(0, Control.MeleeAttack2);
+                Game.DisableControlThisFrame(0, Control.MeleeAttackAlternate);
+                Game.DisableControlThisFrame(0, Control.MeleeAttackHeavy);
+                Game.DisableControlThisFrame(0, Control.MeleeAttackLight);
+                Game.DisableControlThisFrame(0, Control.MeleeBlock);
+
+
+
+
 
                 Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
 

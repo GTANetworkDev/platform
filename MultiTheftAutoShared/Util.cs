@@ -80,6 +80,9 @@ namespace GTANetworkShared
         public bool StartGameInOfflineMode { get; set; }
         public bool AutosetBorderlessWindowed { get; set; }
 
+        public int ChatboxXOffset { get; set; }
+        public int ChatboxYOffset { get; set; }
+
         public PlayerSettings()
         {
             MasterServerAddress = "http://148.251.18.67:8888/";

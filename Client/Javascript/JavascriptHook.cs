@@ -286,7 +286,7 @@ namespace GTANetwork.Javascript
 
         internal void OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (Main.Chat == null || Main.Chat.IsFocused) return;
+            if (Main.Chat == null || Main.Chat.IsFocused || Main.MainMenu.Visible) return;
 
             lock (ScriptEngines)
             {
@@ -3465,12 +3465,12 @@ namespace GTANetwork.Javascript
             return (entity - destination).LengthSquared() < (range*range);
         }
         
-        public void dxDrawTexture(string path, Point pos, Size size, int id = 60)
+        public void dxDrawTexture(string path, Point pos, Size size, double rotation = 0)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
             if (!isPathSafe(path)) throw new Exception("Illegal path for texture!");
             path = getResourceFilePath(path);
-            Util.Util.DxDrawTexture(id, path, pos.X, pos.Y, size.Width, size.Height, 0f, 255, 255, 255, 255);
+            Util.Util.DxDrawTexture(60, path, pos.X, pos.Y, size.Width, size.Height, (float) rotation, 255, 255, 255, 255);
         }
 
         public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading,
