@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows.Forms;
 using GTA;
 using GTANetwork.Javascript;
@@ -283,12 +284,24 @@ namespace GTANetwork.GUI
             if ((key == Keys.ShiftKey && _lastKey == Keys.Menu) || (key == Keys.Menu && _lastKey == Keys.ShiftKey))
                 ActivateKeyboardLayout(1, 0);
 
-            if (key == Keys.C && _lastKey == Keys.ControlKey)
+            if (key == Keys.V && Game.IsKeyPressed(Keys.ControlKey))
             {
-                str = Clipboard.GetText(TextDataFormat.Text);
+                str = null;
+                Thread staThread = new Thread(
+                    delegate ()
+                    {
+                        try
+                        {
+                            str = Clipboard.GetText();
+                        }
+                        catch{}
+                    });
+                staThread.SetApartmentState(ApartmentState.STA);
+                staThread.Start();
+                staThread.Join();
 
                 if (!string.IsNullOrWhiteSpace(str))
-                { 
+                {
                     CurrentInput += str;
                     _mainScaleform.CallFunction("ADD_TEXT", str);
                 }
