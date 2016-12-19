@@ -171,7 +171,7 @@ namespace GTANetwork.Networking
         }
     }
 
-    internal class SyncCollector : Script
+    public class SyncCollector : Script
     {
         internal static bool ForceAimData;
         internal static object LastSyncPacket;
@@ -181,7 +181,7 @@ namespace GTANetwork.Networking
         private static bool _lastBullet;
         private static DateTime _lastShot;
 
-        internal SyncCollector()
+        public SyncCollector()
         {
             var t = new Thread(SyncSender.MainLoop);
             t.IsBackground = true;

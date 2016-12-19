@@ -36,9 +36,9 @@ using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork
 {
-    internal class MessagePump : Script
+    public class MessagePump : Script
     {
-        internal MessagePump()
+        public MessagePump()
         {
             Tick += (sender, args) =>
             {
@@ -75,7 +75,7 @@ namespace GTANetwork
         internal static Main EntryPoint;
     }
 
-    internal class Main : Script
+    public class Main : Script
     {
         internal static PlayerSettings PlayerSettings;
         
@@ -148,7 +148,7 @@ namespace GTANetwork
         private TabTextItem _statsItem;
         //
       
-        internal Main()
+        public Main()
         {
 
             World.DestroyAllCameras();
@@ -326,7 +326,7 @@ namespace GTANetwork
 
         internal static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
         
-        internal void GetWelcomeMessage()
+        public void GetWelcomeMessage()
         {
             ThreadPool.QueueUserWorkItem(delegate
             {
@@ -345,6 +345,8 @@ namespace GTANetwork
                         _welcomePage.Text = jsonObj.Message;
                         _welcomePage.TextTitle = jsonObj.Title;
                         _welcomePage.PromoPicturePath = GTANInstallDir + "images\\" + jsonObj.Picture;
+
+                        LogManager.AlwaysDebugLog("Set text to " + jsonObj.Message + " and title to " + jsonObj.Title);
                     }
                 }
                 catch (WebException ex)
@@ -594,14 +596,19 @@ namespace GTANetwork
 
                     Client.DiscoverLocalPeers(Port);
 
+                    LogManager.AlwaysDebugLog("Contacting " + PlayerSettings.MasterServerAddress);
+
                     if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
                         return;
+
                     string response = String.Empty;
                     try
                     {
                         using (var wc = new ImpatientWebClient())
                         {
+                            LogManager.AlwaysDebugLog("Downloading response...");
                             response = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/servers");
+                            LogManager.AlwaysDebugLog("Downloaded " + response);
                         }
                     }
                     catch (Exception e)
@@ -616,7 +623,7 @@ namespace GTANetwork
                         if (e.InnerException != null)
                             logOutput += "\nInnerException: " + e.InnerException.Message;
                         logOutput += "\n";
-                        File.AppendAllText("scripts\\GTACOOP.log", logOutput);
+                        LogManager.SimpleLog("masterserver", logOutput);
                     }
 
                     var list = new List<string>();
@@ -625,7 +632,7 @@ namespace GTANetwork
                     {
                         var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
 
-                        if (dejson != null)
+                        if (dejson != null && dejson.list != null)
                         {
                             list.AddRange(dejson.list);
                         }

@@ -62,7 +62,7 @@ namespace GTANetwork.GUI
             return mod;
         }
         
-        internal CefController()
+        public CefController()
         {
             Tick += (sender, args) =>
             {

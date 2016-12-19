@@ -240,7 +240,7 @@ namespace GTANetwork
                     counter++;
                     if (counter > 50)
                     {
-                        MoveStuffOut();
+                        MoveStuffOut(InstallFolder);
                         return;
                     }
                 }
@@ -272,7 +272,7 @@ namespace GTANetwork
 
             PatchStartup(_startupFlow, _landingPage);
 
-            MoveStuffOut();
+            MoveStuffOut(InstallFolder);
 
             mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
             mySettings.Video.Windowed.Value = _windowedMode;
@@ -503,8 +503,17 @@ namespace GTANetwork
             }
         }
 
-        public void MoveStuffOut()
+        public void MoveStuffOut(string installFolder)
         {
+            if (File.Exists(installFolder + "\\commandline.txt"))
+            {
+                try
+                {
+                    NoReadonly(installFolder + "\\commandline.txt");
+                    File.Delete(installFolder + "\\commandline.txt");
+                }catch { }
+            }
+
             foreach (var file in OurFiles)
             {
                 try

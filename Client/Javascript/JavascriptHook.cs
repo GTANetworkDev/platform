@@ -124,9 +124,9 @@ namespace GTANetwork.Javascript
         }
     }
 
-    internal class JavascriptHook : Script
+    public class JavascriptHook : Script
     {
-        internal JavascriptHook()
+        public JavascriptHook()
         {
             Tick += OnTick;
             KeyDown += OnKeyDown;

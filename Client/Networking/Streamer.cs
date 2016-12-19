@@ -23,7 +23,7 @@ namespace GTANetwork.Networking
 
         public static SyncPed[] StreamedInPlayers;
 
-        internal StreamerThread()
+        public StreamerThread()
         {
             _itemsToStreamIn = new List<IStreamedItem>();
             _itemsToStreamOut = new List<IStreamedItem>();
