@@ -2404,7 +2404,7 @@ namespace GTANetwork.Networking
 
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.VehicleLocked))
             {
-                veh.LockStatus = VehicleLockStatus.Locked;
+                veh.LockStatus = VehicleLockStatus.CannotBeTriedToEnter;
             }
             
 

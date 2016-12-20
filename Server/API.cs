@@ -1289,7 +1289,7 @@ namespace GTANetworkServer
                         (byte)PacketOptimization.ResetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
                             EntityFlag.VehicleLocked);
                 }
-                Program.ServerInstance.SendNativeCallToAllPlayers(0xB664292EAECF7FA6, new EntityArgument(vehicle.Value), locked ? 2 : 1);
+                Program.ServerInstance.SendNativeCallToAllPlayers(0xB664292EAECF7FA6, new EntityArgument(vehicle.Value), locked ? 10 : 1);
 
                 var delta = new Delta_VehicleProperties();
                 delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;

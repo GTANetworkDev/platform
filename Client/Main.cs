@@ -1801,11 +1801,13 @@ namespace GTANetwork
             }
 
             World.CurrentDayTime = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
-            Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, map.World.Weather);
 
             Time = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
             if (map.World.Weather >= 0 && map.World.Weather < _weather.Length)
+            {
                 Weather = _weather[map.World.Weather];
+                Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, _weather[map.World.Weather]);
+            }
 
             Function.Call(Hash.PAUSE_CLOCK, true);
         }
