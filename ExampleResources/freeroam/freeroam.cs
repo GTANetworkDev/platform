@@ -10,6 +10,11 @@ using System.Threading;
 
 public class FreeroamScript : Script
 {
+    public FreeroamScript()
+    {
+        API.onClientEventTrigger += onClientEventTrigger;
+    }
+
     public Dictionary<Client, List<NetHandle>> VehicleHistory = new Dictionary<Client, List<NetHandle>>();
     public Dictionary<string, string> AnimationList = new Dictionary<string, string>
     {
@@ -45,6 +50,36 @@ public class FreeroamScript : Script
         {"loco", "anim@mp_player_intcelebrationmale@you_loco you_loco"},
         {"handsup", "missminuteman_1ig_2 handsup_base"},
     };
+
+    public void onClientEventTrigger(Client sender, string name, object[] args)
+    {
+        if (name == "CREATE_VEHICLE")
+        {
+            int model = (int)args[0];
+
+            if (!Enum.IsDefined(typeof(VehicleHash), model))
+                return;
+
+            var rot = API.getEntityRotation(sender.handle);
+            var veh = API.createVehicle((VehicleHash)model, sender.position, new Vector3(0, 0, rot.Z), 0, 0);
+
+            if (VehicleHistory.ContainsKey(sender))
+            {
+                VehicleHistory[sender].Add(veh);
+                if (VehicleHistory[sender].Count > 3)
+                {
+                    API.deleteEntity(VehicleHistory[sender][0]);
+                    VehicleHistory[sender].RemoveAt(0);
+                }
+            }
+            else
+            {
+                VehicleHistory.Add(sender, new List<NetHandle> { veh });
+            }
+            
+            API.setPlayerIntoVehicle(sender, veh, -1);        
+        }
+    }
 
 
     [Command("me", GreedyArg = true)]

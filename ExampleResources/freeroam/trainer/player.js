@@ -52,4 +52,6 @@ API.onResourceStart.connect(function (sender, e) {
 	});
 
 	mainWindow.AddItem(suicide);
+
+	mainWindow.RefreshIndex();
 });

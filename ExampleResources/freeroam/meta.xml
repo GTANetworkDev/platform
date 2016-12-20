@@ -7,6 +7,8 @@
 
     <script src="trainer/trainer.js" type="client" />
     <script src="trainer/player.js" type="client" />
+    <script src="trainer/weapons.js" type="client" />
+    <script src="trainer/vehicles.js" type="client" />
 
     <file src="skeletor.png" />
 </meta>
