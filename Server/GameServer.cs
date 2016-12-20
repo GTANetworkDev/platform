@@ -561,14 +561,14 @@ namespace GTANetworkServer
                         }
                         Assembly ass;
 
-                        //if (ourResource.Info.Info.Shadowcopy)
+                        if (ourResource.Info.Info.Shadowcopy)
                         {
                             byte[] bytes = File.ReadAllBytes(baseDir + script.Path);
                             ass = Assembly.Load(bytes);
                         }
-                        //else
+                        else
                         {
-                            //ass = Assembly.LoadFrom(baseDir + script.Path);
+                            ass = Assembly.LoadFrom(baseDir + script.Path);
                         }
 
                         var instances = InstantiateScripts(ass);

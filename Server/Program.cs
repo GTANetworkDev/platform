@@ -100,7 +100,7 @@ namespace GTANetworkServer
 
             Output("Starting...");
 
-            AppDomain.CurrentDomain.SetShadowCopyFiles();
+            //AppDomain.CurrentDomain.SetShadowCopyFiles();
 
             if (!Directory.Exists("resources"))
             {
