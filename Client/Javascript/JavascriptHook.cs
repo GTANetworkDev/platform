@@ -1020,7 +1020,11 @@ namespace GTANetwork.Javascript
 
         public void destroyCefBrowser(Browser browser)
         {
-            CEFManager.Browsers.Remove(browser);
+            lock (CEFManager.Browsers)
+            {
+                CEFManager.Browsers.Remove(browser);
+            }
+            
             try
             {
                 CefUtil._cachedReferences.Remove(CefUtil._cachedReferences.FirstOrDefault(pair => pair.Value == browser).Key);
