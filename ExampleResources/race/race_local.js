@@ -86,9 +86,8 @@ API.onUpdate.connect(function(sender, args) {
 API.onServerEventTrigger.connect(function (eventName, args) {
     if (eventName === "startRaceCountdown") {
         var countdown = API.requestScaleform("countdown");
-
-        API.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
-        API.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
+        
+        API.playSoundFrontEnd("HUD_MINI_GAME_SOUNDSET", "CHECKPOINT_NORMAL");
         countdown.CallFunction("FADE_MP", "3", 241, 247, 57);
 
         var start = API.getGlobalTime();
@@ -97,9 +96,8 @@ API.onServerEventTrigger.connect(function (eventName, args) {
             countdown.Render2D();
             API.sleep(0);
         }
-
-        API.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
-        API.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
+        
+        API.playSoundFrontEnd("HUD_MINI_GAME_SOUNDSET", "CHECKPOINT_NORMAL");
         countdown.CallFunction("FADE_MP", "2", 241, 247, 57);
         
         start = API.getGlobalTime();
@@ -110,8 +108,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         }
 
 
-        API.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
-        API.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
+        API.playSoundFrontEnd("HUD_MINI_GAME_SOUNDSET", "CHECKPOINT_NORMAL");
         countdown.CallFunction("FADE_MP", "1", 241, 247, 57);
         
         start = API.getGlobalTime();
@@ -121,8 +118,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
             API.sleep(0);
         }
 
-        API.callNative("REQUEST_SCRIPT_AUDIO_BANK", "HUD_MINI_GAME_SOUNDSET", true);
-        API.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
+        API.playSoundFrontEnd("HUD_MINI_GAME_SOUNDSET", "CHECKPOINT_NORMAL");
         countdown.CallFunction("FADE_MP", "go", 49, 235, 126);
 
         start = API.getGlobalTime();
@@ -171,7 +167,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
         }
 
         if (playSound) {
-            API.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
+            API.playSoundFrontEnd("HUD_MINI_GAME_SOUNDSET", "CHECKPOINT_NORMAL");
         }
 
         if (mainBlip == null) {
@@ -217,7 +213,7 @@ API.onServerEventTrigger.connect(function (eventName, args) {
     }
 
     if (eventName === "finishRace") {
-        API.callNative("PLAY_SOUND_FRONTEND", 0, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
+        API.playSoundFrontEnd("HUD_MINI_GAME_SOUNDSET", "CHECKPOINT_NORMAL");
         API.showShard("finished");
 
         if (mainBlip != null) {

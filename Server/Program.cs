@@ -100,6 +100,8 @@ namespace GTANetworkServer
 
             Output("Starting...");
 
+            AppDomain.CurrentDomain.SetShadowCopyFiles();
+
             if (!Directory.Exists("resources"))
             {
                 Output("ERROR: Necessary \"resources\" folder does not exist!");

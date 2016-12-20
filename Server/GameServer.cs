@@ -559,8 +559,18 @@ namespace GTANetworkServer
                         catch
                         {
                         }
-                        byte[] bytes = File.ReadAllBytes(baseDir + script.Path);
-                        var ass = Assembly.Load(bytes);
+                        Assembly ass;
+
+                        //if (ourResource.Info.Info.Shadowcopy)
+                        {
+                            byte[] bytes = File.ReadAllBytes(baseDir + script.Path);
+                            ass = Assembly.Load(bytes);
+                        }
+                        //else
+                        {
+                            //ass = Assembly.LoadFrom(baseDir + script.Path);
+                        }
+
                         var instances = InstantiateScripts(ass);
                         ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                     }
@@ -3184,6 +3194,10 @@ namespace GTANResource
                 else if (o is Entity)
                 {
                     list.Add(new EntityArgument(((Entity)o).Value));
+                }
+                else if (o is Client)
+                {
+                    list.Add(new EntityArgument(((Client) o).handle.Value));
                 }
                 else if (o is IList)
                 {

@@ -5361,6 +5361,8 @@ namespace GTANetwork
             Game.Player.Character.Opacity = 255;
             Game.Player.Character.IsInvincible = false;
             Game.Player.Character.Weapons.RemoveAll();
+            Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Game.Player, 1f);
+            Function.Call(Hash.SET_SWIM_MULTIPLIER_FOR_PLAYER, Game.Player, 1f);
 
             Function.Call(Hash.SET_FAKE_WANTED_LEVEL, 0);
             Function.Call(Hash.DETACH_ENTITY, Game.Player.Character.Handle, true, true);

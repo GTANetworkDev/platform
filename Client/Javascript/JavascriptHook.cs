@@ -1203,7 +1203,7 @@ namespace GTANetwork.Javascript
                 throw new ArgumentException("Hash \"" + hash + "\" has not been found!");
 
             if (!NativeWhitelist.IsAllowed((ulong) ourHash))
-                return;
+                throw new ArgumentException("Hash \"" + hash + "\" is not allowed!");
 
             Function.Call(ourHash, args.Select(o =>
             {

@@ -846,5 +846,8 @@ namespace GTANetworkServer
 
         [XmlAttribute("async")]
         public bool Multithreaded { get; set; }
+
+        [XmlAttribute("shadowcopy")]
+        public bool Shadowcopy { get; set; }
     }
 }
