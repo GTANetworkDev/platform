@@ -2150,9 +2150,17 @@ namespace GTANetwork.Networking
 
 			if (IsCustomAnimationPlaying)
 			{
-                UpdatePlayerPedPos();
+			    if ((CustomAnimationFlag & 48) == 48)
+			    {
+			        VMultiOnfootPosition();
+			    }
+			    else
+			    {
+			        UpdatePlayerPedPos();
+			    }
 
 			    DisplayCustomAnimation();
+
 			}
 
 

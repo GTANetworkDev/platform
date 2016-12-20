@@ -8035,7 +8035,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:GTANetwork, Version=0.1.354.343, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:GTANetwork, Version=0.1.354.361, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_A470BDE980617047663C747CAD7ED6D9"
@@ -11315,7 +11315,7 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"
             {
-            "DefaultLocation" = "8:[ProgramFiles64Folder]\\[ProductName]"
+            "DefaultLocation" = "8:[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
@@ -11518,7 +11518,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:GTA Network"
         "ProductCode" = "8:{CBF80437-3B43-4ECF-8233-4415BAC0377C}"
-        "PackageCode" = "8:{CBAA3FE5-F22D-44FE-8078-433FE35D3022}"
+        "PackageCode" = "8:{F40901FD-E625-44B8-9782-8C956C95946C}"
         "UpgradeCode" = "8:{AAA5B0FF-B5D5-4F0A-916A-E4F6EE864E75}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

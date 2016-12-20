@@ -406,7 +406,18 @@ namespace GTANetwork
                 GTANetworkShared.VehicleHash.Shotaro,GTANetworkShared.VehicleHash.Tornado6,
                 GTANetworkShared.VehicleHash.Vortex,GTANetworkShared.VehicleHash.Wolfsbane,
                 GTANetworkShared.VehicleHash.Youga2,GTANetworkShared.VehicleHash.Zombiea,
-                GTANetworkShared.VehicleHash.Zombieb,
+                GTANetworkShared.VehicleHash.Zombieb, GTANetworkShared.VehicleHash.Voltic2,
+                GTANetworkShared.VehicleHash.Ruiner2, GTANetworkShared.VehicleHash.Dune4,
+                GTANetworkShared.VehicleHash.Dune5, GTANetworkShared.VehicleHash.Phantom2,
+                GTANetworkShared.VehicleHash.Technical2, GTANetworkShared.VehicleHash.Boxville5,
+                GTANetworkShared.VehicleHash.Blazer5,
+                GTANetworkShared.VehicleHash.Comet3, GTANetworkShared.VehicleHash.Diablous, 
+                GTANetworkShared.VehicleHash.Diablous2, GTANetworkShared.VehicleHash.Elegy,
+                GTANetworkShared.VehicleHash.Fcr, GTANetworkShared.VehicleHash.Fcr2,
+                GTANetworkShared.VehicleHash.Italigtb, GTANetworkShared.VehicleHash.Italigtb2,
+                GTANetworkShared.VehicleHash.Nero, GTANetworkShared.VehicleHash.Nero2,
+                GTANetworkShared.VehicleHash.Penetrator, GTANetworkShared.VehicleHash.Specter,
+                GTANetworkShared.VehicleHash.Specter2, GTANetworkShared.VehicleHash.Tempesta
             };
 
 
@@ -1325,6 +1336,12 @@ namespace GTANetwork
                         if (!int.TryParse(strInput, out newSetting))
                         {
                             Util.Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+
+                        if (newSetting <= 0)
+                        {
+                            Util.Util.SafeNotify("Input must be a positive integer!");
                             return;
                         }
 
@@ -2444,7 +2461,7 @@ namespace GTANetwork
         public void OnTick(object sender, EventArgs e)
         {
             Main.TickCount++;
-
+            
             try
             {
                 Ped player = Game.Player.Character;
@@ -2532,11 +2549,14 @@ namespace GTANetwork
                 Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
-                Game.DisableControlThisFrame(0, Control.MeleeAttack1);
                 Game.DisableControlThisFrame(0, Control.MeleeAttack2);
                 Game.DisableControlThisFrame(0, Control.MeleeAttackAlternate);
                 Game.DisableControlThisFrame(0, Control.MeleeAttackHeavy);
-                Game.DisableControlThisFrame(0, Control.MeleeAttackLight);
+                if (!player.IsJumping)
+                {
+                    Game.DisableControlThisFrame(0, Control.MeleeAttack1);
+                    Game.DisableControlThisFrame(0, Control.MeleeAttackLight);
+                }
                 Game.DisableControlThisFrame(0, Control.MeleeBlock);
 
 
