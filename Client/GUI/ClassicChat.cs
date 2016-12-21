@@ -47,7 +47,7 @@ namespace GTANetwork.GUI
             _messages = new List<Tuple<string, Color>>();
 
             
-            _inputboxRectangle = new UIResRectangle(new Point(20, 280), new Size(600, 35), Color.FromArgb(200, 60, 60, 60));
+            _inputboxRectangle = new UIResRectangle(new Point(20, 280), new Size(600, 35), Color.FromArgb(150, 60, 60, 60));
             _inputboxBorderRectangle = new UIResRectangle(new Point(20 - borderWidth, 280 - borderWidth), new Size(600 + borderWidth*2, 35 + borderWidth*2), Color.FromArgb(200, 0, 0, 0));
             _inputboxText = new UIResText("", new Point(24, 282), 0.35f, Color.White);
         }
@@ -161,15 +161,22 @@ namespace GTANetwork.GUI
         private UIResText _inputboxText;
         private void DrawChatboxInput()
         {
-            //var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
-            //_mainScaleform.Render2DScreenSpace(new PointF(pos.X + Main.PlayerSettings.ChatboxXOffset, pos.Y + Main.PlayerSettings.ChatboxYOffset), new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
+            if (Main.PlayerSettings.UseClassicChat)
+            {
+                var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
+                _mainScaleform.Render2DScreenSpace(
+                    new PointF(pos.X + Main.PlayerSettings.ChatboxXOffset, pos.Y + Main.PlayerSettings.ChatboxYOffset),
+                    new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
+                return;
+            }
 
             //float realSize = StringMeasurer.MeasureString(CurrentInput ?? "");
             float realSize = UIResText.MeasureStringWidth(CurrentInput ?? "", Font.ChaletLondon, 0.35f);
 
             //realSize /= 0.35f;
 
-            _inputboxBorderRectangle.Size = new SizeF(Math.Max(600 + borderWidth * 2, borderWidth*2 + realSize + 20), 35 + borderWidth*2);
+            _inputboxBorderRectangle.Size = new SizeF(Math.Max(600 + borderWidth * 2, borderWidth*2 + realSize + 20),
+                                            35 + borderWidth*2);
             _inputboxBorderRectangle.Draw();
 
             _inputboxRectangle.Size = new SizeF(Math.Max(600, realSize + 20), 35);

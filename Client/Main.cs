@@ -113,6 +113,7 @@ namespace GTANetwork
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
         public static bool CanOpenChatbox = true;
+        public static bool DisplayWastedMessage = true;
         public static bool ScriptChatVisible = true;
         public static bool UIVisible = true;
         public static byte TickCount = 0;
@@ -1127,6 +1128,16 @@ namespace GTANetwork
 
                         PlayerSettings.ChatboxYOffset = newSetting;
                         debugItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
+                        SaveSettings();
+                    };
+                    internetServers.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Use Classic Chatbox", PlayerSettings.UseClassicChat);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.UseClassicChat = @checked;
                         SaveSettings();
                     };
                     internetServers.Items.Add(debugItem);
@@ -3079,6 +3090,11 @@ namespace GTANetwork
                         if (lastHealth != playerCar.EngineHealth)
                         {
                             JavascriptHook.InvokeCustomEvent(api => api?.invokeonVehicleHealthChange((int)lastHealth));
+                        }
+
+                        if (playerCar.IsEngineRunning ^ !PacketOptimization.CheckBit(item.Flag, EntityFlag.EngineOff))
+                        {
+                            playerCar.IsEngineRunning = !PacketOptimization.CheckBit(item.Flag, EntityFlag.EngineOff);
                         }
 
                         if (lastDamageModel != null)
@@ -5433,6 +5449,7 @@ namespace GTANetwork
 		    HasFinishedDownloading = false;
 		    ScriptChatVisible = true;
 		    CanOpenChatbox = true;
+		    DisplayWastedMessage = true;
 
             Main.UIColor = Color.White;
 		    

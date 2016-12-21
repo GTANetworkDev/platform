@@ -1001,6 +1001,16 @@ namespace GTANetwork.Javascript
             return Main.CanOpenChatbox;
         }
 
+        public void setDisplayWastedShard(bool show)
+        {
+            Main.DisplayWastedMessage = show;
+        }
+
+        public bool getDisplayWastedShard()
+        {
+            return Main.DisplayWastedMessage;
+        }
+
         public Browser createCefBrowser(double width, double height, bool local = true)
         {
 #if RELATIVE_CEF_POS
@@ -2822,14 +2832,19 @@ namespace GTANetwork.Javascript
             Function.Call((Hash)0x67C540AA08E4A6F5, -1, audioName, audioLib);
         }
 
-        public void showShard(string text)
-        {
-            NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text);
-        }
-
-        public void showShard(string text, int timeout)
+        public void showShard(string text, int timeout = 5000)
         {
             NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
+        }
+
+        public void showColorShard(string text, string description, int color1, int color2, int time = 5000)
+        {
+            NativeUI.BigMessageThread.MessageInstance.ShowColoredShard(text, description, (HudColor) color1, (HudColor) color2, time);
+        }
+
+        public void showWeaponPurchasedShard(string text, string weaponName, int weapon, int time = 5000)
+        {
+            NativeUI.BigMessageThread.MessageInstance.ShowWeaponPurchasedMessage(text, weaponName, (GTA.WeaponHash) weapon, time);
         }
 
         public XmlGroup loadConfig(string config)

@@ -79,6 +79,7 @@ namespace GTANetworkShared
         public int CefFps { get; set; }
         public bool StartGameInOfflineMode { get; set; }
         public bool AutosetBorderlessWindowed { get; set; }
+        public bool UseClassicChat { get; set; }
 
         public int ChatboxXOffset { get; set; }
         public int ChatboxYOffset { get; set; }
@@ -96,6 +97,7 @@ namespace GTANetworkShared
             AutosetBorderlessWindowed = true;
             StartGameInOfflineMode = true;
             ScreenshotKey = Keys.F8;
+            UseClassicChat = false;
             CefFps = 30;
         }
     }
