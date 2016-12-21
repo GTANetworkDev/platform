@@ -115,7 +115,7 @@ namespace GTANetwork
             var gameVer = "GAMEVERSION";
 
             InstallFolder = (string)Registry.GetValue(dictPath, keyName, null);
-            settings.SteamPowered = ((string) Registry.GetValue(dictPath, gameVer, 0) == "2");
+            settings.SteamPowered = ((string) Registry.GetValue(dictPath, gameVer, "1") == "2");
 
             if (string.IsNullOrEmpty(InstallFolder))
             {
@@ -623,6 +623,16 @@ namespace GTANetwork
         {
             Inject(gta, Path.GetFullPath("bin\\scripthookv.dll"));
             Inject(gta, Path.GetFullPath("bin\\ScriptHookVDotNet.dll"));
+
+            foreach (var file in Directory.GetFiles("bin", "*.asi"))
+            {
+                if (file.ToLower().StartsWith("scripthookv")) continue;
+
+                try
+                {
+                    Inject(gta, file);
+                } catch { }
+            }
         }
 
         public static void Inject(Process target, string path)

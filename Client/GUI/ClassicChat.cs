@@ -12,6 +12,7 @@ using GTA.Native;
 using GTANetwork.Javascript;
 using NativeUI;
 using Control = GTA.Control;
+using Font = GTA.UI.Font;
 
 namespace GTANetwork.GUI
 {
@@ -44,7 +45,14 @@ namespace GTANetwork.GUI
             CurrentInput = "";
             _mainScaleform = new Scaleform("multiplayer_chat");
             _messages = new List<Tuple<string, Color>>();
+
+            
+            _inputboxRectangle = new UIResRectangle(new Point(20, 280), new Size(600, 35), Color.FromArgb(200, 60, 60, 60));
+            _inputboxBorderRectangle = new UIResRectangle(new Point(20 - borderWidth, 280 - borderWidth), new Size(600 + borderWidth*2, 35 + borderWidth*2), Color.FromArgb(200, 0, 0, 0));
+            _inputboxText = new UIResText("", new Point(24, 282), 0.35f, Color.White);
         }
+
+        const int borderWidth = 2;
 
         public bool HasInitialized;
 
@@ -145,7 +153,38 @@ namespace GTANetwork.GUI
 
             return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
         }
-        
+
+        private bool _tick;
+        private DateTime _lastTick;
+        private UIResRectangle _inputboxRectangle;
+        private UIResRectangle _inputboxBorderRectangle;
+        private UIResText _inputboxText;
+        private void DrawChatboxInput()
+        {
+            //var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
+            //_mainScaleform.Render2DScreenSpace(new PointF(pos.X + Main.PlayerSettings.ChatboxXOffset, pos.Y + Main.PlayerSettings.ChatboxYOffset), new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
+
+            //float realSize = StringMeasurer.MeasureString(CurrentInput ?? "");
+            float realSize = UIResText.MeasureStringWidth(CurrentInput ?? "", Font.ChaletLondon, 0.35f);
+
+            //realSize /= 0.35f;
+
+            _inputboxBorderRectangle.Size = new SizeF(Math.Max(600 + borderWidth * 2, borderWidth*2 + realSize + 20), 35 + borderWidth*2);
+            _inputboxBorderRectangle.Draw();
+
+            _inputboxRectangle.Size = new SizeF(Math.Max(600, realSize + 20), 35);
+            _inputboxRectangle.Draw();
+
+            _inputboxText.Caption = (CurrentInput ?? "") + (_tick ? "|" : "");
+            _inputboxText.Draw();
+
+            if (DateTime.Now.Subtract(_lastTick).TotalMilliseconds > 800)
+            {
+                _lastTick = DateTime.Now;
+                _tick = !_tick;
+            }
+        }
+
         public void Tick()
         {
             if (!Main.IsOnServer()) return;
@@ -158,10 +197,6 @@ namespace GTANetwork.GUI
             if (timePassed < 300 && _lastFadedOut)
                 alpha = (int)MiscExtensions.QuadraticEasingLerp(0f, 100f, (int)Math.Min(timePassed, 300), 300);
             
-            
-            var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
-            _mainScaleform.Render2DScreenSpace(new PointF(pos.X + Main.PlayerSettings.ChatboxXOffset, pos.Y + Main.PlayerSettings.ChatboxYOffset), new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
-
             var textAlpha = (alpha/100f)*126 + 126;
             var c = 0;
 
@@ -206,9 +241,12 @@ namespace GTANetwork.GUI
                 new UIResRectangle(start + new Size(0, (int)(chatHeight - chatHeight*((_pagingIndex + 1)/(float)availableChoices))), new Size(10, (int)barHeight), Color.FromArgb(150, 0, 0, 0)).Draw();
             }
             
+            if (!Main.CanOpenChatbox) IsFocused = false;
+
             if (!IsFocused) return;
 
-            if (!Main.CanOpenChatbox) IsFocused = false;
+
+            DrawChatboxInput();
 
             Game.DisableControlThisFrame(0, Control.NextCamera);
             Game.DisableAllControlsThisFrame(0);
@@ -248,7 +286,7 @@ namespace GTANetwork.GUI
             return input;
         }
 
-        public const int MAX_CHAT_MESSAGE = 200;
+        public const int MAX_CHAT_MESSAGE = 109;
         
         public void OnKeyDown(Keys key)
         {

@@ -442,6 +442,9 @@ namespace GTANetwork.Networking
                 if (Game.Player.Character.IsRagdoll)
                     sendShootingPacket = false;
 
+                if (!player.IsSubtaskActive(ESubtask.MELEE_COMBAT) && player.Weapons.Current.Ammo == 0)
+                    sendShootingPacket = false;
+
                 if (sendShootingPacket && !_lastShooting)
                 {
                     _lastShooting = true;

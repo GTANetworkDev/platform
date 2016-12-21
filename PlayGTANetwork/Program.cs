@@ -123,6 +123,7 @@ namespace PlayGTANetwork
             }
             catch (Exception ex)
             {
+                if (!Directory.Exists("logs")) Directory.CreateDirectory("logs");
                 File.AppendAllText("logs\\launcher.log", "LAUNCHER EXCEPTION AT " + DateTime.Now + "\r\n" + ex.ToString() + "\r\n\r\n");
                 MessageBox.Show(ex.ToString(), "FATAL ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
