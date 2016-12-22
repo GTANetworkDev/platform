@@ -2552,20 +2552,13 @@ namespace GTANetwork
                 Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
-                ////Game.DisableControlThisFrame(0, Control.MeleeAttack2);
-                Game.DisableControlThisFrame(0, Control.MeleeAttackAlternate);
-                //Game.DisableControlThisFrame(0, Control.MeleeAttackHeavy);
+                
                 if (!player.IsJumping)
                 {
-                    Game.DisableControlThisFrame(0, Control.MeleeAttack1);
+                    //Game.DisableControlThisFrame(0, Control.MeleeAttack1);
                     Game.DisableControlThisFrame(0, Control.MeleeAttackLight);
                 }
-                Game.DisableControlThisFrame(0, Control.MeleeBlock);
-
-
-
-
-
+                
                 Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
 
                 if (Game.Player.Character.IsRagdoll)
