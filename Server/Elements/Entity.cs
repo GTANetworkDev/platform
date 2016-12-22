@@ -179,42 +179,42 @@ namespace GTANetworkServer
             Base.createParticleEffectOnEntity(ptfxLib, ptfxName, this, offset, rotation, scale, bone, dimension);
         }
 
-        public void setData(string key, object value)
+        public void setSyncedData(string key, object value)
         {
             Base.setEntitySyncedData(this, key, value);
         }
 
-        public dynamic getData(string key)
+        public dynamic getSyncedData(string key)
         {
             return Base.getEntitySyncedData(this, key);
         }
 
-        public void resetData(string key)
+        public void resetSyncedData(string key)
         {
             Base.resetEntitySyncedData(this, key);
         }
 
-        public bool hasData(string key)
+        public bool hasSyncedData(string key)
         {
             return Base.hasEntitySyncedData(this, key);
         }
 
-        public void setLocalData(string key, object value)
+        public void setData(string key, object value)
         {
             Base.setEntityData(this, key, value);
         }
 
-        public dynamic getLocalData(string key)
+        public dynamic getData(string key)
         {
             return Base.getEntityData(this, key);
         }
 
-        public void resetLocalData(string key)
+        public void resetData(string key)
         {
             Base.resetEntityData(this, key);
         }
 
-        public bool hasLocalData(string key)
+        public bool hasData(string key)
         {
             return Base.hasEntityData(this, key);
         }

@@ -1,4 +1,4 @@
-﻿#define WHITELIST_ACTIVE
+﻿//#define WHITELIST_ACTIVE
 
 
 using System;
@@ -56,7 +56,9 @@ namespace GTANMasterServer
                         CoopServerWorker.Work();
                         foreach (var pair in UpdateChannels) pair.Value.Work();
                         WelcomeMessageWorker.Work();
+                        #if WHITELIST_ACTIVE
                         Whitelist.Work();
+                        #endif
                     }
                     catch {}
                     finally

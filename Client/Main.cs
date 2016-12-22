@@ -1332,7 +1332,7 @@ namespace GTANetwork
                         Misc.GameSettings.SaveSettings(GameSettings);
                     };
                 }
-
+                /*
                 {
                     var cityDen = new UIMenuItem("Chrome Embedded Framework Framerate");
                     cityDen.SetRightLabel(PlayerSettings.CefFps.ToString());
@@ -1362,7 +1362,7 @@ namespace GTANetwork
                         cityDen.SetRightLabel(PlayerSettings.CefFps.ToString());
                     };
                 }
-
+                */
                 var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>()
                 {
                     internetServers,
@@ -2552,9 +2552,9 @@ namespace GTANetwork
                 Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
                 Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
-                Game.DisableControlThisFrame(0, Control.MeleeAttack2);
+                ////Game.DisableControlThisFrame(0, Control.MeleeAttack2);
                 Game.DisableControlThisFrame(0, Control.MeleeAttackAlternate);
-                Game.DisableControlThisFrame(0, Control.MeleeAttackHeavy);
+                //Game.DisableControlThisFrame(0, Control.MeleeAttackHeavy);
                 if (!player.IsJumping)
                 {
                     Game.DisableControlThisFrame(0, Control.MeleeAttack1);

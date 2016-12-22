@@ -273,6 +273,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_2007E6CBCE42E022D001312D31542292"
+        "OwnerKey" = "8:_FEF6D1E442694213AECC16E78AC57C93"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_208B28EAAF5F4A978146EDD74A01EE7D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -754,7 +760,7 @@
         "Entry"
         {
         "MsmKey" = "8:_4C89163A7C67DAB1FC85EFE9999BBD87"
-        "OwnerKey" = "8:_A470BDE980617047663C747CAD7ED6D9"
+        "OwnerKey" = "8:_2007E6CBCE42E022D001312D31542292"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1119,6 +1125,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_74D4FF7766F3455A8E5AC2194F136710"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_74DB7A6C0CDC42C2BF1AF9F40BC05C32"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1287,36 +1299,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_8A2BFE8969E638A432CEFF8F5610C508"
-        "OwnerKey" = "8:_C42CF6EDA0DA4F0882420D1ACBEFE4B1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_8A2BFE8969E638A432CEFF8F5610C508"
-        "OwnerKey" = "8:_FEF6D1E442694213AECC16E78AC57C93"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_8A2BFE8969E638A432CEFF8F5610C508"
-        "OwnerKey" = "8:_A470BDE980617047663C747CAD7ED6D9"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_8A2BFE8969E638A432CEFF8F5610C508"
-        "OwnerKey" = "8:_E00E59E0B3354A238F0D1925C155A60E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_8A2BFE8969E638A432CEFF8F5610C508"
-        "OwnerKey" = "8:_C93DA2484FC8455884C516AF8BF444A0"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_8A5DDA9E4ED24975A715E8C078AB3066"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1473,12 +1455,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_98C05EE2E2B74584B4683C77E343494E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_997B8CF0C9E248B7BFB86F0DDC6E5F59"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1557,6 +1533,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A20B99B99ED44AA58A1C9BB57C35F65A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_A2EF49ED72C942F1A436FA22520A4FBA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1571,12 +1553,6 @@
         {
         "MsmKey" = "8:_A3F99EF4CDAE462984051EF2B8E4901C"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_A470BDE980617047663C747CAD7ED6D9"
-        "OwnerKey" = "8:_FEF6D1E442694213AECC16E78AC57C93"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1708,12 +1684,6 @@
         "Entry"
         {
         "MsmKey" = "8:_AED7F3CF114B4C2CAC09ACE958200F63"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_AF6EB67649DF4640BE1CDB864EFC5251"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1865,6 +1835,36 @@
         {
         "MsmKey" = "8:_BDDF6B98BA0B4DC4935B356D5498DCDF"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+        "OwnerKey" = "8:_C42CF6EDA0DA4F0882420D1ACBEFE4B1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+        "OwnerKey" = "8:_FEF6D1E442694213AECC16E78AC57C93"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+        "OwnerKey" = "8:_2007E6CBCE42E022D001312D31542292"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+        "OwnerKey" = "8:_E00E59E0B3354A238F0D1925C155A60E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+        "OwnerKey" = "8:_C93DA2484FC8455884C516AF8BF444A0"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2560,6 +2560,12 @@
         "Entry"
         {
         "MsmKey" = "8:_FCEB9B8FAADE7DB6D387A1F659A4B218"
+        "OwnerKey" = "8:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FCEB9B8FAADE7DB6D387A1F659A4B218"
         "OwnerKey" = "8:_FEF6D1E442694213AECC16E78AC57C93"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2579,12 +2585,6 @@
         {
         "MsmKey" = "8:_FCEB9B8FAADE7DB6D387A1F659A4B218"
         "OwnerKey" = "8:_C42CF6EDA0DA4F0882420D1ACBEFE4B1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_FCEB9B8FAADE7DB6D387A1F659A4B218"
-        "OwnerKey" = "8:_8A2BFE8969E638A432CEFF8F5610C508"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2638,7 +2638,13 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_3462F0DE408D4A0ABCE5A5D47676BC38"
+        "OwnerKey" = "8:_2007E6CBCE42E022D001312D31542292"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2698,6 +2704,12 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_3462F0DE408D4A0ABCE5A5D47676BC38"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_2F121CD5F03242EA951C1A83ADE54B61"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2711,12 +2723,6 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_FEF6D1E442694213AECC16E78AC57C93"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A470BDE980617047663C747CAD7ED6D9"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2873,12 +2879,6 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_C42CF6EDA0DA4F0882420D1ACBEFE4B1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_8A2BFE8969E638A432CEFF8F5610C508"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -3877,6 +3877,37 @@
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9D3DD1B943914E1384B2275C720AB28B"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_2007E6CBCE42E022D001312D31542292"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:GTANetwork, Version=0.1.356.672, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_2007E6CBCE42E022D001312D31542292"
+                    {
+                    "Name" = "8:GTANetwork.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:GTANetwork.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -6667,6 +6698,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_74D4FF7766F3455A8E5AC2194F136710"
+            {
+            "SourcePath" = "8:..\\ExampleResources\\freeroam\\trainer\\vehicles.js"
+            "TargetName" = "8:vehicles.js"
+            "Tag" = "8:"
+            "Folder" = "8:_A108E21E5FEB441A8129E783EE3FF452"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_74DB7A6C0CDC42C2BF1AF9F40BC05C32"
             {
             "SourcePath" = "8:..\\images\\map\\blips\\475.png"
@@ -7238,37 +7289,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_8A2BFE8969E638A432CEFF8F5610C508"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:GTANetworkShared, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_8A2BFE8969E638A432CEFF8F5610C508"
-                    {
-                    "Name" = "8:GTANetworkShared.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:GTANetworkShared.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8A5DDA9E4ED24975A715E8C078AB3066"
             {
             "SourcePath" = "8:..\\images\\map\\blips\\403.png"
@@ -7680,26 +7700,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_98C05EE2E2B74584B4683C77E343494E"
-            {
-            "SourcePath" = "8:..\\ExampleResources\\freeroam\\trainer\\clothes.js"
-            "TargetName" = "8:clothes.js"
-            "Tag" = "8:"
-            "Folder" = "8:_A108E21E5FEB441A8129E783EE3FF452"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_997B8CF0C9E248B7BFB86F0DDC6E5F59"
             {
             "SourcePath" = "8:..\\images\\map\\blips\\483.png"
@@ -7971,6 +7971,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A20B99B99ED44AA58A1C9BB57C35F65A"
+            {
+            "SourcePath" = "8:..\\ExampleResources\\freeroam\\trainer\\weapons.js"
+            "TargetName" = "8:weapons.js"
+            "Tag" = "8:"
+            "Folder" = "8:_A108E21E5FEB441A8129E783EE3FF452"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A2EF49ED72C942F1A436FA22520A4FBA"
             {
             "SourcePath" = "8:..\\images\\map\\blips\\318.png"
@@ -8029,37 +8049,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_A470BDE980617047663C747CAD7ED6D9"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:GTANetwork, Version=0.1.354.361, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_A470BDE980617047663C747CAD7ED6D9"
-                    {
-                    "Name" = "8:GTANetwork.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:GTANetwork.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A4EE999F30C843B09A92903941C5E19A"
@@ -8479,26 +8468,6 @@
             "TargetName" = "8:mr.pak"
             "Tag" = "8:"
             "Folder" = "8:_B7F78BA069FC4CB487019A667D553F9D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AF6EB67649DF4640BE1CDB864EFC5251"
-            {
-            "SourcePath" = "8:..\\natives.txt"
-            "TargetName" = "8:natives.txt"
-            "Tag" = "8:"
-            "Folder" = "8:_ED0B79FD09D64751ABEFEBFC836CF297"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -9002,6 +8971,37 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:GTANetworkShared, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_BDEDB4CBD19C2EA3F223EAFC4E0BEAA5"
+                    {
+                    "Name" = "8:GTANetworkShared.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:GTANetworkShared.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BE1AA990F85C44ECA0E815C0B8FDDBBD"
@@ -11315,7 +11315,7 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"
             {
-            "DefaultLocation" = "8:[ProductName]"
+            "DefaultLocation" = "8:[WindowsVolume][ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
@@ -11409,17 +11409,6 @@
                     "Property" = "8:_E204F1CC3F0D4442A590263B20398CE1"
                         "Folders"
                         {
-                            "{9EF0B969-E518-4E46-987F-47570745A589}:_C12C29D19ABE47ECAEE763DCE5AFED12"
-                            {
-                            "Name" = "8:resources"
-                            "AlwaysCreate" = "11:TRUE"
-                            "Condition" = "8:"
-                            "Transitive" = "11:FALSE"
-                            "Property" = "8:_17A369935462463DAD8FDA284483580B"
-                                "Folders"
-                                {
-                                }
-                            }
                             "{9EF0B969-E518-4E46-987F-47570745A589}:_D7105F6E123D41C3A399CF6E85E7937A"
                             {
                             "Name" = "8:resources"
@@ -11518,7 +11507,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:GTA Network"
         "ProductCode" = "8:{CBF80437-3B43-4ECF-8233-4415BAC0377C}"
-        "PackageCode" = "8:{F40901FD-E625-44B8-9782-8C956C95946C}"
+        "PackageCode" = "8:{0853784A-6801-4D57-A9C5-BD096917D2D9}"
         "UpgradeCode" = "8:{AAA5B0FF-B5D5-4F0A-916A-E4F6EE864E75}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -11526,7 +11515,7 @@
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
         "ProductVersion" = "8:1.0.0"
-        "Manufacturer" = "8:Default Company Name"
+        "Manufacturer" = "8:GTANetwork Team"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
         "Title" = "8:GTA Network"
@@ -12251,7 +12240,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_29D23D6C3F3D43F492A77C5FB5CA6F55"
             {
-            "SourcePath" = "8:..\\MultiTheftAutoShared\\obj\\Debug\\GTANetworkShared.dll"
+            "SourcePath" = "8:..\\MultiTheftAutoShared\\obj\\Release\\GTANetworkShared.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9D3DD1B943914E1384B2275C720AB28B"
@@ -12279,7 +12268,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AB9F4E6092BF4032B9A269B3132167F1"
             {
-            "SourcePath" = "8:..\\MultiTheftAutoShared\\obj\\Debug\\GTANetworkShared.dll"
+            "SourcePath" = "8:..\\MultiTheftAutoShared\\obj\\Release\\GTANetworkShared.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_100FD972ABCB49479AE48AD92B1BD19A"
@@ -12307,7 +12296,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C42CF6EDA0DA4F0882420D1ACBEFE4B1"
             {
-            "SourcePath" = "8:..\\PlayGTANetwork\\obj\\Debug\\PlayGTANetwork.exe"
+            "SourcePath" = "8:..\\PlayGTANetwork\\obj\\Release\\PlayGTANetwork.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"
@@ -12335,7 +12324,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C93DA2484FC8455884C516AF8BF444A0"
             {
-            "SourcePath" = "8:..\\Client\\obj\\Debug\\GTANetwork.dll"
+            "SourcePath" = "8:..\\Client\\obj\\Release\\GTANetwork.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_100FD972ABCB49479AE48AD92B1BD19A"
@@ -12363,7 +12352,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E00E59E0B3354A238F0D1925C155A60E"
             {
-            "SourcePath" = "8:..\\Server\\obj\\Debug\\GTANetworkServer.exe"
+            "SourcePath" = "8:..\\Server\\obj\\Release\\GTANetworkServer.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9D3DD1B943914E1384B2275C720AB28B"
@@ -12391,7 +12380,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FEF6D1E442694213AECC16E78AC57C93"
             {
-            "SourcePath" = "8:..\\GTANSubprocess\\obj\\Debug\\GTANetwork.dll"
+            "SourcePath" = "8:..\\GTANSubprocess\\obj\\Release\\GTANetwork.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_59D1B7FC2BFB4685AE6EAF0EA4C74BF0"

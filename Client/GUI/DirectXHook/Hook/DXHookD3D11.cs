@@ -232,7 +232,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         public ImageElement ObligatoryElement;
 
-        public void AddImage(ImageElement element)
+        public void AddImage(ImageElement element, int overlay = 0)
         {
             lock (_overlayLock)
             {
@@ -247,17 +247,18 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 if (OverlayEngine.Overlays.Count == 0)
                 {
                     OverlayEngine.Overlays.Add(new Overlay());
+                    OverlayEngine.Overlays.Add(new Overlay());
                     newElem = true;
                 }
 
-                OverlayEngine.Overlays[0].Elements.Add(element);
+                OverlayEngine.Overlays[overlay].Elements.Add(element);
 
                 if (newElem && ObligatoryElement != null)
-                    OverlayEngine.Overlays[0].Elements.Add(ObligatoryElement);
+                    OverlayEngine.Overlays[overlay].Elements.Add(ObligatoryElement);
             }
         }
 
-        public void RemoveImage(ImageElement element)
+        public void RemoveImage(ImageElement element, int overlay = 0)
         {
             lock (_overlayLock)
             {
@@ -265,9 +266,12 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     OverlayEngine = new DX11.DXOverlayEngine(this);
 
                 if (OverlayEngine.Overlays.Count == 0)
+                {
                     OverlayEngine.Overlays.Add(new Overlay());
+                    OverlayEngine.Overlays.Add(new Overlay());
+                }
 
-                OverlayEngine.Overlays[0].Elements.Add(element);
+                OverlayEngine.Overlays[overlay].Elements.Add(element);
             }
         }
 
@@ -423,6 +427,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
                         OverlayEngine = new DX11.DXOverlayEngine(this);
                         OverlayEngine.Overlays = new List<IOverlay>();
+                        OverlayEngine.Overlays.Add(new Overlay());
                         OverlayEngine.Overlays.Add(new Overlay());
 
                         if (oldOverlays != null)

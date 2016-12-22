@@ -258,41 +258,56 @@ namespace GTANetwork.GUI
         internal static void InitializeCef()
         {
 #if !DISABLE_CEF
-            CefRuntime.Load(Main.GTANInstallDir + "\\cef");
-
-            var args = new []
+            var t = new Thread((ThreadStart)delegate
             {
-                "--off-screen-rendering-enabled",
-                "--transparent-painting-enabled",
-            };
+                try
+                {
+                    CefRuntime.Load(Main.GTANInstallDir + "\\cef");
 
-            var cefMainArgs = new CefMainArgs(args);
-            var cefApp = new MainCefApp();
-                
-            if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
-            {
-                LogManager.AlwaysDebugLog("CefRuntime could not execute the secondary process.");
-            }
+                    var args = new[]
+                    {
+                        "--off-screen-rendering-enabled",
+                        "--transparent-painting-enabled",
+                    };
 
-            var cefSettings = new CefSettings()
-            {
-                SingleProcess = true,
-                MultiThreadedMessageLoop = true,
-                WindowlessRenderingEnabled = true,
-                BackgroundColor = new CefColor(0, 0, 0, 0),
-                    
-                CachePath = Main.GTANInstallDir + "\\cef",
-                ResourcesDirPath = Main.GTANInstallDir + "\\cef",
-                LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales",
-                BrowserSubprocessPath = Main.GTANInstallDir + "\\cef",
-                    
-                //NoSandbox = true,
-            };
+                    var cefMainArgs = new CefMainArgs(args);
+                    var cefApp = new MainCefApp();
 
-            CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
+                    if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
+                    {
+                        LogManager.AlwaysDebugLog("CefRuntime could not execute the secondary process.");
+                    }
 
-            CefRuntime.RegisterSchemeHandlerFactory("http", null, new SecureSchemeFactory());
-            CefRuntime.RegisterSchemeHandlerFactory("https", null, new SecureSchemeFactory());
+                    var cefSettings = new CefSettings()
+                    {
+                        SingleProcess = true,
+                        MultiThreadedMessageLoop = true,
+                        WindowlessRenderingEnabled = true,
+                        BackgroundColor = new CefColor(0, 0, 0, 0),
+
+                        CachePath = Main.GTANInstallDir + "\\cef",
+                        ResourcesDirPath = Main.GTANInstallDir + "\\cef",
+                        LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales",
+                        BrowserSubprocessPath = Main.GTANInstallDir + "\\cef",
+
+                        //NoSandbox = true,
+                    };
+
+                    CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
+
+                    CefRuntime.RegisterSchemeHandlerFactory("http", null, new SecureSchemeFactory());
+                    CefRuntime.RegisterSchemeHandlerFactory("https", null, new SecureSchemeFactory());
+                    CefRuntime.RegisterSchemeHandlerFactory("ftp", null, new SecureSchemeFactory());
+                    CefRuntime.RegisterSchemeHandlerFactory("sftp", null, new SecureSchemeFactory());
+                }
+                catch (Exception ex)
+                {
+                    LogManager.LogException(ex, "cef initialization");
+                }
+            });
+
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
 #endif
         }
 
@@ -314,14 +329,15 @@ namespace GTANetwork.GUI
 
         internal static void SetMouseHidden(bool hidden)
         {
+            if (DirectXHook == null) return;
+
             if (_cursor == null)
             {
                 var cursorPic = new Bitmap(Main.GTANInstallDir + "images\\cef\\cursor.png");
                 _cursor = new ImageElement(null, true);
                 _cursor.SetBitmap(cursorPic);
                 _cursor.Hidden = true;
-                DirectXHook.AddImage(_cursor);
-                LogManager.SimpleLog("cef", "Creating cursor image...");
+                DirectXHook.AddImage(_cursor, 1);
             }
 
             _cursor.Hidden = hidden;
@@ -501,7 +517,9 @@ namespace GTANetwork.GUI
             get { return _headless; }
             set
             {
+                #if !DISABLE_CEF
                 _client.SetHidden(value);
+                #endif
                 _headless = value;
             }
         }
@@ -514,7 +532,9 @@ namespace GTANetwork.GUI
             set
             {
                 _position = value;
+                #if !DISABLE_CEF
                 _client.SetPosition(value.X, value.Y);
+                #endif
             }
         }
 

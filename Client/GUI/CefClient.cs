@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define DISABLE_CEF
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -26,7 +28,7 @@ namespace GTANetwork.GUI
 
             if (_cachedReferences.ContainsKey(browser.Identifier))
                 return _cachedReferences[browser.Identifier];
-            
+            #if !DISABLE_CEF
             lock (CEFManager.Browsers)
             {
                 foreach (var b in CEFManager.Browsers)
@@ -39,7 +41,7 @@ namespace GTANetwork.GUI
                     }
                 }
             }
-
+                #endif
             return father;
         }
     }
@@ -166,7 +168,7 @@ namespace GTANetwork.GUI
                 exception = "NO FATHER WAS FOUND.";
                 return false;
             }
-
+            #if !DISABLE_CEF
             LogManager.AlwaysDebugLog("Father was found!");
             try
             {
@@ -207,7 +209,7 @@ namespace GTANetwork.GUI
             {
                 LogManager.LogException(ex, "EXECUTE JS FUNCTION");
             }
-
+            #endif
             returnValue = CefV8Value.CreateNull();
             exception = "";
             return false;
@@ -225,7 +227,9 @@ namespace GTANetwork.GUI
                 Browser father = CefUtil.GetBrowserFromCef(browser);
                 if (father != null)
                 {
+                    #if !DISABLE_CEF
                     father._mainContext = context;
+                    #endif
                     LogManager.AlwaysDebugLog("Main context set!");
                 }
             }
@@ -334,7 +338,15 @@ namespace GTANetwork.GUI
 
         protected override void OnPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr buffer, int width, int height)
         {
-            if (_imageElement != null) _imageElement.SetBitmap(new Bitmap(width, height, width * 4, PixelFormat.Format32bppArgb, buffer));
+            try
+            {
+                if (_imageElement != null)
+                    _imageElement.SetBitmap(new Bitmap(width, height, width*4, PixelFormat.Format32bppArgb, buffer));
+            }
+            catch (Exception ex)
+            {
+                LogManager.LogException(ex, "CEF PAINT");
+            }
         }
         
         protected override void OnScrollOffsetChanged(CefBrowser browser)

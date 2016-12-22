@@ -26,7 +26,7 @@ namespace GTANetwork.GUI.DirectXHook
         {
             IntPtr swapchain = (IntPtr) sender;
 
-            if (CEFManager.DirectXHook != null)
+            if (CEFManager.DirectXHook != null && !Main.MainMenu.Visible)
             {
                 CEFManager.DirectXHook.ManualPresentHook(swapchain);
             }
