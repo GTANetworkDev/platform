@@ -1570,12 +1570,7 @@ namespace GTANetwork
                 welcomeItem.Activated += (sender, args) =>
                 {
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
-                    CEFManager.StopRender = true;
-
-                    while (!CEFManager.Disposed)
-                    {
-                        Script.Yield();
-                    }
+                    CEFManager.Dispose();
                     CEFManager.DisposeCef();
                     Script.Wait(500);
                     //Environment.Exit(0);
@@ -2508,12 +2503,7 @@ namespace GTANetwork
                         _mainWarning.OnAccept = () =>
                         {
                             if (Client != null && IsOnServer()) Client.Disconnect("Quit");
-                            CEFManager.StopRender = true;
-
-                            while (!CEFManager.Disposed)
-                            {
-                                Script.Yield();
-                            }
+                            CEFManager.Dispose();
                             CEFManager.DisposeCef();
                             Script.Wait(500);
                             //Environment.Exit(0);
@@ -5455,7 +5445,6 @@ namespace GTANetwork
 		    
 			DEBUG_STEP = 52;
 
-		    CEFManager.StopRender = true;
 
 		    lock (CEFManager.Browsers)
 		    {
@@ -5468,6 +5457,7 @@ namespace GTANetwork
                 CEFManager.Browsers.Clear();
 		    }
 
+		    CEFManager.Dispose();
             ClearStats();
 
 			RestoreMainMenu();

@@ -626,7 +626,9 @@ namespace GTANetwork
 
             foreach (var file in Directory.GetFiles("bin", "*.asi"))
             {
-                if (file.ToLower().StartsWith("scripthookv")) continue;
+                if (string.IsNullOrWhiteSpace(file)) continue;
+
+                if (Path.GetFileName(file).ToLower().StartsWith("scripthookv")) continue;
 
                 try
                 {

@@ -1,4 +1,7 @@
-﻿namespace GTANetwork.GUI.DirectXHook.Hook.Common
+﻿using System.Drawing;
+using GTANetwork.GUI.DirectXHook.Hook.DX11;
+
+namespace GTANetwork.GUI.DirectXHook.Hook.Common
 {
     public class ImageElement: Element
     {
@@ -25,6 +28,28 @@
 
         bool _ownsBitmap = false;
 
+        public DXImage Image { get; set; }
+
+        public bool Dirty = true;
+
+        public Bitmap NextBitmap { get; set; }
+
+        public object SwitchLock = new object();
+
+        public void SetBitmap(Bitmap bmp)
+        {
+            lock (SwitchLock)
+            {
+                if (Dirty && NextBitmap != null)
+                {
+                    SafeDispose(NextBitmap);
+                }
+
+                NextBitmap = bmp;
+                Dirty = true;
+            }
+        }
+       
         public ImageElement(string filename):
             this(new System.Drawing.Bitmap(filename), true)
         {
@@ -49,6 +74,18 @@
                 {
                     SafeDispose(this.Bitmap);
                     this.Bitmap = null;
+                }
+
+                if (Image != null)
+                {
+                    Image.Dispose();
+                    Image = null;
+                }
+
+                if (NextBitmap != null)
+                {
+                    NextBitmap.Dispose();
+                    NextBitmap = null;
                 }
             }
         }

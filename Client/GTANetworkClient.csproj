@@ -241,6 +241,7 @@
   <ItemGroup>
     <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
     <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x86.dll" />
+    <EmbeddedResource Include="natives.txt" />
     <Content Include="Properties\AssemblyInfo.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>AssemblyInfo.cs</LastGenOutput>

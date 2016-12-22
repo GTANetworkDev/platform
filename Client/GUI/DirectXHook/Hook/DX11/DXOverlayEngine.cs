@@ -31,9 +31,11 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
         DXSprite _spriteEngine;
         Dictionary<string, DXFont> _fontCache = new Dictionary<string, DXFont>();
         Dictionary<Element, DXImage> _imageCache = new Dictionary<Element, DXImage>();
+        DXHookD3D11 _hook;
 
-        public DXOverlayEngine()
+        public DXOverlayEngine(DXHookD3D11 hook)
         {
+            _hook = hook;
             Overlays = new List<IOverlay>();
         }
 
@@ -45,7 +47,6 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
         public bool Initialise(SharpDX.DXGI.SwapChain swapChain)
         {
             return Initialise(swapChain.GetDevice<Device>(), swapChain.GetBackBuffer<Texture2D>(0));
-            
         }
 
         public bool Initialise(Device device, Texture2D renderTarget)
@@ -99,6 +100,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         private void IntialiseElementResources()
         {
+            lock (_hook._overlayLock)
             foreach (var overlay in Overlays)
             {
                 foreach (var element in overlay.Elements)
@@ -136,7 +138,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
             if (!_initialised) return;
 
             Begin();
-            
+
+            lock (_hook._overlayLock)
             foreach (var overlay in Overlays)
             {
                 foreach (var element in overlay.Elements)
@@ -198,38 +201,34 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
         public void FlushCache()
         {
-            lock (_imageCache)
-            {
-                foreach (var dxImage in _imageCache)
-                {
-                    dxImage.Value?.Dispose();
-                }
-
-                _imageCache.Clear();
-
-                foreach (var element in Overlays[0].Elements.OfType<ImageElement>())
-                {
-                    DXImage result = ToDispose(new DXImage(_device, _deviceContext));
-                    result.Initialise(element.Bitmap);
-                    _imageCache.Set(element, result);
-                }
-            }
+            
         }
 
         DXImage GetImageForImageElement(ImageElement element)
         {
-            DXImage result = null;
-            
-            if (!_imageCache.TryGetValue(element, out result))
+            if (element.Dirty)
             {
-                //result = new DXImage(_device, _deviceContext);
-                result = ToDispose(new DXImage(_device, _deviceContext));
-                result.Initialise(element.Bitmap);
-                _imageCache[element] = result;
+                lock (element.SwitchLock)
+                {
+                    element.Image?.Dispose();
+                    element.Image = null;
+
+                    element.Bitmap?.Dispose();
+                    element.Bitmap = element.NextBitmap;
+                    element.NextBitmap = null;
+
+                    element.Dirty = false;
+                }
             }
 
-            Disposable = false;
-            return result;
+            if (element.Image == null && element.Bitmap != null)
+            {
+                element.Image = ToDispose(new DXImage(_device, _deviceContext));
+                element.Image.Initialise(element.Bitmap);
+            }
+
+
+            return element.Image;
         }
 
         /// <summary>

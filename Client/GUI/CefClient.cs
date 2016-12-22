@@ -7,6 +7,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using GTANetwork.GUI.DirectXHook.Hook.Common;
 using GTANetwork.Util;
 using GTANetworkShared;
 using Xilium.CefGlue;
@@ -257,6 +258,8 @@ namespace GTANetwork.GUI
         private int _windowHeight;
         private int _windowWidth;
 
+        private ImageElement _imageElement;
+
         public Bitmap LastBitmap;
         public readonly object BitmapLock = new object();
 
@@ -265,12 +268,33 @@ namespace GTANetwork.GUI
             _windowWidth = windowWidth;
             _windowHeight = windowHeight;
             LogManager.AlwaysDebugLog("Instantiated Renderer");
+
+            _imageElement = new ImageElement(null, true);
+
+            CEFManager.DirectXHook.AddImage(_imageElement);
+        }
+
+        public void SetHidden(bool hidden)
+        {
+            _imageElement.Hidden = hidden;
         }
 
         public void SetSize(int width, int height)
         {
             _windowHeight = height;
             _windowWidth = width;
+        }
+
+        public void SetPosition(int x, int y)
+        {
+            _imageElement.Location = new Point(x, y);
+        }
+
+        public void Dispose()
+        {
+            CEFManager.DirectXHook?.RemoveImage(_imageElement);
+            _imageElement.Dispose();
+            _imageElement = null;
         }
 
         protected override void OnCursorChange(CefBrowser browser, IntPtr cursorHandle, CefCursorType type, CefCursorInfo customCursorInfo)
@@ -310,21 +334,7 @@ namespace GTANetwork.GUI
 
         protected override void OnPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr buffer, int width, int height)
         {
-            lock (BitmapLock)
-            {
-                LastBitmap?.Dispose();
-                LastBitmap = null;
-                LastBitmap = new Bitmap(width, height, width*4, PixelFormat.Format32bppArgb, buffer);
-            }
-            /*
-            var oldBitmap = LastBitmap;
-            var newBitmap = new Bitmap(width, height, width * 4, PixelFormat.Format32bppArgb, buffer);
-            lock (BitmapLock)
-            {
-                LastBitmap = newBitmap;
-                if (oldBitmap != null) oldBitmap.Dispose();
-            }*/
-            // TODO: Check mem usage
+            if (_imageElement != null) _imageElement.SetBitmap(new Bitmap(width, height, width * 4, PixelFormat.Format32bppArgb, buffer));
         }
         
         protected override void OnScrollOffsetChanged(CefBrowser browser)
@@ -357,9 +367,24 @@ namespace GTANetwork.GUI
             _contextMenuHandler = new ContextMenuRemover();
         }
 
+        public void SetPosition(int x, int y)
+        {
+            _renderHandler.SetPosition(x, y);
+        }
+
         public void SetSize(int w, int h)
         {
             _renderHandler.SetSize(w, h);
+        }
+
+        public void SetHidden(bool hidden)
+        {
+            _renderHandler.SetHidden(hidden);
+        }
+
+        public void Close()
+        {
+            _renderHandler.Dispose();
         }
 
         public Bitmap GetLastBitmap()

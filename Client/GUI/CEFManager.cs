@@ -16,6 +16,7 @@ using System.Windows.Forms;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
+using GTANetwork.GUI.DirectXHook.Hook.Common;
 using GTANetwork.GUI.Extern;
 using GTANetwork.Javascript;
 using GTANetwork.Util;
@@ -43,6 +44,8 @@ namespace GTANetwork.GUI
                     _lastShownCursor = Util.Util.TickCount;
                 }
                 _showCursor = value;
+
+                CEFManager.SetMouseHidden(!value);
             }
         }
 
@@ -84,6 +87,12 @@ namespace GTANetwork.GUI
                 var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
 
                 _lastMousePoint = new PointF(mouseX, mouseY);
+
+                if (CEFManager._cursor != null)
+                {
+                    CEFManager._cursor.Location = new Point((int) mouseX, (int) mouseY);
+                }
+
 
                 var mouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorAccept);
                 var mouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorAccept);
@@ -294,6 +303,30 @@ namespace GTANetwork.GUI
 #endif
         }
 
+        internal static void Dispose()
+        {
+            _cursor?.Dispose();
+            _cursor = null;
+
+            DirectXHook?.Dispose();
+            DirectXHook = null;
+        }
+
+        internal static void SetMouseHidden(bool hidden)
+        {
+            if (_cursor == null)
+            {
+                var cursorPic = new Bitmap(Main.GTANInstallDir + "images\\cef\\cursor.png");
+                _cursor = new ImageElement(null, true);
+                _cursor.SetBitmap(cursorPic);
+                _cursor.Hidden = true;
+                DirectXHook.AddImage(_cursor);
+                LogManager.SimpleLog("cef", "Creating cursor image...");
+            }
+
+            _cursor.Hidden = hidden;
+        }
+
         internal static void Initialize(Size screenSize)
         {
             ScreenSize = screenSize;
@@ -301,8 +334,6 @@ namespace GTANetwork.GUI
             SharpDX.Configuration.EnableObjectTracking = true;
             Configuration.EnableReleaseOnFinalizer = true;
             Configuration.EnableTrackingReleaseOnFinalizer = true;
-            StopRender = false;
-            Disposed = false;
 
             try
             {
@@ -313,135 +344,24 @@ namespace GTANetwork.GUI
             {
                 LogManager.LogException(ex, "DIRECTX START");
             }
+
+            
 #endif
 
-            RenderThread = new Thread(RenderLoop);
-            RenderThread.IsBackground = true;
-            RenderThread.Start();
+            //RenderThread = new Thread(RenderLoop);
+            //RenderThread.IsBackground = true;
+            //RenderThread.Start();
         }
 
         internal static readonly List<Browser> Browsers = new List<Browser>();
         internal static int FPS = 30;
-        internal static Thread RenderThread;
-        internal static bool StopRender;
         internal static Size ScreenSize;
-        internal static bool Disposed = true;
+        internal static ImageElement _cursor;
 
         internal static DXHookD3D11 DirectXHook;
 
         private static long _lastCefRender = 0;
         private static Bitmap _lastCefBitmap = null;
-
-        internal static void RenderLoop()
-        {
-            Application.ThreadException += ApplicationOnThreadException;
-            AppDomain.CurrentDomain.UnhandledException += AppDomainException;
-            
-            LogManager.AlwaysDebugLog("STARTING MAIN LOOP");
-
-
-            var cursor = new Bitmap(Main.GTANInstallDir + "\\images\\cef\\cursor.png");
-
-#if !DISABLE_HOOK
-            SharpDX.Configuration.EnableObjectTracking = true;
-
-            while (!StopRender)
-            {
-                try
-                {
-                    using (
-                        Bitmap doubleBuffer = new Bitmap(ScreenSize.Width, ScreenSize.Height,
-                            PixelFormat.Format32bppArgb))
-                    {
-                        if (!Main.MainMenu.Visible)
-                            using (var graphics = Graphics.FromImage(doubleBuffer))
-                            {
-#if !DISABLE_CEF
-                                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                                lock (Browsers)
-                                    foreach (var browser in Browsers)
-                                    {
-                                        if (browser.Headless) continue;
-                                        
-                                        var bitmap = browser.GetRawBitmap();
-
-                                        if (bitmap == null) continue;
-
-                                        if (browser.Pinned == null || browser.Pinned.Length != 4)
-                                        {
-                                            graphics.DrawImageUnscaled(bitmap, browser.Position);
-                                        }
-                                        else
-                                        {
-                                            var bmOut = new FastBitmap(doubleBuffer);
-                                            var ourText = new FastBitmap(bitmap);
-
-                                            QuadDistort.DrawBitmap(ourText,
-                                                browser.Pinned[0].Floor(),
-                                                browser.Pinned[1].Floor(),
-                                                browser.Pinned[2].Floor(),
-                                                browser.Pinned[3].Floor(),
-                                                bmOut);
-
-                                            graphics.DrawImageUnscaled(bmOut, 0, 0);
-                                        }
-
-                                        bitmap.Dispose();
-                                    }
-#endif
-                                if (CefController.ShowCursor)
-                                    graphics.DrawImage(cursor, CefController._lastMousePoint);
-                            }
-                        DirectXHook.SetBitmap(doubleBuffer);
-                    }       
-                }
-                catch (Exception ex)
-                {
-                    LogManager.LogException(ex, "DIRECTX HOOK");
-                }
-                finally
-                {
-                    Thread.Sleep(1000 / FPS);
-                }
-            }
-
-            cursor.Dispose();
-
-            lock (Browsers)
-            {
-                foreach (var browser in CEFManager.Browsers)
-                {
-                    browser.Dispose();
-                }
-
-                Browsers.Clear();
-            }
-            
-            try
-            {
-                DirectXHook.Dispose();
-            }
-            catch (Exception ex)
-            {
-                LogManager.LogException(ex, "DIRECTX DISPOSAL");
-            }
-#endif
-
-            Application.ThreadException -= ApplicationOnThreadException;
-            AppDomain.CurrentDomain.UnhandledException -= AppDomainException;
-
-            Disposed = true;
-        }
-
-        private static void ApplicationOnThreadException(object sender, ThreadExceptionEventArgs threadExceptionEventArgs)
-        {
-            LogManager.LogException(threadExceptionEventArgs.Exception, "APPTHREAD");
-        }
-
-        private static void AppDomainException(object sender, UnhandledExceptionEventArgs threadExceptionEventArgs)
-        {
-            LogManager.LogException(threadExceptionEventArgs.ExceptionObject as Exception, "APPTHREAD");
-        }
     }
     
 
@@ -573,10 +493,30 @@ namespace GTANetwork.GUI
 #endif
         internal readonly bool _localMode;
         internal bool _hasFocused;
-        
-        public bool Headless = false;
 
-        public Point Position { get; set; }
+
+        private bool _headless = false;
+        public bool Headless
+        {
+            get { return _headless; }
+            set
+            {
+                _client.SetHidden(value);
+                _headless = value;
+            }
+        }
+
+        private Point _position;
+
+        public Point Position
+        {
+            get { return _position; }
+            set
+            {
+                _position = value;
+                _client.SetPosition(value.X, value.Y);
+            }
+        }
 
         public PointF[] Pinned { get; set; }
         
@@ -689,6 +629,8 @@ namespace GTANetwork.GUI
         internal void Close()
         {
 #if !DISABLE_CEF
+            _client.Close();
+
             if (_browser == null) return;
             var host = _browser.GetHost();
             host.CloseBrowser(true);

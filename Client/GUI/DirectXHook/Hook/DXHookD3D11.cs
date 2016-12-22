@@ -228,6 +228,49 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             return DXGISwapChain_ResizeTargetHook.Original(swapChainPtr, ref newTargetParameters);
         }
 
+        internal object _overlayLock = new object();
+
+        public ImageElement ObligatoryElement;
+
+        public void AddImage(ImageElement element)
+        {
+            lock (_overlayLock)
+            {
+                bool newElem = false;
+
+                if (OverlayEngine == null || OverlayEngine.Overlays == null)
+                {
+                    OverlayEngine = new DX11.DXOverlayEngine(this);
+                    newElem = true;
+                }
+
+                if (OverlayEngine.Overlays.Count == 0)
+                {
+                    OverlayEngine.Overlays.Add(new Overlay());
+                    newElem = true;
+                }
+
+                OverlayEngine.Overlays[0].Elements.Add(element);
+
+                if (newElem && ObligatoryElement != null)
+                    OverlayEngine.Overlays[0].Elements.Add(ObligatoryElement);
+            }
+        }
+
+        public void RemoveImage(ImageElement element)
+        {
+            lock (_overlayLock)
+            {
+                if (OverlayEngine == null || OverlayEngine.Overlays == null)
+                    OverlayEngine = new DX11.DXOverlayEngine(this);
+
+                if (OverlayEngine.Overlays.Count == 0)
+                    OverlayEngine.Overlays.Add(new Overlay());
+
+                OverlayEngine.Overlays[0].Elements.Add(element);
+            }
+        }
+
         public void SetBitmap(Bitmap bt)
         {
             if (OverlayEngine == null || OverlayEngine.Overlays == null) return;
@@ -296,7 +339,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
                         if (OverlayEngine != null)
                             OverlayEngine.Dispose();
-                        OverlayEngine = new DX11.DXOverlayEngine();
+                        OverlayEngine = new DX11.DXOverlayEngine(this);
                         OverlayEngine.Overlays.Add(new DirectXHook.Hook.Common.Overlay
                         {
                             Elements =
@@ -358,27 +401,40 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     if (_swapChainPointer != swapChain.NativePointer || OverlayEngine == null)
                     {
                         NewSwapchain = true;
+                        List<IOverlayElement> oldOverlays = null;
 
                         if (OverlayEngine != null)
-                            OverlayEngine.Dispose();
-                        OverlayEngine = new DX11.DXOverlayEngine();
-                        OverlayEngine.Overlays.Add(new DirectXHook.Hook.Common.Overlay
                         {
-                            Elements =
+                            if (OverlayEngine.Overlays.Count > 0 && OverlayEngine.Overlays[0].Elements != null)
                             {
-                                new Common.TextElement(new System.Drawing.Font("Times New Roman", 22))
+                                oldOverlays = new List<IOverlayElement>(OverlayEngine.Overlays[0].Elements);
+
+                                foreach (var element in oldOverlays)
                                 {
-                                    Text = "*",
-                                    Location = new System.Drawing.Point(0, 0),
-                                    Color = System.Drawing.Color.Red,
-                                    AntiAliased = false
-                                },
-                                new Common.ImageElement(new Bitmap(Width, Height))
-                                {
-                                    Location = new System.Drawing.Point(0, 0)
-                                },
+                                    if (element is ImageElement)
+                                    {
+                                        ((ImageElement) element).Image?.Dispose();
+                                        ((ImageElement) element).Image = null;
+                                    }
+                                }
                             }
-                        });
+                            OverlayEngine.Dispose();
+                        }
+
+                        OverlayEngine = new DX11.DXOverlayEngine(this);
+                        OverlayEngine.Overlays = new List<IOverlay>();
+                        OverlayEngine.Overlays.Add(new Overlay());
+
+                        if (oldOverlays != null)
+                        {
+                            OverlayEngine.Overlays[0].Elements = oldOverlays;
+                        }
+
+                        if (ObligatoryElement != null)
+                        {
+                            OverlayEngine.Overlays[0].Elements.Add(ObligatoryElement);
+                        }
+                        
                         OverlayEngine.Initialise(swapChain);
 
                         _swapChainPointer = swapChain.NativePointer;
