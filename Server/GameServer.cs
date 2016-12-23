@@ -1420,13 +1420,13 @@ namespace GTANResource
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
                                     continue;
                                 }
-
+                                /*
                                 if (cVersion < VersionCompatibility.LastCompatibleClientVersion)
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
                                     continue;
                                 }
-
+                                */
                                 if (BanManager.IsClientBanned(client))
                                 {
                                     client.NetConnection.Deny("You are banned.");
