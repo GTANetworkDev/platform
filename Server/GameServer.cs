@@ -103,6 +103,7 @@ namespace GTANetworkServer
             config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
             config.ConnectionTimeout = 120f; // 30 second timeout
+            config.MaximumConnections = conf.MaxPlayers + 2; // + 2 for discoveries
             
             Server = new NetServer(config);
             

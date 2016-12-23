@@ -297,7 +297,7 @@ namespace GTANetwork.GUI
         public void Dispose()
         {
             CEFManager.DirectXHook?.RemoveImage(_imageElement);
-            _imageElement.Dispose();
+            _imageElement?.Dispose();
             _imageElement = null;
         }
 
