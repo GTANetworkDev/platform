@@ -1398,7 +1398,8 @@ namespace GTANResource
                             case NetIncomingMessageType.DebugMessage:
                             case NetIncomingMessageType.WarningMessage:
                             case NetIncomingMessageType.ErrorMessage:
-                                Program.Output(msg.ReadString());
+                                if (LogLevel > 3)
+                                    Program.Output(msg.ReadString());
                                 break;
                             case NetIncomingMessageType.ConnectionLatencyUpdated:
                                 client.Latency = msg.ReadFloat();
