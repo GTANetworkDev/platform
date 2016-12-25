@@ -595,7 +595,16 @@ namespace GTANMasterServer
 
                     UpdatesServers.Add(finalAddr, DateTime.Now);
                     APIServers.Add(finalAddr, newServObj);
-                    Debug.Log("Adding server: " + finalAddr + " | FQDN: " + newServObj.fqdn + " | Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); //Will only be shown if the server does not exist in memory
+
+                    //Will only be shown if the server does not exist in memory
+                    if (newServObj.fqdn != null)
+                    {
+                        Debug.Log("Adding Server: " + ip + ":" + newServObj.Port + " | FQDN: " + newServObj.fqdn + " | Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); 
+                    }
+                    else
+                    {
+                        Debug.Log("Adding Server: " + finalAddr);
+                    }
                 }
             }
             catch { }
