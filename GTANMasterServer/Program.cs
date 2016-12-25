@@ -574,10 +574,16 @@ namespace GTANMasterServer
                 }
                
                 var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
-                
+
                 var finalAddr = ip + ":" + newServObj.Port;
 
+                if (newServObj.fqdn != null && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)
+                {
+                   finalAddr = newServObj.fqdn + ":" + newServObj.Port;
+                }
+
                 newServObj.IP = finalAddr;
+
                 lock (GlobalLock)
                 {
                     if (UpdatesServers.ContainsKey(finalAddr))
@@ -589,7 +595,7 @@ namespace GTANMasterServer
 
                     UpdatesServers.Add(finalAddr, DateTime.Now);
                     APIServers.Add(finalAddr, newServObj);
-                    Debug.Log("Adding server: " + finalAddr); //Will only be shown if the server does not exist in memory
+                    Debug.Log("Adding server: " + finalAddr + " | FQDN: " + newServObj.fqdn + " | Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); //Will only be shown if the server does not exist in memory
                 }
             }
             catch { }
@@ -794,6 +800,7 @@ namespace GTANMasterServer
         public string Map { get; set; }
         public string IP { get; set; }
         public bool Passworded { get; set; }
+        public string fqdn { get; set; }
     }
 
     public class MasterServerStats
