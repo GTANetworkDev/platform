@@ -1,6 +1,4 @@
-﻿
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -577,10 +575,10 @@ namespace GTANMasterServer
 
                 var finalAddr = ip + ":" + newServObj.Port;
 
-                if (newServObj.fqdn != null && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)
-                {
-                   finalAddr = newServObj.fqdn + ":" + newServObj.Port;
-                }
+                if (newServObj.fqdn != null && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip && newServObj.fqdn.Length < 64) finalAddr = newServObj.fqdn + ":" + newServObj.Port;
+                if (newServObj.ServerName != null) newServObj.ServerName = newServObj.ServerName.Substring(0, Math.Min(55, newServObj.ServerName.Length));
+                if (newServObj.Gamemode != null) newServObj.Gamemode = newServObj.Gamemode.Substring(0, Math.Min(20, newServObj.Gamemode.Length));
+                if (newServObj.Map != null) newServObj.Map = newServObj.Map.Substring(0, Math.Min(20, newServObj.Map.Length));
 
                 newServObj.IP = finalAddr;
 
