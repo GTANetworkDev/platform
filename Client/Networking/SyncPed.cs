@@ -562,10 +562,6 @@ namespace GTANetwork.Networking
                     canSeeNametag = false;
                 }
             }
-            else
-            {
-                canSeeNametag = false;
-            }
 
             if (canSeeNametag)
             {
