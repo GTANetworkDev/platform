@@ -279,7 +279,6 @@ namespace GTANetwork.Networking
         }
 
         private bool _lastVehicle;
-        private uint _switch;
         private bool _lastAiming;
         private float _lastSpeed;
         private bool _lastShooting;
@@ -401,6 +400,7 @@ namespace GTANetwork.Networking
 
         bool CreateCharacter(Vector3 gPos, float hRange)
         {
+
 			if (Character == null || !Character.Exists() || (!Character.IsInRangeOfEx(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
 			{
 				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOfEx(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
@@ -538,77 +538,96 @@ namespace GTANetwork.Networking
 		    return false;
 	    }
 
-	    void DrawNametag()
+        private long _lastCheckDrawNametag = Util.Util.TickCount;
+        private bool canSeeNametag = false;
+        void DrawNametag()
 	    {
 	        if (!Main.UIVisible) return;
 
             if ((NametagSettings & 1) != 0) return;
 
             bool isAiming = false;
-			if ((!Character.IsOccluded && (Character.IsInRangeOfEx(Game.Player.Character.Position, 30f))) ||
-				(isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
-			{
-				if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17) || isAiming)
-				{
-				    Vector3 targetPos;
-				    targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
-                    
-				    targetPos += Character.Velocity/Game.FPS;
 
-					Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
-					DEBUG_STEP = 6;
-					var nameText = Name == null ? "<nameless>" : Name;
-
-				    if (!string.IsNullOrEmpty(NametagText))
-				        nameText = NametagText;
-
-					if (TicksSinceLastUpdate > 10000)
-						nameText = "~r~AFK~w~~n~" + nameText;
-
-                    var dist = (GameplayCamera.Position - Character.Position).Length();
-					var sizeOffset = Math.Max(1f - (dist/30f), 0.3f);
-
-				    Color defaultColor = Color.FromArgb(245, 245, 245);
-
-				    if ((NametagSettings & 2) != 0)
-				    {
-				        byte r, g, b, a;
-
-                        Util.Util.ToArgb(NametagSettings >> 8, out a, out r, out g, out b);
-
-				        defaultColor = Color.FromArgb(r, g, b);
-				    }
-
-                    Util.Util.DrawText(nameText, 0, 0, 0.4f * sizeOffset, defaultColor.R, defaultColor.G, defaultColor.B, 255, 0, 1, false, true, 0);
-
-					DEBUG_STEP = 7;
-					if (Character != null)
-					{
-						var armorColor = Color.FromArgb(200, 220, 220, 220);
-						var bgColor = Color.FromArgb(100, 0, 0, 0);
-						var armorPercent = Math.Min(Math.Max(PedArmor / 100f, 0f), 1f);
-						var armorBar = Math.Round(150 * armorPercent);
-						armorBar = (armorBar * sizeOffset);
-
-                        //*
-					    Util.Util.DrawRectangle(-75*sizeOffset, 36*sizeOffset, armorBar, 20*sizeOffset, armorColor.R, armorColor.G,
-					        armorColor.B, armorColor.A);
-					    Util.Util.DrawRectangle(-75*sizeOffset + armorBar, 36*sizeOffset, (sizeOffset*150) - armorBar, sizeOffset*20,
-					        bgColor.R, bgColor.G, bgColor.B, bgColor.A);
-					    Util.Util.DrawRectangle(-71*sizeOffset, 40*sizeOffset, (142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset, 12 * sizeOffset,
-                             50, 250, 50, 150);
+            if (Util.Util.TickCount - _lastCheckDrawNametag > 150)
+            {
+                if (((Character.IsInRangeOfEx(Game.Player.Character.Position, 30f) && !Character.IsOccluded)) || (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
+                {
+                    if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17) || isAiming)
+                    {
+                        canSeeNametag = true;
                     }
-                    DEBUG_STEP = 8;
-					Function.Call(Hash.CLEAR_DRAW_ORIGIN);
-				}
-			}
+                }
+                else
+                {
+                    canSeeNametag = false;
+                }
+            }
+            else
+            {
+                canSeeNametag = false;
+            }
+
+            if (canSeeNametag)
+            {
+                _lastCheckDrawNametag = Util.Util.TickCount;
+                Vector3 targetPos;
+                targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
+
+                targetPos += Character.Velocity / Game.FPS;
+
+                Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
+                DEBUG_STEP = 6;
+                var nameText = Name == null ? "<nameless>" : Name;
+
+                if (!string.IsNullOrEmpty(NametagText))
+                    nameText = NametagText;
+
+                if (TicksSinceLastUpdate > 10000)
+                    nameText = "~r~AFK~w~~n~" + nameText;
+
+                var dist = (GameplayCamera.Position - Character.Position).Length();
+                var sizeOffset = Math.Max(1f - (dist / 30f), 0.3f);
+
+                Color defaultColor = Color.FromArgb(245, 245, 245);
+
+                if ((NametagSettings & 2) != 0)
+                {
+                    byte r, g, b, a;
+
+                    Util.Util.ToArgb(NametagSettings >> 8, out a, out r, out g, out b);
+
+                    defaultColor = Color.FromArgb(r, g, b);
+                }
+
+                Util.Util.DrawText(nameText, 0, 0, 0.4f * sizeOffset, defaultColor.R, defaultColor.G, defaultColor.B, 255, 0, 1, false, true, 0);
+
+                DEBUG_STEP = 7;
+                if (Character != null)
+                {
+                    var armorColor = Color.FromArgb(200, 220, 220, 220);
+                    var bgColor = Color.FromArgb(100, 0, 0, 0);
+                    var armorPercent = Math.Min(Math.Max(PedArmor / 100f, 0f), 1f);
+                    var armorBar = Math.Round(150 * armorPercent);
+                    armorBar = (armorBar * sizeOffset);
+
+                    //*
+                    Util.Util.DrawRectangle(-75 * sizeOffset, 36 * sizeOffset, armorBar, 20 * sizeOffset, armorColor.R, armorColor.G,
+                        armorColor.B, armorColor.A);
+                    Util.Util.DrawRectangle(-75 * sizeOffset + armorBar, 36 * sizeOffset, (sizeOffset * 150) - armorBar, sizeOffset * 20,
+                        bgColor.R, bgColor.G, bgColor.B, bgColor.A);
+                    Util.Util.DrawRectangle(-71 * sizeOffset, 40 * sizeOffset, (142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset, 12 * sizeOffset,
+                         50, 250, 50, 150);
+                }
+                DEBUG_STEP = 8;
+                Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+            }
 		}
 
         internal int _debugVehicleHash;
 	    bool CreateVehicle()
 	    {
-	        if (_isInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 &&
-	            Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER, Game.Player.Character) == -1 &&
+	        if (_isInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && Game.Player.Character.IsInVehicle(MainVehicle) && VehicleSeat == -1 && 
+                Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER, Game.Player.Character) == -1 &&
 	            Util.Util.GetPedSeat(Game.Player.Character) == 0)
 	        {
 	            Character.Task.WarpOutOfVehicle(MainVehicle);
@@ -883,14 +902,31 @@ namespace GTANetwork.Networking
 
         private void VMultiVehiclePos()
         {
-            Vector3 vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
-            float force = 0.9875f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 850); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
 
-            float forceVelo = 0.9875f + (float)Math.Sqrt(_latencyAverager.Average() / 10000) + (Speed / 1850); // calcul de la force à appliquer au vecteur
+            bool isInRange = Game.Player.Character.IsInRangeOfEx(Position, physicsRange * 2.5f);
+            if (isInRange)
+            {
+                Vector3 vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
+                float force = 1.25f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
+                float forceVelo = 1.05f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
 
-            MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * (force + 0.15f)); // Calcul
+                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) // If the player 
+                {
+                    MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * (force + 0.15f)); // Calcul
+                }
+                else
+                {
+                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.2f) + (vecDif * (force)); // Calcul
+                }
+            }
+            else
+            {
+                MainVehicle.PositionNoOffset = currentInterop.vecTarget;
+                MainVehicle.Velocity = VehicleVelocity;
+            }
 
-            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f /* && spazzout */)
+
+            if (isInRange && _lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f /* && spazzout */)
             {
                 MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(),
                     _vehicleRotation.ToQuaternion(),
@@ -1306,43 +1342,42 @@ namespace GTANetwork.Networking
 
 	    bool UpdateVehiclePosition()
 	    {
-			UpdateVehicleMountedWeapon();
+            UpdateVehicleMountedWeapon();
 
-	        if (IsCustomAnimationPlaying)
-	        {
-	            DisplayCustomAnimation();
-	        }
+            if (IsCustomAnimationPlaying)
+            {
+                DisplayCustomAnimation();
+            }
 
-	        if (ExitingVehicle && !_lastExitingVehicle)
-	        {
-	            Character.Task.ClearAll();
+            if (ExitingVehicle && !_lastExitingVehicle)
+            {
+                Character.Task.ClearAll();
                 Character.Task.ClearSecondary();
 
-	            if (Speed < 1f)
-	            {
-	                Character.Task.LeaveVehicle(MainVehicle, false);
-	            }
-	            else
-	            {
-	                Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
-	            }
-	        }
-	        if (!ExitingVehicle && _lastExitingVehicle)
-	        {
-	            DirtyWeapons = true;
-	        }
+                if (Speed < 1f)
+                {
+                    Character.Task.LeaveVehicle(MainVehicle, false);
+                }
+                else
+                {
+                    Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
+                }
+            }
+            if (!ExitingVehicle && _lastExitingVehicle)
+            {
+                DirtyWeapons = true;
+            }
 
-	        _lastExitingVehicle = ExitingVehicle;
+            _lastExitingVehicle = ExitingVehicle;
 
-	        if (ExitingVehicle) return true;
-            
-	        if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
+            if (ExitingVehicle) return true;
+
+            if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
                 Environment.TickCount - LastUpdateReceived < 10000)
-	        {
-	            UpdateVehicleMainData();
-				if (DisplayVehicleDriveBy()) return true;
-			}
-
+            {
+                UpdateVehicleMainData();
+                if (DisplayVehicleDriveBy()) return true;
+            }
             return false;
 	    }
 
@@ -1640,11 +1675,11 @@ namespace GTANetwork.Networking
 	    void DisplayAimingAnimation()
 	    {
             var hands = GetWeaponHandsHeld(CurrentWeapon);
-	        if (IsReloading)
+	        /*if (IsReloading)
 	        {
                 UpdatePlayerPedPos();
                 return;
-	        }
+	        }*/
 #if !CRASHTEST
             if (WeaponDataProvider.NeedsManualRotation(CurrentWeapon))
             {
@@ -1665,89 +1700,8 @@ namespace GTANetwork.Networking
 #endif
             if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
             {
-                /*
-                Character.Task.ClearSecondary();
-
-                if (PedVelocity.LengthSquared() > 0.1f)
-                {
-                    if (Game.GameTime - _lastVehicleAimUpdate > 100)
-                    {
-                        var latency = DataLatency + TicksSinceLastUpdate;
-                        var dir = Position - _lastPosition;
-                        var posTarget = Vector3.Lerp(Position, Position + dir,
-                            latency / ((float)AverageLatency));
-                        var ndir = posTarget - Character.Position;
-                        ndir.Normalize();
-
-                        var target = Character.Position + ndir*20f;
-
-                        Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_COORD, Character, target.X, target.Y,
-                            target.Z, AimCoords.X, AimCoords.Y, AimCoords.Z, 3f, false, 2f, 2f, true, 512, false,
-                            unchecked ((int) FiringPattern.FullAuto));
-
-                        _lastVehicleAimUpdate = Game.GameTime;
-                    }
-                }
-                else
-                {
-                    Character.Task.AimAt(AimCoords, -1);
-                }
-                */
-            /*
-                long tServer = DataLatency;
-
-                float lerpValue = 0f;
-                var length = Position.DistanceToSquared(Character.Position);
-                if (length > 0.1f * 0.1f) // 
-                {
-                    if (length > 0.5f * 0.5f) // 
-                    {
-                        lerpValue = 0.02f;
-                    }
-                    else if (length > 1f) // 
-                    {
-                        lerpValue = 0.15f;
-                    }
-                    else if (length > 2f * 2f) // 
-                    {
-                        lerpValue = 0.30f;
-                    }
-                    else if (length > 3f * 3f) // 
-                    {
-                        lerpValue = 0.50f;
-                    }
-                    else
-                    {
-                        if (!IsAiming)
-                            lerpValue = 0.055f;
-                        else
-                            lerpValue = 0.035f;
-                    }
-
-                    lerpValue = lerpValue + ((tServer * 2) / 50000f);
-
-                    if (Character.IsSwimming)
-                    {
-                        Character.PositionNoOffset = GTA.Math.Vector3.Lerp(
-                            new GTA.Math.Vector3(Character.Position.X, Character.Position.Y, Character.Position.Z),
-                            new GTA.Math.Vector3(Position.X, Position.Y, Position.Z), lerpValue);
-                    }
-                    else
-                    {
-                        var tmpPosition = Vector3.Lerp(
-                            new Vector3(Character.Position.X, Character.Position.Y, Character.Position.Z),
-                            new GTA.Math.Vector3(
-                                Position.X + ((PedVelocity.X / 3) / tServer),
-                                Position.Y + ((PedVelocity.Y / 3) / tServer),
-                                Position.Z + ((PedVelocity.Z / 3) / tServer)),
-                            lerpValue);
-
-                        Character.PositionNoOffset = tmpPosition;
-                    }
-                }
-                */
-                UpdatePlayerPedPos(false);
-                VMultiAiming();
+                //UpdatePlayerPedPos(false);
+                VMultiOnfootPosition();
             }
 
         }
@@ -1961,17 +1915,16 @@ namespace GTANetwork.Networking
 		bool UpdateOnFootPosition()
 		{
             UpdateProps();
-			
-			DEBUG_STEP = 23;
 
-			UpdateCurrentWeapon();
+            DEBUG_STEP = 23;
 
+            UpdateCurrentWeapon();
 
             if (!_lastJumping && IsJumping)
-			{
-				Character.Task.Jump();
-			}
-            
+            {
+                Character.Task.Jump();
+            }
+
             if (IsOnFire && !_lastFire)
             {
                 Character.IsInvincible = false;
@@ -1989,68 +1942,68 @@ namespace GTANetwork.Networking
                 _scriptFire = 0;
             }
 
-		    _lastFire = IsOnFire;
+            _lastFire = IsOnFire;
 
-		    if (EnteringVehicle && !_lastEnteringVehicle)
-		    {
-		        Entity targetVeh = null;
-		        if (Debug)
-		        {
-		            targetVeh = MainVehicle;
-		        }
-		        else
-		        {
-		            targetVeh = Main.NetEntityHandler.NetToEntity(VehicleNetHandle);
-		        }
+            if (EnteringVehicle && !_lastEnteringVehicle)
+            {
+                Entity targetVeh = null;
+                if (Debug)
+                {
+                    targetVeh = MainVehicle;
+                }
+                else
+                {
+                    targetVeh = Main.NetEntityHandler.NetToEntity(VehicleNetHandle);
+                }
 
-		        if (targetVeh != null)
-		        {
+                if (targetVeh != null)
+                {
                     Character.Task.ClearAll();
                     Character.Task.ClearSecondary();
                     Character.Task.ClearAllImmediately();
                     Character.IsPositionFrozen = false;
-		            Character.Task.EnterVehicle(new Vehicle(targetVeh.Handle), (GTA.VehicleSeat) VehicleSeat, -1, 2f);
+                    Character.Task.EnterVehicle(new Vehicle(targetVeh.Handle), (GTA.VehicleSeat)VehicleSeat, -1, 2f);
                     _seatEnterStart = Util.Util.TickCount;
-		        }
-		    }
-            
-		    _lastEnteringVehicle = EnteringVehicle;
+                }
+            }
 
-		    if (EnteringVehicle) return true;
+            _lastEnteringVehicle = EnteringVehicle;
+
+            if (EnteringVehicle) return true;
 
             Character.CanBeTargetted = true;
 
-		    DEBUG_STEP = 24;
-			if (IsFreefallingWithParachute)
-			{
-				DisplayParachuteFreefall();
-			    return false;
-			}
+            DEBUG_STEP = 24;
+            if (IsFreefallingWithParachute)
+            {
+                DisplayParachuteFreefall();
+                return false;
+            }
 
-			if (IsParachuteOpen)
-			{
-				DisplayOpenParachute();
-			    return false;
-			}
+            if (IsParachuteOpen)
+            {
+                DisplayOpenParachute();
+                return false;
+            }
 
-			if (_parachuteProp != null)
-			{
-				_parachuteProp.Delete();
-				_parachuteProp = null;
-			}
-			DEBUG_STEP = 27;
+            if (_parachuteProp != null)
+            {
+                _parachuteProp.Delete();
+                _parachuteProp = null;
+            }
+            DEBUG_STEP = 27;
 
             bool ragdoll = IsRagdoll;
 
-			if (IsPlayerDead) ragdoll = true;
+            if (IsPlayerDead) ragdoll = true;
 
-			if (ragdoll)
-			{
-			    if (!Character.IsRagdoll)
-			    {
-			        Character.CanRagdoll = true;
+            if (ragdoll)
+            {
+                if (!Character.IsRagdoll)
+                {
+                    Character.CanRagdoll = true;
                     Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 50000, 60000, 0, 1, 1, 1);
-			    }
+                }
 
                 var dir = Position - (_lastPosition ?? Position);
                 var vdir = PedVelocity - _lastPedVel;
@@ -2068,25 +2021,25 @@ namespace GTANetwork.Networking
                 float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
                                     PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
 
-			    if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold*fThreshold)
-			    {
-			        Character.PositionNoOffset = currentInterop.vecTarget;
-			    }
-			    else
-                { 
-			        Character.Velocity = target + 2*(posTarget - Character.Position);
-			    }
+                if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold)
+                {
+                    Character.PositionNoOffset = currentInterop.vecTarget;
+                }
+                else
+                {
+                    Character.Velocity = target + 2 * (posTarget - Character.Position);
+                }
 
-			    _stopTime = DateTime.Now;
+                _stopTime = DateTime.Now;
                 _carPosOnUpdate = Character.Position;
-                    
+
                 return true;
-			}
+            }
             else if (!ragdoll && Character.IsRagdoll)
             {
                 Character.CanRagdoll = false;
                 Character.Task.ClearAllImmediately();
-                Character.PositionNoOffset = Position;
+                //Character.PositionNoOffset = Position;
 
                 if (!IsPlayerDead)
                 {
@@ -2100,166 +2053,107 @@ namespace GTANetwork.Networking
                 return true;
             }
 
-			if (_playingGetupAnim)
-			{
-			    var getupAnim = GetAnimalGetUpAnimation().Split();
+            if (_playingGetupAnim)
+            {
+                var getupAnim = GetAnimalGetUpAnimation().Split();
 
-			    if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
-			    {
-			        UpdatePlayerPedPos();
-			        var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0],
-			            getupAnim[1]);
+                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
+                {
+                    UpdatePlayerPedPos();
+                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0],
+                        getupAnim[1]);
 
-			        if (currentTime >= 0.7f)
-			        {
-			            Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
-			            Character.Task.ClearAll();
-			            _playingGetupAnim = false;
-			        }
-			        else
-			        {
-			            return true;
-			        }
-			    }
-			}
+                    if (currentTime >= 0.7f)
+                    {
+                        Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
+                        Character.Task.ClearAll();
+                        _playingGetupAnim = false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+            }
 
-			if (lastMeleeAnim != null)
-			{
-				DisplayMeleeAnimation();
-			}
-			else if (IsInMeleeCombat)
-			{
-				DisplayMeleeCombat();
-			}
-			DEBUG_STEP = 29;
-			if (IsAiming/* && !IsShooting*/)
-			{
+            if (lastMeleeAnim != null)
+            {
+                DisplayMeleeAnimation();
+            }
+            else if (IsInMeleeCombat)
+            {
+                DisplayMeleeCombat();
+            }
+            DEBUG_STEP = 29;
+            if (IsAiming/* && !IsShooting*/)
+            {
                 DisplayAimingAnimation();
 
-			    //UpdatePlayerPedPos();
-			    //VMultiAiming();
+                //UpdatePlayerPedPos();
+                //VMultiAiming();
 
-			}
+            }
 
-			DEBUG_STEP = 30;
+            DEBUG_STEP = 30;
 
             if (IsShooting)
-			{
-				DisplayShootingAnimation();
-			}
+            {
+                DisplayShootingAnimation();
+            }
 
-			if (IsCustomAnimationPlaying)
-			{
-			    if ((CustomAnimationFlag & 48) == 48)
-			    {
-			        VMultiOnfootPosition();
-			    }
-			    else
-			    {
-			        UpdatePlayerPedPos();
-			    }
+            if (IsCustomAnimationPlaying)
+            {
+                if ((CustomAnimationFlag & 48) == 48)
+                {
+                    VMultiOnfootPosition();
+                }
+                else
+                {
+                    UpdatePlayerPedPos();
+                }
 
-			    DisplayCustomAnimation();
+                DisplayCustomAnimation();
 
-			}
+            }
 
 
             DEBUG_STEP = 32;
-			if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
-			{
-				//UpdatePlayerPedPos();
+            if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
+            {
+                //UpdatePlayerPedPos();
 
-				//DisplayWalkingAnimation();
+                //DisplayWalkingAnimation();
 
                 VMultiOnfootPosition();
-			}
+            }
 
 			return false;
 	    }
 
-
         private Vector3 _lastAimCoords;
         private Prop _aimingProp;
+        private Prop _followProp;
         private long lastAimSet;
-        internal void VMultiAiming()
-        {
-            if (_aimingProp != null && _aimingProp.Exists())
-            {
-                this._aimingProp.Position = AimCoords;
-            }
-            else
-            {
-                this._aimingProp = World.CreateProp(new Model(-512779781), this.AimCoords, false, false);
-                this._aimingProp.IsCollisionEnabled = false;
-                this._aimingProp.Opacity = 0;
-            }
 
-            // Prediction de la position du joueur (évite qu'il s'arrête de viser et remarche)
-            Vector3 predictPosition = Position + (Position - Character.Position) + PedVelocity * 1.50f;
-
-            bool isAiming = Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, Character, (int)290);
-
-            var delta = Util.Util.TickCount - lastAimSet;
-
-            // Game doesnt detect IsWalking/IsRunning/IsSprinting when aiming
-
-            if ((!isAiming || Main.TickCount % 50 == 0) && OnFootSpeed == 0)
-            {
-                Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _aimingProp, -1, false);
-                _lastAimCoords = AimCoords;
-            }
-            if ((!isAiming || Main.TickCount % 50 == 0) && OnFootSpeed > 0)
-            {
-                Function.Call(Hash.TASK_GO_TO_COORD_WHILE_AIMING_AT_ENTITY, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, _aimingProp, (float)OnFootSpeed, false, (float)OnFootSpeed, (float)OnFootSpeed, true, 1, false, (uint)FiringPattern.FullAuto);
-                lastAimSet = Util.Util.TickCount;
-
-                _lastAimCoords = AimCoords;
-            }
-            
-        }
         private bool lastMoving;
+
         internal void VMultiOnfootPosition()
         {
-            if (IsReloading || (IsInCover && IsShooting && !IsAiming))
+            /*
+             * if (IsReloading || (IsInCover && IsShooting && !IsAiming))
             {
                 UpdatePlayerPedPos();
                 return;
             }
-
+            */
             long tServer = DataLatency;
-            
 
             float lerpValue = 0f;
             var length = Position.DistanceToSquared(Character.Position);
-
-            if (length > 0.05f*0.05f) // 
+            Vector3 predictPosition = this.Position + (this.Position - Character.Position) + PedVelocity * 1.25f;
+            if (length > 0.05f * 0.05f)
             {
-                if (length > 0.5f) // 
-                {
-                    lerpValue = 0.02f;
-                }
-                else if (length > 1f) // 
-                {
-                    lerpValue = 0.15f;
-                }
-                else if (length > 2f) // 
-                {
-                    lerpValue = 0.30f;
-                }
-                else if (length > 3f) // 
-                {
-                    lerpValue = 0.50f;
-                }
-                else
-                {
-                    if (!IsAiming)
-                        lerpValue = 0.055f;
-                    else
-                        lerpValue = 0.035f;
-                }
-
                 lerpValue = lerpValue + ((tServer * 2) / 50000f);
-
                 if (Character.IsSwimming)
                 {
                     Character.PositionNoOffset = GTA.Math.Vector3.Lerp(
@@ -2275,15 +2169,12 @@ namespace GTANetwork.Networking
                             Position.Y + ((PedVelocity.Y / 3) / tServer),
                             Position.Z + ((PedVelocity.Z / 3) / tServer)),
                         lerpValue);
-
                     Character.PositionNoOffset = tmpPosition;
                 }
-
                 if (!Character.IsSwimming && _lastSwimming)
                 {
                     Character.Task.ClearAllImmediately();
                 }
-
                 _lastSwimming = Character.IsSwimming;
                 _carPosOnUpdate = Character.Position;
                 _stopTime = DateTime.Now;
@@ -2301,6 +2192,7 @@ namespace GTANetwork.Networking
                     Position.Z, 0, 0, 0);
             }
 
+
             Character.Quaternion = GTA.Math.Quaternion.Lerp(Character.Quaternion, Rotation.ToQuaternion(), 0.10f); // mise à jours de la rotation
             Character.Velocity = PedVelocity; // Mise à jours de la vitesse
 
@@ -2309,9 +2201,7 @@ namespace GTANetwork.Networking
             if (ourAnim != null && animDict != null)
             {
                 var flag = GetAnimFlag();
-
                 DEBUG_STEP = 34;
-
                 if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
                     3))
                 {
@@ -2319,56 +2209,90 @@ namespace GTANetwork.Networking
                     Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,
                         8f, 10f, -1, flag, -8f, 1, 1, 1);
                 }
-
             }
             else
             {
-                /*
-                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
-                    3))
+                if (IsAiming && !IsReloading)
                 {
-                    Character.Task.ClearAnimation(animDict, ourAnim);
-                }
-                */
-                
-                Vector3 tmpposition = this.Position + ((this.Position - Character.Position)) + PedVelocity*0.75f;
-
-                var range = tmpposition.DistanceToSquared(Character.Position);
-
-                if (OnFootSpeed == 1 || (range > 0.75f && range < 2.0f))
-                {
-                    if (!Character.IsWalking || (Main.TickCount % 75 == 0 || range > 0.50f))
+                    if (_aimingProp != null && _aimingProp.Exists())
                     {
-                        Character.Task.GoTo(tmpposition, true);
+                        this._aimingProp.Position = AimCoords;
                     }
-                    lastMoving = true;
-                }
-                else if (OnFootSpeed == 2)
-                {
-                    if (!Character.IsRunning || (Main.TickCount % 75 == 0 || range > 1.0f))
+                    else
                     {
-                        Character.Task.RunTo(tmpposition, true);
+                        this._aimingProp = World.CreateProp(new Model(-512779781), this.AimCoords, false, false);
+                        this._aimingProp.IsCollisionEnabled = false;
+                        this._aimingProp.Opacity = 0;
                     }
-                    lastMoving = true;
-                }
-                else if (OnFootSpeed == 3)
-                {
-                    if (!Character.IsSprinting || (Main.TickCount % 75 == 0 || range > 2.0f))
-                    {
-                        Function.Call(Hash.TASK_GO_STRAIGHT_TO_COORD, Character, tmpposition.X, tmpposition.Y,tmpposition.Z, 3.0f, -1, 0.0f, 0.0f);
-                        Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Character, 1.49f);
-                        Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, 3.0f);
 
+                    if (_followProp != null && _followProp.Exists())
+                    {
+                        this._followProp.Position = Position + PedVelocity * 1.25f;
                     }
-                    lastMoving = true;
+                    else
+                    {
+                        this._followProp = World.CreateProp(new Model(-512779781), Position, false, false);
+                        this._followProp.IsCollisionEnabled = false;
+                        this._followProp.Opacity = 0;
+                    }
+
+                    bool isAiming = Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, Character, (int)290);
+
+                    if ((!isAiming || Main.TickCount % 25 == 0) && OnFootSpeed == 0)
+                    {
+                        Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _aimingProp, -1, false);
+                        _lastAimCoords = AimCoords;
+                    }
+                    else if ((!isAiming || Main.TickCount % 25 == 0) && OnFootSpeed > 0)
+                    {
+                        Function.Call(Hash.TASK_GO_TO_ENTITY_WHILE_AIMING_AT_ENTITY, Character, _followProp, _aimingProp, (float)OnFootSpeed, false, 10000, 10000, true, true, (uint)FiringPattern.FullAuto);
+                        Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, (float)OnFootSpeed);
+                        _lastAimCoords = AimCoords;
+                    }
                 }
                 else
-                { 
-                    Character.Task.AchieveHeading(Rotation.Z);
-                    if (lastMoving == true)
+                {
+
+                    var range = predictPosition.DistanceToSquared(Character.Position);
+                    if (OnFootSpeed == 1 && (range > 0.1f))
                     {
-                        Character.Task.StandStill(2000);
-                        lastMoving = false;
+                        if (!Character.IsWalking || (Main.TickCount % 50 == 0 || range > 0.25f))
+                        {
+                            Character.Task.GoTo(predictPosition, true);
+
+                            Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, 1.0f);
+                        }
+                        lastMoving = true;
+                    }
+
+                    else if (OnFootSpeed == 2)
+                    {
+                        if (!Character.IsRunning || (Main.TickCount % 50 == 0 || range > 0.50f))
+                        {
+                            Character.Task.RunTo(predictPosition, true);
+                            Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, 2.0f);
+                        }
+                        lastMoving = true;
+                    }
+                    else if (OnFootSpeed == 3)
+                    {
+                        if (!Character.IsSprinting || (Main.TickCount % 50 == 0 || range > 0.75f))
+                        {
+                            Function.Call(Hash.TASK_GO_STRAIGHT_TO_COORD, Character, predictPosition.X, predictPosition.Y, predictPosition.Z, 3.0f, -1, 0.0f, 0.0f);
+                            Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Character, 1.49f);
+                            Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, 3.0f);
+
+                        }
+                        lastMoving = true;
+                    }
+                    else
+                    {
+                        Character.Task.AchieveHeading(Rotation.Z);
+                        if (lastMoving == true)
+                        {
+                            Character.Task.StandStill(2000);
+                            lastMoving = false;
+                        }
                     }
                 }
             }
@@ -2383,8 +2307,7 @@ namespace GTANetwork.Networking
             const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
 
             // Check if the distance to interpolate is too far.
-            float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
-                                PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
+            float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD + PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
 
             if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold
                 /* || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25*/)
@@ -2464,30 +2387,30 @@ namespace GTANetwork.Networking
         {
             try
             {
-                if (!StreamedIn ||
-                    IsSpectating ||
-                    (Flag & (int) EntityFlag.PlayerSpectating) != 0 ||
-                    ModelHash == 0 ||
-                    string.IsNullOrEmpty(Name)) return;
+                if (!StreamedIn || IsSpectating || (Flag & (int)EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 
+#if DEBUG
+                PedThread.StreamedPlayers++;
+#endif
                 var gPos = Position;
                 var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
-                
+#if DEBUG
+                if (inRange) PedThread.StreamedPlayersInRange++;
+#endif
                 DEBUG_STEP = 0;
+
                 /*
                 if (CrossReference.EntryPoint.CurrentSpectatingPlayer == this ||
                     (Character != null && Main.NetEntityHandler.NetToEntity(CrossReference.EntryPoint.SpectatingEntity)?.Handle == Character.Handle))
                     inRange = true;
-                    */
+                */
+
                 DEBUG_STEP = 1;
 
 
                 bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
 
-                bool test = Character != null &&
-                            (Character.IsSubtaskActive(67) || IsBeingControlledByScript ||
-                             Character.IsExitingLeavingCar() || enteringSeat);
-
+                bool test = Character != null && (Character.IsSubtaskActive(67) || IsBeingControlledByScript ||  Character.IsExitingLeavingCar() || enteringSeat);
                 if (test)
                 {
                     DrawNametag();
@@ -2498,16 +2421,21 @@ namespace GTANetwork.Networking
 
                 DEBUG_STEP = 5;
 
-	            if (CreateVehicle()) return;
+                if (CreateVehicle()) return;
 
-                _switch++;
                 DEBUG_STEP = 15;
+
+                if (Character == null || !Character.Exists())
+                {
+                    inRange = inRange;
+                }
 
                 if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
 
                 DEBUG_STEP = 16;
 
-	            WorkaroundBlip();
+                WorkaroundBlip();
+
                 DEBUG_STEP = 119;
 
                 if (Character != null)
@@ -2523,10 +2451,15 @@ namespace GTANetwork.Networking
                     Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
                 DEBUG_STEP = 120;
-
-                UpdatePosition();
-
-                DrawNametag();
+#if DEBUG
+                if (PedThread.DisableUpdateAndNametag)
+                {
+#endif
+                    UpdatePosition();
+                    DrawNametag();
+#if DEBUG
+                }
+#endif
 
                 _lastJumping = IsJumping;
                 _lastFreefall = IsFreefallingWithParachute;

@@ -268,6 +268,9 @@ namespace GTANetwork.GUI
                     {
                         "--off-screen-rendering-enabled",
                         "--transparent-painting-enabled",
+                        "--disable-gpu",
+                        "--disable-gpu-compositing",
+                        "--enable-begin-frame-scheduling",
                     };
 
                     var cefMainArgs = new CefMainArgs(args);

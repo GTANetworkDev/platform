@@ -3632,11 +3632,10 @@ namespace GTANetwork
                     {
                         if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.Player.Character)
                         {
-                            entity.Kill();
+                            //entity.Kill();
                             entity.Delete();
                         }
                     }
-
                     foreach (var entity in World.GetAllVehicles())
                     {
                         if (entity == null) continue;
