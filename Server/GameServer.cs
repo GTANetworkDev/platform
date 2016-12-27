@@ -1466,8 +1466,6 @@ namespace GTANResource
 
                                             connReq.DisplayName = displayname + " (" + duplicate + ")";
                                         }
-
-                                        Clients.Add(client);
                                     }
 
                                     client.CommitConnection();
@@ -1508,6 +1506,7 @@ namespace GTANResource
                                     }
                                     else
                                     {
+                                        Clients.Add(client);
                                         client.NetConnection.Approve(channelHail);
                                         Program.Output("New incoming connection: " + client.SocialClubName + " (" + client.Name + ")");
                                     }

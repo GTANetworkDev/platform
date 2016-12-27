@@ -1,4 +1,4 @@
-﻿//#define DISABLE_CEF
+﻿#define DISABLE_CEF
 
 using System;
 using System.Collections;

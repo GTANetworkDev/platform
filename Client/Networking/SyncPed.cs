@@ -903,16 +903,16 @@ namespace GTANetwork.Networking
             if (isInRange)
             {
                 Vector3 vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
-                float force = 1.25f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
+                float force = 1.20f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
                 float forceVelo = 1.05f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
 
-                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) // If the player 
+                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) 
                 {
                     MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * (force + 0.15f)); // Calcul
                 }
                 else
                 {
-                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.2f) + (vecDif * (force)); // Calcul
+                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.25f) + (vecDif * (force)); // Calcul
                 }
             }
             else
@@ -2376,9 +2376,8 @@ namespace GTANetwork.Networking
         private long _seatEnterStart;
         private bool _isReloading;
 
-        private const float hRange = 1000f; // 1km
+        private const float hRange = 500; // 1km
         private const float physicsRange = 175f;
-
         internal void DisplayLocally()
         {
             try
@@ -2403,30 +2402,39 @@ namespace GTANetwork.Networking
 
                 DEBUG_STEP = 1;
 
+                bool canBeUpdated = inRange;
 
                 bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
 
-                bool test = Character != null && (Character.IsSubtaskActive(67) || IsBeingControlledByScript ||  Character.IsExitingLeavingCar() || enteringSeat);
+                if (inRange)
+                {
+                    if (CreateCharacter(gPos, hRange)) return;
+
+                    DEBUG_STEP = 5;
+
+                    if (CreateVehicle()) return;
+                }
+
+                DEBUG_STEP = 15;
+
+                if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
+
+                if (Character != null)
+                {
+                    if (!inRange && (Character.IsOnScreen || Character.IsVisible))
+                    {
+                        canBeUpdated = true;
+                    }
+                }
+
+                if(canBeUpdated) PedThread.StreamedPlayersInRangeCanBeUpdated++;
+
+                bool test = canBeUpdated && Character != null && (enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar());
                 if (test)
                 {
                     DrawNametag();
                     return;
                 }
-
-                if (CreateCharacter(gPos, hRange)) return;
-
-                DEBUG_STEP = 5;
-
-                if (CreateVehicle()) return;
-
-                DEBUG_STEP = 15;
-
-                if (Character == null || !Character.Exists())
-                {
-                    inRange = inRange;
-                }
-
-                if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
 
                 DEBUG_STEP = 16;
 
@@ -2448,7 +2456,7 @@ namespace GTANetwork.Networking
                 }
                 DEBUG_STEP = 120;
 #if DEBUG
-                if (PedThread.DisableUpdateAndNametag)
+                if (PedThread.DisableUpdateAndNametag && canBeUpdated)
                 {
 #endif
                     UpdatePosition();
