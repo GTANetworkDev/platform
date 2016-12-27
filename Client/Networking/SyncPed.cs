@@ -387,6 +387,8 @@ namespace GTANetwork.Networking
         internal int CustomAnimationFlag;
         internal long CustomAnimationStartTime;
 
+        private bool IsOnScreenVisibleAndRange;
+
         #region NeoSyncPed
 
         internal bool CreateCharacter()
@@ -395,23 +397,23 @@ namespace GTANetwork.Networking
             var gPos = Position;
             var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
 
-            return CreateCharacter(gPos, hRange);
+            return CreateCharacter(gPos, inRange);
         }
 
-        bool CreateCharacter(Vector3 gPos, float hRange)
+        bool CreateCharacter(Vector3 gPos, bool InRange)
         {
+            // SI LE JOUEUR EST NULL OU n'EXISTE PAS ET SI IL A UN AUTRE SKIN OU QU'IL EST MORT 
+            if ((Character == null || !Character.Exists()) || (Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0)))
+            {
+                LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
 
-			if (Character == null || !Character.Exists() || (!Character.IsInRangeOfEx(gPos, hRange) && Environment.TickCount - LastUpdateReceived < 5000) || Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0))
-			{
-				LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {hRange}, {Character?.IsInRangeOfEx(gPos, hRange)}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
-
-			    if (Character != null && Character.Exists())
-			    {
+                if (Character != null && Character.Exists())
+                {
                     LogManager.DebugLog("DELETING CHARACTER");
-			        Character.Delete();
-			    }
-                
-				DEBUG_STEP = 3;
+                    Character.Delete();
+                }
+
+                 DEBUG_STEP = 3;
 
 				LogManager.DebugLog("NEW PLAYER " + Name);
 
@@ -550,7 +552,7 @@ namespace GTANetwork.Networking
 
             if (Util.Util.TickCount - _lastCheckDrawNametag > 150)
             {
-                if (((Character.IsInRangeOfEx(Game.Player.Character.Position, 30f) && !Character.IsOccluded)) || (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
+                if (((Character.IsInRangeOfEx(Game.Player.Character.Position, 30f) && !Character.IsOccluded && IsOnScreenVisibleAndRange)) || (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
                 {
                     if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17) || isAiming)
                     {
@@ -2147,7 +2149,8 @@ namespace GTANetwork.Networking
             float lerpValue = 0f;
             var length = Position.DistanceToSquared(Character.Position);
             Vector3 predictPosition = this.Position + (this.Position - Character.Position) + PedVelocity * 1.25f;
-            if (length > 0.05f * 0.05f)
+
+            if (IsOnScreenVisibleAndRange && length > 0.05f * 0.05f)
             {
                 lerpValue = lerpValue + ((tServer * 2) / 50000f);
                 if (Character.IsSwimming)
@@ -2376,7 +2379,7 @@ namespace GTANetwork.Networking
         private long _seatEnterStart;
         private bool _isReloading;
 
-        private const float hRange = 500; // 1km
+        private float hRange = 500f; // 1km
         private const float physicsRange = 175f;
         internal void DisplayLocally()
         {
@@ -2402,75 +2405,71 @@ namespace GTANetwork.Networking
 
                 DEBUG_STEP = 1;
 
-                bool canBeUpdated = inRange;
-
                 bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
 
                 if (inRange)
                 {
-                    if (CreateCharacter(gPos, hRange)) return;
+                    if (PedThread.DisableUCreatedPlayer)
+                        if (CreateCharacter(gPos, inRange)) return;
 
                     DEBUG_STEP = 5;
 
                     if (CreateVehicle()) return;
-                }
 
-                DEBUG_STEP = 15;
+                    DEBUG_STEP = 15;
 
-                if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
+                    if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
 
-                if (Character != null)
-                {
-                    if (!inRange && (Character.IsOnScreen || Character.IsVisible))
+                    if ((Character.IsOnScreen || Character.IsVisible))
                     {
-                        canBeUpdated = true;
-                    }
-                }
-
-                if(canBeUpdated) PedThread.StreamedPlayersInRangeCanBeUpdated++;
-
-                bool test = canBeUpdated && Character != null && (enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar());
-                if (test)
-                {
-                    DrawNametag();
-                    return;
-                }
-
-                DEBUG_STEP = 16;
-
-                WorkaroundBlip();
-
-                DEBUG_STEP = 119;
-
-                if (Character != null)
-                {
-                    Character.Health = PedHealth;
-                    if (IsPlayerDead && !Character.IsDead && IsInVehicle)
-                    {
-                        Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
-                        Character.IsInvincible = false;
-                        Character.Kill();
+                        IsOnScreenVisibleAndRange = true;
                     }
 
-                    Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
-                }
-                DEBUG_STEP = 120;
-#if DEBUG
-                if (PedThread.DisableUpdateAndNametag && canBeUpdated)
-                {
-#endif
-                    UpdatePosition();
-                    DrawNametag();
-#if DEBUG
-                }
-#endif
+                    if (IsOnScreenVisibleAndRange) PedThread.StreamedPlayersInRangeCanBeUpdated++;
 
-                _lastJumping = IsJumping;
-                _lastFreefall = IsFreefallingWithParachute;
-                _lastShooting = IsShooting;
-                _lastAiming = IsAiming;
-                _lastVehicle = _isInVehicle;
-                _lastEnteringVehicle = EnteringVehicle;
+                    bool test = IsOnScreenVisibleAndRange && Character != null && (enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar());
+                    if (test)
+                    {
+                        DrawNametag();
+                        return;
+                    }
+
+                    DEBUG_STEP = 16;
+
+                    WorkaroundBlip();
+
+                    DEBUG_STEP = 119;
+
+                    if (Character != null)
+                    {
+                        Character.Health = PedHealth;
+                        if (IsPlayerDead && !Character.IsDead && IsInVehicle)
+                        {
+                            Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
+                            Character.IsInvincible = false;
+                            Character.Kill();
+                        }
+
+                        Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
+                    }
+                    DEBUG_STEP = 120;
+    #if DEBUG
+                    if (PedThread.DisableUpdateAndNametag)
+                    {
+    #endif
+                        UpdatePosition();
+                        DrawNametag();
+    #if DEBUG
+                    }
+    #endif
+
+                    _lastJumping = IsJumping;
+                    _lastFreefall = IsFreefallingWithParachute;
+                    _lastShooting = IsShooting;
+                    _lastAiming = IsAiming;
+                    _lastVehicle = _isInVehicle;
+                    _lastEnteringVehicle = EnteringVehicle;
+                }
                 DEBUG_STEP = 35;
             }
             catch (Exception ex)
