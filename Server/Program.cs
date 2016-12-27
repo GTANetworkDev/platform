@@ -91,6 +91,7 @@ namespace GTANetworkServer
             Console.WriteLine("=======================================================================");
             Console.WriteLine("= Server Name: " + settings.Name);
             Console.WriteLine("= Server Port: " + settings.Port);
+            Console.WriteLine("= Server FQDN: " + settings.fqdn);
             Console.WriteLine("=");
             Console.WriteLine("= Player Limit: " + settings.MaxPlayers);
             Console.WriteLine("=======================================================================");

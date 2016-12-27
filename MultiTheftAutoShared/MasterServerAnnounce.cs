@@ -9,5 +9,6 @@
         public string Gamemode { get; set; }
         public string Map { get; set; }
         public bool Passworded { get; set; }
+        public string fqdn { get; set; }
     }
 }
