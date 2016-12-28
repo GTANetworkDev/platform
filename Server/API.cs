@@ -3477,7 +3477,7 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(blip))
             {
-                ((BlipProperties) Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color = color;
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color = color;
                 var delta = new Delta_BlipProperties();
                 delta.Color = color;
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);

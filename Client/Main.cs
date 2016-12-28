@@ -111,9 +111,9 @@ namespace GTANetwork
         public static bool VehicleLagCompensation = true;
         public static bool OnFootLagCompensation = true;
 
-        public static int GlobalStreamingRange = 500;
-        public static int PlayerStreamingRange = 175;
-        public static int VehicleStreamingRange = 250;
+        public static int GlobalStreamingRange = 750;
+        public static int PlayerStreamingRange = 200;
+        public static int VehicleStreamingRange = 350;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
         public static bool CanOpenChatbox = true;
@@ -4867,9 +4867,11 @@ namespace GTANetwork
                                 try
                                 {
                                     if(respObj.Settings.GlobalStreamingRange != 0)
-                                    GlobalStreamingRange = respObj.Settings.GlobalStreamingRange;
+                                        GlobalStreamingRange = respObj.Settings.GlobalStreamingRange;
+
                                     if (respObj.Settings.PlayerStreamingRange != 0)
                                         PlayerStreamingRange = respObj.Settings.PlayerStreamingRange;
+
                                     if (respObj.Settings.VehicleStreamingRange != 0)
                                         VehicleStreamingRange = respObj.Settings.VehicleStreamingRange;
                                 }

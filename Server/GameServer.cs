@@ -1118,7 +1118,7 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1km
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > GlobalStreamingRange * GlobalStreamingRange) // 1km
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
@@ -1191,7 +1191,7 @@ namespace GTANResource
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
-                if (client.Position.DistanceToSquared(exception.Position) > 1000000f) continue; // 1km
+                if (client.Position.DistanceToSquared(exception.Position) > GlobalStreamingRange * GlobalStreamingRange) continue; // 1km
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 msg.Write((byte)PacketType.BulletSync);
@@ -1235,7 +1235,7 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1 km
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > GlobalStreamingRange * GlobalStreamingRange) // 1 km
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
@@ -1312,7 +1312,7 @@ namespace GTANResource
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (client.Position == null) continue;
-                if (client.Position.DistanceToSquared(fullPacket.Position) < 250000) // 500 m
+                if (client.Position.DistanceToSquared(fullPacket.Position) < (GlobalStreamingRange * GlobalStreamingRange) / 2) // 500 m
                 {
                     msg.Write((byte)PacketType.UnoccupiedVehSync);
                     msg.Write(full.Length);

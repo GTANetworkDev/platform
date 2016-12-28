@@ -1325,41 +1325,46 @@ namespace GTANetwork.Networking
 
 	    bool UpdateVehiclePosition()
 	    {
-            UpdateVehicleMountedWeapon();
-
-            if (IsCustomAnimationPlaying)
+            DEBUG_STEP = 121;
+            if (MainVehicle != null && Character.CurrentVehicle != null)
             {
-                DisplayCustomAnimation();
-            }
-
-            if (ExitingVehicle && !_lastExitingVehicle)
-            {
-                Character.Task.ClearAll();
-                Character.Task.ClearSecondary();
-
-                if (Speed < 1f)
+                DEBUG_STEP = 122;
+                UpdateVehicleMountedWeapon();
+                DEBUG_STEP = 123;
+                if (IsCustomAnimationPlaying)
                 {
-                    Character.Task.LeaveVehicle(MainVehicle, false);
+                    DisplayCustomAnimation();
                 }
-                else
+                DEBUG_STEP = 124;
+                if (ExitingVehicle && !_lastExitingVehicle)
                 {
-                    Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
+                    Character.Task.ClearAll();
+                    Character.Task.ClearSecondary();
+
+                    if (Speed < 1f)
+                    {
+                        Character.Task.LeaveVehicle(MainVehicle, false);
+                    }
+                    else
+                    {
+                        Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
+                    }
                 }
-            }
-            if (!ExitingVehicle && _lastExitingVehicle)
-            {
-                DirtyWeapons = true;
-            }
+                if (!ExitingVehicle && _lastExitingVehicle)
+                {
+                    DirtyWeapons = true;
+                }
 
-            _lastExitingVehicle = ExitingVehicle;
+                _lastExitingVehicle = ExitingVehicle;
 
-            if (ExitingVehicle) return true;
+                if (ExitingVehicle) return true;
 
-            if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
-                Environment.TickCount - LastUpdateReceived < 10000)
-            {
-                UpdateVehicleMainData();
-                if (DisplayVehicleDriveBy()) return true;
+                if (GetResponsiblePed(MainVehicle).Handle == Character.Handle &&
+                    Environment.TickCount - LastUpdateReceived < 10000)
+                {
+                    UpdateVehicleMainData();
+                    if (DisplayVehicleDriveBy()) return true;
+                }
             }
             return false;
 	    }
@@ -1902,7 +1907,7 @@ namespace GTANetwork.Networking
             DEBUG_STEP = 23;
 
             UpdateCurrentWeapon();
-
+            
             if (!_lastJumping && IsJumping)
             {
                 Character.Task.Jump();
@@ -2269,7 +2274,7 @@ namespace GTANetwork.Networking
                             }
                             else
                             {
-                                Character.Task.AchieveHeading(Rotation.Z);
+                                //Character.Task.AchieveHeading(Rotation.Z);
                                 if (lastMoving == true)
                                 {
                                     Character.Task.StandStill(2000);
@@ -2417,7 +2422,7 @@ namespace GTANetwork.Networking
                     {
                         bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
 
-                        if (UpdatePlayerPosOutOfRange(gPos, inRange)) return;
+                        if (UpdatePlayerPosOutOfRange(gPos, Game.Player.Character.IsInRangeOfEx(gPos, Main.PlayerStreamingRange))) return;
 
                         if ((enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar()))
                         {
