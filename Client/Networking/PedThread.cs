@@ -28,7 +28,7 @@ namespace GTANetwork.Networking
         {
             if (e.KeyCode == Keys.NumPad3) DisableUpdateAndNametag = !DisableUpdateAndNametag;
             if (e.KeyCode == Keys.NumPad0) DisableUpdate = !DisableUpdate;
-            if (e.KeyCode == Keys.NumPad1) DisableUpdate = !DisableUpdate;
+            if (e.KeyCode == Keys.NumPad1) DisableUCreatedPlayer = !DisableUCreatedPlayer;
         }
 #endif
         public static void OnTick(object sender, EventArgs e)
@@ -44,13 +44,10 @@ namespace GTANetwork.Networking
             if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
 
 
-            if (DisableUpdate)
+            for (int i = 0; i < StreamerThread.MAX_PLAYERS; i++)
             {
-                for (int i = 0; i < StreamerThread.MAX_PLAYERS; i++)
-                {
-                    //if (i >= StreamerThread.StreamedInPlayers.Length) break;
-                    StreamerThread.StreamedInPlayers[i]?.DisplayLocally();
-                }
+                if (i >= StreamerThread.StreamedInPlayers.Length) break;
+                StreamerThread.StreamedInPlayers[i]?.DisplayLocally();
             }
 #if DEBUG
             sw.Stop();
@@ -64,7 +61,7 @@ namespace GTANetwork.Networking
             Util.Util.DrawText("CurrentStreamedPlayersInRange: " + StreamedPlayersInRange + "", 600, 920, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
             Util.Util.DrawText("Game.FPS: " + Game.FPS.ToString("0.0") + "", 600, 960, 0.7f, 255, 255, 255, 255, 0, 1, false, true, 0);
 #endif
-            LogManager.DebugLog("END LOOP");
+                LogManager.DebugLog("END LOOP");
         }
     }
 }

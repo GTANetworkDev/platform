@@ -67,6 +67,16 @@ namespace GTANetworkShared
         [XmlElement("local_address")]
         public string LocalAddress { get; set; }
 
+        [XmlElement("global_stream_range")]
+        public int GlobalStreamingRange { get; set; }
+
+        [XmlElement("player_stream_range")]
+        public int PlayerStreamingRange { get; set; }
+
+        [XmlElement("vehicle_stream_range")]
+        public int VehicleStreamingRange { get; set; }
+
+
         public WhitelistCollection whitelist { get; set; }
 
         [XmlRoot("resource")]
@@ -92,6 +102,9 @@ namespace GTANetworkShared
             Resources = new List<SettingsResFilepath>();
             OnFootLagCompensation = true;
             VehicleLagCompensation = true;
+            GlobalStreamingRange = 500;
+            PlayerStreamingRange = 175;
+            VehicleStreamingRange = 250;
             UseHTTPServer = false;
             RefreshHz = 120;
             LogLevel = 0;

@@ -179,6 +179,15 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public bool UseHttpServer { get; set; }
+
+        [ProtoMember(5)]
+        public int PlayerStreamingRange { get; set; }
+
+        [ProtoMember(6)]
+        public int VehicleStreamingRange { get; set; }
+
+        [ProtoMember(7)]
+        public int GlobalStreamingRange { get; set; }
     }
 
     [ProtoContract]

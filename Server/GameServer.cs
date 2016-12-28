@@ -117,6 +117,9 @@ namespace GTANetworkServer
             MinimumClientVersion = ParseableVersion.Parse(conf.MinimumClientVersion);
             OnFootLagComp = conf.OnFootLagCompensation;
             VehLagComp = conf.VehicleLagCompensation;
+            GlobalStreamingRange = conf.GlobalStreamingRange;
+            PlayerStreamingRange = conf.PlayerStreamingRange;
+            VehicleStreamingRange = conf.VehicleStreamingRange;
             LogLevel = conf.LogLevel;
             UseHTTPFileServer = conf.UseHTTPServer;
             TrustClientProperties = conf.EnableClientsideEntityProperties;
@@ -166,6 +169,9 @@ namespace GTANetworkServer
         public bool UseUPnP { get; set; }
         public bool VehLagComp { get; set; }
         public bool OnFootLagComp { get; set; }
+        public int PlayerStreamingRange { get; set; }
+        public int GlobalStreamingRange { get; set; }
+        public int VehicleStreamingRange { get; set; }
         public List<string> ModWhitelist { get; set; }
         public bool UseHTTPFileServer { get; set; }
         public bool TrustClientProperties { get; set; }
@@ -1482,6 +1488,9 @@ namespace GTANResource
                                     {
                                         OnFootLagCompensation = OnFootLagComp,
                                         VehicleLagCompensation = VehLagComp,
+                                        GlobalStreamingRange = GlobalStreamingRange,
+                                        PlayerStreamingRange = PlayerStreamingRange,
+                                        VehicleStreamingRange = VehicleStreamingRange,
                                         ModWhitelist = ModWhitelist,
                                         UseHttpServer = UseHTTPFileServer,
                                     };

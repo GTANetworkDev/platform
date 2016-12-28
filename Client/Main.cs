@@ -110,6 +110,10 @@ namespace GTANetwork
         public static bool LerpRotaion = true;
         public static bool VehicleLagCompensation = true;
         public static bool OnFootLagCompensation = true;
+
+        public static int GlobalStreamingRange = 500;
+        public static int PlayerStreamingRange = 175;
+        public static int VehicleStreamingRange = 250;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
         public static bool CanOpenChatbox = true;
@@ -4859,6 +4863,21 @@ namespace GTANetwork
                             {
                                 OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
                                 VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
+
+                                try
+                                {
+                                    if(respObj.Settings.GlobalStreamingRange != 0)
+                                    GlobalStreamingRange = respObj.Settings.GlobalStreamingRange;
+                                    if (respObj.Settings.PlayerStreamingRange != 0)
+                                        PlayerStreamingRange = respObj.Settings.PlayerStreamingRange;
+                                    if (respObj.Settings.VehicleStreamingRange != 0)
+                                        VehicleStreamingRange = respObj.Settings.VehicleStreamingRange;
+                                }
+                                catch
+                                {
+                                    // Client.Disconnect("The server need to be update!");
+                                }
+                                
 
                                 HTTPFileServer = respObj.Settings.UseHttpServer;
 
