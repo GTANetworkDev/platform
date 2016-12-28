@@ -1390,7 +1390,7 @@ namespace GTANResource
                         }
                     }
 
-                    if(blockedIP.Any(c => c.Adress == msg.SenderConnection.RemoteEndPoint.Address.ToString())) Server.Recycle(msg);
+                    if(blockedIP.Any(c => c.Adress == msg.SenderConnection.RemoteEndPoint.Address.ToString())) Server.Recycle(msg); continue;
 
                     if (client == null) client = new Client(msg.SenderConnection);
                     PacketType packetType = PacketType.NpcPedPositionData;
