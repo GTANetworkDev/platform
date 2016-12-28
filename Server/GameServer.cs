@@ -123,6 +123,7 @@ namespace GTANetworkServer
             LogLevel = conf.LogLevel;
             UseHTTPFileServer = conf.UseHTTPServer;
             TrustClientProperties = conf.EnableClientsideEntityProperties;
+            fqdn = conf.fqdn;
 
             if (conf.whitelist != null && conf.whitelist != null)
             {
@@ -157,6 +158,7 @@ namespace GTANetworkServer
         public string Password { get; set; }
         public bool PasswordProtected { get; set; }
         public string GamemodeName { get; set; }
+        public string fqdn { get; set; }
         public Resource Gamemode { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
@@ -289,6 +291,7 @@ namespace GTANetworkServer
                                         : GamemodeName;
                         annObject.Port = Port;
                         annObject.Passworded = PasswordProtected;
+                        annObject.fqdn = fqdn;
 
                         wb.UploadData(MasterServer.Trim('/') + "/addserver",
                             Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(annObject)));

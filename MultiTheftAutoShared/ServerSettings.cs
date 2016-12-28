@@ -77,6 +77,9 @@ namespace GTANetworkShared
         public int VehicleStreamingRange { get; set; }
 
 
+        [XmlElement("fqdn")]
+        public string fqdn { get; set; }
+
         public WhitelistCollection whitelist { get; set; }
 
         [XmlRoot("resource")]
@@ -110,6 +113,7 @@ namespace GTANetworkShared
             LogLevel = 0;
             EnableClientsideEntityProperties = false;
             LocalAddress = "0.0.0.0";
+            fqdn = "";
         }
 
         public static ServerSettings ReadSettings(string path)
