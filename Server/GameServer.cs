@@ -62,6 +62,17 @@ namespace GTANetworkServer
     public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
     public delegate void ExportedEvent(params dynamic[] parameters);
 
+    internal class BlockedIP
+    {
+        public BlockedIP(string p_adress, long p_tick)
+        {
+            Adress = p_adress;
+            Tick = p_tick;
+
+        }
+        public string Adress { get; set; }
+        public long Tick { get; set; }
+    }
     internal class GameServer
     {
         public GameServer(ServerSettings conf)
@@ -210,6 +221,8 @@ namespace GTANetworkServer
         public Dictionary<string, string> AssemblyReferences = new Dictionary<string, string>();
 
         private DateTime _lastAnnounceDateTime;
+
+        private List<BlockedIP> blockedIP = new List<BlockedIP>();
 
         public void Start(string[] filterscripts)
         {
@@ -1424,7 +1437,19 @@ namespace GTANResource
                                 Program.Output("INFO: Initiating connection from IP: " + client.NetConnection.RemoteEndPoint.Address.ToString());
                                 var type = msg.ReadByte();
                                 var leng = msg.ReadInt32();
-                                var connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
+                                ConnectionRequest connReq = null;
+                                try
+                                {
+                                    connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
+                                }
+                                catch(EndOfStreamException)
+                                {
+                                    blockedIP.Add(new BlockedIP(client.NetConnection.RemoteEndPoint.Address.ToString(), Environment.TickCount));
+                                    client.NetConnection.Deny();
+                                    Server.Recycle(msg);
+                                    continue;
+                                }
+
                                 if (connReq == null)
                                 {
                                     client.NetConnection.Deny("Connection Object is null");
@@ -1434,6 +1459,7 @@ namespace GTANResource
                                 /*if (cVersion < MinimumClientVersion)
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
+
                                     continue;
                                 }
                                 
@@ -2823,14 +2849,29 @@ namespace GTANResource
                 }
             }
 
+            lock(blockedIP)
+            {
+                for (int i = 0; i < blockedIP.Count; i++)
+                {
+                    if (Environment.TickCount - blockedIP[i].Tick > 2000)
+                    {
+                        blockedIP.Remove(blockedIP[i]);
+                    }
+                }
+            }
             lock (Clients)
             {
                 for (int i = Clients.Count - 1; i >= 0; i--) // Kick AFK players
                 {
-                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 60)
+                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 70)
+                    {
+                        Clients.Remove(Clients[i]);
+                    }
+                    else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 60)
                     {
                         Clients[i].NetConnection.Disconnect("Time out");
                     }
+
                 }
             }
         }
