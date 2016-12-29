@@ -5026,10 +5026,10 @@ namespace GTANetwork
                                 while (IsOnServer()) Script.Yield();
                             }
 
-                            //if (data.PasswordProtected)
-                            //{
-                            //    _password = Game.GetUserInput(256);
-                            //}
+                            if (data.PasswordProtected)
+                            {
+                                _password = Game.GetUserInput(256);
+                            }
 
 
                             ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
