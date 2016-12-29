@@ -57,12 +57,12 @@ bool ManagedInit()
 }
 bool ManagedTick()
 {
-    /*
+    
 	if (ScriptHook::Domain->IsKeyPressed(ScriptHook::ReloadKey))
 	{
 		return false;
 	}
-    */
+    
 	ScriptHook::Domain->DoTick();
 
 	return true;
