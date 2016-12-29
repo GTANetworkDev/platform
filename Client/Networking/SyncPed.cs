@@ -902,6 +902,7 @@ namespace GTANetwork.Networking
                 {
                     MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.25f) + (vecDif * (force)); // Calcul
                 }
+                StuckVehicleCheck(Position);
             }
             else
             {
@@ -919,8 +920,6 @@ namespace GTANetwork.Networking
             {
                 MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
             }
-
-            StuckVehicleCheck(Position);
         }
 
         private void StuckVehicleCheck(Vector3 newPos)
@@ -2074,14 +2073,16 @@ namespace GTANetwork.Networking
             }
 
             DEBUG_STEP = 29;
+
             if (IsAiming && !IsCustomAnimationPlaying)
             {
                 DisplayAimingAnimation();
             }
-            else if (IsShooting && !IsCustomAnimationPlaying)
+            if (IsShooting && !IsCustomAnimationPlaying)
             {
                 DisplayShootingAnimation();
             }
+
             else if (IsCustomAnimationPlaying)
             {
                 if ((CustomAnimationFlag & 48) == 48)
@@ -2131,7 +2132,6 @@ namespace GTANetwork.Networking
             float lerpValue = 0f;
             var length = Position.DistanceToSquared(Character.Position);
             
-
             if (length > 0.05f * 0.05f && length < Main.PlayerStreamingRange * Main.PlayerStreamingRange)
             {
                 lerpValue = lerpValue + ((tServer * 2) / 50000f);
@@ -2284,9 +2284,8 @@ namespace GTANetwork.Networking
                         }
                     }
                 }
+                StuckDetection();
             }
-
-            StuckDetection();
         }
 
         internal void StuckDetection()
