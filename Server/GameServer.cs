@@ -101,7 +101,7 @@ namespace GTANetworkServer
 
             ConstantVehicleDataOrganizer.Initialize();
 
-            Name = conf.Name;
+            if (conf.Name != null) Name = conf.Name.Substring(0, Math.Min(58, conf.Name.Length)); // 46 to fill up title + additional 12 chars for colors such as ~g~.. etc..
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             var lAdd = IPAddress.Parse(conf.LocalAddress);
@@ -116,16 +116,18 @@ namespace GTANetworkServer
 
             config.ConnectionTimeout = 120f; // 30 second timeout
             //config.MaximumConnections = conf.MaxPlayers + 2; // + 2 for discoveries
+            if (conf.MaxPlayers > 1000) MaxPlayers = 1000;
 
-            config.MaxPlayers = conf.MaxPlayers;
-            
+            if (conf.MaxPlayers < 1) MaxPlayers = 2;
+
+            config.MaxPlayers = MaxPlayers;
+
             Server = new NetServer(config);
             
             PasswordProtected = !string.IsNullOrWhiteSpace(conf.Password);
             Password = conf.Password;
             AnnounceSelf = conf.Announce;
             MasterServer = conf.MasterServer;
-            MaxPlayers = conf.MaxPlayers;
             AnnounceToLAN = conf.AnnounceToLan;
             UseUPnP = conf.UseUPnP;
             MinimumClientVersion = ParseableVersion.Parse(conf.MinimumClientVersion);
