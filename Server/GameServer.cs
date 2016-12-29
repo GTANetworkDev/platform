@@ -88,9 +88,10 @@ namespace GTANetworkServer
             UnoccupiedVehicleManager = new UnoccupiedVehicleManager();
             NetEntityHandler = new NetEntityHandler();
 
-            MaxPlayers = 200; //32 has some bad reputation
             Port = conf.Port;
-            
+            if (conf.MaxPlayers < 2) MaxPlayers = 2;
+            else if (conf.MaxPlayers > 1000) MaxPlayers = 1000;
+            else MaxPlayers = conf.MaxPlayers;
 
             ACLEnabled = conf.UseACL && File.Exists("acl.xml");
             BanManager.Initialize();
@@ -113,14 +114,12 @@ namespace GTANetworkServer
             config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
             config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
-
+            config.MaxPlayers = MaxPlayers;
             config.ConnectionTimeout = 120f; // 30 second timeout
             //config.MaximumConnections = conf.MaxPlayers + 2; // + 2 for discoveries
-            if (conf.MaxPlayers > 1000) MaxPlayers = 1000;
+   
 
-            if (conf.MaxPlayers < 1) MaxPlayers = 2;
-
-            config.MaxPlayers = MaxPlayers;
+            
 
             Server = new NetServer(config);
             
@@ -1447,6 +1446,7 @@ namespace GTANResource
                                 catch(EndOfStreamException)
                                 {
                                     blockedIP.Add(new BlockedIP(client.NetConnection.RemoteEndPoint.Address.ToString(), Environment.TickCount));
+                                    Program.Output("WARN: Temporarily blocked " + client.NetConnection.RemoteEndPoint.Address.ToString() + ".");
                                     client.NetConnection.Deny();
                                     Server.Recycle(msg);
                                     continue;
@@ -2038,8 +2038,8 @@ namespace GTANResource
 
                                                 ResendPacket(fullPacket, client, false);
                                             }
-                                            catch (IndexOutOfRangeException)
-                                            { }
+                                            catch (IndexOutOfRangeException) { }
+                                            catch (KeyNotFoundException) { } //Proper fix is needed but this isn't very problematic
                                         }
                                         break;
                                     case PacketType.PedPureSync:
