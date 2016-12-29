@@ -43,12 +43,11 @@ namespace GTANetwork.Networking
             if (!Main.IsOnServer()) return;
             if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
 
-
-            for (int i = 0; i < StreamerThread.MAX_PLAYERS; i++)
+            foreach (SyncPed StreamedInPlayers in StreamerThread.StreamedInPlayers)
             {
-                if (i >= StreamerThread.StreamedInPlayers.Length) break;
-                StreamerThread.StreamedInPlayers[i]?.DisplayLocally();
+                StreamedInPlayers?.DisplayLocally();
             }
+
 #if DEBUG
             sw.Stop();
 
