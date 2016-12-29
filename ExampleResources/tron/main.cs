@@ -26,9 +26,9 @@ public class Tron : Script
                 continue;
 
             Vector3 _lastPos;
-            if ((_lastPos = API.getLocalEntityData(player, "TRON_LAST_PLACED_POS")) == null)
+            if ((_lastPos = API.getEntityData(player, "TRON_LAST_PLACED_POS")) == null)
             {
-                API.setLocalEntityData(player, "TRON_LAST_PLACED_POS", API.getEntityPosition(player));
+                API.setEntityData(player, "TRON_LAST_PLACED_POS", API.getEntityPosition(player));
                 continue;
             }
 
@@ -42,7 +42,7 @@ public class Tron : Script
                 var heading = (float)(radAtan * 180f / Math.PI);
                 heading += 90f;
 
-                API.setLocalEntityData(player, "TRON_LAST_PLACED_POS", _lastPos + dir*4f);
+                API.setEntityData(player, "TRON_LAST_PLACED_POS", _lastPos + dir*4f);
 
                 API.createObject(API.getHashKey("prop_const_fence01b_cr"), _lastPos + dir*2f - new Vector3(0, 0, 2f), new Vector3(0, 0, heading));
             }

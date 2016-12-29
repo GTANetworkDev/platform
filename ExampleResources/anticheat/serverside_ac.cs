@@ -33,20 +33,20 @@ public class AntiCheat : Script
 
         foreach (var p in players)
         {
-            if (API.getLocalEntityData(p, "ANTICHEAT_LAST_POS") == null || API.getLocalEntityData(p, "ANTICHEAT_LAST_POS") == new Vector3())
+            if (API.getEntityData(p, "ANTICHEAT_LAST_POS") == null || API.getEntityData(p, "ANTICHEAT_LAST_POS") == new Vector3())
             {
-                API.setLocalEntityData(p, "ANTICHEAT_LAST_POS", API.getEntityPosition(p));
+                API.setEntityData(p, "ANTICHEAT_LAST_POS", API.getEntityPosition(p));
                 continue;
             }
 
-            var lastLegitTp = API.getLocalEntityData(p, "__LAST_POSITION_SET");
-            var lastLegitDeath = API.getLocalEntityData(p, "__LAST_PLAYER_DEATH") ?? 0;
-            var lastLegitRespawn = API.getLocalEntityData(p, "__LAST_PLAYER_RESPAWN") ?? 0;
+            var lastLegitTp = API.getEntityData(p, "__LAST_POSITION_SET");
+            var lastLegitDeath = API.getEntityData(p, "__LAST_PLAYER_DEATH") ?? 0;
+            var lastLegitRespawn = API.getEntityData(p, "__LAST_PLAYER_RESPAWN") ?? 0;
             var stillDead = lastLegitRespawn < lastLegitDeath;
 
             if ((lastLegitTp == null || API.TickCount - lastLegitTp > 500) && !stillDead)
             {
-                var lastPos = API.getLocalEntityData(p, "ANTICHEAT_LAST_POS");
+                var lastPos = API.getEntityData(p, "ANTICHEAT_LAST_POS");
                 var velocity = API.getPlayerVelocity(p).Length();
                 var newPos = API.getEntityPosition(p);
 
@@ -66,7 +66,7 @@ public class AntiCheat : Script
                 }
             }
 
-            API.setLocalEntityData(p, "ANTICHEAT_LAST_POS", API.getEntityPosition(p));
+            API.setEntityData(p, "ANTICHEAT_LAST_POS", API.getEntityPosition(p));
         }
     }
 

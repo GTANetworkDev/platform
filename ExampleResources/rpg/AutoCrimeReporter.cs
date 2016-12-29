@@ -16,9 +16,9 @@ namespace RPGResource
 
         public void PlayerEnterCar(Client sender, NetHandle vehicle)
         {
-            if (API.getLocalEntityData(sender, "IS_COP") == true) return;
+            if (API.getEntityData(sender, "IS_COP") == true) return;
 
-            if (API.getLocalEntityData(vehicle, "COPCAR") == true)
+            if (API.getEntityData(vehicle, "COPCAR") == true)
             {
                 CopUtil.ReportPlayer(sender, 3); // Copcar Car jacking
             }
@@ -26,7 +26,7 @@ namespace RPGResource
 
         public void StickyDetonation(Client sender)
         {
-            if (API.getLocalEntityData(sender, "IS_COP") == true) return;
+            if (API.getEntityData(sender, "IS_COP") == true) return;
 
             CopUtil.ReportPlayer(sender, 1); // Explosion
         }
@@ -37,26 +37,26 @@ namespace RPGResource
 
             if (killerClient != null)
             {
-                if (API.getLocalEntityData(killerClient, "IS_COP") == true)
+                if (API.getEntityData(killerClient, "IS_COP") == true)
                 {
                     // TODO: Demote cop if the victim didnt have wanted level
                     return;
                 }
 
-                if (API.getLocalEntityData(victim, "IS_COP") == true)
+                if (API.getEntityData(victim, "IS_COP") == true)
                     CopUtil.ReportPlayer(killerClient, 2); // Cop Murder
                 else
                     CopUtil.ReportPlayer(killerClient, 0); // Murder
             }
 
-            if (API.getLocalEntityData(victim, "WantedLevel") > 2)
+            if (API.getEntityData(victim, "WantedLevel") > 2)
             {
                 var allPlayers = API.getPlayersInRadiusOfPlayer(15f, victim);
 
-                if (allPlayers.Any(player => API.getLocalEntityData(player, "IS_COP") == true))
+                if (allPlayers.Any(player => API.getEntityData(player, "IS_COP") == true))
                 {
                     API.call("JailController", "jailPlayer", victim,
-                        WantedLevelDataProvider.GetTimeFromWantedLevel(API.getLocalEntityData(victim, "WantedLevel")));
+                        WantedLevelDataProvider.GetTimeFromWantedLevel(API.getEntityData(victim, "WantedLevel")));
                 }
             }
 

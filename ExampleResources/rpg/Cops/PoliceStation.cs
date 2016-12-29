@@ -25,7 +25,7 @@ namespace RPGResource.Cops
                 Client player;
                 if ((player = API.getPlayerFromHandle(entity)) != null)
                 {
-                    if (API.getLocalEntityData(player, "IS_COP") == true)
+                    if (API.getEntityData(player, "IS_COP") == true)
                     {
                         API.sendChatMessageToPlayer(player, "Use /mission to start a mission!");
                     }

@@ -29,12 +29,12 @@ namespace RPGResource.Vehicles
                     new Vector3(0, 0, heading), 160, 160);
 
                 if (element.getElementData<bool>("cop"))
-                    API.setLocalEntityData(car, "COPCAR", true);
+                    API.setEntityData(car, "COPCAR", true);
 
-                API.setLocalEntityData(car, "RESPAWNABLE", true);
+                API.setEntityData(car, "RESPAWNABLE", true);
 
-                API.setLocalEntityData(car, "SPAWN_POS", spawnPos);
-                API.setLocalEntityData(car, "SPAWN_ROT", heading);
+                API.setEntityData(car, "SPAWN_POS", spawnPos);
+                API.setEntityData(car, "SPAWN_ROT", heading);
             }
         }
     }
