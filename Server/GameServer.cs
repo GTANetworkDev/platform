@@ -62,17 +62,6 @@ namespace GTANetworkServer
     public delegate dynamic ExportedFunctionDelegate(params object[] parameters);
     public delegate void ExportedEvent(params dynamic[] parameters);
 
-    internal class BlockedIP
-    {
-        public BlockedIP(string p_adress, long p_tick)
-        {
-            Adress = p_adress;
-            Tick = p_tick;
-
-        }
-        public string Adress { get; set; }
-        public long Tick { get; set; }
-    }
     internal class GameServer
     {
         public GameServer(ServerSettings conf)
@@ -221,10 +210,10 @@ namespace GTANetworkServer
         // Assembly name, Path to assembly.
         public Dictionary<string, string> AssemblyReferences = new Dictionary<string, string>();
 
+
+        private Dictionary<IPEndPoint, DateTime> queue = new Dictionary<IPEndPoint, DateTime>();
+
         private DateTime _lastAnnounceDateTime;
-
-        private List<BlockedIP> blockedIP = new List<BlockedIP>();
-
         public void Start(string[] filterscripts)
         {
             try
@@ -1435,7 +1424,17 @@ namespace GTANResource
                                 break;
 
                             case NetIncomingMessageType.ConnectionApproval:
-                                Program.Output("INFO: Initiating connection from IP: " + client.NetConnection.RemoteEndPoint.Address.ToString());
+                                if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
+                                {
+                                    client.NetConnection.Deny("Wait atleast 60 seconds before reconnecting..");
+                                    continue;
+                                }
+                                else
+                                {
+                                    queue.Add(client.NetConnection.RemoteEndPoint, DateTime.Now);
+                                }
+
+                                Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "]");
                                 var type = msg.ReadByte();
                                 var leng = msg.ReadInt32();
                                 ConnectionRequest connReq = null;
@@ -1443,10 +1442,9 @@ namespace GTANResource
                                 {
                                     connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
                                 }
-                                catch(EndOfStreamException)
+                                catch (EndOfStreamException)
                                 {
-                                    blockedIP.Add(new BlockedIP(client.NetConnection.RemoteEndPoint.Address.ToString(), Environment.TickCount));
-                                    Program.Output("WARN: Temporarily blocked " + client.NetConnection.RemoteEndPoint.Address.ToString() + ".");
+                                    Program.Output("WARN: Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
                                     client.NetConnection.Deny();
                                     Server.Recycle(msg);
                                     continue;
@@ -1547,7 +1545,7 @@ namespace GTANResource
                                     if (cancelArgs.Cancel)
                                     {
                                         client.NetConnection.Deny(cancelArgs.Reason ?? "");
-                                        Program.Output("Incoming connection denied: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                        Program.Output("Connection denied: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
                                         continue;
                                     }
                                     else
@@ -1555,7 +1553,7 @@ namespace GTANResource
                                         Clients.Add(client);
                                         Server.Configuration.CurrentPlayers = Clients.Count;
                                         client.NetConnection.Approve(channelHail);
-                                        Program.Output("New incoming connection: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                        Program.Output("Processing connection: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
 
                                     }
                              //   }
@@ -2578,8 +2576,8 @@ namespace GTANResource
                                                             en.InvokePlayerConnected(client);
                                                         }));
 
-                                                Program.Output("New player connected: " + client.SocialClubName + " (" +
-                                                                client.Name + ")");
+                                                Program.Output("Connection established: " + client.SocialClubName + " (" +
+                                                                client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
                                             }
                                             else
                                             {
@@ -2850,14 +2848,13 @@ namespace GTANResource
                     }
                 }
             }
-
-            lock(blockedIP)
+            lock (queue)
             {
-                for (int i = 0; i < blockedIP.Count; i++)
+                for (int i = queue.Count - 1; i >= 0; i--)
                 {
-                    if (Environment.TickCount - blockedIP[i].Tick > 2000)
+                    if (DateTime.Now.Subtract(queue.ElementAt(i).Value).TotalSeconds >= 60)
                     {
-                        blockedIP.Remove(blockedIP[i]);
+                        queue.Remove(queue.ElementAt(i).Key);
                     }
                 }
             }
