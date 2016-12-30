@@ -2374,8 +2374,8 @@ namespace GTANetwork.Networking
 
         internal void DisplayLocally()
         {
-            try
-            {
+            //try
+            //{
                 if (!StreamedIn || IsSpectating || (Flag & (int)EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
 #if DEBUG
                 PedThread.StreamedPlayers++;
@@ -2461,16 +2461,16 @@ namespace GTANetwork.Networking
                     }
                 }
                 DEBUG_STEP = 35;
-            }
-            catch (Exception ex)
-            {
-                Util.Util.SafeNotify("Caught unhandled exception in PedThread for player " + Name);
-                Util.Util.SafeNotify(ex.Message);
-                Util.Util.SafeNotify("LAST STEP: " + DEBUG_STEP);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Util.Util.SafeNotify("Caught unhandled exception in PedThread for player " + Name);
+            //    Util.Util.SafeNotify(ex.Message);
+            //    Util.Util.SafeNotify("LAST STEP: " + DEBUG_STEP);
 
-                LogManager.LogException(ex, "PEDTHREAD FOR " + Name + " LASTSTEP: " + DEBUG_STEP);
+            //    LogManager.LogException(ex, "PEDTHREAD FOR " + Name + " LASTSTEP: " + DEBUG_STEP);
                 //throw;
-            }
+            //}
         }
 
         internal static Ped GetResponsiblePed(Vehicle veh)
