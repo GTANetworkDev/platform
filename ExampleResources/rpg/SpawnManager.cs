@@ -52,8 +52,8 @@ namespace RPGResource
         {
             API.setPlayerNametagColor(target, 55, 135, 240);
 
-            API.setLocalEntityData(target, "IS_COP", true);
-            API.setLocalEntityData(target, "IS_CROOK", false);
+            API.setEntityData(target, "IS_COP", true);
+            API.setEntityData(target, "IS_CROOK", false);
 
             API.setEntityPosition(target, _copSpawnpoint);
             API.removeAllPlayerWeapons(target);
@@ -74,12 +74,12 @@ namespace RPGResource
         {
             API.resetPlayerNametagColor(target);
 
-            API.setLocalEntityData(target, "IS_COP", false);
-            API.setLocalEntityData(target, "IS_CROOK", true);
+            API.setEntityData(target, "IS_COP", false);
+            API.setEntityData(target, "IS_CROOK", true);
 
-            if (API.getLocalEntityData(target, "Jailed") == true)
+            if (API.getEntityData(target, "Jailed") == true)
             {
-                API.call("JailController", "jailPlayer", API.getLocalEntityData(target, "JailTime"));
+                API.call("JailController", "jailPlayer", API.getEntityData(target, "JailTime"));
             }
             else
             {
@@ -89,7 +89,7 @@ namespace RPGResource
 
             API.sendChatMessageToPlayer(target, "You are a citizen! Do various jobs to earn money and reputation!");
 
-            API.setPlayerWantedLevel(target, (int)Math.Ceiling((float)API.getLocalEntityData(target, "WantedLevel") / 2f));
+            API.setPlayerWantedLevel(target, (int)Math.Ceiling((float)API.getEntityData(target, "WantedLevel") / 2f));
         }
     }
 }

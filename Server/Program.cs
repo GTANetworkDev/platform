@@ -153,7 +153,9 @@ namespace GTANetworkServer
                 }
                 CloseProgram = true;
             }
-            catch { }
+#pragma warning disable CS0168
+            catch (Exception e) { } //Proper fix is needed but this isn't problematic
+#pragma warning restore CS0168
             return true;
         }
 

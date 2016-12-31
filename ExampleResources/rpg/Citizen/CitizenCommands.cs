@@ -10,20 +10,20 @@ namespace RPGResource.Citizen
         [Command("acceptfine", Group = "Citizen Commands")]
         public void AcceptCopFine(Client sender)
         {
-            var ticketOffered = API.getLocalEntityData(sender, "FINE_OFFERED");
-            var cop = API.getLocalEntityData(sender, "FINE_OFFERED_BY");
+            var ticketOffered = API.getEntityData(sender, "FINE_OFFERED");
+            var cop = API.getEntityData(sender, "FINE_OFFERED_BY");
 
-            API.resetLocalEntityData(sender, "FINE_OFFERED");
-            API.resetLocalEntityData(sender, "FINE_OFFERED_BY");
+            API.resetEntityData(sender, "FINE_OFFERED");
+            API.resetEntityData(sender, "FINE_OFFERED_BY");
 
-            if (API.getLocalEntityData(sender, "IS_COP") == true)
+            if (API.getEntityData(sender, "IS_COP") == true)
             {
                 API.sendChatMessageToPlayer(sender, "~r~ERROR: You're a cop, you can't be fined!");
                 return;
             }
 
-            if (API.getLocalEntityData(sender, "WantedLevel") == 0 ||
-                API.getLocalEntityData(sender, "WantedLevel") > 2)
+            if (API.getEntityData(sender, "WantedLevel") == 0 ||
+                API.getEntityData(sender, "WantedLevel") > 2)
             {
                 API.sendChatMessageToPlayer(sender, "~r~You cant accept the ticket with your wanted level!");
                 return;
@@ -41,7 +41,7 @@ namespace RPGResource.Citizen
                 return;
             }
 
-            List<int> crimes = API.getLocalEntityData(sender, "Crimes");
+            List<int> crimes = API.getEntityData(sender, "Crimes");
             int totalPrice = 0;
 
             foreach (var crime in crimes)
@@ -51,19 +51,19 @@ namespace RPGResource.Citizen
                 totalPrice += crimeData.TicketCost;
             }
 
-            var playerMoney = API.getLocalEntityData(sender, "Money");
+            var playerMoney = API.getEntityData(sender, "Money");
 
             if (playerMoney >= totalPrice)
             {
-                API.setLocalEntityData(sender, "Money", playerMoney - totalPrice);
+                API.setEntityData(sender, "Money", playerMoney - totalPrice);
 
-                API.triggerClientEvent(sender, "update_money_display", API.getLocalEntityData(sender, "Money"));
+                API.triggerClientEvent(sender, "update_money_display", API.getEntityData(sender, "Money"));
 
                 API.sendChatMessageToPlayer(sender, "You have paid your fine!");
-                API.sendChatMessageToPlayer(cop, sender.Name + " has paid his fine!");
+                API.sendChatMessageToPlayer(cop, sender.name + " has paid his fine!");
 
-                API.setLocalEntityData(sender, "WantedLevel", 0);
-                API.resetLocalEntityData(sender, "Crimes");
+                API.setEntityData(sender, "WantedLevel", 0);
+                API.resetEntityData(sender, "Crimes");
                 API.setPlayerWantedLevel(sender, 0);
             }
             else
@@ -75,27 +75,27 @@ namespace RPGResource.Citizen
         [Command("payfine", Group = "Citizen Commands")]
         public void PayOwnFine(Client sender)
         {
-            if (API.getLocalEntityData(sender, "IS_COP") == true)
+            if (API.getEntityData(sender, "IS_COP") == true)
             {
                 API.sendChatMessageToPlayer(sender, "~r~ERROR: You're a cop, you can't be fined!");
                 return;
             }
 
-            if (!(bool) API.call("PoliceStation", "IsInPoliceStation", (NetHandle)sender.CharacterHandle))
+            if (!(bool) API.call("PoliceStation", "IsInPoliceStation", (NetHandle)sender.handle))
             {
                 API.sendChatMessageToPlayer(sender, "~r~ERROR: You're not in a police station!");
                 return;
             }
 
-            if (API.getLocalEntityData(sender, "WantedLevel") == 0 ||
-                API.getLocalEntityData(sender, "WantedLevel") > 2)
+            if (API.getEntityData(sender, "WantedLevel") == 0 ||
+                API.getEntityData(sender, "WantedLevel") > 2)
             {
                 API.sendChatMessageToPlayer(sender, "~r~You can't pay your fine with that wanted level!");
                 return;
             }
 
             
-            List<int> crimes = API.getLocalEntityData(sender, "Crimes");
+            List<int> crimes = API.getEntityData(sender, "Crimes");
             int totalPrice = 0;
 
             foreach (var crime in crimes)
@@ -105,18 +105,18 @@ namespace RPGResource.Citizen
                 totalPrice += crimeData.TicketCost;
             }
 
-            var playerMoney = API.getLocalEntityData(sender, "Money");
+            var playerMoney = API.getEntityData(sender, "Money");
 
             if (playerMoney >= totalPrice)
             {
-                API.setLocalEntityData(sender, "Money", playerMoney - totalPrice);
+                API.setEntityData(sender, "Money", playerMoney - totalPrice);
 
-                API.triggerClientEvent(sender, "update_money_display", API.getLocalEntityData(sender, "Money"));
+                API.triggerClientEvent(sender, "update_money_display", API.getEntityData(sender, "Money"));
 
                 API.sendChatMessageToPlayer(sender, "You have paid your fine!");
 
-                API.setLocalEntityData(sender, "WantedLevel", 0);
-                API.resetLocalEntityData(sender, "Crimes");
+                API.setEntityData(sender, "WantedLevel", 0);
+                API.resetEntityData(sender, "Crimes");
                 API.setPlayerWantedLevel(sender, 0);
             }
             else

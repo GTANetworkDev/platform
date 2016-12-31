@@ -35,7 +35,7 @@ API.onServerEventTrigger.connect(function (name, args) {
 
         menu.Visible = true;
 
-        pool.AddMenu(menu);
+        pool.Add(menu);
     }
     else if (name === "menu_handler_close_menu") {
         pool = null;

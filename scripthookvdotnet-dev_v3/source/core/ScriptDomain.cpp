@@ -188,10 +188,11 @@ namespace GTA
                         }
                     }
                 }
-                catch (Exception ^ex)
-                {
-                    Log("[ERROR]", "Failed to load assembly ", filenameAssemblies[i], Environment::NewLine, ex->ToString());
-                }
+				catch (BadImageFormatException ^) { }
+				catch (Exception ^ex)
+				{
+					Log("[ERROR]", "Failed to load assembly ", filenameAssemblies[i], Environment::NewLine, ex->ToString());
+				}
 			}
 
 			for each (String ^filename in filenameScripts)
@@ -275,10 +276,10 @@ namespace GTA
 		{
 			assembly = Assembly::LoadFrom(filename);
 		}
+		catch (BadImageFormatException ^) { return false; }
 		catch (Exception ^ex)
 		{
 			Log("[ERROR]", "Failed to load assembly '", IO::Path::GetFileName(filename), "':", Environment::NewLine, ex->ToString());
-
 			return false;
 		}
 

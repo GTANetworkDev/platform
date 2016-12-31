@@ -4495,15 +4495,16 @@ namespace GTANetwork
                                         if (lclHndl != null && lclHndl.Handle != Game.Player.Character.Handle)
                                         {
                                             var pair = NetEntityHandler.NetToStreamedItem(netHandle) as SyncPed;
-                                            if (pair != null)
+                                            if (pair != null && pair.Character != null && pair.Character.Exists() && pair.IsCustomAnimationPlaying)
                                             {
+                                                pair.Character.Task.ClearAll();
                                                 pair.IsCustomAnimationPlaying = false;
                                                 pair.CustomAnimationName = null;
                                                 pair.CustomAnimationDictionary = null;
                                                 pair.CustomAnimationFlag = 0;
                                                 pair.IsCustomScenarioPlaying = false;
                                                 pair.HasCustomScenarioStarted = false;
-                                                pair.Character.Task.ClearAll();
+
                                             }
                                         }
                                         else if (lclHndl != null && lclHndl.Handle == Game.Player.Character.Handle)
@@ -4942,7 +4943,7 @@ namespace GTANetwork
                     _currentOnlinePlayers += data.PlayerCount;
 
                     MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " + _currentOnlinePlayers;
-                        
+                    #region LAN
                     if (data.LAN) //  && matchedItems.Count == 0
                     {
                         var item = new UIMenuItem(data.ServerName);
@@ -4988,7 +4989,7 @@ namespace GTANetwork
 
                         _lanBrowser.Items.Add(item);
                     }
-                        
+                    #endregion
 
                     foreach (var ourItem in matchedItems.Where(k => k != null))
                     {
@@ -5007,7 +5008,6 @@ namespace GTANetwork
                             lastIndx = _serverBrowser.Index;
 
                         var gMsg = msg;
-                        var data1 = data;
                         ourItem.Activated += (sender, selectedItem) =>
                         {
                             if (IsOnServer())
@@ -5026,13 +5026,13 @@ namespace GTANetwork
                                 while (IsOnServer()) Script.Yield();
                             }
 
-                            if (data1.PasswordProtected)
+                            if (data.PasswordProtected)
                             {
                                 _password = Game.GetUserInput(256);
                             }
 
 
-                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data1.Port);
+                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
                             MainMenu.TemporarilyHidden = true;
                             _connectTab.RefreshIndex();
                         };

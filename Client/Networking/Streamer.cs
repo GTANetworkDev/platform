@@ -550,8 +550,11 @@ namespace GTANetwork.Networking
         {
             lock (ClientMap)
             {
-                ClientMap.Remove(item.RemoteHandle);
-                HandleMap.Remove(item.RemoteHandle);
+               // if (item != null)
+               // {
+                    ClientMap.Remove(item.RemoteHandle);
+                    HandleMap.Remove(item.RemoteHandle);
+               // }
             }
         }
 
