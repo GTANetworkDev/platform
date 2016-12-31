@@ -45,6 +45,7 @@ namespace GTANetworkShared
         UnoccupiedVehStartStopSync = 36,
         UnoccupiedVehSync = 37,
         BasicUnoccupiedVehSync = 38,
+        BulletPlayerSync = 39,
     }
 
     public enum ScriptVersion
