@@ -423,7 +423,8 @@ namespace GTA
 			return;
 		}
 
-		String ^assemblyPath = Assembly::GetExecutingAssembly()->Location;
+		//String ^logpath = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), "..\\bin\\scripts");
+		String ^assemblyPath = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), "..\\bin\\scripts");
 		String ^assemblyFilename = IO::Path::GetFileNameWithoutExtension(assemblyPath);
 
 		for each (String ^path in IO::Directory::GetFiles(IO::Path::GetDirectoryName(assemblyPath), "*.log"))

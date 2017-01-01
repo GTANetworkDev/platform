@@ -45,10 +45,8 @@ namespace GTANetwork
                 MessageBox.Show("No settings were found.");
                 return;
             }
-            
 
-            // Create splash screen
-
+            #region Create splash screen
             var splashScreen = new SplashScreenThread();
             
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
@@ -59,7 +57,9 @@ namespace GTANetwork
 
             splashScreen.SetPercent(10);
 
-            // Check for new version
+            #endregion
+
+            #region Check for new version
             using (var wc = new ImpatientWebClient())
             {
                 try
@@ -102,10 +102,17 @@ namespace GTANetwork
 
             splashScreen.SetPercent(40);
 
-            if (Process.GetProcessesByName("GTA5").Any())
+            #endregion
+
+            //if (Process.GetProcessesByName("GTA5").Any())
+            //{
+            //    MessageBox.Show(splashScreen.SplashScreen, "GTA V is already running. Please shut down the game before starting GTA Network.");
+            //    return;
+            //}
+
+            foreach (var process in Process.GetProcessesByName("GTA5").Concat(Process.GetProcessesByName("GTAVLauncher")))
             {
-                MessageBox.Show(splashScreen.SplashScreen, "GTA V is already running. Please shut down the game before starting GTA Network.");
-                return;
+                process.Kill();
             }
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
@@ -160,9 +167,12 @@ namespace GTANetwork
             {
                 MessageBox.Show(splashScreen.SplashScreen, "We require administrative privileges to continue. Please restart as administrator.", "Unauthorized access");
                 return;
+
+                //PROMPT for admin rights is needed here
             }
 
             splashScreen.SetPercent(50);
+            //PROMPT for admin rights is needed here
 
             if ((string) Registry.GetValue(dictPath, "GTANetworkInstallDir", null) != AppDomain.CurrentDomain.BaseDirectory)
             {
@@ -205,7 +215,7 @@ namespace GTANetwork
                 mySettings.Video.Windowed.Value = 2;
             }
 
-            MoveAuxilliaryStuffIn();
+            //MoveAuxilliaryStuffIn();
 
             GameSettings.SaveSettings(mySettings);
 
@@ -213,14 +223,22 @@ namespace GTANetwork
 
             PatchStartup();
 
-            if (settings.StartGameInOfflineMode)
-                InsertCommandline(InstallFolder);
+            //if (settings.StartGameInOfflineMode)
+            //    InsertCommandline(InstallFolder);
 
             splashScreen.SetPercent(65);
 
             if (!settings.SteamPowered)
             {
-                Process.Start(InstallFolder + "\\GTAVLauncher.exe");
+                //try
+                //{
+                    Process.Start(InstallFolder + "\\GTAVLauncher.exe");
+                //}
+                //catch (Exception e)
+                //{
+
+                //}
+
             }
             else
             {
@@ -233,19 +251,11 @@ namespace GTANetwork
 
             var counter = 0;
 
+            //gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null);
+
             while ((gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null)) == null)
             {
                 Thread.Sleep(100);
-
-                if (Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null) == null)
-                {
-                    counter++;
-                    if (counter > 50)
-                    {
-                        MoveStuffOut(InstallFolder);
-                        return;
-                    }
-                }
             }
 
             splashScreen.SetPercent(100);
@@ -274,7 +284,7 @@ namespace GTANetwork
 
             PatchStartup(_startupFlow, _landingPage);
 
-            MoveStuffOut(InstallFolder);
+            //MoveStuffOut(InstallFolder);
 
             mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
             mySettings.Video.Windowed.Value = _windowedMode;
@@ -286,25 +296,25 @@ namespace GTANetwork
                     Environment.SpecialFolder.LocalApplicationData,
                     Environment.SpecialFolderOption.DoNotVerify) + "\\Rockstar Games\\GTA V";
 
-            if (File.Exists(scSubfilePath + "\\silentlauncher"))
-            {
-                try
-                {
-                    File.Delete(scSubfilePath + "\\silentlauncher");
-                }
-                catch { }
-            }
+            //if (File.Exists(scSubfilePath + "\\silentlauncher"))
+            //{
+            //    try
+            //    {
+            //        File.Delete(scSubfilePath + "\\silentlauncher");
+            //    }
+            //    catch { }
+            //}
 
-            var fils = Directory.GetFiles(scSubfilePath, "*-*");
+            //var fils = Directory.GetFiles(scSubfilePath, "*-*");
 
-            foreach (var file in fils)
-            {
-                try
-                {
-                    File.Delete(file);
-                }
-                catch { }
-            }
+            //foreach (var file in fils)
+            //{
+            //    try
+            //    {
+            //        File.Delete(file);
+            //    }
+            //    catch { }
+            //}
         }
 
         public static PlayerSettings ReadSettings(string path)
