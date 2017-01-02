@@ -517,7 +517,7 @@ namespace Lidgren.Network
 					if (tp >= NetMessageType.Unused1 && tp <= NetMessageType.Unused29)
 					{
 						LogVerbose("Unexpected NetMessageType: " + tp);
-                        LogWarning("Suspected connection exploit attack [" + sender.RemoteEndPoint.Address.ToString() + "], type: Unexpected NetMessageType " + tp);
+                        LogWarning("Suspected connection exploit attack [" + ipsender + "], type: Unexpected NetMessageType " + tp);
                         connBlock.Add(ipsender.Address);
                         return;
 					}
