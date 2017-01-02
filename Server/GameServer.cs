@@ -1217,6 +1217,28 @@ namespace GTANResource
             }
         }
 
+        internal void ResendBulletPacket(int netHandle, int netHandleTarget, bool shooting, Client exception)
+        {
+            byte[] full = new byte[0];
+
+            full = PacketOptimization.WriteBulletSync(netHandle, shooting, netHandleTarget);
+
+            foreach (var client in exception.Streamer.GetNearClients())
+            {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+                if (client.Position.DistanceToSquared(exception.Position) > GlobalStreamingRange * GlobalStreamingRange) continue; // 1km
+
+                NetOutgoingMessage msg = Server.CreateMessage();
+                msg.Write((byte)PacketType.BulletPlayerSync);
+                msg.Write(full.Length);
+                msg.Write(full);
+                Server.SendMessage(msg, client.NetConnection,
+                    NetDeliveryMethod.ReliableSequenced,
+                    (int)ConnectionChannel.BulletSync);
+            }
+        }
+
         internal void ResendPacket(VehicleData fullPacket, Client exception, bool pure)
         {
             byte[] full = new byte[0];
@@ -2211,6 +2233,27 @@ namespace GTANResource
                                             { }
                                         }
                                         break;
+                                    case PacketType.BulletPlayerSync:
+                                        {
+                                            try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var bin = msg.ReadBytes(len);
+
+                                                int netHandle;
+                                                bool shooting;
+                                                int netHandleTarget;
+
+                                                shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out netHandleTarget);
+
+                                                netHandle = client.handle.Value;
+
+                                                ResendBulletPacket(netHandle, netHandleTarget, shooting, client);
+                                            }
+                                            catch
+                                            { }
+                                        }
+                                        break;
                                     case PacketType.UnoccupiedVehSync:
                                         {
                                             try
@@ -2357,37 +2400,37 @@ namespace GTANResource
                                         break;
                                     case PacketType.NpcVehPositionData:
                                         {
-                                            //try
-                                            //{
-                                            //    var len = msg.ReadInt32();
-                                            //    var data =
-                                            //        DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as
-                                            //            VehicleData;
-                                            //    if (data != null)
-                                            //    {
-                                            //        SendToAll(data, PacketType.NpcVehPositionData, false, client, ConnectionChannel.PositionData);
-                                            //    }
-                                            //}
-                                            //catch (IndexOutOfRangeException)
-                                            //{
-                                            //}
+                                            /*try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var data =
+                                                    DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as
+                                                        VehicleData;
+                                                if (data != null)
+                                                {
+                                                    SendToAll(data, PacketType.NpcVehPositionData, false, client, ConnectionChannel.PositionData);
+                                                }
+                                            }
+                                            catch (IndexOutOfRangeException)
+                                            {
+                                            }*/
                                         }
                                         break;
                                     case PacketType.NpcPedPositionData:
                                         {
-                                            //try
-                                            //{
-                                                //var len = msg.ReadInt32();
-                                                //var data =
-                                                //    DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
-                                                //if (data != null)
-                                                //{
-                                                //    SendToAll(data, PacketType.NpcPedPositionData, false, client, ConnectionChannel.PositionData);
-                                                //}
-                                            //}
-                                            //catch (IndexOutOfRangeException)
-                                            //{
-                                            //}
+                                            /*try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var data =
+                                                    DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
+                                                if (data != null)
+                                                {
+                                                    SendToAll(data, PacketType.NpcPedPositionData, false, client, ConnectionChannel.PositionData);
+                                                }
+                                            }
+                                            catch (IndexOutOfRangeException)
+                                            {
+                                            }*/
                                         }
                                         break;
                                     case PacketType.SyncEvent:

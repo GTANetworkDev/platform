@@ -111,6 +111,8 @@ namespace GTANetwork
         public static bool VehicleLagCompensation = true;
         public static bool OnFootLagCompensation = true;
 
+        public static bool OnShootingLagCompensation = true;
+
         public static int GlobalStreamingRange = 750;
         public static int PlayerStreamingRange = 200;
         public static int VehicleStreamingRange = 350;
@@ -1663,6 +1665,7 @@ namespace GTANetwork
         private static Dictionary<int, int> _vehMods = new Dictionary<int, int>();
         private static Dictionary<int, int> _pedClothes = new Dictionary<int, int>();
 
+
         public static string Weather { get; set; }
         public static TimeSpan? Time { get; set; }
 
@@ -2337,6 +2340,26 @@ namespace GTANetwork
             }
         }
         //*/
+
+
+        public static SyncPed GetPedDamagedByPlayer()
+        {
+            foreach (SyncPed StreamedInPlayers in StreamerThread.StreamedInPlayers)
+            {
+                if (Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, StreamedInPlayers.LocalHandle, Game.Player.Character, true))
+                {
+                    if (Function.Call<bool>(Hash.HAS_PED_BEEN_DAMAGED_BY_WEAPON, StreamedInPlayers.LocalHandle, Game.Player.Character.Weapons.Current.Model.Hash, 0))
+                    {
+                        if (Function.Call<int>(Hash.GET_WEAPON_DAMAGE_TYPE, Game.Player.Character.Weapons.Current.Model.Hash) == 3)
+                        {
+                            Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, StreamedInPlayers.LocalHandle);
+                            return StreamedInPlayers;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
 
         public static byte GetPedWalkingSpeed(Ped ped)
         {
@@ -4015,6 +4038,18 @@ namespace GTANetwork
                         HandleBulletPacket(nethandle, shooting, position.ToVector());
                     }
                     break;
+                case PacketType.BulletPlayerSync:
+                    {
+                        var len = msg.ReadInt32();
+                        var data = msg.ReadBytes(len);
+
+                        int nethandle;
+                        int nethandleTarget;
+                        bool shooting = PacketOptimization.ReadBulletSync(data, out nethandle, out nethandleTarget);
+
+                        HandleBulletPacket(nethandle, shooting, nethandleTarget);
+                    }
+                    break;
                 case PacketType.UnoccupiedVehStartStopSync:
                     {
                         var veh = msg.ReadInt32();
@@ -5198,6 +5233,16 @@ namespace GTANetwork
             syncPed.IsShooting = shooting;
 
             if (shooting) syncPed.AimCoords = aim;
+        }
+
+        private void HandleBulletPacket(int netHandle, bool shooting, int netHandleTarget)
+        {
+            var syncPed = NetEntityHandler.GetPlayer(netHandle);
+            var syncPedTarget = NetEntityHandler.GetPlayer(netHandleTarget);
+
+            syncPed.IsShooting = shooting;
+
+            if (shooting) syncPed.AimPlayer = syncPedTarget;
         }
 
         private void HandlePedPacket(PedData fullPacket, bool pure)

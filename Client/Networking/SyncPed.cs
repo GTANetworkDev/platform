@@ -48,6 +48,9 @@ namespace GTANetwork.Networking
         internal int CurrentWeapon;
         internal bool IsAiming;
         internal Vector3 AimCoords;
+
+        internal SyncPed AimPlayer;
+
         internal float Latency;
         internal bool IsHornPressed;
         internal bool _isRagdoll;
@@ -402,7 +405,7 @@ namespace GTANetwork.Networking
 
         bool CreateCharacter(Vector3 gPos, bool InRange)
         {
-            // SI LE JOUEUR EST NULL OU n'EXISTE PAS ET SI IL A UN AUTRE SKIN OU QU'IL EST MORT 
+
             if ((Character == null || !Character.Exists()) || (Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0)))
             {
                 LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
@@ -888,6 +891,7 @@ namespace GTANetwork.Networking
         {
 
             bool isInRange = Game.Player.Character.IsInRangeOfEx(Position, Main.VehicleStreamingRange);
+
             if (isInRange)
             {
                 Vector3 vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
@@ -902,6 +906,7 @@ namespace GTANetwork.Networking
                 {
                     MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.25f) + (vecDif * (force)); // Calcul
                 }
+                StuckVehicleCheck(Position);
             }
             else
             {
@@ -919,8 +924,6 @@ namespace GTANetwork.Networking
             {
                 MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
             }
-
-            StuckVehicleCheck(Position);
         }
 
         private void StuckVehicleCheck(Vector3 newPos)
@@ -1259,6 +1262,13 @@ namespace GTANetwork.Networking
                     {
                         Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
                         Function.Call(Hash.SET_PED_AMMO, Character, CurrentWeapon, 10);
+
+
+                        if (AimPlayer != null && AimPlayer.Position != null)
+                        {
+                            AimCoords = AimPlayer.Position;
+                            AimPlayer = null;
+                        }
 
                         if (!WeaponDataProvider.NeedsFakeBullets(CurrentWeapon))
                         {
@@ -2074,14 +2084,16 @@ namespace GTANetwork.Networking
             }
 
             DEBUG_STEP = 29;
+
             if (IsAiming && !IsCustomAnimationPlaying)
             {
                 DisplayAimingAnimation();
             }
-            else if (IsShooting && !IsCustomAnimationPlaying)
+            if (IsShooting && !IsCustomAnimationPlaying)
             {
                 DisplayShootingAnimation();
             }
+
             else if (IsCustomAnimationPlaying)
             {
                 if ((CustomAnimationFlag & 48) == 48)
@@ -2131,7 +2143,6 @@ namespace GTANetwork.Networking
             float lerpValue = 0f;
             var length = Position.DistanceToSquared(Character.Position);
             
-
             if (length > 0.05f * 0.05f && length < Main.PlayerStreamingRange * Main.PlayerStreamingRange)
             {
                 lerpValue = lerpValue + ((tServer * 2) / 50000f);
@@ -2146,9 +2157,9 @@ namespace GTANetwork.Networking
                     var tmpPosition = Vector3.Lerp(
                         new Vector3(Character.Position.X, Character.Position.Y, Character.Position.Z),
                         new GTA.Math.Vector3(
-                            Position.X + ((PedVelocity.X / 3) / tServer),
-                            Position.Y + ((PedVelocity.Y / 3) / tServer),
-                            Position.Z + ((PedVelocity.Z / 3) / tServer)),
+                            Position.X + ((PedVelocity.X / 5)),
+                            Position.Y + ((PedVelocity.Y / 5)),
+                            Position.Z + ((PedVelocity.Z / 5))),
                         lerpValue);
                     Character.PositionNoOffset = tmpPosition;
                 }
@@ -2169,8 +2180,7 @@ namespace GTANetwork.Networking
             }
             else
             {
-                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,
-                    Position.Z, 0, 0, 0);
+                //Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y,Position.Z, 0, 0, 0);
             }
 
             Character.Quaternion = GTA.Math.Quaternion.Lerp(Character.Quaternion, Rotation.ToQuaternion(), 0.10f); // mise à jours de la rotation
@@ -2284,9 +2294,8 @@ namespace GTANetwork.Networking
                         }
                     }
                 }
+                StuckDetection();
             }
-
-            StuckDetection();
         }
 
         internal void StuckDetection()
