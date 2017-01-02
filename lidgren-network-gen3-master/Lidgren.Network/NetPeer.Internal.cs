@@ -42,7 +42,6 @@ namespace Lidgren.Network
 		private List<NetTuple<SynchronizationContext, SendOrPostCallback>> m_receiveCallbacks;
 
         private List<IPAddress> connBlock = new List<IPAddress>();
-        private Dictionary<IPAddress, DateTime> queue = new Dictionary<IPAddress, DateTime>();
 
 
         /// <summary>
@@ -167,6 +166,7 @@ namespace Lidgren.Network
 				m_releasedIncomingMessages.Clear();
 				m_unsentUnconnectedMessages.Clear();
 				m_handshakes.Clear();
+                connBlock.Clear();
 
 
                 // bind to socket
@@ -444,24 +444,11 @@ namespace Lidgren.Network
                 NetConnection sender = null;
                 m_connectionLookup.TryGetValue(ipsender, out sender);
 
-                if(queue.ContainsKey(ipsender.Address))
-                {
-                    if (DateTime.Now.Subtract(queue[ipsender.Address]).TotalSeconds >= 55)
-                    {
-                        queue.Remove(ipsender.Address);
-                    }
-                    NetOutgoingMessage full = CreateMessage("Wait atleast 60 seconds before reconnecting.");
-                    full.m_messageType = NetMessageType.Disconnect;
-                    SendLibrary(full, ipsender);
-                    return;
-                }
-                else
-                {
-                    queue.Add(ipsender.Address, DateTime.Now);
-                }
-
                 if (connBlock.Contains(ipsender.Address))
                 {
+                    NetOutgoingMessage full = CreateMessage("Blocked");
+                    full.m_messageType = NetMessageType.Disconnect;
+                    SendLibrary(full, ipsender);
                     return;
                 }
 
