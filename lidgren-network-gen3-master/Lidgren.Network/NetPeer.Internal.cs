@@ -41,10 +41,14 @@ namespace Lidgren.Network
 		private AutoResetEvent m_messageReceivedEvent;
 		private List<NetTuple<SynchronizationContext, SendOrPostCallback>> m_receiveCallbacks;
 
-		/// <summary>
-		/// Gets the socket, if Start() has been called
-		/// </summary>
-		public Socket Socket { get { return m_socket; } }
+        private List<IPAddress> connBlock = new List<IPAddress>();
+        private Dictionary<IPAddress, DateTime> queue = new Dictionary<IPAddress, DateTime>();
+
+
+        /// <summary>
+        /// Gets the socket, if Start() has been called
+        /// </summary>
+        public Socket Socket { get { return m_socket; } }
 
 		/// <summary>
 		/// Call this to register a callback for when a new message arrives
@@ -164,8 +168,9 @@ namespace Lidgren.Network
 				m_unsentUnconnectedMessages.Clear();
 				m_handshakes.Clear();
 
-				// bind to socket
-				BindSocket(false);
+
+                // bind to socket
+                BindSocket(false);
 
 				m_receiveBuffer = new byte[m_configuration.ReceiveBufferSize];
 				m_sendBuffer = new byte[m_configuration.SendBufferSize];
@@ -436,7 +441,31 @@ namespace Lidgren.Network
 
 				var ipsender = (NetEndPoint)m_senderRemote;
 
-				if (m_upnp != null && now < m_upnp.m_discoveryResponseDeadline && bytesReceived > 32)
+                NetConnection sender = null;
+                m_connectionLookup.TryGetValue(ipsender, out sender);
+
+                if(queue.ContainsKey(ipsender.Address))
+                {
+                    if (DateTime.Now.Subtract(queue[ipsender.Address]).TotalSeconds >= 55)
+                    {
+                        queue.Remove(ipsender.Address);
+                    }
+                    NetOutgoingMessage full = CreateMessage("Wait atleast 60 seconds before reconnecting.");
+                    full.m_messageType = NetMessageType.Disconnect;
+                    SendLibrary(full, ipsender);
+                    return;
+                }
+                else
+                {
+                    queue.Add(ipsender.Address, DateTime.Now);
+                }
+
+                if (connBlock.Contains(ipsender.Address))
+                {
+                    return;
+                }
+
+                if (m_upnp != null && now < m_upnp.m_discoveryResponseDeadline && bytesReceived > 32)
 				{
 					// is this an UPnP response?
 					string resp = System.Text.Encoding.UTF8.GetString(m_receiveBuffer, 0, bytesReceived);
@@ -459,8 +488,6 @@ namespace Lidgren.Network
 					}
 				}
 
-				NetConnection sender = null;
-				m_connectionLookup.TryGetValue(ipsender, out sender);
 
 				//
 				// parse packet into messages
@@ -492,16 +519,20 @@ namespace Lidgren.Network
 					ushort payloadBitLength = (ushort)(m_receiveBuffer[ptr++] | (m_receiveBuffer[ptr++] << 8));
 					int payloadByteLength = NetUtility.BytesToHoldBits(payloadBitLength);
 
-					if (bytesReceived - ptr < payloadByteLength)
+                    if (bytesReceived - ptr < payloadByteLength)
 					{
-						LogWarning("Malformed packet; stated payload length " + payloadByteLength + ", remaining bytes " + (bytesReceived - ptr));
-						return;
+						LogDebug("Malformed packet; stated payload length " + payloadByteLength + ", remaining bytes " + (bytesReceived - ptr));
+                        LogWarning("Suspected connection exploit attack [" + ipsender.Address + ":" + ipsender.Port + "], type: Malformed packet.");
+                        connBlock.Add(ipsender.Address);
+                        return;
 					}
 
 					if (tp >= NetMessageType.Unused1 && tp <= NetMessageType.Unused29)
 					{
-						ThrowOrLog("Unexpected NetMessageType: " + tp);
-						return;
+						LogVerbose("Unexpected NetMessageType: " + tp);
+                        LogWarning("Suspected connection exploit attack [" + sender.RemoteEndPoint.Address.ToString() + "], type: Unexpected NetMessageType " + tp);
+                        connBlock.Add(ipsender.Address);
+                        return;
 					}
 
 					try
@@ -554,8 +585,10 @@ namespace Lidgren.Network
 					catch (Exception ex)
 					{
 						LogError("Packet parsing error: " + ex.Message + " from " + ipsender);
-					}
-					ptr += payloadByteLength;
+                        LogWarning("Suspected connection exploit attack [" + sender.RemoteEndPoint.Address.ToString() + "], type: Packet parsing error.");
+                        connBlock.Add(ipsender.Address);
+                    }
+                    ptr += payloadByteLength;
 				}
 
 				m_statistics.PacketReceived(bytesReceived, numMessages, numFragments);
@@ -603,107 +636,127 @@ namespace Lidgren.Network
 
 		private void ReceivedUnconnectedLibraryMessage(double now, NetEndPoint senderEndPoint, NetMessageType tp, int ptr, int payloadByteLength)
 		{
-			NetConnection shake;
+
+            NetConnection shake;
 			if (m_handshakes.TryGetValue(senderEndPoint, out shake))
 			{
 				shake.ReceivedHandshake(now, tp, ptr, payloadByteLength);
 				return;
 			}
 
-			//
-			// Library message from a completely unknown sender; lets just accept Connect
-			//
-			switch (tp)
-			{
-				case NetMessageType.Discovery:
-					HandleIncomingDiscoveryRequest(now, senderEndPoint, ptr, payloadByteLength);
-					return;
-				case NetMessageType.DiscoveryResponse:
-					HandleIncomingDiscoveryResponse(now, senderEndPoint, ptr, payloadByteLength);
-					return;
-				case NetMessageType.NatIntroduction:
-					if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
-						HandleNatIntroduction(ptr);
-					return;
-				case NetMessageType.NatPunchMessage:
-					if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
-						HandleNatPunch(ptr, senderEndPoint);
-					return;
-				case NetMessageType.NatIntroductionConfirmRequest:
-					if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
-						HandleNatPunchConfirmRequest(ptr, senderEndPoint);
-					return;
-				case NetMessageType.NatIntroductionConfirmed:
-					if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
-						HandleNatPunchConfirmed(ptr, senderEndPoint);
-					return;
-				case NetMessageType.ConnectResponse:
+            //
+            // Library message from a completely unknown sender; lets just accept Connect
+            //
+            switch (tp)
+            {
+                case NetMessageType.Discovery:
 
-					lock (m_handshakes)
-					{
-						foreach (var hs in m_handshakes)
-						{
-							if (hs.Key.Address.Equals(senderEndPoint.Address))
-							{
-								if (hs.Value.m_connectionInitiator)
-								{
-									//
-									// We are currently trying to connection to XX.XX.XX.XX:Y
-									// ... but we just received a ConnectResponse from XX.XX.XX.XX:Z
-									// Lets just assume the router decided to use this port instead
-									//
-									var hsconn = hs.Value;
-									m_connectionLookup.Remove(hs.Key);
-									m_handshakes.Remove(hs.Key);
+                    HandleIncomingDiscoveryRequest(now, senderEndPoint, ptr, payloadByteLength);
+                    return;
+                case NetMessageType.DiscoveryResponse:
+                    HandleIncomingDiscoveryResponse(now, senderEndPoint, ptr, payloadByteLength);
+                    return;
+                case NetMessageType.NatIntroduction:
+                    if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
+                        HandleNatIntroduction(ptr);
+                    return;
+                case NetMessageType.NatPunchMessage:
+                    if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
+                        HandleNatPunch(ptr, senderEndPoint);
+                    return;
+                case NetMessageType.NatIntroductionConfirmRequest:
+                    if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
+                        HandleNatPunchConfirmRequest(ptr, senderEndPoint);
+                    return;
+                case NetMessageType.NatIntroductionConfirmed:
+                    if (m_configuration.IsMessageTypeEnabled(NetIncomingMessageType.NatIntroductionSuccess))
+                        HandleNatPunchConfirmed(ptr, senderEndPoint);
+                    return;
+                case NetMessageType.ConnectResponse:
+                    lock (m_handshakes)
+                    {
+                        foreach (var hs in m_handshakes)
+                        {
+                            if (hs.Key.Address.Equals(senderEndPoint.Address))
+                            {
+                                if (hs.Value.m_connectionInitiator)
+                                {
+                                    //
+                                    // We are currently trying to connection to XX.XX.XX.XX:Y
+                                    // ... but we just received a ConnectResponse from XX.XX.XX.XX:Z
+                                    // Lets just assume the router decided to use this port instead
+                                    //
+                                    var hsconn = hs.Value;
+                                    m_connectionLookup.Remove(hs.Key);
+                                    m_handshakes.Remove(hs.Key);
 
-									LogDebug("Detected host port change; rerouting connection to " + senderEndPoint);
-									hsconn.MutateEndPoint(senderEndPoint);
+                                    LogDebug("Detected host port change; rerouting connection to " + senderEndPoint);
+                                    hsconn.MutateEndPoint(senderEndPoint);
 
-									m_connectionLookup.Add(senderEndPoint, hsconn);
-									m_handshakes.Add(senderEndPoint, hsconn);
+                                    m_connectionLookup.Add(senderEndPoint, hsconn);
+                                    m_handshakes.Add(senderEndPoint, hsconn);
 
-									hsconn.ReceivedHandshake(now, tp, ptr, payloadByteLength);
-									return;
-								}
-							}
-						}
-					}
+                                    hsconn.ReceivedHandshake(now, tp, ptr, payloadByteLength);
+                                    return;
+                                }
+                            }
+                        }
+                    }
 
-					LogWarning("Received unhandled library message " + tp + " from " + senderEndPoint);
-					return;
-				case NetMessageType.Connect:
-					if (m_configuration.AcceptIncomingConnections == false)
-					{
-						LogWarning("Received Connect, but we're not accepting incoming connections!");
-						return;
-					}
-					// handle connect
-					// It's someone wanting to shake hands with us!
+                    LogDebug("Received unhandled library message " + tp + " from " + senderEndPoint);
+                    LogWarning("Suspected connection exploit attack [" + senderEndPoint.Address.ToString() + "], type: Received unhandled library message " + tp);
+                    connBlock.Add(senderEndPoint.Address);
+                    return;
+                case NetMessageType.Connect:
 
-					int reservedSlots = m_handshakes.Count + m_connections.Count;
-					if (reservedSlots >= m_configuration.m_maximumConnections)
+                    if (m_configuration.AcceptIncomingConnections == false)
+                    {
+                        LogWarning("Received Connect, but we're not accepting incoming connections!");
+                        return;
+                    }
+         
+                    if (m_handshakes.ContainsKey(senderEndPoint))
+                    {
+                        NetOutgoingMessage full = CreateMessage("Handshake already initiated, wait atleast 10 seconds.");
+                        full.m_messageType = NetMessageType.Disconnect;
+                        SendLibrary(full, senderEndPoint);
+                    }
+
+                    // handle connect
+                    // It's someone wanting to shake hands with us!
+
+                    //Server full issue ded.
+                    //int reservedSlots = m_handshakes.Count + m_connections.Count;
+                    //if (m_connections.Count >= m_configuration.m_maximumConnections)
+
+
+                    if (m_configuration.m_curPlayers >= m_configuration.m_maxPlayers)
 					{
 						// server full
-						NetOutgoingMessage full = CreateMessage("Server full");
+						NetOutgoingMessage full = CreateMessage("Server full.");
 						full.m_messageType = NetMessageType.Disconnect;
 						SendLibrary(full, senderEndPoint);
-						return;
+                        return;
 					}
+                    
 
-					// Ok, start handshake!
-					NetConnection conn = new NetConnection(this, senderEndPoint);
-					conn.m_status = NetConnectionStatus.ReceivedInitiation;
+                    // Ok, start handshake!
+                    NetConnection conn = new NetConnection(this, senderEndPoint);
+                    conn.m_status = NetConnectionStatus.ReceivedInitiation;
 					m_handshakes.Add(senderEndPoint, conn);
 					conn.ReceivedHandshake(now, tp, ptr, payloadByteLength);
-					return;
+                    //Console.WriteLine("INFO: Online players: " + m_configuration.m_curPlayers + "/" + m_configuration.m_maxPlayers);
+                    return;
 
 				case NetMessageType.Disconnect:
 					// this is probably ok
 					LogVerbose("Received Disconnect from unconnected source: " + senderEndPoint);
 					return;
 				default:
-					LogWarning("Received unhandled library message " + tp + " from " + senderEndPoint);
-					return;
+					LogVerbose("Received unhandled library message " + tp + " from " + senderEndPoint);
+                    LogWarning("Suspected connection exploit attack [" + senderEndPoint.Address.ToString() + "], type: Received unhandled library message " + tp);
+                    connBlock.Add(senderEndPoint.Address);
+                    return;
 			}
 		}
 
@@ -713,14 +766,20 @@ namespace Lidgren.Network
 			conn.InitExpandMTU(NetTime.Now);
 
 			if (m_handshakes.Remove(conn.m_remoteEndPoint) == false)
-				LogWarning("AcceptConnection called but m_handshakes did not contain it!");
+            {
+                LogWarning("AcceptConnection called but m_handshakes did not contain it!");
+                NetOutgoingMessage full = CreateMessage("Handshake already initiated.");
+                full.m_messageType = NetMessageType.Disconnect;
+            }
 
 			lock (m_connections)
 			{
 				if (m_connections.Contains(conn))
 				{
 					LogWarning("AcceptConnection called but m_connection already contains it!");
-				}
+                    NetOutgoingMessage full = CreateMessage("Handshake already initiated.");
+                    full.m_messageType = NetMessageType.Disconnect;
+                }
 				else
 				{
 					m_connections.Add(conn);

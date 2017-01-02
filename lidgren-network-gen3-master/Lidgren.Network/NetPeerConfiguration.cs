@@ -22,10 +22,12 @@ using System.Net;
 
 namespace Lidgren.Network
 {
-	/// <summary>
-	/// Partly immutable after NetPeer has been initialized
-	/// </summary>
-	public sealed class NetPeerConfiguration
+    /// <summary>
+    /// Partly immutable after NetPeer has been initialized
+    /// </summary>
+    /// 
+
+    public sealed class NetPeerConfiguration
 	{
 		// Maximum transmission unit
 		// Ethernet can take 1500 bytes of payload, so lets stay below that.
@@ -49,7 +51,7 @@ namespace Lidgren.Network
 		private IPAddress m_localAddress;
 		private IPAddress m_broadcastAddress;
 		internal bool m_acceptIncomingConnections;
-		internal int m_maximumConnections;
+		//internal int m_maximumConnections;
 		internal int m_defaultOutgoingMessageCapacity;
 		internal float m_pingInterval;
 		internal bool m_useMessageRecycling;
@@ -59,6 +61,9 @@ namespace Lidgren.Network
 		internal bool m_autoFlushSendQueue;
 		private NetUnreliableSizeBehaviour m_unreliableSizeBehaviour;
 		internal bool m_suppressUnreliableUnorderedAcks;
+
+        internal int m_maxPlayers;
+        internal int m_curPlayers;
 
 		internal NetIncomingMessageType m_disabledTypes;
 		internal int m_port;
@@ -79,10 +84,11 @@ namespace Lidgren.Network
 		internal float m_expandMTUFrequency;
 		internal int m_expandMTUFailAttempts;
 
-		/// <summary>
-		/// NetPeerConfiguration constructor
-		/// </summary>
-		public NetPeerConfiguration(string appIdentifier)
+
+        /// <summary>
+        /// NetPeerConfiguration constructor
+        /// </summary>
+        public NetPeerConfiguration(string appIdentifier)
 		{
 			if (string.IsNullOrEmpty(appIdentifier))
 				throw new NetException("App identifier must be at least one character long");
@@ -100,11 +106,11 @@ namespace Lidgren.Network
 			{
 				m_broadcastAddress = ip;
 			}
+
 			m_port = 0;
-			m_receiveBufferSize = 131071;
-			m_sendBufferSize = 131071;
+			m_receiveBufferSize = 131071; //To check
+			m_sendBufferSize = 131071; //To check
 			m_acceptIncomingConnections = false;
-			m_maximumConnections = 32;
 			m_defaultOutgoingMessageCapacity = 16;
 			m_pingInterval = 4.0f;
 			m_connectionTimeout = 25.0f;
@@ -113,7 +119,11 @@ namespace Lidgren.Network
 			m_resendHandshakeInterval = 3.0f;
 			m_maximumHandshakeAttempts = 5;
 			m_autoFlushSendQueue = true;
-			m_suppressUnreliableUnorderedAcks = false;
+			m_suppressUnreliableUnorderedAcks = false; //Interesting
+
+            m_maxPlayers = 200;
+            //m_maximumConnections = m_maxPlayers + 100;
+            m_curPlayers = 0;
 
 			m_maximumTransmissionUnit = kDefaultMTU;
 			m_autoExpandMTU = false;
@@ -203,21 +213,47 @@ namespace Lidgren.Network
 		/// <summary>
 		/// Gets or sets the maximum amount of connections this peer can hold. Cannot be changed once NetPeer is initialized.
 		/// </summary>
-		public int MaximumConnections
-		{
-			get { return m_maximumConnections; }
-			set
-			{
-				if (m_isLocked)
-					throw new NetException(c_isLockedMessage);
-				m_maximumConnections = value;
-			}
-		}
+		//public int MaximumConnections
+		//{
+		//	get { return m_maximumConnections; }
+		//	set
+		//	{
+		//		if (m_isLocked)
+		//			throw new NetException(c_isLockedMessage);
+		//		m_maximumConnections = value;
+		//	}
+		//}
+        /// <summary>
+        /// Some bla bla that I don't really have to document
+        /// </summary>
+        public int MaxPlayers
+        {
+            get { return m_maxPlayers; }
+            set
+            {
+                if (m_isLocked)
+                    throw new NetException(c_isLockedMessage);
+                m_maxPlayers = value;
+            }
+        }
 
-		/// <summary>
-		/// Gets or sets the maximum amount of bytes to send in a single packet, excluding ip, udp and lidgren headers. Cannot be changed once NetPeer is initialized.
-		/// </summary>
-		public int MaximumTransmissionUnit
+        /// <summary>
+        /// Some bla bla that I don't really have to document
+        /// </summary>
+        public int CurrentPlayers
+        {
+            get { return m_curPlayers; }
+            set
+            {
+                m_curPlayers = value;
+            }
+        }
+
+
+        /// <summary>
+        /// Gets or sets the maximum amount of bytes to send in a single packet, excluding ip, udp and lidgren headers. Cannot be changed once NetPeer is initialized.
+        /// </summary>
+        public int MaximumTransmissionUnit
 		{
 			get { return m_maximumTransmissionUnit; }
 			set
@@ -538,4 +574,6 @@ namespace Lidgren.Network
 		/// </summary>
 		DropAboveMTU = 2,
 	}
+
 }
+
