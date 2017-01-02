@@ -429,7 +429,7 @@ namespace Lidgren.Network
 							return;
 
 						default:
-							LogWarning("Socket exception: " + sx.ToString());
+							LogDebug("Socket exception: " + sx.ToString());
 							return;
 					}
 				}
@@ -738,11 +738,15 @@ namespace Lidgren.Network
 				case NetMessageType.Disconnect:
 					// this is probably ok
 					LogVerbose("Received Disconnect from unconnected source: " + senderEndPoint);
+
 					return;
-				default:
+                case NetMessageType.Acknowledge:
+                    LogVerbose("Received Acknowledge from source: " + senderEndPoint);
+                    return;
+                default:
 					LogVerbose("Received unhandled library message " + tp + " from " + senderEndPoint);
                     LogWarning("Suspected connection exploit attack [" + senderEndPoint.Address.ToString() + "], type: Received unhandled library message " + tp);
-                    connBlock.Add(senderEndPoint.Address);
+                    //connBlock.Add(senderEndPoint.Address);
                     return;
 			}
 		}
