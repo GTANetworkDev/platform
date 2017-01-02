@@ -1463,7 +1463,7 @@ namespace GTANResource
                                 if (connCount.ContainsKey(client.NetConnection.RemoteEndPoint)) {
                                     connCount[client.NetConnection.RemoteEndPoint]++;
                                     if (connCount[client.NetConnection.RemoteEndPoint] >= 20) {
-                                        Program.Output("WARN: Suspected DoS attack [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
+                                        Program.Output("[WARN]: Suspected DoS attack [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
                                     }
                                 }
                                 else {

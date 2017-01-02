@@ -323,8 +323,8 @@ namespace Lidgren.Network
 					}
 					if (m_status == NetConnectionStatus.RespondedAwaitingApproval)
 					{
-						m_peer.LogWarning("Ignoring multiple Connect() most likely due to a delayed Approval");
-						return;
+                        ExecuteDisconnect("Disconnected.", true);
+                        return;
 					}
 					if (m_status == NetConnectionStatus.RespondedConnect)
 					{

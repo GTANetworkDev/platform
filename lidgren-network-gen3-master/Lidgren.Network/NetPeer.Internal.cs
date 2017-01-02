@@ -41,7 +41,7 @@ namespace Lidgren.Network
 		private AutoResetEvent m_messageReceivedEvent;
 		private List<NetTuple<SynchronizationContext, SendOrPostCallback>> m_receiveCallbacks;
 
-        private List<IPAddress> connBlock = new List<IPAddress>();
+        public List<IPAddress> connBlock = new List<IPAddress>();
 
 
         /// <summary>
@@ -571,8 +571,8 @@ namespace Lidgren.Network
 					}
 					catch (Exception ex)
 					{
-						LogError("Packet parsing error: " + ex.Message + " from " + ipsender);
-                        LogWarning("Suspected connection exploit attack [" + sender.RemoteEndPoint.Address.ToString() + "], type: Packet parsing error.");
+						LogDebug("Packet parsing error: " + ex.Message + " from " + ipsender);
+                        LogWarning("Suspected connection exploit attack [" + ipsender + "], type: Packet parsing error.");
                         connBlock.Add(ipsender.Address);
                     }
                     ptr += payloadByteLength;
