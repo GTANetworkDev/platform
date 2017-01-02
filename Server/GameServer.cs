@@ -212,10 +212,15 @@ namespace GTANetworkServer
 
 
         private Dictionary<IPEndPoint, DateTime> queue = new Dictionary<IPEndPoint, DateTime>();
+        private Dictionary<IPEndPoint, uint> connCount = new Dictionary<IPEndPoint, uint>();
+        private Dictionary<IPEndPoint, uint> connRepeats = new Dictionary<IPEndPoint, uint>();
+
+        private DateTime LastconnRepeatsFlush;
 
         private DateTime _lastAnnounceDateTime;
         public void Start(string[] filterscripts)
         {
+            LastconnRepeatsFlush = DateTime.Now;
             try
             {
                 Server.Start();
@@ -1401,40 +1406,58 @@ namespace GTANResource
                                         pong.Write("pong");
                                         Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                     }
-                                    if (isPing == "query")
+                                    else if (isPing == "query")
                                     {
                                         //Program.Output("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
                                         var pong = Server.CreateMessage();
-                                        pong.Write(Name + "%" + PasswordProtected + "%" + Clients.Count + "%" + MaxPlayers + "%" +
-                                                    GamemodeName);
+                                        pong.Write(Name + "%" + PasswordProtected + "%" + Clients.Count + "%" + MaxPlayers + "%" + GamemodeName);
                                         Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                     }
                                 }
                                 catch (Exception e) {}
                                 break;
+                            case NetIncomingMessageType.DiscoveryResponse:
+                                break;
                             case NetIncomingMessageType.VerboseDebugMessage:
-                            case NetIncomingMessageType.DebugMessage:
-                            case NetIncomingMessageType.WarningMessage:
-                            case NetIncomingMessageType.ErrorMessage:
                                 if (LogLevel > 3)
-                                    Program.Output(msg.ReadString());
+                                    Program.Output("[VERBOSE] " + msg.ReadString());   
+                                break;
+                            case NetIncomingMessageType.DebugMessage:
+                                if (LogLevel > 2)
+                                    Program.Output("[DEBUG] " + msg.ReadString());
+                                break;
+                            case NetIncomingMessageType.WarningMessage:
+                                    Program.Output("[WARN] " + msg.ReadString());
+                                break;
+                            case NetIncomingMessageType.ErrorMessage:
+                                if (LogLevel > 1)
+                                    Program.Output("[ERROR] " + msg.ReadString());
                                 break;
                             case NetIncomingMessageType.ConnectionLatencyUpdated:
                                 client.Latency = msg.ReadFloat();
                                 break;
 
                             case NetIncomingMessageType.ConnectionApproval:
-                                if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
-                                {
+                                if (connCount.ContainsKey(client.NetConnection.RemoteEndPoint)) {
+                                    connCount[client.NetConnection.RemoteEndPoint]++;
+                                    if (connCount[client.NetConnection.RemoteEndPoint] >= 20) {
+                                        Program.Output("WARN: Suspected DoS attack [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
+                                    }
+                                }
+                                else {
+                                    connCount.Add(client.NetConnection.RemoteEndPoint, 1);
+                                }
+                                if (queue.ContainsKey(client.NetConnection.RemoteEndPoint)) {
                                     client.NetConnection.Deny("Wait atleast 60 seconds before reconnecting..");
                                     continue;
                                 }
-                                else
-                                {
+                                else {
                                     queue.Add(client.NetConnection.RemoteEndPoint, DateTime.Now);
                                 }
 
-                                Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "]");
+
+                                Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "] (Attempts: " + connCount[client.NetConnection.RemoteEndPoint] + "/hour)");
+
                                 var type = msg.ReadByte();
                                 var leng = msg.ReadInt32();
                                 ConnectionRequest connReq = null;
@@ -1444,9 +1467,14 @@ namespace GTANResource
                                 }
                                 catch (EndOfStreamException)
                                 {
-                                    Program.Output("WARN: Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                    if(connRepeats.ContainsKey(client.NetConnection.RemoteEndPoint)) {
+                                        connRepeats.Add(client.NetConnection.RemoteEndPoint, 1);
+                                    }
+                                    else {
+                                        connRepeats[client.NetConnection.RemoteEndPoint]++;
+                                    }
+                                    Program.Output("WARN: Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
                                     client.NetConnection.Deny();
-                                    Server.Recycle(msg);
                                     continue;
                                 }
 
@@ -2856,6 +2884,12 @@ namespace GTANResource
                     {
                         queue.Remove(queue.ElementAt(i).Key);
                     }
+                }
+            }
+            lock (connRepeats)
+            {
+                if (DateTime.Now.Subtract(LastconnRepeatsFlush).TotalMinutes >= 60) {
+                    connRepeats.Clear();
                 }
             }
             lock (Clients)

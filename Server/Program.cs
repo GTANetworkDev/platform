@@ -94,6 +94,7 @@ namespace GTANetworkServer
             Console.WriteLine("= Server FQDN: " + settings.fqdn);
             Console.WriteLine("=");
             Console.WriteLine("= Player Limit: " + settings.MaxPlayers);
+            Console.WriteLine("= Log Level: " + settings.LogLevel + " (2: ERROR, 3: DEBUG, 4: VERBOSE)");
             Console.WriteLine("=======================================================================");
 
             if (settings.Port != 4499)
