@@ -103,7 +103,7 @@ namespace Lidgren.Network
 					}
 					catch (Exception ex)
 					{
-						LogWarning("Receive callback exception:" + ex);
+						LogDebug("Receive callback exception:" + ex);
 					}
 				}
 			}
@@ -207,7 +207,7 @@ namespace Lidgren.Network
 				}
 				catch (Exception ex)
 				{
-					LogWarning(ex.ToString());
+					LogDebug(ex.ToString());
 				}
 			} while (m_status == NetPeerStatus.Running);
 
@@ -322,7 +322,7 @@ namespace Lidgren.Network
 #if DEBUG
 						// sanity check
 						if (kvp.Key != kvp.Key)
-							LogWarning("Sanity fail! Connection in handshake list under wrong key!");
+							LogDebug("Sanity fail! Connection in handshake list under wrong key!");
 #endif
 						conn.UnconnectedHeartbeat(now);
 						if (conn.m_status == NetConnectionStatus.Connected || conn.m_status == NetConnectionStatus.Disconnected)
@@ -331,7 +331,7 @@ namespace Lidgren.Network
 							// sanity check
 							if (conn.m_status == NetConnectionStatus.Disconnected && m_handshakes.ContainsKey(conn.RemoteEndPoint))
 							{
-								LogWarning("Sanity fail! Handshakes list contained disconnected connection!");
+								LogDebug("Sanity fail! Handshakes list contained disconnected connection!");
 								m_handshakes.Remove(conn.RemoteEndPoint);
 							}
 #endif
@@ -420,7 +420,7 @@ namespace Lidgren.Network
 							// connection reset by peer, aka connection forcibly closed aka "ICMP port unreachable"
 							// we should shut down the connection; but m_senderRemote seemingly cannot be trusted, so which connection should we shut down?!
 							// So, what to do?
-							LogWarning("ConnectionReset");
+							LogDebug("ConnectionReset");
 							return;
 
 						case SocketError.NotConnected:
@@ -509,7 +509,7 @@ namespace Lidgren.Network
                     if (bytesReceived - ptr < payloadByteLength)
 					{
 						LogDebug("Malformed packet; stated payload length " + payloadByteLength + ", remaining bytes " + (bytesReceived - ptr));
-                        LogWarning("Suspected connection exploit attack [" + ipsender.Address + ":" + ipsender.Port + "], type: Malformed packet.");
+                        LogWarning("Suspected connection exploit attack [" + ipsender.Address + "], type: Malformed packet.");
                         connBlock.Add(ipsender.Address);
                         return;
 					}
@@ -517,7 +517,7 @@ namespace Lidgren.Network
 					if (tp >= NetMessageType.Unused1 && tp <= NetMessageType.Unused29)
 					{
 						LogVerbose("Unexpected NetMessageType: " + tp);
-                        LogWarning("Suspected connection exploit attack [" + ipsender + "], type: Unexpected NetMessageType " + tp);
+                        LogWarning("Suspected connection exploit attack [" + ipsender.Address + "], type: Unexpected NetMessageType " + tp);
                         connBlock.Add(ipsender.Address);
                         return;
 					}
@@ -698,7 +698,7 @@ namespace Lidgren.Network
 
                     if (m_configuration.AcceptIncomingConnections == false)
                     {
-                        LogWarning("Received Connect, but we're not accepting incoming connections!");
+                        LogDebug("Received Connect, but we're not accepting incoming connections!");
                         return;
                     }
          
@@ -758,7 +758,7 @@ namespace Lidgren.Network
 
 			if (m_handshakes.Remove(conn.m_remoteEndPoint) == false)
             {
-                LogWarning("AcceptConnection called but m_handshakes did not contain it!");
+                LogDebug("AcceptConnection called but m_handshakes did not contain it!");
                 NetOutgoingMessage full = CreateMessage("Handshake already initiated.");
                 full.m_messageType = NetMessageType.Disconnect;
             }
@@ -767,7 +767,7 @@ namespace Lidgren.Network
 			{
 				if (m_connections.Contains(conn))
 				{
-					LogWarning("AcceptConnection called but m_connection already contains it!");
+					LogDebug("AcceptConnection called but m_connection already contains it!");
                     NetOutgoingMessage full = CreateMessage("Handshake already initiated.");
                     full.m_messageType = NetMessageType.Disconnect;
                 }

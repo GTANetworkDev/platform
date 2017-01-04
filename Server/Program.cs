@@ -21,6 +21,11 @@ namespace GTANetworkServer
             return DateTime.Now.Ticks/10000;
         }
 
+        public static void ToFile(string path, string str)
+        {
+            File.AppendAllText(path, "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str + Environment.NewLine);
+        }
+
         public static void Output(string str)
         {
             Console.WriteLine("[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
@@ -154,9 +159,7 @@ namespace GTANetworkServer
                 }
                 CloseProgram = true;
             }
-#pragma warning disable CS0168
-            catch (Exception e) { } //Proper fix is needed but this isn't problematic
-#pragma warning restore CS0168
+            catch (Exception) { } //Proper fix is needed but this isn't problematic
             return true;
         }
 

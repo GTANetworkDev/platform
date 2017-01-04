@@ -90,7 +90,7 @@ namespace Lidgren.Network
 			{
 				if (m_connections.Count > 0)
 				{
-					LogWarning("Connect attempt failed; Already connected");
+					LogDebug("Connect attempt failed; Already connected");
 					return null;
 				}
 			}
@@ -99,7 +99,7 @@ namespace Lidgren.Network
 			{
 				if (m_handshakes.Count > 0)
 				{
-					LogWarning("Connect attempt failed; Handshake already in progress");
+					LogDebug("Connect attempt failed; Handshake already in progress");
 					return null;
 				}
 			}
@@ -127,7 +127,7 @@ namespace Lidgren.Network
 					}
 				}
 
-				LogWarning("Disconnect requested when not connected!");
+				LogDebug("Disconnect requested when not connected!");
 				return;
 			}
 			serverConnection.Disconnect(byeMessage);
@@ -141,7 +141,7 @@ namespace Lidgren.Network
 			NetConnection serverConnection = ServerConnection;
 			if (serverConnection == null)
 			{
-				LogWarning("Cannot send message, no server connection!");
+				LogDebug("Cannot send message, no server connection!");
 				return NetSendResult.FailedNotConnected;
 			}
 
@@ -156,7 +156,7 @@ namespace Lidgren.Network
 			NetConnection serverConnection = ServerConnection;
 			if (serverConnection == null)
 			{
-				LogWarning("Cannot send message, no server connection!");
+				LogDebug("Cannot send message, no server connection!");
 				Recycle(msg);
 				return NetSendResult.FailedNotConnected;
 			}

@@ -152,6 +152,7 @@ namespace GTANetworkServer
 
         public ParseableVersion MinimumClientVersion;
         public NetServer Server;
+        public NetPeer NetPeerCon;
         public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
         internal API PublicAPI = new API();
@@ -1428,7 +1429,7 @@ namespace GTANResource
                                         pong.Write("pong");
                                         Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                     }
-                                    else if (isPing == "query")
+                                    if (isPing == "query")
                                     {
                                         //Program.Output("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
                                         var pong = Server.CreateMessage();
@@ -1449,7 +1450,7 @@ namespace GTANResource
                                     Program.Output("[DEBUG] " + msg.ReadString());
                                 break;
                             case NetIncomingMessageType.WarningMessage:
-                                    Program.Output("[WARN] " + msg.ReadString());
+                                Program.ToFile("attack.log", msg.ReadString());
                                 break;
                             case NetIncomingMessageType.ErrorMessage:
                                 if (LogLevel > 1)
@@ -1463,7 +1464,7 @@ namespace GTANResource
                                 if (connCount.ContainsKey(client.NetConnection.RemoteEndPoint)) {
                                     connCount[client.NetConnection.RemoteEndPoint]++;
                                     if (connCount[client.NetConnection.RemoteEndPoint] >= 20) {
-                                        Program.Output("[WARN]: Suspected DoS attack [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
+                                        Program.ToFile("attack.log", "Suspected DoS attack [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
                                     }
                                 }
                                 else {
@@ -1487,7 +1488,8 @@ namespace GTANResource
                                 {
                                     connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
                                 }
-                                catch (EndOfStreamException)
+                                //catch (EndOfStreamException)
+                                catch (Exception e)
                                 {
                                     if(connRepeats.ContainsKey(client.NetConnection.RemoteEndPoint)) {
                                         connRepeats.Add(client.NetConnection.RemoteEndPoint, 1);
@@ -1495,8 +1497,12 @@ namespace GTANResource
                                     else {
                                         connRepeats[client.NetConnection.RemoteEndPoint]++;
                                     }
-                                    Program.Output("WARN: Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
-                                    client.NetConnection.Deny();
+                                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], type: " + msg.MessageType + " | " + packetType + " | " + e.Inn);
+
+                                    if (LogLevel > 2) Program.Output("[DEBUG]" + e.ToString());
+
+                                    NetPeerCon.connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+                                    client.NetConnection.Deny("Blocked.");
                                     continue;
                                 }
 

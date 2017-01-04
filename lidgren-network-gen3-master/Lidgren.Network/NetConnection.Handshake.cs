@@ -89,7 +89,7 @@ namespace Lidgren.Network
 					case NetConnectionStatus.None:
 					case NetConnectionStatus.ReceivedInitiation:
 					default:
-						m_peer.LogWarning("Time to resend handshake, but status is " + m_status);
+						m_peer.LogDebug("Time to resend handshake, but status is " + m_status);
 						break;
 				}
 			}
@@ -231,7 +231,7 @@ namespace Lidgren.Network
 		{
 			if (m_status != NetConnectionStatus.RespondedAwaitingApproval)
 			{
-				m_peer.LogWarning("Approve() called in wrong status; expected RespondedAwaitingApproval; got " + m_status);
+				m_peer.LogDebug("Approve() called in wrong status; expected RespondedAwaitingApproval; got " + m_status);
 				return;
 			}
 
@@ -248,7 +248,7 @@ namespace Lidgren.Network
 		{
 			if (m_status != NetConnectionStatus.RespondedAwaitingApproval)
 			{
-				m_peer.LogWarning("Approve() called in wrong status; expected RespondedAwaitingApproval; got " + m_status);
+				m_peer.LogDebug("Approve() called in wrong status; expected RespondedAwaitingApproval; got " + m_status);
 				return;
 			}
 
@@ -469,7 +469,7 @@ namespace Lidgren.Network
 			{
 				// whatever; we failed
 				ExecuteDisconnect("Handshake data validation failed", true);
-				m_peer.LogWarning("ReadRemoteHandshakeData failed: " + ex.Message);
+				m_peer.LogDebug("ReadRemoteHandshakeData failed: " + ex.Message);
 				return false;
 			}
 			return true;

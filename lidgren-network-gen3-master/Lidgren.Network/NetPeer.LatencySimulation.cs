@@ -152,7 +152,7 @@ namespace Lidgren.Network
 
 				int bytesSent = m_socket.SendTo(data, 0, numBytes, SocketFlags.None, target);
 				if (numBytes != bytesSent)
-					LogWarning("Failed to send the full " + numBytes + "; only " + bytesSent + " bytes sent in packet!");
+					LogDebug("Failed to send the full " + numBytes + "; only " + bytesSent + " bytes sent in packet!");
 
 				// LogDebug("Sent " + numBytes + " bytes");
 			}
@@ -161,7 +161,7 @@ namespace Lidgren.Network
 				if (sx.SocketErrorCode == SocketError.WouldBlock)
 				{
 					// send buffer full?
-					LogWarning("Socket threw exception; would block - send buffer full? Increase in NetPeerConfiguration");
+					LogDebug("Socket threw exception; would block - send buffer full? Increase in NetPeerConfiguration");
 					return false;
 				}
 				if (sx.SocketErrorCode == SocketError.ConnectionReset)
@@ -191,7 +191,7 @@ namespace Lidgren.Network
 				m_socket.DontFragment = true;
 				int bytesSent = m_socket.SendTo(m_sendBuffer, 0, numBytes, SocketFlags.None, target);
 				if (numBytes != bytesSent)
-					LogWarning("Failed to send the full " + numBytes + "; only " + bytesSent + " bytes sent in packet!");
+					LogDebug("Failed to send the full " + numBytes + "; only " + bytesSent + " bytes sent in packet!");
 
 				m_statistics.PacketSent(numBytes, 1);
 			}
@@ -202,7 +202,7 @@ namespace Lidgren.Network
 				if (sx.SocketErrorCode == SocketError.WouldBlock)
 				{
 					// send buffer full?
-					LogWarning("Socket threw exception; would block - send buffer full? Increase in NetPeerConfiguration");
+					LogDebug("Socket threw exception; would block - send buffer full? Increase in NetPeerConfiguration");
 					return true;
 				}
 				if (sx.SocketErrorCode == SocketError.ConnectionReset)

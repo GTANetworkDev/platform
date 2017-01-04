@@ -134,7 +134,7 @@ namespace Lidgren.Network
 			if (m_status != NetPeerStatus.NotRunning)
 			{
 				// already running! Just ignore...
-				LogWarning("Start() called on already running NetPeer - ignoring.");
+				LogDebug("Start() called on already running NetPeer - ignoring.");
 				return;
 			}
 
@@ -328,7 +328,7 @@ namespace Lidgren.Network
 							break;
 						default:
 							// weird
-							LogWarning("Weird situation; Connect() already in progress to remote endpoint; but hs status is " + hs.m_status);
+							LogDebug("Weird situation; Connect() already in progress to remote endpoint; but hs status is " + hs.m_status);
 							break;
 					}
 					return hs;
@@ -385,5 +385,10 @@ namespace Lidgren.Network
 			m_shutdownReason = bye;
 			m_status = NetPeerStatus.ShutdownRequested;
 		}
-	}
+
+        public void Block(IPAddress item)
+        {
+            connBlock.Add(item);
+        }
+    }
 }
