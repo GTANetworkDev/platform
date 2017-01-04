@@ -1497,7 +1497,7 @@ namespace GTANResource
                                     else {
                                         connRepeats[client.NetConnection.RemoteEndPoint]++;
                                     }
-                                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], type: " + msg.MessageType + " | " + packetType + " | " + e.Inn);
+                                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], type: " + msg.MessageType + " | " + packetType + " | " + e.InnerException);
 
                                     if (LogLevel > 2) Program.Output("[DEBUG]" + e.ToString());
 
