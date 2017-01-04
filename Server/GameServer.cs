@@ -1492,10 +1492,10 @@ namespace GTANResource
                                 catch (Exception e)
                                 {
                                     if(connRepeats.ContainsKey(client.NetConnection.RemoteEndPoint)) {
-                                        connRepeats.Add(client.NetConnection.RemoteEndPoint, 1);
+                                        connRepeats[client.NetConnection.RemoteEndPoint]++;
                                     }
                                     else {
-                                        connRepeats[client.NetConnection.RemoteEndPoint]++;
+                                        connRepeats.Add(client.NetConnection.RemoteEndPoint, 1);     
                                     }
                                     Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], type: " + msg.MessageType + " | " + packetType + " | " + e.InnerException);
 
