@@ -152,7 +152,6 @@ namespace GTANetworkServer
 
         public ParseableVersion MinimumClientVersion;
         public NetServer Server;
-        public NetPeer NetPeerCon;
         public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
         internal API PublicAPI = new API();
@@ -215,6 +214,7 @@ namespace GTANetworkServer
         private Dictionary<IPEndPoint, DateTime> queue = new Dictionary<IPEndPoint, DateTime>();
         private Dictionary<IPEndPoint, uint> connCount = new Dictionary<IPEndPoint, uint>();
         private Dictionary<IPEndPoint, uint> connRepeats = new Dictionary<IPEndPoint, uint>();
+        private List<IPAddress> connBlock = new List<IPAddress>();
 
         private DateTime LastconnRepeatsFlush;
 
@@ -1437,7 +1437,7 @@ namespace GTANResource
                                         Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                     }
                                 }
-                                catch (Exception e) {}
+                                catch (Exception) {}
                                 break;
                             case NetIncomingMessageType.DiscoveryResponse:
                                 break;
@@ -1461,6 +1461,11 @@ namespace GTANResource
                                 break;
 
                             case NetIncomingMessageType.ConnectionApproval:
+                                if(connBlock.Contains(client.NetConnection.RemoteEndPoint.Address))
+                                {
+                                    client.NetConnection.Deny("Blocked.");
+                                    continue;
+                                }
                                 if (connCount.ContainsKey(client.NetConnection.RemoteEndPoint)) {
                                     connCount[client.NetConnection.RemoteEndPoint]++;
                                     if (connCount[client.NetConnection.RemoteEndPoint] >= 20) {
@@ -1497,15 +1502,14 @@ namespace GTANResource
                                     else {
                                         connRepeats.Add(client.NetConnection.RemoteEndPoint, 1);     
                                     }
-                                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], type: " + msg.MessageType + " | " + packetType + " | " + e.InnerException);
+                                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
 
                                     if (LogLevel > 2) Program.Output("[DEBUG]" + e.ToString());
-
-                                    NetPeerCon.connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+                                    connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
                                     client.NetConnection.Deny("Blocked.");
                                     continue;
                                 }
-
+                                
                                 if (connReq == null)
                                 {
                                     client.NetConnection.Deny("Connection Object is null");
