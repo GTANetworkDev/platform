@@ -566,26 +566,41 @@ namespace GTANMasterServer
         {
             try
             {
-                if((bool)XML.Config("whitelist"))
-                {
+                if ((bool)XML.Config("whitelist")) {
                     if (!Whitelist.IsWhitelisted(ip)) return;
                 }
-               
-                var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
 
+                var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
                 var finalAddr = ip + ":" + newServObj.Port;
 
                 if (newServObj.fqdn != null && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip && newServObj.fqdn.Length < 64) finalAddr = newServObj.fqdn + ":" + newServObj.Port;
-                if (newServObj.ServerName != null) newServObj.ServerName = newServObj.ServerName.Substring(0, Math.Min(128, newServObj.ServerName.Length));
                 if (newServObj.Gamemode != null) newServObj.Gamemode = newServObj.Gamemode.Substring(0, Math.Min(20, newServObj.Gamemode.Length));
                 if (newServObj.Map != null) newServObj.Map = newServObj.Map.Substring(0, Math.Min(20, newServObj.Map.Length));
+                if (newServObj.MaxPlayers > 1000) newServObj.MaxPlayers = 1000;
+                if (newServObj.MaxPlayers < 1) newServObj.MaxPlayers = 1;
+                if (newServObj.ServerName != null) newServObj.ServerName = newServObj.ServerName.Substring(0, Math.Min(128, newServObj.ServerName.Length));
 
                 newServObj.IP = finalAddr;
 
                 lock (GlobalLock)
                 {
-                    if (UpdatesServers.ContainsKey(finalAddr))
+                    if (APIServers.Values.Count(x => x.IP.Contains(ip)) > 2)
                     {
+                        return;
+                    }
+
+                    if (APIServers.Values.Any(x => x.ServerName == newServObj.ServerName))
+                    {
+                        return;
+                    }
+
+                    if (APIServers.Values.Any(x => x.Gamemode.Contains("UGBASE")))
+                    {
+                        return;
+                    }
+
+
+                    if (UpdatesServers.ContainsKey(finalAddr)) {
                         UpdatesServers[finalAddr] = DateTime.Now;
                         APIServers[finalAddr] = newServObj;
                         return;
@@ -594,13 +609,10 @@ namespace GTANMasterServer
                     UpdatesServers.Add(finalAddr, DateTime.Now);
                     APIServers.Add(finalAddr, newServObj);
 
-                    //Will only be shown if the server does not exist in memory
-                    if (newServObj.fqdn != null)
-                    {
+                    if (newServObj.fqdn != null) {
                         Debug.Log("Adding Server: " + ip + ":" + newServObj.Port + " | FQDN: " + newServObj.fqdn + " | Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); 
                     }
-                    else
-                    {
+                    else {
                         Debug.Log("Adding Server: " + finalAddr);
                     }
                 }
