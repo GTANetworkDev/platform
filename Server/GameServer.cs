@@ -1470,6 +1470,8 @@ namespace GTANResource
                                     connCount[client.NetConnection.RemoteEndPoint]++;
                                     if (connCount[client.NetConnection.RemoteEndPoint] >= 20) {
                                         Program.ToFile("attack.log", "Suspected DoS attack [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
+                                        connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+                                        continue;
                                     }
                                 }
                                 else {
@@ -2771,6 +2773,11 @@ namespace GTANResource
                                 Program.Output("WARN: Unhandled type: " + msg.MessageType);
                                 break;
                         }
+                    }
+                    catch (InvalidCastException)
+                    {
+                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
+                        connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
                     }
                     catch (Exception ex)
                     {
