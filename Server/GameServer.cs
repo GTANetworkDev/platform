@@ -1556,12 +1556,14 @@ namespace GTANResource
                                         int duplicate = 0;
                                         string displayname = connReq.DisplayName;
 
-                                        if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
-                                        {
-                                            client.NetConnection.Deny("Duplicate RGSC handle.");
-                                            Program.Output("Player connection refused: duplicate RGSC. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                                            continue;
-                                        }
+
+                                        //REWORK NEEDED
+                                        //if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
+                                        //{
+                                        //    client.NetConnection.Deny("Duplicate RGSC handle.");
+                                        //    Program.Output("Player connection refused: duplicate RGSC. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
+                                        //    continue;
+                                        //}
 
                                         while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
                                         {
