@@ -582,8 +582,12 @@ namespace GTANetwork
             }
         }
 
+        bool finished = true;
         private void RebuildServerBrowser()
         {
+            if (!finished) return;
+            finished = false;
+
             _serverBrowser.Items.Clear();
             _favBrowser.Items.Clear();
             _lanBrowser.Items.Clear();
@@ -737,6 +741,7 @@ namespace GTANetwork
                 {
                     LogManager.LogException(e, "DISCOVERY CRASH");
                 }
+                finished = true;
             });
 
             fetchThread.Start();
