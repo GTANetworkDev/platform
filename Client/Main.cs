@@ -304,6 +304,7 @@ namespace GTANetwork
         private int _currentOnlinePlayers;
         private int _currentOnlineServers;
 
+        private TabInteractiveListItem _Verified;
         private TabInteractiveListItem _serverBrowser;
         private TabInteractiveListItem _lanBrowser;
         private TabInteractiveListItem _favBrowser;
@@ -581,13 +582,13 @@ namespace GTANetwork
                 return false;
             }
         }
-
         bool finished = true;
         private void RebuildServerBrowser()
         {
             if (!finished) return;
             finished = false;
 
+            _Verified.Items.Clear();
             _serverBrowser.Items.Clear();
             _favBrowser.Items.Clear();
             _lanBrowser.Items.Clear();
@@ -601,9 +602,11 @@ namespace GTANetwork
             _currentOnlinePlayers = 0;
             _currentOnlineServers = 0;
 
-            
+
+
             var fetchThread = new Thread((ThreadStart)delegate
             {
+
                 try
                 {
                     if (Client == null)
@@ -872,7 +875,8 @@ namespace GTANetwork
                     };
                     dConnect.Buttons.Add(ipButton);
                 }
-                
+
+                _Verified = new TabInteractiveListItem("Verified", new List<UIMenuItem>());
                 _serverBrowser = new TabInteractiveListItem("Internet", new List<UIMenuItem>());
                 _lanBrowser = new TabInteractiveListItem("Local Area Network", new List<UIMenuItem>());
                 _favBrowser = new TabInteractiveListItem("Favorites", new List<UIMenuItem>());
@@ -1008,7 +1012,8 @@ namespace GTANetwork
             #region Settings
 
             {
-                var internetServers = new TabInteractiveListItem("Multiplayer", new List<UIMenuItem>());
+                #region General Menu
+                var GeneralMenu = new TabInteractiveListItem("General", new List<UIMenuItem>());
 
                 {
                     var nameItem = new UIMenuItem("Name");
@@ -1030,66 +1035,8 @@ namespace GTANetwork
                         }
                     };
 
-                    internetServers.Items.Add(nameItem);
+                    GeneralMenu.Items.Add(nameItem);
                 }
-
-                #if DEBUG
-                {
-                    
-                    var debugItem = new UIMenuCheckboxItem("Debug", false);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        display = @checked;
-                        if (!display)
-                        {
-                            if (mainPed != null) mainPed.Delete();
-                            if (mainVehicle != null) mainVehicle.Delete();
-                            if (_debugSyncPed != null)
-                            {
-                                _debugSyncPed.Clear();
-                                _debugSyncPed = null;
-                            }
-                        }
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Debug Window", false);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        _debugWindow = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-                
-                {
-                    var debugItem = new UIMenuCheckboxItem("Despawn Entities", RemoveGameEntities);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        RemoveGameEntities = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Write Debug Info To File", false);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        WriteDebugLog = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Subtitle Debug", false);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        SlowDownClientForDebug = @checked;
-                    };
-                    internetServers.Items.Add(debugItem);
-                }
-#endif
                 {
                     var debugItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
                     debugItem.CheckboxEvent += (sender, @checked) =>
@@ -1097,7 +1044,7 @@ namespace GTANetwork
                         PlayerSettings.ScaleChatWithSafezone = @checked;
                         SaveSettings();
                     };
-                    internetServers.Items.Add(debugItem);
+                    GeneralMenu.Items.Add(debugItem);
                 }
 
                 {
@@ -1119,7 +1066,7 @@ namespace GTANetwork
                         debugItem.SetRightLabel(PlayerSettings.ChatboxXOffset.ToString());
                         SaveSettings();
                     };
-                    internetServers.Items.Add(debugItem);
+                    GeneralMenu.Items.Add(debugItem);
                 }
 
                 {
@@ -1141,7 +1088,7 @@ namespace GTANetwork
                         debugItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
                         SaveSettings();
                     };
-                    internetServers.Items.Add(debugItem);
+                    GeneralMenu.Items.Add(debugItem);
                 }
 
                 {
@@ -1151,7 +1098,7 @@ namespace GTANetwork
                         PlayerSettings.UseClassicChat = @checked;
                         SaveSettings();
                     };
-                    internetServers.Items.Add(debugItem);
+                    GeneralMenu.Items.Add(debugItem);
                 }
 
                 {
@@ -1161,58 +1108,17 @@ namespace GTANetwork
                         PlayerSettings.DisableRockstarEditor = @checked;
                         SaveSettings();
                     };
-                    internetServers.Items.Add(debugItem);
+                    GeneralMenu.Items.Add(debugItem);
                 }
+                #endregion
 
-                {
-                    var nameItem = new UIMenuItem("Update Channel");
-                    nameItem.SetRightLabel(PlayerSettings.UpdateChannel);
-                    nameItem.Activated += (sender, item) =>
-                    {
-                        var newName = InputboxThread.GetUserInput(PlayerSettings.UpdateChannel ?? "stable", 40, TickSpinner);
-                        if (!string.IsNullOrWhiteSpace(newName))
-                        {
-                            PlayerSettings.UpdateChannel = newName;
-                            SaveSettings();
-                            nameItem.SetRightLabel(newName);
-                        }
-                    };
-
-                    internetServers.Items.Add(nameItem);
-                }
-
-                var startupFlow = new TabInteractiveListItem("Start Up", new List<UIMenuItem>());
-
-                {
-                    var nameItem = new UIMenuCheckboxItem("Start in Borderless Windowed", PlayerSettings.AutosetBorderlessWindowed);
-                    
-                    nameItem.CheckboxEvent += (sender, chequed) =>
-                    {
-                        PlayerSettings.AutosetBorderlessWindowed = chequed;
-                        SaveSettings();
-                    };
-
-                    startupFlow.Items.Add(nameItem);
-                }
-
-                {
-                    var nameItem = new UIMenuCheckboxItem("Start in Offline Mode", PlayerSettings.StartGameInOfflineMode);
-
-                    nameItem.CheckboxEvent += (sender, chequed) =>
-                    {
-                        PlayerSettings.StartGameInOfflineMode = chequed;
-                        SaveSettings();
-                    };
-
-                    startupFlow.Items.Add(nameItem);
-                }
-
-                var localServs = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
+                #region Graphics Menu
+                var GraphicsMenu = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
 
                 {
                     var cityDen = new UIMenuItem("City Density");
                     cityDen.SetRightLabel(GameSettings.Graphics.CityDensity.Value.ToString());
-                    localServs.Items.Add(cityDen);
+                    GraphicsMenu.Items.Add(cityDen);
 
                     cityDen.Activated += (sender, item) =>
                     {
@@ -1234,7 +1140,7 @@ namespace GTANetwork
                 {
                     var cityDen = new UIMenuItem("Depth Of Field");
                     cityDen.SetRightLabel(GameSettings.Graphics.DoF.Value.ToString());
-                    localServs.Items.Add(cityDen);
+                    GraphicsMenu.Items.Add(cityDen);
 
                     cityDen.Activated += (sender, item) =>
                     {
@@ -1256,7 +1162,7 @@ namespace GTANetwork
                 {
                     var cityDen = new UIMenuItem("Grass Quality");
                     cityDen.SetRightLabel(GameSettings.Graphics.GrassQuality.Value.ToString());
-                    localServs.Items.Add(cityDen);
+                    GraphicsMenu.Items.Add(cityDen);
 
                     cityDen.Activated += (sender, item) =>
                     {
@@ -1278,7 +1184,7 @@ namespace GTANetwork
                 {
                     var cityDen = new UIMenuItem("MSAA");
                     cityDen.SetRightLabel(GameSettings.Graphics.MSAA.Value.ToString());
-                    localServs.Items.Add(cityDen);
+                    GraphicsMenu.Items.Add(cityDen);
 
                     cityDen.Activated += (sender, item) =>
                     {
@@ -1297,13 +1203,26 @@ namespace GTANetwork
                     };
                 }
 
+                #endregion
 
-                var favServers = new TabInteractiveListItem("Video", new List<UIMenuItem>());
+                #region Display Menu
+                var DisplayMenu = new TabInteractiveListItem("Display", new List<UIMenuItem>());
+                {
+                    var nameItem = new UIMenuCheckboxItem("Start in Borderless Windowed", PlayerSettings.AutosetBorderlessWindowed);
+
+                    nameItem.CheckboxEvent += (sender, chequed) =>
+                    {
+                        PlayerSettings.AutosetBorderlessWindowed = chequed;
+                        SaveSettings();
+                    };
+
+                    DisplayMenu.Items.Add(nameItem);
+                }
 
                 {
                     var cityDen = new UIMenuItem("City Density");
                     cityDen.SetRightLabel(GameSettings.Video.Windowed.Value.ToString());
-                    favServers.Items.Add(cityDen);
+                    DisplayMenu.Items.Add(cityDen);
 
                     cityDen.Activated += (sender, item) =>
                     {
@@ -1325,7 +1244,7 @@ namespace GTANetwork
                 {
                     var cityDen = new UIMenuItem("Vertical Sync");
                     cityDen.SetRightLabel(GameSettings.Video.VSync.Value.ToString());
-                    favServers.Items.Add(cityDen);
+                    DisplayMenu.Items.Add(cityDen);
 
                     cityDen.Activated += (sender, item) =>
                     {
@@ -1374,12 +1293,92 @@ namespace GTANetwork
                     };
                 }
                 */
+                #endregion
+
+                #region Debug Menu
+#if DEBUG
+                var DebugMenu = new TabInteractiveListItem("Debug", new List<UIMenuItem>());
+                {
+
+                    var debugItem = new UIMenuCheckboxItem("Debug", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        display = @checked;
+                        if (!display)
+                        {
+                            if (mainPed != null) mainPed.Delete();
+                            if (mainVehicle != null) mainVehicle.Delete();
+                            if (_debugSyncPed != null)
+                            {
+                                _debugSyncPed.Clear();
+                                _debugSyncPed = null;
+                            }
+                        }
+                    };
+                    DebugMenu.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Debug Window", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        _debugWindow = @checked;
+                    };
+                    DebugMenu.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Despawn Entities", RemoveGameEntities);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        RemoveGameEntities = @checked;
+                    };
+                    DebugMenu.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Write Debug Info To File", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        WriteDebugLog = @checked;
+                    };
+                    DebugMenu.Items.Add(debugItem);
+                }
+
+                {
+                    var debugItem = new UIMenuCheckboxItem("Subtitle Debug", false);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        SlowDownClientForDebug = @checked;
+                    };
+                    DebugMenu.Items.Add(debugItem);
+                }
+
+                {
+                    var nameItem = new UIMenuItem("Update Channel");
+                    nameItem.SetRightLabel(PlayerSettings.UpdateChannel);
+                    nameItem.Activated += (sender, item) =>
+                    {
+                        var newName = InputboxThread.GetUserInput(PlayerSettings.UpdateChannel ?? "stable", 40, TickSpinner);
+                        if (!string.IsNullOrWhiteSpace(newName))
+                        {
+                            PlayerSettings.UpdateChannel = newName;
+                            SaveSettings();
+                            nameItem.SetRightLabel(newName);
+                        }
+                    };
+
+                    DebugMenu.Items.Add(nameItem);
+                }
+#endif
+                #endregion
+
                 var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>()
                 {
-                    internetServers,
-                    startupFlow,
-                    localServs,
-                    favServers
+                    GeneralMenu,
+                    DisplayMenu,
+                    GraphicsMenu,
+                    DebugMenu
                 });
                 MainMenu.AddTab(welcomeItem);
             }
