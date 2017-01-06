@@ -159,7 +159,7 @@ namespace GTANetwork
 
             splashScreen.SetPercent(30);
 
-            #region Check required folders
+            #region Check required folders and clean up
             var Profiles = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
 
             if (!Directory.Exists(Profiles))
@@ -171,6 +171,16 @@ namespace GTANetwork
             {
                 MessageBox.Show(splashScreen.SplashScreen, "Missing Profile, Make sure to have run the game atleast once.", "Missing files");
                 return;
+            }
+
+            foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
+            {
+                if (File.Exists((Path.GetDirectoryName(file) + "//SGTA50000.bak")))
+                {
+                    File.Delete(Path.GetDirectoryName(file) + "//SGTA50000");
+                    File.Move(Path.GetDirectoryName(file) + "//SGTA50000.bak", Path.GetDirectoryName(file) + "//SGTA50000");
+                }
+                else continue;    
             }
 
             #endregion
@@ -344,9 +354,15 @@ namespace GTANetwork
             Thread.Sleep(1000);
 
             //PatchStartup(_startupFlow, _landingPage);
-            mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
+            //mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
 
-            GameSettings.SaveSettings(mySettings);
+            //try
+            //{
+            //    GameSettings.SaveSettings(mySettings);
+            //}
+            //catch (Exception)
+            //{ }
+            
 
             foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
             {
