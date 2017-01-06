@@ -573,13 +573,12 @@ namespace GTANMasterServer
                 var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
                 var finalAddr = ip + ":" + newServObj.Port;
 
-                if (newServObj.fqdn != null && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip && newServObj.fqdn.Length < 64) finalAddr = newServObj.fqdn + ":" + newServObj.Port;
-                if (newServObj.Gamemode != null) newServObj.Gamemode = newServObj.Gamemode.Substring(0, Math.Min(20, newServObj.Gamemode.Length));
-                if (newServObj.Map != null) newServObj.Map = newServObj.Map.Substring(0, Math.Min(20, newServObj.Map.Length));
+                if (!string.IsNullOrWhiteSpace(newServObj.fqdn) && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip && newServObj.fqdn.Length < 64) finalAddr = newServObj.fqdn + ":" + newServObj.Port;
+                if (!string.IsNullOrWhiteSpace(newServObj.Gamemode)) newServObj.Gamemode = newServObj.Gamemode.Substring(0, Math.Min(20, newServObj.Gamemode.Length));
+                if (!string.IsNullOrWhiteSpace(newServObj.Map)) newServObj.Map = newServObj.Map.Substring(0, Math.Min(20, newServObj.Map.Length)).Replace("~n~", string.Empty);
+                if (!string.IsNullOrWhiteSpace(newServObj.ServerName)) newServObj.ServerName = newServObj.ServerName.Substring(0, Math.Min(128, newServObj.ServerName.Length));
                 if (newServObj.MaxPlayers > 1000) newServObj.MaxPlayers = 1000;
                 if (newServObj.MaxPlayers < 1) newServObj.MaxPlayers = 1;
-                if (newServObj.ServerName != null) newServObj.ServerName = newServObj.ServerName.Substring(0, Math.Min(128, newServObj.ServerName.Length));
-
                 newServObj.IP = finalAddr;
 
                 lock (GlobalLock)
