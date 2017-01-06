@@ -47,10 +47,8 @@ namespace GTANetwork.Networking
             {
                 StreamedInPlayers?.DisplayLocally();
             }
-
 #if DEBUG
             sw.Stop();
-
             Util.Util.DrawText("ms: " + sw.ElapsedMilliseconds + "", 600, 480, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
             Util.Util.DrawText("Disable Update Pos and Nametag: " + DisableUpdateAndNametag.ToString() + "", 600, 600, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
             Util.Util.DrawText("Total VEH: " + GTA.World.GetAllVehicles().Length + "", 600, 760, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
@@ -58,9 +56,10 @@ namespace GTANetwork.Networking
             Util.Util.DrawText("CurrentStreamedPlayers: " + StreamedPlayers + "", 600, 840, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
             Util.Util.DrawText("StreamedPlayersInRangeCanBeUpdated: " + StreamedPlayersInRangeCanBeUpdated + "", 600, 880, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
             Util.Util.DrawText("CurrentStreamedPlayersInRange: " + StreamedPlayersInRange + "", 600, 920, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-            Util.Util.DrawText("Game.FPS: " + Game.FPS.ToString("0.0") + "", 600, 960, 0.7f, 255, 255, 255, 255, 0, 1, false, true, 0);
 #endif
-                LogManager.DebugLog("END LOOP");
+
+            Util.Util.DrawText(Game.FPS.ToString("0"), Screen.PrimaryScreen.WorkingArea.Width - 20, 0, 0.35f, 255, 255, 255, 255, 0, 1, false, true, 0);
+
         }
     }
 }
