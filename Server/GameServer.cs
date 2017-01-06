@@ -212,16 +212,11 @@ namespace GTANetworkServer
 
 
         private Dictionary<IPEndPoint, DateTime> queue = new Dictionary<IPEndPoint, DateTime>();
-        private Dictionary<IPEndPoint, uint> connCount = new Dictionary<IPEndPoint, uint>();
-        private Dictionary<IPEndPoint, uint> connRepeats = new Dictionary<IPEndPoint, uint>();
         private List<IPAddress> connBlock = new List<IPAddress>();
-
-        private DateTime LastconnRepeatsFlush;
 
         private DateTime _lastAnnounceDateTime;
         public void Start(string[] filterscripts)
         {
-            LastconnRepeatsFlush = DateTime.Now;
             try
             {
                 Server.Start();
@@ -1437,23 +1432,23 @@ namespace GTANResource
                                         Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                     }
                                 }
-                                catch (Exception) {}
+                                catch (Exception) { }
                                 break;
                             case NetIncomingMessageType.DiscoveryResponse:
                                 break;
                             case NetIncomingMessageType.VerboseDebugMessage:
-                                if (LogLevel > 3)
-                                    Program.Output("[VERBOSE] " + msg.ReadString());   
+                                if (LogLevel > 2)
+                                    Program.Output("[VERBOSE] " + msg.ReadString());
                                 break;
                             case NetIncomingMessageType.DebugMessage:
-                                if (LogLevel > 2)
+                                if (LogLevel > 1)
                                     Program.Output("[DEBUG] " + msg.ReadString());
                                 break;
                             case NetIncomingMessageType.WarningMessage:
                                 Program.ToFile("attack.log", msg.ReadString());
                                 break;
                             case NetIncomingMessageType.ErrorMessage:
-                                if (LogLevel > 1)
+                                if (LogLevel > 0)
                                     Program.Output("[ERROR] " + msg.ReadString());
                                 break;
                             case NetIncomingMessageType.ConnectionLatencyUpdated:
@@ -1461,32 +1456,22 @@ namespace GTANResource
                                 break;
 
                             case NetIncomingMessageType.ConnectionApproval:
-                                if(connBlock.Contains(client.NetConnection.RemoteEndPoint.Address))
+                                if (connBlock.Contains(client.NetConnection.RemoteEndPoint.Address))
                                 {
                                     client.NetConnection.Deny("Blocked.");
                                     continue;
-                                }
-                                if (connCount.ContainsKey(client.NetConnection.RemoteEndPoint)) {
-                                    connCount[client.NetConnection.RemoteEndPoint]++;
-                                    if (connCount[client.NetConnection.RemoteEndPoint] >= 20) {
-                                        Program.ToFile("attack.log", "Suspected DoS attack [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
-                                        connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
-                                        continue;
-                                    }
-                                }
-                                else {
-                                    connCount.Add(client.NetConnection.RemoteEndPoint, 1);
                                 }
                                 if (queue.ContainsKey(client.NetConnection.RemoteEndPoint)) {
                                     client.NetConnection.Deny("Wait atleast 60 seconds before reconnecting..");
                                     continue;
                                 }
-                                else {
+                                else
+                                {
                                     queue.Add(client.NetConnection.RemoteEndPoint, DateTime.Now);
                                 }
 
 
-                                Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "] (Attempts: " + connCount[client.NetConnection.RemoteEndPoint] + "/hour)");
+                                Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "]");
 
                                 var type = msg.ReadByte();
                                 var leng = msg.ReadInt32();
@@ -1498,26 +1483,24 @@ namespace GTANResource
                                 //catch (EndOfStreamException)
                                 catch (Exception e)
                                 {
-                                    if(connRepeats.ContainsKey(client.NetConnection.RemoteEndPoint)) {
-                                        connRepeats[client.NetConnection.RemoteEndPoint]++;
-                                    }
-                                    else {
-                                        connRepeats.Add(client.NetConnection.RemoteEndPoint, 1);     
-                                    }
-                                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                    if (client.NetConnection.RemoteEndPoint != null)
+                                    {
+                                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
 
-                                    if (LogLevel > 2) Program.Output("[DEBUG]" + e.ToString());
-                                    connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
-                                    client.NetConnection.Deny("Blocked.");
+                                        if (LogLevel > 1) Program.Output("[DEBUG]" + e.ToString());
+                                        if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+
+                                        client.NetConnection.Deny("Denied access due to suspected connection exploit.");
+                                    }
                                     continue;
                                 }
-                                
+
                                 if (connReq == null)
                                 {
                                     client.NetConnection.Deny("Connection Object is null");
                                     continue;
                                 }
-                                var cVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
+                                //var cVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
                                 /*if (cVersion < MinimumClientVersion)
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
@@ -1541,92 +1524,91 @@ namespace GTANResource
                                 //lock (Clients) clients = Clients.Count;
                                 //if (clients <= MaxPlayers) //Useless, it is checked in Lidgren.
                                 //{
-                                    if (PasswordProtected && !string.IsNullOrWhiteSpace(Password))
+                                if (PasswordProtected && !string.IsNullOrWhiteSpace(Password))
+                                {
+                                    if (Password != connReq.Password)
                                     {
-                                        if (Password != connReq.Password)
-                                        {
-                                            client.NetConnection.Deny("Wrong password.");
-                                            Program.Output("Player connection refused: wrong password. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                                            continue;
-                                        }
-                                    }
-
-                                    lock (Clients)
-                                    {
-                                        int duplicate = 0;
-                                        string displayname = connReq.DisplayName;
-
-
-                                        //REWORK NEEDED
-                                        //if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
-                                        //{
-                                        //    client.NetConnection.Deny("Duplicate RGSC handle.");
-                                        //    Program.Output("Player connection refused: duplicate RGSC. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                                        //    continue;
-                                        //}
-
-                                        while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
-                                        {
-                                            duplicate++;
-
-                                            connReq.DisplayName = displayname + " (" + duplicate + ")";
-                                        }
-                                    }
-
-                                    client.CommitConnection();
-                                    client.SocialClubName = connReq.SocialClubName;
-                                    client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
-                                    client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
-                                    client.GameVersion = connReq.GameVersion;
-                                    ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
-
-                                    var respObj = new ConnectionResponse();
-
-                                    respObj.CharacterHandle = client.handle.Value;
-                                    respObj.Settings = new SharedSettings()
-                                    {
-                                        OnFootLagCompensation = OnFootLagComp,
-                                        VehicleLagCompensation = VehLagComp,
-                                        GlobalStreamingRange = GlobalStreamingRange,
-                                        PlayerStreamingRange = PlayerStreamingRange,
-                                        VehicleStreamingRange = VehicleStreamingRange,
-                                        ModWhitelist = ModWhitelist,
-                                        UseHttpServer = UseHTTPFileServer,
-                                    };
-
-                                    var channelHail = Server.CreateMessage();
-                                    var respBin = SerializeBinary(respObj);
-
-                                    channelHail.Write(respBin.Length);
-                                    channelHail.Write(respBin);
-
-                                    var cancelArgs = new CancelEventArgs();
-
-                                    lock (RunningResources)
-                                        RunningResources.ForEach(
-                                            fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client, cancelArgs)));
-
-                                    if (cancelArgs.Cancel)
-                                    {
-                                        client.NetConnection.Deny(cancelArgs.Reason ?? "");
-                                        Program.Output("Connection denied: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                        client.NetConnection.Deny("Wrong password.");
+                                        Program.Output("Player connection refused: wrong password. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
                                         continue;
                                     }
-                                    else
-                                    {
-                                        Clients.Add(client);
-                                        Server.Configuration.CurrentPlayers = Clients.Count;
-                                        client.NetConnection.Approve(channelHail);
-                                        Program.Output("Processing connection: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                }
 
+                                lock (Clients)
+                                {
+                                    int duplicate = 0;
+                                    string displayname = connReq.DisplayName;
+
+                                    //REWORK NEEDED
+                                    //if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
+                                    //{
+                                    //    client.NetConnection.Deny("Duplicate RGSC handle.");
+                                    //    Program.Output("Player connection refused: duplicate RGSC. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
+                                    //    continue;
+                                    //}
+
+                                    while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
+                                    {
+                                        duplicate++;
+
+                                        connReq.DisplayName = displayname + " (" + duplicate + ")";
                                     }
-                             //   }
-                             //   else //Unreachable code
-                             //   {
-                             //       client.NetConnection.Deny("Server is full");
-                             //       Program.Output("Player connection refused: server full. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                             //       continue;
-                             //   }
+                                }
+
+                                client.CommitConnection();
+                                client.SocialClubName = connReq.SocialClubName;
+                                client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
+                                //client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
+                                client.GameVersion = connReq.GameVersion;
+                                ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
+
+                                var respObj = new ConnectionResponse();
+
+                                respObj.CharacterHandle = client.handle.Value;
+                                respObj.Settings = new SharedSettings()
+                                {
+                                    OnFootLagCompensation = OnFootLagComp,
+                                    VehicleLagCompensation = VehLagComp,
+                                    GlobalStreamingRange = GlobalStreamingRange,
+                                    PlayerStreamingRange = PlayerStreamingRange,
+                                    VehicleStreamingRange = VehicleStreamingRange,
+                                    ModWhitelist = ModWhitelist,
+                                    UseHttpServer = UseHTTPFileServer,
+                                };
+
+                                var channelHail = Server.CreateMessage();
+                                var respBin = SerializeBinary(respObj);
+
+                                channelHail.Write(respBin.Length);
+                                channelHail.Write(respBin);
+
+                                var cancelArgs = new CancelEventArgs();
+
+                                lock (RunningResources)
+                                    RunningResources.ForEach(
+                                        fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client, cancelArgs)));
+
+                                if (cancelArgs.Cancel)
+                                {
+                                    client.NetConnection.Deny(cancelArgs.Reason ?? "");
+                                    Program.Output("Connection denied: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                    continue;
+                                }
+                                else
+                                {
+                                    Clients.Add(client);
+                                    Server.Configuration.CurrentPlayers = Clients.Count;
+                                    client.NetConnection.Approve(channelHail);
+                                    Program.Output("Processing connection: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+
+                                }
+                                //   }
+                                //   else //Unreachable code
+                                //   {
+                                //       client.NetConnection.Deny("Server is full");
+                                //       Program.Output("Player connection refused: server full. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
+                                //       continue;
+                                //   }
                                 break;
                             case NetIncomingMessageType.StatusChanged:
                                 var newStatus = (NetConnectionStatus)msg.ReadByte();
@@ -1678,15 +1660,15 @@ namespace GTANResource
                                 obj.PasswordProtected = PasswordProtected;
                                 //lock (RunningResources)
                                 //{
-                                    obj.Gamemode = string.IsNullOrEmpty(GamemodeName)
-                                        ? Gamemode?
-                                            .DirectoryName ?? "GTA Network"
-                                        : GamemodeName;
+                                obj.Gamemode = string.IsNullOrEmpty(GamemodeName)
+                                    ? Gamemode?
+                                        .DirectoryName ?? "GTA Network"
+                                    : GamemodeName;
                                 //}
                                 //lock (Clients)
-                                    obj.PlayerCount =
-                                        (short)
-                                            Clients.Count;//(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
+                                obj.PlayerCount =
+                                    (short)
+                                        Clients.Count;//(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
                                 obj.Port = Port;
                                 obj.LAN = isIPLocal(msg.SenderEndPoint.Address.ToString());
 
@@ -2778,16 +2760,19 @@ namespace GTANResource
                     }
                     catch (InvalidCastException)
                     {
-                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "] (Attempts: " + connRepeats[client.NetConnection.RemoteEndPoint] + "/hour)");
-                        connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                        if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
                     }
                     catch (Exception ex)
                     {
                         // Program.Output("EXCEPTION IN MESSAGEPUMP, MSG TYPE: " + msg.MessageType + " DATA TYPE: " + packetType);
                         // Program.Output(ex.ToString());
-                        Program.Output("--> Exception in the Netcode.");
-                        Program.Output("--> Message type: " + msg.MessageType + " |" + " Data type: " + packetType);
-                        Program.Output("===\n" + ex.ToString() + "\n===");
+                        if (LogLevel > 1)
+                        {
+                            Program.Output("--> Exception in the Netcode.");
+                            Program.Output("--> Message type: " + msg.MessageType + " |" + " Data type: " + packetType);
+                            Program.Output("===\n" + ex.ToString() + "\n===");
+                        }
                     }
                     finally
                     {
@@ -2946,12 +2931,6 @@ namespace GTANResource
                     {
                         queue.Remove(queue.ElementAt(i).Key);
                     }
-                }
-            }
-            lock (connRepeats)
-            {
-                if (DateTime.Now.Subtract(LastconnRepeatsFlush).TotalMinutes >= 60) {
-                    connRepeats.Clear();
                 }
             }
             lock (Clients)
