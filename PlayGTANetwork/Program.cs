@@ -36,7 +36,7 @@ namespace PlayGTANetwork
 
             var playerSetings = new PlayerSettings();
 
-            if (File.Exists("settings.xml"))
+            if (File.Exists("settings.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText("settings.xml")))
             {
                 var ser = new XmlSerializer(typeof (PlayerSettings));
                 using (var stream = File.OpenRead("settings.xml"))

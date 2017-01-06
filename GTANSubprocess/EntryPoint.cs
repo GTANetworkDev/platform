@@ -36,30 +36,47 @@ namespace GTANetwork
                 8. Delete our mod files.
                 9. Move the temporary mod files back
                 10. Terminate
+
+            REWORK:
+
+                1. Check for new update
+                2. Check Game directory
+                3. Check Game version
+                4. Start GTAVLauncher.exe
+                5. Start the game
+                6. Inject ourselves into GTA5.exe
+                7. Restore old settings on GTA5.exe termination.
+                8. Terminate
             */
 
-            var settings = ReadSettings("settings.xml");
-
-            if (settings == null)
-            {
-                MessageBox.Show("No settings were found.");
-                return;
-            }
+            
 
             #region Create splash screen
-            var splashScreen = new SplashScreenThread();
-            
+            SplashScreenThread splashScreen = new SplashScreenThread();
+            #endregion
+
+            PlayerSettings settings = null;
+
+            settings = ReadSettings("settings.xml");
+
+            splashScreen.SetPercent(10);
+
+            #region Check if running
+            if (Process.GetProcessesByName("GTA5").Any())
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "GTA V is already running. Please close the game before starting GTA Network.");
+                return;
+            }
+            #endregion
+
+            #region Check for new version
+
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
             if (File.Exists("bin\\scripts\\GTANetwork.dll"))
             {
                 fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(Path.GetFullPath("bin\\scripts\\GTANetwork.dll")).FileVersion);
             }
 
-            splashScreen.SetPercent(10);
-
-            #endregion
-
-            #region Check for new version
             using (var wc = new ImpatientWebClient())
             {
                 try
@@ -99,96 +116,125 @@ namespace GTANetwork
                     File.AppendAllText("logs\\launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
                 }
             }
+            #endregion
 
-            splashScreen.SetPercent(40);
+            splashScreen.SetPercent(20);
+
+            #region Check for dependencies
+            var NetPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full";
+            if ((int)Registry.GetValue(NetPath, "Release", null) < 379893) //379893 == .NET Framework v4.5.2
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Missing or outdated .NET Framework, required version: 4.5.2 or newer.", "Missing Dependency");
+                return;
+            }
+
+            var Redist2013x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86";
+            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x86, "Version", null)))
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2013 Redistributable (x86) is missing.", "Missing Dependency");
+                return;
+            }
+
+            var Redist2013x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64";
+            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x64, "Version", null)))
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2013 Redistributable (x64) is missing.", "Missing Dependency");
+                return;
+            }
+
+            var Redist2015x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86";
+            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x86, "Version", null)))
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2015 Redistributable (x86) is missing.", "Missing Dependency");
+                return;
+            }
+
+            var Redist2015x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64";
+            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x64, "Version", null)))
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2015 Redistributable (x64) is missing.", "Missing Dependency");
+                return;
+            }
+            #endregion
+
+            splashScreen.SetPercent(30);
+
+            #region Check required folders
+            var Profiles = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
+
+            if (!Directory.Exists(Profiles))
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Missing Path: " + Profiles + ", Make sure to have run the game atleast once.", "Missing files");
+                return;
+            }
+            if(!Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories).Any())
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Missing Profile, Make sure to have run the game atleast once.", "Missing files");
+                return;
+            }
 
             #endregion
 
-            //if (Process.GetProcessesByName("GTA5").Any())
-            //{
-            //    MessageBox.Show(splashScreen.SplashScreen, "GTA V is already running. Please shut down the game before starting GTA Network.");
-            //    return;
-            //}
-
-            foreach (var process in Process.GetProcessesByName("GTA5").Concat(Process.GetProcessesByName("GTAVLauncher")))
-            {
-                process.Kill();
-            }
-
+            splashScreen.SetPercent(35);
+          
+            #region Check GTAN Folder Registry entry
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
-            var steamDictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\GTAV";
-            var keyName = "InstallFolder";
-            var keyNameSteam = "InstallFolderSteam";
-            var gameVer = "GAMEVERSION";
-
-            InstallFolder = (string)Registry.GetValue(dictPath, keyName, null);
-            settings.SteamPowered = ((string) Registry.GetValue(dictPath, gameVer, "1") == "2");
-
-            if (string.IsNullOrEmpty(InstallFolder))
-            {
-                InstallFolder = (string) Registry.GetValue(steamDictPath, keyNameSteam, null);
-                settings.SteamPowered = true;
-
-                if (string.IsNullOrEmpty(InstallFolder))
-                {
-                    var diag = new OpenFileDialog();
-                    diag.Filter = "GTA5 Executable|GTA5.exe";
-                    diag.RestoreDirectory = true;
-                    diag.CheckFileExists = true;
-                    diag.CheckPathExists = true;
-
-                    if (diag.ShowDialog() == DialogResult.OK)
-                    {
-                        InstallFolder = Path.GetDirectoryName(diag.FileName);
-                        try
-                        {
-                            Registry.SetValue(dictPath, keyName, InstallFolder);
-                        }
-                        catch (UnauthorizedAccessException)
-                        {
-                        }
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    InstallFolder = InstallFolder.Replace("Grand Theft Auto V\\GTAV", "Grand Theft Auto V");
-                }
-            }
-
-            try
-            {
-                SaveSettings("settings.xml", settings);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                MessageBox.Show(splashScreen.SplashScreen, "We require administrative privileges to continue. Please restart as administrator.", "Unauthorized access");
-                return;
-
-                //PROMPT for admin rights is needed here
-            }
-
-            splashScreen.SetPercent(50);
-            //PROMPT for admin rights is needed here
-
-            if ((string) Registry.GetValue(dictPath, "GTANetworkInstallDir", null) != AppDomain.CurrentDomain.BaseDirectory)
+            if ((string)Registry.GetValue(dictPath, "GTANetworkInstallDir", null) != AppDomain.CurrentDomain.BaseDirectory)
             {
                 try
                 {
                     Registry.SetValue(dictPath, "GTANetworkInstallDir", AppDomain.CurrentDomain.BaseDirectory);
                 }
-                catch (UnauthorizedAccessException ex)
+                catch (UnauthorizedAccessException)
                 {
-                    MessageBox.Show(splashScreen.SplashScreen, "We have no access to the registry. Please start the program as Administrator.",
-                        "UNAUTHORIZED ACCESS");
+                    MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues.", "Unauthorized access");
                     return;
                 }
             }
+            #endregion
+
+            splashScreen.SetPercent(40);
+
+            #region Check GamePath directory
+            if (string.IsNullOrWhiteSpace(settings.GamePath) || !File.Exists(settings.GamePath + "\\GTA5.exe"))
+            {
+                var diag = new OpenFileDialog();
+                diag.Filter = "GTA5 Executable|GTA5.exe";
+                diag.FileName = "GTA5.exe";
+                diag.DefaultExt = ".exe";
+                diag.RestoreDirectory = true;
+                diag.CheckFileExists = true;
+                diag.CheckPathExists = true;
+                diag.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                if (diag.ShowDialog() == DialogResult.OK)
+                {
+                    settings.GamePath = Path.GetDirectoryName(diag.FileName);
+                    try
+                    {
+                        SaveSettings("settings.xml", settings);
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        MessageBox.Show(splashScreen.SplashScreen, "Oops! Insufficient permissions, Please run as Admin to avoid permission issues.", "Unauthorized access");
+                        return;
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+            #endregion
+
+            splashScreen.SetPercent(50);
+
+            #region remove that commandline.txt mistake we've made
+            if (File.Exists(settings.GamePath + "//commandline.txt")) File.Delete(settings.GamePath + "//commandline.txt");
+            #endregion
 
             splashScreen.SetPercent(60);
+
+            #region Patching Game Settings
 
             var mySettings = GameSettings.LoadGameSettings();
             if (mySettings.Video != null)
@@ -198,181 +244,133 @@ namespace GTANetwork
                     _pauseOnFocusLoss = mySettings.Video.PauseOnFocusLoss.Value;
                     mySettings.Video.PauseOnFocusLoss.Value = 0;
                 }
-
-                if (mySettings.Video.Windowed != null)
-                {
-                    _windowedMode = mySettings.Video.Windowed.Value;
-                    if (settings.AutosetBorderlessWindowed)
-                        mySettings.Video.Windowed.Value = 2;
-                }
             }
             else
             {
                 mySettings.Video = new GameSettings.Video();
                 mySettings.Video.PauseOnFocusLoss = new GameSettings.PauseOnFocusLoss();
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
-                mySettings.Video.Windowed = new GameSettings.Windowed();
-                mySettings.Video.Windowed.Value = 2;
             }
-
-            //MoveAuxilliaryStuffIn();
 
             GameSettings.SaveSettings(mySettings);
+            #endregion
 
-            ReadStartupSettings();
+            splashScreen.SetPercent(70);
+
+            #region Patch Startup Settings
+            //string filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
+
+            //if (!Directory.Exists(filePath))
+            //{
+            //    MessageBox.Show(splashScreen.SplashScreen, "Missing GTA V Profile folder, Make sure to have run the game atleast once.", "Missing files");
+            //    return;
+            //}
+
+            //foreach (var dir in Directory.GetDirectories(filePath))
+            //{
+            //    var Path = dir + "\\pc_settings.bin";
+            //    if (!File.Exists(Path)) continue;
+
+            //    using (Stream stream = new FileStream(Path, FileMode.Open))
+            //    {
+            //        stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
+            //        _startupFlow = (byte)stream.ReadByte();
+
+            //        stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
+            //        _landingPage = (byte)stream.ReadByte();
+            //    }
+            //}
 
             PatchStartup();
-
-            //if (settings.StartGameInOfflineMode)
-            //    InsertCommandline(InstallFolder);
-
-            splashScreen.SetPercent(65);
-
-            if (!settings.SteamPowered)
-            {
-                //try
-                //{
-                    Process.Start(InstallFolder + "\\GTAVLauncher.exe");
-                //}
-                //catch (Exception e)
-                //{
-
-                //}
-
-            }
-            else
-            {
-                Process.Start("steam://run/271590");
-            }
+            #endregion
 
             splashScreen.SetPercent(80);
 
+            #region Copy over the savegame
+            foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    if (File.Exists((Path.GetDirectoryName(file) + "//SGTA50000")))
+                        File.Move(Path.GetDirectoryName(file) + "//SGTA50000", Path.GetDirectoryName(file) + "//SGTA50000.bak");
+
+                    if (File.Exists("savegame//SGTA50000"))
+                        File.Copy("savegame//SGTA50000", Path.GetDirectoryName(file) + "//SGTA50000");
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(splashScreen.SplashScreen, "An error has occured while copying the savegame.", "Error");
+                    return;
+                }
+            }
+            #endregion
+
+            splashScreen.SetPercent(85);
+
+            #region Launch the Game
+            BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(settings.GamePath + "\\GTA5.exe")));
+            br.BaseStream.Position = 0x01500000;
+            byte[] array = br.ReadBytes(0x35F757);
+            string value = BitConverter.ToString(array).Replace("-", string.Empty);
+
+            if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); }
+            else { Process.Start(settings.GamePath + "\\GTAVLauncher.exe"); }
+            #endregion
+
+            splashScreen.SetPercent(90);
+
+            #region Wait for the Game to launch
             Process gta5Process;
-
-            var counter = 0;
-
             //gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null);
 
-            while ((gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null)) == null)
-            {
+            while ((gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null)) == null) {
                 Thread.Sleep(100);
             }
+            #endregion
 
             splashScreen.SetPercent(100);
-
-            // Close the splashscreen here.
-
-
             splashScreen.Stop();
 
             Thread.Sleep(15000);
-
             InjectOurselves(gta5Process);
 
+            #region Restore Old Settings
             // Wait for GTA5 to exit
-
             var launcherProcess = Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null);
-
-            while (!gta5Process.HasExited || (launcherProcess != null && !launcherProcess.HasExited))
-            {
+            while (!gta5Process.HasExited || (launcherProcess != null && !launcherProcess.HasExited)) {
                 Thread.Sleep(1000);
             }
 
             Thread.Sleep(1000);
 
-            // Move everything back
-
-            PatchStartup(_startupFlow, _landingPage);
-
-            //MoveStuffOut(InstallFolder);
-
+            //PatchStartup(_startupFlow, _landingPage);
             mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
-            mySettings.Video.Windowed.Value = _windowedMode;
 
             GameSettings.SaveSettings(mySettings);
 
-            var scSubfilePath =
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.LocalApplicationData,
-                    Environment.SpecialFolderOption.DoNotVerify) + "\\Rockstar Games\\GTA V";
-
-            //if (File.Exists(scSubfilePath + "\\silentlauncher"))
-            //{
-            //    try
-            //    {
-            //        File.Delete(scSubfilePath + "\\silentlauncher");
-            //    }
-            //    catch { }
-            //}
-
-            //var fils = Directory.GetFiles(scSubfilePath, "*-*");
-
-            //foreach (var file in fils)
-            //{
-            //    try
-            //    {
-            //        File.Delete(file);
-            //    }
-            //    catch { }
-            //}
-        }
-
-        public static PlayerSettings ReadSettings(string path)
-        {
-            var ser = new XmlSerializer(typeof(PlayerSettings));
-
-            PlayerSettings settings = new PlayerSettings();
-
-            if (File.Exists(path))
+            foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
             {
-                using (var stream = File.OpenRead(path)) settings = (PlayerSettings)ser.Deserialize(stream);
+                try
+                {
+                    if (File.Exists((Path.GetDirectoryName(file) + "//SGTA50000")))
+                        File.Delete(Path.GetDirectoryName(file) + "//SGTA50000");
+
+                    if (File.Exists((Path.GetDirectoryName(file) + "//SGTA50000.bak")))
+                        File.Move(Path.GetDirectoryName(file) + "//SGTA50000.bak", Path.GetDirectoryName(file) + "//SGTA50000"); 
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show(splashScreen.SplashScreen, "An error has occured while restoring the savegame.", "Error");
+                    return;
+                }
             }
 
-            return settings;
+            #endregion
         }
 
-        private List<string> OurFiles = new List<string>();
-        private string InstallFolder;
-
-        private byte _startupFlow;
-        private byte _landingPage;
+        //private byte _startupFlow;
+        //private byte _landingPage;
         private int _pauseOnFocusLoss;
-        private int _windowedMode;
-
-        public void InsertCommandline(string path)
-        {
-            try
-            {
-                using (var file = new StreamWriter(File.OpenWrite(path + "\\commandline.txt")))
-                {
-                    file.WriteLine("-scOfflineOnly");
-                }
-            }catch { }
-        }
-
-        public void ReadStartupSettings()
-        {
-            var filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
-                Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
-
-            var dirs = Directory.GetDirectories(filePath);
-
-            foreach (var dir in dirs)
-            {
-                var absPath = dir + "\\pc_settings.bin";
-
-                if (!File.Exists(absPath)) continue;
-
-                using (Stream stream = new FileStream(absPath, FileMode.Open))
-                {
-                    stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
-                    _startupFlow = (byte)stream.ReadByte();
-
-                    stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
-                    _landingPage = (byte)stream.ReadByte();
-                }
-            }
-        }
 
         public void PatchStartup(byte startupFlow = 0x00, byte landingPage = 0x00)
         {
@@ -389,7 +387,7 @@ namespace GTANetwork
 
                 using (Stream stream = new FileStream(absPath, FileMode.Open))
                 {
-                    stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
+                    stream.Seek(0xF4, SeekOrigin.Begin); // Startup Flow, why was it 0xE4?
                     stream.Write(new byte[] { startupFlow }, 0, 1);
 
                     stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
@@ -398,173 +396,32 @@ namespace GTANetwork
             }
         }
 
-        public void MoveAuxilliaryStuffIn()
+        public static PlayerSettings ReadSettings(string path)
         {
-            string[] aux = new[]
-            { "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "v8-ia32.dll", "v8-x64.dll", "EasyHook64.dll", "sharpdx_direct3d11_effects_x64.dll"};
+            var ser = new XmlSerializer(typeof(PlayerSettings));
 
-            foreach (var path in aux)
+            PlayerSettings settings = new PlayerSettings();
+
+            if (File.Exists(path))
             {
-                NoReadonly(InstallFolder + "\\" + path);
-                File.Copy("bin\\" + path, InstallFolder + "\\" + path, true);
-                OurFiles.Add(InstallFolder + "\\" + path);
+                using (var stream = File.OpenRead(path)) settings = (PlayerSettings)ser.Deserialize(stream);
             }
 
-            if (Directory.Exists("tempstorage"))
-            {
-                DeleteDirectory("tempstorage");
-            }
-
-            Directory.CreateDirectory("tempstorage");
-
-            var filesRoot = Directory.GetFiles(InstallFolder, "*.asi");
-
-            foreach (var s in filesRoot)
-            {
-                MoveFile(s, "tempstorage\\" + Path.GetFileName(s));
-            }
-
-            if (File.Exists(InstallFolder + "\\dinput8.dll"))
-                MoveFile(InstallFolder + "\\dinput8.dll", "tempstorage\\dinput8.dll");
-
-            if (File.Exists(InstallFolder + "\\dsound.dll"))
-                MoveFile(InstallFolder + "\\dsound.dll", "tempstorage\\dsound.dll");
-
-            if (File.Exists(InstallFolder + "\\scripthookv.dll"))
-                MoveFile(InstallFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
-
-            if (File.Exists(InstallFolder + "\\commandline.txt"))
-                MoveFile(InstallFolder + "\\commandline.txt", "tempstorage\\commandline.txt");
-
-            /*
-            foreach (var path in Directory.GetFiles("cef"))
-            {
-                NoReadonly(InstallFolder + "\\" + Path.GetFileName(path));
-                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
-                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
-            }
-
-            foreach (var path in Directory.GetDirectories("cef"))
-            {
-                CopyFolder(path, InstallFolder + "\\" + Path.GetFileName(path));
-                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
-            }
-            */
-        }
-
-        public void MoveStuffIn()
-        {
-            if (Directory.Exists("tempstorage"))
-            {
-                DeleteDirectory("tempstorage");
-            }
-
-            Directory.CreateDirectory("tempstorage");
-
-            var filesRoot = Directory.GetFiles(InstallFolder, "*.asi");
-            foreach (var s in filesRoot)
-            {
-                MoveFile(s, "tempstorage\\" + Path.GetFileName(s));
-            }
-
-            if (File.Exists(InstallFolder + "\\dinput8.dll"))
-                MoveFile(InstallFolder + "\\dinput8.dll", "tempstorage\\dinput8.dll");
-
-            if (File.Exists(InstallFolder + "\\dsound.dll"))
-                MoveFile(InstallFolder + "\\dsound.dll", "tempstorage\\dsound.dll");
-
-            if (File.Exists(InstallFolder + "\\scripthookv.dll"))
-                MoveFile(InstallFolder + "\\scripthookv.dll", "tempstorage\\scripthookv.dll");
-
-            if (File.Exists(InstallFolder + "\\commandline.txt"))
-                MoveFile(InstallFolder + "\\commandline.txt", "tempstorage\\commandline.txt");
-
-
-            if (Directory.Exists(InstallFolder + "\\scripts"))
-                MoveDirectory(InstallFolder + "\\scripts", "tempstorage\\scripts");
-
-            // Moving our stuff
-
-            foreach (var path in Directory.GetFiles("bin"))
-            {
-                NoReadonly(InstallFolder + "\\" + Path.GetFileName(path));
-                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
-                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
-            }
-
-            Directory.CreateDirectory(InstallFolder + "\\scripts");
-
-            foreach (var path in Directory.GetFiles("bin\\scripts"))
-            {
-                NoReadonly(InstallFolder + "\\scripts\\" + Path.GetFileName(path));
-                File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
-                OurFiles.Add(InstallFolder + "\\scripts\\" + Path.GetFileName(path));
-            }
-            
-            foreach (var path in Directory.GetFiles("cef"))
-            {
-                NoReadonly(InstallFolder + "\\" + Path.GetFileName(path));
-                File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
-                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
-            }
-
-            foreach (var path in Directory.GetDirectories("cef"))
-            {
-                CopyFolder(path, InstallFolder + "\\" + Path.GetFileName(path));
-                OurFiles.Add(InstallFolder + "\\" + Path.GetFileName(path));
-            }
-        }
-
-        public void MoveStuffOut(string installFolder)
-        {
-            if (File.Exists(installFolder + "\\commandline.txt"))
-            {
-                try
-                {
-                    NoReadonly(installFolder + "\\commandline.txt");
-                    File.Delete(installFolder + "\\commandline.txt");
-                }catch { }
-            }
-
-            foreach (var file in OurFiles)
-            {
-                try
-                {
-                    NoReadonly(file);
-                    File.Delete(file);
-                }
-                catch
-                { }
-            }
-
-            if (Directory.Exists("tempstorage"))
-            {
-                foreach (var path in Directory.GetFiles("tempstorage"))
-                {
-                    File.Copy(path, InstallFolder + "\\" + Path.GetFileName(path), true);
-                }
-
-                if (Directory.Exists("tempstorage\\scripts"))
-                {
-                    if (!Directory.Exists(InstallFolder + "\\scripts"))
-                        Directory.CreateDirectory(InstallFolder + "\\scripts");
-
-                    foreach (var path in Directory.GetFiles("tempstorage\\scripts"))
-                    {
-                        File.Copy(path, InstallFolder + "\\scripts\\" + Path.GetFileName(path), true);
-                    }
-                }
-
-                DeleteDirectory("tempstorage");
-            }
+            return settings;
         }
 
         public static void SaveSettings(string path, PlayerSettings set)
         {
             var ser = new XmlSerializer(typeof(PlayerSettings));
+            if (File.Exists(path))
+            {
+                using (var stream = new FileStream(path, FileMode.Truncate)) ser.Serialize(stream, set);
+            }
+            else 
+            {
+                using (var stream = new FileStream(path, FileMode.Create)) ser.Serialize(stream, set);
+            }
 
-            if (File.Exists(path)) using (var stream = new FileStream(path, FileMode.Truncate)) ser.Serialize(stream, set);
-            else using (var stream = new FileStream(path, FileMode.Create)) ser.Serialize(stream, set);
         }
 
         public static void DeleteDirectory(string target_dir)
