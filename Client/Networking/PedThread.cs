@@ -3,6 +3,7 @@ using GTA;
 using GTANetwork.Util;
 using System.Diagnostics;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 
 namespace GTANetwork.Networking
 {
@@ -15,49 +16,50 @@ namespace GTANetwork.Networking
             KeyDown += OnKeyDown;
 #endif
         }
-
 #if DEBUG
-        public static int StreamedPlayers = 0;
-        public static int StreamedPlayersInRange = 0;
-        public static int StreamedPlayersInRangeCanBeUpdated = 0;
-
-        public static bool DisableUpdateAndNametag = true;
-        public static bool DisableUpdate = true;
-        public static bool DisableUCreatedPlayer = true;
+        public static int InRangePlayers = 0;
+        public static int OutRangePlayers = 0;
+        public static bool ToggleNametag = true;
+        public static bool ToggleUpdate = true;
         public static void OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.NumPad3) DisableUpdateAndNametag = !DisableUpdateAndNametag;
-            if (e.KeyCode == Keys.NumPad0) DisableUpdate = !DisableUpdate;
-            if (e.KeyCode == Keys.NumPad1) DisableUCreatedPlayer = !DisableUCreatedPlayer;
+            if (e.KeyCode == Keys.NumPad1) ToggleUpdate = !ToggleUpdate;
+            if (e.KeyCode == Keys.NumPad2) ToggleNametag = !ToggleNametag;
         }
 #endif
-        public static void OnTick(object sender, EventArgs e)
+        public  static void OnTick(object sender, EventArgs e)
         {
 #if DEBUG
-            StreamedPlayers = 0;
-            StreamedPlayersInRange = 0;
-            StreamedPlayersInRangeCanBeUpdated = 0;
+            InRangePlayers = 0;
+            OutRangePlayers = 0;
             var sw = new Stopwatch();
-            sw.Start();
 #endif
             if (!Main.IsOnServer()) return;
             if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
+#if DEBUG
+            sw.Start();
+#endif
+            //foreach (SyncPed StreamedInPlayers in StreamerThread.StreamedInPlayers)
+            //{
+            //    StreamedInPlayers?.DisplayLocally();
+            //}
 
-            foreach (SyncPed StreamedInPlayers in StreamerThread.StreamedInPlayers)
+            // For loop is recommended
+            for (int i = StreamerThread.StreamedInPlayers.Length - 1; i >= 0; i--)
             {
-                StreamedInPlayers?.DisplayLocally();
+                StreamerThread.StreamedInPlayers[i]?.DisplayLocally();
             }
 #if DEBUG
             sw.Stop();
-            Util.Util.DrawText("ms: " + sw.ElapsedMilliseconds + "", 600, 480, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-            Util.Util.DrawText("Disable Update Pos and Nametag: " + DisableUpdateAndNametag.ToString() + "", 600, 600, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-            Util.Util.DrawText("Total VEH: " + GTA.World.GetAllVehicles().Length + "", 600, 760, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-            Util.Util.DrawText("Total PEDS: " + GTA.World.GetAllPeds().Length + "", 600, 800, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-            Util.Util.DrawText("CurrentStreamedPlayers: " + StreamedPlayers + "", 600, 840, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-            Util.Util.DrawText("StreamedPlayersInRangeCanBeUpdated: " + StreamedPlayersInRangeCanBeUpdated + "", 600, 880, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-            Util.Util.DrawText("CurrentStreamedPlayersInRange: " + StreamedPlayersInRange + "", 600, 920, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
-#endif
 
+            Util.Util.DrawText("Stream Loop: " + sw.ElapsedMilliseconds + " ms", 5, 380, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
+            Util.Util.DrawText("Show Nametags: " + ToggleNametag.ToString(), 5, 420, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
+            Util.Util.DrawText("Update Players: " + ToggleUpdate.ToString(), 5, 440, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
+            Util.Util.DrawText("Spawned Vehicles: " + GTA.World.GetAllVehicles().Length + "", 5, 480, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
+            Util.Util.DrawText("Spawned Peds: " + GTA.World.GetAllPeds().Length + "", 5, 500, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
+            Util.Util.DrawText("InRange Players: " + InRangePlayers + "", 5, 540, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
+            //Util.Util.DrawText("CurrentStreamedPlayersInRange: " + StreamedPlayersInRange + "", 600, 920, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
+#endif
             Util.Util.DrawText(Game.FPS.ToString("0"), Screen.PrimaryScreen.WorkingArea.Width - 20, 0, 0.35f, 255, 255, 255, 255, 0, 1, false, true, 0);
 
         }

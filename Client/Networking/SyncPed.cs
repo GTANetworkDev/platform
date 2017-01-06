@@ -2383,103 +2383,70 @@ namespace GTANetwork.Networking
 
         internal void DisplayLocally()
         {
-            //try
-            //{
-                if (!StreamedIn || IsSpectating || (Flag & (int)EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
+            if (!StreamedIn || IsSpectating || (Flag & (int)EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
+            bool inRange = Game.Player.Character.IsInRangeOfEx(Position, hRange);
+
+            if (inRange)
+            {
 #if DEBUG
-                PedThread.StreamedPlayers++;
+                PedThread.InRangePlayers++;
 #endif
-                var gPos = Position;
-                var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
-
-                DEBUG_STEP = 0;
-
-                DEBUG_STEP = 1;
-                if (inRange)
+                if (Environment.TickCount - _lastTickUpdate > 500)
                 {
-                    //PedThread.StreamedPlayersInRange++;
+                    _lastTickUpdate = Environment.TickCount;
+                    if (CreateCharacter(Position, inRange)) return;
+                    if (CreateVehicle()) return;
 
-                    if (Environment.TickCount - _lastTickUpdate > 100)
+                    if (Character != null)
                     {
-                        _lastTickUpdate = Environment.TickCount;
-                        //if (PedThread.DisableUCreatedPlayer)
-                        if (CreateCharacter(gPos, inRange)) return;
-
-                        DEBUG_STEP = 5;
-
-                        //if (PedThread.DisableUCreatedPlayer)
-                        if (CreateVehicle()) return;
-
-                        DEBUG_STEP = 15;
-
-                        if (Character != null)
+                        Character.Health = PedHealth;
+                        if (IsPlayerDead && !Character.IsDead && IsInVehicle)
                         {
-                            Character.Health = PedHealth;
-                            if (IsPlayerDead && !Character.IsDead && IsInVehicle)
-                            {
-                                Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
-                                Character.IsInvincible = false;
-                                Character.Kill();
-                            }
-
-                            Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
+                            Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
+                            Character.IsInvincible = false;
+                            Character.Kill();
                         }
 
-                        WorkaroundBlip();
+                        Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                     }
-                    if (Character != null && Character.Exists())
-                    {
-                        bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
-
-                        if (UpdatePlayerPosOutOfRange(gPos, Game.Player.Character.IsInRangeOfEx(gPos, Main.PlayerStreamingRange))) return;
-
-                        if ((enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar()))
-                        {
-                            DrawNametag();
-                            return;
-                        }
-
-                        DEBUG_STEP = 16;
-                        DEBUG_STEP = 119;
-                        DEBUG_STEP = 120;
-#if DEBUG
-                        if (PedThread.DisableUpdateAndNametag)
-                        {
-#endif
-                            UpdatePosition();
-                            DrawNametag();
-#if DEBUG
-                        }
-                    
-#endif
-                
-                        _lastJumping = IsJumping;
-                        _lastFreefall = IsFreefallingWithParachute;
-                        _lastShooting = IsShooting;
-                        _lastAiming = IsAiming;
-                        _lastVehicle = _isInVehicle;
-                        _lastEnteringVehicle = EnteringVehicle;
-                    }
+                    WorkaroundBlip();
                 }
-                else
+                if (Character != null && Character.Exists())
                 {
-                    if (Character != null && Character.Exists())
-                    {
-                        LogManager.DebugLog("DELETING CHARACTER");
-                        Character.Delete();
-                    }
-                }
-                DEBUG_STEP = 35;
-            //}
-            //catch (Exception ex)
-            //{
-            //    Util.Util.SafeNotify("Caught unhandled exception in PedThread for player " + Name);
-            //    Util.Util.SafeNotify(ex.Message);
-            //    Util.Util.SafeNotify("LAST STEP: " + DEBUG_STEP);
+                    bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
+                    if (UpdatePlayerPosOutOfRange(Position, Game.Player.Character.IsInRangeOfEx(Position, Main.PlayerStreamingRange))) return;
 
-            //    LogManager.LogException(ex, "PEDTHREAD FOR " + Name + " LASTSTEP: " + DEBUG_STEP);
-                //throw;
-            //}
+                    if ((enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar())) {
+                        DrawNametag();
+                        return;
+                    }
+#if DEBUG
+                    if (PedThread.ToggleUpdate) {
+#endif
+                        UpdatePosition();
+#if DEBUG
+                    }
+                    if (PedThread.ToggleNametag) {
+#endif
+                        DrawNametag();
+#if DEBUG
+                    }
+#endif
+                    _lastJumping = IsJumping;
+                    _lastFreefall = IsFreefallingWithParachute;
+                    _lastShooting = IsShooting;
+                    _lastAiming = IsAiming;
+                    _lastVehicle = _isInVehicle;
+                    _lastEnteringVehicle = EnteringVehicle;
+                }
+            }
+            else
+            {
+                if (Character != null && Character.Exists() && Environment.TickCount - _lastTickUpdate > 500)
+                {
+                    Character.Delete();
+                }
+            }
         }
 
         internal static Ped GetResponsiblePed(Vehicle veh)
