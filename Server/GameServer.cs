@@ -128,6 +128,7 @@ namespace GTANetworkServer
             UseHTTPFileServer = conf.UseHTTPServer;
             TrustClientProperties = conf.EnableClientsideEntityProperties;
             fqdn = conf.fqdn;
+            ConnTimeout = conf.ConnTimeout;
 
             if (conf.whitelist != null && conf.whitelist != null)
             {
@@ -163,6 +164,7 @@ namespace GTANetworkServer
         public bool PasswordProtected { get; set; }
         public string GamemodeName { get; set; }
         public string fqdn { get; set; }
+        public bool ConnTimeout { get; set; }
         public Resource Gamemode { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
@@ -1458,19 +1460,21 @@ namespace GTANResource
                             case NetIncomingMessageType.ConnectionApproval:
                                 if (connBlock.Contains(client.NetConnection.RemoteEndPoint.Address))
                                 {
-                                    client.NetConnection.Deny("Blocked.");
+                                    client.NetConnection.Deny("Denied access due to suspected connection exploit.");
                                     continue;
                                 }
-                                if (queue.ContainsKey(client.NetConnection.RemoteEndPoint)) {
-                                    client.NetConnection.Deny("Wait atleast 60 seconds before reconnecting..");
-                                    continue;
-                                }
-                                else
+                                if(ConnTimeout)
                                 {
-                                    queue.Add(client.NetConnection.RemoteEndPoint, DateTime.Now);
+                                    if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
+                                    {
+                                        client.NetConnection.Deny("Wait atleast 60 seconds before reconnecting..");
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        queue.Add(client.NetConnection.RemoteEndPoint, DateTime.Now);
+                                    }
                                 }
-
-
                                 Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "]");
 
                                 var type = msg.ReadByte();
