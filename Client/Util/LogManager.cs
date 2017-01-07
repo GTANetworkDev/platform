@@ -27,11 +27,11 @@ namespace GTANetwork.Util
 
         public static void DebugLog(string text)
         {
-            CreateLogDirectory();
             if (!Main.WriteDebugLog) return;
+            CreateLogDirectory();
             try
             {
-                //File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+                File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
                 Debug.WriteLine(text);
             }
             catch (Exception) { }

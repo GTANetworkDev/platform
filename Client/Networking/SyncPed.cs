@@ -548,12 +548,10 @@ namespace GTANetwork.Networking
             if (!Main.UIVisible) return;
 
             if ((NametagSettings & 1) != 0) return;
-
-            bool isAiming = false;
-
-            if (((Character.IsInRangeOfEx(Game.Player.Character.Position, 25f))) || (isAiming = Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)))
+           
+            if (((Character.IsInRangeOfEx(Game.Player.Character.Position, 25f))) || Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, Character)) //Natives can slow down
             {
-                if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17) || isAiming)
+                if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, Game.Player.Character, Character, 17)) //Natives can slow down
                 {
 
                     Vector3 targetPos;
@@ -596,13 +594,13 @@ namespace GTANetwork.Networking
                         var armorBar = Math.Round(150 * armorPercent);
                         armorBar = (armorBar * sizeOffset);
 
-                        //*
+                    //Less latency with rectangles disabled
                         Util.Util.DrawRectangle(-75 * sizeOffset, 36 * sizeOffset, armorBar, 20 * sizeOffset, armorColor.R, armorColor.G,
                             armorColor.B, armorColor.A);
                         Util.Util.DrawRectangle(-75 * sizeOffset + armorBar, 36 * sizeOffset, (sizeOffset * 150) - armorBar, sizeOffset * 20,
                             bgColor.R, bgColor.G, bgColor.B, bgColor.A);
                         Util.Util.DrawRectangle(-71 * sizeOffset, 40 * sizeOffset, (142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset, 12 * sizeOffset,
-                                50, 250, 50, 150);
+                            50, 250, 50, 150);
                     }
                     DEBUG_STEP = 8;
                     Function.Call(Hash.CLEAR_DRAW_ORIGIN);
@@ -885,7 +883,6 @@ namespace GTANetwork.Networking
             currentInterop.FinishTime = currentInterop.StartTime + 100;
             currentInterop.LastAlpha = 0f;
         }
-
 
         private void VMultiVehiclePos()
         {
@@ -1566,7 +1563,6 @@ namespace GTANetwork.Networking
                 HasCustomScenarioStarted = true;
             }
         }
-
 
         void DisplayMeleeAnimation()
 	    {

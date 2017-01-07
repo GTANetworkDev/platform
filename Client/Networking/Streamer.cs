@@ -2232,9 +2232,11 @@ namespace GTANetwork.Networking
 
             if (veh == null || !veh.Exists())
             {
+#if DEBUG
                 LogManager.LogException(
                     new Exception("Vehicle was null or didnt spawn, model=" + model.Hash + ", loaded=" + model.IsLoaded +
                                   ", vehicleHandle=" + (veh?.Handle)), "StreamInVehicle");
+#endif
                 data.StreamedIn = false;
                 return;
             }

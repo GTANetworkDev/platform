@@ -360,7 +360,7 @@ namespace GTANetwork
                         LogManager.AlwaysDebugLog("Set text to " + jsonObj.Message + " and title to " + jsonObj.Title);
                     }
                 }
-                catch (WebException ex)
+                catch (WebException)
                 {
                 }
             });
@@ -1378,16 +1378,18 @@ namespace GTANetwork
                     GeneralMenu,
                     DisplayMenu,
                     GraphicsMenu,
+#if DEBUG
                     DebugMenu
+#endif
                 });
                 MainMenu.AddTab(welcomeItem);
             }
 
-            #endregion
+#endregion
             
-            #region Host
+#region Host
             {
-                #if ATTACHSERVER
+#if ATTACHSERVER
                 var settingsPath = GTANInstallDir + "\\server\\settings.xml";
 
                 if (File.Exists(settingsPath) && Directory.Exists(GTANInstallDir + "\\server\\resources"))
@@ -1571,9 +1573,9 @@ namespace GTANetwork
                 }
 #endif
             }
-            #endregion
+#endregion
 
-            #region Quit
+#region Quit
             {
                 var welcomeItem = new TabTextItem("Quit", "Quit GTA Network", "Are you sure you want to quit Grand Theft Auto Network and return to desktop?");
                 welcomeItem.CanBeFocused = false;
@@ -1585,17 +1587,18 @@ namespace GTANetwork
                     Script.Wait(500);
                     //Environment.Exit(0);
                     Process.GetProcessesByName("GTAVLauncher")[0].Kill();
+                    Process.GetProcessesByName("GTA5")[0].Kill();
                     Process.GetCurrentProcess().Kill();
                 };
                 MainMenu.Tabs.Add(welcomeItem);
             }
-            #endregion
+#endregion
 
-            #region Current Server Tab
+#region Current Server Tab
 
-            #region Players
+#region Players
             _serverPlayers = new TabItemSimpleList("Players", new Dictionary<string, string>());
-            #endregion
+#endregion
 
             var favTab = new TabTextItem("Favorite", "Add to Favorites", "Add the current server to favorites.");
             favTab.CanBeFocused = false;
@@ -1649,7 +1652,7 @@ namespace GTANetwork
 
             _serverItem = new TabSubmenuItem("server", new List<TabItem>() { _serverPlayers, favTab, _statsItem, dcItem });
             _serverItem.Parent = MainMenu;
-            #endregion
+#endregion
             
             MainMenu.RefreshIndex();
         }
@@ -2395,7 +2398,7 @@ namespace GTANetwork
                 output = 2;
             if (Function.Call<bool>(Hash.IS_PED_SPRINTING, ped) || (ped.IsPlayer && Game.IsControlPressed(0, Control.Sprint)))
                 output = 3;
-            if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
+            //if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
 
             /*if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
             {
@@ -3910,7 +3913,7 @@ namespace GTANetwork
             obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Unknown" : Game.Player.Name; // To be used as identifiers in server files
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrEmpty(_password)) obj.Password = _password;
-            obj.ScriptVersion = CurrentVersion.ToLong();
+            //obj.ScriptVersion = CurrentVersion.ToLong();
             obj.GameVersion = (byte)Game.Version;
 
             var bin = SerializeBinary(obj);
@@ -3949,34 +3952,32 @@ namespace GTANetwork
         public bool IsMessageTypeThreadsafe(NetIncomingMessageType msgType)
         {
             return false;
-
-            if (msgType == NetIncomingMessageType.Data || msgType == NetIncomingMessageType.StatusChanged)
-                return false;
-            return true;
+            //if (msgType == NetIncomingMessageType.Data || msgType == NetIncomingMessageType.StatusChanged) return false;
+            //return true;
         }
 
         private bool IsPacketTypeThreadsafe(PacketType type)
         {
             return false;
 
-            if (type == PacketType.CreateEntity ||
-                type == PacketType.DeleteEntity ||
-                type == PacketType.FileTransferTick || // TODO: Make this threadsafe (remove GTA.UI.Screen.ShowSubtitle)
-                type == PacketType.FileTransferComplete || 
-                type == PacketType.ServerEvent ||
-                type == PacketType.SyncEvent ||
-                type == PacketType.NativeCall ||
-                type == PacketType.BasicUnoccupiedVehSync ||
-                type == PacketType.UnoccupiedVehSync ||
-                type == PacketType.UnoccupiedVehStartStopSync ||
-                type == PacketType.NativeResponse)
-                return false;
-            return true;
+            //if (type == PacketType.CreateEntity ||
+            //    type == PacketType.DeleteEntity ||
+            //    type == PacketType.FileTransferTick || // TODO: Make this threadsafe (remove GTA.UI.Screen.ShowSubtitle)
+            //    type == PacketType.FileTransferComplete || 
+            //    type == PacketType.ServerEvent ||
+            //    type == PacketType.SyncEvent ||
+            //    type == PacketType.NativeCall ||
+            //    type == PacketType.BasicUnoccupiedVehSync ||
+            //    type == PacketType.UnoccupiedVehSync ||
+            //    type == PacketType.UnoccupiedVehStartStopSync ||
+            //    type == PacketType.NativeResponse)
+            //    return false;
+            //return true;
         }
 
         private void ProcessDataMessage(NetIncomingMessage msg, PacketType type)
         {
-            #region Data
+#region Data
             LogManager.DebugLog("RECEIVED DATATYPE " + type);
             switch (type)
             {
@@ -4785,12 +4786,12 @@ namespace GTANetwork
                                         new Dictionary<string, SyncPed>(Npcs).Where(
                                             p => p.Value.Host == data.Id))
                                 {
-                                    pair.Value.Clear();
                                     Npcs.Remove(pair.Key);
+                                    pair.Value.Clear();
                                 }
                             }
                         }
-                        NetEntityHandler.RemoveByNetHandle(data.Id);
+                        if (data != null) NetEntityHandler.RemoveByNetHandle(data.Id);
                     }
                     break;
                 case PacketType.ScriptEventTrigger:
@@ -4818,7 +4819,7 @@ namespace GTANetwork
                     }
                     break;
             }
-            #endregion
+#endregion
         }
 
         public void ProcessMessages(NetIncomingMessage msg, bool safeThreaded)
@@ -4852,7 +4853,7 @@ namespace GTANetwork
                 }
                 else if (msg.MessageType == NetIncomingMessageType.StatusChanged)
                 {
-                    #region StatusChanged
+#region StatusChanged
                     var newStatus = (NetConnectionStatus) msg.ReadByte();
                     LogManager.DebugLog("NEW STATUS: " + newStatus);
                     switch (newStatus)
@@ -4958,11 +4959,12 @@ namespace GTANetwork
                             OnLocalDisconnect();
                             break;
                     }
-                    #endregion
+#endregion
                 }
                 else if (msg.MessageType == NetIncomingMessageType.DiscoveryResponse)
                 {
-                    #region DiscoveryResponse
+
+#region DiscoveryResponse
                     var discType = msg.ReadByte();
                     var len = msg.ReadInt32();
                     var bin = msg.ReadBytes(len);
@@ -4982,7 +4984,7 @@ namespace GTANetwork
                     _currentOnlinePlayers += data.PlayerCount;
 
                     MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " + _currentOnlinePlayers;
-                    #region LAN
+#region LAN
                     if (data.LAN) //  && matchedItems.Count == 0
                     {
                         var item = new UIMenuItem(data.ServerName);
@@ -5028,7 +5030,7 @@ namespace GTANetwork
 
                         _lanBrowser.Items.Add(item);
                     }
-                    #endregion
+#endregion
 
                     foreach (var ourItem in matchedItems.Where(k => k != null))
                     {
@@ -5114,7 +5116,7 @@ namespace GTANetwork
                                 _recentBrowser.RefreshIndex();
                         }
                     }
-                    #endregion
+#endregion
                 }
             }
             catch (Exception e)
@@ -5547,7 +5549,7 @@ namespace GTANetwork
             _messagesSent = 0;
         }
 
-        #region debug stuff
+#region debug stuff
 
         private DateTime _artificialLagCounter = DateTime.MinValue;
         private bool _debugStarted;
@@ -5719,7 +5721,7 @@ namespace GTANetwork
 
         }
         
-        #endregion
+#endregion
 
         public static IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {

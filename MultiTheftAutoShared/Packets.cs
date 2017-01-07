@@ -362,7 +362,7 @@ namespace GTANetworkShared
         public byte GameVersion { get; set; }
 
         [ProtoMember(5)]
-        public ulong ScriptVersion { get; set; }
+        public int ScriptVersion { get; set; }
     }
 
     
