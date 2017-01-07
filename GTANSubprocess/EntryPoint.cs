@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
@@ -69,57 +67,6 @@ namespace GTANetwork
             }
             #endregion
 
-            #region Check for new version
-
-            ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
-            if (File.Exists("bin\\scripts\\GTANetwork.dll"))
-            {
-                fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(Path.GetFullPath("bin\\scripts\\GTANetwork.dll")).FileVersion);
-            }
-
-            using (var wc = new ImpatientWebClient())
-            {
-                try
-                {
-                    var lastVersion = ParseableVersion.Parse(wc.DownloadString(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/version"));
-                    if (lastVersion > fileVersion)
-                    {
-                        var updateResult =
-                            MessageBox.Show(splashScreen.SplashScreen,
-                                "New GTA Network version is available! Download now?\n\nInternet Version: " +
-                                lastVersion + "\nOur Version: " + fileVersion, "Update Available",
-                                MessageBoxButtons.YesNo);
-
-                        if (updateResult == DialogResult.Yes)
-                        {
-                            // Download latest version.
-                            if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
-                            wc.Timeout = Int32.MaxValue;
-                            wc.DownloadFile(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/files", "tempstorage\\files.zip");
-                            using (var zipfile = ZipFile.Read("tempstorage\\files.zip"))
-                            {
-                                zipfile.ParallelDeflateThreshold = -1; // http://stackoverflow.com/questions/15337186/dotnetzip-badreadexception-on-extract
-                                foreach (var entry in zipfile)
-                                {
-                                    entry.Extract("bin", ExtractExistingFileAction.OverwriteSilently);
-                                }
-                            }
-
-                            File.Delete("tempstorage\\files.zip");
-                        }
-                    }
-                }
-                catch (WebException ex)
-                {
-                    MessageBox.Show(splashScreen.SplashScreen,
-                        "The master server is unavailable at this time. Unable to check for latest version.", "Warning");
-                    File.AppendAllText("logs\\launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
-                }
-            }
-            #endregion
-
-            splashScreen.SetPercent(20);
-
             #region Check for dependencies
             var NetPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full";
             if ((int)Registry.GetValue(NetPath, "Release", null) < 379893) //379893 == .NET Framework v4.5.2
@@ -157,53 +104,57 @@ namespace GTANetwork
             }
             #endregion
 
-            splashScreen.SetPercent(30);
+            splashScreen.SetPercent(20);
 
-            #region Check required folders and clean up
-            var Profiles = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
+            #region Check for new version
 
-            if (!Directory.Exists(Profiles))
+            ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
+            if (File.Exists("bin\\scripts\\GTANetwork.dll"))
             {
-                MessageBox.Show(splashScreen.SplashScreen, "Missing Path: " + Profiles + ", Make sure to have run the game atleast once.", "Missing files");
-                return;
-            }
-            if(!Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories).Any())
-            {
-                MessageBox.Show(splashScreen.SplashScreen, "Missing Profile, Make sure to have run the game atleast once.", "Missing files");
-                return;
+                fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(Path.GetFullPath("bin\\scripts\\GTANetwork.dll")).FileVersion);
             }
 
-            foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
-            {
-                if (File.Exists((Path.GetDirectoryName(file) + "//SGTA50000.bak")))
-                {
-                    File.Delete(Path.GetDirectoryName(file) + "//SGTA50000");
-                    File.Move(Path.GetDirectoryName(file) + "//SGTA50000.bak", Path.GetDirectoryName(file) + "//SGTA50000");
-                }
-                else continue;    
-            }
-
-            #endregion
-
-            splashScreen.SetPercent(35);
-          
-            #region Check GTAN Folder Registry entry
-            var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
-            if ((string)Registry.GetValue(dictPath, "GTANetworkInstallDir", null) != AppDomain.CurrentDomain.BaseDirectory)
+            using (var wc = new ImpatientWebClient())
             {
                 try
                 {
-                    Registry.SetValue(dictPath, "GTANetworkInstallDir", AppDomain.CurrentDomain.BaseDirectory);
+                    var lastVersion = ParseableVersion.Parse(wc.DownloadString(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/version"));
+                    if (lastVersion > fileVersion)
+                    {
+                        var updateResult =
+                            MessageBox.Show(splashScreen.SplashScreen,
+                                "New GTA Network update is available! Download now?\n\nInternet Version: " +
+                                lastVersion + "\nLocal Version: " + fileVersion, "Update Available",
+                                MessageBoxButtons.YesNo);
+
+                        if (updateResult == DialogResult.Yes)
+                        {
+                            // Download latest version.
+                            if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
+                            wc.Timeout = Int32.MaxValue;
+                            wc.DownloadFile(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/files", "tempstorage\\files.zip");
+                            using (var zipfile = ZipFile.Read("tempstorage\\files.zip"))
+                            {
+                                zipfile.ParallelDeflateThreshold = -1; // http://stackoverflow.com/questions/15337186/dotnetzip-badreadexception-on-extract
+                                foreach (var entry in zipfile)
+                                {
+                                    entry.Extract("bin", ExtractExistingFileAction.OverwriteSilently);
+                                }
+                            }
+
+                            File.Delete("tempstorage\\files.zip");
+                        }
+                    }
                 }
-                catch (UnauthorizedAccessException)
+                catch (WebException ex)
                 {
-                    MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues.", "Unauthorized access");
-                    return;
+                    MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    File.AppendAllText("logs\\launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
                 }
             }
             #endregion
 
-            splashScreen.SetPercent(40);
+            splashScreen.SetPercent(30);
 
             #region Check GamePath directory
             if (string.IsNullOrWhiteSpace(settings.GamePath) || !File.Exists(settings.GamePath + "\\GTA5.exe"))
@@ -225,7 +176,7 @@ namespace GTANetwork
                     }
                     catch (UnauthorizedAccessException)
                     {
-                        MessageBox.Show(splashScreen.SplashScreen, "Oops! Insufficient permissions, Please run as Admin to avoid permission issues.", "Unauthorized access");
+                        MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (2)", "Unauthorized access");
                         return;
                     }
                 }
@@ -236,10 +187,104 @@ namespace GTANetwork
             }
             #endregion
 
+            splashScreen.SetPercent(35);
+          
+            #region Check GTAN Folder Registry entry
+            var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
+            var GTANFolder = (string)Registry.GetValue(dictPath, "GTANetworkInstallDir", null);
+            if (GTANFolder != AppDomain.CurrentDomain.BaseDirectory)
+            {
+                try
+                {
+                    Registry.SetValue(dictPath, "GTANetworkInstallDir", AppDomain.CurrentDomain.BaseDirectory);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues.(6)", "Unauthorized access");
+                    return;
+                }
+            }
+            #endregion
+
+            splashScreen.SetPercent(40);
+
+            #region Check required folders and clean up
+            var Profiles = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\Profiles";
+
+            if (!Directory.Exists(Profiles))
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Missing Path: " + Profiles + ", Make sure to have run the game atleast once.", "Missing files");
+                return;
+            }
+            if (!Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories).Any())
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Missing Profile, Make sure to have run the game atleast once.", "Missing files");
+                return;
+            }
+            try
+            {
+                if (Directory.Exists(settings.GamePath + "//scripts"))
+                {
+                    if (!Directory.Exists(settings.GamePath + "//Disabled")) Directory.CreateDirectory(settings.GamePath + "//Disabled");
+                    Directory.Move(settings.GamePath + "//scripts", settings.GamePath + "//Disabled//scripts");
+                }
+
+                foreach (var file in Directory.GetFiles(settings.GamePath, "*.asi", SearchOption.TopDirectoryOnly))
+                {
+                    if (!Directory.Exists(settings.GamePath + "//Disabled")) Directory.CreateDirectory(settings.GamePath + "//Disabled");
+                    File.Move(file, settings.GamePath + "//Disabled//" + Path.GetFileName(file));
+                }
+
+                string[] Files = { "ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "EasyHook64.dll", "scripthookv.dll", "ScriptHookVDotNet.dll", "v8-ia32.dll", "d3d11.dll", "d3d10.dll", "d3d9.dll", "dxgi.dll" };
+                foreach (var file in Files)
+                {
+                    if (!File.Exists(settings.GamePath + "//" + file)) continue;
+                    if (!Directory.Exists(settings.GamePath + "//Disabled")) Directory.CreateDirectory(settings.GamePath + "//Disabled");
+                    if (!File.Exists(settings.GamePath + "//Disabled//" + file)) File.Delete(settings.GamePath + "//Disabled//" + file);
+                    if (File.Exists(settings.GamePath + "//Disabled//" + file)) File.Delete(settings.GamePath + "//Disabled//" + file);
+                    File.Move(settings.GamePath + "//" + file, settings.GamePath + "//Disabled//" + file);
+                }
+
+                foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
+                {
+                    if (!File.Exists((Path.GetDirectoryName(file) + "//SGTA50000.bak"))) continue;
+                    if (File.Exists(Path.GetDirectoryName(file) + "//SGTA50000")) File.Delete(Path.GetDirectoryName(file) + "//SGTA50000");
+                    File.Move(Path.GetDirectoryName(file) + "//SGTA50000.bak", Path.GetDirectoryName(file) + "//SGTA50000");
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (1)", "Unauthorized access");
+                MessageBox.Show(splashScreen.SplashScreen, e.ToString(), "Unauthorized access");
+                return;
+            }
+
+            #endregion
+
             splashScreen.SetPercent(50);
 
-            #region remove that commandline.txt mistake we've made
-            if (File.Exists(settings.GamePath + "//commandline.txt")) File.Delete(settings.GamePath + "//commandline.txt");
+            #region Copy over required files to GamePath
+            try
+            {
+                if (!File.Exists(settings.GamePath + "//sharpdx_direct3d11_effects_x64.dll"))
+                    File.Copy(GTANFolder + "bin//sharpdx_direct3d11_effects_x64.dll", settings.GamePath + "//sharpdx_direct3d11_effects_x64.dll");
+
+                if (!File.Exists(settings.GamePath + "//dinput8.dll")) {
+                    File.Copy(GTANFolder + "bin//dinput8.dll", settings.GamePath + "//dinput8.dll");
+                }
+                else { 
+                    File.Delete(settings.GamePath + "//dinput8.dll");
+                    File.Copy(GTANFolder + "bin//dinput8.dll", settings.GamePath + "//dinput8.dll");
+                }
+                if (!File.Exists(settings.GamePath + "//v8-x64.dll"))
+                    File.Copy(GTANFolder + "bin//v8-x64.dll", settings.GamePath + "//v8-x64.dll");
+
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (3)", "Unauthorized access");
+                return;
+            }
             #endregion
 
             splashScreen.SetPercent(60);
@@ -261,8 +306,15 @@ namespace GTANetwork
                 mySettings.Video.PauseOnFocusLoss = new GameSettings.PauseOnFocusLoss();
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
             }
-
-            GameSettings.SaveSettings(mySettings);
+            try
+            {
+                GameSettings.SaveSettings(mySettings);
+            }
+            catch
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues.(8)", "Unauthorized access");
+                return;
+            }
             #endregion
 
             splashScreen.SetPercent(70);
@@ -309,7 +361,7 @@ namespace GTANetwork
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show(splashScreen.SplashScreen, "An error has occured while copying the savegame.", "Error");
+                    MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (4)", "Unauthorized access");
                     return;
                 }
             }
@@ -323,47 +375,40 @@ namespace GTANetwork
             byte[] array = br.ReadBytes(0x35F757);
             string value = BitConverter.ToString(array).Replace("-", string.Empty);
 
-            if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); }
-            else { Process.Start(settings.GamePath + "\\GTAVLauncher.exe"); }
+            if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); } else { Process.Start(settings.GamePath + "\\GTAVLauncher.exe"); }
             #endregion
 
             splashScreen.SetPercent(90);
 
             #region Wait for the Game to launch
             Process gta5Process;
-            //gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null);
-
-            while ((gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null)) == null) {
-                Thread.Sleep(100);
-            }
+            while ((gta5Process = Process.GetProcessesByName("GTA5").FirstOrDefault(p => p != null)) == null) { Thread.Sleep(100); }
             #endregion
 
             splashScreen.SetPercent(100);
             splashScreen.Stop();
 
+            //Injection
             Thread.Sleep(15000);
             InjectOurselves(gta5Process);
 
-            #region Restore Old Settings
             // Wait for GTA5 to exit
             var launcherProcess = Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null);
-            while (!gta5Process.HasExited || (launcherProcess != null && !launcherProcess.HasExited)) {
-                Thread.Sleep(1000);
-            }
-
+            while (!gta5Process.HasExited || (launcherProcess != null && !launcherProcess.HasExited)) { Thread.Sleep(1000); }
             Thread.Sleep(1000);
 
-            //PatchStartup(_startupFlow, _landingPage);
-            //mySettings.Video.PauseOnFocusLoss.Value = _pauseOnFocusLoss;
+            #region remove that commandline.txt mistake we've made 
+            try
+            {
+                if (File.Exists(settings.GamePath + "//commandline.txt")) File.Delete(settings.GamePath + "//commandline.txt");
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (7)", "Unauthorized access");
+            }
+            #endregion
 
-            //try
-            //{
-            //    GameSettings.SaveSettings(mySettings);
-            //}
-            //catch (Exception)
-            //{ }
-            
-
+            #region Restore save game
             foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
             {
                 try
@@ -376,16 +421,13 @@ namespace GTANetwork
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show(splashScreen.SplashScreen, "An error has occured while restoring the savegame.", "Error");
+                    MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (5)", "Unauthorized access");
                     return;
                 }
             }
-
             #endregion
         }
 
-        //private byte _startupFlow;
-        //private byte _landingPage;
         private int _pauseOnFocusLoss;
 
         public void PatchStartup(byte startupFlow = 0x00, byte landingPage = 0x00)
@@ -440,68 +482,6 @@ namespace GTANetwork
 
         }
 
-        public static void DeleteDirectory(string target_dir)
-        {
-            string[] files = Directory.GetFiles(target_dir);
-            string[] dirs = Directory.GetDirectories(target_dir);
-
-            foreach (string file in files)
-            {
-                NoReadonly(file);
-                File.SetAttributes(file, FileAttributes.Normal);
-                File.Delete(file);
-            }
-
-            foreach (string dir in dirs)
-            {
-                DeleteDirectory(dir);
-            }
-
-            Directory.Delete(target_dir, true);
-        }
-
-        public static void CopyFolder(string sourceFolder, string destFolder)
-        {
-            if (!Directory.Exists(destFolder))
-                Directory.CreateDirectory(destFolder);
-            string[] files = Directory.GetFiles(sourceFolder);
-            foreach (string file in files)
-            {
-                string name = Path.GetFileName(file);
-                string dest = Path.Combine(destFolder, name);
-                NoReadonly(dest);
-                File.Copy(file, dest, true);
-            }
-            string[] folders = Directory.GetDirectories(sourceFolder);
-            foreach (string folder in folders)
-            {
-                string name = Path.GetFileName(folder);
-                string dest = Path.Combine(destFolder, name);
-                CopyFolder(folder, dest);
-            }
-        }
-
-        public static void MoveFile(string sourceFile, string destFile)
-        {
-            NoReadonly(destFile);
-            NoReadonly(sourceFile);
-            File.Copy(sourceFile, destFile);
-            File.SetAttributes(sourceFile, FileAttributes.Normal);
-            File.Delete(sourceFile);
-        }
-
-        public static void MoveDirectory(string sourceDir, string destDir)
-        {
-            CopyFolder(sourceDir, destDir);
-            DeleteDirectory(sourceDir);
-        }
-
-        public static void NoReadonly(string path)
-        {
-            if (File.Exists(path))
-                new FileInfo(path).IsReadOnly = false;
-        }
-
         public static void InjectOurselves(Process gta)
         {
             Inject(gta, Path.GetFullPath("bin\\scripthookv.dll"));
@@ -529,7 +509,6 @@ namespace GTANetwork
     public class SplashScreenThread
     {
         private Thread _thread;
-        private bool _hasToClose = false;
 
         private delegate void CloseForm();
         private delegate void SetPercentDel(int newPercent);
