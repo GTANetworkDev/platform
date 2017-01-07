@@ -52,9 +52,7 @@ namespace GTANMasterServer
                         GtanServerWorker.Work();
                         foreach (var pair in UpdateChannels) pair.Value.Work();
                         WelcomeMessageWorker.Work();
-
-                        if((bool)XML.Config("whitelist"))
-                            Whitelist.Work();
+                        Whitelist.Work();
                     }
                     catch {}
                     finally
@@ -534,6 +532,7 @@ namespace GTANMasterServer
     {
         public Dictionary<string, DateTime> UpdatesServers = new Dictionary<string, DateTime>();
         public Dictionary<string, MasterServerAnnounceSchema> APIServers = new Dictionary<string, MasterServerAnnounceSchema>();
+        public Dictionary<string, MasterServerAnnounceSchema> VerifiedServers = new Dictionary<string, MasterServerAnnounceSchema>();
         public MasterServerStats Stats = new MasterServerStats();
 
         public int MaxMinutes = 10;
@@ -557,6 +556,7 @@ namespace GTANMasterServer
                     {
                         UpdatesServers.Remove(pair.Key);
                         APIServers.Remove(pair.Key);
+                        VerifiedServers.Remove(pair.Key);
                     }
                 }
             }
@@ -566,9 +566,6 @@ namespace GTANMasterServer
         {
             try
             {
-                if ((bool)XML.Config("whitelist")) {
-                    if (!Whitelist.IsWhitelisted(ip)) return;
-                }
 
                 var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
                 var finalAddr = ip + ":" + newServObj.Port;
@@ -598,15 +595,23 @@ namespace GTANMasterServer
                         return;
                     }
 
-
-                    if (UpdatesServers.ContainsKey(finalAddr)) {
+                    if (UpdatesServers.ContainsKey(finalAddr))
+                    {
                         UpdatesServers[finalAddr] = DateTime.Now;
                         APIServers[finalAddr] = newServObj;
+                        if (VerifiedServers.ContainsKey(finalAddr))
+                        {
+                            APIServers[finalAddr] = newServObj;
+                        }
                         return;
                     }
 
                     UpdatesServers.Add(finalAddr, DateTime.Now);
                     APIServers.Add(finalAddr, newServObj);
+                    if (Whitelist.IsWhitelisted(finalAddr))
+                    {
+                        VerifiedServers.Add(finalAddr, newServObj);
+                    }
 
                     if (newServObj.fqdn != null) {
                         Debug.Log("Adding Server: " + ip + ":" + newServObj.Port + " | FQDN: " + newServObj.fqdn + " | Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); 
@@ -641,6 +646,17 @@ namespace GTANMasterServer
             }
         }
 
+        public string ToVerifiedRawJson()
+        {
+            lock (GlobalLock)
+            {
+                var obj = new MasterServerSchema();
+                obj.list = new List<string>(VerifiedServers.Select(s => s.Value.IP));
+
+                return JsonConvert.SerializeObject(obj);
+            }
+        }
+
         public string StatsJson()
         {
             lock (GlobalLock)
@@ -661,6 +677,14 @@ namespace GTANMasterServer
             Get["/servers"] = _ =>
             {
                 var resp = (Response) Program.GtanServerWorker.ToRawJson();
+                resp.ContentType = "application/json";
+
+                return resp;
+            };
+
+            Get["/verified"] = _ =>
+            {
+                var resp = (Response)Program.GtanServerWorker.ToVerifiedRawJson();
                 resp.ContentType = "application/json";
 
                 return resp;
