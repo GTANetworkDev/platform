@@ -687,12 +687,12 @@ namespace GTANetwork
                         if (!int.TryParse(split[1], out port))
                             continue;
 
-                        var item = new UIMenuItem(server);
-                        item.Description = server;
+                        var item = new UIMenuItem(Dns.GetHostAddresses(split[0])[0].ToString() + ":" + split[1]);
+                        item.Description = Dns.GetHostAddresses(split[0])[0].ToString() + ":" + split[1];
 
                         int lastIndx = 0;
 
-                        if (!isIPLocal(split[0]))
+                        if (!isIPLocal(Dns.GetHostAddresses(split[0])[0].ToString()))
                         {
                             if (_serverBrowser.Items.Count > 0)
                                 lastIndx = _serverBrowser.Index;
@@ -732,7 +732,7 @@ namespace GTANetwork
                         if (spl.Length < 2) continue;
                         try
                         {
-                            Client.DiscoverKnownPeer(spl[0], int.Parse(spl[1]));
+                            Client.DiscoverKnownPeer(Dns.GetHostAddresses(spl[0])[0].ToString(), int.Parse(spl[1]));
                         }
                         catch (Exception e)
                         {
@@ -4971,8 +4971,7 @@ namespace GTANetwork
                     var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;
                     if (data == null) return;
 
-                    var itemText = msg.SenderEndPoint.Address.ToString() + ":" + data.Port;
-
+                    var itemText = Dns.GetHostAddresses(msg.SenderEndPoint.Address.ToString())[0].ToString() + ":" + data.Port;
                     var matchedItems = new List<UIMenuItem>();
 
                     matchedItems.Add(_serverBrowser.Items.FirstOrDefault(i => i.Description == itemText));
@@ -5024,7 +5023,7 @@ namespace GTANetwork
                             }
 
                             _connectTab.RefreshIndex();
-                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                            ConnectToServer(Dns.GetHostAddresses(gMsg.SenderEndPoint.Address.ToString())[0].ToString(), data.Port);
                             MainMenu.TemporarilyHidden = true;
                         };
 
@@ -5073,7 +5072,7 @@ namespace GTANetwork
                             }
 
 
-                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port);
+                            ConnectToServer(Dns.GetHostAddresses(gMsg.SenderEndPoint.Address.ToString())[0].ToString(), data.Port);
                             MainMenu.TemporarilyHidden = true;
                             _connectTab.RefreshIndex();
                         };
