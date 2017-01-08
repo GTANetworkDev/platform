@@ -11,7 +11,7 @@ namespace GTANetworkShared
         PlayerDisconnect = 2,
         //PedPositionData = 3,
         NpcVehPositionData = 4,
-        NpcPedPositionData = 5,
+        ConnectionPacket = 5,
         WorldSharingStop = 6,
         DiscoveryResponse = 7,
         ConnectionRequest = 8,
@@ -163,7 +163,7 @@ namespace GTANetworkShared
         public SharedSettings Settings { get; set; }
 
         [ProtoMember(3)]
-        public ulong ServerVersion { get; set; }
+        public string ServerVersion { get; set; }
     }
 
     [ProtoContract]
@@ -362,7 +362,8 @@ namespace GTANetworkShared
         public byte GameVersion { get; set; }
 
         [ProtoMember(5)]
-        public int ScriptVersion { get; set; }
+        public string ScriptVersion { get; set; }
+
         [ProtoMember(6)]
         public bool CEF { get; set; }
     }

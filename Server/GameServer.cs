@@ -92,6 +92,7 @@ namespace GTANetworkServer
             ConstantVehicleDataOrganizer.Initialize();
 
             if (conf.Name != null) Name = conf.Name.Substring(0, Math.Min(58, conf.Name.Length)); // 46 to fill up title + additional 12 chars for colors such as ~g~.. etc..
+            Name.Replace("¦", string.Empty);
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             var lAdd = IPAddress.Parse(conf.LocalAddress);
@@ -212,9 +213,10 @@ namespace GTANetworkServer
         // Assembly name, Path to assembly.
         public Dictionary<string, string> AssemblyReferences = new Dictionary<string, string>();
 
-
         private Dictionary<IPEndPoint, DateTime> queue = new Dictionary<IPEndPoint, DateTime>();
         private List<IPAddress> connBlock = new List<IPAddress>();
+
+        ParseableVersion serverVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
 
         private DateTime _lastAnnounceDateTime;
         public void Start(string[] filterscripts)
@@ -301,6 +303,7 @@ namespace GTANetworkServer
                         annObject.Port = Port;
                         annObject.Passworded = PasswordProtected;
                         annObject.fqdn = fqdn;
+                        annObject.ServerVersion = serverVersion.ToString();
 
                         wb.UploadData(MasterServer.Trim('/') + "/addserver",
                             Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(annObject)));
@@ -308,7 +311,7 @@ namespace GTANetworkServer
                     catch (WebException ex)
                     {
                         Program.Output("Failed to announce self: master server is not available at this time.");
-                        if (LogLevel >= 2)
+                        if (LogLevel >= 1)
                         {
                             Program.Output(ex.ToString());
                         }
@@ -747,7 +750,7 @@ namespace GTANetworkServer
                             if (eventInfo == null)
                             {
                                 Program.Output("WARN: Exported event " + func.EventName + " has not been found!");
-                                if (LogLevel > 1)
+                                if (LogLevel > 0)
                                 {
                                     Program.Output("Available events:");
                                     Program.Output(string.Join(", ", engine._compiledScript.GetType().GetEvents().Select(ev => ev.Name)));
@@ -1408,23 +1411,23 @@ namespace GTANResource
                         }
                     }
                     if (client == null) client = new Client(msg.SenderConnection);
-                    PacketType packetType = PacketType.NpcPedPositionData;
+                    PacketType packetType = PacketType.ConnectionPacket;
 
                     try
                     {
                         switch (msg.MessageType)
                         {
                             case NetIncomingMessageType.UnconnectedData:
-
                                 try
                                 {
                                     var isPing = msg.ReadString();
                                     if (isPing == "ping")
                                     {
-                                        //Program.Output("INFO: ping received from " + msg.SenderEndPoint.Address.ToString());
+                                        if (LogLevel > 0) Program.Output("INFO: Received masterlist Ping.");
+
                                         var pong = Server.CreateMessage();
                                         pong.Write("pong");
-                                        Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
+                                        Server.SendUnconnectedMessage(pong, msg.SenderEndPoint.Address.ToString(), msg.SenderEndPoint.Port);
                                     }
                                     if (isPing == "query")
                                     {
@@ -1463,7 +1466,7 @@ namespace GTANResource
                                     client.NetConnection.Deny("Denied access due to suspected connection exploit.");
                                     continue;
                                 }
-                                if(ConnTimeout)
+                                if (ConnTimeout)
                                 {
                                     if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
                                     {
@@ -1484,40 +1487,35 @@ namespace GTANResource
                                 {
                                     connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
                                 }
-                                //catch (EndOfStreamException)
-                                catch (Exception e)
+                                catch (EndOfStreamException e)
+                                //catch (Exception e)
                                 {
                                     if (client.NetConnection.RemoteEndPoint != null)
                                     {
                                         Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
 
                                         if (LogLevel > 1) Program.Output("[DEBUG]" + e.ToString());
-                                        if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+                                        if (LogLevel > 2) Program.Output("[VERBOSE]" + connReq.ToString());
+                                        //if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
 
                                         client.NetConnection.Deny("Denied access due to suspected connection exploit.");
                                     }
                                     continue;
                                 }
 
-                                if (connReq == null)
-                                {
-                                    client.NetConnection.Deny("Connection Object is null");
-                                    continue;
-                                }
-                                //var cVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
-                                /*if (cVersion < MinimumClientVersion)
+                                if (connReq == null || string.IsNullOrWhiteSpace(connReq.DisplayName) || string.IsNullOrWhiteSpace(connReq.SocialClubName) || string.IsNullOrWhiteSpace(connReq.ScriptVersion))
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
+                                    continue;
+                                }
 
-                                    continue;
-                                }
-                                
-                                if (cVersion < VersionCompatibility.LastCompatibleClientVersion)
+                                var cVersion = ParseableVersion.Parse(connReq.ScriptVersion);
+                                if (cVersion < MinimumClientVersion || cVersion < VersionCompatibility.LastCompatibleClientVersion)
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
                                     continue;
                                 }
-                                */
+
                                 if (BanManager.IsClientBanned(client))
                                 {
                                     client.NetConnection.Deny("You are banned.");
@@ -1554,20 +1552,21 @@ namespace GTANResource
                                     while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
                                     {
                                         duplicate++;
-
                                         connReq.DisplayName = displayname + " (" + duplicate + ")";
                                     }
                                 }
 
                                 client.CommitConnection();
                                 client.SocialClubName = connReq.SocialClubName;
+                                client.CEF = connReq.CEF;
                                 client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
-                                //client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
+                                client.RemoteScriptVersion = ParseableVersion.Parse(connReq.ScriptVersion);
                                 client.GameVersion = connReq.GameVersion;
                                 ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
 
                                 var respObj = new ConnectionResponse();
 
+                                respObj.ServerVersion = serverVersion.ToString();
                                 respObj.CharacterHandle = client.handle.Value;
                                 respObj.Settings = new SharedSettings()
                                 {
@@ -2394,29 +2393,11 @@ namespace GTANResource
                                             }
                                             catch (IndexOutOfRangeException ex)
                                             {
-                                                Program.Output(ex.ToString());
+                                                if (LogLevel > 0) Program.Output(ex.ToString());
                                             }
                                         }
                                         break;
-                                    case PacketType.NpcVehPositionData:
-                                        {
-                                            /*try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var data =
-                                                    DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as
-                                                        VehicleData;
-                                                if (data != null)
-                                                {
-                                                    SendToAll(data, PacketType.NpcVehPositionData, false, client, ConnectionChannel.PositionData);
-                                                }
-                                            }
-                                            catch (IndexOutOfRangeException)
-                                            {
-                                            }*/
-                                        }
-                                        break;
-                                    case PacketType.NpcPedPositionData:
+                                    case PacketType.ConnectionPacket:
                                         {
                                             /*try
                                             {
@@ -2758,24 +2739,24 @@ namespace GTANResource
                                 }
                                 break;
                             default:
-                                Program.Output("WARN: Unhandled type: " + msg.MessageType);
+                                if (LogLevel > 0) Program.Output("WARN: Unhandled type: " + msg.MessageType);
                                 break;
                         }
                     }
                     catch (InvalidCastException)
                     {
-                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], Message type: " + msg.MessageType + " |" + " Packet type: " + packetType + " |" + " Exception: InvalidCastException");
                         if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
                     }
                     catch (Exception ex)
                     {
                         // Program.Output("EXCEPTION IN MESSAGEPUMP, MSG TYPE: " + msg.MessageType + " DATA TYPE: " + packetType);
                         // Program.Output(ex.ToString());
-                        if (LogLevel > 1)
+                        if (LogLevel > 0)
                         {
                             Program.Output("--> Exception in the Netcode.");
-                            Program.Output("--> Message type: " + msg.MessageType + " |" + " Data type: " + packetType);
-                            Program.Output("===\n" + ex.ToString() + "\n===");
+                            Program.Output("--> Message type: " + msg.MessageType + " |" + " Packet type: " + packetType);
+                            Program.Output("\n===\n" + ex.ToString() + "\n===");
                         }
                     }
                     finally
@@ -2901,7 +2882,7 @@ namespace GTANResource
 
             NetEntityHandler.UpdateMovements();
 
-            if (AnnounceSelf && DateTime.Now.Subtract(_lastAnnounceDateTime).TotalMinutes >= 5)
+            if (AnnounceSelf && DateTime.Now.Subtract(_lastAnnounceDateTime).TotalMinutes >= 2)
             {
                 _lastAnnounceDateTime = DateTime.Now;
                 AnnounceSelfToMaster();
@@ -3221,7 +3202,7 @@ namespace GTANResource
                 }
                 catch (ProtoException e)
                 {
-                    Program.Output("WARN: Deserialization failed: " + e.Message);
+                    if(LogLevel > 0) Program.Output("WARN: Deserialization failed: " + e.Message);
                     return null;
                 }
             }
@@ -3576,6 +3557,18 @@ namespace GTANResource
             var natArg = prop.SyncedProperties[key];
 
             return DecodeArgumentListPure(natArg).Single();
+        }
+
+        public string[] GetEntityAllProperties(int entity)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null) return new string[0];
+
+            if (prop.SyncedProperties == null || prop.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
+
+            //return prop.SyncedProperties.Select(pair => DecodeArgumentListPure(pair.Value).Single().ToString()).ToArray(); //Returns all the values
+            return prop.SyncedProperties.Select(pair => pair.Key).ToArray();
         }
 
         public void ChangePlayerTeam(Client target, int newTeam)

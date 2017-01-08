@@ -928,7 +928,7 @@ namespace GTANetwork
                         RebuildServerBrowser();
                     }
 
-                    if (_connectTab.Index == 1 && _connectTab.Items[1].Focused)
+                    if (_connectTab.Index == 2 && _connectTab.Items[2].Focused)
                     {
                         MainMenu.DrawInstructionalButton(5, Control.Enter, "Favorite");
                         if (Game.IsControlJustPressed(0, Control.Enter))
@@ -1049,14 +1049,13 @@ namespace GTANetwork
             {
                 #region General Menu
                 var GeneralMenu = new TabInteractiveListItem("General", new List<UIMenuItem>());
-
                 {
-                    var nameItem = new UIMenuItem("Name");
+                    var nameItem = new UIMenuItem("Display Name");
                     nameItem.SetRightLabel(PlayerSettings.DisplayName);
                     nameItem.Activated += (sender, item) =>
                     {
                         if (IsOnServer()) return;
-                        var newName = InputboxThread.GetUserInput(PlayerSettings.DisplayName ?? "Enter new name", 32, TickSpinner);
+                        var newName = InputboxThread.GetUserInput(PlayerSettings.DisplayName ?? "Enter a new name", 32, TickSpinner);
                         if (!string.IsNullOrWhiteSpace(newName))
                         {
                             if (newName.Length > 32)
@@ -1073,19 +1072,47 @@ namespace GTANetwork
                     GeneralMenu.Items.Add(nameItem);
                 }
                 {
-                    var debugItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
+                    var debugItem = new UIMenuCheckboxItem("Disable Rockstar Editor", PlayerSettings.DisableRockstarEditor);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
-                        PlayerSettings.ScaleChatWithSafezone = @checked;
+                        PlayerSettings.DisableRockstarEditor = @checked;
                         SaveSettings();
                     };
                     GeneralMenu.Items.Add(debugItem);
                 }
+                {
+                    var nameItem = new UIMenuItem("Update Channel");
+                    nameItem.SetRightLabel(PlayerSettings.UpdateChannel);
+                    nameItem.Activated += (sender, item) =>
+                    {
+                        var newName = InputboxThread.GetUserInput(PlayerSettings.UpdateChannel ?? "stable", 40, TickSpinner);
+                        if (!string.IsNullOrWhiteSpace(newName))
+                        {
+                            PlayerSettings.UpdateChannel = newName;
+                            SaveSettings();
+                            nameItem.SetRightLabel(newName);
+                        }
+                    };
+
+                    GeneralMenu.Items.Add(nameItem);
+                }
+                #endregion
+                #region Chatbox
+                var ChatboxMenu = new TabInteractiveListItem("Chatbox", new List<UIMenuItem>());
+                {
+                    var chatItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
+                    chatItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.ScaleChatWithSafezone = @checked;
+                        SaveSettings();
+                    };
+                    ChatboxMenu.Items.Add(chatItem);
+                }
 
                 {
-                    var debugItem = new UIMenuItem("Horizontal Chatbox Offset");
-                    debugItem.SetRightLabel(PlayerSettings.ChatboxXOffset.ToString());
-                    debugItem.Activated += (sender, item) =>
+                    var chatItem = new UIMenuItem("Horizontal Chatbox Offset");
+                    chatItem.SetRightLabel(PlayerSettings.ChatboxXOffset.ToString());
+                    chatItem.Activated += (sender, item) =>
                     {
                         var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxXOffset.ToString(),
                             10, TickSpinner);
@@ -1098,16 +1125,16 @@ namespace GTANetwork
                         }
 
                         PlayerSettings.ChatboxXOffset = newSetting;
-                        debugItem.SetRightLabel(PlayerSettings.ChatboxXOffset.ToString());
+                        chatItem.SetRightLabel(PlayerSettings.ChatboxXOffset.ToString());
                         SaveSettings();
                     };
-                    GeneralMenu.Items.Add(debugItem);
+                    ChatboxMenu.Items.Add(chatItem);
                 }
 
                 {
-                    var debugItem = new UIMenuItem("Vertical Chatbox Offset");
-                    debugItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
-                    debugItem.Activated += (sender, item) =>
+                    var chatItem = new UIMenuItem("Vertical Chatbox Offset");
+                    chatItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
+                    chatItem.Activated += (sender, item) =>
                     {
                         var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxYOffset.ToString(),
                             10, TickSpinner);
@@ -1120,30 +1147,20 @@ namespace GTANetwork
                         }
 
                         PlayerSettings.ChatboxYOffset = newSetting;
-                        debugItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
+                        chatItem.SetRightLabel(PlayerSettings.ChatboxYOffset.ToString());
                         SaveSettings();
                     };
-                    GeneralMenu.Items.Add(debugItem);
+                    ChatboxMenu.Items.Add(chatItem);
                 }
 
                 {
-                    var debugItem = new UIMenuCheckboxItem("Use Classic Chatbox", PlayerSettings.UseClassicChat);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    var chatItem = new UIMenuCheckboxItem("Use Classic Chatbox", PlayerSettings.UseClassicChat);
+                    chatItem.CheckboxEvent += (sender, @checked) =>
                     {
                         PlayerSettings.UseClassicChat = @checked;
                         SaveSettings();
                     };
-                    GeneralMenu.Items.Add(debugItem);
-                }
-
-                {
-                    var debugItem = new UIMenuCheckboxItem("Disable Rockstar Editor", PlayerSettings.DisableRockstarEditor);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        PlayerSettings.DisableRockstarEditor = @checked;
-                        SaveSettings();
-                    };
-                    GeneralMenu.Items.Add(debugItem);
+                    ChatboxMenu.Items.Add(chatItem);
                 }
                 #endregion
 
@@ -1389,33 +1406,55 @@ namespace GTANetwork
                     DebugMenu.Items.Add(debugItem);
                 }
 
-                {
-                    var nameItem = new UIMenuItem("Update Channel");
-                    nameItem.SetRightLabel(PlayerSettings.UpdateChannel);
-                    nameItem.Activated += (sender, item) =>
-                    {
-                        var newName = InputboxThread.GetUserInput(PlayerSettings.UpdateChannel ?? "stable", 40, TickSpinner);
-                        if (!string.IsNullOrWhiteSpace(newName))
-                        {
-                            PlayerSettings.UpdateChannel = newName;
-                            SaveSettings();
-                            nameItem.SetRightLabel(newName);
-                        }
-                    };
-
-                    DebugMenu.Items.Add(nameItem);
-                }
+                
 #endif
+                #endregion
+
+                #region Experimental
+                var ExpMenu = new TabInteractiveListItem("Experimental", new List<UIMenuItem>());
+                {
+
+                    var expItem = new UIMenuCheckboxItem("Enable Chromium Embedded Framework (Requires restart)", PlayerSettings.CEF);
+                    expItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                            PlayerSettings.CEF = @checked;
+                            SaveSettings();
+                    };
+                    ExpMenu.Items.Add(expItem);
+                }
+                {
+                    var expItem = new UIMenuItem("Chromium Embedded Framework Framerate (requires reconnect)");
+                    expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+                    expItem.Activated += (sender, item) =>
+                    {
+                        var strInput = InputboxThread.GetUserInput(PlayerSettings.CEFfps.ToString(),
+                            10, TickSpinner);
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting) || newSetting <= 0 || newSetting > 120)
+                        {
+                            Util.Util.SafeNotify("Input was not in the correct format.");
+                            return;
+                        }
+                        PlayerSettings.CEFfps = newSetting;
+                        CEFManager.FPS = newSetting;
+                        SaveSettings();
+                        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+                    };
+                    ExpMenu.Items.Add(expItem);
+                }
+
                 #endregion
 
                 var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>()
                 {
                     GeneralMenu,
-                    DisplayMenu,
-                    GraphicsMenu,
+                    ChatboxMenu,
+                    //DisplayMenu,
+                    //GraphicsMenu,
 #if DEBUG
-                    DebugMenu
+                    DebugMenu,
 #endif
+                    ExpMenu
                 });
                 MainMenu.AddTab(welcomeItem);
             }
@@ -1621,7 +1660,6 @@ namespace GTANetwork
                     CEFManager.DisposeCef();
                     Script.Wait(500);
                     //Environment.Exit(0);
-                    Process.GetProcessesByName("GTAVLauncher")[0].Kill();
                     Process.GetProcessesByName("GTA5")[0].Kill();
                     Process.GetCurrentProcess().Kill();
                 };
@@ -3948,7 +3986,7 @@ namespace GTANetwork
             obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Unknown" : Game.Player.Name; // To be used as identifiers in server files
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrWhiteSpace(_password)) obj.Password = _password;
-            //obj.ScriptVersion = CurrentVersion.ToLong();
+            obj.ScriptVersion = CurrentVersion.ToString();
             obj.CEF = PlayerSettings.CEF;
             obj.GameVersion = (byte)Game.Version;
 
@@ -4172,7 +4210,7 @@ namespace GTANetwork
                         }*/
                     }
                     break;
-                case PacketType.NpcPedPositionData:
+                case PacketType.ConnectionPacket:
                     {
                         var len = msg.ReadInt32();
                         var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
@@ -4908,7 +4946,7 @@ namespace GTANetwork
                             break;
                         case NetConnectionStatus.Connected:
                             AddServerToRecent(_currentServerIp, "");
-                            Util.Util.SafeNotify("Connection successful!");
+                            Util.Util.SafeNotify("Connection established!");
                             var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
                             var respObj =
                                 DeserializeBinary<ConnectionResponse>(
@@ -4967,10 +5005,9 @@ namespace GTANetwork
                                 }
                             }
 
-                            if (ParseableVersion.FromLong(respObj.ServerVersion) <
-                                VersionCompatibility.LastCompatibleServerVersion)
+                            if (ParseableVersion.Parse(respObj.ServerVersion) < VersionCompatibility.LastCompatibleServerVersion)
                             {
-                                Client.Disconnect("Server is outdated");
+                                Client.Disconnect("Server is outdated.");
                             }
 
 
@@ -6664,6 +6701,20 @@ namespace GTANetwork
             return DecodeArgumentListPure(natArg).Single();
         }
 
+        public static string[] GetEntityAllProperties(LocalHandle entity)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
+            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
+
+            if (prop == null) return new string[0];
+
+            if (prop.SyncedProperties == null || prop.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
+
+            //return prop.SyncedProperties.Select(pair => DecodeArgumentListPure(pair.Value).Single().ToString()).ToArray(); //Returns all the values
+            return prop.SyncedProperties.Select(pair => pair.Key).ToArray();
+        }
+
+
         public static bool SetWorldData(string key, object value)
         {
             if (NetEntityHandler.ServerWorld.SyncedProperties == null) NetEntityHandler.ServerWorld.SyncedProperties = new Dictionary<string, NativeArgument>();
@@ -6712,6 +6763,15 @@ namespace GTANetwork
             var natArg = NetEntityHandler.ServerWorld.SyncedProperties[key];
 
             return DecodeArgumentListPure(natArg).Single();
+        }
+
+        public static string[] GetAllWorldData()
+        {
+            if (NetEntityHandler.ServerWorld == null) return new string[0];
+
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null || NetEntityHandler.ServerWorld.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
+
+            return NetEntityHandler.ServerWorld.SyncedProperties.Select(pair => pair.Key).ToArray();
         }
 
         public void TerminateGameScripts()

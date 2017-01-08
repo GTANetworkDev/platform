@@ -1300,6 +1300,11 @@ namespace GTANetwork.Javascript
             return Main.GetEntityProperty(entity, key);
         }
 
+        public string[] getAllEntitySyncedData(LocalHandle entity)
+        {
+            return Main.GetEntityAllProperties(entity);
+        }
+
         public bool setWorldSyncedData(string key, object data)
         {
             return Main.SetWorldData(key, data);
@@ -1318,6 +1323,11 @@ namespace GTANetwork.Javascript
         public object getWorldSyncedData(string key)
         {
             return Main.GetWorldData(key);
+        }
+
+        public string[] getAllWorldSyncedData()
+        {
+            return Main.GetAllWorldData();
         }
 
         public int getGamePlayer()

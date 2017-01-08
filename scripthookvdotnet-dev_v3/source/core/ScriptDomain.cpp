@@ -15,6 +15,7 @@
  */
 
 #include "ScriptDomain.hpp"
+#define DEBUG true
 
 using namespace System;
 using namespace System::Threading;
@@ -122,7 +123,12 @@ namespace GTA
 
 		auto setup = gcnew AppDomainSetup();
 		setup->ApplicationBase = path;
+#if DEBUG
 		setup->ShadowCopyFiles = "true";
+#else
+		setup->ShadowCopyFiles = "false";
+#endif
+		
 		setup->ShadowCopyDirectories = path;
 
 		auto appdomain = System::AppDomain::CreateDomain("ScriptDomain_" + (path->GetHashCode() * Environment::TickCount).ToString("X"), nullptr, setup, gcnew Security::PermissionSet(Security::Permissions::PermissionState::Unrestricted));
