@@ -550,11 +550,11 @@ namespace GTANetwork.Networking
         {
             lock (ClientMap)
             {
-               // if (item != null)
-               // {
+                if (item != null)
+                {
                     ClientMap.Remove(item.RemoteHandle);
                     HandleMap.Remove(item.RemoteHandle);
-               // }
+                }
             }
         }
 
@@ -1903,6 +1903,7 @@ namespace GTANetwork.Networking
         }
         public void StreamOut(IStreamedItem item)
         {
+            if (item == null) return;
             if (!item.StreamedIn) return;
 
             switch ((EntityType) item.EntityType)

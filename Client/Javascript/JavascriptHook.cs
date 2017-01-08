@@ -3432,9 +3432,11 @@ namespace GTANetwork.Javascript
         public void deleteEntity(LocalHandle handle)
         {
             var item = handle.Properties<IStreamedItem>();
-
-            Main.NetEntityHandler.StreamOut(item);
-            Main.NetEntityHandler.Remove(item);
+            if (item != null)
+            {
+                Main.NetEntityHandler.StreamOut(item);
+                Main.NetEntityHandler.Remove(item);
+            }
         }
 
         public void attachEntity(LocalHandle ent1, LocalHandle ent2, string bone, Vector3 positionOffset, Vector3 rotationOffset)
