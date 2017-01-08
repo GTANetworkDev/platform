@@ -14,6 +14,7 @@ using Microsoft.Owin.Hosting;
 using Nancy.Extensions;
 using Newtonsoft.Json;
 using System.Xml.Linq;
+using Lidgren.Network;
 
 namespace GTANMasterServer
 {
@@ -22,6 +23,7 @@ namespace GTANMasterServer
 
         public static MasterServerWorker GtanServerWorker;
         public static Dictionary<string, VersioningUpdaterWorker> UpdateChannels;
+        public static Dictionary<string, string> Queue;
 
         public static void Main(string[] args)
         {
@@ -38,29 +40,33 @@ namespace GTANMasterServer
 
             UpdateChannels.Add("stable", new VersioningUpdaterWorker());
 
+            PingerWorker.Start();
+            
+
             using (WebApp.Start<Startup>(url))
             {
                 Debug.Log("Running on: " + url);
                 WelcomeMessageWorker.UpdateWelcomeMessage();
-                ContinuousIntegration.GetLastVersion();
-
+                //ContinuousIntegration.GetLastVersion();
                 while (true)
                 {
                     try
                     {
                         ContinuousIntegration.Work();
                         GtanServerWorker.Work();
+                        PingerWorker.ProcessMessages();
                         foreach (var pair in UpdateChannels) pair.Value.Work();
                         WelcomeMessageWorker.Work();
                         Whitelist.Work();
                     }
-                    catch {}
+                    catch { }
                     finally
                     {
                         Thread.Sleep(100);
                     }
                 }
             }
+
         }
 
         public static VersioningUpdaterWorker GetChannelWorker(string channelName)
@@ -76,6 +82,73 @@ namespace GTANMasterServer
             return null;
         }
     }
+
+    #region Pinger
+    public static class PingerWorker
+    {
+
+        public static NetClient Client;
+
+        public static void Start()
+        {
+            Program.Queue = new Dictionary<string, string>();
+            NetPeerConfiguration config = new NetPeerConfiguration("Pinger") { Port = 4499 };
+            config.SetMessageTypeEnabled(NetIncomingMessageType.UnconnectedData, true);
+            Client = new NetClient(config);
+            Client.Start();
+        }
+
+        public static void ProcessMessages()
+        {
+            try
+            {
+                //NetIncomingMessage msg = Client.ReadMessage();
+                List<NetIncomingMessage> messages = new List<NetIncomingMessage>();
+                int msgsRead = Client.ReadMessages(messages);
+                foreach (var msg in messages)
+                {
+                    if ((msg) != null)
+                    {
+                        switch (msg.MessageType)
+                        {
+                            case NetIncomingMessageType.UnconnectedData:
+                                var Pong = msg.ReadString();
+                                var Server = msg.SenderEndPoint.Address.ToString() + ":" + msg.SenderEndPoint.Port.ToString();
+                                if (Pong == "pong")
+                                {
+                                    //Debug.Log("Pong: " + Server);
+                                    lock (Program.Queue)
+                                    {
+                                        if (Program.Queue.ContainsKey(Server))
+                                        {
+                                            //Debug.Log("Contains");
+                                            Program.GtanServerWorker.AddServer(msg.SenderEndPoint.Address.ToString(), Program.Queue[Server]);
+                                        }
+                                    }
+
+                                }
+                                break;
+
+                            default:
+                                break;
+                        }
+                        Client.Recycle(msg);
+                    }
+                }
+            }
+            catch { }
+        }
+  
+        public static void Ping(string IP, int Port)
+        {
+            //Debug.Log("Ping: " + IP + ":" + Port);
+            NetOutgoingMessage ping = Client.CreateMessage();
+            ping.Write("ping");
+            Client.SendUnconnectedMessage(ping, IP, Port);
+        }
+    }
+    #endregion
+
 
     public static class Debug
     {
@@ -316,6 +389,8 @@ namespace GTANMasterServer
         }
     }
 
+
+
     public static class MiscFilesServer
     {
         private static DateTime _lastUpdate;
@@ -373,6 +448,7 @@ namespace GTANMasterServer
             public List<string> Files { get; set; }
         }
     }
+
 
     public class VersioningUpdaterWorker
     {
@@ -491,7 +567,8 @@ namespace GTANMasterServer
         public string Message { get; set; }
         public string Picture { get; set; }
     }
-#endregion
+    #endregion
+
 
     public static class Whitelist
     {
@@ -535,6 +612,7 @@ namespace GTANMasterServer
         public Dictionary<string, MasterServerAnnounceSchema> VerifiedServers = new Dictionary<string, MasterServerAnnounceSchema>();
         public MasterServerStats Stats = new MasterServerStats();
 
+
         public int MaxMinutes = 10;
 
         public object GlobalLock = new object();
@@ -557,43 +635,61 @@ namespace GTANMasterServer
                         UpdatesServers.Remove(pair.Key);
                         APIServers.Remove(pair.Key);
                         VerifiedServers.Remove(pair.Key);
+                        Program.Queue.Remove(pair.Key);
                     }
                 }
             }
+
         }
+        public void QueueServer(string ip, string json)
+        {
+            try
+            {
+                var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
+                //Debug.Log("Queued Server: " + ip + ":" + newServObj.Port);
+                lock (Program.Queue)
+                {
+                    if(!APIServers.ContainsKey(ip + ":" + newServObj.Port))
+                    {
+                        Debug.Log("Pinging Server: " + ip + ":" + newServObj.Port);
+                        Program.Queue.Add(ip + ":" + newServObj.Port, json);
+                        PingerWorker.Ping(ip, newServObj.Port);
+                    }
+                    else
+                    {
+                        AddServer(ip, json);
+                    }
+                }
+
+            }
+            catch { }
+        }
+
 
         public void AddServer(string ip, string json)
         {
             try
             {
-
+                //Debug.Log("Processing Server: " + ip);
                 var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
                 var finalAddr = ip + ":" + newServObj.Port;
 
                 if (!string.IsNullOrWhiteSpace(newServObj.fqdn) && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip && newServObj.fqdn.Length < 64) finalAddr = newServObj.fqdn + ":" + newServObj.Port;
                 if (!string.IsNullOrWhiteSpace(newServObj.Gamemode)) newServObj.Gamemode = newServObj.Gamemode.Substring(0, Math.Min(20, newServObj.Gamemode.Length));
-                if (!string.IsNullOrWhiteSpace(newServObj.Map)) newServObj.Map = newServObj.Map.Substring(0, Math.Min(20, newServObj.Map.Length)).Replace("~n~", string.Empty);
+                if (!string.IsNullOrWhiteSpace(newServObj.Map)) newServObj.Map = newServObj.Map.Substring(0, Math.Min(20, newServObj.Map.Length)).Replace("~n~", string.Empty).Replace("¦", string.Empty); ;
                 if (!string.IsNullOrWhiteSpace(newServObj.ServerName)) newServObj.ServerName = newServObj.ServerName.Substring(0, Math.Min(128, newServObj.ServerName.Length));
                 if (newServObj.MaxPlayers > 1000) newServObj.MaxPlayers = 1000;
                 if (newServObj.MaxPlayers < 1) newServObj.MaxPlayers = 1;
                 newServObj.IP = finalAddr;
 
+                if (ParseableVersion.Parse(newServObj.ServerVersion) < ParseableVersion.Parse((string)XML.Config("MinVersion")))
+                    return;
+
                 lock (GlobalLock)
                 {
-                    if (APIServers.Values.Count(x => x.IP.Contains(ip)) > 2)
-                    {
-                        return;
-                    }
 
-                    if (APIServers.Values.Any(x => x.ServerName == newServObj.ServerName))
-                    {
+                    if (APIServers.Values.Count(x => x.IP.Contains(ip)) > 2 || APIServers.Values.Any(x => x.ServerName == newServObj.ServerName))
                         return;
-                    }
-
-                    if (APIServers.Values.Any(x => x.Gamemode.Contains("UGBASE")))
-                    {
-                        return;
-                    }
 
                     if (UpdatesServers.ContainsKey(finalAddr))
                     {
@@ -613,8 +709,8 @@ namespace GTANMasterServer
                         VerifiedServers.Add(finalAddr, newServObj);
                     }
 
-                    if (newServObj.fqdn != null) {
-                        Debug.Log("Adding Server: " + ip + ":" + newServObj.Port + " | FQDN: " + newServObj.fqdn + " | Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); 
+                    if (!string.IsNullOrWhiteSpace(newServObj.fqdn)) {
+                        Debug.Log("Adding Server: " + ip + ":" + newServObj.Port + ", FQDN: " + newServObj.fqdn + ", Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); 
                     }
                     else {
                         Debug.Log("Adding Server: " + finalAddr);
@@ -719,12 +815,10 @@ namespace GTANMasterServer
 
             Post["/addserver"] = parameters =>
             {
-                //if (Request.IsLocal()) return 403;
                 var jsonData = new StreamReader(Request.Body).ReadToEnd();
-                var serverAddress = Request.Headers["x-real-ip"].FirstOrDefault();
-                //var serverAddress = Request.UserHostAddress;
-                Program.GtanServerWorker.AddServer(serverAddress, jsonData);
-
+                //var serverAddress = Request.Headers["x-real-ip"].FirstOrDefault();
+                var serverAddress = Request.UserHostAddress;
+                Program.GtanServerWorker.QueueServer(serverAddress, jsonData);
                 return 200;
             };
 
@@ -843,6 +937,8 @@ namespace GTANMasterServer
         public string IP { get; set; }
         public bool Passworded { get; set; }
         public string fqdn { get; set; }
+        public string ServerVersion { get; set; }
+        public string key { get; set; }
     }
 
     public class MasterServerStats
