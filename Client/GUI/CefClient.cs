@@ -1,6 +1,4 @@
-﻿#define DISABLE_CEF
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -18,6 +16,10 @@ namespace GTANetwork.GUI
 {
     internal static class CefUtil
     {
+        public static bool DISABLE_CEF = true;
+        public static bool DISABLE_HOOK = true;
+
+
         internal static Dictionary<int, Browser> _cachedReferences = new Dictionary<int, Browser>();
 
         internal static Browser GetBrowserFromCef(CefBrowser browser)
@@ -28,20 +30,21 @@ namespace GTANetwork.GUI
 
             if (_cachedReferences.ContainsKey(browser.Identifier))
                 return _cachedReferences[browser.Identifier];
-            #if !DISABLE_CEF
-            lock (CEFManager.Browsers)
+            if (!CefUtil.DISABLE_CEF)
             {
-                foreach (var b in CEFManager.Browsers)
+                lock (CEFManager.Browsers)
                 {
-                    if (b != null && b._browser != null && b._browser.Identifier == browser.Identifier)
+                    foreach (var b in CEFManager.Browsers)
                     {
-                        father = b;
-                        _cachedReferences.Add(browser.Identifier, b);
-                        break;
+                        if (b != null && b._browser != null && b._browser.Identifier == browser.Identifier)
+                        {
+                            father = b;
+                            _cachedReferences.Add(browser.Identifier, b);
+                            break;
+                        }
                     }
                 }
             }
-                #endif
             return father;
         }
     }
@@ -168,48 +171,49 @@ namespace GTANetwork.GUI
                 exception = "NO FATHER WAS FOUND.";
                 return false;
             }
-            #if !DISABLE_CEF
-            LogManager.AlwaysDebugLog("Father was found!");
-            try
+            if (!CefUtil.DISABLE_CEF)
             {
-                if (name == "resourceCall")
+                LogManager.AlwaysDebugLog("Father was found!");
+                try
                 {
-                    LogManager.AlwaysDebugLog("Entering resourceCall...");
-
-                    List<object> args = new List<object>();
-
-                    for (int i = 1; i < arguments.Length; i++)
+                    if (name == "resourceCall")
                     {
-                        args.Add(arguments[i].GetValue());
+                        LogManager.AlwaysDebugLog("Entering resourceCall...");
+
+                        List<object> args = new List<object>();
+
+                        for (int i = 1; i < arguments.Length; i++)
+                        {
+                            args.Add(arguments[i].GetValue());
+                        }
+
+                        LogManager.AlwaysDebugLog("Executing callback...");
+
+                        object output = father._callback.call(arguments[0].GetStringValue(), args.ToArray());
+
+                        LogManager.AlwaysDebugLog("Callback executed!");
+
+                        returnValue = V8Helper.CreateValue(output);
+                        exception = null;
+                        return true;
                     }
 
-                    LogManager.AlwaysDebugLog("Executing callback...");
+                    if (name == "resourceEval")
+                    {
+                        LogManager.AlwaysDebugLog("Entering resource eval");
+                        object output = father._callback.eval(arguments[0].GetStringValue());
+                        LogManager.AlwaysDebugLog("callback executed!");
 
-                    object output = father._callback.call(arguments[0].GetStringValue(), args.ToArray());
-
-                    LogManager.AlwaysDebugLog("Callback executed!");
-
-                    returnValue = V8Helper.CreateValue(output);
-                    exception = null;
-                    return true;
+                        returnValue = V8Helper.CreateValue(output);
+                        exception = null;
+                        return true;
+                    }
                 }
-
-                if (name == "resourceEval")
+                catch (Exception ex)
                 {
-                    LogManager.AlwaysDebugLog("Entering resource eval");
-                    object output = father._callback.eval(arguments[0].GetStringValue());
-                    LogManager.AlwaysDebugLog("callback executed!");
-
-                    returnValue = V8Helper.CreateValue(output);
-                    exception = null;
-                    return true;
+                    LogManager.LogException(ex, "EXECUTE JS FUNCTION");
                 }
             }
-            catch (Exception ex)
-            {
-                LogManager.LogException(ex, "EXECUTE JS FUNCTION");
-            }
-            #endif
             returnValue = CefV8Value.CreateNull();
             exception = "";
             return false;
@@ -227,9 +231,10 @@ namespace GTANetwork.GUI
                 Browser father = CefUtil.GetBrowserFromCef(browser);
                 if (father != null)
                 {
-                    #if !DISABLE_CEF
-                    father._mainContext = context;
-                    #endif
+                    if (!CefUtil.DISABLE_CEF)
+                    {
+                        father._mainContext = context;
+                    }
                     LogManager.AlwaysDebugLog("Main context set!");
                 }
             }

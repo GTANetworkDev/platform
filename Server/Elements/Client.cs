@@ -23,6 +23,7 @@ namespace GTANetworkServer
 
         internal string SocialClubName { get; set; }
         internal string Name { get; set; }
+        internal bool CEF { get; set; }
         internal float Latency { get; set; }
         internal ParseableVersion RemoteScriptVersion { get; set; }
         internal int GameVersion { get; set; }
@@ -152,6 +153,11 @@ namespace GTANetworkServer
         public string socialClubName
         {
             get { return SocialClubName; }
+        }
+
+        public bool isCEFenabled
+        {
+            get { return CEF; }
         }
 
         public Vector3 velocity

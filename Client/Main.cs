@@ -166,7 +166,19 @@ namespace GTANetwork
             CrossReference.EntryPoint = this;
 
             PlayerSettings = Util.Util.ReadSettings(GTANInstallDir + "\\settings.xml");
-            CEFManager.FPS = PlayerSettings.CefFps;
+
+            if(PlayerSettings.CEF)
+            {
+                CefUtil.DISABLE_CEF = false;
+                CefUtil.DISABLE_HOOK = false;
+            }
+            else
+            {
+                CefUtil.DISABLE_CEF = true;
+                CefUtil.DISABLE_HOOK = true;
+            }
+
+            CEFManager.FPS = PlayerSettings.CEFfps;
 
             GameSettings = Misc.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
@@ -3937,6 +3949,7 @@ namespace GTANetwork
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             if (!string.IsNullOrWhiteSpace(_password)) obj.Password = _password;
             //obj.ScriptVersion = CurrentVersion.ToLong();
+            obj.CEF = PlayerSettings.CEF;
             obj.GameVersion = (byte)Game.Version;
 
             var bin = SerializeBinary(obj);

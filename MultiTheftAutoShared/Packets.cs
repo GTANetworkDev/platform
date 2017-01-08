@@ -363,6 +363,8 @@ namespace GTANetworkShared
 
         [ProtoMember(5)]
         public int ScriptVersion { get; set; }
+        [ProtoMember(6)]
+        public bool CEF { get; set; }
     }
 
     
