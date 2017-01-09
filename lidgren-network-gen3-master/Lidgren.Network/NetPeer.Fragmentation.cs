@@ -114,7 +114,7 @@ namespace Lidgren.Network
 			if (chunkNumber >= totalNumChunks)
 			{
 				LogDebug("Index out of bounds for chunk " + chunkNumber + " (total chunks " + totalNumChunks + ")");
-                LogWarning("Suspected connection exploit attack [" + im.SenderEndPoint.Address.ToString() + "], type: Chunk index out of bounds.");
+                LogWarning("Suspected connection exploit attack [" + im.SenderEndPoint.Address.ToString() + "], type: Chunk index out of bounds for chunk " + chunkNumber + " (total chunks " + totalNumChunks + ")");
                 //im.SenderConnection.Deny("Banned."); unneeded
                 return;
 			}

@@ -94,8 +94,29 @@ namespace Lidgren.Network
 				}
 			}
 		}
+        internal void ExecuteHalt()
+        {
+            m_peer.VerifyNetworkThread();
 
-		internal void ExecuteDisconnect(string reason, bool sendByeMessage)
+            for (int i = 0; i < m_sendChannels.Length; i++)
+            {
+                NetSenderChannelBase channel = m_sendChannels[i];
+                if (channel != null) channel.Reset();
+            }
+
+            lock (m_peer.m_handshakes)
+            {
+                if(m_peer.m_handshakes.ContainsKey(m_remoteEndPoint))
+                {
+                    m_peer.m_handshakes.Remove(m_remoteEndPoint);
+                }
+            }
+            m_disconnectRequested = false;
+            m_connectRequested = false;
+            m_handshakeAttempts = 0;
+        }
+
+        internal void ExecuteDisconnect(string reason, bool sendByeMessage)
 		{
 			m_peer.VerifyNetworkThread();
 
