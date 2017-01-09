@@ -271,13 +271,27 @@ namespace GTANetwork.GUI
             msg = msg.Replace("\n", "");
             msg = msg.Replace("~n~", "");
 
+            string timestamp = "";
+            if (Main.PlayerSettings.Timestamp)
+            {
+                if (Main.PlayerSettings.Militarytime)
+                {
+                    timestamp = "[" + DateTime.Now.ToString("HH:mm:ss") + "] ";
+                }
+                else
+                {
+                    timestamp = "[" + DateTime.Now.ToString("h:mm:ss tt") + "] ";
+                }
+            }
+
             if (string.IsNullOrEmpty(sender))
-                _messages.Insert(0, new Tuple<string, Color>(msg, textColor));
+
+                _messages.Insert(0, new Tuple<string, Color>(timestamp + msg, textColor));
             else
             {
                 sender = sender.Replace("\n", "");
                 sender = sender.Replace("~n~", "");
-                _messages.Insert(0, new Tuple<string, Color>(sender + ": " + msg, textColor));
+                _messages.Insert(0, new Tuple<string, Color>(timestamp + sender + ": " + msg, textColor));
             }
 
             if (_messages.Count > 50)

@@ -67,10 +67,23 @@ namespace GTANetwork.GUI
 
         public void AddMessage(string sender, string msg)
         {
+            string timestamp = "";
+            if (Main.PlayerSettings.Timestamp)
+            {
+                if(Main.PlayerSettings.Militarytime)
+                {
+                    timestamp = "[" + DateTime.Now.ToString("HH:mm:ss") + "] ";
+                }
+                else
+                {
+                    timestamp = "[" + DateTime.Now.ToString("h:mm:ss tt") + "] ";
+                }
+            }
+
             if (string.IsNullOrEmpty(sender))
-                _mainScaleform.CallFunction("ADD_MESSAGE", "", SanitizeString(msg));
+                _mainScaleform.CallFunction("ADD_MESSAGE", timestamp, SanitizeString(msg));
             else
-                _mainScaleform.CallFunction("ADD_MESSAGE", SanitizeString(sender) + ":", SanitizeString(msg));
+                _mainScaleform.CallFunction("ADD_MESSAGE", timestamp + SanitizeString(sender) + ":", SanitizeString(msg));
         }
 
         public static string SanitizeString(string input)

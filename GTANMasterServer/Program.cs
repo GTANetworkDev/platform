@@ -45,9 +45,11 @@ namespace GTANMasterServer
 
             using (WebApp.Start<Startup>(url))
             {
-                Debug.Log("Running on: " + url);
+                Debug.Log("Running list on: " + url);
                 WelcomeMessageWorker.UpdateWelcomeMessage();
-                //ContinuousIntegration.GetLastVersion();
+
+                if ((bool)XML.Config("CI")) ContinuousIntegration.GetLastVersion();
+
                 while (true)
                 {
                     try
@@ -92,10 +94,11 @@ namespace GTANMasterServer
         public static void Start()
         {
             Program.Queue = new Dictionary<string, string>();
-            NetPeerConfiguration config = new NetPeerConfiguration("Pinger") { Port = 4499 };
+            NetPeerConfiguration config = new NetPeerConfiguration("Pinger") { Port = (int)XML.Config("PingPort") };
             config.SetMessageTypeEnabled(NetIncomingMessageType.UnconnectedData, true);
             Client = new NetClient(config);
             Client.Start();
+            Debug.Log("Running pinger on: " + config.Port);
         }
 
         public static void ProcessMessages()

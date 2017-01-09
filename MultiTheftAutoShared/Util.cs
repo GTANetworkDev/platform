@@ -75,8 +75,11 @@ namespace GTANetworkShared
         public string UpdateChannel { get; set; }
         public bool DisableRockstarEditor { get; set; }
         public Keys ScreenshotKey { get; set; }
+        public bool ShowFPS { get; set; }
         public bool CEF { get; set; }
         public int CEFfps { get; set; }
+        public bool Timestamp { get; set; }
+        public bool Militarytime { get; set; }
         public bool AutosetBorderlessWindowed { get; set; }
         public bool UseClassicChat { get; set; }
 
@@ -93,11 +96,14 @@ namespace GTANetworkShared
             ScaleChatWithSafezone = true;
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
-            AutosetBorderlessWindowed = false;
+            //AutosetBorderlessWindowed = false;
             ScreenshotKey = Keys.F8;
             UseClassicChat = false;
+            ShowFPS = true;
             CEF = false;
             CEFfps = 30;
+            Timestamp = false;
+            Militarytime = true;
             GamePath = null;
         }
     }

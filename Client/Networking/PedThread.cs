@@ -16,6 +16,8 @@ namespace GTANetwork.Networking
             KeyDown += OnKeyDown;
 #endif
         }
+        public static bool FPS = true;
+
 #if DEBUG
         public static int InRangePlayers = 0;
         public static int OutRangePlayers = 0;
@@ -60,7 +62,7 @@ namespace GTANetwork.Networking
             Util.Util.DrawText("Streamed Players: " + InRangePlayers + "", 5, 540, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
             //Util.Util.DrawText("CurrentStreamedPlayersInRange: " + StreamedPlayersInRange + "", 600, 920, 0.5f, 255, 255, 255, 255, 0, 1, false, true, 0);
 #endif
-            Util.Util.DrawText(Game.FPS.ToString("0"), Screen.PrimaryScreen.WorkingArea.Width - 20, 0, 0.35f, 255, 255, 255, 255, 0, 1, false, true, 0);
+            if(FPS) Util.Util.DrawText(Game.FPS.ToString("0"), Screen.PrimaryScreen.WorkingArea.Width - 20, 0, 0.35f, 255, 255, 255, 255, 0, 1, false, true, 0);
 
         }
     }

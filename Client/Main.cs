@@ -179,6 +179,7 @@ namespace GTANetwork
             }
 
             CEFManager.FPS = PlayerSettings.CEFfps;
+            PedThread.FPS = PlayerSettings.ShowFPS;
 
             GameSettings = Misc.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
@@ -1072,6 +1073,16 @@ namespace GTANetwork
                     GeneralMenu.Items.Add(nameItem);
                 }
                 {
+                    var debugItem = new UIMenuCheckboxItem("Show Game FPS Counter", PlayerSettings.ShowFPS);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.ShowFPS = @checked;
+                        PedThread.FPS = @checked;
+                        SaveSettings();
+                    };
+                    GeneralMenu.Items.Add(debugItem);
+                }
+                {
                     var debugItem = new UIMenuCheckboxItem("Disable Rockstar Editor", PlayerSettings.DisableRockstarEditor);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
@@ -1099,6 +1110,25 @@ namespace GTANetwork
                 #endregion
                 #region Chatbox
                 var ChatboxMenu = new TabInteractiveListItem("Chatbox", new List<UIMenuItem>());
+
+                {
+                    var chatItem = new UIMenuCheckboxItem("Enable Timestamp", PlayerSettings.Timestamp);
+                    chatItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.Timestamp = @checked;
+                        SaveSettings();
+                    };
+                    ChatboxMenu.Items.Add(chatItem);
+                }
+                {
+                    var chatItem = new UIMenuCheckboxItem("Use Military Time", PlayerSettings.Militarytime);
+                    chatItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.Militarytime = @checked;
+                        SaveSettings();
+                    };
+                    ChatboxMenu.Items.Add(chatItem);
+                }
                 {
                     var chatItem = new UIMenuCheckboxItem("Scale Chatbox With Safezone", PlayerSettings.ScaleChatWithSafezone);
                     chatItem.CheckboxEvent += (sender, @checked) =>
