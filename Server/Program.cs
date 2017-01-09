@@ -159,7 +159,7 @@ namespace GTANetworkServer
                 }
                 CloseProgram = true;
             }
-            catch (Exception) { } //Proper fix is needed but this isn't problematic
+            catch (Exception e) { Program.Output("An exception has occured while closing server.\n" + e.ToString()); } //Proper fix is needed but this isn't problematic
             return true;
         }
 
@@ -177,13 +177,13 @@ namespace GTANetworkServer
         public enum CtrlTypes
         {
             CTRL_C_EVENT = 0,
-            CTRL_BREAK_EVENT,
-            CTRL_CLOSE_EVENT,
+            CTRL_BREAK_EVENT = 1,
+            CTRL_CLOSE_EVENT = 2,
             CTRL_LOGOFF_EVENT = 5,
-            CTRL_SHUTDOWN_EVENT
+            CTRL_SHUTDOWN_EVENT = 6
         }
 
         #endregion
-        
+
     }
 }
