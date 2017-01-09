@@ -1643,7 +1643,7 @@ namespace GTANResource
                                             SendToAll(dcObj, PacketType.PlayerDisconnect, true, ConnectionChannel.EntityBackend);
 
                                             Program.Output("Player disconnected: " + client.SocialClubName + " (" +
-                                                            client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                                            client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], reason: " + reason);
 
                                             Clients.Remove(client);
                                             Server.Configuration.CurrentPlayers = Clients.Count;
