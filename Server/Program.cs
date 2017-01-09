@@ -13,6 +13,12 @@ namespace GTANetworkServer
 {
     internal static class Program
     {
+        [DllImport("Kernel32")]
+        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+
+        private delegate bool EventHandler(CtrlType sig);
+        static EventHandler _handler;
+
         private static object _filelock = new object();
         private static bool _log;
 
@@ -73,6 +79,7 @@ namespace GTANetworkServer
 
 
         public static string Location { get { return AppDomain.CurrentDomain.BaseDirectory; } }
+
         internal static GameServer ServerInstance { get; set; }
         internal static bool CloseProgram = false;
 
@@ -82,6 +89,9 @@ namespace GTANetworkServer
 
         static void Main(string[] args)
         {
+            _handler += new EventHandler(Handler);
+            SetConsoleCtrlHandler(_handler, true);
+
             var settings = ServerSettings.ReadSettings(Program.Location + "settings.xml");
             
             _log = settings.LogToFile;
@@ -123,18 +133,6 @@ namespace GTANetworkServer
 
             Output("Started! Waiting for connections.");
 
-            if (Type.GetType("Mono.Runtime") == null)
-            {
-                SetConsoleCtrlHandler(new HandlerRoutine(ConsoleCtrlCheck), true);
-            }
-            else
-            {
-                Console.CancelKeyPress += (sender, eventArgs) =>
-                {
-                    ConsoleCtrlCheck(CtrlTypes.CTRL_C_EVENT);
-                };
-            }
-
             while (!CloseProgram)
             {
                 ServerInstance.Tick();
@@ -143,38 +141,20 @@ namespace GTANetworkServer
 
         }
 
-
-        #region unmanaged
-
-        private static bool ConsoleCtrlCheck(CtrlTypes ctrType)
+        private static bool Handler(CtrlType sig)
         {
-            try
+            Program.Output("Terminating...");
+            ServerInstance.IsClosing = true;
+            DateTime start = DateTime.Now;
+            while (!ServerInstance.ReadyToClose)
             {
-                ServerInstance.IsClosing = true;
-                Program.Output("Terminating...");
-                DateTime start = DateTime.Now;
-                while (!ServerInstance.ReadyToClose)
-                {
-                    Thread.Sleep(10);
-                }
-                CloseProgram = true;
+                Thread.Sleep(10);
             }
-            catch (Exception e) { Program.Output("An exception has occured while closing server.\n" + e.ToString()); } //Proper fix is needed but this isn't problematic
+            CloseProgram = true;
             return true;
         }
 
-        [DllImport("Kernel32")]
-        public static extern bool SetConsoleCtrlHandler(HandlerRoutine Handler, bool Add);
-
-        // A delegate type to be used as the handler routine
-        // for SetConsoleCtrlHandler.
-
-        public delegate bool HandlerRoutine(CtrlTypes CtrlType);
-
-        // An enumerated type for the control messages
-        // sent to the handler routine.
-
-        public enum CtrlTypes
+        public enum CtrlType
         {
             CTRL_C_EVENT = 0,
             CTRL_BREAK_EVENT = 1,
@@ -182,8 +162,5 @@ namespace GTANetworkServer
             CTRL_LOGOFF_EVENT = 5,
             CTRL_SHUTDOWN_EVENT = 6
         }
-
-        #endregion
-
     }
 }
