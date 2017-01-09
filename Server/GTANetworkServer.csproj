@@ -90,6 +90,10 @@
     <Reference Include="Microsoft.Owin.Hosting">
       <HintPath>..\libs\Microsoft.Owin.Hosting.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Posix, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Posix.4.0.0.0\lib\net40\Mono.Posix.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Nancy">
       <HintPath>..\libs\Nancy.dll</HintPath>
     </Reference>

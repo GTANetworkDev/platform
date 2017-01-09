@@ -8,15 +8,16 @@ using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
 using GTANetworkShared;
+using Mono.Unix;
+using Mono.Unix.Native;
 
 namespace GTANetworkServer
 {
     internal static class Program
     {
 
-        [DllImport("Kernel32")]
+        [DllImport("Kernel32.dll")]
         private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
-
         private delegate bool EventHandler(CtrlType sig);
         static EventHandler _handler;
 
@@ -88,10 +89,20 @@ namespace GTANetworkServer
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool DeleteFile(string name);
 
+
         static void Main(string[] args)
         {
+
             _handler += new EventHandler(Handler);
-            SetConsoleCtrlHandler(_handler, true);
+            int p = (int)Environment.OSVersion.Platform;
+            if ((p == 4) || (p == 6) || (p == 128))
+            {
+                setupHandlers();
+            }
+            else
+            {
+                SetConsoleCtrlHandler(_handler, true);
+            }
 
             var settings = ServerSettings.ReadSettings(Program.Location + "settings.xml");
             
@@ -134,6 +145,7 @@ namespace GTANetworkServer
 
             Output("Started! Waiting for connections.");
 
+ 
             while (!CloseProgram)
             {
                 ServerInstance.Tick();
@@ -152,6 +164,7 @@ namespace GTANetworkServer
                 Thread.Sleep(10);
             }
             CloseProgram = true;
+            Console.WriteLine("Terminated.");
             return true;
         }
 
@@ -162,6 +175,53 @@ namespace GTANetworkServer
             CTRL_CLOSE_EVENT = 2,
             CTRL_LOGOFF_EVENT = 5,
             CTRL_SHUTDOWN_EVENT = 6
+        }
+
+        public static bool masterExit = false;
+        private static void setupHandlers()
+        {
+            Thread newthread = new Thread(new ThreadStart(sigHan));
+            newthread.Start();
+        }
+
+        private static void sigHan()
+        {
+            UnixSignal[] signals = new UnixSignal[] {
+                new UnixSignal (Signum.SIGINT),
+                new UnixSignal (Signum.SIGTERM),
+                new UnixSignal (Signum.SIGQUIT),
+                };
+
+            while (!masterExit)
+            {
+                int index = UnixSignal.WaitAny(signals, -1);
+                Signum signal = signals[index].Signum;
+                sigHandler(signal);
+            };
+        }
+
+        private static void sigHandler(Signum signal)
+        {
+            switch (signal)
+            {
+                case Signum.SIGINT:    // Control-C
+                    Console.WriteLine("Processing SIGINT Signal");
+                    masterExit = true;
+                    break;
+                case Signum.SIGTERM:
+                    Console.WriteLine("Processing SIGTERM Signal");
+                    masterExit = true;
+                    break;
+                case Signum.SIGQUIT:
+                    Console.WriteLine("Processing SIGQUIT Signal");
+                    masterExit = true;
+                    break;
+            }
+
+            if (masterExit)
+            {
+                Handler(CtrlType.CTRL_C_EVENT);
+            }
         }
     }
 }
