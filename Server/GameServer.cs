@@ -2925,7 +2925,7 @@ namespace GTANResource
                     {
                         Clients.Remove(Clients[i]);
                     }
-                    else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 60)
+                    else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 5)
                     {
                         Clients[i].NetConnection.Disconnect("Time out");
                     }
