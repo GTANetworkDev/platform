@@ -4847,21 +4847,19 @@ namespace GTANetwork
                 case PacketType.PlayerDisconnect:
                     {
                         var len = msg.ReadInt32();
+                        
                         var data = DeserializeBinary<PlayerDisconnect>(msg.ReadBytes(len)) as PlayerDisconnect;
                         SyncPed target = null;
                         if (data != null && (target = NetEntityHandler.NetToStreamedItem(data.Id) as SyncPed) != null)
                         {
-                            target.Clear();
                             NetEntityHandler.StreamOut(target);
+                            target.Clear();
                             lock (Npcs)
                             {
-                                foreach (
-                                    var pair in
-                                        new Dictionary<string, SyncPed>(Npcs).Where(
-                                            p => p.Value.Host == data.Id))
+                                foreach (var pair in new Dictionary<string, SyncPed>(Npcs).Where(p => p.Value.Host == data.Id))
                                 {
                                     Npcs.Remove(pair.Key);
-                                    //pair.Value.Clear();
+                                    pair.Value.Clear();
                                 }
                             }
                         }

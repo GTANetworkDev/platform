@@ -13,6 +13,7 @@ namespace GTANetworkServer
 {
     internal static class Program
     {
+
         [DllImport("Kernel32")]
         private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
 

@@ -2646,7 +2646,7 @@ namespace GTANetworkServer
             msg.Write((byte)PacketType.ChatData);
             msg.Write(data.Length);
             msg.Write(data);
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.Chat);
         }
 
         public void setPlayerWantedLevel(Client player, int wantedLevel)

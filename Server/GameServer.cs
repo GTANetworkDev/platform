@@ -2810,11 +2810,10 @@ namespace GTANResource
                     }
 
                     ColShapeManager.Shutdown();
-                    FileServer.Dispose();
-
+                    //FileServer.Dispose(); //Causes nullref on server termination
                     if (UseUPnP) Server.UPnP?.DeleteForwardingRule(Port);
                 }
-                catch { }
+                catch(Exception e) { Program.Output(e.ToString()); }
 
                 ReadyToClose = true;
                 return;
