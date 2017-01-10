@@ -723,11 +723,14 @@ namespace GTANetwork
                         }
                         else
                         {
-                            if (_lanBrowser.Items.Count > 0)
-                                lastIndx = _lanBrowser.Index;
+                            if(!_lanBrowser.Items.Any(i => i.Description == item.Description))
+                            {
+                                if (_lanBrowser.Items.Count > 0)
+                                    lastIndx = _lanBrowser.Index;
 
-                            _lanBrowser.Items.Add(item);
-                            _lanBrowser.Index = lastIndx;
+                                _lanBrowser.Items.Add(item);
+                                _lanBrowser.Index = lastIndx;
+                            }
                         }
 
                         if (listVerified.Contains(server))
