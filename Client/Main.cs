@@ -1838,6 +1838,7 @@ namespace GTANetwork
                 if (map.Objects != null)
                     foreach (var pair in map.Objects)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(pair.Key)) continue;
                         NetEntityHandler.CreateObject(pair.Key, pair.Value);
                         GTA.UI.Screen.ShowSubtitle("Creating object...", 500000);
                     }
@@ -1845,6 +1846,7 @@ namespace GTANetwork
                 if (map.Vehicles != null)
                     foreach (var pair in map.Vehicles)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(pair.Key)) continue;
                         NetEntityHandler.CreateVehicle(pair.Key, pair.Value);
                         GTA.UI.Screen.ShowSubtitle("Creating vehicle...", 500000);
                     }
@@ -1853,6 +1855,7 @@ namespace GTANetwork
                 {
                     foreach (var blip in map.Blips)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(blip.Key)) continue;
                         NetEntityHandler.CreateBlip(blip.Key, blip.Value);
                     }
                 }
@@ -1861,6 +1864,7 @@ namespace GTANetwork
                 {
                     foreach (var marker in map.Markers)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(marker.Key)) continue;
                         NetEntityHandler.CreateMarker(marker.Key, marker.Value);
                     }
                 }
@@ -1869,14 +1873,18 @@ namespace GTANetwork
                 {
                     foreach (var pickup in map.Pickups)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(pickup.Key)) continue;
                         NetEntityHandler.CreatePickup(pickup.Key, pickup.Value);
                     }
                 }
 
                 if (map.TextLabels != null)
                 {
+                    //map.TextLabels.GroupBy(x => x.Key).Select(y => y.First()); //Remove duplicates before procceeding
+
                     foreach (var label in map.TextLabels)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(label.Key)) continue;
                         NetEntityHandler.CreateTextLabel(label.Key, label.Value);
                     }
                 }
@@ -1885,6 +1893,7 @@ namespace GTANetwork
                 {
                     foreach (var ped in map.Peds)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(ped.Key)) continue;
                         NetEntityHandler.CreatePed(ped.Key, ped.Value);
                     }
                 }
@@ -1893,6 +1902,7 @@ namespace GTANetwork
                 {
                     foreach (var ped in map.Particles)
                     {
+                        if (NetEntityHandler.ClientMap.ContainsKey(ped.Key)) continue;
                         NetEntityHandler.CreateParticle(ped.Key, ped.Value);
                     }
                 }
@@ -1920,7 +1930,7 @@ namespace GTANetwork
                                     ? Main.FriendRelGroup
                                     : Main.RelGroup;
 
-                                for (int i = 0; i < 15; i++)
+                                for (int i = 0; i < 15; i++) //NEEDS A CHECK
                                 {
                                     Function.Call(Hash.SET_PED_COMPONENT_VARIATION, ourSyncPed.Character, i,
                                         pair.Value.Props.Get((byte)i),
@@ -5215,8 +5225,6 @@ namespace GTANetwork
                             {
                                 pass = true;
                             }
-                            Util.Util.SafeNotify("1");
-
                             ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port, pass);
                             MainMenu.TemporarilyHidden = true;
                             _connectTab.RefreshIndex();
