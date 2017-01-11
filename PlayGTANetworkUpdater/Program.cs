@@ -13,6 +13,7 @@ using System.Xml;
 using System.Diagnostics;
 using Ionic.Zip;
 using Microsoft.Win32;
+using GTANetwork;
 
 namespace PlayGTANetworkUpdater
 {
@@ -22,19 +23,19 @@ namespace PlayGTANetworkUpdater
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool DeleteFile(string name);
-
+        public static SplashScreenThread splashScreen = new SplashScreenThread();
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         /// 
+
         [STAThread]
         static void Main()
         {
-
             #region Check if GTA5 or GTAVLauncher is running
             if (Process.GetProcessesByName("GTA5").Any() || Process.GetProcessesByName("GTAVLauncher").Any() || Process.GetProcessesByName("GTANSubprocess").Any())
             {
-                var updateResult = MessageBox.Show("GTAN Launcher has found a running instance of either GTA5/GTAVLauncher/GTANSubprocess, Close before proceeding?", "Alert", MessageBoxButtons.YesNo);
+                var updateResult = MessageBox.Show(splashScreen.SplashScreen,"GTAN Launcher has found a running instance of either GTA5/GTAVLauncher/GTANSubprocess, Close before proceeding?", "Alert", MessageBoxButtons.YesNo);
                 if (updateResult == DialogResult.Yes)
                 {
                     foreach (var process in Process.GetProcessesByName("GTA5"))
@@ -58,51 +59,51 @@ namespace PlayGTANetworkUpdater
             #endregion
 
             Thread.Sleep(1000);
-
+            splashScreen.SetPercent(5);
             #region Check for dependencies
             if (!Environment.Is64BitOperatingSystem)
             {
-                MessageBox.Show("GTA Network does not work on 32bit machines.", "Incompatible");
+                MessageBox.Show(splashScreen.SplashScreen,"GTA Network does not work on 32bit machines.", "Incompatible");
                 return;
             }
 
             if (Environment.OSVersion.ToString().Contains("Windows NT 6.1"))
             {
-                MessageBox.Show("You may run into loading to Singleplayer issue using Windows 7", "Just a little reminder :)");
+                MessageBox.Show(splashScreen.SplashScreen,"You may run into loading to Singleplayer issue using Windows 7", "Just a little reminder :)");
             }
 
             var NetPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full";
             if ((int)Registry.GetValue(NetPath, "Release", null) < 379893) //379893 == .NET Framework v4.5.2
             {
-                MessageBox.Show("Missing or outdated .NET Framework, required version: 4.5.2 or newer.", "Missing Dependency");
+                MessageBox.Show(splashScreen.SplashScreen,"Missing or outdated .NET Framework, required version: 4.5.2 or newer.", "Missing Dependency");
                 return;
             }
 
             var Redist2013x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x86, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2013 Redistributable (x86) is missing.", "Missing Dependency");
+                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2013 Redistributable (x86) is missing.", "Missing Dependency");
                 return;
             }
 
             var Redist2013x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x64, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2013 Redistributable (x64) is missing.", "Missing Dependency");
+                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2013 Redistributable (x64) is missing.", "Missing Dependency");
                 return;
             }
 
             var Redist2015x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x86, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2015 Redistributable (x86) is missing.", "Missing Dependency");
+                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2015 Redistributable (x86) is missing.", "Missing Dependency");
                 return;
             }
 
             var Redist2015x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x64, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2015 Redistributable (x64) is missing.", "Missing Dependency");
+                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2015 Redistributable (x64) is missing.", "Missing Dependency");
                 return;
             }
             #endregion
@@ -117,7 +118,7 @@ namespace PlayGTANetworkUpdater
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    MessageBox.Show("Insufficient permissions, Please run as an Admin to avoid permission issues.", "Unauthorized access");
+                    MessageBox.Show(splashScreen.SplashScreen,"Insufficient permissions, Please run as an Admin to avoid permission issues.", "Unauthorized access");
                     return;
                 }
             }
@@ -155,7 +156,7 @@ namespace PlayGTANetworkUpdater
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString(), "Error");
+                MessageBox.Show(splashScreen.SplashScreen,e.ToString(), "Error");
             }
 
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
@@ -172,7 +173,7 @@ namespace PlayGTANetworkUpdater
                     if (lastVersion > fileVersion)
                     {
                         var updateResult =
-                            MessageBox.Show("New GTANLauncher update is available! Download now?\n\nUpdate Version: " +
+                            MessageBox.Show(splashScreen.SplashScreen,"New GTANLauncher update is available! Download now?\n\nUpdate Version: " +
                                 lastVersion + "\nInstalled Version: " + fileVersion, "Update Available",
                                 MessageBoxButtons.YesNo);
 
@@ -197,12 +198,13 @@ namespace PlayGTANetworkUpdater
                 }
                 catch (WebException ex)
                 {
-                    MessageBox.Show("Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    MessageBox.Show(splashScreen.SplashScreen,"Unable to contact master server, Please check your internet connection and try again.", "Warning");
                     File.AppendAllText("logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
                 }
             }
-
+            splashScreen.SetPercent(10);
             Process.Start("launcher\\GTANSubprocess.exe");
+            splashScreen.Stop();
         }
         private static void Download(string file, string outputfile, string channel, string MasterServer)
         {
@@ -214,7 +216,7 @@ namespace PlayGTANetworkUpdater
                 }
                 catch (WebException e)
                 {
-                    MessageBox.Show(e.ToString(), "CRITICAL ERROR");
+                    MessageBox.Show(splashScreen.SplashScreen, e.ToString(), "CRITICAL ERROR");
                 }
             }
         }
@@ -361,6 +363,45 @@ namespace PlayGTANetworkUpdater
                 Revision = ourVersion.Revision,
                 Build = ourVersion.Build,
             };
+        }
+    }
+
+
+    public class SplashScreenThread
+    {
+        private Thread _thread;
+
+        private delegate void CloseForm();
+        private delegate void SetPercentDel(int newPercent);
+
+        public SplashScreen SplashScreen;
+
+        public SplashScreenThread()
+        {
+            _thread = new Thread(Show);
+            _thread.IsBackground = true;
+            _thread.Start();
+        }
+
+        public void Stop()
+        {
+            if (SplashScreen.InvokeRequired)
+                SplashScreen.Invoke(new CloseForm(Stop));
+            else
+                SplashScreen.Close();
+        }
+        public void SetPercent(int newPercent)
+        {
+            while (SplashScreen == null) Thread.Sleep(10);
+            if (SplashScreen.InvokeRequired)
+                SplashScreen.Invoke(new SetPercentDel(SetPercent), newPercent);
+            else
+                SplashScreen.progressBar1.Value = newPercent;
+        }
+        public void Show()
+        {
+            SplashScreen = new SplashScreen();
+            SplashScreen.ShowDialog();
         }
     }
 }

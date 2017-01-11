@@ -74,12 +74,12 @@ namespace GTANetwork
             settings = ReadSettings(GTANFolder + "settings.xml");
             #endregion
 
-            splashScreen.SetPercent(10);
+            splashScreen.SetPercent(15);
 
             #region Check if GTA5 or GTAVLauncher is running
             if (Process.GetProcessesByName("GTA5").Any() || Process.GetProcessesByName("GTAVLauncher").Any())
             {
-                MessageBox.Show("GTA5 or the GTAVLauncher is already running. Please close them before starting GTA Network.");
+                MessageBox.Show(splashScreen.SplashScreen, "GTA5 or the GTAVLauncher is already running. Please close them before starting GTA Network.");
                 return;
             }
             #endregion
@@ -87,53 +87,51 @@ namespace GTANetwork
             #region Check for dependencies
             if (!Environment.Is64BitOperatingSystem)
             {
-                MessageBox.Show("GTA Network does not work on 32bit machines.", "Incompatible");
+               MessageBox.Show(splashScreen.SplashScreen, "GTA Network does not work on 32bit machines.", "Incompatible");
                 return;
             }
 
             if (Environment.OSVersion.ToString().Contains("Windows NT 6.1"))
             {
-                MessageBox.Show("You may run into loading to Singleplayer issue using Windows 7", "Just a little reminder :)");
+               MessageBox.Show(splashScreen.SplashScreen, "You may run into loading to Singleplayer issue using Windows 7", "Just a little reminder :)");
             }
 
             var NetPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full";
             if ((int)Registry.GetValue(NetPath, "Release", null) < 379893) //379893 == .NET Framework v4.5.2
             {
-                MessageBox.Show("Missing or outdated .NET Framework, required version: 4.5.2 or newer.", "Missing Dependency");
+               MessageBox.Show(splashScreen.SplashScreen, "Missing or outdated .NET Framework, required version: 4.5.2 or newer.", "Missing Dependency");
                 return;
             }
 
             var Redist2013x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x86, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2013 Redistributable (x86) is missing.", "Missing Dependency");
+               MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2013 Redistributable (x86) is missing.", "Missing Dependency");
                 return;
             }
 
             var Redist2013x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x64, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2013 Redistributable (x64) is missing.", "Missing Dependency");
+               MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2013 Redistributable (x64) is missing.", "Missing Dependency");
                 return;
             }
 
             var Redist2015x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x86, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2015 Redistributable (x86) is missing.", "Missing Dependency");
+               MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2015 Redistributable (x86) is missing.", "Missing Dependency");
                 return;
             }
 
             var Redist2015x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64";
             if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x64, "Version", null)))
             {
-                MessageBox.Show("Microsoft Visual C++ 2015 Redistributable (x64) is missing.", "Missing Dependency");
+               MessageBox.Show(splashScreen.SplashScreen, "Microsoft Visual C++ 2015 Redistributable (x64) is missing.", "Missing Dependency");
                 return;
             }
             #endregion
 
-            splashScreen.SetPercent(20);
-            
             #region Check for new client version
 
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
@@ -142,6 +140,7 @@ namespace GTANetwork
                 fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(GTANFolder + "bin" + "\\" + "scripts" + "\\" + "GTANetwork.dll").FileVersion);
             }
 
+            splashScreen.SetPercent(20);
             using (var wc = new ImpatientWebClient())
             {
                 try
