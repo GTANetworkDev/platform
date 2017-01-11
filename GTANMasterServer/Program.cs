@@ -508,9 +508,14 @@ namespace GTANMasterServer
             return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "files.zip";
         }
 
-        public string SubprocessPath()
+        public string LauncherPath()
         {
-            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "GTANetwork.dll";
+            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "launcher" + Path.DirectorySeparatorChar + "files.zip";
+        }
+
+        public string LauncherVersionPath()
+        {
+            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "launcher" + Path.DirectorySeparatorChar + "version.txt";
         }
     }
 #endregion
@@ -859,7 +864,7 @@ namespace GTANMasterServer
                 return 404;
             };
 
-            Get["/update/{channel}/version"] = parameters =>
+            Get["/update/{channel}/gtan/version"] = parameters =>
             {
                 var chan = (string)parameters.channel;
 
@@ -873,21 +878,7 @@ namespace GTANMasterServer
                 return 404;
             };
 
-            Get["/update/{channel}/version/l"] = parameters =>
-            {
-                var chan = (string)parameters.channel;
-
-                var versionWorker = Program.GetChannelWorker(chan);
-
-                if (versionWorker != null)
-                {
-                    return versionWorker.LastSubprocessVersion.ToString();
-                }
-
-                return 404;
-            };
-
-            Get["/update/{channel}/files"] = parameters =>
+            Get["/update/{channel}/gtan/files"] = parameters =>
             {
                 var chan = (string)parameters.channel;
 
@@ -901,7 +892,7 @@ namespace GTANMasterServer
                 return 404;
             };
 
-            Get["/update/{channel}/files/l"] = parameters =>
+            Get["/update/{channel}/launcher/version"] = parameters =>
             {
                 var chan = (string)parameters.channel;
 
@@ -909,7 +900,20 @@ namespace GTANMasterServer
 
                 if (versionWorker != null)
                 {
-                    return Response.AsFile(versionWorker.SubprocessPath());
+                    return File.ReadAllText(versionWorker.LauncherVersionPath()).ToString();
+                }
+                return 404;
+            };
+
+            Get["/update/{channel}/launcher/files"] = parameters =>
+            {
+                var chan = (string)parameters.channel;
+
+                var versionWorker = Program.GetChannelWorker(chan);
+
+                if (versionWorker != null)
+                {
+                    return Response.AsFile(versionWorker.LauncherPath());
                 }
 
                 return 404;

@@ -90,7 +90,7 @@ namespace GTANetworkShared
 
         public PlayerSettings()
         {
-            MasterServerAddress = "http://master.gtanet.work/";
+            MasterServerAddress = "https://master.gtanet.work/";
             FavoriteServers = new List<string>();
             RecentServers = new List<string>();
             ScaleChatWithSafezone = true;
