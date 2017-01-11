@@ -60,86 +60,35 @@ namespace PlayGTANetworkUpdater
 
             Thread.Sleep(1000);
             splashScreen.SetPercent(5);
-            #region Check for dependencies
-            if (!Environment.Is64BitOperatingSystem)
-            {
-                MessageBox.Show(splashScreen.SplashScreen,"GTA Network does not work on 32bit machines.", "Incompatible");
-                return;
-            }
-
-            if (Environment.OSVersion.ToString().Contains("Windows NT 6.1"))
-            {
-                MessageBox.Show(splashScreen.SplashScreen,"You may run into loading to Singleplayer issue using Windows 7", "Just a little reminder :)");
-            }
-
-            var NetPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full";
-            if ((int)Registry.GetValue(NetPath, "Release", null) < 379893) //379893 == .NET Framework v4.5.2
-            {
-                MessageBox.Show(splashScreen.SplashScreen,"Missing or outdated .NET Framework, required version: 4.5.2 or newer.", "Missing Dependency");
-                return;
-            }
-
-            var Redist2013x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86";
-            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x86, "Version", null)))
-            {
-                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2013 Redistributable (x86) is missing.", "Missing Dependency");
-                return;
-            }
-
-            var Redist2013x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x64";
-            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2013x64, "Version", null)))
-            {
-                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2013 Redistributable (x64) is missing.", "Missing Dependency");
-                return;
-            }
-
-            var Redist2015x86 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86";
-            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x86, "Version", null)))
-            {
-                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2015 Redistributable (x86) is missing.", "Missing Dependency");
-                return;
-            }
-
-            var Redist2015x64 = @"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64";
-            if (string.IsNullOrEmpty((string)Registry.GetValue(Redist2015x64, "Version", null)))
-            {
-                MessageBox.Show(splashScreen.SplashScreen,"Microsoft Visual C++ 2015 Redistributable (x64) is missing.", "Missing Dependency");
-                return;
-            }
-            #endregion
 
             var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
             var GTANFolder = (string)Registry.GetValue(dictPath, "GTANetworkInstallDir", null);
-            if (GTANFolder != AppDomain.CurrentDomain.BaseDirectory)
+            try
             {
-                try
-                {
-                    Registry.SetValue(dictPath, "GTANetworkInstallDir", AppDomain.CurrentDomain.BaseDirectory);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    MessageBox.Show(splashScreen.SplashScreen,"Insufficient permissions, Please run as an Admin to avoid permission issues.", "Unauthorized access");
-                    return;
-                }
+                Registry.SetValue(dictPath, "GTANetworkInstallDir", AppDomain.CurrentDomain.BaseDirectory);
             }
-
+            catch (UnauthorizedAccessException)
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as an Admin to avoid permission issues.", "Unauthorized access");
+                return;
+            }
             PlayerSettings Settings = new PlayerSettings();
 
             try
             {
-                if (File.Exists("settings.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText("settings.xml")))
+                if (File.Exists(GTANFolder + "settings.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText(GTANFolder + "settings.xml")))
                 {
                     var ser = new XmlSerializer(typeof(PlayerSettings));
-                    using (var stream = File.OpenRead("settings.xml"))
+                    using (var stream = File.OpenRead(GTANFolder + "settings.xml"))
                     {
                         Settings = (PlayerSettings)ser.Deserialize(stream);
                     }
                 }
-                else if (File.Exists("launcher\\updater.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText("launcher\\updater.xml")))
+                else if (File.Exists(GTANFolder + "launcher\\updater.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText(GTANFolder + "launcher\\updater.xml")))
                 {
 
                     var ser = new XmlSerializer(typeof(PlayerSettings));
-                    using (var stream = File.OpenRead("launcher\\updater.xml"))
+                    using (var stream = File.OpenRead(GTANFolder + "launcher\\updater.xml"))
                     {
                         Settings = (PlayerSettings)ser.Deserialize(stream);
                     }
@@ -147,7 +96,7 @@ namespace PlayGTANetworkUpdater
                 else
                 {
                     var ser = new XmlSerializer(typeof(PlayerSettings));
-                    using (var stream = File.OpenWrite("launcher\\updater.xml"))
+                    using (var stream = File.OpenWrite(GTANFolder + "launcher\\updater.xml"))
                     {
                         ser.Serialize(stream, Settings);
                     }
@@ -160,50 +109,58 @@ namespace PlayGTANetworkUpdater
             }
 
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
-            if (File.Exists("launcher" + "\\" + "GTANetwork.dll"))
+            if (File.Exists(GTANFolder + "launcher" + "\\" + "GTANetwork.dll"))
             {
-                fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(Path.GetFullPath("launcher" + "\\" + "GTANetwork.dll")).FileVersion);
+                fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(GTANFolder + "launcher" + "\\" + "GTANetwork.dll").FileVersion);
             }
 
             using (var wc = new ImpatientWebClient())
             {
+                var lastVersion = ParseableVersion.Parse("0.0.0.0");
                 try
                 {
-                    var lastVersion = ParseableVersion.Parse(wc.DownloadString(Settings.MasterServerAddress.Trim('/') + $"/update/{Settings.UpdateChannel}/launcher/version"));
-                    if (lastVersion > fileVersion)
+                    lastVersion = ParseableVersion.Parse(wc.DownloadString(Settings.MasterServerAddress.Trim('/') + $"/update/{Settings.UpdateChannel}/launcher/version"));
+                }
+                catch
+                {
+                    lastVersion = ParseableVersion.Parse("0.0.0.0");
+                }
+                if (lastVersion > fileVersion)
+                {
+                    var updateResult =
+                        MessageBox.Show(splashScreen.SplashScreen, "New GTANLauncher update is available! Download now?\n\nUpdate Version: " +
+                            lastVersion + "\nInstalled Version: " + fileVersion, "Update Available",
+                            MessageBoxButtons.YesNo);
+
+                    if (updateResult == DialogResult.Yes)
                     {
-                        var updateResult =
-                            MessageBox.Show(splashScreen.SplashScreen,"New GTANLauncher update is available! Download now?\n\nUpdate Version: " +
-                                lastVersion + "\nInstalled Version: " + fileVersion, "Update Available",
-                                MessageBoxButtons.YesNo);
-
-                        if (updateResult == DialogResult.Yes)
+                        // Download latest version.
+                        if (!Directory.Exists(GTANFolder + "tempstorage")) Directory.CreateDirectory(GTANFolder + "tempstorage");
+                        wc.Timeout = Int32.MaxValue;
+                        wc.DownloadFile(Settings.MasterServerAddress.Trim('/') + $"/update/{Settings.UpdateChannel}/launcher/files", "tempstorage" + "\\" + "files.zip");
+                        using (var zipfile = ZipFile.Read(GTANFolder + "tempstorage" + "\\" + "files.zip"))
                         {
-                            // Download latest version.
-                            if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
-                            wc.Timeout = Int32.MaxValue;
-                            wc.DownloadFile(Settings.MasterServerAddress.Trim('/') + $"/update/{Settings.UpdateChannel}/launcher/files", "tempstorage" + "\\" + "files.zip");
-                            using (var zipfile = ZipFile.Read("tempstorage" + "\\" + "files.zip"))
+                            zipfile.ParallelDeflateThreshold = -1; // http://stackoverflow.com/questions/15337186/dotnetzip-badreadexception-on-extract
+                            foreach (var entry in zipfile)
                             {
-                                zipfile.ParallelDeflateThreshold = -1; // http://stackoverflow.com/questions/15337186/dotnetzip-badreadexception-on-extract
-                                foreach (var entry in zipfile)
-                                {
-                                    entry.Extract("launcher", ExtractExistingFileAction.OverwriteSilently);
-                                }
+                                entry.Extract("launcher", ExtractExistingFileAction.OverwriteSilently);
                             }
-
-                            File.Delete("tempstorage" + "\\" + "files.zip");
                         }
+
+                        File.Delete(GTANFolder + "tempstorage" + "\\" + "files.zip");
                     }
                 }
-                catch (WebException ex)
-                {
-                    MessageBox.Show(splashScreen.SplashScreen,"Unable to contact master server, Please check your internet connection and try again.", "Warning");
-                    File.AppendAllText("logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
-                }
             }
+
             splashScreen.SetPercent(10);
-            Process.Start("launcher\\GTANSubprocess.exe");
+            try
+            {
+                Process.Start(GTANFolder + "launcher\\GTANSubprocess.exe");
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(splashScreen.SplashScreen, e.ToString(), "Error");
+            }
             splashScreen.Stop();
         }
         private static void Download(string file, string outputfile, string channel, string MasterServer)

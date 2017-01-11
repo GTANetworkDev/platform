@@ -91,11 +91,6 @@ namespace GTANetwork
                 return;
             }
 
-            if (Environment.OSVersion.ToString().Contains("Windows NT 6.1"))
-            {
-               MessageBox.Show(splashScreen.SplashScreen, "You may run into loading to Singleplayer issue using Windows 7", "Just a little reminder :)");
-            }
-
             var NetPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full";
             if ((int)Registry.GetValue(NetPath, "Release", null) < 379893) //379893 == .NET Framework v4.5.2
             {
@@ -214,7 +209,7 @@ namespace GTANetwork
             }
             #endregion
 
-            #region Unneeded
+            #region Registry checking (Obsolete)
             //splashScreen.SetPercent(35);
 
             //#region Check GTAN Folder Registry entry
@@ -255,13 +250,19 @@ namespace GTANetwork
                 if (Directory.Exists(settings.GamePath + "\\" + "scripts"))
                 {
                     if (!Directory.Exists(settings.GamePath + "\\" + "Disabled")) Directory.CreateDirectory(settings.GamePath + "\\" + "Disabled");
-                    Directory.Move(settings.GamePath + "\\" + "scripts", settings.GamePath + "\\" + "Disabled" + "\\" + "scripts");
+
+                    if (Directory.Exists(settings.GamePath + "\\" + "Disabled" + "\\" + "scripts")) DeleteDirectory(settings.GamePath + "\\" + "Disabled" + "\\" + "scripts");
+
+                    MoveDirectory(settings.GamePath + "\\" + "scripts", settings.GamePath + "\\" + "Disabled" + "\\" + "scripts");
                 }
 
                 foreach (var file in Directory.GetFiles(settings.GamePath, "*.asi", SearchOption.TopDirectoryOnly))
                 {
                     if (!Directory.Exists(settings.GamePath + "\\" + "Disabled")) Directory.CreateDirectory(settings.GamePath + "\\" + "Disabled");
-                    File.Move(file, settings.GamePath + "\\" + "Disabled" + "\\" + Path.GetFileName(file));
+
+                    if (File.Exists(settings.GamePath + "\\" + "Disabled" + "\\" + Path.GetFileName(file))) File.Delete(settings.GamePath + "\\" + "Disabled" + "\\" + Path.GetFileName(file));
+
+                    MoveFile(file, settings.GamePath + "\\" + "Disabled" + "\\" + Path.GetFileName(file));
                 }
 
                 string[] Files = { "ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "EasyHook64.dll", "scripthookv.dll", "ScriptHookVDotNet.dll", "v8-ia32.dll", "d3d11.dll", "d3d10.dll", "d3d9.dll", "dxgi.dll" };
@@ -271,14 +272,14 @@ namespace GTANetwork
                     if (!Directory.Exists(settings.GamePath + "\\" + "Disabled")) Directory.CreateDirectory(settings.GamePath + "\\" + "Disabled");
                     if (!File.Exists(settings.GamePath + "\\" + "Disabled" + "\\" + file)) File.Delete(settings.GamePath + "\\" + "Disabled" + "\\" + file);
                     if (File.Exists(settings.GamePath + "\\" + "Disabled" + "\\" + file)) File.Delete(settings.GamePath + "\\" + "Disabled" + "\\" + file);
-                    File.Move(settings.GamePath + "\\" + file, settings.GamePath + "\\" + "Disabled" + "\\" + file);
+                    MoveFile(settings.GamePath + "\\" + file, settings.GamePath + "\\" + "Disabled" + "\\" + file);
                 }
 
                 foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
                 {
                     if (!File.Exists((Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak"))) continue;
                     if (File.Exists(Path.GetDirectoryName(file) + "\\" + "SGTA50000")) File.Delete(Path.GetDirectoryName(file) + "\\" + "SGTA50000");
-                    File.Move(Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak", Path.GetDirectoryName(file) + "\\" + "SGTA50000");
+                    MoveFile(Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak", Path.GetDirectoryName(file) + "\\" + "SGTA50000");
                 }
             }
             catch (Exception e)
@@ -321,8 +322,8 @@ namespace GTANetwork
             {
                 if (mySettings.Video.PauseOnFocusLoss != null)
                 {
-                    _pauseOnFocusLoss = mySettings.Video.PauseOnFocusLoss.Value;
                     mySettings.Video.PauseOnFocusLoss.Value = 0;
+                    mySettings.Graphics.DX_Version.Value = 2;
                 }
             }
             else
@@ -330,6 +331,8 @@ namespace GTANetwork
                 mySettings.Video = new GameSettings.Video();
                 mySettings.Video.PauseOnFocusLoss = new GameSettings.PauseOnFocusLoss();
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
+                mySettings.Graphics.DX_Version = new GameSettings.DX_Version();
+                mySettings.Graphics.DX_Version.Value = 2;
             }
             try
             {
@@ -379,7 +382,7 @@ namespace GTANetwork
                 try
                 {
                     if (File.Exists((Path.GetDirectoryName(file) + "\\" + "SGTA50000")))
-                        File.Move(Path.GetDirectoryName(file) + "\\" + "SGTA50000", Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak");
+                        MoveFile(Path.GetDirectoryName(file) + "\\" + "SGTA50000", Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak");
 
                     if (File.Exists(GTANFolder + "savegame" + "\\" + "SGTA50000"))
                         File.Copy(GTANFolder + "savegame" + "\\" + "SGTA50000", Path.GetDirectoryName(file) + "\\" + "SGTA50000");
@@ -444,7 +447,7 @@ namespace GTANetwork
                         File.Delete(Path.GetDirectoryName(file) + "\\" + "SGTA50000");
 
                     if (File.Exists((Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak")))
-                        File.Move(Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak", Path.GetDirectoryName(file) + "\\" + "SGTA50000"); 
+                        MoveFile(Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak", Path.GetDirectoryName(file) + "\\" + "SGTA50000"); 
                 }
                 catch (Exception)
                 {
@@ -455,8 +458,6 @@ namespace GTANetwork
             #endregion
 
         }
-
-        private int _pauseOnFocusLoss;
 
         public void PatchStartup(byte startupFlow = 0x00, byte landingPage = 0x00)
         {
@@ -515,7 +516,7 @@ namespace GTANetwork
             Inject(gta, GTANFolder + "bin" + "\\" + "scripthookv.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "ScriptHookVDotNet.dll");
 
-            foreach (var file in Directory.GetFiles("bin", "*.asi"))
+            foreach (var file in Directory.GetFiles(GTANFolder + "bin", "*.asi"))
             {
                 if (string.IsNullOrWhiteSpace(file)) continue;
 
@@ -524,7 +525,8 @@ namespace GTANetwork
                 try
                 {
                     Inject(gta, file);
-                } catch { }
+                }
+                catch { }
             }
         }
 
@@ -532,6 +534,73 @@ namespace GTANetwork
         {
             DllInjector.GetInstance.Inject(target, Path.GetFullPath(path));
         }
+
+        #region Dir and Files utils
+
+        public static void DeleteDirectory(string target_dir)
+        {
+            string[] files = Directory.GetFiles(target_dir);
+            string[] dirs = Directory.GetDirectories(target_dir);
+
+            foreach (string file in files)
+            {
+                NoReadonly(file);
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.Delete(file);
+            }
+
+            foreach (string dir in dirs)
+            {
+                DeleteDirectory(dir);
+            }
+
+            Directory.Delete(target_dir, true);
+        }
+
+        public static void CopyFolder(string sourceFolder, string destFolder)
+        {
+            if (!Directory.Exists(destFolder))
+                Directory.CreateDirectory(destFolder);
+            string[] files = Directory.GetFiles(sourceFolder);
+            foreach (string file in files)
+            {
+                string name = Path.GetFileName(file);
+                string dest = Path.Combine(destFolder, name);
+                NoReadonly(dest);
+                File.Copy(file, dest, true);
+            }
+            string[] folders = Directory.GetDirectories(sourceFolder);
+            foreach (string folder in folders)
+            {
+                string name = Path.GetFileName(folder);
+                string dest = Path.Combine(destFolder, name);
+                CopyFolder(folder, dest);
+            }
+        }
+
+        public static void MoveFile(string sourceFile, string destFile)
+        {
+            NoReadonly(destFile);
+            NoReadonly(sourceFile);
+            File.Copy(sourceFile, destFile);
+            File.SetAttributes(sourceFile, FileAttributes.Normal);
+            File.Delete(sourceFile);
+        }
+
+        public static void MoveDirectory(string sourceDir, string destDir)
+        {
+            CopyFolder(sourceDir, destDir);
+            DeleteDirectory(sourceDir);
+        }
+
+        public static void NoReadonly(string path)
+        {
+            if (File.Exists(path))
+                new FileInfo(path).IsReadOnly = false;
+        }
+
+        #endregion
+
     }
 
     public class SplashScreenThread
