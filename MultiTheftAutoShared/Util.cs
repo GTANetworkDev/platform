@@ -101,7 +101,7 @@ namespace GTANetworkShared
             UseClassicChat = false;
             ShowFPS = true;
             CEF = false;
-            CEFfps = 30;
+            CEFfps = 0;
             Timestamp = false;
             Militarytime = true;
             GamePath = null;

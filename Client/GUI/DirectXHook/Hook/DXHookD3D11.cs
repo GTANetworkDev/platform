@@ -128,7 +128,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 #region Get Device and SwapChain method addresses
                 // Create temporary device + swapchain and determine method addresses
                 _renderForm = ToDispose(new SharpDX.Windows.RenderForm());
-                this.DebugMessage("Hook: Before device creation");
+                DebugMessage("Hook: Before device creation");
                 SharpDX.Direct3D11.Device.CreateWithSwapChain(
                     DriverType.Hardware,
                     DeviceCreationFlags.BgraSupport,
@@ -141,13 +141,13 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
                 if (_device != null && _swapChain != null)
                 {
-                    this.DebugMessage("Hook: Device created");
+                    DebugMessage("Hook: Device created");
                     _d3d11VTblAddresses.AddRange(GetVTblAddresses(_device.NativePointer, D3D11_DEVICE_METHOD_COUNT));
                     _dxgiSwapChainVTblAddresses.AddRange(GetVTblAddresses(_swapChain.NativePointer, DXGI.DXGI_SWAPCHAIN_METHOD_COUNT));
                 }
                 else
                 {
-                    this.DebugMessage("Hook: Device creation failed");
+                    DebugMessage("Hook: Device creation failed");
                 }
                 #endregion
             }
@@ -157,25 +157,26 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 _dxgiSwapChainVTblAddresses[(int)DXGI.DXGISwapChainVTbl.Present],
                 new DXGISwapChain_PresentDelegate(PresentHook),
                 this);
-            
-            
+
+
             // We will capture target/window resizes here
             DXGISwapChain_ResizeTargetHook = new Hook<DXGISwapChain_ResizeTargetDelegate>(
                 _dxgiSwapChainVTblAddresses[(int)DXGI.DXGISwapChainVTbl.ResizeTarget],
                 new DXGISwapChain_ResizeTargetDelegate(ResizeTargetHook),
                 this);
-                
+
             /*
              * Don't forget that all hooks will start deactivated...
              * The following ensures that all threads are intercepted:
              * Note: you must do this for each hook.
              */
             DXGISwapChain_PresentHook.Activate();
-            
+
             DXGISwapChain_ResizeTargetHook.Activate();
 
             Hooks.Add(DXGISwapChain_PresentHook);
             Hooks.Add(DXGISwapChain_ResizeTargetHook);
+            DebugMessage("EndofMain");
         }
 
         public override void Cleanup()
@@ -186,6 +187,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 {
                     OverlayEngine.Dispose();
                     OverlayEngine = null;
+                    DebugMessage("Cleanup");
                 }
             }
             catch
@@ -221,10 +223,11 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             // Dispose of overlay engine (so it will be recreated with correct renderTarget view size)
             if (OverlayEngine != null)
             {
+                DebugMessage("ResieTargetHook isn't null");
                 OverlayEngine.Dispose();
                 OverlayEngine = null;
             }
-
+            DebugMessage("ResieTargetHook else");
             return DXGISwapChain_ResizeTargetHook.Original(swapChainPtr, ref newTargetParameters);
         }
 
@@ -234,6 +237,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         public void AddImage(ImageElement element, int overlay = 0)
         {
+            DebugMessage("AddImage request");
             lock (_overlayLock)
             {
                 bool newElem = false;
@@ -244,10 +248,12 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     newElem = true;
                 }
 
+
+
                 if (OverlayEngine.Overlays.Count == 0)
                 {
                     OverlayEngine.Overlays.Add(new Overlay());
-                    OverlayEngine.Overlays.Add(new Overlay());
+                    OverlayEngine.Overlays.Add(new Overlay()); //Cursor, got it.
                     newElem = true;
                 }
 
@@ -256,10 +262,12 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                 if (newElem && ObligatoryElement != null)
                     OverlayEngine.Overlays[overlay].Elements.Add(ObligatoryElement);
             }
+            DebugMessage("AddImage end");
         }
 
         public void RemoveImage(ImageElement element, int overlay = 0)
         {
+            DebugMessage("RemoveImage");
             lock (_overlayLock)
             {
                 if (OverlayEngine == null || OverlayEngine.Overlays == null)
@@ -277,6 +285,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         public void SetBitmap(Bitmap bt)
         {
+            DebugMessage("SetBitmap");
             if (OverlayEngine == null || OverlayEngine.Overlays == null) return;
 
             if (OverlayEngine.Overlays.Count == 0)
@@ -328,6 +337,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         /// <returns>The HRESULT of the original method</returns>
         int PresentHook(IntPtr swapChainPtr, int syncInterval, SharpDX.DXGI.PresentFlags flags)
         {
+            DebugMessage("PresentHook");
             SwapChain swapChain = (SharpDX.DXGI.SwapChain)swapChainPtr;
 
             if (swapChainPtr != IntPtr.Zero)
@@ -341,8 +351,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     {
                         NewSwapchain = true;
 
-                        if (OverlayEngine != null)
-                            OverlayEngine.Dispose();
+                        if (OverlayEngine != null) OverlayEngine.Dispose();
                         OverlayEngine = new DX11.DXOverlayEngine(this);
                         OverlayEngine.Overlays.Add(new DirectXHook.Hook.Common.Overlay
                         {
@@ -393,30 +402,36 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         public void ManualPresentHook(IntPtr swapChainPtr)
         {
+            DebugMessage("ManualPresentHook Method start");
             SwapChain swapChain = (SharpDX.DXGI.SwapChain)swapChainPtr;
 
             if (swapChainPtr != IntPtr.Zero)
             {
                 try
                 {
+                    DebugMessage("ManualPresentHook:1");
                     #region Draw overlay (after screenshot so we don't capture overlay as well)
 
-                    // Initialise Overlay Engine
+                    #region Initialise Overlay Engine
                     if (_swapChainPointer != swapChain.NativePointer || OverlayEngine == null)
                     {
+                        DebugMessage("ManualPresentHook:2");
                         NewSwapchain = true;
                         List<IOverlayElement> oldOverlays = null;
 
                         if (OverlayEngine != null)
                         {
+                            DebugMessage("ManualPresentHook:3");
                             if (OverlayEngine.Overlays.Count > 0 && OverlayEngine.Overlays[0].Elements != null)
                             {
+                                DebugMessage("ManualPresentHook:4");
                                 oldOverlays = new List<IOverlayElement>(OverlayEngine.Overlays[0].Elements);
 
                                 foreach (var element in oldOverlays)
                                 {
                                     if (element is ImageElement)
                                     {
+                                        DebugMessage("ManualPresentHook:5");
                                         ((ImageElement) element).Image?.Dispose();
                                         ((ImageElement) element).Image = null;
                                     }
@@ -425,34 +440,41 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                             OverlayEngine.Dispose();
                         }
 
+                        DebugMessage("ManualPresentHook:6");
                         OverlayEngine = new DX11.DXOverlayEngine(this);
                         OverlayEngine.Overlays = new List<IOverlay>();
                         OverlayEngine.Overlays.Add(new Overlay());
                         OverlayEngine.Overlays.Add(new Overlay());
-
+                        DebugMessage("ManualPresentHook:7");
                         if (oldOverlays != null)
                         {
+                            DebugMessage("ManualPresentHook:8");
                             OverlayEngine.Overlays[0].Elements = oldOverlays;
                         }
-
+                        DebugMessage("ManualPresentHook:9");
                         if (ObligatoryElement != null)
                         {
+                            DebugMessage("ManualPresentHook:10");
                             OverlayEngine.Overlays[0].Elements.Add(ObligatoryElement);
                         }
-                        
+                        DebugMessage("ManualPresentHook:11");
                         OverlayEngine.Initialise(swapChain);
-
+                        DebugMessage("ManualPresentHook:12");
                         _swapChainPointer = swapChain.NativePointer;
                     }
+                    #endregion
 
+                    // ---LOOP---
                     // Draw Overlay(s)
-
                     if (OverlayEngine != null)
                     {
+                        DebugMessage("ManualPresentHook:13");
                         foreach (var overlay in OverlayEngine.Overlays)
                             overlay.Frame();
                         OverlayEngine.Draw();
+                        DebugMessage("ManualPresentHook:14");
                     }
+                    // ---LOOP---
 
                     #endregion
                 }

@@ -118,6 +118,7 @@ namespace GTANetwork
         public static int VehicleStreamingRange = 350;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
+        public static bool ClientSideDebugging = true;
         public static bool CanOpenChatbox = true;
         public static bool DisplayWastedMessage = true;
         public static bool ScriptChatVisible = true;
@@ -157,7 +158,8 @@ namespace GTANetwork
 
         private TabTextItem _statsItem;
         //
-      
+
+
         public Main()
         {
 
@@ -174,11 +176,18 @@ namespace GTANetwork
             }
             else
             {
+                //KillCEFEnemies();
                 CefUtil.DISABLE_CEF = true;
                 CefUtil.DISABLE_HOOK = true;
             }
-
-            CEFManager.FPS = PlayerSettings.CEFfps;
+            if(PlayerSettings.CEFfps <= 0)
+            {
+                CEFManager.FPS = (int)Game.FPS;
+            }
+            else
+            {
+                CEFManager.FPS = PlayerSettings.CEFfps;
+            }
             PedThread.FPS = PlayerSettings.ShowFPS;
 
             GameSettings = Misc.GameSettings.LoadGameSettings();
@@ -270,6 +279,23 @@ namespace GTANetwork
             });
         }
 
+        //public static void KillCEFEnemies()
+        //{
+        //    string[] exactEnemies = { "Dxtory64", "Dxtory", "DiscordOverlay.x86", "GameOverlayUI", "OverwolfOverlayHelper", "OverwolfHelper", "OverwolfHelper64", "RTSS", "RTSSHooksLoader", "RTSSHooksLoader64", "CAMFPS", "CAM_V3" };
+        //    string[] Enemies = { "Dxtory","DiscordOverlay", "GameOverlay", "Overwolf", "RTSS", "CAMFPS", "CAM_V3" };
+            
+        //    foreach (var name in Enemies)
+        //    {
+        //        Process.GetProcesses().Where(x => x.ProcessName.ToLower().StartsWith(name)).ToList().ForEach(x => x.Kill());
+        //    }
+
+        //    //just to be sure
+        //    foreach (var name in exactEnemies)
+        //    {
+        //        Process.GetProcessesByName(name).ToList().ForEach(x => x.Kill());
+        //    }
+        //}
+
         public static void ChatOnComplete(object sender,EventArgs args)
         {
             var message = GUI.Chat.SanitizeString(Chat.CurrentInput);
@@ -346,9 +372,9 @@ namespace GTANetwork
 
 
         public static Camera MainMenuCamera;
-        
 
-        public static string GTANInstallDir = ((string) Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null)) ?? AppDomain.CurrentDomain.BaseDirectory;
+
+        public static string GTANInstallDir = ((string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null));
         
         public void GetWelcomeMessage()
         {
@@ -370,7 +396,7 @@ namespace GTANetwork
                         _welcomePage.TextTitle = jsonObj.Title;
                         _welcomePage.PromoPicturePath = GTANInstallDir + "images\\" + jsonObj.Picture;
 
-                        LogManager.AlwaysDebugLog("Set text to " + jsonObj.Message + " and title to " + jsonObj.Title);
+                        LogManager.RuntimeLog("Set text to " + jsonObj.Message + " and title to " + jsonObj.Title);
                     }
                 }
                 catch (WebException)
@@ -631,7 +657,7 @@ namespace GTANetwork
 
                     Client.DiscoverLocalPeers(Port);
 
-                    LogManager.AlwaysDebugLog("Contacting " + PlayerSettings.MasterServerAddress);
+                    LogManager.RuntimeLog("Contacting " + PlayerSettings.MasterServerAddress);
 
                     if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
                         return;
@@ -642,10 +668,10 @@ namespace GTANetwork
                     {
                         using (var wc = new ImpatientWebClient())
                         {
-                            LogManager.AlwaysDebugLog("Downloading response...");
+                            LogManager.RuntimeLog("Downloading response...");
                             response = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/servers");
                             responseVerified = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/verified");
-                            LogManager.AlwaysDebugLog("Downloaded " + response);
+                            LogManager.RuntimeLog("Downloaded " + response);
                         }
                     }
                     catch (Exception e)
@@ -1397,10 +1423,79 @@ namespace GTANetwork
                 }
                 #endregion
 
+                    #region Experimental
+                    var ExpMenu = new TabInteractiveListItem("Experimental", new List<UIMenuItem>());
+                {
+
+                    var expItem = new UIMenuCheckboxItem("Enable Chromium Embedded Framework (Requires restart)", PlayerSettings.CEF);
+                    expItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                            PlayerSettings.CEF = @checked;
+                            SaveSettings();
+                    };
+                    ExpMenu.Items.Add(expItem);
+                }
+                {
+                    var expItem = new UIMenuItem("Chromium Embedded Framework Framerate (requires reconnect)");
+
+                    if(PlayerSettings.CEFfps == 0)
+                    {
+                        expItem.SetRightLabel("Auto (0)");
+                    }
+                    else
+                    {
+                        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+                    }
+
+                    expItem.Activated += (sender, item) =>
+                    {
+                        MainMenu.TemporarilyHidden = true;
+                        var strInput = InputboxThread.GetUserInput(PlayerSettings.CEFfps.ToString(),
+                            10, TickSpinner);
+                        int newSetting;
+                        if (!int.TryParse(strInput, out newSetting) || newSetting < 0 || newSetting > 120)
+                        {
+                            Util.Util.SafeNotify("Input was not in the correct format.");
+                            MainMenu.TemporarilyHidden = false;
+                            return;
+                        }
+                        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+                        if (newSetting == 0)
+                        {
+                            CEFManager.FPS = (int)Game.FPS;
+                            expItem.SetRightLabel("Auto (0)");
+                        }
+                        else
+                        {
+                            CEFManager.FPS = newSetting;
+                            expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+
+                        }
+                        PlayerSettings.CEFfps = newSetting;
+                        MainMenu.TemporarilyHidden = false;
+                        SaveSettings();
+                    };
+                    ExpMenu.Items.Add(expItem);
+                }
+
+                #endregion
+
                 #region Debug Menu
-#if DEBUG
+
+
+
                 var DebugMenu = new TabInteractiveListItem("Debug", new List<UIMenuItem>());
                 {
+                    var debugItem = new UIMenuCheckboxItem("Enable Script Engine Crash Handling", ClientSideDebugging);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        ClientSideDebugging = @checked;
+                    };
+                    DebugMenu.Items.Add(debugItem);
+                }
+
+                
+#if DEBUG
 
                     var debugItem = new UIMenuCheckboxItem("Debug", false);
                     debugItem.CheckboxEvent += (sender, @checked) =>
@@ -1460,54 +1555,14 @@ namespace GTANetwork
 #endif
                 #endregion
 
-                #region Experimental
-                var ExpMenu = new TabInteractiveListItem("Experimental", new List<UIMenuItem>());
-                {
-
-                    var expItem = new UIMenuCheckboxItem("Enable Chromium Embedded Framework (Requires restart)", PlayerSettings.CEF);
-                    expItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                            PlayerSettings.CEF = @checked;
-                            SaveSettings();
-                    };
-                    ExpMenu.Items.Add(expItem);
-                }
-                {
-                    var expItem = new UIMenuItem("Chromium Embedded Framework Framerate (requires reconnect)");
-                    expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
-                    expItem.Activated += (sender, item) =>
-                    {
-                        MainMenu.TemporarilyHidden = true;
-                        var strInput = InputboxThread.GetUserInput(PlayerSettings.CEFfps.ToString(),
-                            10, TickSpinner);
-                        int newSetting;
-                        if (!int.TryParse(strInput, out newSetting) || newSetting <= 0 || newSetting > 120)
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            MainMenu.TemporarilyHidden = false;
-                            return;
-                        }
-                        MainMenu.TemporarilyHidden = false;
-                        PlayerSettings.CEFfps = newSetting;
-                        CEFManager.FPS = newSetting;
-                        SaveSettings();
-                        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
-                    };
-                    ExpMenu.Items.Add(expItem);
-                }
-
-                #endregion
-
                 var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>()
                 {
                     GeneralMenu,
                     ChatboxMenu,
                     //DisplayMenu,
                     //GraphicsMenu,
-#if DEBUG
-                    DebugMenu,
-#endif
-                    ExpMenu
+                    ExpMenu,
+                    DebugMenu
                 });
                 MainMenu.AddTab(welcomeItem);
             }

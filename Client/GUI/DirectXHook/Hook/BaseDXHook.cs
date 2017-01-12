@@ -52,15 +52,13 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         protected void DebugMessage(string message)
         {
-#if DEBUG
             try
             {
+                //Debug.WriteLine(message);
+                //File.AppendAllText(Main.GTANInstallDir + "\\logs" + "\\Hook.log", ">> " + message + "\r\n\r\n");
+             
             }
-            catch (RemotingException)
-            {
-                // Ignore remoting exceptions
-            }
-#endif
+            catch (Exception) { }
         }
 
         protected IntPtr[] GetVTblAddresses(IntPtr pointer, int numberOfMethods)
@@ -270,11 +268,13 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
         protected override void Dispose(bool disposeManagedResources)
         {
+            DebugMessage("DisposeBase");
             // Only clean up managed objects if disposing (i.e. not called from destructor)
             if (disposeManagedResources)
             {
                 try
                 {
+                    DebugMessage("CleanupBase");
                     Cleanup();
                 }
                 catch { }
@@ -289,6 +289,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                         {
                             // Lets ensure that no threads will be intercepted again
                             hook.Deactivate();
+                            DebugMessage("DisactiveHook");
                         }
 
                         System.Threading.Thread.Sleep(100);
@@ -297,9 +298,11 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                         foreach (var hook in Hooks)
                         {
                             hook.Dispose();
+                            DebugMessage("Dispose");
                         }
-
+                        DebugMessage("HooksClear");
                         Hooks.Clear();
+
                     }
 
                     try
@@ -319,7 +322,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
             }
             catch (Exception ex)
             {
-                LogManager.LogException(ex, "DIRECTX DISPOSE");
+                DebugMessage("DIRECTX DISPOSE" + ex);
             }
         }
 

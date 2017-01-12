@@ -62,7 +62,7 @@ namespace GTANetwork.GUI
             if (Stream.Position >= Stream.Length - 1 && bytesRead == 0)
             {
                 Stream.Close();
-                LogManager.AlwaysDebugLog("Closed file stream!");
+                LogManager.CefLog("Closed file stream!");
             }
 
             return bytesRead > 0;

@@ -270,7 +270,7 @@ namespace GTANetwork.GUI
 
                         if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
                         {
-                            LogManager.AlwaysDebugLog("CefRuntime could not execute the secondary process.");
+                            LogManager.CefLog("CefRuntime could not execute the secondary process.");
                         }
 
                         var cefSettings = new CefSettings()
@@ -297,7 +297,7 @@ namespace GTANetwork.GUI
                     }
                     catch (Exception ex)
                     {
-                        LogManager.LogException(ex, "cef initialization");
+                        LogManager.CefLog(ex, "cef initialization");
                     }
                 });
 
@@ -356,7 +356,7 @@ namespace GTANetwork.GUI
                 }
                 catch (Exception ex)
                 {
-                    LogManager.LogException(ex, "DIRECTX START");
+                    LogManager.CefLog(ex, "DIRECTX START");
                 }
 
             }
@@ -367,7 +367,7 @@ namespace GTANetwork.GUI
         }
 
         internal static readonly List<Browser> Browsers = new List<Browser>();
-        internal static int FPS = 30;
+        internal static int FPS = (int)Game.FPS;
         internal static Size ScreenSize;
         internal static ImageElement _cursor;
 
@@ -632,7 +632,7 @@ namespace GTANetwork.GUI
                 _client.OnCreated += (sender, args) =>
                 {
                     _browser = (CefBrowser)sender;
-                    LogManager.AlwaysDebugLog("Browser ready!");
+                    LogManager.CefLog("Browser ready!");
                 };
 
                 Size = browserSize;
@@ -648,7 +648,7 @@ namespace GTANetwork.GUI
             {
                 if (_browser != null)
                 {
-                    LogManager.AlwaysDebugLog("Trying to load page " + page + "...");
+                    LogManager.CefLog("Trying to load page " + page + "...");
                     _browser.GetMainFrame().LoadUrl(page);
                 }
             }
@@ -728,7 +728,7 @@ namespace GTANetwork.GUI
                 //return output;
                 Bitmap lbmp = _client.GetLastBitmap();
 
-                //LogManager.AlwaysDebugLog("Requesting bitmap. Null? " + (lbmp == null));
+                //LogManager.CefLog("Requesting bitmap. Null? " + (lbmp == null));
                 return lbmp;
             }
             else
