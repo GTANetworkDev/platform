@@ -311,6 +311,8 @@ namespace GTANetwork
                 mySettings.Video.PauseOnFocusLoss.Value = 0;
                 mySettings.Graphics.DX_Version = new GameSettings.DX_Version();
                 mySettings.Graphics.DX_Version.Value = 2;
+                mySettings.Video.Windowed = new GameSettings.Windowed();
+                mySettings.Video.Windowed.Value = 2;
             }
             try
             {

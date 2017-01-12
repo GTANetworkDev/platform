@@ -76,19 +76,19 @@ namespace PlayGTANetworkUpdater
 
             try
             {
-                if (File.Exists(GTANFolder + "settings.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText(GTANFolder + "settings.xml")))
+                if (File.Exists("settings.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText("settings.xml")))
                 {
                     var ser = new XmlSerializer(typeof(PlayerSettings));
-                    using (var stream = File.OpenRead(GTANFolder + "settings.xml"))
+                    using (var stream = File.OpenRead("settings.xml"))
                     {
                         Settings = (PlayerSettings)ser.Deserialize(stream);
                     }
                 }
-                else if (File.Exists(GTANFolder + "launcher\\updater.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText(GTANFolder + "launcher\\updater.xml")))
+                else if (File.Exists("launcher\\updater.xml") && !string.IsNullOrWhiteSpace(File.ReadAllText("launcher\\updater.xml")))
                 {
 
                     var ser = new XmlSerializer(typeof(PlayerSettings));
-                    using (var stream = File.OpenRead(GTANFolder + "launcher\\updater.xml"))
+                    using (var stream = File.OpenRead("launcher\\updater.xml"))
                     {
                         Settings = (PlayerSettings)ser.Deserialize(stream);
                     }
@@ -96,7 +96,7 @@ namespace PlayGTANetworkUpdater
                 else
                 {
                     var ser = new XmlSerializer(typeof(PlayerSettings));
-                    using (var stream = File.OpenWrite(GTANFolder + "launcher\\updater.xml"))
+                    using (var stream = File.OpenWrite("launcher\\updater.xml"))
                     {
                         ser.Serialize(stream, Settings);
                     }
@@ -109,9 +109,9 @@ namespace PlayGTANetworkUpdater
             }
 
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
-            if (File.Exists(GTANFolder + "launcher" + "\\" + "GTANetwork.dll"))
+            if (File.Exists("launcher" + "\\" + "GTANetwork.dll"))
             {
-                fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(GTANFolder + "launcher" + "\\" + "GTANetwork.dll").FileVersion);
+                fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo("launcher" + "\\" + "GTANetwork.dll").FileVersion);
             }
 
             using (var wc = new ImpatientWebClient())
@@ -135,10 +135,10 @@ namespace PlayGTANetworkUpdater
                     if (updateResult == DialogResult.Yes)
                     {
                         // Download latest version.
-                        if (!Directory.Exists(GTANFolder + "tempstorage")) Directory.CreateDirectory(GTANFolder + "tempstorage");
+                        if (!Directory.Exists("tempstorage")) Directory.CreateDirectory("tempstorage");
                         wc.Timeout = Int32.MaxValue;
                         wc.DownloadFile(Settings.MasterServerAddress.Trim('/') + $"/update/{Settings.UpdateChannel}/launcher/files", "tempstorage" + "\\" + "files.zip");
-                        using (var zipfile = ZipFile.Read(GTANFolder + "tempstorage" + "\\" + "files.zip"))
+                        using (var zipfile = ZipFile.Read("tempstorage" + "\\" + "files.zip"))
                         {
                             zipfile.ParallelDeflateThreshold = -1; // http://stackoverflow.com/questions/15337186/dotnetzip-badreadexception-on-extract
                             foreach (var entry in zipfile)
@@ -147,7 +147,7 @@ namespace PlayGTANetworkUpdater
                             }
                         }
 
-                        File.Delete(GTANFolder + "tempstorage" + "\\" + "files.zip");
+                        DeleteDirectory("tempstorage" + "\\" + "files.zip");
                     }
                 }
             }
@@ -155,7 +155,7 @@ namespace PlayGTANetworkUpdater
             splashScreen.SetPercent(10);
             try
             {
-                Process.Start(GTANFolder + "launcher\\GTANSubprocess.exe");
+                Process.Start("launcher\\GTANSubprocess.exe");
             }
             catch (Exception e)
             {
@@ -163,20 +163,33 @@ namespace PlayGTANetworkUpdater
             }
             splashScreen.Stop();
         }
-        private static void Download(string file, string outputfile, string channel, string MasterServer)
+
+        public static void DeleteDirectory(string target_dir)
         {
-            using (var wc = new ImpatientWebClient())
+            string[] files = Directory.GetFiles(target_dir);
+            string[] dirs = Directory.GetDirectories(target_dir);
+
+            foreach (string file in files)
             {
-                try
-                {
-                    wc.DownloadFile(MasterServer.Trim('/') + $"/update/{channel}/files/launcher/" + file, outputfile);
-                }
-                catch (WebException e)
-                {
-                    MessageBox.Show(splashScreen.SplashScreen, e.ToString(), "CRITICAL ERROR");
-                }
+                NoReadonly(file);
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.Delete(file);
             }
+
+            foreach (string dir in dirs)
+            {
+                DeleteDirectory(dir);
+            }
+
+            Directory.Delete(target_dir, true);
         }
+
+        public static void NoReadonly(string path)
+        {
+            if (File.Exists(path))
+                new FileInfo(path).IsReadOnly = false;
+        }
+
     }
 
     public class PlayerSettings
