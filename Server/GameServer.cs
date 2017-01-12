@@ -129,7 +129,7 @@ namespace GTANetworkServer
             UseHTTPFileServer = conf.UseHTTPServer;
             TrustClientProperties = conf.EnableClientsideEntityProperties;
             fqdn = conf.fqdn;
-            ConnTimeout = conf.ConnTimeout;
+            Conntimeout = conf.Conntimeout;
 
             if (conf.whitelist != null && conf.whitelist != null)
             {
@@ -165,7 +165,7 @@ namespace GTANetworkServer
         public bool PasswordProtected { get; set; }
         public string GamemodeName { get; set; }
         public string fqdn { get; set; }
-        public bool ConnTimeout { get; set; }
+        public bool Conntimeout { get; set; }
         public Resource Gamemode { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
@@ -1466,7 +1466,7 @@ namespace GTANResource
                                     client.NetConnection.Deny("Denied access due to suspected connection exploit.");
                                     continue;
                                 }
-                                if (ConnTimeout)
+                                if (Conntimeout == true)
                                 {
                                     if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
                                     {
@@ -1622,7 +1622,6 @@ namespace GTANResource
                                 else if (newStatus == NetConnectionStatus.Disconnected)
                                 {
                                     var reason = msg.ReadString();
-
                                     if (Clients.Contains(client))
                                     {
                                         lock (RunningResources)
@@ -2927,7 +2926,8 @@ namespace GTANResource
                     }
                     else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 5)
                     {
-                        Clients[i].NetConnection.Disconnect("Time out");
+                        Clients[i].NetConnection.Disconnect("Timeout");
+                        //DisconnectClient(Clients[i], "Timeout");
                     }
 
                 }

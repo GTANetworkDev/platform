@@ -77,10 +77,10 @@ namespace GTANetworkShared
         public int VehicleStreamingRange { get; set; }
 
         [XmlElement("fqdn")]
-        public string fqdn { get; set; }
+        public string fqdn { get; }
 
-        [XmlElement("ConnTimeout")]
-        public bool ConnTimeout { get; set; }
+        [XmlElement("Conntimeout")]
+        public bool Conntimeout { get; set; }
 
         public WhitelistCollection whitelist { get; set; }
 
@@ -116,7 +116,7 @@ namespace GTANetworkShared
             EnableClientsideEntityProperties = false;
             LocalAddress = "0.0.0.0";
             fqdn = "";
-            ConnTimeout = true;
+            Conntimeout = true;
         }
 
         public static ServerSettings ReadSettings(string path)
