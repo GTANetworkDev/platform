@@ -247,14 +247,14 @@ namespace GTANetwork
             }
             try
             {
-                if (Directory.Exists(settings.GamePath + "\\" + "scripts"))
-                {
-                    if (!Directory.Exists(settings.GamePath + "\\" + "Disabled")) Directory.CreateDirectory(settings.GamePath + "\\" + "Disabled");
+                //if (Directory.Exists(settings.GamePath + "\\" + "scripts"))
+                //{
+                //    if (!Directory.Exists(settings.GamePath + "\\" + "Disabled")) Directory.CreateDirectory(settings.GamePath + "\\" + "Disabled");
 
-                    if (Directory.Exists(settings.GamePath + "\\" + "Disabled" + "\\" + "scripts")) DeleteDirectory(settings.GamePath + "\\" + "Disabled" + "\\" + "scripts");
+                //    if (Directory.Exists(settings.GamePath + "\\" + "Disabled" + "\\" + "scripts")) DeleteDirectory(settings.GamePath + "\\" + "Disabled" + "\\" + "scripts");
 
-                    MoveDirectory(settings.GamePath + "\\" + "scripts", settings.GamePath + "\\" + "Disabled" + "\\" + "scripts");
-                }
+                //    MoveDirectory(settings.GamePath + "\\" + "scripts", settings.GamePath + "\\" + "Disabled" + "\\" + "scripts");
+                //}
 
                 foreach (var file in Directory.GetFiles(settings.GamePath, "*.asi", SearchOption.TopDirectoryOnly))
                 {
@@ -289,28 +289,6 @@ namespace GTANetwork
                 return;
             }
 
-            #endregion
-
-            splashScreen.SetPercent(50);
-
-            #region Copy over required files to GamePath
-            try
-            {
-                if (!File.Exists(settings.GamePath + "\\" + "sharpdx_direct3d11_effects_x64.dll"))
-                    File.Copy(GTANFolder + "bin" + "\\" + "sharpdx_direct3d11_effects_x64.dll", settings.GamePath + "\\" + "sharpdx_direct3d11_effects_x64.dll");
-
-                if (!File.Exists(settings.GamePath + "\\" + "dinput8.dll")) {
-                    File.Copy(GTANFolder + "bin" + "\\" + "dinput8.dll", settings.GamePath + "\\" + "dinput8.dll");
-                }
-                if (!File.Exists(settings.GamePath + "\\" + "v8-x64.dll"))
-                    File.Copy(GTANFolder + "bin" + "\\" + "v8-x64.dll", settings.GamePath + "\\" + "v8-x64.dll");
-
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (3)", "Unauthorized access");
-                return;
-            }
             #endregion
 
             splashScreen.SetPercent(60);
@@ -515,7 +493,10 @@ namespace GTANetwork
         {
             Inject(gta, GTANFolder + "bin" + "\\" + "scripthookv.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "ScriptHookVDotNet.dll");
-
+            Inject(gta, GTANFolder + "bin" + "\\" + "sharpdx_direct3d11_effects_x64.dll");
+            Inject(gta, GTANFolder + "bin" + "\\" + "dinput8.dll");
+            Inject(gta, GTANFolder + "bin" + "\\" + "v8-x64.dll");
+            
             foreach (var file in Directory.GetFiles(GTANFolder + "bin", "*.asi"))
             {
                 if (string.IsNullOrWhiteSpace(file)) continue;
