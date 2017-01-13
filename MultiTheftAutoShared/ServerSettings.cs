@@ -77,7 +77,7 @@ namespace GTANetworkShared
         public int VehicleStreamingRange { get; set; }
 
         [XmlElement("fqdn")]
-        public string fqdn { get; }
+        public string fqdn { get; set; }
 
         [XmlElement("Conntimeout")]
         public bool Conntimeout { get; set; }

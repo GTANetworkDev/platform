@@ -54,10 +54,13 @@ namespace GTANMasterServer
                 {
                     try
                     {
-                        ContinuousIntegration.Work();
+                        if ((bool)XML.Config("CI"))
+                        {
+                            ContinuousIntegration.Work();
+                            foreach (var pair in UpdateChannels) pair.Value.Work();
+                        }
                         GtanServerWorker.Work();
                         PingerWorker.ProcessMessages();
-                        foreach (var pair in UpdateChannels) pair.Value.Work();
                         WelcomeMessageWorker.Work();
                         Whitelist.Work();
                     }
@@ -598,7 +601,7 @@ namespace GTANMasterServer
 
         public static void Work()
         {
-            if (DateTime.Now.Subtract(_lastWhitelistUpdate).TotalMinutes > 30)
+            if (DateTime.Now.Subtract(_lastWhitelistUpdate).TotalMinutes > 5)
             {
                 _lastWhitelistUpdate = DateTime.Now;
 
@@ -864,7 +867,7 @@ namespace GTANMasterServer
                 return 404;
             };
 
-            Get["/update/{channel}/gtan/version"] = parameters =>
+            Get["/update/{channel}/version"] = parameters =>
             {
                 var chan = (string)parameters.channel;
 
@@ -878,7 +881,7 @@ namespace GTANMasterServer
                 return 404;
             };
 
-            Get["/update/{channel}/gtan/files"] = parameters =>
+            Get["/update/{channel}/files"] = parameters =>
             {
                 var chan = (string)parameters.channel;
 
