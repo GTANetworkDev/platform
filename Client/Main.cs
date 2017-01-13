@@ -738,46 +738,52 @@ namespace GTANetwork
 
                         int lastIndx = 0;
 
-
-                        if (!isIPLocal(Dns.GetHostAddresses(split[0])[0].ToString()))
+                        try
                         {
-                            if (_serverBrowser.Items.Count > 0)
-                                lastIndx = _serverBrowser.Index;
-
-                            _serverBrowser.Items.Add(item);
-                            _serverBrowser.Index = lastIndx;
-                        }
-                        else
-                        {
-                            if(!_lanBrowser.Items.Any(i => i.Description == item.Description))
+                            if (!isIPLocal(Dns.GetHostAddresses(split[0])[0].ToString()))
                             {
-                                if (_lanBrowser.Items.Count > 0)
-                                    lastIndx = _lanBrowser.Index;
+                                if (_serverBrowser.Items.Count > 0)
+                                    lastIndx = _serverBrowser.Index;
 
-                                _lanBrowser.Items.Add(item);
-                                _lanBrowser.Index = lastIndx;
+                                _serverBrowser.Items.Add(item);
+                                _serverBrowser.Index = lastIndx;
+                            }
+                            else
+                            {
+                                if (!_lanBrowser.Items.Any(i => i.Description == item.Description))
+                                {
+                                    if (_lanBrowser.Items.Count > 0)
+                                        lastIndx = _lanBrowser.Index;
+
+                                    _lanBrowser.Items.Add(item);
+                                    _lanBrowser.Index = lastIndx;
+                                }
+                            }
+
+                            if (listVerified.Contains(server))
+                            {
+                                _Verified.Items.Add(item);
+                                _Verified.Index = lastIndx;
+                            }
+
+                            if (PlayerSettings.RecentServers.Contains(server))
+                            {
+                                _recentBrowser.Items.Add(item);
+                                _recentBrowser.Index = lastIndx;
+                            }
+
+                            if (PlayerSettings.FavoriteServers.Contains(server))
+                            {
+                                _favBrowser.Items.Add(item);
+                                _favBrowser.Index = lastIndx;
                             }
                         }
-
-                        if (listVerified.Contains(server))
+                        catch (Exception e)
                         {
-                            _Verified.Items.Add(item);
-                            _Verified.Index = lastIndx;
-                        }
-
-                        if (PlayerSettings.RecentServers.Contains(server))
-                        {
-                            _recentBrowser.Items.Add(item);
-                            _recentBrowser.Index = lastIndx;
-                        }
-
-                        if (PlayerSettings.FavoriteServers.Contains(server))
-                        {
-                            _favBrowser.Items.Add(item);
-                            _favBrowser.Index = lastIndx;
+                            LogManager.LogException(e, "DISCOVERY EXCEPTION");
                         }
                     }
-
+                        
                     for (int i = 0; i < list.Count; i++)
                     {
                         if (i != 0 && i%10 == 0)
