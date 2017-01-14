@@ -1423,11 +1423,12 @@ namespace GTANResource
                                     var isPing = msg.ReadString();
                                     if (isPing == "ping")
                                     {
-                                        if (LogLevel > 0) Program.Output("INFO: Received masterlist Ping.");
+                                        //if (LogLevel > 0) Program.Output("INFO: Received a ping, responding..");
 
                                         var pong = Server.CreateMessage();
                                         pong.Write("pong");
-                                        Server.SendUnconnectedMessage(pong, msg.SenderEndPoint.Address.ToString(), msg.SenderEndPoint.Port);
+                                        //Server.SendUnconnectedMessage(pong, msg.SenderEndPoint.Address.ToString(), msg.SenderEndPoint.Port);
+                                        Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                     }
                                     if (isPing == "query")
                                     {
