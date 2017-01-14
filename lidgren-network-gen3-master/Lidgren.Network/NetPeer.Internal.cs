@@ -574,6 +574,7 @@ namespace Lidgren.Network
                         LogWarning("Suspected connection exploit attack [" + ipsender + "], type: Packet parsing error, action: blocked.");
                         connBlock.Add(ipsender.Address);
                         sender.ExecuteHalt();
+                        return;
                     }
                     ptr += payloadByteLength;
 				}
@@ -747,7 +748,7 @@ namespace Lidgren.Network
                     return;
                 default:
 					LogVerbose("Received unhandled library message " + tp + " from " + senderEndPoint);
-                    LogWarning("Suspected connection exploit attack [" + senderEndPoint.Address.ToString() + "], type: Received unhandled library message " + tp);
+                    //LogWarning("Suspected connection exploit attack [" + senderEndPoint.Address.ToString() + "], type: Received unhandled library message " + tp);
                     //connBlock.Add(senderEndPoint.Address);
                     return;
 			}
