@@ -171,6 +171,8 @@ namespace GTANetwork
                 catch (WebException ex)
                 {
                     MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    if (!Directory.Exists(GTANFolder + "logs")) Directory.CreateDirectory(GTANFolder + "logs");
+
                     File.AppendAllText(GTANFolder + "logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
                 }
             }
@@ -375,6 +377,27 @@ namespace GTANetwork
             }
             #endregion
 
+            #region Create commandline
+            try
+            {
+                if (settings.OfflineMode)
+                {
+                    using (var file = new StreamWriter(File.OpenWrite(settings.GamePath + "\\commandline.txt")))
+                    {
+                        file.WriteLine("-scOfflineOnly");
+                    }
+                }
+                else
+                {
+                    if (File.Exists(settings.GamePath + "\\commandline.txt")) File.WriteAllLines(settings.GamePath + "\\commandline.txt", File.ReadLines(settings.GamePath + "\\commandline.txt").Where(l => l != "-scOfflineOnly").ToList());
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (10)", "Unauthorized access");
+            }
+            #endregion
+
             splashScreen.SetPercent(85);
 
             #region Launch the Game
@@ -407,14 +430,14 @@ namespace GTANetwork
             Thread.Sleep(1000);
             #endregion
 
-            #region remove that commandline.txt mistake we've made 
+            #region Cleanup
             try
             {
-                if (File.Exists(settings.GamePath + "\\" + "commandline.txt")) File.Delete(settings.GamePath + "\\" + "commandline.txt");
+                if (File.Exists(settings.GamePath + "\\commandline.txt")) File.WriteAllLines(settings.GamePath + "\\commandline.txt", File.ReadLines(settings.GamePath + "\\commandline.txt").Where(l => l != "-scOfflineOnly").ToList());
             }
             catch (Exception)
             {
-                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (7)", "Unauthorized access");
+                MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (11)", "Unauthorized access");
             }
             #endregion
 
