@@ -169,18 +169,10 @@ namespace GTANetwork
 
             PlayerSettings = Util.Util.ReadSettings(GTANInstallDir + "\\settings.xml");
 
-            if(PlayerSettings.CEF)
-            {
-                CefUtil.DISABLE_CEF = false;
-                CefUtil.DISABLE_HOOK = false;
-            }
-            else
-            {
-                //KillCEFEnemies();
-                CefUtil.DISABLE_CEF = true;
-                CefUtil.DISABLE_HOOK = true;
-            }
-            if(PlayerSettings.CEFfps <= 0)
+            CefUtil.DISABLE_CEF = !PlayerSettings.CEF;
+            CefUtil.DISABLE_HOOK = !PlayerSettings.CEF;
+
+            if (PlayerSettings.CEFfps <= 0)
             {
                 CEFManager.FPS = (int)Game.FPS;
             }
@@ -281,18 +273,10 @@ namespace GTANetwork
 
         //public static void KillCEFEnemies()
         //{
-        //    string[] exactEnemies = { "Dxtory64", "Dxtory", "DiscordOverlay.x86", "GameOverlayUI", "OverwolfOverlayHelper", "OverwolfHelper", "OverwolfHelper64", "RTSS", "RTSSHooksLoader", "RTSSHooksLoader64", "CAMFPS", "CAM_V3" };
-        //    string[] Enemies = { "Dxtory","DiscordOverlay", "GameOverlay", "Overwolf", "RTSS", "CAMFPS", "CAM_V3" };
-            
+        //    string[] Enemies = { "Dxtory","DiscordOverlay", "GameOverlay", "Overwolf", "RTSS", "CAMFPS", "CAM_V3" };            
         //    foreach (var name in Enemies)
         //    {
         //        Process.GetProcesses().Where(x => x.ProcessName.ToLower().StartsWith(name)).ToList().ForEach(x => x.Kill());
-        //    }
-
-        //    //just to be sure
-        //    foreach (var name in exactEnemies)
-        //    {
-        //        Process.GetProcessesByName(name).ToList().ForEach(x => x.Kill());
         //    }
         //}
 
@@ -1429,7 +1413,7 @@ namespace GTANetwork
                 }
                 #endregion
 
-                    #region Experimental
+                #region Experimental
                     var ExpMenu = new TabInteractiveListItem("Experimental", new List<UIMenuItem>());
                 {
 
@@ -4121,7 +4105,7 @@ namespace GTANetwork
             obj.SocialClubName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Unknown" : Game.Player.Name; // To be used as identifiers in server files
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             obj.ScriptVersion = CurrentVersion.ToString();
-            obj.CEF = PlayerSettings.CEF;
+            obj.CEF = !CefUtil.DISABLE_CEF;
             obj.GameVersion = (byte)Game.Version;
 
 
