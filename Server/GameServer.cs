@@ -1467,7 +1467,7 @@ namespace GTANResource
                                     client.NetConnection.Deny("Denied access due to suspected connection exploit.");
                                     continue;
                                 }
-                                if (Conntimeout == true)
+                                if (Conntimeout)
                                 {
                                     if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
                                     {

@@ -79,7 +79,7 @@ namespace GTANetworkShared
         [XmlElement("fqdn")]
         public string fqdn { get; set; }
 
-        [XmlElement("Conntimeout")]
+        [XmlElement("conntimeout")]
         public bool Conntimeout { get; set; }
 
         public WhitelistCollection whitelist { get; set; }

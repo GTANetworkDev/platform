@@ -2,10 +2,10 @@
 <package>
   <metadata>
     <id>gtanetwork.api</id>
-    <version>Public BETA 0.2.13.1</version>
+    <version>0.2.13.1</version>
     <title>GTA Network Scripting API Libraries</title>
-    <authors>GTA Network Dev. Team</authors>
-    <owners>GTA Network Dev. Team</owners>
+    <authors>GTA Network Dev Team</authors>
+    <owners>GTA Network Dev Team</owners>
     <projectUrl>https://gtanet.work/</projectUrl>
     <iconUrl>https://forum.gtanet.work/favicon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -15,7 +15,7 @@
     <tags>gtan server gta network api</tags>
   </metadata>
      <files>
-         <file src="bin\Debug\GTANetworkServer.exe" target="lib\GTANetworkServer.exe" />
-         <file src="bin\Debug\GTANetworkShared.dll" target="lib\GTANetworkShared.dll" />
+         <file src="bin\Release\GTANetworkServer.exe" target="lib\GTANetworkServer.exe" />
+         <file src="bin\Release\GTANetworkShared.dll" target="lib\GTANetworkShared.dll" />
      </files>
 </package>
