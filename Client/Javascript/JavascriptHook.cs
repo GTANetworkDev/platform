@@ -1218,6 +1218,12 @@ namespace GTANetwork.Javascript
             }
         }
 
+        public void goBackCefBrowser(Browser browser)
+        {
+            if (browser == null) return;
+                browser.GoBack();
+        }
+
         public bool isCefBrowserLoading(Browser browser)
         {
             return browser.IsLoading();

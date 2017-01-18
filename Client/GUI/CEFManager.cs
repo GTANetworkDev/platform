@@ -240,7 +240,6 @@ namespace GTANetwork.GUI
             if (!CefUtil.DISABLE_CEF && !initializedCef)
             {
                 initializedCef = true;
-
                 var t = new Thread((ThreadStart)delegate
                 {
                     try
@@ -664,6 +663,19 @@ namespace GTANetwork.GUI
                 }
             }
         }
+
+        internal void GoBack()
+        {
+            if (!CefUtil.DISABLE_CEF)
+            {
+                if (_browser != null)
+                {
+                    LogManager.CefLog("Trying to go back a page...");
+                    _browser.GetMainFrame().Browser.GoBack();
+                }
+            }
+        }
+
 
         internal void Close()
         {

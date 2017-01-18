@@ -130,6 +130,7 @@ namespace GTANetwork.GUI
     {
         private MainCefClient bClient;
 
+
         internal MainLifeSpanHandler(MainCefClient bc)
         {
             this.bClient = bc;
@@ -140,6 +141,14 @@ namespace GTANetwork.GUI
             base.OnAfterCreated(browser);
             this.bClient.Created(browser);
         }
+
+        protected override bool OnBeforePopup(CefBrowser browser, CefFrame frame, string targetUrl, string targetFrameName, CefWindowOpenDisposition targetDisposition, bool userGesture, CefPopupFeatures popupFeatures, CefWindowInfo windowInfo, ref CefClient client, CefBrowserSettings settings, ref bool noJavascriptAccess)
+        {
+            Browser father = CefUtil.GetBrowserFromCef(browser);
+            father.GoToPage(targetUrl);
+            return true;
+        }
+
     }
 
     internal class V8Bridge : CefV8Handler
@@ -245,8 +254,7 @@ namespace GTANetwork.GUI
             base.OnContextCreated(browser, frame, context);
         }
 
-        protected override bool OnBeforeNavigation(CefBrowser browser, CefFrame frame, CefRequest request, CefNavigationType navigation_type,
-            bool isRedirect)
+        protected override bool OnBeforeNavigation(CefBrowser browser, CefFrame frame, CefRequest request, CefNavigationType navigation_type, bool isRedirect)
         {
             if ((request.TransitionType & CefTransitionType.ForwardBackFlag) != 0 || navigation_type == CefNavigationType.BackForward)
             {

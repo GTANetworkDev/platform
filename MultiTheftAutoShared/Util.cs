@@ -101,7 +101,7 @@ namespace GTANetworkShared
             ScreenshotKey = Keys.F8;
             UseClassicChat = false;
             ShowFPS = true;
-            CEF = false;
+            CEF = true;
             CEFfps = 0;
             Timestamp = false;
             Militarytime = true;
