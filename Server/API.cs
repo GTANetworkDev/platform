@@ -3816,6 +3816,28 @@ namespace GTANetworkServer
             return null;
         }
 
+        public void setTextLabelRange(NetHandle label, float newRange)
+        {
+            if (doesEntityExist(label))
+            {
+                ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Range = newRange;
+
+                var delta = new Delta_TextLabelProperties();
+                delta.Range = newRange;
+                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+            }
+        }
+
+        public float getTextLabelRange(NetHandle label)
+        {
+            if (doesEntityExist(label))
+            {
+                return ((TextLabelProperties)Program.ServerInstance.NetEntityHandler.ToDict()[label.Value]).Range;
+            }
+
+            return 0;
+        }
+
         public void setTextLabelColor(NetHandle label, int red, int green, int blue, int alpha)
         {
             if (doesEntityExist(label))
