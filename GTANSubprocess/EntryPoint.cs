@@ -424,10 +424,25 @@ namespace GTANetwork
             InjectOurselves(gta5Process);
             #endregion
 
+            #region Terminate duplicate GTA5 processes
+            var t = new Thread((ThreadStart)delegate
+            {
+                Thread.Sleep(10000);
+                while (true)
+                {
+                    Process.GetProcesses().Where(x => x.ProcessName.ToString().ToLower().Contains("gta5") && x.Id != gta5Process.Id).ToList().ForEach(x => x.Kill());
+                    Thread.Sleep(1000);
+                }
+            });
+
+            t.Start();
+            #endregion
+
             #region Wait for GTA5 to exit
             var launcherProcess = Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null);
             while (!gta5Process.HasExited || (launcherProcess != null && !launcherProcess.HasExited)) { Thread.Sleep(1000); }
             Thread.Sleep(1000);
+            t.Abort();
             #endregion
 
             #region Cleanup

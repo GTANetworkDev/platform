@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
 using GTANetwork.GUI.DirectXHook.Hook.Common;
 using GTANetwork.Util;
 using GTANetworkShared;
@@ -30,7 +27,7 @@ namespace GTANetwork.GUI
 
             if (_cachedReferences.ContainsKey(browser.Identifier))
                 return _cachedReferences[browser.Identifier];
-            if (!CefUtil.DISABLE_CEF)
+            if (!DISABLE_CEF)
             {
                 lock (CEFManager.Browsers)
                 {
@@ -71,7 +68,7 @@ namespace GTANetwork.GUI
         {
             Browser father = null;
 
-            LogManager.CefLog("Entering request w/ schemeName " + schemeName);
+            //LogManager.CefLog("-> Entering request w/ schemeName " + schemeName);
 
             try
             {
@@ -79,21 +76,19 @@ namespace GTANetwork.GUI
 
                 if (father == null || father._localMode)
                 {
-                    LogManager.CefLog("Local mode detected! Uri: " + request.Url);
+                    LogManager.CefLog("-> [Local mode] Uri: " + request.Url);
                     var uri = new Uri(request.Url);
                     var path = Main.GTANInstallDir + "resources\\";
                     var requestedFile = path + uri.Host + uri.LocalPath;
 
-                    LogManager.CefLog("Requested file: " + requestedFile);
+                    LogManager.CefLog("-> Loading: " + requestedFile);
 
                     if (!File.Exists(requestedFile))
                     {
-                        LogManager.CefLog("File doesnt exist!");
+                        LogManager.CefLog("-> Error: File does not exist!");
                         browser.StopLoad();
                         return SecureCefResourceHandler.FromString("404", ".txt");
                     }
-
-                    LogManager.CefLog("Loading from file!");
 
                     return SecureCefResourceHandler.FromFilePath(requestedFile,
                         MimeType.GetMimeType(Path.GetExtension(requestedFile)));
@@ -118,7 +113,7 @@ namespace GTANetwork.GUI
             //   for a single URL if there are frames (i.e. <FRAME>, <IFRAME>).
             //if (frame.IsMain)
             {
-                LogManager.CefLog("START: " + browser.GetMainFrame().Url);
+                LogManager.CefLog("-> Start: " + browser.GetMainFrame().Url);
             }
         }
 
@@ -126,7 +121,7 @@ namespace GTANetwork.GUI
         {
             //if (frame.IsMain)
             {
-                LogManager.CefLog(string.Format("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
+                LogManager.CefLog(string.Format("-> End: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
             }
         }
     }
@@ -160,7 +155,7 @@ namespace GTANetwork.GUI
         {
             Browser father = null;
 
-            LogManager.CefLog("Entering JS Execute. Func: " + name + " arg len: " + arguments.Length);
+            LogManager.CefLog("-> Entering JS Execute. Func: " + name + " arg len: " + arguments.Length);
 
             father = CefUtil.GetBrowserFromCef(_browser);
 
@@ -173,12 +168,12 @@ namespace GTANetwork.GUI
             }
             if (!CefUtil.DISABLE_CEF)
             {
-                LogManager.CefLog("Father was found!");
+                LogManager.CefLog("-> Father was found!");
                 try
                 {
                     if (name == "resourceCall")
                     {
-                        LogManager.CefLog("Entering resourceCall...");
+                        LogManager.CefLog("-> Entering resourceCall...");
 
                         List<object> args = new List<object>();
 
@@ -187,11 +182,11 @@ namespace GTANetwork.GUI
                             args.Add(arguments[i].GetValue());
                         }
 
-                        LogManager.CefLog("Executing callback...");
+                        LogManager.CefLog("-> Executing callback...");
 
                         object output = father._callback.call(arguments[0].GetStringValue(), args.ToArray());
 
-                        LogManager.CefLog("Callback executed!");
+                        LogManager.CefLog("-> Callback executed!");
 
                         returnValue = V8Helper.CreateValue(output);
                         exception = null;
@@ -200,9 +195,9 @@ namespace GTANetwork.GUI
 
                     if (name == "resourceEval")
                     {
-                        LogManager.CefLog("Entering resource eval");
+                        LogManager.CefLog("-> Entering resource eval");
                         object output = father._callback.eval(arguments[0].GetStringValue());
-                        LogManager.CefLog("callback executed!");
+                        LogManager.CefLog("-> callback executed!");
 
                         returnValue = V8Helper.CreateValue(output);
                         exception = null;
@@ -226,7 +221,7 @@ namespace GTANetwork.GUI
         {
             if (frame.IsMain)
             {
-                LogManager.CefLog("Setting main context!");
+                LogManager.CefLog("-> Setting main context!");
 
                 Browser father = CefUtil.GetBrowserFromCef(browser);
                 if (father != null)
@@ -235,7 +230,7 @@ namespace GTANetwork.GUI
                     {
                         father._mainContext = context;
                     }
-                    LogManager.CefLog("Main context set!");
+                    LogManager.CefLog("-> Main context set!");
                 }
             }
 
@@ -276,12 +271,11 @@ namespace GTANetwork.GUI
         {
             _windowWidth = windowWidth;
             _windowHeight = windowHeight;
-            LogManager.CefLog("Instantiated Renderer");
 
             _imageElement = new ImageElement(null, true);
 
             CEFManager.DirectXHook.AddImage(_imageElement);
-            LogManager.CefLog("End of MainCefRenderHandler");
+            LogManager.CefLog("-> Instantiated Renderer");
         }
 
         public void SetHidden(bool hidden)
