@@ -68,6 +68,13 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ClearScript">
       <HintPath>..\libs\ClearScript.dll</HintPath>
@@ -144,7 +151,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GUI\CefClient.cs" />
+    <Compile Include="GUI\CEFClient.cs" />
     <Compile Include="GUI\DirectXHook\SwapchainHooker.cs" />
     <Compile Include="GUI\SecureCefResourceHandler.cs" />
     <Compile Include="Misc\BiDictionarity.cs" />
@@ -174,8 +181,6 @@
     <Compile Include="GUI\DirectXHook\Hook\DX11\RendererBase.cs" />
     <Compile Include="GUI\DirectXHook\Hook\DX11\ScreenAlignedQuadRenderer.cs" />
     <Compile Include="GUI\DirectXHook\Hook\DXGI.cs" />
-    <Compile Include="GUI\DirectXHook\Hook\DXHookD3D10.cs" />
-    <Compile Include="GUI\DirectXHook\Hook\DXHookD3D10_1.cs" />
     <Compile Include="GUI\DirectXHook\Hook\DXHookD3D11.cs" />
     <Compile Include="GUI\DirectXHook\Hook\Hook.cs" />
     <Compile Include="GUI\DirectXHook\Hook\IDXHook.cs" />
@@ -235,12 +240,11 @@
   <ItemGroup>
     <ProjectReference Include="..\MultiTheftAutoShared\GTANetworkShared.csproj">
       <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
-      <Name>GTANetworkShared</Name>
+      <Name>GTANShared</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
-    <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x86.dll" />
     <EmbeddedResource Include="natives.txt" />
     <Content Include="Properties\AssemblyInfo.tt">
       <Generator>TextTemplatingFileGenerator</Generator>

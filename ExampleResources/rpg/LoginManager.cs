@@ -32,7 +32,7 @@ namespace RPGResource
                 // Spawn the player
                 API.call("SpawnManager", "CreateSkinSelection", sender);
 
-                int money = API.getLocalEntityData(sender, "Money");
+                int money = API.getEntityData(sender, "Money");
                 API.triggerClientEvent(sender, "update_money_display", money);
             }
         }
@@ -46,7 +46,7 @@ namespace RPGResource
                 return;
             }
 
-            if (Database.DoesAccountExist(sender.SocialClubName))
+            if (Database.DoesAccountExist(sender.socialClubName))
             {
                 API.sendChatMessageToPlayer(sender, "~r~ERROR: ~w~An account linked to this Social Club handle already exists!");
                 return;
@@ -60,9 +60,9 @@ namespace RPGResource
         {
             foreach (var client in API.getAllPlayers())
             {
-                foreach (var data in API.getAllLocalEntityData(client))
+                foreach (var data in API.getAllEntityData(client))
                 {
-                    API.resetLocalEntityData(client, data);
+                    API.resetEntityData(client, data);
                 }
             }
         }

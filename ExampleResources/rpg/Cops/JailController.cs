@@ -23,7 +23,7 @@ namespace RPGResource.Cops
 
             shape.onEntityExitColShape += (colShape, entity) =>
             {
-                if (API.getLocalEntityData(entity, "Jailed") == true)
+                if (API.getEntityData(entity, "Jailed") == true)
                 {
                     API.setEntityPosition(entity, JailCenter);
                 }
@@ -32,14 +32,14 @@ namespace RPGResource.Cops
 
         public void jailPlayer(Client player, int seconds)
         {
-            API.setLocalEntityData(player, "Jailed", true);
+            API.setEntityData(player, "Jailed", true);
             API.resetPlayerNametagColor(player);
             API.setEntityPosition(player, JailCenter);
 
-            API.setLocalEntityData(player, "WantedLevel", 0);
+            API.setEntityData(player, "WantedLevel", 0);
             API.setPlayerWantedLevel(player, 0);
-            API.resetLocalEntityData(player, "Crimes");
-            API.setLocalEntityData(player, "JailTime", seconds);
+            API.resetEntityData(player, "Crimes");
+            API.setEntityData(player, "JailTime", seconds);
 
             API.removeAllPlayerWeapons(player);
 
@@ -48,8 +48,8 @@ namespace RPGResource.Cops
 
         public void freePlayer(Client player)
         {
-            API.resetLocalEntityData(player, "Jailed");
-            API.resetLocalEntityData(player, "JailTime");
+            API.resetEntityData(player, "Jailed");
+            API.resetEntityData(player, "JailTime");
             API.sendChatMessageToPlayer(player, "~g~You have served your sentence! You're free to go.");
             lock (JailTimes) JailTimes.Remove(player);
         }

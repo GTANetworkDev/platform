@@ -77,9 +77,10 @@ namespace GTANetworkServer
             UnoccupiedVehicleManager = new UnoccupiedVehicleManager();
             NetEntityHandler = new NetEntityHandler();
 
-            MaxPlayers = 32;
             Port = conf.Port;
-            
+            if (conf.MaxPlayers < 2) MaxPlayers = 2;
+            else if (conf.MaxPlayers > 1000) MaxPlayers = 1000;
+            else MaxPlayers = conf.MaxPlayers;
 
             ACLEnabled = conf.UseACL && File.Exists("acl.xml");
             BanManager.Initialize();
@@ -90,7 +91,8 @@ namespace GTANetworkServer
 
             ConstantVehicleDataOrganizer.Initialize();
 
-            Name = conf.Name;
+            if (conf.Name != null) Name = conf.Name.Substring(0, Math.Min(58, conf.Name.Length)); // 46 to fill up title + additional 12 chars for colors such as ~g~.. etc..
+            Name.Replace("¦", string.Empty);
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             var lAdd = IPAddress.Parse(conf.LocalAddress);
@@ -102,24 +104,32 @@ namespace GTANetworkServer
             config.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
             config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
             config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
+            config.MaxPlayers = MaxPlayers;
             config.ConnectionTimeout = 120f; // 30 second timeout
-            config.MaximumConnections = conf.MaxPlayers + 2; // + 2 for discoveries
+            //config.MaximumConnections = conf.MaxPlayers + 2; // + 2 for discoveries
+   
+
             
+
             Server = new NetServer(config);
             
             PasswordProtected = !string.IsNullOrWhiteSpace(conf.Password);
             Password = conf.Password;
             AnnounceSelf = conf.Announce;
             MasterServer = conf.MasterServer;
-            MaxPlayers = conf.MaxPlayers;
             AnnounceToLAN = conf.AnnounceToLan;
             UseUPnP = conf.UseUPnP;
             MinimumClientVersion = ParseableVersion.Parse(conf.MinimumClientVersion);
             OnFootLagComp = conf.OnFootLagCompensation;
             VehLagComp = conf.VehicleLagCompensation;
+            GlobalStreamingRange = conf.GlobalStreamingRange;
+            PlayerStreamingRange = conf.PlayerStreamingRange;
+            VehicleStreamingRange = conf.VehicleStreamingRange;
             LogLevel = conf.LogLevel;
             UseHTTPFileServer = conf.UseHTTPServer;
             TrustClientProperties = conf.EnableClientsideEntityProperties;
+            fqdn = conf.fqdn;
+            Conntimeout = conf.Conntimeout;
 
             if (conf.whitelist != null && conf.whitelist != null)
             {
@@ -154,6 +164,8 @@ namespace GTANetworkServer
         public string Password { get; set; }
         public bool PasswordProtected { get; set; }
         public string GamemodeName { get; set; }
+        public string fqdn { get; set; }
+        public bool Conntimeout { get; set; }
         public Resource Gamemode { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
@@ -166,6 +178,9 @@ namespace GTANetworkServer
         public bool UseUPnP { get; set; }
         public bool VehLagComp { get; set; }
         public bool OnFootLagComp { get; set; }
+        public int PlayerStreamingRange { get; set; }
+        public int GlobalStreamingRange { get; set; }
+        public int VehicleStreamingRange { get; set; }
         public List<string> ModWhitelist { get; set; }
         public bool UseHTTPFileServer { get; set; }
         public bool TrustClientProperties { get; set; }
@@ -198,8 +213,12 @@ namespace GTANetworkServer
         // Assembly name, Path to assembly.
         public Dictionary<string, string> AssemblyReferences = new Dictionary<string, string>();
 
-        private DateTime _lastAnnounceDateTime;
+        private Dictionary<IPEndPoint, DateTime> queue = new Dictionary<IPEndPoint, DateTime>();
+        private List<IPAddress> connBlock = new List<IPAddress>();
 
+        ParseableVersion serverVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
+
+        private DateTime _lastAnnounceDateTime;
         public void Start(string[] filterscripts)
         {
             try
@@ -283,6 +302,8 @@ namespace GTANetworkServer
                                         : GamemodeName;
                         annObject.Port = Port;
                         annObject.Passworded = PasswordProtected;
+                        annObject.fqdn = fqdn;
+                        annObject.ServerVersion = serverVersion.ToString();
 
                         wb.UploadData(MasterServer.Trim('/') + "/addserver",
                             Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(annObject)));
@@ -290,7 +311,7 @@ namespace GTANetworkServer
                     catch (WebException ex)
                     {
                         Program.Output("Failed to announce self: master server is not available at this time.");
-                        if (LogLevel >= 2)
+                        if (LogLevel >= 1)
                         {
                             Program.Output(ex.ToString());
                         }
@@ -729,7 +750,7 @@ namespace GTANetworkServer
                             if (eventInfo == null)
                             {
                                 Program.Output("WARN: Exported event " + func.EventName + " has not been found!");
-                                if (LogLevel > 1)
+                                if (LogLevel > 0)
                                 {
                                     Program.Output("Available events:");
                                     Program.Output(string.Join(", ", engine._compiledScript.GetType().GetEvents().Select(ev => ev.Name)));
@@ -1112,7 +1133,7 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1km
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > GlobalStreamingRange * GlobalStreamingRange) // 1km
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
@@ -1185,10 +1206,32 @@ namespace GTANResource
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
-                if (client.Position.DistanceToSquared(exception.Position) > 1000000f) continue; // 1km
+                if (client.Position.DistanceToSquared(exception.Position) > GlobalStreamingRange * GlobalStreamingRange) continue; // 1km
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 msg.Write((byte)PacketType.BulletSync);
+                msg.Write(full.Length);
+                msg.Write(full);
+                Server.SendMessage(msg, client.NetConnection,
+                    NetDeliveryMethod.ReliableSequenced,
+                    (int)ConnectionChannel.BulletSync);
+            }
+        }
+
+        internal void ResendBulletPacket(int netHandle, int netHandleTarget, bool shooting, Client exception)
+        {
+            byte[] full = new byte[0];
+
+            full = PacketOptimization.WriteBulletSync(netHandle, shooting, netHandleTarget);
+
+            foreach (var client in exception.Streamer.GetNearClients())
+            {
+                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+                if (client.Position.DistanceToSquared(exception.Position) > GlobalStreamingRange * GlobalStreamingRange) continue; // 1km
+
+                NetOutgoingMessage msg = Server.CreateMessage();
+                msg.Write((byte)PacketType.BulletPlayerSync);
                 msg.Write(full.Length);
                 msg.Write(full);
                 Server.SendMessage(msg, client.NetConnection,
@@ -1229,7 +1272,7 @@ namespace GTANResource
                 if (pure)
                 {
                     if (client.Position == null) continue;
-                    if (client.Position.DistanceToSquared(fullPacket.Position) > 1000000f) // 1 km
+                    if (client.Position.DistanceToSquared(fullPacket.Position) > GlobalStreamingRange * GlobalStreamingRange) // 1 km
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
@@ -1306,7 +1349,7 @@ namespace GTANResource
 
                 NetOutgoingMessage msg = Server.CreateMessage();
                 if (client.Position == null) continue;
-                if (client.Position.DistanceToSquared(fullPacket.Position) < 250000) // 500 m
+                if (client.Position.DistanceToSquared(fullPacket.Position) < (GlobalStreamingRange * GlobalStreamingRange) / 2) // 500 m
                 {
                     msg.Write((byte)PacketType.UnoccupiedVehSync);
                     msg.Write(full.Length);
@@ -1367,159 +1410,211 @@ namespace GTANResource
                             }
                         }
                     }
-
                     if (client == null) client = new Client(msg.SenderConnection);
-                    PacketType packetType = PacketType.NpcPedPositionData;
+                    PacketType packetType = PacketType.ConnectionPacket;
 
                     try
                     {
                         switch (msg.MessageType)
                         {
                             case NetIncomingMessageType.UnconnectedData:
-                                var isPing = msg.ReadString();
-                                if (isPing == "ping")
+                                try
                                 {
-                                    Program.Output("INFO: ping received from " + msg.SenderEndPoint.Address.ToString());
-                                    var pong = Server.CreateMessage();
-                                    pong.Write("pong");
-                                    Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
+                                    var isPing = msg.ReadString();
+                                    if (isPing == "ping")
+                                    {
+                                        //if (LogLevel > 0) Program.Output("INFO: Received a ping, responding..");
+
+                                        var pong = Server.CreateMessage();
+                                        pong.Write("pong");
+                                        //Server.SendUnconnectedMessage(pong, msg.SenderEndPoint.Address.ToString(), msg.SenderEndPoint.Port);
+                                        Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
+                                    }
+                                    if (isPing == "query")
+                                    {
+                                        //Program.Output("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
+                                        var pong = Server.CreateMessage();
+                                        pong.Write(Name + "%" + PasswordProtected + "%" + Clients.Count + "%" + MaxPlayers + "%" + GamemodeName);
+                                        Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
+                                    }
                                 }
-                                if (isPing == "query")
-                                {
-                                    int playersonline = 0;
-                                    lock (Clients) playersonline = Clients.Count;
-                                    Program.Output("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
-                                    var pong = Server.CreateMessage();
-                                    pong.Write(Name + "%" + PasswordProtected + "%" + playersonline + "%" + MaxPlayers + "%" +
-                                                GamemodeName);
-                                    Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
-                                }
+                                catch (Exception) { }
+                                break;
+                            case NetIncomingMessageType.DiscoveryResponse:
                                 break;
                             case NetIncomingMessageType.VerboseDebugMessage:
+                                if (LogLevel > 2)
+                                    Program.Output("[VERBOSE] " + msg.ReadString());
+                                break;
                             case NetIncomingMessageType.DebugMessage:
+                                if (LogLevel > 1)
+                                    Program.Output("[DEBUG] " + msg.ReadString());
+                                break;
                             case NetIncomingMessageType.WarningMessage:
+                                Program.ToFile("attack.log", msg.ReadString());
+                                break;
                             case NetIncomingMessageType.ErrorMessage:
-                                if (LogLevel > 3)
-                                    Program.Output(msg.ReadString());
+                                if (LogLevel > 0)
+                                    Program.Output("[ERROR] " + msg.ReadString());
                                 break;
                             case NetIncomingMessageType.ConnectionLatencyUpdated:
                                 client.Latency = msg.ReadFloat();
                                 break;
+
                             case NetIncomingMessageType.ConnectionApproval:
+                                if (connBlock.Contains(client.NetConnection.RemoteEndPoint.Address))
+                                {
+                                    client.NetConnection.Deny("Denied access due to suspected connection exploit.");
+                                    continue;
+                                }
+                                if (Conntimeout)
+                                {
+                                    if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
+                                    {
+                                        client.NetConnection.Deny("Wait atleast 60 seconds before reconnecting..");
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        queue.Add(client.NetConnection.RemoteEndPoint, DateTime.Now);
+                                    }
+                                }
+                                Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "]");
+
                                 var type = msg.ReadByte();
                                 var leng = msg.ReadInt32();
-                                var connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
-                                if (connReq == null)
+                                ConnectionRequest connReq = null;
+                                try
                                 {
-                                    client.NetConnection.Deny("Connection Object is null");
+                                    connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
+                                }
+                                catch (EndOfStreamException e)
+                                //catch (Exception e)
+                                {
+                                    if (client.NetConnection.RemoteEndPoint != null)
+                                    {
+                                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+
+                                        if (LogLevel > 1) Program.Output("[DEBUG]" + e.ToString());
+                                        if (LogLevel > 2) Program.Output("[VERBOSE]" + connReq.ToString());
+                                        //if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+
+                                        client.NetConnection.Deny("Denied access due to suspected connection exploit.");
+                                    }
                                     continue;
                                 }
 
-                                var cVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
-                                if (cVersion < MinimumClientVersion)
+                                if (connReq == null || string.IsNullOrWhiteSpace(connReq.DisplayName) || string.IsNullOrWhiteSpace(connReq.SocialClubName) || string.IsNullOrWhiteSpace(connReq.ScriptVersion))
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
                                     continue;
                                 }
-                                /*
-                                if (cVersion < VersionCompatibility.LastCompatibleClientVersion)
+
+                                var cVersion = ParseableVersion.Parse(connReq.ScriptVersion);
+                                if (cVersion < MinimumClientVersion || cVersion < VersionCompatibility.LastCompatibleClientVersion)
                                 {
                                     client.NetConnection.Deny("Outdated version. Please update your client.");
                                     continue;
                                 }
-                                */
+
                                 if (BanManager.IsClientBanned(client))
                                 {
                                     client.NetConnection.Deny("You are banned.");
                                     continue;
                                 }
 
-                                int clients = 0;
-                                lock (Clients) clients = Clients.Count;
-                                if (clients <= MaxPlayers)
+                                //int clients = 0;
+                                //lock (Clients) clients = Clients.Count;
+                                //if (clients <= MaxPlayers) //Useless, it is checked in Lidgren.
+                                //{
+                                if (PasswordProtected && !string.IsNullOrWhiteSpace(Password))
                                 {
-                                    if (PasswordProtected && !string.IsNullOrWhiteSpace(Password))
+                                    if (Password != connReq.Password)
                                     {
-                                        if (Password != connReq.Password)
-                                        {
-                                            client.NetConnection.Deny("Wrong password.");
-                                            Program.Output("Player connection refused: wrong password.");
-                                            continue;
-                                        }
-                                    }
-
-                                    lock (Clients)
-                                    {
-                                        int duplicate = 0;
-                                        string displayname = connReq.DisplayName;
-
-                                        if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
-                                        {
-                                            client.NetConnection.Deny("Duplicate RGSC handle.");
-                                            Program.Output("Player connection refused: duplicate RGSC.");
-                                            continue;
-                                        }
-                                        
-                                        while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
-                                        {
-                                            duplicate++;
-
-                                            connReq.DisplayName = displayname + " (" + duplicate + ")";
-                                        }
-
-                                        Clients.Add(client);
-                                    }
-
-                                    client.CommitConnection();
-                                    client.SocialClubName = connReq.SocialClubName;
-                                    client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
-                                    client.RemoteScriptVersion = ParseableVersion.FromLong(connReq.ScriptVersion);
-                                    client.GameVersion = connReq.GameVersion;
-                                    ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
-
-                                    var respObj = new ConnectionResponse();
-
-                                    respObj.CharacterHandle = client.handle.Value;
-                                    respObj.Settings = new SharedSettings()
-                                    {
-                                        OnFootLagCompensation = OnFootLagComp,
-                                        VehicleLagCompensation = VehLagComp,
-                                        ModWhitelist = ModWhitelist,
-                                        UseHttpServer = UseHTTPFileServer,
-                                    };
-                                    
-                                    var channelHail = Server.CreateMessage();
-                                    var respBin = SerializeBinary(respObj);
-
-                                    channelHail.Write(respBin.Length);
-                                    channelHail.Write(respBin);
-                                    
-                                    var cancelArgs = new CancelEventArgs();
-
-                                    lock (RunningResources)
-                                        RunningResources.ForEach(
-                                            fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client, cancelArgs)));
-
-                                    if (cancelArgs.Cancel)
-                                    {
-                                        client.NetConnection.Deny(cancelArgs.Reason ?? "");
-                                        Program.Output("Incoming connection denied: " + client.SocialClubName + " (" + client.Name + ")");
+                                        client.NetConnection.Deny("Wrong password.");
+                                        Program.Output("Player connection refused: wrong password. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
                                         continue;
                                     }
-                                    else
+                                }
+
+                                lock (Clients)
+                                {
+                                    int duplicate = 0;
+                                    string displayname = connReq.DisplayName;
+
+                                    //REWORK NEEDED
+                                    //if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
+                                    //{
+                                    //    client.NetConnection.Deny("Duplicate RGSC handle.");
+                                    //    Program.Output("Player connection refused: duplicate RGSC. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
+                                    //    continue;
+                                    //}
+
+                                    while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
                                     {
-                                        client.NetConnection.Approve(channelHail);
-                                        Program.Output("New incoming connection: " + client.SocialClubName + " (" + client.Name + ")");
+                                        duplicate++;
+                                        connReq.DisplayName = displayname + " (" + duplicate + ")";
                                     }
+                                }
+
+                                client.CommitConnection();
+                                client.SocialClubName = connReq.SocialClubName;
+                                client.CEF = connReq.CEF;
+                                client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
+                                client.RemoteScriptVersion = ParseableVersion.Parse(connReq.ScriptVersion);
+                                client.GameVersion = connReq.GameVersion;
+                                ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
+
+                                var respObj = new ConnectionResponse();
+
+                                respObj.ServerVersion = serverVersion.ToString();
+                                respObj.CharacterHandle = client.handle.Value;
+                                respObj.Settings = new SharedSettings()
+                                {
+                                    OnFootLagCompensation = OnFootLagComp,
+                                    VehicleLagCompensation = VehLagComp,
+                                    GlobalStreamingRange = GlobalStreamingRange,
+                                    PlayerStreamingRange = PlayerStreamingRange,
+                                    VehicleStreamingRange = VehicleStreamingRange,
+                                    ModWhitelist = ModWhitelist,
+                                    UseHttpServer = UseHTTPFileServer,
+                                };
+
+                                var channelHail = Server.CreateMessage();
+                                var respBin = SerializeBinary(respObj);
+
+                                channelHail.Write(respBin.Length);
+                                channelHail.Write(respBin);
+
+                                var cancelArgs = new CancelEventArgs();
+
+                                lock (RunningResources)
+                                    RunningResources.ForEach(
+                                        fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client, cancelArgs)));
+
+                                if (cancelArgs.Cancel)
+                                {
+                                    client.NetConnection.Deny(cancelArgs.Reason ?? "");
+                                    Program.Output("Connection denied: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                                    continue;
                                 }
                                 else
                                 {
-                                    client.NetConnection.Deny("Server is full");
-                                    Program.Output("Player connection refused: server full.");
-                                    continue;
+                                    Clients.Add(client);
+                                    Server.Configuration.CurrentPlayers = Clients.Count;
+                                    client.NetConnection.Approve(channelHail);
+                                    Program.Output("Processing connection: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+
                                 }
-                            break;
-                        case NetIncomingMessageType.StatusChanged:
+                                //   }
+                                //   else //Unreachable code
+                                //   {
+                                //       client.NetConnection.Deny("Server is full");
+                                //       Program.Output("Player connection refused: server full. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
+                                //       continue;
+                                //   }
+                                break;
+                            case NetIncomingMessageType.StatusChanged:
                                 var newStatus = (NetConnectionStatus)msg.ReadByte();
 
                                 if (newStatus == NetConnectionStatus.Connected)
@@ -1528,14 +1623,13 @@ namespace GTANResource
                                 else if (newStatus == NetConnectionStatus.Disconnected)
                                 {
                                     var reason = msg.ReadString();
-
                                     if (Clients.Contains(client))
                                     {
                                         lock (RunningResources)
-                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                {
-                                                    en.InvokePlayerDisconnected(client, reason);
-                                                }));
+                                            RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                            {
+                                                en.InvokePlayerDisconnected(client, reason);
+                                            }));
 
                                         UnoccupiedVehicleManager.UnsyncAllFrom(client);
 
@@ -1549,9 +1643,10 @@ namespace GTANResource
                                             SendToAll(dcObj, PacketType.PlayerDisconnect, true, ConnectionChannel.EntityBackend);
 
                                             Program.Output("Player disconnected: " + client.SocialClubName + " (" +
-                                                            client.Name + ")");
-                                            
+                                                            client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], reason: " + reason);
+
                                             Clients.Remove(client);
+                                            Server.Configuration.CurrentPlayers = Clients.Count;
                                             NetEntityHandler.DeleteEntityQuiet(client.handle.Value);
                                             if (ACLEnabled) ACL.LogOutClient(client);
 
@@ -1566,17 +1661,17 @@ namespace GTANResource
                                 obj.ServerName = Name;
                                 obj.MaxPlayers = (short)MaxPlayers;
                                 obj.PasswordProtected = PasswordProtected;
-                                lock (RunningResources)
-                                {
-                                    obj.Gamemode = string.IsNullOrEmpty(GamemodeName)
-                                        ? Gamemode?
-                                            .DirectoryName ?? "GTA Network"
-                                        : GamemodeName;
-                                }
-                                lock (Clients)
-                                    obj.PlayerCount =
-                                        (short)
-                                            Clients.Count;//(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
+                                //lock (RunningResources)
+                                //{
+                                obj.Gamemode = string.IsNullOrEmpty(GamemodeName)
+                                    ? Gamemode?
+                                        .DirectoryName ?? "GTA Network"
+                                    : GamemodeName;
+                                //}
+                                //lock (Clients)
+                                obj.PlayerCount =
+                                    (short)
+                                        Clients.Count;//(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
                                 obj.Port = Port;
                                 obj.LAN = isIPLocal(msg.SenderEndPoint.Address.ToString());
 
@@ -1589,9 +1684,12 @@ namespace GTANResource
                                     response.Write(bin);
 
                                     Server.SendDiscoveryResponse(response, msg.SenderEndPoint);
+
                                 }
                                 break;
+
                             case NetIncomingMessageType.Data:
+
                                 packetType = (PacketType)msg.ReadByte();
 
                                 switch (packetType)
@@ -1616,27 +1714,27 @@ namespace GTANResource
 
                                                         if (pass)
                                                         {
-                                                            ThreadPool.QueueUserWorkItem((WaitCallback) delegate
-                                                            {
-                                                                var cancelArg = new CancelEventArgs();
+                                                            ThreadPool.QueueUserWorkItem((WaitCallback)delegate
+                                                           {
+                                                               var cancelArg = new CancelEventArgs();
 
-                                                                lock (RunningResources)
-                                                                {
-                                                                    RunningResources.ForEach(
-                                                                        fs =>
-                                                                            fs.Engines.ForEach(
-                                                                                en =>
-                                                                                    en.InvokeChatCommand(client,
-                                                                                        data.Message, cancelArg)));
-                                                                }
+                                                               lock (RunningResources)
+                                                               {
+                                                                   RunningResources.ForEach(
+                                                                       fs =>
+                                                                           fs.Engines.ForEach(
+                                                                               en =>
+                                                                                   en.InvokeChatCommand(client,
+                                                                                       data.Message, cancelArg)));
+                                                               }
 
-                                                                if (!cancelArg.Cancel)
-                                                                {
-                                                                    if (!CommandHandler.Parse(client, data.Message))
-                                                                        PublicAPI.sendChatMessageToPlayer(client,
-                                                                            "~r~ERROR:~w~ Command not found.");
-                                                                }
-                                                            });
+                                                               if (!cancelArg.Cancel)
+                                                               {
+                                                                   if (!CommandHandler.Parse(client, data.Message))
+                                                                       PublicAPI.sendChatMessageToPlayer(client,
+                                                                           "~r~ERROR:~w~ Command not found.");
+                                                               }
+                                                           });
                                                         }
                                                         else
                                                         {
@@ -1658,27 +1756,27 @@ namespace GTANResource
                                                         continue;
                                                     }
 
-                                                    ThreadPool.QueueUserWorkItem((WaitCallback) delegate
-                                                    {
-                                                        lock (RunningResources)
-                                                            RunningResources.ForEach(
-                                                                fs =>
-                                                                    fs.Engines.ForEach(
-                                                                        en =>
-                                                                            pass =
-                                                                                pass &&
-                                                                                en.InvokeChatMessage(client,
-                                                                                    data.Message)));
+                                                    ThreadPool.QueueUserWorkItem((WaitCallback)delegate
+                                                   {
+                                                       lock (RunningResources)
+                                                           RunningResources.ForEach(
+                                                               fs =>
+                                                                   fs.Engines.ForEach(
+                                                                       en =>
+                                                                           pass =
+                                                                               pass &&
+                                                                               en.InvokeChatMessage(client,
+                                                                                   data.Message)));
 
-                                                        if (pass)
-                                                        {
-                                                            data.Id = client.NetConnection.RemoteUniqueIdentifier;
-                                                            data.Sender = client.Name;
-                                                            SendToAll(data, PacketType.ChatData, true,
-                                                                ConnectionChannel.Chat);
-                                                            Program.Output(data.Sender + ": " + data.Message);
-                                                        }
-                                                    });
+                                                       if (pass)
+                                                       {
+                                                           data.Id = client.NetConnection.RemoteUniqueIdentifier;
+                                                           data.Sender = client.Name;
+                                                           SendToAll(data, PacketType.ChatData, true,
+                                                               ConnectionChannel.Chat);
+                                                           Program.Output(data.Sender + ": " + data.Message);
+                                                       }
+                                                   });
                                                 }
                                             }
                                             catch (IndexOutOfRangeException)
@@ -1694,7 +1792,7 @@ namespace GTANResource
                                                 var bin = msg.ReadBytes(len);
 
                                                 var fullPacket = PacketOptimization.ReadPureVehicleSync(bin);
-                                                
+
                                                 fullPacket.NetHandle = client.handle.Value;
 
                                                 if (fullPacket.PlayerHealth.Value != client.Health)
@@ -1760,7 +1858,7 @@ namespace GTANResource
                                                         if (fullPacket.Flag.HasValue)
                                                         {
                                                             var newDead = (fullPacket.Flag &
-                                                                           (byte) VehicleDataFlags.VehicleDead) > 0;
+                                                                           (byte)VehicleDataFlags.VehicleDead) > 0;
                                                             if (!((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
                                                                 .IsDead && newDead)
@@ -1817,7 +1915,7 @@ namespace GTANResource
                                                             ((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
                                                                 .Siren = (fullPacket.Flag &
-                                                                          (byte) VehicleDataFlags.SirenActive) > 0;
+                                                                          (byte)VehicleDataFlags.SirenActive) > 0;
                                                         }
                                                     }
 
@@ -1862,7 +1960,7 @@ namespace GTANResource
                                         }
                                         break;
                                     case PacketType.VehicleLightSync:
-                                    {
+                                        {
                                             try
                                             {
                                                 var len = msg.ReadInt32();
@@ -1987,9 +2085,9 @@ namespace GTANResource
 
                                                 ResendPacket(fullPacket, client, false);
                                             }
-                                            catch(IndexOutOfRangeException)
-                                            { }
-                                    }
+                                            catch (IndexOutOfRangeException) { }
+                                            catch (KeyNotFoundException) { } //Proper fix is needed but this isn't very problematic
+                                        }
                                         break;
                                     case PacketType.PedPureSync:
                                         {
@@ -2012,7 +2110,7 @@ namespace GTANResource
                                                 client.LastUpdate = DateTime.Now;
                                                 client.Rotation = fullPacket.Quaternion;
                                                 client.Velocity = fullPacket.Velocity;
-                                                client.CurrentWeapon = (WeaponHash) fullPacket.WeaponHash.Value;
+                                                client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
                                                 if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
 
                                                 if (fullPacket.PlayerHealth.Value != oldHealth)
@@ -2100,16 +2198,16 @@ namespace GTANResource
                                                     if (oldValue != fullPacket.PedModelHash.Value)
                                                     {
                                                         lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerModelChange(client, oldValue);
-                                                        }));
+                                                            RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                            {
+                                                                en.InvokePlayerModelChange(client, oldValue);
+                                                            }));
                                                     }
                                                 }
 
                                                 ResendPacket(fullPacket, client, false);
                                             }
-                                            catch(IndexOutOfRangeException)
+                                            catch (IndexOutOfRangeException)
                                             { }
                                         }
                                         break;
@@ -2134,6 +2232,27 @@ namespace GTANResource
                                             { }
                                         }
                                         break;
+                                    case PacketType.BulletPlayerSync:
+                                        {
+                                            try
+                                            {
+                                                var len = msg.ReadInt32();
+                                                var bin = msg.ReadBytes(len);
+
+                                                int netHandle;
+                                                bool shooting;
+                                                int netHandleTarget;
+
+                                                shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out netHandleTarget);
+
+                                                netHandle = client.handle.Value;
+
+                                                ResendBulletPacket(netHandle, netHandleTarget, shooting, client);
+                                            }
+                                            catch
+                                            { }
+                                        }
+                                        break;
                                     case PacketType.UnoccupiedVehSync:
                                         {
                                             try
@@ -2143,7 +2262,7 @@ namespace GTANResource
 
                                                 for (int i = 0; i < bin[0]; i++)
                                                 {
-                                                    var cVehBin = bin.Skip(1 + 46*i).Take(46).ToArray();
+                                                    var cVehBin = bin.Skip(1 + 46 * i).Take(46).ToArray();
 
                                                     var fullPacket = PacketOptimization.ReadUnoccupiedVehicleSync(cVehBin);
 
@@ -2154,7 +2273,7 @@ namespace GTANResource
                                                             = fullPacket.Position;
                                                         NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation
                                                             = fullPacket.Quaternion;
-                                                        
+
                                                         ((VehicleProperties)
                                                             NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
                                                             .Tires = fullPacket.PlayerHealth.Value;
@@ -2189,7 +2308,7 @@ namespace GTANResource
                                                                 {
                                                                     if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
                                                                          1 << k) == 0) continue;
-                                                                    
+
                                                                     RunningResources.ForEach(
                                                                         fs => fs.Engines.ForEach(en =>
                                                                         {
@@ -2221,7 +2340,7 @@ namespace GTANResource
                                                         if (fullPacket.Flag.HasValue)
                                                         {
                                                             var newDead = (fullPacket.Flag &
-                                                                           (byte) VehicleDataFlags.VehicleDead) > 0;
+                                                                           (byte)VehicleDataFlags.VehicleDead) > 0;
                                                             var oldDead = ((VehicleProperties)
                                                                 NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
                                                                     ])
@@ -2274,31 +2393,13 @@ namespace GTANResource
                                             }
                                             catch (IndexOutOfRangeException ex)
                                             {
-                                                Program.Output(ex.ToString());
+                                                if (LogLevel > 0) Program.Output(ex.ToString());
                                             }
                                         }
                                         break;
-                                    case PacketType.NpcVehPositionData:
+                                    case PacketType.ConnectionPacket:
                                         {
-                                            try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var data =
-                                                    DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as
-                                                        VehicleData;
-                                                if (data != null)
-                                                {
-                                                    SendToAll(data, PacketType.NpcVehPositionData, false, client, ConnectionChannel.PositionData);
-                                                }
-                                            }
-                                            catch (IndexOutOfRangeException)
-                                            {
-                                            }
-                                        }
-                                        break;
-                                    case PacketType.NpcPedPositionData:
-                                        {
-                                            try
+                                            /*try
                                             {
                                                 var len = msg.ReadInt32();
                                                 var data =
@@ -2310,7 +2411,7 @@ namespace GTANResource
                                             }
                                             catch (IndexOutOfRangeException)
                                             {
-                                            }
+                                            }*/
                                         }
                                         break;
                                     case PacketType.SyncEvent:
@@ -2446,17 +2547,17 @@ namespace GTANResource
                                                     {
                                                         mapObj.Players.Add(pair.Key, (PlayerProperties)pair.Value);
                                                     }
-                                                    else if (pair.Value.EntityType == (byte) EntityType.TextLabel)
+                                                    else if (pair.Value.EntityType == (byte)EntityType.TextLabel)
                                                     {
-                                                        mapObj.TextLabels.Add(pair.Key, (TextLabelProperties) pair.Value);
+                                                        mapObj.TextLabels.Add(pair.Key, (TextLabelProperties)pair.Value);
                                                     }
-                                                    else if (pair.Value.EntityType == (byte) EntityType.Ped)
+                                                    else if (pair.Value.EntityType == (byte)EntityType.Ped)
                                                     {
                                                         mapObj.Peds.Add(pair.Key, (PedProperties)pair.Value);
                                                     }
-                                                    else if (pair.Value.EntityType == (byte) EntityType.Particle)
+                                                    else if (pair.Value.EntityType == (byte)EntityType.Particle)
                                                     {
-                                                        mapObj.Particles.Add(pair.Key, (ParticleProperties) pair.Value);
+                                                        mapObj.Particles.Add(pair.Key, (ParticleProperties)pair.Value);
                                                     }
                                                 }
 
@@ -2519,7 +2620,7 @@ namespace GTANResource
 
 
                                                 Downloads.Add(downloader);
-                                                
+
                                                 lock (RunningResources)
                                                     RunningResources.ForEach(
                                                         fs => fs.Engines.ForEach(en =>
@@ -2527,8 +2628,8 @@ namespace GTANResource
                                                             en.InvokePlayerConnected(client);
                                                         }));
 
-                                                Program.Output("New player connected: " + client.SocialClubName + " (" +
-                                                                client.Name + ")");
+                                                Program.Output("Connection established: " + client.SocialClubName + " (" +
+                                                                client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
                                             }
                                             else
                                             {
@@ -2628,7 +2729,7 @@ namespace GTANResource
                                                         }
                                                     }
 
-                                                    UpdateEntityInfo(data.NetHandle, (EntityType) data.EntityType,
+                                                    UpdateEntityInfo(data.NetHandle, (EntityType)data.EntityType,
                                                         data.Properties, client);
                                                 }
                                             }
@@ -2638,14 +2739,25 @@ namespace GTANResource
                                 }
                                 break;
                             default:
-                                Program.Output("WARN: Unhandled type: " + msg.MessageType);
+                                if (LogLevel > 0) Program.Output("WARN: Unhandled type: " + msg.MessageType);
                                 break;
                         }
                     }
+                    catch (InvalidCastException)
+                    {
+                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], Message type: " + msg.MessageType + " |" + " Packet type: " + packetType + " |" + " Exception: InvalidCastException");
+                        if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+                    }
                     catch (Exception ex)
                     {
-                        Program.Output("EXCEPTION IN MESSAGEPUMP, MSG TYPE: " + msg.MessageType + " DATA TYPE: " + packetType);
-                        Program.Output(ex.ToString());
+                        // Program.Output("EXCEPTION IN MESSAGEPUMP, MSG TYPE: " + msg.MessageType + " DATA TYPE: " + packetType);
+                        // Program.Output(ex.ToString());
+                        if (LogLevel > 0)
+                        {
+                            Program.Output("--> Exception in the Netcode.");
+                            Program.Output("--> Message type: " + msg.MessageType + " |" + " Packet type: " + packetType);
+                            Program.Output("\n===\n" + ex.ToString() + "\n===");
+                        }
                     }
                     finally
                     {
@@ -2698,11 +2810,10 @@ namespace GTANResource
                     }
 
                     ColShapeManager.Shutdown();
-                    FileServer.Dispose();
-
+                    //FileServer.Dispose(); //Causes nullref on server termination
                     if (UseUPnP) Server.UPnP?.DeleteForwardingRule(Port);
                 }
-                catch { }
+                catch(Exception e) { Program.Output(e.ToString()); }
 
                 ReadyToClose = true;
                 return;
@@ -2770,7 +2881,7 @@ namespace GTANResource
 
             NetEntityHandler.UpdateMovements();
 
-            if (AnnounceSelf && DateTime.Now.Subtract(_lastAnnounceDateTime).TotalMinutes >= 5)
+            if (AnnounceSelf && DateTime.Now.Subtract(_lastAnnounceDateTime).TotalMinutes >= 2)
             {
                 _lastAnnounceDateTime = DateTime.Now;
                 AnnounceSelfToMaster();
@@ -2796,15 +2907,30 @@ namespace GTANResource
                     }
                 }
             }
-
+            lock (queue)
+            {
+                for (int i = queue.Count - 1; i >= 0; i--)
+                {
+                    if (DateTime.Now.Subtract(queue.ElementAt(i).Value).TotalSeconds >= 60)
+                    {
+                        queue.Remove(queue.ElementAt(i).Key);
+                    }
+                }
+            }
             lock (Clients)
             {
                 for (int i = Clients.Count - 1; i >= 0; i--) // Kick AFK players
                 {
-                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 60)
+                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 70)
                     {
-                        Clients[i].NetConnection.Disconnect("Time out");
+                        Clients.Remove(Clients[i]);
                     }
+                    else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 5)
+                    {
+                        Clients[i].NetConnection.Disconnect("Timeout");
+                        //DisconnectClient(Clients[i], "Timeout");
+                    }
+
                 }
             }
         }
@@ -3076,7 +3202,7 @@ namespace GTANResource
                 }
                 catch (ProtoException e)
                 {
-                    Program.Output("WARN: Deserialization failed: " + e.Message);
+                    if(LogLevel > 0) Program.Output("WARN: Deserialization failed: " + e.Message);
                     return null;
                 }
             }
@@ -3431,6 +3557,18 @@ namespace GTANResource
             var natArg = prop.SyncedProperties[key];
 
             return DecodeArgumentListPure(natArg).Single();
+        }
+
+        public string[] GetEntityAllProperties(int entity)
+        {
+            var prop = NetEntityHandler.NetToProp<EntityProperties>(entity);
+
+            if (prop == null) return new string[0];
+
+            if (prop.SyncedProperties == null || prop.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
+
+            //return prop.SyncedProperties.Select(pair => DecodeArgumentListPure(pair.Value).Single().ToString()).ToArray(); //Returns all the values
+            return prop.SyncedProperties.Select(pair => pair.Key).ToArray();
         }
 
         public void ChangePlayerTeam(Client target, int newTeam)

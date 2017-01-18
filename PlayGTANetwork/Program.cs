@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 using GTANetworkShared;
+using Microsoft.Win32;
 
 namespace PlayGTANetwork
 {
@@ -24,69 +22,23 @@ namespace PlayGTANetwork
         [STAThread]
         static void Main(string[] args)
         {
-            ParseableVersion subprocessVersion = new ParseableVersion(0, 0, 0, 0);
-
-            if (File.Exists("GTANetwork.dll"))
-            {
-                var versiontext =
-                    System.Diagnostics.FileVersionInfo.GetVersionInfo("GTANetwork.dll").FileVersion.ToString();
-                subprocessVersion = ParseableVersion.Parse(versiontext);
-            }
-
-
-            var playerSetings = new PlayerSettings();
-
-            if (File.Exists("settings.xml"))
-            {
-                var ser = new XmlSerializer(typeof (PlayerSettings));
-                using (var stream = File.OpenRead("settings.xml"))
-                {
-                    playerSetings = (PlayerSettings) ser.Deserialize(stream);
-                }
-            }
-            else
-            {
-                var ser = new XmlSerializer(typeof(PlayerSettings));
-                using (var stream = File.OpenWrite("settings.xml"))
-                {
-                    ser.Serialize(stream, playerSetings);
-                }
-            }
-
-            try
-            {
-                using (var wc = new ImpatientWebClient())
-                {
-                    var internetTextVersion =
-                        wc.DownloadString(playerSetings.MasterServerAddress.Trim('/') + $"/update/{playerSetings.UpdateChannel}/version/l");
-                    var internetVersion = ParseableVersion.Parse(internetTextVersion);
-
-                    if (internetVersion > subprocessVersion)
-                    {
-                        wc.DownloadFile(playerSetings.MasterServerAddress.Trim('/') + $"/update/{playerSetings.UpdateChannel}/files/l", "GTANetwork.dll");
-                    }
-                }
-            }
-            catch (WebException)
-            {
-            }
-
+            string GTANFolder = (string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null);
             IEnumerable<Type> validTypes;
             try
             {
                 try
                 {
-                    DeleteFile(Path.GetFullPath("GTANetwork.dll:Zone.Identifier"));
+                    DeleteFile(GTANFolder + "launcher\\GTANetwork.dll:Zone.Identifier");
                 }
-                catch { }
+                catch (Exception e) { MessageBox.Show("ERROR: " + e.Message, "CRITICAL ERROR"); }
 
-                var ourAssembly = Assembly.LoadFrom("GTANetwork.dll");
+                var ourAssembly = Assembly.LoadFrom(GTANFolder + "launcher\\GTANetwork.dll");
 
                 var types = ourAssembly.GetExportedTypes();
                 validTypes = types.Where(t =>
                     !t.IsInterface &&
                     !t.IsAbstract)
-                    .Where(t => typeof (LauncherSettings.ISubprocessBehaviour).IsAssignableFrom(t));
+                    .Where(t => typeof(LauncherSettings.ISubprocessBehaviour).IsAssignableFrom(t));
             }
             catch (Exception e)
             {
@@ -94,11 +46,9 @@ namespace PlayGTANetwork
                 goto end;
             }
 
-
             if (!validTypes.Any())
             {
-                MessageBox.Show("Failed to load assembly \"GTANetwork.dll\": no assignable classes found.",
-                    "CRITICAL ERROR");
+                MessageBox.Show("Failed to load assembly \"GTANetwork.dll\": no assignable classes found.", "CRITICAL ERROR");
                 goto end;
             }
 
@@ -112,8 +62,7 @@ namespace PlayGTANetwork
 
             if (mainBehaviour == null)
             {
-                MessageBox.Show("Failed to load assembly \"GTANetwork.dll\": assignable class is null.",
-                    "CRITICAL ERROR");
+                MessageBox.Show("Failed to load assembly \"GTANetwork.dll\": assignable class is null.", "CRITICAL ERROR");
                 goto end;
             }
 
@@ -123,13 +72,13 @@ namespace PlayGTANetwork
             }
             catch (Exception ex)
             {
-                if (!Directory.Exists("logs")) Directory.CreateDirectory("logs");
-                File.AppendAllText("logs\\launcher.log", "LAUNCHER EXCEPTION AT " + DateTime.Now + "\r\n" + ex.ToString() + "\r\n\r\n");
+                if (!Directory.Exists(GTANFolder + "logs")) Directory.CreateDirectory(GTANFolder + "logs");
+                File.AppendAllText(GTANFolder + "logs\\launcher.log", "LAUNCHER EXCEPTION AT " + DateTime.Now + "\r\n" + ex.ToString() + "\r\n\r\n");
                 MessageBox.Show(ex.ToString(), "FATAL ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             end:
-            {}
+            { }
         }
     }
 }

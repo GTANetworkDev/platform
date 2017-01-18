@@ -1,7 +1,4 @@
-﻿//#define WHITELIST_ACTIVE
-
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,18 +13,23 @@ using Nancy;
 using Microsoft.Owin.Hosting;
 using Nancy.Extensions;
 using Newtonsoft.Json;
+using System.Xml.Linq;
+using Lidgren.Network;
 
 namespace GTANMasterServer
 {
     public class Program
     {
-        public static MasterServer2Worker GtanServerWorker;
-        public static MasterServerWorker CoopServerWorker;
+
+        public static MasterServerWorker GtanServerWorker;
         public static Dictionary<string, VersioningUpdaterWorker> UpdateChannels;
+        public static Dictionary<string, string> Queue;
+
+        public static object GlobalLock = new object();
 
         public static void Main(string[] args)
         {
-            int port = 80;
+            int port = (int)XML.Config("Port");
 
             if (args.Any() && int.TryParse(args.First(), out port))
             {
@@ -35,38 +37,42 @@ namespace GTANMasterServer
 
             var url = "http://+:" + port;
 
-            GtanServerWorker = new MasterServer2Worker();
-            CoopServerWorker = new MasterServerWorker();
-            UpdateChannels = new Dictionary<string, VersioningUpdaterWorker>();
+            GtanServerWorker = new MasterServerWorker();
+            if ((bool)XML.Config("CI")) UpdateChannels = new Dictionary<string, VersioningUpdaterWorker>();
 
-            UpdateChannels.Add("stable", new VersioningUpdaterWorker());
+            if ((bool)XML.Config("CI")) UpdateChannels.Add("stable", new VersioningUpdaterWorker());
 
+            PingerWorker.Start();
+            
             using (WebApp.Start<Startup>(url))
             {
-                Console.WriteLine("Running on {0}", url);
+                Debug.Log("Running list on: " + url);
                 WelcomeMessageWorker.UpdateWelcomeMessage();
-                ContinuousIntegration.GetLastVersion();
+
+                if ((bool)XML.Config("CI")) ContinuousIntegration.GetLastVersion();
 
                 while (true)
                 {
                     try
                     {
-                        ContinuousIntegration.Work();
+                        if ((bool)XML.Config("CI"))
+                        {
+                            ContinuousIntegration.Work();
+                            foreach (var pair in UpdateChannels) pair.Value.Work();
+                        }
                         GtanServerWorker.Work();
-                        CoopServerWorker.Work();
-                        foreach (var pair in UpdateChannels) pair.Value.Work();
+                        PingerWorker.ProcessMessages();
                         WelcomeMessageWorker.Work();
-                        #if WHITELIST_ACTIVE
                         Whitelist.Work();
-                        #endif
                     }
-                    catch {}
+                    catch (Exception e) { Debug.Log("Exception: " + e.ToString()); }
                     finally
                     {
                         Thread.Sleep(100);
                     }
                 }
             }
+
         }
 
         public static VersioningUpdaterWorker GetChannelWorker(string channelName)
@@ -82,6 +88,75 @@ namespace GTANMasterServer
             return null;
         }
     }
+
+    #region Pinger
+    public static class PingerWorker
+    {
+
+        public static NetClient Client;
+
+        public static void Start()
+        {
+            Program.Queue = new Dictionary<string, string>();
+            NetPeerConfiguration config = new NetPeerConfiguration("Pinger") { Port = (int)XML.Config("PingPort") };
+            config.SetMessageTypeEnabled(NetIncomingMessageType.DiscoveryResponse, true);
+            Client = new NetClient(config);
+            Client.Start();
+            Debug.Log("Running pinger on: " + config.Port);
+        }
+
+        public static void ProcessMessages()
+        {
+            try
+            {
+                NetIncomingMessage msg;
+                if ((msg = Client.ReadMessage()) != null)
+                {
+                    switch (msg.MessageType)
+                    {
+                        case NetIncomingMessageType.DiscoveryResponse:
+                            var Server = msg.SenderEndPoint.Address.ToString() + ":" + msg.SenderEndPoint.Port.ToString();
+                            Debug.Log("Pong <- " + Server);
+                            lock (Program.GlobalLock)
+                            {
+                                if (Program.Queue.ContainsKey(Server))
+                                {
+                                    Program.GtanServerWorker.AddServer(msg.SenderEndPoint.Address.ToString(), Program.Queue[Server]);
+                                }
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
+                    Client.Recycle(msg);
+                }
+            }
+            catch (Exception e) {
+                Debug.Log("Exception: " + e);
+            }
+        }
+  
+        public static void Ping(string IP, int Port)
+        {
+            Client.DiscoverKnownPeer(IP, Port);
+        }
+    }
+    #endregion
+
+
+    public static class Debug
+    {
+        public static void Log(string text) { Console.WriteLine("[" + DateTime.UtcNow.ToString("dd'/'MM'/'yyyy HH:mm:ss UTC") + "] " + text); }
+
+        public static void LogCI(string text)
+        {
+            if ((bool)XML.Config("DebugCI"))
+                Console.WriteLine("[" + DateTime.UtcNow.ToString("dd'/'MM'/'yyyy HH:mm:ss UTC") + "] " + text);
+        }
+    }
+
+    #region CI
 
     public static class ContinuousIntegration
     {
@@ -99,7 +174,7 @@ namespace GTANMasterServer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("[{0}] CI ERROR: " + ex.ToString(), DateTime.Now.ToString("HH:mm:ss"));
+                    Debug.Log("CI ERROR: " + ex.ToString());
                 }
                 _lastUpdate = DateTime.Now;
             }
@@ -109,11 +184,11 @@ namespace GTANMasterServer
         {
             Dictionary<string, MemoryStream> zipFile = null;
 
-            Console.WriteLine("[{0}] Getting last CI build.", DateTime.Now.ToString("HH:mm:ss"));
+            Debug.LogCI("Getting last CI build.");
             
             try
             {
-                Console.WriteLine("[{0}] Fetching last build...", DateTime.Now.ToString("HH:mm:ss"));
+                Debug.LogCI("Fetching last build...");
                 
                 string basedir = "updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "temp";
 
@@ -124,12 +199,12 @@ namespace GTANMasterServer
 
                 Directory.CreateDirectory(basedir + "" + Path.DirectorySeparatorChar + "scripts");
 
-                Console.WriteLine("Fetching last build...");
+                Debug.LogCI("Fetching last build...");
 
                 // Download the zip to download.zip
                 FetchLastBuild("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
 
-                Console.WriteLine("Fetch complete. Zipping up...");
+                Debug.LogCI("Fetch complete. Zipping up...");
 
                 zipFile = UnzipFile("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
 
@@ -192,7 +267,7 @@ namespace GTANMasterServer
             }
             catch (Exception ex)
             {
-                Console.WriteLine("{0} CONTINUOUS INTEGRATION ERROR: " + ex, DateTime.Now.ToString("HH:mm:ss"));
+                Debug.Log("{0} CONTINUOUS INTEGRATION ERROR: " + ex);
                 return;
             }
             finally
@@ -206,7 +281,7 @@ namespace GTANMasterServer
                 if (File.Exists("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip")) File.Delete("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "download.zip");
             }
             
-            Console.WriteLine("[{0}] Git CI build updated!", DateTime.Now.ToString("HH:mm:ss"));
+            Debug.Log("Git CI build updated!");
         }
 
 
@@ -216,7 +291,7 @@ namespace GTANMasterServer
 
             var creds = File.ReadAllText("updater" + Path.DirectorySeparatorChar + "git" + Path.DirectorySeparatorChar + "credentials.txt").Split('=');
 
-            Console.WriteLine("Logging into appveyor...");
+            Debug.LogCI("Logging into appveyor...");
 
             var form = string.Format(formParams, creds[0], creds[1]);
             var url = @"http://ci.appveyor.com/api/user/login";
@@ -228,25 +303,25 @@ namespace GTANMasterServer
             req.Method = "POST";
             byte[] bytes = Encoding.ASCII.GetBytes(form);
             req.ContentLength = bytes.Length;
-            Console.WriteLine("Writing to stream...");
+            Debug.LogCI("Writing to stream...");
             using (Stream os = req.GetRequestStream())
             {
                 os.Write(bytes, 0, bytes.Length);
             }
-            Console.WriteLine("Getting response...");
+            Debug.LogCI("Getting response...");
             WebResponse resp = req.GetResponse();
             cookieHeader = resp.Headers["Set-cookie"];
 
-            Console.WriteLine("Getting last build...");
+            Debug.LogCI("Getting last build...");
 
             string pageSource;
             string getUrl = @"http://ci.appveyor.com/api/projects/Guad/mtav";
             WebRequest getRequest = WebRequest.Create(getUrl);
-            Console.WriteLine("Adding cookies...");
+            Debug.LogCI("Adding cookies...");
 
             getRequest.Headers.Add("Cookie", cookieHeader);
 
-            Console.WriteLine("Getting response...");
+            Debug.LogCI("Getting response...");
             WebResponse getResponse = getRequest.GetResponse();
             using (StreamReader sr = new StreamReader(getResponse.GetResponseStream()))
             {
@@ -259,14 +334,14 @@ namespace GTANMasterServer
 
             var buildFileUri = $"http://ci.appveyor.com/api/buildjobs/{buildId}/artifacts/Client/bin/Client%20Folder.zip";
 
-            Console.WriteLine("Downloading client folder...");
+            Debug.LogCI("Downloading client folder...");
             WebRequest fileRequest = WebRequest.Create(buildFileUri);
             fileRequest.Headers.Add("Cookie", cookieHeader);
 
-            Console.WriteLine("Getting stream response...");
+            Debug.LogCI("Getting stream response...");
             WebResponse fileResponse = fileRequest.GetResponse();
             if (File.Exists(destination)) File.Delete(destination);
-            Console.WriteLine("Downloading file...");
+            Debug.LogCI("Downloading file...");
             using (var fileDest = File.Create(destination))
             {
                 fileResponse.GetResponseStream().CopyTo(fileDest);
@@ -308,6 +383,8 @@ namespace GTANMasterServer
             Directory.Delete(target_dir, false);
         }
     }
+
+
 
     public static class MiscFilesServer
     {
@@ -367,40 +444,6 @@ namespace GTANMasterServer
         }
     }
 
-    public static class Whitelist
-    {
-        private static DateTime _lastWhitelistUpdate;
-        private static string[] _whitelist = new string[0];
-
-        private static object _syncList = new object();
-
-        public static bool IsWhitelisted(string ip)
-        {
-            lock (_syncList)
-            {
-                return Array.IndexOf(_whitelist, ip) != -1;
-            }
-        }
-
-
-        private const string _whitelistPath = "whitelist.txt";
-        
-        public static void Work()
-        {
-            if (DateTime.Now.Subtract(_lastWhitelistUpdate).TotalMinutes > 30)
-            {
-                _lastWhitelistUpdate = DateTime.Now;
-
-                if (File.Exists(_whitelistPath))
-                {
-                    lock (_syncList)
-                    {
-                        _whitelist = File.ReadAllLines(_whitelistPath);
-                    }
-                }
-            }
-        }
-    }
 
     public class VersioningUpdaterWorker
     {
@@ -436,7 +479,7 @@ namespace GTANMasterServer
                     !File.Exists(baseDir + "files.zip") ||
                     !File.Exists(baseDir + "GTANetwork.dll"))
                 {
-                    Console.WriteLine("ERROR: version.txt, files.zip or GTANetwork.dll were not found for channel " +
+                    Debug.Log("ERROR: version.txt, files.zip or GTANetwork.dll were not found for channel " +
                                       Channel);
                     return;
                 }
@@ -448,8 +491,7 @@ namespace GTANMasterServer
                     System.Diagnostics.FileVersionInfo.GetVersionInfo(baseDir + "GTANetwork.dll").FileVersion.ToString();
                 LastSubprocessVersion = ParseableVersion.Parse(subprocessVersionText);
 
-                Console.WriteLine("[{0}] Updated last version for channel {1}.", DateTime.Now.ToString("HH:mm:ss"),
-                    Channel);
+                Debug.Log("Updated last version for channel " + Channel);
             }
         }
 
@@ -458,12 +500,19 @@ namespace GTANMasterServer
             return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "files.zip";
         }
 
-        public string SubprocessPath()
+        public string LauncherPath()
         {
-            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "GTANetwork.dll";
+            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "launcher" + Path.DirectorySeparatorChar + "files.zip";
+        }
+
+        public string LauncherVersionPath()
+        {
+            return "updater" + Path.DirectorySeparatorChar + Channel + Path.DirectorySeparatorChar + "launcher" + Path.DirectorySeparatorChar + "version.txt";
         }
     }
-
+#endregion
+    
+    #region Welcome
     public static class WelcomeMessageWorker
     {
         public static string Title { get; set; }
@@ -485,7 +534,7 @@ namespace GTANMasterServer
             _lastUpdate = DateTime.Now;
             if (!File.Exists("welcome" + Path.DirectorySeparatorChar + "welcome.json"))
             {
-                Console.WriteLine("ERROR: welcome.json were not found.");
+                Debug.Log("ERROR: welcome.json were not found.");
                 return;
             }
 
@@ -498,7 +547,7 @@ namespace GTANMasterServer
             Message = welcomeObj.Message;
             Picture = welcomeObj.Picture;
 
-            Console.WriteLine("[{0}] Updated welcome message.", DateTime.Now.ToString("HH:mm:ss"));
+            Debug.Log("Updated welcome message.");
         }
 
         public static string ToJson()
@@ -518,66 +567,61 @@ namespace GTANMasterServer
         public string Message { get; set; }
         public string Picture { get; set; }
     }
+    #endregion
 
-    public class MasterServerWorker
+
+    public static class Whitelist
     {
-        public List<Tuple<string, DateTime>> Servers = new List<Tuple<string, DateTime>>();
-        public int MaxMinutes = 10;
+        private static DateTime _lastWhitelistUpdate;
+        private static string[] _whitelist = new string[0];
 
-        public void Work()
+        private static object _syncList = new object();
+
+        public static bool IsWhitelisted(string ip)
         {
-            lock (Servers)
+            lock (_syncList)
             {
-                for (int i = Servers.Count - 1; i >= 0; i--)
+                return Array.IndexOf(_whitelist, ip) != -1;
+            }
+        }
+
+
+        private const string _whitelistPath = "whitelist.txt";
+
+        public static void Work()
+        {
+            if (DateTime.Now.Subtract(_lastWhitelistUpdate).TotalMinutes > 5)
+            {
+                _lastWhitelistUpdate = DateTime.Now;
+
+                if (File.Exists(_whitelistPath))
                 {
-                    if (DateTime.Now.Subtract(Servers[i].Item2).TotalMinutes > MaxMinutes)
+                    lock (_syncList)
                     {
-                        Servers.RemoveAt(i);
+                        _whitelist = File.ReadAllLines(_whitelistPath);
                     }
                 }
             }
         }
-
-        public void AddServer(string ip)
-        {
-            var split = ip.Split(':');
-            if (split.Length != 2) return;
-            int port;
-            if (!int.TryParse(split[1], out port)) return;
-            var finalString = split[0] + ":" + port;
-            lock (Servers)
-            {
-                if (Servers.Any(s => s.Item1 == finalString)) return;
-                Servers.Add(new Tuple<string, DateTime>(split[0] + ":" + port, DateTime.Now));
-            }
-        }
-
-        public string ToJson()
-        {
-            lock (Servers)
-            {
-                var obj = new MasterServerSchema();
-                obj.list = new List<string>(Servers.Select(s => s.Item1));
-
-                return JsonConvert.SerializeObject(obj);
-            }
-        }
     }
 
-    public class MasterServer2Worker
+    public class MasterServerWorker
     {
         public Dictionary<string, DateTime> UpdatesServers = new Dictionary<string, DateTime>();
-        public Dictionary<string, MasterServerAnnounceSchema> Servers = new Dictionary<string, MasterServerAnnounceSchema>();
+        public Dictionary<string, MasterServerAnnounceSchema> APIServers = new Dictionary<string, MasterServerAnnounceSchema>();
+        public Dictionary<string, MasterServerAnnounceSchema> VerifiedServers = new Dictionary<string, MasterServerAnnounceSchema>();
+        public MasterServerStats Stats = new MasterServerStats();
+
 
         public int MaxMinutes = 10;
 
-        public object GlobalLock = new object();
+
 
         public void Work()
         {
             Dictionary<string, DateTime> copy;
 
-            lock (GlobalLock)
+            lock (Program.GlobalLock)
             {
                 copy = new Dictionary<string, DateTime>(UpdatesServers);
             }
@@ -586,49 +630,111 @@ namespace GTANMasterServer
             {
                 if (DateTime.Now.Subtract(pair.Value).TotalMinutes > MaxMinutes)
                 {
-                    lock (GlobalLock)
+                    lock (Program.GlobalLock)
                     {
                         UpdatesServers.Remove(pair.Key);
-                        Servers.Remove(pair.Key);
+                        APIServers.Remove(pair.Key);
+                        VerifiedServers.Remove(pair.Key);
+                        Program.Queue.Remove(pair.Key);
                     }
                 }
             }
+
         }
+        public void QueueServer(string ip, string json)
+        {
+            try
+            {
+                lock (Program.GlobalLock)
+                {
+                    var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
+                    if (!APIServers.ContainsKey(ip + ":" + newServObj.Port.ToString()) && !Program.Queue.ContainsKey(ip + ":" + newServObj.Port.ToString()))
+                    {
+                        Debug.Log("Ping -> " + ip + ":" + newServObj.Port);
+                        Program.Queue.Add(ip + ":" + newServObj.Port.ToString(), json);
+                        PingerWorker.Ping(ip, newServObj.Port);
+                    }
+                    else
+                    {
+                        AddServer(ip, json);
+                    }
+                }
+
+            }
+            catch (Exception e) { Debug.Log("Exception: " + e.ToString()); }
+        }
+
 
         public void AddServer(string ip, string json)
         {
             try
             {
-            #if WHITELIST_ACTIVE
-                if (!Whitelist.IsWhitelisted(ip)) return;
-            #endif
+                //Debug.Log("Processing Server: " + ip);
                 var newServObj = JsonConvert.DeserializeObject<MasterServerAnnounceSchema>(json);
+                var finalAddr = ip + ":" + newServObj.Port.ToString();
 
-                var finalAddr = ip + ":" + newServObj.Port;
-
+                if (!string.IsNullOrWhiteSpace(newServObj.fqdn) && Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip && newServObj.fqdn.Length < 64) finalAddr = newServObj.fqdn + ":" + newServObj.Port;
+                if (!string.IsNullOrWhiteSpace(newServObj.Gamemode)) newServObj.Gamemode = newServObj.Gamemode.Substring(0, Math.Min(20, newServObj.Gamemode.Length));
+                if (!string.IsNullOrWhiteSpace(newServObj.Map)) newServObj.Map = newServObj.Map.Substring(0, Math.Min(20, newServObj.Map.Length)).Replace("~n~", string.Empty).Replace("¦", string.Empty);
+                if (!string.IsNullOrWhiteSpace(newServObj.ServerName)) newServObj.ServerName = newServObj.ServerName.Substring(0, Math.Min(128, newServObj.ServerName.Length));
+                if (newServObj.MaxPlayers > 1000) newServObj.MaxPlayers = 1000;
+                if (newServObj.MaxPlayers < 1) newServObj.MaxPlayers = 1;
                 newServObj.IP = finalAddr;
-                lock (GlobalLock)
+
+                if (string.IsNullOrWhiteSpace(newServObj.ServerVersion) || ParseableVersion.Parse(newServObj.ServerVersion) < ParseableVersion.Parse((string)XML.Config("MinVersion")))
                 {
+                    Debug.Log("Rejected server: " + ip + ", reason: Outdated server version.");
+                    return;
+                }
+
+
+                lock (Program.GlobalLock)
+                {
+
+                    //if (APIServers.Values.Count(x => x.IP.Contains(ip)) > 2 || APIServers.Values.Any(x => x.ServerName == newServObj.ServerName))
+                    //{
+                    //    Debug.Log("Rejected server: " + finalAddr + ", reason: Duplicate.");
+                    //    return;
+                    //}
+
+
                     if (UpdatesServers.ContainsKey(finalAddr))
                     {
                         UpdatesServers[finalAddr] = DateTime.Now;
-                        Servers[finalAddr] = newServObj;
+                        APIServers[finalAddr] = newServObj;
+                        if (VerifiedServers.ContainsKey(finalAddr))
+                        {
+                            APIServers[finalAddr] = newServObj;
+                        }
                         return;
                     }
 
                     UpdatesServers.Add(finalAddr, DateTime.Now);
-                    Servers.Add(finalAddr, newServObj);
+                    APIServers.Add(finalAddr, newServObj);
+                    if (Whitelist.IsWhitelisted(finalAddr))
+                    {
+                        VerifiedServers.Add(finalAddr, newServObj);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(newServObj.fqdn)) {
+                        Debug.Log("Adding Server: " + ip + ":" + newServObj.Port.ToString() + ", FQDN: " + newServObj.fqdn + ", Match: " + (Dns.GetHostAddresses(newServObj.fqdn)[0].ToString() == ip)); 
+                    }
+                    else {
+                        Debug.Log("Adding Server: " + finalAddr);
+                    }
                 }
             }
-            catch { }
+            catch (Exception e) {
+                Debug.Log("Step: " + ", Exception: " + e.ToString());
+            }
         }
 
         public string ToJson()
         {
-            lock (GlobalLock)
+            lock (Program.GlobalLock)
             {
                 var obj = new MasterServer2Schema();
-                obj.list = new List<MasterServerAnnounceSchema>(Servers.Select(pair => pair.Value));
+                obj.list = new List<MasterServerAnnounceSchema>(APIServers.Select(pair => pair.Value));
 
                 return JsonConvert.SerializeObject(obj);
             }
@@ -636,10 +742,33 @@ namespace GTANMasterServer
 
         public string ToRawJson()
         {
-            lock (GlobalLock)
+            lock (Program.GlobalLock)
             {
                 var obj = new MasterServerSchema();
-                obj.list = new List<string>(Servers.Select(s => s.Value.IP));
+                obj.list = new List<string>(APIServers.Select(s => s.Value.IP));
+
+                return JsonConvert.SerializeObject(obj);
+            }
+        }
+
+        public string ToVerifiedRawJson()
+        {
+            lock (Program.GlobalLock)
+            {
+                var obj = new MasterServerSchema();
+                obj.list = new List<string>(VerifiedServers.Select(s => s.Value.IP));
+
+                return JsonConvert.SerializeObject(obj);
+            }
+        }
+
+        public string StatsJson()
+        {
+            lock (Program.GlobalLock)
+            {
+                var obj = new MasterServerStats();
+                obj.TotalServers = UpdatesServers.Count();
+                obj.TotalPlayers = APIServers.Sum(x => x.Value.CurrentPlayers);
 
                 return JsonConvert.SerializeObject(obj);
             }
@@ -658,6 +787,23 @@ namespace GTANMasterServer
                 return resp;
             };
 
+            Get["/verified"] = _ =>
+            {
+                var resp = (Response)Program.GtanServerWorker.ToVerifiedRawJson();
+                resp.ContentType = "application/json";
+
+                return resp;
+            };
+
+            Get["/stats"] = _ =>
+            {
+                var resp = (Response)Program.GtanServerWorker.StatsJson();
+                resp.ContentType = "application/json";
+                resp.Headers.Add("Access-Control-Allow-Origin", "*");
+
+                return resp;
+            };
+
             Get["/apiservers"] = _ =>
             {
                 var resp = (Response)Program.GtanServerWorker.ToJson();
@@ -667,9 +813,38 @@ namespace GTANMasterServer
                 return resp;
             };
 
+            Get["/"] = parameters =>
+            {
+                return Response.AsRedirect("https://stats.gtanet.work");
+            };
+
+            //Get["/"] = _ => View["index"];
+
+            Post["/"] = parameters => { return 403; };
+
+            Post["/addserver"] = parameters =>
+            {
+                var jsonData = new StreamReader(Request.Body).ReadToEnd();
+                var serverAddress = Request.Headers["x-real-ip"].FirstOrDefault();
+                //var serverAddress = Request.UserHostAddress;
+                Program.GtanServerWorker.QueueServer(serverAddress, jsonData);
+                //Program.GtanServerWorker.AddServer(serverAddress, jsonData);
+                return 200;
+            };
+
+            Get["/pictures/{pic}"] = parameters => Response.AsFile("welcome" + Path.DirectorySeparatorChar + "pictures" + Path.DirectorySeparatorChar + ((string)parameters.pic));
+
+            Get["/welcome.json"] = _ =>
+            {
+                var resp = (Response) WelcomeMessageWorker.ToJson();
+                resp.ContentType = "application/json";
+
+                return resp;
+            };
+
             Get["/static.json"] = _ =>
             {
-                var resp = (Response) MiscFilesServer.LastJson;
+                var resp = (Response)MiscFilesServer.LastJson;
 
                 resp.ContentType = "application/json";
 
@@ -691,48 +866,6 @@ namespace GTANMasterServer
                 return 404;
             };
 
-            Get["/"] = _ =>
-            {
-                var resp = (Response)Program.CoopServerWorker.ToJson();
-
-                resp.ContentType = "application/json";
-
-                return resp;
-            };
-
-            Post["/"] = parameters =>
-            {
-                if (Request.IsLocal()) return 403;
-                var port = new StreamReader(Request.Body).ReadToEnd();
-                var serverAddress = Request.UserHostAddress + ":" + port;
-                Console.WriteLine("[{1}] Adding COOP server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:mm:ss"));
-                Program.CoopServerWorker.AddServer(serverAddress);
-                return 200;
-            };
-
-
-            Post["/addserver"] = parameters =>
-            {
-                if (Request.IsLocal()) return 403;
-                var jsonData = new StreamReader(Request.Body).ReadToEnd();
-                var serverAddress = Request.Headers["x-real-ip"].FirstOrDefault();
-                //var serverAddress = Request.UserHostAddress;
-                Console.WriteLine("[{1}] Adding server \"{0}\".", serverAddress, DateTime.Now.ToString("HH:mm:ss"));
-                Program.GtanServerWorker.AddServer(serverAddress, jsonData);
-                return 200;
-            };
-
-            Get["/pictures/{pic}"] = parameters => Response.AsFile("welcome" + Path.DirectorySeparatorChar + "pictures" + Path.DirectorySeparatorChar + ((string)parameters.pic));
-
-            Get["/welcome.json"] = _ =>
-            {
-                var resp = (Response) WelcomeMessageWorker.ToJson();
-                resp.ContentType = "application/json";
-
-                return resp;
-            };
-
-
             Get["/update/{channel}/version"] = parameters =>
             {
                 var chan = (string)parameters.channel;
@@ -742,20 +875,6 @@ namespace GTANMasterServer
                 if (versionWorker != null)
                 {
                     return versionWorker.LastClientVersion.ToString();
-                }
-
-                return 404;
-            };
-
-            Get["/update/{channel}/version/l"] = parameters =>
-            {
-                var chan = (string)parameters.channel;
-
-                var versionWorker = Program.GetChannelWorker(chan);
-
-                if (versionWorker != null)
-                {
-                    return versionWorker.LastSubprocessVersion.ToString();
                 }
 
                 return 404;
@@ -775,7 +894,7 @@ namespace GTANMasterServer
                 return 404;
             };
 
-            Get["/update/{channel}/files/l"] = parameters =>
+            Get["/update/{channel}/launcher/version"] = parameters =>
             {
                 var chan = (string)parameters.channel;
 
@@ -783,7 +902,20 @@ namespace GTANMasterServer
 
                 if (versionWorker != null)
                 {
-                    return Response.AsFile(versionWorker.SubprocessPath());
+                    return File.ReadAllText(versionWorker.LauncherVersionPath()).ToString();
+                }
+                return 404;
+            };
+
+            Get["/update/{channel}/launcher/files"] = parameters =>
+            {
+                var chan = (string)parameters.channel;
+
+                var versionWorker = Program.GetChannelWorker(chan);
+
+                if (versionWorker != null)
+                {
+                    return Response.AsFile(versionWorker.LauncherPath());
                 }
 
                 return 404;
@@ -791,6 +923,7 @@ namespace GTANMasterServer
         }
     }
 
+#region Schemas
 
     public class MasterServerSchema
     {
@@ -812,6 +945,15 @@ namespace GTANMasterServer
         public string Map { get; set; }
         public string IP { get; set; }
         public bool Passworded { get; set; }
+        public string fqdn { get; set; }
+        public string ServerVersion { get; set; }
+        public string key { get; set; }
+    }
+
+    public class MasterServerStats
+    {
+        public int TotalPlayers { get; set; }
+        public int TotalServers { get; set; }
     }
 
     public class Startup
@@ -888,4 +1030,17 @@ namespace GTANMasterServer
             };
         }
     }
-}
+
+    public class XML
+    {
+        public static dynamic Config(string str)
+        {
+            dynamic output;
+            XElement doc = XElement.Load("settings.xml");
+            return output = (from el in doc.Descendants(str) select el).FirstOrDefault();
+
+        }
+    }
+        #endregion
+
+    }

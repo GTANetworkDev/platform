@@ -281,6 +281,25 @@ namespace GTANetworkShared
             return byteArray.ToArray();
         }
 
+        public static byte[] WriteBulletSync(int netHandle, bool shooting, int netHandleTarget)
+        {
+            List<byte> byteArray = new List<byte>();
+
+            // write the player nethandle
+            byteArray.AddRange(GetBytes(netHandle));
+
+            // is he shooting anymore?
+            byteArray.Add(shooting ? (byte)0x01 : (byte)0x00);
+
+            if (shooting)
+            {
+                // Write his aiming point
+                byteArray.AddRange(GetBytes(netHandleTarget));
+            }
+
+            return byteArray.ToArray();
+        }
+
         public static byte[] WriteUnOccupiedVehicleSync(VehicleData data)
         {
             List<byte> byteArray = new List<byte>();
@@ -614,6 +633,26 @@ namespace GTANetworkShared
                 position.X = r.ReadSingle();
                 position.Y = r.ReadSingle();
                 position.Z = r.ReadSingle();
+            }
+            return output;
+        }
+
+        public static bool ReadBulletSync(byte[] array, out int netHandle, out int netHandleTarget)
+        {
+            var r = new BitReader(array);
+
+            // read netHandle
+            netHandle = r.ReadInt32();
+
+            // read whether he's shooting
+            bool output = r.ReadBoolean();
+
+            netHandleTarget = 0;
+
+            // read aiming point
+            if (output)
+            {
+                netHandleTarget = r.ReadInt32();
             }
             return output;
         }

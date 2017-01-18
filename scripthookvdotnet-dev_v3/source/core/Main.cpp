@@ -1,3 +1,4 @@
+#define DEBUG false
 /**
  * Copyright (C) 2015 crosire
  *
@@ -57,12 +58,12 @@ bool ManagedInit()
 }
 bool ManagedTick()
 {
-    /*
+#if DEBUG
 	if (ScriptHook::Domain->IsKeyPressed(ScriptHook::ReloadKey))
 	{
 		return false;
 	}
-    */
+#endif
 	ScriptHook::Domain->DoTick();
 
 	return true;

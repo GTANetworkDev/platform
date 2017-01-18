@@ -171,9 +171,9 @@ namespace GTANetworkServer.Managers
 
         public bool DoesUserHaveAccessToCommand(Client client, string command)
         {
-            if (!DoesRightExist(command, RightType.command)) return true;
+            if (!DoesRightExist(command.ToLower(), RightType.command)) return true;
             var userGrp = FindObjectGroup(client.SocialClubName, ObjectType.user);
-            return (DoesGroupHavePermissions(userGrp, command, RightType.command) && IsPlayerLoggedIn(client));
+            return (DoesGroupHavePermissions(userGrp, command.ToLower(), RightType.command) && IsPlayerLoggedIn(client));
         }
 
         public LoginResult TryLoginPlayer(Client player, string password)

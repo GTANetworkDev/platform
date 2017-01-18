@@ -28,18 +28,18 @@ namespace RPGResource
 
         public static bool IsPlayerLoggedIn(Client player)
         {
-            return API.shared.getLocalEntityData(player, "LOGGED_IN") == true;
+            return API.shared.getEntityData(player, "LOGGED_IN") == true;
         }
 
         public static void CreatePlayerAccount(Client player, string password)
         {
-            var path = Path.Combine(ACCOUNT_FOLDER, player.SocialClubName);
+            var path = Path.Combine(ACCOUNT_FOLDER, player.socialClubName);
 
             //if (!path.StartsWith(Directory.GetCurrentDirectory())) return;
 
             var data = new PlayerData()
             {
-                SocialClubName = player.SocialClubName,
+                socialClubName = player.socialClubName,
                 Password = API.shared.getHashSHA256(password),
             };
 
@@ -50,7 +50,7 @@ namespace RPGResource
 
         public static bool TryLoginPlayer(Client player, string password)
         {
-            var path = Path.Combine(ACCOUNT_FOLDER, player.SocialClubName);
+            var path = Path.Combine(ACCOUNT_FOLDER, player.socialClubName);
 
             //if (!path.StartsWith(Directory.GetCurrentDirectory())) return false;
 
@@ -63,7 +63,7 @@ namespace RPGResource
 
         public static void LoadPlayerAccount(Client player)
         {
-            var path = Path.Combine(ACCOUNT_FOLDER, player.SocialClubName);
+            var path = Path.Combine(ACCOUNT_FOLDER, player.socialClubName);
 
             //if (!path.StartsWith(Directory.GetCurrentDirectory())) return;
 
@@ -71,19 +71,19 @@ namespace RPGResource
 
             PlayerData playerObj = API.shared.fromJson(txt).ToObject<PlayerData>();
 
-            API.shared.setLocalEntityData(player, "LOGGED_IN", true);
+            API.shared.setEntityData(player, "LOGGED_IN", true);
 
             foreach (var property in typeof(PlayerData).GetProperties())
             {
                 if (property.GetCustomAttributes(typeof (XmlIgnoreAttribute), false).Length > 0) continue;
 
-                API.shared.setLocalEntityData(player, property.Name, property.GetValue(playerObj, null));
+                API.shared.setEntityData(player, property.Name, property.GetValue(playerObj, null));
             }
         }
 
         public static void SavePlayerAccount(Client player)
         {
-            var path = Path.Combine(ACCOUNT_FOLDER, player.SocialClubName);
+            var path = Path.Combine(ACCOUNT_FOLDER, player.socialClubName);
 
             //if (!path.StartsWith(Directory.GetCurrentDirectory())) return;
 
@@ -93,7 +93,7 @@ namespace RPGResource
 
             var data = new PlayerData()
             {
-                SocialClubName = player.SocialClubName,
+                socialClubName = player.socialClubName,
                 Password = old.Password,
             };
 
@@ -101,9 +101,9 @@ namespace RPGResource
             {
                 if (property.GetCustomAttributes(typeof(XmlIgnoreAttribute), false).Length > 0) continue;
 
-                if (API.shared.hasLocalEntityData(player, property.Name))
+                if (API.shared.hasEntityData(player, property.Name))
                 {
-                    property.SetValue(data, API.shared.getLocalEntityData(player, property.Name), null);
+                    property.SetValue(data, API.shared.getEntityData(player, property.Name), null);
                 }
             }
 
@@ -116,7 +116,7 @@ namespace RPGResource
     public class PlayerData
     {
         [XmlIgnore]
-        public string SocialClubName { get; set; }
+        public string socialClubName { get; set; }
         [XmlIgnore]
         public string Password { get; set; }
 

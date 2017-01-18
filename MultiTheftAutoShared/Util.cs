@@ -72,33 +72,41 @@ namespace GTANetworkShared
         public List<string> FavoriteServers { get; set; }
         public List<string> RecentServers { get; set; }
         public bool ScaleChatWithSafezone { get; set; }
-        public bool SteamPowered { get; set; }
         public string UpdateChannel { get; set; }
         public bool DisableRockstarEditor { get; set; }
         public Keys ScreenshotKey { get; set; }
-        public int CefFps { get; set; }
-        public bool StartGameInOfflineMode { get; set; }
+        public bool ShowFPS { get; set; }
+        public bool CEF { get; set; }
+        public int CEFfps { get; set; }
+        public bool Timestamp { get; set; }
+        public bool Militarytime { get; set; }
         public bool AutosetBorderlessWindowed { get; set; }
         public bool UseClassicChat { get; set; }
+        public bool OfflineMode { get; set; }
 
         public int ChatboxXOffset { get; set; }
         public int ChatboxYOffset { get; set; }
 
+        public string GamePath { get; set; }
+
         public PlayerSettings()
         {
-            MasterServerAddress = "http://148.251.18.67:8888/";
+            MasterServerAddress = "https://master.gtanet.work/";
             FavoriteServers = new List<string>();
             RecentServers = new List<string>();
             ScaleChatWithSafezone = true;
-            SteamPowered = false;
-            StartGameInOfflineMode = true;
             UpdateChannel = "stable";
             DisableRockstarEditor = true;
-            AutosetBorderlessWindowed = true;
-            StartGameInOfflineMode = true;
+            //AutosetBorderlessWindowed = false;
             ScreenshotKey = Keys.F8;
             UseClassicChat = false;
-            CefFps = 30;
+            ShowFPS = true;
+            CEF = false;
+            CEFfps = 0;
+            Timestamp = false;
+            Militarytime = true;
+            OfflineMode = false;
+            GamePath = null;
         }
     }
 

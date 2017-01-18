@@ -247,14 +247,21 @@ namespace GTANetwork.Javascript
             ThreadJumper.Clear();
 
             foreach (var a in tmpList)
-            { 
-                try
+            {
+                if (Main.ClientSideDebugging == true)
+                {
+                    try
+                    {
+                        a.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogException(ex);
+                    }
+                }
+                else
                 {
                     a.Invoke();
-                }
-                catch (Exception ex)
-                {
-                    LogException(ex);
                 }
             }
 
@@ -262,23 +269,32 @@ namespace GTANetwork.Javascript
             {
                 foreach (var engine in ScriptEngines)
                 {
-                    try
+                    if(Main.ClientSideDebugging == true)
+                    {
+                        try
+                        {
+                            engine.Engine.Script.API.invokeUpdate();
+                        }
+                        catch (Exception ex)
+                        {
+                            LogException(ex);
+                        }
+
+                        try
+                        {
+                            engine.Engine.Script.API.processCoroutines();
+                        }
+                        catch (Exception ex)
+                        {
+                            LogException(ex);
+                        }
+                    }
+                    else
                     {
                         engine.Engine.Script.API.invokeUpdate();
-                    }  
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
-                    }
-
-                    try
-                    {
                         engine.Engine.Script.API.processCoroutines();
                     }
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
-                    }
+
                 }
             }
 
@@ -292,13 +308,20 @@ namespace GTANetwork.Javascript
             {
                 foreach (var engine in ScriptEngines)
                 {
-                    try
+                    if(Main.ClientSideDebugging == true)
+                    {
+                        try
+                        {
+                            engine.Engine.Script.API.invokeKeyDown(sender, e);
+                        }
+                        catch (ScriptEngineException ex)
+                        {
+                            LogException(ex);
+                        }
+                    }
+                    else
                     {
                         engine.Engine.Script.API.invokeKeyDown(sender, e);
-                    }
-                    catch (ScriptEngineException ex)
-                    {
-                        LogException(ex);
                     }
                 }
             }
@@ -312,13 +335,20 @@ namespace GTANetwork.Javascript
             {
                 foreach (var engine in ScriptEngines)
                 {
-                    try
+                    if(Main.ClientSideDebugging == true)
+                    {
+                        try
+                        {
+                            engine.Engine.Script.API.invokeKeyUp(sender, e);
+                        }
+                        catch (ScriptEngineException ex)
+                        {
+                            LogException(ex);
+                        }
+                    }
+                    else
                     {
                         engine.Engine.Script.API.invokeKeyUp(sender, e);
-                    }
-                    catch (ScriptEngineException ex)
-                    {
-                        LogException(ex);
                     }
                 }
             }
@@ -1300,6 +1330,11 @@ namespace GTANetwork.Javascript
             return Main.GetEntityProperty(entity, key);
         }
 
+        public string[] getAllEntitySyncedData(LocalHandle entity)
+        {
+            return Main.GetEntityAllProperties(entity);
+        }
+
         public bool setWorldSyncedData(string key, object data)
         {
             return Main.SetWorldData(key, data);
@@ -1318,6 +1353,11 @@ namespace GTANetwork.Javascript
         public object getWorldSyncedData(string key)
         {
             return Main.GetWorldData(key);
+        }
+
+        public string[] getAllWorldSyncedData()
+        {
+            return Main.GetAllWorldData();
         }
 
         public int getGamePlayer()
@@ -3422,9 +3462,11 @@ namespace GTANetwork.Javascript
         public void deleteEntity(LocalHandle handle)
         {
             var item = handle.Properties<IStreamedItem>();
-
-            Main.NetEntityHandler.StreamOut(item);
-            Main.NetEntityHandler.Remove(item);
+            if (item != null)
+            {
+                Main.NetEntityHandler.StreamOut(item);
+                Main.NetEntityHandler.Remove(item);
+            }
         }
 
         public void attachEntity(LocalHandle ent1, LocalHandle ent2, string bone, Vector3 positionOffset, Vector3 rotationOffset)

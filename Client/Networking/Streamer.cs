@@ -550,8 +550,11 @@ namespace GTANetwork.Networking
         {
             lock (ClientMap)
             {
-                ClientMap.Remove(item.RemoteHandle);
-                HandleMap.Remove(item.RemoteHandle);
+                if (item != null)
+                {
+                    ClientMap.Remove(item.RemoteHandle);
+                    HandleMap.Remove(item.RemoteHandle);
+                }
             }
         }
 
@@ -1900,6 +1903,7 @@ namespace GTANetwork.Networking
         }
         public void StreamOut(IStreamedItem item)
         {
+            if (item == null) return;
             if (!item.StreamedIn) return;
 
             switch ((EntityType) item.EntityType)
@@ -2229,9 +2233,11 @@ namespace GTANetwork.Networking
 
             if (veh == null || !veh.Exists())
             {
+#if DEBUG
                 LogManager.LogException(
                     new Exception("Vehicle was null or didnt spawn, model=" + model.Hash + ", loaded=" + model.IsLoaded +
                                   ", vehicleHandle=" + (veh?.Handle)), "StreamInVehicle");
+#endif
                 data.StreamedIn = false;
                 return;
             }

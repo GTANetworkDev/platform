@@ -8,17 +8,30 @@ using System.Text;
 using System.Threading;
 using System.Xml.Serialization;
 using GTANetworkShared;
+using Mono.Unix;
+using Mono.Unix.Native;
 
 namespace GTANetworkServer
 {
     internal static class Program
     {
+
+        [DllImport("Kernel32.dll")]
+        private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+        private delegate bool EventHandler(CtrlType sig);
+        static EventHandler _handler;
+
         private static object _filelock = new object();
         private static bool _log;
 
         public static long GetTicks()
         {
             return DateTime.Now.Ticks/10000;
+        }
+
+        public static void ToFile(string path, string str)
+        {
+            File.AppendAllText(path, "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str + Environment.NewLine);
         }
 
         public static void Output(string str)
@@ -68,6 +81,7 @@ namespace GTANetworkServer
 
 
         public static string Location { get { return AppDomain.CurrentDomain.BaseDirectory; } }
+
         internal static GameServer ServerInstance { get; set; }
         internal static bool CloseProgram = false;
 
@@ -75,8 +89,21 @@ namespace GTANetworkServer
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool DeleteFile(string name);
 
+
         static void Main(string[] args)
         {
+
+            _handler += new EventHandler(Handler);
+            int p = (int)Environment.OSVersion.Platform;
+            if ((p == 4) || (p == 6) || (p == 128))
+            {
+                setupHandlers();
+            }
+            else
+            {
+                SetConsoleCtrlHandler(_handler, true);
+            }
+
             var settings = ServerSettings.ReadSettings(Program.Location + "settings.xml");
             
             _log = settings.LogToFile;
@@ -91,8 +118,10 @@ namespace GTANetworkServer
             Console.WriteLine("=======================================================================");
             Console.WriteLine("= Server Name: " + settings.Name);
             Console.WriteLine("= Server Port: " + settings.Port);
+            Console.WriteLine("= Server FQDN: " + settings.fqdn);
             Console.WriteLine("=");
             Console.WriteLine("= Player Limit: " + settings.MaxPlayers);
+            Console.WriteLine("= Log Level: " + settings.LogLevel + " (1: ERROR, 2: DEBUG, 3: VERBOSE)");
             Console.WriteLine("=======================================================================");
 
             if (settings.Port != 4499)
@@ -116,18 +145,7 @@ namespace GTANetworkServer
 
             Output("Started! Waiting for connections.");
 
-            if (Type.GetType("Mono.Runtime") == null)
-            {
-                SetConsoleCtrlHandler(new HandlerRoutine(ConsoleCtrlCheck), true);
-            }
-            else
-            {
-                Console.CancelKeyPress += (sender, eventArgs) =>
-                {
-                    ConsoleCtrlCheck(CtrlTypes.CTRL_C_EVENT);
-                };
-            }
-
+ 
             while (!CloseProgram)
             {
                 ServerInstance.Tick();
@@ -136,47 +154,74 @@ namespace GTANetworkServer
 
         }
 
-
-        #region unmanaged
-
-        private static bool ConsoleCtrlCheck(CtrlTypes ctrType)
+        private static bool Handler(CtrlType sig)
         {
-            try
+            Program.Output("Terminating...");
+            ServerInstance.IsClosing = true;
+            DateTime start = DateTime.Now;
+            while (!ServerInstance.ReadyToClose)
             {
-                ServerInstance.IsClosing = true;
-                Program.Output("Terminating...");
-                DateTime start = DateTime.Now;
-                while (!ServerInstance.ReadyToClose)
-                {
-                    Thread.Sleep(10);
-                }
-                CloseProgram = true;
+                Thread.Sleep(10);
             }
-            catch { }
+            CloseProgram = true;
+            Console.WriteLine("Terminated.");
             return true;
         }
 
-        [DllImport("Kernel32")]
-        public static extern bool SetConsoleCtrlHandler(HandlerRoutine Handler, bool Add);
-
-        // A delegate type to be used as the handler routine
-        // for SetConsoleCtrlHandler.
-
-        public delegate bool HandlerRoutine(CtrlTypes CtrlType);
-
-        // An enumerated type for the control messages
-        // sent to the handler routine.
-
-        public enum CtrlTypes
+        public enum CtrlType
         {
             CTRL_C_EVENT = 0,
-            CTRL_BREAK_EVENT,
-            CTRL_CLOSE_EVENT,
+            CTRL_BREAK_EVENT = 1,
+            CTRL_CLOSE_EVENT = 2,
             CTRL_LOGOFF_EVENT = 5,
-            CTRL_SHUTDOWN_EVENT
+            CTRL_SHUTDOWN_EVENT = 6
         }
 
-        #endregion
-        
+        public static bool masterExit = false;
+        private static void setupHandlers()
+        {
+            Thread newthread = new Thread(new ThreadStart(sigHan));
+            newthread.Start();
+        }
+
+        private static void sigHan()
+        {
+            UnixSignal[] signals = new UnixSignal[] {
+                new UnixSignal (Signum.SIGINT),
+                new UnixSignal (Signum.SIGTERM),
+                new UnixSignal (Signum.SIGQUIT),
+                };
+
+            while (!masterExit)
+            {
+                int index = UnixSignal.WaitAny(signals, -1);
+                Signum signal = signals[index].Signum;
+                sigHandler(signal);
+            };
+        }
+
+        private static void sigHandler(Signum signal)
+        {
+            switch (signal)
+            {
+                case Signum.SIGINT:    // Control-C
+                    Console.WriteLine("Processing SIGINT Signal");
+                    masterExit = true;
+                    break;
+                case Signum.SIGTERM:
+                    Console.WriteLine("Processing SIGTERM Signal");
+                    masterExit = true;
+                    break;
+                case Signum.SIGQUIT:
+                    Console.WriteLine("Processing SIGQUIT Signal");
+                    masterExit = true;
+                    break;
+            }
+
+            if (masterExit)
+            {
+                Handler(CtrlType.CTRL_C_EVENT);
+            }
+        }
     }
 }

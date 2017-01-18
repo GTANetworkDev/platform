@@ -1681,6 +1681,15 @@ namespace GTANetworkServer
             return null;
         }
 
+        public string[] getAllEntitySyncedData(NetHandle entity)
+        {
+            if (doesEntityExist(entity))
+            {
+                return Program.ServerInstance.GetEntityAllProperties(entity.Value);
+            }
+            return new string[0];
+        }
+
         public void resetEntitySyncedData(NetHandle entity, string key)
         {
             if (doesEntityExist(entity))
@@ -1706,6 +1715,11 @@ namespace GTANetworkServer
         public dynamic getWorldSyncedData(string key)
         {
             return Program.ServerInstance.GetEntityProperty(1, key);
+        }
+
+        public string[] getAllWorldSyncedData()
+        {
+            return Program.ServerInstance.GetEntityAllProperties(1);
         }
 
         public void resetWorldSyncedData(string key)
@@ -1796,6 +1810,14 @@ namespace GTANetworkServer
             lock (Program.ServerInstance.WorldProperties)
             {
                 return Program.ServerInstance.WorldProperties.Get(key);
+            }
+        }
+
+        public string[] getAllWorldData()
+        {
+            lock (Program.ServerInstance.WorldProperties)
+            {
+                return Program.ServerInstance.WorldProperties.Select(pair => pair.Key).ToArray();
             }
         }
 
@@ -2624,7 +2646,7 @@ namespace GTANetworkServer
             msg.Write((byte)PacketType.ChatData);
             msg.Write(data.Length);
             msg.Write(data);
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.Chat);
         }
 
         public void setPlayerWantedLevel(Client player, int wantedLevel)
@@ -2789,7 +2811,8 @@ namespace GTANetworkServer
 
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
 
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, ammo, equipNow, ammo);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, 0, equipNow, ammo);
+            Program.ServerInstance.SendNativeCallToPlayer(player, 0x14E56BC5B5DB6A19, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
         }
 
         public void removePlayerWeapon(Client player, WeaponHash weapon)
@@ -2800,6 +2823,7 @@ namespace GTANetworkServer
 
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weapon, false);
 
+            //Program.ServerInstance.SendNativeCallToPlayer(player, 0x14E56BC5B5DB6A19, new LocalPlayerArgument(), (int)weapon, 0); //SET_PED_AMMO
             Program.ServerInstance.SendNativeCallToPlayer(player, 0x4899CB088EDF59B8, new LocalPlayerArgument(), (int)weapon);
 
             var delta = new Delta_PlayerProperties();
@@ -3477,7 +3501,7 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(blip))
             {
-                ((BlipProperties) Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color = color;
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color = color;
                 var delta = new Delta_BlipProperties();
                 delta.Color = color;
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);

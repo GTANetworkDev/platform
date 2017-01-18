@@ -15,6 +15,7 @@
  */
 
 #include "ScriptDomain.hpp"
+#define DEBUG false
 
 using namespace System;
 using namespace System::Threading;
@@ -122,7 +123,12 @@ namespace GTA
 
 		auto setup = gcnew AppDomainSetup();
 		setup->ApplicationBase = path;
+#if DEBUG
 		setup->ShadowCopyFiles = "true";
+#else
+		setup->ShadowCopyFiles = "false";
+#endif
+		
 		setup->ShadowCopyDirectories = path;
 
 		auto appdomain = System::AppDomain::CreateDomain("ScriptDomain_" + (path->GetHashCode() * Environment::TickCount).ToString("X"), nullptr, setup, gcnew Security::PermissionSet(Security::Permissions::PermissionState::Unrestricted));
@@ -188,10 +194,11 @@ namespace GTA
                         }
                     }
                 }
-                catch (Exception ^ex)
-                {
-                    Log("[ERROR]", "Failed to load assembly ", filenameAssemblies[i], Environment::NewLine, ex->ToString());
-                }
+				catch (BadImageFormatException ^) { }
+				catch (Exception ^ex)
+				{
+					Log("[ERROR]", "Failed to load assembly ", filenameAssemblies[i], Environment::NewLine, ex->ToString());
+				}
 			}
 
 			for each (String ^filename in filenameScripts)
@@ -275,10 +282,10 @@ namespace GTA
 		{
 			assembly = Assembly::LoadFrom(filename);
 		}
+		catch (BadImageFormatException ^) { return false; }
 		catch (Exception ^ex)
 		{
 			Log("[ERROR]", "Failed to load assembly '", IO::Path::GetFileName(filename), "':", Environment::NewLine, ex->ToString());
-
 			return false;
 		}
 
@@ -422,7 +429,8 @@ namespace GTA
 			return;
 		}
 
-		String ^assemblyPath = Assembly::GetExecutingAssembly()->Location;
+		//String ^logpath = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), "..\\bin\\scripts");
+		String ^assemblyPath = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), "..\\bin\\scripts");
 		String ^assemblyFilename = IO::Path::GetFileNameWithoutExtension(assemblyPath);
 
 		for each (String ^path in IO::Directory::GetFiles(IO::Path::GetDirectoryName(assemblyPath), "*.log"))

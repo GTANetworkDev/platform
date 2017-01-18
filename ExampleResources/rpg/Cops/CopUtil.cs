@@ -11,34 +11,34 @@ namespace RPGResource.Cops
         {
             var crimeWL = WantedLevelDataProvider.Crimes.Get(crimeId);
 
-            if (API.shared.getLocalEntityData(player, "WantedLevel") >= crimeWL.WantedLevel)
+            if (API.shared.getEntityData(player, "WantedLevel") >= crimeWL.WantedLevel)
             {
                 return false;
             }
 
-            API.shared.setLocalEntityData(player, "WantedLevel", crimeWL.WantedLevel);
+            API.shared.setEntityData(player, "WantedLevel", crimeWL.WantedLevel);
 
             API.shared.sendChatMessageToPlayer(player, "~y~You have been reported for " + WantedLevelDataProvider.Crimes.Get(crimeId).Name);
 
             if (crimeWL.WantedLevel <= 2)
             {
-                BroadcastToCops("~b~TICKET ISSUED FOR ~w~" + player.Name + " ~b~FOR~w~ " + WantedLevelDataProvider.Crimes.Get(crimeId).Name);
+                BroadcastToCops("~b~TICKET ISSUED FOR ~w~" + player.name + " ~b~FOR~w~ " + WantedLevelDataProvider.Crimes.Get(crimeId).Name);
             }
             else
             {
-                BroadcastToCops("~b~ARREST WARRANT ISSUED FOR ~w~" + player.Name + " ~b~FOR~w~ " + WantedLevelDataProvider.Crimes.Get(crimeId).Name);
+                BroadcastToCops("~b~ARREST WARRANT ISSUED FOR ~w~" + player.name + " ~b~FOR~w~ " + WantedLevelDataProvider.Crimes.Get(crimeId).Name);
             }
 
             List<int> playerCrimes;
 
-            if ((playerCrimes = API.shared.getLocalEntityData(player, "Crimes")) == null)
+            if ((playerCrimes = API.shared.getEntityData(player, "Crimes")) == null)
             {
                 playerCrimes = new List<int>();
             }
 
             playerCrimes.Add(crimeId);
 
-            API.shared.setLocalEntityData(player, "Crimes", playerCrimes);
+            API.shared.setEntityData(player, "Crimes", playerCrimes);
             if (crimeWL.WantedLevel > 2)
                 API.shared.setPlayerNametagColor(player, 232, 44, 44);
             else
@@ -55,7 +55,7 @@ namespace RPGResource.Cops
 
             foreach (var player in players)
             {
-                if (API.shared.getLocalEntityData(player, "IS_COP") == true)
+                if (API.shared.getEntityData(player, "IS_COP") == true)
                 {
                     API.shared.sendChatMessageToPlayer(player, message);
                 }
@@ -64,7 +64,7 @@ namespace RPGResource.Cops
 
         public static int CalculatePlayerFine(Client player)
         {
-            List<int> crimes = API.shared.getLocalEntityData(player, "Crimes");
+            List<int> crimes = API.shared.getEntityData(player, "Crimes");
             int totalPrice = 0;
 
             if (crimes != null)

@@ -24,24 +24,47 @@ namespace GTANetwork.Util
             }
             catch{}
         }
+        public static void CefLog(string text)
+        {
+            CreateLogDirectory();
+            try
+            {
+                lock (errorLogLock)
+                    File.AppendAllText(LogDirectory + "\\" + "CEF.log", text + "\r\n");
+            }
+            catch { }
+        }
+        public static void CefLog(Exception ex, string source)
+        {
+            CreateLogDirectory();
+            lock (errorLogLock)
+            {
+                File.AppendAllText(LogDirectory + "\\CEF.log", ">> EXCEPTION OCCURED AT " + DateTime.Now + " FROM " + source + "\r\n" + ex.ToString() + "\r\n\r\n");
+            }
+        }
 
         public static void DebugLog(string text)
         {
-            CreateLogDirectory();
             if (!Main.WriteDebugLog) return;
+            CreateLogDirectory();
             try
             {
-                //File.AppendAllText(LogDirectory + "\\debug.log", text + "\r\n");
+                File.AppendAllText(LogDirectory + "\\Debug.log", text + "\r\n");
                 Debug.WriteLine(text);
             }
             catch (Exception) { }
         }
 
-        public static void AlwaysDebugLog(string text)
+        public static void RuntimeLog(string text)
         {
             try
             {
                 Debug.WriteLine(text);
+                CreateLogDirectory();
+                lock (errorLogLock)
+                {
+                    File.AppendAllText(LogDirectory + "\\Runtime.log", ">> " + text + "\r\n\r\n");
+                }
             }
             catch (Exception) { }
         }
@@ -52,7 +75,7 @@ namespace GTANetwork.Util
             CreateLogDirectory();
             lock (errorLogLock)
             {
-                File.AppendAllText(LogDirectory + "\\error.log", ">> EXCEPTION OCCURED AT " + DateTime.Now + " FROM " + source + "\r\n" + ex.ToString() + "\r\n\r\n");
+                File.AppendAllText(LogDirectory + "\\Error.log", ">> EXCEPTION OCCURED AT " + DateTime.Now + " FROM " + source + "\r\n" + ex.ToString() + "\r\n\r\n");
             }
         }
     }

@@ -10,6 +10,7 @@ using Lidgren.Network;
 using Vector3 = GTA.Math.Vector3;
 using WeaponHash = GTA.WeaponHash;
 using VehicleHash = GTA.VehicleHash;
+using System.Collections.Generic;
 
 namespace GTANetwork.Networking
 {
@@ -17,6 +18,8 @@ namespace GTANetwork.Networking
     {
         private const int LIGHT_SYNC_RATE = 1500;
         private const int PURE_SYNC_RATE = 100;
+
+
 
         internal static void MainLoop()
         {
@@ -445,34 +448,58 @@ namespace GTANetwork.Networking
                 if (!player.IsSubtaskActive(ESubtask.MELEE_COMBAT) && player.Weapons.Current.Ammo == 0)
                     sendShootingPacket = false;
 
+                
                 if (sendShootingPacket && !_lastShooting)
                 {
                     _lastShooting = true;
 
                     _lastShot = DateTime.Now;
 
-                    var bin = PacketOptimization.WriteBulletSync(0, true, aimCoord.ToLVector());
-
                     var msg = Main.Client.CreateMessage();
+                    byte[] bin = null;
+                    SyncPed syncPlayer = null;
 
-                    msg.Write((byte)PacketType.BulletSync);
+                    if (Main.OnShootingLagCompensation)
+                        syncPlayer = Main.GetPedDamagedByPlayer();
+
+                    if (syncPlayer != null)
+                    {
+                        bin = PacketOptimization.WriteBulletSync(0, true, syncPlayer.RemoteHandle);
+                        msg.Write((byte)PacketType.BulletPlayerSync);
+                    }
+                    else
+                    {
+                        bin = PacketOptimization.WriteBulletSync(0, true, aimCoord.ToLVector());
+                        msg.Write((byte)PacketType.BulletSync);
+                    }
+
                     msg.Write(bin.Length);
                     msg.Write(bin);
 
                     Main.Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.BulletSync);
-                    
+
                     Main._bytesSent += bin.Length;
                     Main._messagesSent++;
                 }
-
                 else if (!sendShootingPacket && _lastShooting && DateTime.Now.Subtract(_lastShot).TotalMilliseconds > 50)
                 {
                     _lastShooting = false;
-                    var bin = PacketOptimization.WriteBulletSync(0, false, aimCoord.ToLVector());
 
                     var msg = Main.Client.CreateMessage();
-
-                    msg.Write((byte)PacketType.BulletSync);
+                    byte[] bin = null;
+                    SyncPed syncPlayer = null;
+                    if (Main.OnShootingLagCompensation)
+                        syncPlayer = Main.GetPedDamagedByPlayer();
+                    if (syncPlayer != null)
+                    {
+                        bin = PacketOptimization.WriteBulletSync(0, false, syncPlayer.RemoteHandle);
+                        msg.Write((byte)PacketType.BulletPlayerSync);
+                    }
+                    else
+                    {
+                        bin = PacketOptimization.WriteBulletSync(0, false, aimCoord.ToLVector());
+                        msg.Write((byte)PacketType.BulletSync);
+                    }
                     msg.Write(bin.Length);
                     msg.Write(bin);
 
@@ -483,5 +510,7 @@ namespace GTANetwork.Networking
                 }
             }
         }
+
+
     }
 }

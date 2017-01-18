@@ -18,7 +18,7 @@ namespace RPGResource
 
         public void onPlayerCommand(Client player, string arg, CancelEventArgs ce)
         {
-            if (API.getLocalEntityData(player, "DOWNLOAD_FINISHED") != true)
+            if (API.getEntityData(player, "DOWNLOAD_FINISHED") != true)
             {
                 ce.Cancel = true;
             }
@@ -31,7 +31,7 @@ namespace RPGResource
 
         public void onPlayerDownloaded(Client player)
         {
-            API.setLocalEntityData(player, "DOWNLOAD_FINISHED", true);
+            API.setEntityData(player, "DOWNLOAD_FINISHED", true);
 
             API.sendChatMessageToPlayer(player, "Welcome to %GENERICRPG%! Type /login to log into your account or /register to create an account.");
             API.triggerClientEvent(player, "createCamera", _skinSelectorCamPos, _skinSelectorPos);

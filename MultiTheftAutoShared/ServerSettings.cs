@@ -67,6 +67,21 @@ namespace GTANetworkShared
         [XmlElement("local_address")]
         public string LocalAddress { get; set; }
 
+        [XmlElement("global_stream_range")]
+        public int GlobalStreamingRange { get; set; }
+
+        [XmlElement("player_stream_range")]
+        public int PlayerStreamingRange { get; set; }
+
+        [XmlElement("vehicle_stream_range")]
+        public int VehicleStreamingRange { get; set; }
+
+        [XmlElement("fqdn")]
+        public string fqdn { get; set; }
+
+        [XmlElement("conntimeout")]
+        public bool Conntimeout { get; set; }
+
         public WhitelistCollection whitelist { get; set; }
 
         [XmlRoot("resource")]
@@ -79,7 +94,7 @@ namespace GTANetworkShared
         public ServerSettings()
         {
             Port = 4499;
-            MaxPlayers = 16;
+            MaxPlayers = 50;
             Name = "Simple GTA Network Server";
             MinimumClientVersion = "0.0.0.0";
             Password = "";
@@ -92,11 +107,16 @@ namespace GTANetworkShared
             Resources = new List<SettingsResFilepath>();
             OnFootLagCompensation = true;
             VehicleLagCompensation = true;
+            GlobalStreamingRange = 500;
+            PlayerStreamingRange = 175;
+            VehicleStreamingRange = 250;
             UseHTTPServer = false;
             RefreshHz = 120;
             LogLevel = 0;
             EnableClientsideEntityProperties = false;
             LocalAddress = "0.0.0.0";
+            fqdn = "";
+            Conntimeout = true;
         }
 
         public static ServerSettings ReadSettings(string path)

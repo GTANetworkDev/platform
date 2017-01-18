@@ -11,7 +11,7 @@ namespace GTANetworkShared
         PlayerDisconnect = 2,
         //PedPositionData = 3,
         NpcVehPositionData = 4,
-        NpcPedPositionData = 5,
+        ConnectionPacket = 5,
         WorldSharingStop = 6,
         DiscoveryResponse = 7,
         ConnectionRequest = 8,
@@ -45,6 +45,7 @@ namespace GTANetworkShared
         UnoccupiedVehStartStopSync = 36,
         UnoccupiedVehSync = 37,
         BasicUnoccupiedVehSync = 38,
+        BulletPlayerSync = 39,
     }
 
     public enum ScriptVersion
@@ -162,7 +163,7 @@ namespace GTANetworkShared
         public SharedSettings Settings { get; set; }
 
         [ProtoMember(3)]
-        public ulong ServerVersion { get; set; }
+        public string ServerVersion { get; set; }
     }
 
     [ProtoContract]
@@ -179,6 +180,15 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public bool UseHttpServer { get; set; }
+
+        [ProtoMember(5)]
+        public int PlayerStreamingRange { get; set; }
+
+        [ProtoMember(6)]
+        public int VehicleStreamingRange { get; set; }
+
+        [ProtoMember(7)]
+        public int GlobalStreamingRange { get; set; }
     }
 
     [ProtoContract]
@@ -352,7 +362,10 @@ namespace GTANetworkShared
         public byte GameVersion { get; set; }
 
         [ProtoMember(5)]
-        public ulong ScriptVersion { get; set; }
+        public string ScriptVersion { get; set; }
+
+        [ProtoMember(6)]
+        public bool CEF { get; set; }
     }
 
     
