@@ -1472,21 +1472,9 @@ namespace GTANetwork
 
                 #region Debug Menu
 
-
-
-                var DebugMenu = new TabInteractiveListItem("Debug", new List<UIMenuItem>());
-                {
-                    var debugItem = new UIMenuCheckboxItem("Enable Script Engine Crash Handling", ClientSideDebugging);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        ClientSideDebugging = @checked;
-                    };
-                    DebugMenu.Items.Add(debugItem);
-                }
-
-                
 #if DEBUG
 
+               
                     var debugItem = new UIMenuCheckboxItem("Debug", false);
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
