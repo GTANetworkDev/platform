@@ -112,7 +112,7 @@ namespace GTANetwork.GUI
     
     internal class MainCefLoadHandler : CefLoadHandler
     {
-        protected override void OnLoadStart(CefBrowser browser, CefFrame frame)
+        protected override void OnLoadStart(CefBrowser browser, CefFrame frame, CefTransitionType transitionType)
         {
             // A single CefBrowser instance can handle multiple requests
             //   for a single URL if there are frames (i.e. <FRAME>, <IFRAME>).
@@ -253,7 +253,7 @@ namespace GTANetwork.GUI
         protected override bool OnBeforeNavigation(CefBrowser browser, CefFrame frame, CefRequest request, CefNavigationType navigation_type,
             bool isRedirect)
         {
-            if ((request.TransitionType & CefTransitionType.ForwardBackFlag) != 0 || navigation_type == CefNavigationType.BackForwarD)
+            if ((request.TransitionType & CefTransitionType.ForwardBackFlag) != 0 || navigation_type == CefNavigationType.BackForward)
             {
                 return true;
             }
@@ -281,6 +281,7 @@ namespace GTANetwork.GUI
             _imageElement = new ImageElement(null, true);
 
             CEFManager.DirectXHook.AddImage(_imageElement);
+            LogManager.CefLog("End of MainCefRenderHandler");
         }
 
         public void SetHidden(bool hidden)
@@ -354,8 +355,14 @@ namespace GTANetwork.GUI
             }
         }
         
-        protected override void OnScrollOffsetChanged(CefBrowser browser)
+        protected override void OnScrollOffsetChanged(CefBrowser browser, double x, double y)
         {
+
+        }
+
+        protected override void OnImeCompositionRangeChanged(CefBrowser browser, CefRange selectedRange, CefRectangle[] characterBounds)
+        {
+
         }
     }
 

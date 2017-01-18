@@ -250,6 +250,7 @@ namespace GTANetwork.GUI
         {
             if (!CefUtil.DISABLE_CEF)
             {
+                LogManager.CefLog("InitilizeCef: Start");
                 var t = new Thread((ThreadStart)delegate
                 {
                     try
@@ -258,12 +259,12 @@ namespace GTANetwork.GUI
 
                         var args = new[]
                         {
-                        "--off-screen-rendering-enabled",
-                        "--transparent-painting-enabled",
-                        "--disable-gpu",
-                        "--disable-gpu-compositing",
-                        "--enable-begin-frame-scheduling",
-                    };
+                            "--off-screen-rendering-enabled",
+                            "--transparent-painting-enabled",
+                            "--disable-gpu",
+                            "--disable-gpu-compositing",
+                            "--enable-begin-frame-scheduling",
+                        };
 
                         var cefMainArgs = new CefMainArgs(args);
                         var cefApp = new MainCefApp();
@@ -303,7 +304,7 @@ namespace GTANetwork.GUI
 
                 t.SetApartmentState(ApartmentState.STA);
                 t.Start();
-
+                LogManager.CefLog("InitilizeCef: End");
             }
         }
 
