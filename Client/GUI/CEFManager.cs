@@ -639,7 +639,15 @@ namespace GTANetwork.GUI
                 Size = browserSize;
                 _localMode = localMode;
                 _callback = new BrowserJavascriptCallback(father, this);
-                CefBrowserHost.CreateBrowser(cefWindowinfo, _client, browserSettings);
+                try
+                {
+                    CefBrowserHost.CreateBrowser(cefWindowinfo, _client, browserSettings);
+                }
+                catch (Exception e)
+                {
+                    LogManager.CefLog(e.ToString());
+                }
+
             }
         }
 
