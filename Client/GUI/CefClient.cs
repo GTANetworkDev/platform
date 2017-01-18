@@ -59,7 +59,14 @@ namespace GTANetwork.GUI
         {
             return _injector;
         }
-        
+
+        protected override void OnBeforeCommandLineProcessing(string processType, CefCommandLine commandLine)
+        {
+            if(Main.EnableMediaStream)
+            {
+                commandLine.AppendSwitch("enable-media-stream");
+            }
+        }
     }
 
     internal class SecureSchemeFactory : CefSchemeHandlerFactory
@@ -274,6 +281,7 @@ namespace GTANetwork.GUI
 
         public Bitmap LastBitmap;
         public readonly object BitmapLock = new object();
+
 
         public MainCefRenderHandler(int windowWidth, int windowHeight)
         {

@@ -118,7 +118,6 @@ namespace GTANetwork
         public static int VehicleStreamingRange = 350;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
-        public static bool ClientSideDebugging = true;
         public static bool CanOpenChatbox = true;
         public static bool DisplayWastedMessage = true;
         public static bool ScriptChatVisible = true;
@@ -159,6 +158,7 @@ namespace GTANetwork
         private TabTextItem _statsItem;
         //
 
+        public static bool EnableMediaStream;
 
         public Main()
         {
@@ -181,6 +181,8 @@ namespace GTANetwork
                 CEFManager.FPS = PlayerSettings.CEFfps;
             }
             PedThread.FPS = PlayerSettings.ShowFPS;
+
+            EnableMediaStream = PlayerSettings.MediaStream;
 
             GameSettings = Misc.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
@@ -1153,6 +1155,15 @@ namespace GTANetwork
                     GeneralMenu.Items.Add(debugItem);
                 }
                 {
+                    var debugItem = new UIMenuCheckboxItem("Allow Webcam/Microphone Streaming (Requires restart)", PlayerSettings.MediaStream);
+                    debugItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.MediaStream = @checked;
+                        SaveSettings();
+                    };
+                    GeneralMenu.Items.Add(debugItem);
+                }
+                {
                     var nameItem = new UIMenuItem("Update Channel");
                     nameItem.SetRightLabel(PlayerSettings.UpdateChannel);
                     nameItem.Activated += (sender, item) =>
@@ -1540,7 +1551,7 @@ namespace GTANetwork
                     //DisplayMenu,
                     //GraphicsMenu,
                     ExpMenu,
-                    DebugMenu
+                    //DebugMenu
                 });
                 MainMenu.AddTab(welcomeItem);
             }

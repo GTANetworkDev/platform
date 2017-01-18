@@ -257,6 +257,7 @@ namespace GTANetwork.GUI
                             "--disable-gpu-vsync",
                             "--enable-begin-frame-scheduling",
                             "--disable-d3d11",
+
                         };
 
                         var cefMainArgs = new CefMainArgs(args);
@@ -668,14 +669,13 @@ namespace GTANetwork.GUI
         {
             if (!CefUtil.DISABLE_CEF)
             {
-                if (_browser != null)
+                if (_browser != null && _browser.CanGoBack)
                 {
                     LogManager.CefLog("Trying to go back a page...");
-                    _browser.GetMainFrame().Browser.GoBack();
+                    _browser.GoBack();
                 }
             }
         }
-
 
         internal void Close()
         {
