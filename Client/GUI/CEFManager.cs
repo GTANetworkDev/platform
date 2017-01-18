@@ -342,7 +342,7 @@ namespace GTANetwork.GUI
 
             //LogManager.CefLog("--> Initiatlize: Start");
             ScreenSize = screenSize;
-            if (!CefUtil.DISABLE_HOOK && DirectXHook == null && !initialized && initializedCef)
+            if (!CefUtil.DISABLE_CEF && DirectXHook == null && !initialized && initializedCef)
             {
                 initialized = true;
                 Configuration.EnableObjectTracking = true;

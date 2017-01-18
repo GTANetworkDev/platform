@@ -169,17 +169,16 @@ namespace GTANetwork
 
             PlayerSettings = Util.Util.ReadSettings(GTANInstallDir + "\\settings.xml");
 
-            CefUtil.DISABLE_CEF = !PlayerSettings.CEF;
-            CefUtil.DISABLE_HOOK = !PlayerSettings.CEF;
+            CefUtil.DISABLE_CEF = PlayerSettings.DisableCEF;
 
-            if (PlayerSettings.CEFfps <= 0)
-            {
-                CEFManager.FPS = (int)Game.FPS;
-            }
-            else
-            {
-                CEFManager.FPS = PlayerSettings.CEFfps;
-            }
+            //if (PlayerSettings.CEFfps <= 0)
+            //{
+            //    CEFManager.FPS = (int)Game.FPS;
+            //}
+            //else
+            //{
+            //    CEFManager.FPS = PlayerSettings.CEFfps;
+            //}
             PedThread.FPS = PlayerSettings.ShowFPS;
 
             EnableMediaStream = PlayerSettings.MediaStream;
@@ -1428,56 +1427,56 @@ namespace GTANetwork
                     var ExpMenu = new TabInteractiveListItem("Experimental", new List<UIMenuItem>());
                 {
 
-                    var expItem = new UIMenuCheckboxItem("Enable Chromium Embedded Framework (Requires restart)", PlayerSettings.CEF);
+                    var expItem = new UIMenuCheckboxItem("Disable Chromium Embedded Framework (Requires restart)", PlayerSettings.DisableCEF);
                     expItem.CheckboxEvent += (sender, @checked) =>
                     {
-                            PlayerSettings.CEF = @checked;
+                            PlayerSettings.DisableCEF = @checked;
                             SaveSettings();
                     };
                     ExpMenu.Items.Add(expItem);
                 }
-                {
-                    var expItem = new UIMenuItem("Chromium Embedded Framework Framerate (requires reconnect)");
+                //{
+                //    var expItem = new UIMenuItem("Chromium Embedded Framework Framerate (requires reconnect)");
 
-                    if(PlayerSettings.CEFfps == 0)
-                    {
-                        expItem.SetRightLabel("Auto (0)");
-                    }
-                    else
-                    {
-                        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
-                    }
+                //    if(PlayerSettings.CEFfps == 0)
+                //    {
+                //        expItem.SetRightLabel("Auto (0)");
+                //    }
+                //    else
+                //    {
+                //        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+                //    }
 
-                    expItem.Activated += (sender, item) =>
-                    {
-                        MainMenu.TemporarilyHidden = true;
-                        var strInput = InputboxThread.GetUserInput(PlayerSettings.CEFfps.ToString(),
-                            10, TickSpinner);
-                        int newSetting;
-                        if (!int.TryParse(strInput, out newSetting) || newSetting < 0 || newSetting > 120)
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            MainMenu.TemporarilyHidden = false;
-                            return;
-                        }
-                        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
-                        if (newSetting == 0)
-                        {
-                            CEFManager.FPS = (int)Game.FPS;
-                            expItem.SetRightLabel("Auto (0)");
-                        }
-                        else
-                        {
-                            CEFManager.FPS = newSetting;
-                            expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+                //    expItem.Activated += (sender, item) =>
+                //    {
+                //        MainMenu.TemporarilyHidden = true;
+                //        var strInput = InputboxThread.GetUserInput(PlayerSettings.CEFfps.ToString(),
+                //            10, TickSpinner);
+                //        int newSetting;
+                //        if (!int.TryParse(strInput, out newSetting) || newSetting < 0 || newSetting > 120)
+                //        {
+                //            Util.Util.SafeNotify("Input was not in the correct format.");
+                //            MainMenu.TemporarilyHidden = false;
+                //            return;
+                //        }
+                //        expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
+                //        if (newSetting == 0)
+                //        {
+                //            CEFManager.FPS = (int)Game.FPS;
+                //            expItem.SetRightLabel("Auto (0)");
+                //        }
+                //        else
+                //        {
+                //            CEFManager.FPS = newSetting;
+                //            expItem.SetRightLabel(PlayerSettings.CEFfps.ToString());
 
-                        }
-                        PlayerSettings.CEFfps = newSetting;
-                        MainMenu.TemporarilyHidden = false;
-                        SaveSettings();
-                    };
-                    ExpMenu.Items.Add(expItem);
-                }
+                //        }
+                //        PlayerSettings.CEFfps = newSetting;
+                //        MainMenu.TemporarilyHidden = false;
+                //        SaveSettings();
+                //    };
+                //    ExpMenu.Items.Add(expItem);
+                //}
 
                 #endregion
 

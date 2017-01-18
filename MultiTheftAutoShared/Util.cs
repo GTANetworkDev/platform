@@ -76,8 +76,7 @@ namespace GTANetworkShared
         public bool DisableRockstarEditor { get; set; }
         public Keys ScreenshotKey { get; set; }
         public bool ShowFPS { get; set; }
-        public bool CEF { get; set; }
-        public int CEFfps { get; set; }
+        public bool DisableCEF { get; set; }
         public bool Timestamp { get; set; }
         public bool Militarytime { get; set; }
         public bool AutosetBorderlessWindowed { get; set; }
@@ -102,8 +101,7 @@ namespace GTANetworkShared
             ScreenshotKey = Keys.F8;
             UseClassicChat = false;
             ShowFPS = true;
-            CEF = true;
-            CEFfps = 0;
+            DisableCEF = false;
             Timestamp = false;
             Militarytime = true;
             OfflineMode = false;

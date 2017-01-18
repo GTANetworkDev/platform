@@ -14,7 +14,6 @@ namespace GTANetwork.GUI
     internal static class CefUtil
     {
         public static bool DISABLE_CEF = true;
-        public static bool DISABLE_HOOK = true;
 
 
         internal static Dictionary<int, Browser> _cachedReferences = new Dictionary<int, Browser>();
