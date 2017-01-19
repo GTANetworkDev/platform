@@ -3033,7 +3033,7 @@ namespace GTANResource
                                 PickupToWeapon.Translate(
                                     ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).ModelHash) != 0)
                             {
-                                sender.Weapons.Add((WeaponHash) PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash));
+                                sender.Weapons.Add((WeaponHash) PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash), 0);
                             }
                         }
                     }
@@ -3346,11 +3346,27 @@ namespace GTANResource
 
             return list;
         }
-        
-        public void SendNativeCallToPlayer(Client player, ulong hash, params object[] arguments)
+
+        public void SendDeleteObject(Client player, Vector3 pos, float radius, int modelHash)
+        {
+            var obj = new ObjectData();
+            obj.Position = pos;
+            obj.Radius = radius;
+            obj.modelHash = modelHash;
+            var bin = SerializeBinary(obj);
+
+            var msg = Server.CreateMessage();
+            msg.Write((byte)PacketType.DeleteObject);
+            msg.Write(bin.Length);
+            msg.Write(bin);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.Default);
+        }
+
+        public void SendNativeCallToPlayer(Client player, bool safe, ulong hash, params object[] arguments)
         {
             var obj = new NativeData();
             obj.Hash = hash;
+            obj.Internal = safe;
             obj.Arguments = ParseNativeArguments(arguments);
             var bin = SerializeBinary(obj);
 
@@ -3361,10 +3377,11 @@ namespace GTANResource
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
         }
 
-        public void SendNativeCallToAllPlayers(ulong hash, params object[] arguments)
+        public void SendNativeCallToAllPlayers(bool safe, ulong hash, params object[] arguments)
         {
             var obj = new NativeData();
             obj.Hash = hash;
+            obj.Internal = safe;
             obj.Arguments = ParseNativeArguments(arguments);
             obj.ReturnType = null;
             obj.Id = 0;
@@ -3384,11 +3401,11 @@ namespace GTANResource
         }
 
         private uint _nativeCount = 0;
-        public object ReturnNativeCallFromPlayer(Client player, ulong hash, NativeArgument returnType, params object[] args)
+        public object ReturnNativeCallFromPlayer(Client player, bool safe, ulong hash, NativeArgument returnType, params object[] args)
         {
             _nativeCount++;
             object output = null;
-            GetNativeCallFromPlayer(player, _nativeCount, hash, returnType, (o) =>
+            GetNativeCallFromPlayer(player, safe, _nativeCount, hash, returnType, (o) =>
             {
                 output = o;
             }, args);
@@ -3401,7 +3418,7 @@ namespace GTANResource
         }
 
         private Dictionary<uint, Action<object>> _callbacks = new Dictionary<uint, Action<object>>();
-        public void GetNativeCallFromPlayer(Client player, uint salt, ulong hash, NativeArgument returnType, Action<object> callback,
+        public void GetNativeCallFromPlayer(Client player, bool safe, uint salt, ulong hash, NativeArgument returnType, Action<object> callback,
             params object[] arguments)
         {
             var obj = new NativeData();
@@ -3409,6 +3426,7 @@ namespace GTANResource
             obj.ReturnType = returnType;
             obj.Id = salt;
             obj.Arguments = ParseNativeArguments(arguments);
+            obj.Internal = safe;
 
             var bin = SerializeBinary(obj);
 

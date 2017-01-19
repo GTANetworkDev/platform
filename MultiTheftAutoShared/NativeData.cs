@@ -50,6 +50,22 @@ namespace GTANetworkShared
 
         [ProtoMember(4)]
         public uint Id { get; set; }
+
+        [ProtoMember(5)]
+        public bool Internal { get; set; }
+    }
+
+    [ProtoContract]
+    public class ObjectData
+    {
+        [ProtoMember(1)]
+        public Vector3 Position { get; set; }
+
+        [ProtoMember(2)]
+        public float Radius { get; set; }
+
+        [ProtoMember(3)]
+        public int modelHash { get; set; }
     }
 
     [ProtoContract]

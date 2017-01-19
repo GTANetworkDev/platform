@@ -85,7 +85,7 @@ namespace GTANetwork.GUI
                     LogManager.CefLog("-> [Local mode] Uri: " + request.Url);
                     var uri = new Uri(request.Url);
                     var path = Main.GTANInstallDir + "resources\\";
-                    var requestedFile = path + uri.Host + uri.LocalPath;
+                    var requestedFile = path + uri.Host + uri.LocalPath.Replace("/", "\\");
 
                     LogManager.CefLog("-> Loading: " + requestedFile);
 

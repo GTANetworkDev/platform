@@ -703,8 +703,8 @@ namespace GTANetworkServer
 
         public void playSoundFrontEnd(Client target, string audioLib, string audioName)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(target, 0x2F844A8B08D76685, audioLib, true);
-            Program.ServerInstance.SendNativeCallToPlayer(target, 0x67C540AA08E4A6F5, -1, audioName, audioLib);
+            Program.ServerInstance.SendNativeCallToPlayer(target, false, 0x2F844A8B08D76685, audioLib, true);
+            Program.ServerInstance.SendNativeCallToPlayer(target, false, 0x67C540AA08E4A6F5, -1, audioName, audioLib);
         }
 
         public void setGamemodeName(string newName)
@@ -956,7 +956,7 @@ namespace GTANetworkServer
         {
             return
                 (bool)
-                    Program.ServerInstance.ReturnNativeCallFromPlayer(player, 0x7239B21A38F536BA, new BooleanArgument(),
+                    Program.ServerInstance.ReturnNativeCallFromPlayer(player, false, 0x7239B21A38F536BA, new BooleanArgument(),
                         new EntityArgument(entity.Value));
         }
 
@@ -966,9 +966,9 @@ namespace GTANetworkServer
             {
                 Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Alpha = (byte) newAlpha;
                 if (newAlpha < 255)
-                    Program.ServerInstance.SendNativeCallToAllPlayers(0x44A0870B7E92D7C0, new EntityArgument(entity.Value), newAlpha, false);
+                    Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x44A0870B7E92D7C0, new EntityArgument(entity.Value), newAlpha, false);
                 else
-                    Program.ServerInstance.SendNativeCallToAllPlayers(0x9B1E824FFBB7027A, new EntityArgument(entity.Value));
+                    Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x9B1E824FFBB7027A, new EntityArgument(entity.Value));
 
                 var delta = new Delta_EntityProperties();
                 delta.Alpha = (byte) newAlpha;
@@ -1246,7 +1246,7 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Livery = livery;
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x60BF608F1B8CD1B6, new EntityArgument(vehicle.Value), livery);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x60BF608F1B8CD1B6, new EntityArgument(vehicle.Value), livery);
 
                 var delta = new Delta_VehicleProperties();
                 delta.Livery = livery;
@@ -1289,7 +1289,7 @@ namespace GTANetworkServer
                         (byte)PacketOptimization.ResetBit(Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag,
                             EntityFlag.VehicleLocked);
                 }
-                Program.ServerInstance.SendNativeCallToAllPlayers(0xB664292EAECF7FA6, new EntityArgument(vehicle.Value), locked ? 10 : 1);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xB664292EAECF7FA6, new EntityArgument(vehicle.Value), locked ? 10 : 1);
 
                 var delta = new Delta_VehicleProperties();
                 delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;
@@ -1503,7 +1503,7 @@ namespace GTANetworkServer
                         .VehicleComponents &= (short)(~(1 << slot));
                 }
 
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x7EE3A3C5E4A40CC9, new EntityArgument(vehicle.Value), slot, enabled ? 0 : -1);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x7EE3A3C5E4A40CC9, new EntityArgument(vehicle.Value), slot, enabled ? 0 : -1);
 
                 var delta = new Delta_VehicleProperties();
                 delta.VehicleComponents = ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value])
@@ -1527,7 +1527,7 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).NumberPlate = plate;
-                //Program.ServerInstance.SendNativeCallToAllPlayers(0x95A88F0B409CDA47, new EntityArgument(vehicle.Value), plate);
+                //Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x95A88F0B409CDA47, new EntityArgument(vehicle.Value), plate);
 
                 var delta = new Delta_VehicleProperties();
                 delta.NumberPlate = plate;
@@ -1548,8 +1548,8 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(vehicle))
             {
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x2497C4717C8B881E, vehicle, turnedOn, true, true);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x8ABA6AF54B942B95, vehicle, !turnedOn);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x2497C4717C8B881E, vehicle, turnedOn, true, true);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x8ABA6AF54B942B95, vehicle, !turnedOn);
 
                 if (turnedOn)
                 {
@@ -1585,8 +1585,8 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(vehicle))
             {
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x14E85C5EE7A4D542, vehicle, turnedOn, true);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x598803E85E8448D9, vehicle, turnedOn);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x14E85C5EE7A4D542, vehicle, turnedOn, true);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x598803E85E8448D9, vehicle, turnedOn);
 
                 if (turnedOn)
                 {
@@ -1622,7 +1622,7 @@ namespace GTANetworkServer
         {
             if (doesEntityExist(entity))
             {
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x1A9205C1B9EE827F, entity, !collisionless, true);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x1A9205C1B9EE827F, entity, !collisionless, true);
 
                 if (!collisionless)
                 {
@@ -1866,7 +1866,7 @@ namespace GTANetworkServer
                 ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods.Remove((byte)modType);
             }
 
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x92D619E420858204, vehicle, modType);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x92D619E420858204, vehicle, modType);
 
             var delta = new Delta_VehicleProperties();
             delta.Mods = ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods;
@@ -2093,7 +2093,7 @@ namespace GTANetworkServer
         {
             removeAllPlayerWeapons(player);
 
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x00A1CADD00108836, new LocalGamePlayerArgument(), (int)modelHash);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x00A1CADD00108836, new LocalGamePlayerArgument(), (int)modelHash);
             if (doesEntityExist(player.handle))
             {
                 ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value])
@@ -2109,7 +2109,7 @@ namespace GTANetworkServer
 
         public void setPlayerDefaultClothes(Client player)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x45EEE61580806D63, player.handle);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x45EEE61580806D63, player.handle);
             if (doesEntityExist(player.handle))
             {
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value]).Accessories.Clear();
@@ -2126,7 +2126,7 @@ namespace GTANetworkServer
 
         public void setWeather(int weather)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xED712CA327900C8A, weather);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xED712CA327900C8A, weather);
             Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Weather = weather;
         }
 
@@ -2236,7 +2236,7 @@ namespace GTANetworkServer
 
         public void setTime(int hours, int minutes)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x47C3B5848C3E45D8, hours, minutes, 0);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x47C3B5848C3E45D8, hours, minutes, 0);
             Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Hours = (byte)hours;
             Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1).Minutes = (byte) minutes;
         }
@@ -2250,7 +2250,7 @@ namespace GTANetworkServer
 
         public void freezePlayerTime(Client client, bool freeze)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(client, 0x4055E40BD2DBEC1D, freeze);
+            Program.ServerInstance.SendNativeCallToPlayer(client, false, 0x4055E40BD2DBEC1D, freeze);
         }
 
         public void setVehiclePrimaryColor(NetHandle vehicle, int color)
@@ -2258,8 +2258,8 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor = color;
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x55E1D2758F34E437, vehicle);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x4F1D4BE3A7F24601, vehicle, color, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x55E1D2758F34E437, vehicle);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x4F1D4BE3A7F24601, vehicle, color, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor);
 
                 var delta = new Delta_VehicleProperties();
                 delta.PrimaryColor = color;
@@ -2272,7 +2272,7 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x7141766F91D15BEA, vehicle, red, green, blue);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x7141766F91D15BEA, vehicle, red, green, blue);
 
                 var delta = new Delta_VehicleProperties();
                 delta.PrimaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
@@ -2285,8 +2285,8 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor = color;
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x5FFBDEEC3E8E2009, vehicle);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x4F1D4BE3A7F24601, vehicle, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor, color);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x5FFBDEEC3E8E2009, vehicle);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x4F1D4BE3A7F24601, vehicle, ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).PrimaryColor, color);
 
                 var delta = new Delta_VehicleProperties();
                 delta.SecondaryColor = color;
@@ -2299,7 +2299,7 @@ namespace GTANetworkServer
             if (doesEntityExist(vehicle))
             {
                 ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).SecondaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x36CED73BFED89754, vehicle, red, green, blue);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x36CED73BFED89754, vehicle, red, green, blue);
 
                 var delta = new Delta_VehicleProperties();
                 delta.SecondaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
@@ -2387,7 +2387,7 @@ namespace GTANetworkServer
             {
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value]).Props.Set((byte)slot, (byte)drawable);
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value]).Textures.Set((byte)slot, (byte)texture);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x262B14F48D29DE80, new EntityArgument(player.handle.Value), slot, drawable, texture, 2);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x262B14F48D29DE80, new EntityArgument(player.handle.Value), slot, drawable, texture, 2);
 
                 var delta = new Delta_PlayerProperties();
                 delta.Textures =
@@ -2429,7 +2429,7 @@ namespace GTANetworkServer
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.handle.Value))
             {
                 ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value]).Accessories.Set((byte)slot, new Tuple<byte, byte>((byte)drawable, (byte) texture));
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x93376B65A266EB5F, new EntityArgument(player.handle.Value), slot, drawable, texture, true);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x93376B65A266EB5F, new EntityArgument(player.handle.Value), slot, drawable, texture, true);
 
                 var delta = new Delta_PlayerProperties();
                 delta.Accessories =
@@ -2444,7 +2444,7 @@ namespace GTANetworkServer
             if (Program.ServerInstance.NetEntityHandler.ToDict().ContainsKey(player.handle.Value))
             {
                 ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value]).Accessories.Remove((byte) slot);
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x0943E5B8E078E76E, new EntityArgument(player.handle.Value), slot);
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x0943E5B8E078E76E, new EntityArgument(player.handle.Value), slot);
 
                 var delta = new Delta_PlayerProperties();
                 delta.Accessories =
@@ -2574,12 +2574,12 @@ namespace GTANetworkServer
 
         public void setEntityPositionFrozen(Client player, NetHandle entity, bool frozen)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
         }
 
         public void setEntityPositionFrozen(NetHandle entity, bool frozen)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x428CA6DBD1094446, new EntityArgument(entity.Value), frozen);
         }
 
         public void triggerClientEventForAll(string eventName, params object[] args)
@@ -2651,7 +2651,7 @@ namespace GTANetworkServer
 
         public void setPlayerWantedLevel(Client player, int wantedLevel)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1454F2448DE30163, wantedLevel);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x1454F2448DE30163, wantedLevel);
         }
 
         public int getPlayerWantedLevel(Client player)
@@ -2706,9 +2706,19 @@ namespace GTANetworkServer
             return player.VehicleSeat;
         }
 
+        internal void safeSendNativeToPlayer(Client player, ulong longHash, params object[] args)
+        {
+            Program.ServerInstance.SendNativeCallToPlayer(player, true, longHash, args);
+        }
+
+        internal void safeSendNativeToPlayer(Client player, Hash native, params object[] args)
+        {
+            safeSendNativeToPlayer(player, (ulong)native, args);
+        }
+
         public void sendNativeToPlayer(Client player, ulong longHash, params object[] args)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, longHash, args);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, longHash, args);
         }
 
         public void sendNativeToPlayer(Client player, Hash native, params object[] args)
@@ -2718,7 +2728,7 @@ namespace GTANetworkServer
 
         public void sendNativeToAllPlayers(ulong longHash, params object[] args)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(longHash, args);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, longHash, args);
         }
 
         public void sendNativeToAllPlayers(Hash native, params object[] args)
@@ -2796,7 +2806,20 @@ namespace GTANetworkServer
                 throw new ArgumentException("Type \"" + typeof(T) + "\" is not a valid return type.");
             }
 
-            return (T) Program.ServerInstance.ReturnNativeCallFromPlayer(player, longHash,
+            return (T) Program.ServerInstance.ReturnNativeCallFromPlayer(player, false, longHash,
+                returnType, args);
+        }
+
+        internal T safeFetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
+        {
+            var returnType = Program.ServerInstance.ParseReturnType(typeof(T));
+
+            if (returnType == null)
+            {
+                throw new ArgumentException("Type \"" + typeof(T) + "\" is not a valid return type.");
+            }
+
+            return (T)Program.ServerInstance.ReturnNativeCallFromPlayer(player, true, longHash,
                 returnType, args);
         }
 
@@ -2805,14 +2828,32 @@ namespace GTANetworkServer
             return fetchNativeFromPlayer<T>(player, (ulong) native, args);
         }
 
+        internal T safeFetchNativeFromPlayer<T>(Client player, Hash native, params object[] args)
+        {
+            return safeFetchNativeFromPlayer<T>(player, (ulong)native, args);
+        }
+
         public void givePlayerWeapon(Client player, WeaponHash weaponHash, int ammo, bool equipNow, bool ammoLoaded)
         {
-            if (!player.Weapons.Contains(weaponHash)) player.Weapons.Add(weaponHash);
+            if (!player.Weapons.Keys.Contains(weaponHash)) player.Weapons.Add(weaponHash, ammo);
 
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
 
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, 0, equipNow, ammo);
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x14E56BC5B5DB6A19, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, 0, equipNow, ammo);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
+        }
+
+        public int getPlayerWeaponAmmo(Client player, WeaponHash weaponHash)
+        {
+            if (!player.Weapons.Keys.Contains(weaponHash)) return 0;
+            return player.Weapons[weaponHash];
+            //return fetchNativeFromPlayer<int>(player, (ulong)Hash.GET_AMMO_IN_PED_WEAPON, new LocalPlayerArgument(), (int)weaponHash);
+        }
+
+        public void setPlayerWeaponAmmo(Client player, WeaponHash weaponHash, int ammo)
+        {
+            if (!player.Weapons.Keys.Contains(weaponHash)) return;
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
         }
 
         public void removePlayerWeapon(Client player, WeaponHash weapon)
@@ -2823,8 +2864,8 @@ namespace GTANetworkServer
 
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weapon, false);
 
-            //Program.ServerInstance.SendNativeCallToPlayer(player, 0x14E56BC5B5DB6A19, new LocalPlayerArgument(), (int)weapon, 0); //SET_PED_AMMO
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x4899CB088EDF59B8, new LocalPlayerArgument(), (int)weapon);
+            //Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x14E56BC5B5DB6A19, new LocalPlayerArgument(), (int)weapon, 0); //SET_PED_AMMO
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x4899CB088EDF59B8, new LocalPlayerArgument(), (int)weapon);
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
@@ -2842,7 +2883,7 @@ namespace GTANetworkServer
             player.Properties.WeaponComponents.Add((int)WeaponHash.Unarmed, new List<int>());
 
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, false);
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF25DF915FA38C5F3, new LocalPlayerArgument(), true);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xF25DF915FA38C5F3, new LocalPlayerArgument(), true);
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
@@ -2854,7 +2895,7 @@ namespace GTANetworkServer
         {
             player.Properties.WeaponTints.Set((int) weapon, (byte) tint);
 
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x50969B9B89ED5738, player.handle, (int) weapon, (int) tint);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x50969B9B89ED5738, player.handle, (int) weapon, (int) tint);
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
@@ -2890,7 +2931,7 @@ namespace GTANetworkServer
                 player.Properties.WeaponComponents.Add((int)weapon, new List<int> {(int)component});
             }
 
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xD966D51AA5B28BB9, player.handle, (int)weapon, (int)component);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xD966D51AA5B28BB9, player.handle, (int)weapon, (int)component);
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;
@@ -2904,7 +2945,7 @@ namespace GTANetworkServer
                 player.Properties.WeaponComponents[(int) weapon].Remove((int) component);
             }
             
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1E8BE90C74FB4C09, player.handle, (int)weapon, (int)component);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x1E8BE90C74FB4C09, player.handle, (int)weapon, (int)component);
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;
@@ -3179,7 +3220,7 @@ namespace GTANetworkServer
 
         public WeaponHash[] getPlayerWeapons(Client player)
         {
-            return player.Weapons.ToArray();
+            return player.Weapons.Keys.ToArray();
         }
 
         public WeaponHash getPlayerCurrentWeapon(Client player)
@@ -3227,7 +3268,7 @@ namespace GTANetworkServer
 
         public void setEntityPosition(NetHandle netHandle, Vector3 newPosition)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x239A3351AC1DA385, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x239A3351AC1DA385, new EntityArgument(netHandle.Value), newPosition.X, newPosition.Y, newPosition.Z, 0, 0, 0);
 	        if (doesEntityExist(netHandle))
 	        {
 		        Program.ServerInstance.NetEntityHandler.ToDict()[netHandle.Value].Position = newPosition;
@@ -3335,7 +3376,7 @@ namespace GTANetworkServer
 
         public void setPlayerSeatbelt(Client player, bool seatbelt)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1913FE4CBF41C463,
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x1913FE4CBF41C463,
                 new EntityArgument(player.handle.Value), 32, !seatbelt);
         }
 
@@ -3348,15 +3389,15 @@ namespace GTANetworkServer
         {
             if (player.IsInVehicle)
             {
-                Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.CurrentVehicle.Value), freeze);
+                Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x428CA6DBD1094446, new EntityArgument(player.CurrentVehicle.Value), freeze);
             }
 
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x428CA6DBD1094446, new EntityArgument(player.handle.Value), freeze);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x428CA6DBD1094446, new EntityArgument(player.handle.Value), freeze);
         }
 
 	    public void setEntityRotation(NetHandle netHandle, Vector3 newRotation)
 	    {
-			Program.ServerInstance.SendNativeCallToAllPlayers(0x8524A8B0171D5E07, new EntityArgument(netHandle.Value), newRotation.X, newRotation.Y, newRotation.Z, 2, 1);
+			Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x8524A8B0171D5E07, new EntityArgument(netHandle.Value), newRotation.X, newRotation.Y, newRotation.Z, 2, 1);
 			if (doesEntityExist(netHandle))
 			{
 				Program.ServerInstance.NetEntityHandler.ToDict()[netHandle.Value].Rotation = newRotation;
@@ -3390,7 +3431,7 @@ namespace GTANetworkServer
         {
             //var start = Environment.TickCount;
             //while (!doesEntityExistForPlayer(player, vehicle) && Environment.TickCount - start < 1000) { }
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), seat);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xF75B0D629E1C063D, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), seat);
 
             player.IsInVehicle = true;
             player.CurrentVehicle = vehicle;
@@ -3400,7 +3441,7 @@ namespace GTANetworkServer
 
         public void warpPlayerOutOfVehicle(Client player, NetHandle vehicle)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xD3DBCE61A490BE02, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), 16);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xD3DBCE61A490BE02, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), 16);
         }
 
         public bool doesEntityExist(NetHandle entity)
@@ -3419,7 +3460,7 @@ namespace GTANetworkServer
                 Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
 
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x45F6D8EEF34ABEF1, vehicle, health);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x45F6D8EEF34ABEF1, vehicle, health);
         }
 
         public float getVehicleHealth(NetHandle vehicle)
@@ -3472,13 +3513,13 @@ namespace GTANetworkServer
                 Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
 
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x115722B1B9C14C1C, vehicle);
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x953DA1E1B12C0491, vehicle);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x115722B1B9C14C1C, vehicle);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x953DA1E1B12C0491, vehicle);
         }
 
         public void setPlayerHealth(Client player, int health)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x6B76DC1F3AE6E6A3, new LocalPlayerArgument(), health + 100);
             player.Health = health;
         }
 
@@ -3489,7 +3530,7 @@ namespace GTANetworkServer
 
         public void setPlayerArmor(Client player, int armor)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xCEA04D83135264CC, new LocalPlayerArgument(), armor);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xCEA04D83135264CC, new LocalPlayerArgument(), armor);
         }
 
         public int getPlayerArmor(Client player)
@@ -3507,7 +3548,7 @@ namespace GTANetworkServer
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
 
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x03D7FB09E75D6B7E, blip, color);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x03D7FB09E75D6B7E, blip, color);
         }
 
         public int getBlipColor(NetHandle blip)
@@ -3551,7 +3592,7 @@ namespace GTANetworkServer
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
 
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x45FF974EEE1C8734, blip, alpha);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x45FF974EEE1C8734, blip, alpha);
         }
 
         public int getBlipTransparency(NetHandle blip)
@@ -3573,7 +3614,7 @@ namespace GTANetworkServer
                 delta.IsShortRange = range;
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xBE8BE4FE60E27B72, blip, range);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xBE8BE4FE60E27B72, blip, range);
         }
 
         public bool getBlipShortRange(NetHandle blip)
@@ -3595,7 +3636,7 @@ namespace GTANetworkServer
                 delta.Position = newPos;
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xAE2AF67E9D9AF65D, blip, newPos.X, newPos.Y, newPos.Z);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xAE2AF67E9D9AF65D, blip, newPos.X, newPos.Y, newPos.Z);
         }
 
         public Vector3 getBlipPosition(NetHandle blip)
@@ -3618,7 +3659,7 @@ namespace GTANetworkServer
                 delta.Sprite = sprite;
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xDF735600A4696DAF, blip, sprite);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xDF735600A4696DAF, blip, sprite);
         }
 
         public int getBlipSprite(NetHandle blip)
@@ -3641,7 +3682,7 @@ namespace GTANetworkServer
                 delta.Scale = scale;
                 Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xD38744167B2FA257, blip, scale);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xD38744167B2FA257, blip, scale);
         }
 
         public float getBlipScale(NetHandle blip)
@@ -3656,38 +3697,38 @@ namespace GTANetworkServer
 
         public void sendNotificationToPlayer(Client player, string message, bool flashing = false)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x202709F4C58A0424, "STRING");
             for (int i = 0; i < message.Length; i += 99)
             {
-                Program.ServerInstance.SendNativeCallToPlayer(player, 0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
+                Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
             }
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF020C96915705B3A, flashing, true);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xF020C96915705B3A, flashing, true);
         }
 
         public void sendNotificationToAll(string message, bool flashing = false)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x202709F4C58A0424, "STRING");
             for (int i = 0; i < message.Length; i += 99)
             {
-                Program.ServerInstance.SendNativeCallToAllPlayers(0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
+                Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x6C188BE134E074AA, message.Substring(i, Math.Min(99, message.Length - i)));
             }
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xF020C96915705B3A, flashing, true);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xF020C96915705B3A, flashing, true);
         }
         
         public  void sendPictureNotificationToPlayer(Client player, string body, string pic, int flash, int iconType, string sender, string subject)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x202709F4C58A0424, "STRING");
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x6C188BE134E074AA, body);
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
-            Program.ServerInstance.SendNativeCallToPlayer(player, 0xF020C96915705B3A, false, true);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x202709F4C58A0424, "STRING");
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x6C188BE134E074AA, body);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xF020C96915705B3A, false, true);
         }
         
         public  void sendPictureNotificationToAll(string body, string pic, int flash, int iconType, string sender, string subject)
         {
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x202709F4C58A0424, "STRING");
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x6C188BE134E074AA, body);
-            Program.ServerInstance.SendNativeCallToAllPlayers(0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
-            Program.ServerInstance.SendNativeCallToAllPlayers(0xF020C96915705B3A, false, true);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x202709F4C58A0424, "STRING");
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x6C188BE134E074AA, body);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x1CCD9A37359072CF, pic, pic, flash, iconType, sender, subject);
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xF020C96915705B3A, false, true);
         }
         
         public void setMarkerType(NetHandle marker, int type)
@@ -4062,6 +4103,11 @@ namespace GTANetworkServer
 
             deleteEntityInternal(netHandle);
             lock (ResourceEntities) ResourceEntities.Remove(netHandle);
+        }
+
+        public void deleteObject(Client client, Vector3 position, int modelHash)
+        {
+            Program.ServerInstance.SendDeleteObject(client, position, 1f, modelHash);
         }
 
 #endregion
