@@ -4017,7 +4017,7 @@ namespace GTANetwork
                 MainMenu.RefreshIndex();
             }
 
-            if (e.KeyCode == Keys.F7)
+            if (e.KeyCode == Keys.F7 && IsOnServer())
             {
                 ChatVisible = !ChatVisible;
                 UIVisible = !UIVisible;
@@ -5709,10 +5709,9 @@ namespace GTANetwork
 		    DisplayWastedMessage = true;
             _password = string.Empty;
 
-            Main.UIColor = Color.White;
+            UIColor = Color.White;
 		    
 			DEBUG_STEP = 52;
-
 
 		    lock (CEFManager.Browsers)
 		    {

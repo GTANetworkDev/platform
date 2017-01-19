@@ -59,7 +59,7 @@ namespace GTANetwork.GUI
                 if (ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
-                    if (CefUtil.DISABLE_HOOK)
+                    if (CefUtil.DISABLE_CEF)
                         Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
                 }
                 else
@@ -233,13 +233,10 @@ namespace GTANetwork.GUI
 
     internal static class CEFManager
     {
-
-        static bool initializedCef = false;
         internal static void InitializeCef()
         {
-            if (!CefUtil.DISABLE_CEF && !initializedCef)
+            if (!CefUtil.DISABLE_CEF)
             {
-                initializedCef = true;
                 var t = new Thread((ThreadStart)delegate
                 {
                     try
@@ -336,15 +333,13 @@ namespace GTANetwork.GUI
             _cursor.Hidden = hidden;
         }
 
-        static bool initialized = false;
         internal static void Initialize(Size screenSize)
         {
 
             //LogManager.CefLog("--> Initiatlize: Start");
             ScreenSize = screenSize;
-            if (!CefUtil.DISABLE_CEF && DirectXHook == null && !initialized && initializedCef)
+            if (!CefUtil.DISABLE_CEF && DirectXHook == null)
             {
-                initialized = true;
                 Configuration.EnableObjectTracking = true;
                 Configuration.EnableReleaseOnFinalizer = true;
                 Configuration.EnableTrackingReleaseOnFinalizer = true;
