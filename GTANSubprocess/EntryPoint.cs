@@ -267,7 +267,7 @@ namespace GTANetwork
                     MoveFile(file, settings.GamePath + "\\" + "Disabled" + "\\" + Path.GetFileName(file));
                 }
 
-                string[] Files = { "ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "EasyHook64.dll", "scripthookv.dll", "ScriptHookVDotNet.dll", "v8-ia32.dll", "d3d11.dll", "d3d10.dll", "d3d9.dll", "dxgi.dll" };
+                string[] Files = { "ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "EasyHook64.dll", "scripthookv.dll",  "ScriptHookVDotNet.dll", "dinput8.dll", "v8-ia32.dll" };
                 foreach (var file in Files)
                 {
                     if (!File.Exists(settings.GamePath + "\\" + file)) continue;
