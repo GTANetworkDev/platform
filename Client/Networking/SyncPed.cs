@@ -46,6 +46,7 @@ namespace GTANetwork.Networking
         internal Animation CurrentAnimation;
         internal int ModelHash;
         internal int CurrentWeapon;
+        internal int Ammo;
         internal bool IsAiming;
         internal Vector3 AimCoords;
 

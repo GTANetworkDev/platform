@@ -1059,7 +1059,15 @@ namespace GTANetwork.Javascript
                 Script.Yield();
             }
         }
-        
+
+        public void waitUntilCefBrowserLoaded(Browser browser)
+        {
+            while (!browser.IsLoading())
+            {
+                Script.Yield();
+            }
+        }
+
         public void setCefBrowserSize(Browser browser, double width, double height)
         {
 #if RELATIVE_CEF_POS

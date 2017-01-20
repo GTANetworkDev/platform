@@ -74,6 +74,8 @@ namespace GTANetworkShared
         public int? VehicleTryingToEnter { get; set; }
         [ProtoMember(15)]
         public sbyte? SeatTryingToEnter { get; set; }
+        [ProtoMember(16)]
+        public int? WeaponAmmo { get; set; }
     }
 
 }

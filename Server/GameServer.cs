@@ -210,6 +210,8 @@ namespace GTANetworkServer
         public List<Resource> AvailableMaps;
         public Resource CurrentMap;
 
+        private object operationKey = new object();
+
         // Assembly name, Path to assembly.
         public Dictionary<string, string> AssemblyReferences = new Dictionary<string, string>();
 
@@ -2111,6 +2113,7 @@ namespace GTANResource
                                                 client.Rotation = fullPacket.Quaternion;
                                                 client.Velocity = fullPacket.Velocity;
                                                 client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
+                                                client.Ammo = fullPacket.WeaponAmmo.Value;
                                                 if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
 
                                                 if (fullPacket.PlayerHealth.Value != oldHealth)
@@ -2153,7 +2156,7 @@ namespace GTANResource
                                                             en.InvokePlayerExitVehicle(client, client.CurrentVehicle);
                                                         }));
                                                 }
-
+   
                                                 client.IsInVehicleInternal = false;
                                                 client.IsInVehicle = false;
                                                 client.CurrentVehicle = new NetHandle(0);
@@ -2164,6 +2167,23 @@ namespace GTANResource
                                                     NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
                                                     NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
                                                     //NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
+                                                }
+                                                lock (operationKey)
+                                                {
+                                                    if (client.CurrentWeapon.ToString() != "Unarmed")
+                                                    {
+                                                        if(client.Weapons.ContainsKey(client.CurrentWeapon))
+                                                        {
+                                                            if (client.Ammo > client.Weapons[client.CurrentWeapon])
+                                                            {
+                                                                PublicAPI.setPlayerWeaponAmmo(client, client.CurrentWeapon, client.Weapons[client.CurrentWeapon]);
+                                                            }
+                                                            else
+                                                            {
+                                                                client.Weapons[client.CurrentWeapon] = client.Ammo;
+                                                            }
+                                                        }
+                                                    }
                                                 }
 
                                                 ResendPacket(fullPacket, client, true);

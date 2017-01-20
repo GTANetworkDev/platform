@@ -2835,8 +2835,10 @@ namespace GTANetworkServer
 
         public void givePlayerWeapon(Client player, WeaponHash weaponHash, int ammo, bool equipNow, bool ammoLoaded)
         {
-            if (!player.Weapons.Keys.Contains(weaponHash)) player.Weapons.Add(weaponHash, ammo);
-
+            if (!player.Weapons.ContainsKey(weaponHash))
+            {
+               lock (player.Weapons) player.Weapons.Add(weaponHash, ammo);
+            }
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
 
             Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, 0, equipNow, ammo);
@@ -2845,26 +2847,26 @@ namespace GTANetworkServer
 
         public int getPlayerWeaponAmmo(Client player, WeaponHash weaponHash)
         {
-            if (!player.Weapons.Keys.Contains(weaponHash)) return 0;
+            if (!player.Weapons.ContainsKey(weaponHash)) return 0;
             return player.Weapons[weaponHash];
             //return fetchNativeFromPlayer<int>(player, (ulong)Hash.GET_AMMO_IN_PED_WEAPON, new LocalPlayerArgument(), (int)weaponHash);
         }
 
         public void setPlayerWeaponAmmo(Client player, WeaponHash weaponHash, int ammo)
         {
-            if (!player.Weapons.Keys.Contains(weaponHash)) return;
+            if (!player.Weapons.ContainsKey(weaponHash)) return;
+            player.Weapons[weaponHash] = ammo;
             Program.ServerInstance.SendNativeCallToPlayer(player, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
         }
 
         public void removePlayerWeapon(Client player, WeaponHash weapon)
         {
-            player.Weapons.Remove(weapon);
-            player.Properties.WeaponComponents.Remove((int) weapon);
-            player.Properties.WeaponTints.Remove((int) weapon);
+            if (player.Weapons.ContainsKey(weapon)) player.Weapons.Remove(weapon);
+
+            if (player.Properties.WeaponComponents.ContainsKey((int)weapon)) player.Properties.WeaponComponents.Remove((int)weapon);
+            if (player.Properties.WeaponTints.ContainsKey((int)weapon)) player.Properties.WeaponTints.Remove((int)weapon);
 
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weapon, false);
-
-            //Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x14E56BC5B5DB6A19, new LocalPlayerArgument(), (int)weapon, 0); //SET_PED_AMMO
             Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x4899CB088EDF59B8, new LocalPlayerArgument(), (int)weapon);
 
             var delta = new Delta_PlayerProperties();

@@ -2366,6 +2366,7 @@ namespace GTANetwork
                 obj.PedArmor = (byte)player.Armor;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
+                obj.WeaponAmmo = (int)player.Weapons.Current.Ammo;
                 obj.PlayerHealth = (byte)Util.Util.Clamp(0, player.Health, 255);
 
                 obj.Velocity = player.Velocity.ToLVector();
@@ -5483,6 +5484,7 @@ namespace GTANetwork
             if (fullPacket.WeaponHash != null) syncPed.CurrentWeapon = fullPacket.WeaponHash.Value;
             if (fullPacket.Latency != null) syncPed.Latency = fullPacket.Latency.Value;
             if (fullPacket.Velocity != null) syncPed.PedVelocity = fullPacket.Velocity.ToVector();
+            if (fullPacket.WeaponAmmo != null) syncPed.Ammo = fullPacket.WeaponAmmo.Value;
 
             if (fullPacket.Flag != null)
             {
@@ -5880,6 +5882,7 @@ namespace GTANetwork
                         _debugSyncPed.IsInVehicle = false;
                         _debugSyncPed.AimCoords = data.AimCoords.ToVector();
                         _debugSyncPed.CurrentWeapon = data.WeaponHash.Value;
+                        _debugSyncPed.Ammo = data.WeaponAmmo.Value;
                         _debugSyncPed.Latency = data.Latency.Value;
                         _debugSyncPed.PedVelocity = data.Velocity.ToVector();
                         _debugSyncPed.IsFreefallingWithParachute = (data.Flag & (int)PedDataFlags.InFreefall) > 0;
