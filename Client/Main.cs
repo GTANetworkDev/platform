@@ -133,6 +133,7 @@ namespace GTANetwork
 
         private readonly Queue<Action> _threadJumping;
         private string _password;
+        private string _QCpassword;
         private bool _lastDead;
         private bool _lastKilled;
         private bool _wasTyping;
@@ -920,9 +921,9 @@ namespace GTANetwork
                     {
                         MainMenu.TemporarilyHidden = true;
                         var newIp = InputboxThread.GetUserInput("", 30, TickSpinner);
-                        _password = newIp;
-                        ipButton.Text = string.IsNullOrWhiteSpace(newIp) ? "Password" : "*******";
                         MainMenu.TemporarilyHidden = false;
+                        _QCpassword = newIp;
+                        ipButton.Text = string.IsNullOrWhiteSpace(newIp) ? "Password" : "*******";
                     };
                     dConnect.Buttons.Add(ipButton);
                 }
@@ -933,8 +934,11 @@ namespace GTANetwork
                     ipButton.Size = new Size(500, 40);
                     ipButton.Activated += (sender, args) =>
                     {
-                        AddServerToRecent(_clientIp + ":" + Port, _password);
-                        ConnectToServer(_clientIp, Port, false, _password);
+                        var isPassworded = false;
+                        if(!string.IsNullOrWhiteSpace(_QCpassword)) isPassworded = true;
+                        
+                        AddServerToRecent(_clientIp + ":" + Port, _QCpassword);
+                        ConnectToServer(_clientIp, Port, isPassworded, _QCpassword);
                         MainMenu.TemporarilyHidden = true;
                     };
                     dConnect.Buttons.Add(ipButton);
