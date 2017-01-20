@@ -1861,13 +1861,13 @@ namespace GTANetwork.Javascript
             }
         }
 
-        public bool getEngineStatus(LocalHandle vehicle)
+        public bool getVehicleEngineStatus(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
             if (veh != null)
             {
-                return PacketOptimization.CheckBit(veh.Flag, EntityFlag.EngineOff);
+                return !PacketOptimization.CheckBit(veh.Flag, EntityFlag.EngineOff);
             }
 
             return false;
