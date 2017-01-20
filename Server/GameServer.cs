@@ -2180,7 +2180,7 @@ namespace GTANResource
                                                             }
                                                             else
                                                             {
-                                                                client.Weapons[client.CurrentWeapon] = client.Ammo;
+                                                                lock (client.Weapons) client.Weapons[client.CurrentWeapon] = client.Ammo;
                                                             }
                                                         }
                                                     }

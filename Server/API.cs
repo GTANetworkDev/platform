@@ -2855,13 +2855,13 @@ namespace GTANetworkServer
         public void setPlayerWeaponAmmo(Client player, WeaponHash weaponHash, int ammo)
         {
             if (!player.Weapons.ContainsKey(weaponHash)) return;
-            player.Weapons[weaponHash] = ammo;
+            lock (player.Weapons) player.Weapons[weaponHash] = ammo;
             Program.ServerInstance.SendNativeCallToPlayer(player, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
         }
 
         public void removePlayerWeapon(Client player, WeaponHash weapon)
         {
-            if (player.Weapons.ContainsKey(weapon)) player.Weapons.Remove(weapon);
+            if (player.Weapons.ContainsKey(weapon)) lock (player.Weapons) player.Weapons.Remove(weapon);
 
             if (player.Properties.WeaponComponents.ContainsKey((int)weapon)) player.Properties.WeaponComponents.Remove((int)weapon);
             if (player.Properties.WeaponTints.ContainsKey((int)weapon)) player.Properties.WeaponTints.Remove((int)weapon);
@@ -2877,7 +2877,7 @@ namespace GTANetworkServer
 
         public void removeAllPlayerWeapons(Client player)
         {
-            player.Weapons.Clear();
+            lock (player.Weapons) player.Weapons.Clear();
             player.Properties.WeaponTints.Clear();
             player.Properties.WeaponComponents.Clear();
 
