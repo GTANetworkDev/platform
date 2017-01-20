@@ -1,8 +1,10 @@
 ﻿using System;
 using ProtoBuf;
+using Newtonsoft.Json;
 
 namespace GTANetworkShared
 {
+
     [ProtoContract]
     [ProtoInclude(4, typeof(Quaternion))]
     public class Vector3
@@ -102,6 +104,7 @@ namespace GTANetworkShared
             Z = Z / len;
         }
 
+        [JsonIgnore]
         public Vector3 Normalized
         {
             get
@@ -116,7 +119,7 @@ namespace GTANetworkShared
         {
             return this + right;
         }
-
+        
         public Vector3 Subtract(Vector3 right)
         {
             return this - right;
