@@ -890,19 +890,22 @@ namespace GTANetwork
                     ipButton.Activated += (sender, args) =>
                     {
                         MainMenu.TemporarilyHidden = true;
-                        var newIp = InputboxThread.GetUserInput(Port.ToString(), 30, TickSpinner);
+                        var port = InputboxThread.GetUserInput(Port.ToString(), 30, TickSpinner);
 
-                        if (string.IsNullOrWhiteSpace(newIp)) return;
+                        if (string.IsNullOrWhiteSpace(port))
+                        {
+                            port = "4499";
+                        }
 
                         int newPort;
-                        if (!int.TryParse(newIp, out newPort))
+                        if (!int.TryParse(port, out newPort))
                         {
                             Util.Util.SafeNotify("Wrong port format!");
                             MainMenu.TemporarilyHidden = false;
                             return;
                         }
                         Port = newPort;
-                        ipButton.Text = newIp;
+                        ipButton.Text = Port.ToString();
                         MainMenu.TemporarilyHidden = false;
                     };
                     dConnect.Buttons.Add(ipButton);
