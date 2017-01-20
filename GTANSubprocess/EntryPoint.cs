@@ -430,7 +430,11 @@ namespace GTANetwork
                 Thread.Sleep(10000);
                 while (true)
                 {
-                    Process.GetProcesses().Where(x => x.ProcessName.ToString().ToLower().Contains("gta5") && x.Id != gta5Process.Id).ToList().ForEach(x => x.Kill());
+                    foreach (var process in Process.GetProcesses().Where(x => x.ProcessName.ToString().ToLower().Contains("gta5") && x.Id != gta5Process.Id).ToList())
+                    {
+                        process.Kill();
+                        Thread.CurrentThread.Abort();
+                    }
                     Thread.Sleep(1000);
                 }
             });
