@@ -3548,6 +3548,14 @@ namespace GTANetwork
                 {
                     Game.DisableControlThisFrame(0, Control.Jump);
                 }
+
+                //CRASH WORKAROUND
+                //DISABLE PARACHUTE RUINER2
+                if (Game.Player.Character.CurrentVehicle.IsInAir && Game.Player.Character.CurrentVehicle.Model.Hash == 941494461)
+                {
+                    Game.DisableAllControlsThisFrame(0);
+                }
+
                 DEBUG_STEP = 19;
                 Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f);
                 DEBUG_STEP = 20;
