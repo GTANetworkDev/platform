@@ -4110,16 +4110,18 @@ namespace GTANetwork
             obj.CEF = !CefUtil.DISABLE_CEF;
             obj.GameVersion = (byte)Game.Version;
 
-
-            if (passProtected)
+            if(passProtected)
             {
-                MainMenu.TemporarilyHidden = true;
-                obj.Password = Game.GetUserInput(256);
-                MainMenu.TemporarilyHidden = false;
-            }
-            else if (!string.IsNullOrEmpty(myPass))
-            {
-                obj.Password = myPass;
+                if (!string.IsNullOrWhiteSpace(myPass))
+                {
+                    obj.Password = myPass;
+                }
+                else
+                {
+                    MainMenu.TemporarilyHidden = true;
+                    obj.Password = Game.GetUserInput(256);
+                    MainMenu.TemporarilyHidden = false;
+                }
             }
 
             var bin = SerializeBinary(obj);
