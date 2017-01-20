@@ -1647,6 +1647,9 @@ namespace GTANResource
                                             Program.Output("Player disconnected: " + client.SocialClubName + " (" +
                                                             client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], reason: " + reason);
 
+                                            if (client.CurrentVehicle.Value != 0 && VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) && VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
+                                                VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
+
                                             Clients.Remove(client);
                                             Server.Configuration.CurrentPlayers = Clients.Count;
                                             NetEntityHandler.DeleteEntityQuiet(client.handle.Value);
