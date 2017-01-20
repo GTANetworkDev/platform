@@ -242,6 +242,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
+    <EmbeddedResource Include="soundlist.txt" />
     <EmbeddedResource Include="natives.txt" />
     <Content Include="Properties\AssemblyInfo.tt">
       <Generator>TextTemplatingFileGenerator</Generator>

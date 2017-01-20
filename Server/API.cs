@@ -701,10 +701,10 @@ namespace GTANetworkServer
             return Directory.GetDirectories("resources").Select(s => Path.GetFileName(s)).ToArray();
         }
 
-        public void playSoundFrontEnd(Client target, string audioLib, string audioName)
+        public void playSoundFrontEnd(Client target, string SoundName, string SoundSetName)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(target, false, 0x2F844A8B08D76685, audioLib, true);
-            Program.ServerInstance.SendNativeCallToPlayer(target, false, 0x67C540AA08E4A6F5, -1, audioName, audioLib);
+            Program.ServerInstance.SendNativeCallToPlayer(target, true, 0x2F844A8B08D76685, SoundSetName, true);
+            Program.ServerInstance.SendNativeCallToPlayer(target, true, 0x67C540AA08E4A6F5, -1, SoundName, SoundSetName);
         }
 
         public void setGamemodeName(string newName)

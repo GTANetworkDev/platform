@@ -272,6 +272,7 @@ namespace GTANetwork
             ThreadPool.QueueUserWorkItem(delegate
             {
                 NativeWhitelist.Init();
+                SoundWhitelist.Init();
             });
         }
 
@@ -6225,6 +6226,21 @@ namespace GTANetwork
             if (!NativeWhitelist.IsAllowed(obj.Hash) && obj.Internal == false)
             {
                 throw new ArgumentException("Hash \"" + obj.Hash.ToString("X") + "\" is not allowed!");
+            }
+            else if (obj.Hash == (ulong)Hash.REQUEST_SCRIPT_AUDIO_BANK)
+            {
+                if (!SoundWhitelist.IsAllowed(((StringArgument)obj.Arguments[0]).Data))
+                {
+                    throw new ArgumentException("Such SoundSet is not allowed!");
+                }
+            }
+            else if (obj.Hash == (ulong)Hash.PLAY_SOUND_FRONTEND)
+            {
+                if (!SoundWhitelist.IsAllowed(((StringArgument)obj.Arguments[1]).Data) || !SoundWhitelist.IsAllowed(((StringArgument)obj.Arguments[2]).Data))
+                {
+                    throw new ArgumentException("SoundSet/Name is not allowed!");
+                }
+
             }
 
 

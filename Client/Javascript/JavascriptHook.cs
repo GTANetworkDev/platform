@@ -1219,7 +1219,7 @@ namespace GTANetwork.Javascript
                 return false;
             return true;
         }
-        
+
         public void callNative(string hash, params object[] args)
         {
             Hash ourHash;
@@ -2850,10 +2850,13 @@ namespace GTANetwork.Javascript
             Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, r,g,b,a);
         }
 
-        public void playSoundFrontEnd(string audioLib, string audioName)
+        public void playSoundFrontEnd(string soundName, string soundSetName)
         {
-            Function.Call((Hash)0x2F844A8B08D76685, audioLib, true);
-            Function.Call((Hash)0x67C540AA08E4A6F5, -1, audioName, audioLib);
+            if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
+            {
+                Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+                Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
+            }
         }
 
         public void showShard(string text, int timeout = 5000)
