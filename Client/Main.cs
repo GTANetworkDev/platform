@@ -3547,18 +3547,21 @@ namespace GTANetwork
 
 
                 DEBUG_STEP = 18;
-                if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() &&
-                    Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
+                if (Game.IsControlPressed(0, Control.Aim) && !Game.Player.Character.IsInVehicle() && Game.Player.Character.Weapons.Current.Hash != WeaponHash.Unarmed)
                 {
                     Game.DisableControlThisFrame(0, Control.Jump);
                 }
 
                 //CRASH WORKAROUND
                 //DISABLE PARACHUTE RUINER2
-                if (Game.Player.Character.CurrentVehicle.IsInAir && Game.Player.Character.CurrentVehicle.Model.Hash == 941494461)
+                if (Game.Player.Character.IsInVehicle())
                 {
-                    Game.DisableAllControlsThisFrame(0);
+                    if (Game.Player.Character.CurrentVehicle.IsInAir && Game.Player.Character.CurrentVehicle.Model.Hash == 941494461)
+                    {
+                        Game.DisableAllControlsThisFrame(0);
+                    }
                 }
+                
 
                 DEBUG_STEP = 19;
                 Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f);
