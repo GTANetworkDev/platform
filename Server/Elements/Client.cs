@@ -40,6 +40,7 @@ namespace GTANetworkServer
         internal bool IsInVehicle { get; set; }
         internal int VehicleSeat { get; set; }
         internal int Ammo { get; set; }
+        internal int ModelHash { get; set; }
 
         public NetHandle handle { get; set; }
 

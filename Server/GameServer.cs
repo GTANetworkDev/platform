@@ -2153,6 +2153,8 @@ namespace GTANResource
                                                         VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
                                                         VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
 
+                                                        
+
                                                     lock (RunningResources)
                                                         RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                         {
@@ -2212,14 +2214,13 @@ namespace GTANResource
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                                 {
-                                                    var oldValue =
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash;
+                                                    if (client.ModelHash == 0) client.ModelHash = fullPacket.PedModelHash.Value;
 
-                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
-                                                        fullPacket.PedModelHash.Value;
-
+                                                    var oldValue = client.ModelHash;
                                                     if (oldValue != fullPacket.PedModelHash.Value)
                                                     {
+                                                        client.ModelHash = fullPacket.PedModelHash.Value;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.Value;
                                                         lock (RunningResources)
                                                             RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                             {
@@ -2227,7 +2228,6 @@ namespace GTANResource
                                                             }));
                                                     }
                                                 }
-
                                                 ResendPacket(fullPacket, client, false);
                                             }
                                             catch (IndexOutOfRangeException)
