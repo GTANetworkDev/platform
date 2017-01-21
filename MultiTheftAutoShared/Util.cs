@@ -79,10 +79,11 @@ namespace GTANetworkShared
         public bool DisableCEF { get; set; }
         public bool Timestamp { get; set; }
         public bool Militarytime { get; set; }
-        public bool AutosetBorderlessWindowed { get; set; }
+        //public bool AutosetBorderlessWindowed { get; set; }
         public bool UseClassicChat { get; set; }
         public bool OfflineMode { get; set; }
         public bool MediaStream { get; set; }
+        public bool CEFDevtool { get; set; }
 
         public int ChatboxXOffset { get; set; }
         public int ChatboxYOffset { get; set; }
@@ -106,6 +107,7 @@ namespace GTANetworkShared
             Militarytime = true;
             OfflineMode = false;
             MediaStream = false;
+            CEFDevtool = false;
             GamePath = null;
         }
     }

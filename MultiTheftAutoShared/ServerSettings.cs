@@ -82,6 +82,9 @@ namespace GTANetworkShared
         [XmlElement("conntimeout")]
         public bool Conntimeout { get; set; }
 
+        [XmlElement("allowcefdevtool")]
+        public bool Allowcefdevtool { get; set; }
+
         public WhitelistCollection whitelist { get; set; }
 
         [XmlRoot("resource")]
@@ -117,6 +120,7 @@ namespace GTANetworkShared
             LocalAddress = "0.0.0.0";
             fqdn = "";
             Conntimeout = true;
+            Allowcefdevtool = false;
         }
 
         public static ServerSettings ReadSettings(string path)

@@ -367,6 +367,9 @@ namespace GTANetworkShared
 
         [ProtoMember(6)]
         public bool CEF { get; set; }
+
+        [ProtoMember(7)]
+        public bool CEFDevtool { get; set; }
     }
 
     

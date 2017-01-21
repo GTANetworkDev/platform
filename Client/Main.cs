@@ -157,12 +157,10 @@ namespace GTANetwork
         public static List<int> _averagePacketSize = new List<int>();
 
         private TabTextItem _statsItem;
-
         //
 
-
-
-        public static bool EnableMediaStream;
+        private static bool EnableDevTool;
+        internal static bool EnableMediaStream;
 
         public Main()
         {
@@ -175,17 +173,10 @@ namespace GTANetwork
 
             CefUtil.DISABLE_CEF = PlayerSettings.DisableCEF;
 
-            //if (PlayerSettings.CEFfps <= 0)
-            //{
-            //    CEFManager.FPS = (int)Game.FPS;
-            //}
-            //else
-            //{
-            //    CEFManager.FPS = PlayerSettings.CEFfps;
-            //}
             PedThread.FPS = PlayerSettings.ShowFPS;
 
             EnableMediaStream = PlayerSettings.MediaStream;
+            EnableDevTool = PlayerSettings.CEFDevtool;
 
             GameSettings = Misc.GameSettings.LoadGameSettings();
             _threadJumping = new Queue<Action>();
@@ -1192,8 +1183,8 @@ namespace GTANetwork
                     GeneralMenu.Items.Add(nameItem);
                 }
                 #endregion
-                #region Chatbox
-                var ChatboxMenu = new TabInteractiveListItem("Chatbox", new List<UIMenuItem>());
+                #region Chat
+                var ChatboxMenu = new TabInteractiveListItem("Chat", new List<UIMenuItem>());
 
                 {
                     var chatItem = new UIMenuCheckboxItem("Enable Timestamp", PlayerSettings.Timestamp);
@@ -1282,157 +1273,157 @@ namespace GTANetwork
                 }
                 #endregion
 
-                #region Graphics Menu
-                var GraphicsMenu = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
+                //#region Graphics Menu
+                //var GraphicsMenu = new TabInteractiveListItem("Graphics", new List<UIMenuItem>());
 
-                {
-                    var cityDen = new UIMenuItem("City Density");
-                    cityDen.SetRightLabel(GameSettings.Graphics.CityDensity.Value.ToString());
-                    GraphicsMenu.Items.Add(cityDen);
+                //{
+                //    var cityDen = new UIMenuItem("City Density");
+                //    cityDen.SetRightLabel(GameSettings.Graphics.CityDensity.Value.ToString());
+                //    GraphicsMenu.Items.Add(cityDen);
 
-                    cityDen.Activated += (sender, item) =>
-                    {
-                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.CityDensity.Value.ToString(),
-                            10, TickSpinner);
+                //    cityDen.Activated += (sender, item) =>
+                //    {
+                //        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.CityDensity.Value.ToString(),
+                //            10, TickSpinner);
 
-                        double newSetting;
-                        if (!double.TryParse(strInput, out newSetting))
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            return;
-                        }
+                //        double newSetting;
+                //        if (!double.TryParse(strInput, out newSetting))
+                //        {
+                //            Util.Util.SafeNotify("Input was not in the correct format.");
+                //            return;
+                //        }
 
-                        GameSettings.Graphics.CityDensity.Value = newSetting;
-                        Misc.GameSettings.SaveSettings(GameSettings);
-                    };
-                }
+                //        GameSettings.Graphics.CityDensity.Value = newSetting;
+                //        Misc.GameSettings.SaveSettings(GameSettings);
+                //    };
+                //}
 
-                {
-                    var cityDen = new UIMenuItem("Depth Of Field");
-                    cityDen.SetRightLabel(GameSettings.Graphics.DoF.Value.ToString());
-                    GraphicsMenu.Items.Add(cityDen);
+                //{
+                //    var cityDen = new UIMenuItem("Depth Of Field");
+                //    cityDen.SetRightLabel(GameSettings.Graphics.DoF.Value.ToString());
+                //    GraphicsMenu.Items.Add(cityDen);
 
-                    cityDen.Activated += (sender, item) =>
-                    {
-                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.DoF.Value.ToString(),
-                            10, TickSpinner);
+                //    cityDen.Activated += (sender, item) =>
+                //    {
+                //        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.DoF.Value.ToString(),
+                //            10, TickSpinner);
 
-                        bool newSetting;
-                        if (!bool.TryParse(strInput, out newSetting))
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            return;
-                        }
+                //        bool newSetting;
+                //        if (!bool.TryParse(strInput, out newSetting))
+                //        {
+                //            Util.Util.SafeNotify("Input was not in the correct format.");
+                //            return;
+                //        }
 
-                        GameSettings.Graphics.DoF.Value = newSetting;
-                        Misc.GameSettings.SaveSettings(GameSettings);
-                    };
-                }
+                //        GameSettings.Graphics.DoF.Value = newSetting;
+                //        Misc.GameSettings.SaveSettings(GameSettings);
+                //    };
+                //}
 
-                {
-                    var cityDen = new UIMenuItem("Grass Quality");
-                    cityDen.SetRightLabel(GameSettings.Graphics.GrassQuality.Value.ToString());
-                    GraphicsMenu.Items.Add(cityDen);
+                //{
+                //    var cityDen = new UIMenuItem("Grass Quality");
+                //    cityDen.SetRightLabel(GameSettings.Graphics.GrassQuality.Value.ToString());
+                //    GraphicsMenu.Items.Add(cityDen);
 
-                    cityDen.Activated += (sender, item) =>
-                    {
-                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.GrassQuality.Value.ToString(),
-                            10, TickSpinner);
+                //    cityDen.Activated += (sender, item) =>
+                //    {
+                //        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.GrassQuality.Value.ToString(),
+                //            10, TickSpinner);
 
-                        int newSetting;
-                        if (!int.TryParse(strInput, out newSetting))
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            return;
-                        }
+                //        int newSetting;
+                //        if (!int.TryParse(strInput, out newSetting))
+                //        {
+                //            Util.Util.SafeNotify("Input was not in the correct format.");
+                //            return;
+                //        }
 
-                        GameSettings.Graphics.GrassQuality.Value = newSetting;
-                        Misc.GameSettings.SaveSettings(GameSettings);
-                    };
-                }
+                //        GameSettings.Graphics.GrassQuality.Value = newSetting;
+                //        Misc.GameSettings.SaveSettings(GameSettings);
+                //    };
+                //}
 
-                {
-                    var cityDen = new UIMenuItem("MSAA");
-                    cityDen.SetRightLabel(GameSettings.Graphics.MSAA.Value.ToString());
-                    GraphicsMenu.Items.Add(cityDen);
+                //{
+                //    var cityDen = new UIMenuItem("MSAA");
+                //    cityDen.SetRightLabel(GameSettings.Graphics.MSAA.Value.ToString());
+                //    GraphicsMenu.Items.Add(cityDen);
 
-                    cityDen.Activated += (sender, item) =>
-                    {
-                        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.MSAA.Value.ToString(),
-                            10, TickSpinner);
+                //    cityDen.Activated += (sender, item) =>
+                //    {
+                //        var strInput = InputboxThread.GetUserInput(GameSettings.Graphics.MSAA.Value.ToString(),
+                //            10, TickSpinner);
 
-                        int newSetting;
-                        if (!int.TryParse(strInput, out newSetting))
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            return;
-                        }
+                //        int newSetting;
+                //        if (!int.TryParse(strInput, out newSetting))
+                //        {
+                //            Util.Util.SafeNotify("Input was not in the correct format.");
+                //            return;
+                //        }
 
-                        GameSettings.Graphics.MSAA.Value = newSetting;
-                        Misc.GameSettings.SaveSettings(GameSettings);
-                    };
-                }
+                //        GameSettings.Graphics.MSAA.Value = newSetting;
+                //        Misc.GameSettings.SaveSettings(GameSettings);
+                //    };
+                //}
 
-                #endregion
+                //#endregion
 
-                #region Display Menu
-                var DisplayMenu = new TabInteractiveListItem("Display", new List<UIMenuItem>());
-                {
-                    var nameItem = new UIMenuCheckboxItem("Start in Borderless Windowed", PlayerSettings.AutosetBorderlessWindowed);
+                ////#region Display Menu
+                //var DisplayMenu = new TabInteractiveListItem("Display", new List<UIMenuItem>());
+                //{
+                //    var nameItem = new UIMenuCheckboxItem("Start in Borderless Windowed", PlayerSettings.AutosetBorderlessWindowed);
 
-                    nameItem.CheckboxEvent += (sender, chequed) =>
-                    {
-                        PlayerSettings.AutosetBorderlessWindowed = chequed;
-                        SaveSettings();
-                    };
+                //    nameItem.CheckboxEvent += (sender, chequed) =>
+                //    {
+                //        PlayerSettings.AutosetBorderlessWindowed = chequed;
+                //        SaveSettings();
+                //    };
 
-                    DisplayMenu.Items.Add(nameItem);
-                }
+                //    DisplayMenu.Items.Add(nameItem);
+                //}
 
-                {
-                    var cityDen = new UIMenuItem("City Density");
-                    cityDen.SetRightLabel(GameSettings.Video.Windowed.Value.ToString());
-                    DisplayMenu.Items.Add(cityDen);
+                //{
+                //    var cityDen = new UIMenuItem("City Density");
+                //    cityDen.SetRightLabel(GameSettings.Video.Windowed.Value.ToString());
+                //    DisplayMenu.Items.Add(cityDen);
 
-                    cityDen.Activated += (sender, item) =>
-                    {
-                        var strInput = InputboxThread.GetUserInput(GameSettings.Video.Windowed.Value.ToString(),
-                            10, TickSpinner);
+                //    cityDen.Activated += (sender, item) =>
+                //    {
+                //        var strInput = InputboxThread.GetUserInput(GameSettings.Video.Windowed.Value.ToString(),
+                //            10, TickSpinner);
 
-                        int newSetting;
-                        if (!int.TryParse(strInput, out newSetting))
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            return;
-                        }
+                //        int newSetting;
+                //        if (!int.TryParse(strInput, out newSetting))
+                //        {
+                //            Util.Util.SafeNotify("Input was not in the correct format.");
+                //            return;
+                //        }
 
-                        GameSettings.Video.Windowed.Value = newSetting;
-                        Misc.GameSettings.SaveSettings(GameSettings);
-                    };
-                }
+                //        GameSettings.Video.Windowed.Value = newSetting;
+                //        Misc.GameSettings.SaveSettings(GameSettings);
+                //    };
+                //}
 
-                {
-                    var cityDen = new UIMenuItem("Vertical Sync");
-                    cityDen.SetRightLabel(GameSettings.Video.VSync.Value.ToString());
-                    DisplayMenu.Items.Add(cityDen);
+                //{
+                //    var cityDen = new UIMenuItem("Vertical Sync");
+                //    cityDen.SetRightLabel(GameSettings.Video.VSync.Value.ToString());
+                //    DisplayMenu.Items.Add(cityDen);
 
-                    cityDen.Activated += (sender, item) =>
-                    {
-                        var strInput = InputboxThread.GetUserInput(GameSettings.Video.VSync.Value.ToString(),
-                            10, TickSpinner);
+                //    cityDen.Activated += (sender, item) =>
+                //    {
+                //        var strInput = InputboxThread.GetUserInput(GameSettings.Video.VSync.Value.ToString(),
+                //            10, TickSpinner);
 
-                        int newSetting;
-                        if (!int.TryParse(strInput, out newSetting))
-                        {
-                            Util.Util.SafeNotify("Input was not in the correct format.");
-                            return;
-                        }
+                //        int newSetting;
+                //        if (!int.TryParse(strInput, out newSetting))
+                //        {
+                //            Util.Util.SafeNotify("Input was not in the correct format.");
+                //            return;
+                //        }
 
-                        GameSettings.Video.VSync.Value = newSetting;
-                        Misc.GameSettings.SaveSettings(GameSettings);
-                    };
-                }
-                #endregion
+                //        GameSettings.Video.VSync.Value = newSetting;
+                //        Misc.GameSettings.SaveSettings(GameSettings);
+                //    };
+                //}
+                //#endregion
 
                 #region Experimental
                 var ExpMenu = new TabInteractiveListItem("Experimental", new List<UIMenuItem>());
@@ -1492,6 +1483,17 @@ namespace GTANetwork
                 #endregion
 
                 #region Debug Menu
+                var DebugMenu = new TabInteractiveListItem("Debug", new List<UIMenuItem>());
+                {
+                    var expItem = new UIMenuCheckboxItem("Enable CEF Development Tools (http://localhost:9222) [Restart required]", PlayerSettings.CEFDevtool);
+                    expItem.CheckboxEvent += (sender, @checked) =>
+                    {
+                        PlayerSettings.CEFDevtool = @checked;
+                        SaveSettings();
+                    };
+                    DebugMenu.Items.Add(expItem);
+                }
+
 
 #if DEBUG
 
@@ -1552,16 +1554,16 @@ namespace GTANetwork
 
                 
 #endif
-                #endregion
+                    #endregion
 
-                var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>()
+                    var welcomeItem = new TabSubmenuItem("settings", new List<TabItem>()
                 {
                     GeneralMenu,
                     ChatboxMenu,
                     //DisplayMenu,
                     //GraphicsMenu,
                     ExpMenu,
-                    //DebugMenu
+                    DebugMenu
                 });
                 MainMenu.AddTab(welcomeItem);
             }
@@ -4128,6 +4130,7 @@ namespace GTANetwork
             obj.DisplayName = string.IsNullOrWhiteSpace(PlayerSettings.DisplayName) ? obj.SocialClubName : PlayerSettings.DisplayName.Trim();
             obj.ScriptVersion = CurrentVersion.ToString();
             obj.CEF = !CefUtil.DISABLE_CEF;
+            obj.CEFDevtool = EnableDevTool;
             obj.GameVersion = (byte)Game.Version;
 
             if(passProtected)

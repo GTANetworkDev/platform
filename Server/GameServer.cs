@@ -130,6 +130,7 @@ namespace GTANetworkServer
             TrustClientProperties = conf.EnableClientsideEntityProperties;
             fqdn = conf.fqdn;
             Conntimeout = conf.Conntimeout;
+            AllowCEFDevTool = conf.Allowcefdevtool;
 
             if (conf.whitelist != null && conf.whitelist != null)
             {
@@ -166,6 +167,7 @@ namespace GTANetworkServer
         public string GamemodeName { get; set; }
         public string fqdn { get; set; }
         public bool Conntimeout { get; set; }
+        public bool AllowCEFDevTool { get; set; }
         public Resource Gamemode { get; set; }
         public string MasterServer { get; set; }
         public bool AnnounceSelf { get; set; }
@@ -1566,6 +1568,13 @@ namespace GTANResource
                                 client.RemoteScriptVersion = ParseableVersion.Parse(connReq.ScriptVersion);
                                 client.GameVersion = connReq.GameVersion;
                                 ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
+
+                                if (!AllowCEFDevTool && connReq.CEFDevtool)
+                                {
+                                    client.NetConnection.Deny("CEF DevTool is not allowed.");
+                                    Program.Output("Player connection refused: CEF Devtool enabled. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
+                                    continue;
+                                }
 
                                 var respObj = new ConnectionResponse();
 

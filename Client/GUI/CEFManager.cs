@@ -275,8 +275,10 @@ namespace GTANetwork.GUI
                             ResourcesDirPath = Main.GTANInstallDir + "\\cef",
                             LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales",
                             BrowserSubprocessPath = Main.GTANInstallDir + "\\cef",
-                            //NoSandbox = true,
+                            IgnoreCertificateErrors = true,
                         };
+                        if(Main.PlayerSettings.CEFDevtool) cefSettings.RemoteDebuggingPort = 9222;
+
                         CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
                         //LogManager.CefLog("-> InitilizeCef: 3");
 
