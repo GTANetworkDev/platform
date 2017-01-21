@@ -4021,6 +4021,12 @@ namespace GTANetwork
                 Client.Disconnect("Connection canceled.");
             }
 
+            if (e.KeyCode == Keys.LShiftKey && e.KeyCode == Keys.Tab)
+            {
+                e.SuppressKeyPress = true;
+            }
+
+
             if (e.KeyCode == Keys.F10 && !Chat.IsFocused)
             {
                 MainMenu.Visible = !MainMenu.Visible;
