@@ -420,6 +420,10 @@ namespace GTANetwork.GUI
                                     {
                                         callString += System.Web.HttpUtility.JavaScriptStringEncode(arguments[i].ToString(), true) + comma;
                                     }
+                                    else if (arguments[i] is bool)
+                                    {
+                                        callString += arguments[i].ToString().ToLower() + comma;
+                                    }
                                     else
                                     {
                                         callString += arguments[i] + comma;
