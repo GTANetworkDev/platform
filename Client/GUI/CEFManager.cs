@@ -597,10 +597,6 @@ namespace GTANetwork.GUI
                 callString += ");";
 
                 _browser.GetMainFrame().ExecuteJavaScript(callString, null, 0);
-
-                callString += ");";
-
-                _browser.GetMainFrame().ExecuteJavaScript(callString, null, 0);
             }
         }
 
