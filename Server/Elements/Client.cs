@@ -27,7 +27,8 @@ namespace GTANetworkServer
         internal float Latency { get; set; }
         internal ParseableVersion RemoteScriptVersion { get; set; }
         internal int GameVersion { get; set; }
-        internal List<WeaponHash> Weapons = new List<WeaponHash>();
+        //internal List<WeaponHash> Weapons = new List<WeaponHash>();
+        internal Dictionary<WeaponHash, int> Weapons = new Dictionary<WeaponHash, int>();
         internal WeaponHash CurrentWeapon { get; set; }
         internal Vector3 LastAimPos { get; set; }
         internal NetHandle CurrentVehicle { get; set; }
@@ -38,7 +39,8 @@ namespace GTANetworkServer
         internal int Armor { get; set; }
         internal bool IsInVehicle { get; set; }
         internal int VehicleSeat { get; set; }
-
+        internal int Ammo { get; set; }
+        internal int ModelHash { get; set; }
 
         public NetHandle handle { get; set; }
 

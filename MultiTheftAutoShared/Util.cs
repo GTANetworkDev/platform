@@ -76,13 +76,13 @@ namespace GTANetworkShared
         public bool DisableRockstarEditor { get; set; }
         public Keys ScreenshotKey { get; set; }
         public bool ShowFPS { get; set; }
-        public bool CEF { get; set; }
-        public int CEFfps { get; set; }
+        public bool DisableCEF { get; set; }
         public bool Timestamp { get; set; }
         public bool Militarytime { get; set; }
         public bool AutosetBorderlessWindowed { get; set; }
         public bool UseClassicChat { get; set; }
         public bool OfflineMode { get; set; }
+        public bool MediaStream { get; set; }
 
         public int ChatboxXOffset { get; set; }
         public int ChatboxYOffset { get; set; }
@@ -101,11 +101,11 @@ namespace GTANetworkShared
             ScreenshotKey = Keys.F8;
             UseClassicChat = false;
             ShowFPS = true;
-            CEF = false;
-            CEFfps = 0;
+            DisableCEF = false;
             Timestamp = false;
             Militarytime = true;
             OfflineMode = false;
+            MediaStream = false;
             GamePath = null;
         }
     }

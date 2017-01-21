@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
 using GTANetwork.GUI.DirectXHook.Hook.Common;
 using GTANetwork.Util;
 using GTANetworkShared;
@@ -17,7 +14,6 @@ namespace GTANetwork.GUI
     internal static class CefUtil
     {
         public static bool DISABLE_CEF = true;
-        public static bool DISABLE_HOOK = true;
 
 
         internal static Dictionary<int, Browser> _cachedReferences = new Dictionary<int, Browser>();
@@ -30,7 +26,7 @@ namespace GTANetwork.GUI
 
             if (_cachedReferences.ContainsKey(browser.Identifier))
                 return _cachedReferences[browser.Identifier];
-            if (!CefUtil.DISABLE_CEF)
+            if (!DISABLE_CEF)
             {
                 lock (CEFManager.Browsers)
                 {
@@ -62,7 +58,14 @@ namespace GTANetwork.GUI
         {
             return _injector;
         }
-        
+
+        protected override void OnBeforeCommandLineProcessing(string processType, CefCommandLine commandLine)
+        {
+            if(Main.EnableMediaStream)
+            {
+                commandLine.AppendSwitch("enable-media-stream");
+            }
+        }
     }
 
     internal class SecureSchemeFactory : CefSchemeHandlerFactory
@@ -71,7 +74,7 @@ namespace GTANetwork.GUI
         {
             Browser father = null;
 
-            LogManager.CefLog("Entering request w/ schemeName " + schemeName);
+            //LogManager.CefLog("-> Entering request w/ schemeName " + schemeName);
 
             try
             {
@@ -79,21 +82,19 @@ namespace GTANetwork.GUI
 
                 if (father == null || father._localMode)
                 {
-                    LogManager.CefLog("Local mode detected! Uri: " + request.Url);
+                    LogManager.CefLog("-> [Local mode] Uri: " + request.Url);
                     var uri = new Uri(request.Url);
                     var path = Main.GTANInstallDir + "resources\\";
-                    var requestedFile = path + uri.Host + uri.LocalPath;
+                    var requestedFile = path + uri.Host + uri.LocalPath.Replace("/", "\\");
 
-                    LogManager.CefLog("Requested file: " + requestedFile);
+                    LogManager.CefLog("-> Loading: " + requestedFile);
 
                     if (!File.Exists(requestedFile))
                     {
-                        LogManager.CefLog("File doesnt exist!");
+                        LogManager.CefLog("-> Error: File does not exist!");
                         browser.StopLoad();
                         return SecureCefResourceHandler.FromString("404", ".txt");
                     }
-
-                    LogManager.CefLog("Loading from file!");
 
                     return SecureCefResourceHandler.FromFilePath(requestedFile,
                         MimeType.GetMimeType(Path.GetExtension(requestedFile)));
@@ -112,13 +113,13 @@ namespace GTANetwork.GUI
     
     internal class MainCefLoadHandler : CefLoadHandler
     {
-        protected override void OnLoadStart(CefBrowser browser, CefFrame frame)
+        protected override void OnLoadStart(CefBrowser browser, CefFrame frame, CefTransitionType transitionType)
         {
             // A single CefBrowser instance can handle multiple requests
             //   for a single URL if there are frames (i.e. <FRAME>, <IFRAME>).
             //if (frame.IsMain)
             {
-                LogManager.CefLog("START: " + browser.GetMainFrame().Url);
+                LogManager.CefLog("-> Start: " + browser.GetMainFrame().Url);
             }
         }
 
@@ -126,7 +127,7 @@ namespace GTANetwork.GUI
         {
             //if (frame.IsMain)
             {
-                LogManager.CefLog(string.Format("END: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
+                LogManager.CefLog(string.Format("-> End: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
             }
         }
     }
@@ -134,6 +135,7 @@ namespace GTANetwork.GUI
     internal class MainLifeSpanHandler : CefLifeSpanHandler
     {
         private MainCefClient bClient;
+
 
         internal MainLifeSpanHandler(MainCefClient bc)
         {
@@ -145,6 +147,14 @@ namespace GTANetwork.GUI
             base.OnAfterCreated(browser);
             this.bClient.Created(browser);
         }
+
+        protected override bool OnBeforePopup(CefBrowser browser, CefFrame frame, string targetUrl, string targetFrameName, CefWindowOpenDisposition targetDisposition, bool userGesture, CefPopupFeatures popupFeatures, CefWindowInfo windowInfo, ref CefClient client, CefBrowserSettings settings, ref bool noJavascriptAccess)
+        {
+            Browser father = CefUtil.GetBrowserFromCef(browser);
+            father.GoToPage(targetUrl);
+            return true;
+        }
+
     }
 
     internal class V8Bridge : CefV8Handler
@@ -160,7 +170,7 @@ namespace GTANetwork.GUI
         {
             Browser father = null;
 
-            LogManager.CefLog("Entering JS Execute. Func: " + name + " arg len: " + arguments.Length);
+            LogManager.CefLog("-> Entering JS Execute. Func: " + name + " arg len: " + arguments.Length);
 
             father = CefUtil.GetBrowserFromCef(_browser);
 
@@ -173,12 +183,12 @@ namespace GTANetwork.GUI
             }
             if (!CefUtil.DISABLE_CEF)
             {
-                LogManager.CefLog("Father was found!");
+                LogManager.CefLog("-> Father was found!");
                 try
                 {
                     if (name == "resourceCall")
                     {
-                        LogManager.CefLog("Entering resourceCall...");
+                        LogManager.CefLog("-> Entering resourceCall...");
 
                         List<object> args = new List<object>();
 
@@ -187,11 +197,11 @@ namespace GTANetwork.GUI
                             args.Add(arguments[i].GetValue());
                         }
 
-                        LogManager.CefLog("Executing callback...");
+                        LogManager.CefLog("-> Executing callback...");
 
                         object output = father._callback.call(arguments[0].GetStringValue(), args.ToArray());
 
-                        LogManager.CefLog("Callback executed!");
+                        LogManager.CefLog("-> Callback executed!");
 
                         returnValue = V8Helper.CreateValue(output);
                         exception = null;
@@ -200,9 +210,9 @@ namespace GTANetwork.GUI
 
                     if (name == "resourceEval")
                     {
-                        LogManager.CefLog("Entering resource eval");
+                        LogManager.CefLog("-> Entering resource eval");
                         object output = father._callback.eval(arguments[0].GetStringValue());
-                        LogManager.CefLog("callback executed!");
+                        LogManager.CefLog("-> callback executed!");
 
                         returnValue = V8Helper.CreateValue(output);
                         exception = null;
@@ -226,7 +236,7 @@ namespace GTANetwork.GUI
         {
             if (frame.IsMain)
             {
-                LogManager.CefLog("Setting main context!");
+                LogManager.CefLog("-> Setting main context!");
 
                 Browser father = CefUtil.GetBrowserFromCef(browser);
                 if (father != null)
@@ -235,7 +245,7 @@ namespace GTANetwork.GUI
                     {
                         father._mainContext = context;
                     }
-                    LogManager.CefLog("Main context set!");
+                    LogManager.CefLog("-> Main context set!");
                 }
             }
 
@@ -250,10 +260,9 @@ namespace GTANetwork.GUI
             base.OnContextCreated(browser, frame, context);
         }
 
-        protected override bool OnBeforeNavigation(CefBrowser browser, CefFrame frame, CefRequest request, CefNavigationType navigation_type,
-            bool isRedirect)
+        protected override bool OnBeforeNavigation(CefBrowser browser, CefFrame frame, CefRequest request, CefNavigationType navigation_type, bool isRedirect)
         {
-            if ((request.TransitionType & CefTransitionType.ForwardBackFlag) != 0 || navigation_type == CefNavigationType.BackForwarD)
+            if ((request.TransitionType & CefTransitionType.ForwardBackFlag) != 0 || navigation_type == CefNavigationType.BackForward)
             {
                 return true;
             }
@@ -272,15 +281,16 @@ namespace GTANetwork.GUI
         public Bitmap LastBitmap;
         public readonly object BitmapLock = new object();
 
+
         public MainCefRenderHandler(int windowWidth, int windowHeight)
         {
             _windowWidth = windowWidth;
             _windowHeight = windowHeight;
-            LogManager.CefLog("Instantiated Renderer");
 
             _imageElement = new ImageElement(null, true);
 
             CEFManager.DirectXHook.AddImage(_imageElement);
+            LogManager.CefLog("-> Instantiated Renderer");
         }
 
         public void SetHidden(bool hidden)
@@ -354,8 +364,14 @@ namespace GTANetwork.GUI
             }
         }
         
-        protected override void OnScrollOffsetChanged(CefBrowser browser)
+        protected override void OnScrollOffsetChanged(CefBrowser browser, double x, double y)
         {
+
+        }
+
+        protected override void OnImeCompositionRangeChanged(CefBrowser browser, CefRange selectedRange, CefRectangle[] characterBounds)
+        {
+
         }
     }
 

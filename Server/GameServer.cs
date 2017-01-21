@@ -210,6 +210,8 @@ namespace GTANetworkServer
         public List<Resource> AvailableMaps;
         public Resource CurrentMap;
 
+        private object operationKey = new object();
+
         // Assembly name, Path to assembly.
         public Dictionary<string, string> AssemblyReferences = new Dictionary<string, string>();
 
@@ -1645,6 +1647,9 @@ namespace GTANResource
                                             Program.Output("Player disconnected: " + client.SocialClubName + " (" +
                                                             client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], reason: " + reason);
 
+                                            if (client.CurrentVehicle.Value != 0 && VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) && VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
+                                                VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
+
                                             Clients.Remove(client);
                                             Server.Configuration.CurrentPlayers = Clients.Count;
                                             NetEntityHandler.DeleteEntityQuiet(client.handle.Value);
@@ -2111,6 +2116,7 @@ namespace GTANResource
                                                 client.Rotation = fullPacket.Quaternion;
                                                 client.Velocity = fullPacket.Velocity;
                                                 client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
+                                                client.Ammo = fullPacket.WeaponAmmo.Value;
                                                 if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
 
                                                 if (fullPacket.PlayerHealth.Value != oldHealth)
@@ -2147,13 +2153,15 @@ namespace GTANResource
                                                         VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
                                                         VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
 
+                                                        
+
                                                     lock (RunningResources)
                                                         RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                         {
                                                             en.InvokePlayerExitVehicle(client, client.CurrentVehicle);
                                                         }));
                                                 }
-
+   
                                                 client.IsInVehicleInternal = false;
                                                 client.IsInVehicle = false;
                                                 client.CurrentVehicle = new NetHandle(0);
@@ -2164,6 +2172,23 @@ namespace GTANResource
                                                     NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
                                                     NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
                                                     //NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
+                                                }
+                                                lock (operationKey)
+                                                {
+                                                    if (client.CurrentWeapon.ToString() != "Unarmed")
+                                                    {
+                                                        if(client.Weapons.ContainsKey(client.CurrentWeapon))
+                                                        {
+                                                            if (client.Ammo > client.Weapons[client.CurrentWeapon])
+                                                            {
+                                                                PublicAPI.setPlayerWeaponAmmo(client, client.CurrentWeapon, client.Weapons[client.CurrentWeapon]);
+                                                            }
+                                                            else
+                                                            {
+                                                                lock (client.Weapons) client.Weapons[client.CurrentWeapon] = client.Ammo;
+                                                            }
+                                                        }
+                                                    }
                                                 }
 
                                                 ResendPacket(fullPacket, client, true);
@@ -2189,14 +2214,13 @@ namespace GTANResource
 
                                                 if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
                                                 {
-                                                    var oldValue =
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash;
+                                                    if (client.ModelHash == 0) client.ModelHash = fullPacket.PedModelHash.Value;
 
-                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
-                                                        fullPacket.PedModelHash.Value;
-
+                                                    var oldValue = client.ModelHash;
                                                     if (oldValue != fullPacket.PedModelHash.Value)
                                                     {
+                                                        client.ModelHash = fullPacket.PedModelHash.Value;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.Value;
                                                         lock (RunningResources)
                                                             RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                             {
@@ -2204,7 +2228,6 @@ namespace GTANResource
                                                             }));
                                                     }
                                                 }
-
                                                 ResendPacket(fullPacket, client, false);
                                             }
                                             catch (IndexOutOfRangeException)
@@ -3033,7 +3056,7 @@ namespace GTANResource
                                 PickupToWeapon.Translate(
                                     ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).ModelHash) != 0)
                             {
-                                sender.Weapons.Add((WeaponHash) PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash));
+                                sender.Weapons.Add((WeaponHash) PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash), 0);
                             }
                         }
                     }
@@ -3346,11 +3369,27 @@ namespace GTANResource
 
             return list;
         }
-        
-        public void SendNativeCallToPlayer(Client player, ulong hash, params object[] arguments)
+
+        public void SendDeleteObject(Client player, Vector3 pos, float radius, int modelHash)
+        {
+            var obj = new ObjectData();
+            obj.Position = pos;
+            obj.Radius = radius;
+            obj.modelHash = modelHash;
+            var bin = SerializeBinary(obj);
+
+            var msg = Server.CreateMessage();
+            msg.Write((byte)PacketType.DeleteObject);
+            msg.Write(bin.Length);
+            msg.Write(bin);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.Default);
+        }
+
+        public void SendNativeCallToPlayer(Client player, bool safe, ulong hash, params object[] arguments)
         {
             var obj = new NativeData();
             obj.Hash = hash;
+            obj.Internal = safe;
             obj.Arguments = ParseNativeArguments(arguments);
             var bin = SerializeBinary(obj);
 
@@ -3361,10 +3400,11 @@ namespace GTANResource
             player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.NativeCall);
         }
 
-        public void SendNativeCallToAllPlayers(ulong hash, params object[] arguments)
+        public void SendNativeCallToAllPlayers(bool safe, ulong hash, params object[] arguments)
         {
             var obj = new NativeData();
             obj.Hash = hash;
+            obj.Internal = safe;
             obj.Arguments = ParseNativeArguments(arguments);
             obj.ReturnType = null;
             obj.Id = 0;
@@ -3384,11 +3424,11 @@ namespace GTANResource
         }
 
         private uint _nativeCount = 0;
-        public object ReturnNativeCallFromPlayer(Client player, ulong hash, NativeArgument returnType, params object[] args)
+        public object ReturnNativeCallFromPlayer(Client player, bool safe, ulong hash, NativeArgument returnType, params object[] args)
         {
             _nativeCount++;
             object output = null;
-            GetNativeCallFromPlayer(player, _nativeCount, hash, returnType, (o) =>
+            GetNativeCallFromPlayer(player, safe, _nativeCount, hash, returnType, (o) =>
             {
                 output = o;
             }, args);
@@ -3401,7 +3441,7 @@ namespace GTANResource
         }
 
         private Dictionary<uint, Action<object>> _callbacks = new Dictionary<uint, Action<object>>();
-        public void GetNativeCallFromPlayer(Client player, uint salt, ulong hash, NativeArgument returnType, Action<object> callback,
+        public void GetNativeCallFromPlayer(Client player, bool safe, uint salt, ulong hash, NativeArgument returnType, Action<object> callback,
             params object[] arguments)
         {
             var obj = new NativeData();
@@ -3409,6 +3449,7 @@ namespace GTANResource
             obj.ReturnType = returnType;
             obj.Id = salt;
             obj.Arguments = ParseNativeArguments(arguments);
+            obj.Internal = safe;
 
             var bin = SerializeBinary(obj);
 

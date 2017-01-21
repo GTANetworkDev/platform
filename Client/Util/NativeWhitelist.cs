@@ -32,4 +32,33 @@ namespace GTANetwork.Util
             return Array.BinarySearch(_list, native) >= 0;
         }
     }
+    public static class SoundWhitelist
+    {
+        public static void Init()
+        {
+            var list = new List<string>();
+
+            using (var file = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("GTANetwork.soundlist.txt")))
+            {
+                string currentLine;
+                while (!string.IsNullOrEmpty((currentLine = file.ReadLine())))
+                {
+                    list.Add(currentLine);
+                }
+            }
+
+            list.Sort();
+
+            _list = list.ToArray();
+        }
+
+        private static string[] _list = new string[0];
+
+        public static bool IsAllowed(string sound)
+        {
+            return Array.BinarySearch(_list, sound) >= 0;
+        }
+    }
+
+
 }

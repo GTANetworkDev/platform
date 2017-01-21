@@ -28,9 +28,13 @@ namespace GTANetworkServer
             get { return Base.getTextLabelSeethrough(this); }
             set { Base.setTextLabelSeethrough(this, value); }
         }
-        
-        
-        
+
+        public float range
+        {
+            get { return Base.getTextLabelRange(this); }
+            set { Base.setTextLabelRange(this, value); }
+        }
+
         #endregion
 
         #region Methods

@@ -54,6 +54,7 @@ namespace GTANetworkShared
 
             // Write current weapon hash.
             byteArray.AddRange(GetBytes(data.WeaponHash.Value));
+            byteArray.AddRange(GetBytes(data.WeaponAmmo.Value));
 
             // Are we shooting?
             if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
@@ -426,8 +427,9 @@ namespace GTANetworkShared
             data.PedArmor = r.ReadByte();
             data.Speed = r.ReadByte();
 
-            // read gun model
+            // read gun model and ammo
             data.WeaponHash = r.ReadInt32();
+            data.WeaponAmmo = r.ReadInt32();
 
             // Is the player shooting?
             if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
@@ -450,6 +452,7 @@ namespace GTANetworkShared
 
                 data.SeatTryingToEnter = (sbyte)r.ReadByte();
             }
+
 
             return data;
         }

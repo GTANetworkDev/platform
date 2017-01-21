@@ -38,9 +38,9 @@ namespace GTANMasterServer
             var url = "http://+:" + port;
 
             GtanServerWorker = new MasterServerWorker();
-            if ((bool)XML.Config("CI")) UpdateChannels = new Dictionary<string, VersioningUpdaterWorker>();
+            //if ((bool)XML.Config("CI")) UpdateChannels = new Dictionary<string, VersioningUpdaterWorker>();
 
-            if ((bool)XML.Config("CI")) UpdateChannels.Add("stable", new VersioningUpdaterWorker());
+            //if ((bool)XML.Config("CI")) UpdateChannels.Add("stable", new VersioningUpdaterWorker());
 
             PingerWorker.Start();
             
@@ -49,17 +49,17 @@ namespace GTANMasterServer
                 Debug.Log("Running list on: " + url);
                 WelcomeMessageWorker.UpdateWelcomeMessage();
 
-                if ((bool)XML.Config("CI")) ContinuousIntegration.GetLastVersion();
+                //if ((bool)XML.Config("CI")) ContinuousIntegration.GetLastVersion();
 
                 while (true)
                 {
                     try
                     {
-                        if ((bool)XML.Config("CI"))
-                        {
-                            ContinuousIntegration.Work();
-                            foreach (var pair in UpdateChannels) pair.Value.Work();
-                        }
+                        //if ((bool)XML.Config("CI"))
+                        //{
+                        //    ContinuousIntegration.Work();
+                        //    foreach (var pair in UpdateChannels) pair.Value.Work();
+                        //}
                         GtanServerWorker.Work();
                         PingerWorker.ProcessMessages();
                         WelcomeMessageWorker.Work();
@@ -868,58 +868,80 @@ namespace GTANMasterServer
 
             Get["/update/{channel}/version"] = parameters =>
             {
-                var chan = (string)parameters.channel;
-
-                var versionWorker = Program.GetChannelWorker(chan);
-
-                if (versionWorker != null)
-                {
-                    return versionWorker.LastClientVersion.ToString();
-                }
-
-                return 404;
+                return File.ReadAllText("updater" + Path.DirectorySeparatorChar + (string)parameters.channel + Path.DirectorySeparatorChar + "version.txt");
             };
 
             Get["/update/{channel}/files"] = parameters =>
             {
-                var chan = (string)parameters.channel;
-
-                var versionWorker = Program.GetChannelWorker(chan);
-
-                if (versionWorker != null)
-                {
-                    return Response.AsFile(versionWorker.FilesPath());
-                }
-
-                return 404;
+                return Response.AsFile("updater" + Path.DirectorySeparatorChar + (string)parameters.channel + Path.DirectorySeparatorChar + "files.zip");
             };
 
             Get["/update/{channel}/launcher/version"] = parameters =>
             {
-                var chan = (string)parameters.channel;
-
-                var versionWorker = Program.GetChannelWorker(chan);
-
-                if (versionWorker != null)
-                {
-                    return File.ReadAllText(versionWorker.LauncherVersionPath()).ToString();
-                }
-                return 404;
+                return File.ReadAllText("updater" + Path.DirectorySeparatorChar + (string)parameters.channel + Path.DirectorySeparatorChar + "launcher" + Path.DirectorySeparatorChar + "version.txt");
             };
 
             Get["/update/{channel}/launcher/files"] = parameters =>
             {
-                var chan = (string)parameters.channel;
-
-                var versionWorker = Program.GetChannelWorker(chan);
-
-                if (versionWorker != null)
-                {
-                    return Response.AsFile(versionWorker.LauncherPath());
-                }
-
-                return 404;
+                return Response.AsFile("updater" + Path.DirectorySeparatorChar + (string)parameters.channel + Path.DirectorySeparatorChar + "launcher" + Path.DirectorySeparatorChar + "files.zip");
             };
+
+
+
+            //Get["/update/{channel}/version"] = parameters =>
+            //{
+            //    var chan = (string)parameters.channel;
+
+            //    var versionWorker = Program.GetChannelWorker(chan);
+
+            //    if (versionWorker != null)
+            //    {
+            //        return versionWorker.LastClientVersion.ToString();
+            //    }
+
+            //    return 404;
+            //};
+
+            //Get["/update/{channel}/files"] = parameters =>
+            //{
+            //    var chan = (string)parameters.channel;
+
+            //    var versionWorker = Program.GetChannelWorker(chan);
+
+            //    if (versionWorker != null)
+            //    {
+            //        return Response.AsFile(versionWorker.FilesPath());
+            //    }
+
+            //    return 404;
+            //};
+
+            //Get["/update/{channel}/launcher/version"] = parameters =>
+            //{
+            //    var chan = (string)parameters.channel;
+
+            //    var versionWorker = Program.GetChannelWorker(chan);
+
+            //    if (versionWorker != null)
+            //    {
+            //        return File.ReadAllText(versionWorker.LauncherVersionPath()).ToString();
+            //    }
+            //    return 404;
+            //};
+
+            //Get["/update/{channel}/launcher/files"] = parameters =>
+            //{
+            //    var chan = (string)parameters.channel;
+
+            //    var versionWorker = Program.GetChannelWorker(chan);
+
+            //    if (versionWorker != null)
+            //    {
+            //        return Response.AsFile(versionWorker.LauncherPath());
+            //    }
+
+            //    return 404;
+            //};
         }
     }
 

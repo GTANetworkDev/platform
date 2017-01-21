@@ -1,30 +1,19 @@
-﻿//#define DISABLE_HOOK
-//#define DISABLE_CEF
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-//using CefSharp;
-//using CefSharp.OffScreen;
 using GTA;
 using GTA.Native;
 using GTANetwork.GUI.DirectXHook.Hook;
 using GTANetwork.GUI.DirectXHook.Hook.Common;
-using GTANetwork.GUI.Extern;
 using GTANetwork.Javascript;
 using GTANetwork.Util;
 using Microsoft.ClearScript.V8;
 using SharpDX;
-using SharpDX.Diagnostics;
 using Xilium.CefGlue;
 using Point = System.Drawing.Point;
-
 
 namespace GTANetwork.GUI
 {
@@ -70,7 +59,7 @@ namespace GTANetwork.GUI
                 if (ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
-                    if (CefUtil.DISABLE_HOOK)
+                    if (CefUtil.DISABLE_CEF)
                         Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
                 }
                 else
@@ -244,8 +233,6 @@ namespace GTANetwork.GUI
 
     internal static class CEFManager
     {
-
-
         internal static void InitializeCef()
         {
             if (!CefUtil.DISABLE_CEF)
@@ -254,46 +241,52 @@ namespace GTANetwork.GUI
                 {
                     try
                     {
+                        //LogManager.CefLog("--> InitilizeCef: Start");
                         CefRuntime.Load(Main.GTANInstallDir + "\\cef");
+                        //LogManager.CefLog("-> InitilizeCef: 1");
 
                         var args = new[]
                         {
-                        "--off-screen-rendering-enabled",
-                        "--transparent-painting-enabled",
-                        "--disable-gpu",
-                        "--disable-gpu-compositing",
-                        "--enable-begin-frame-scheduling",
-                    };
+                            "--off-screen-rendering-enabled",
+                            "--transparent-painting-enabled",
+                            "--disable-gpu",
+                            "--disable-gpu-compositing",
+                            "--disable-gpu-vsync",
+                            "--enable-begin-frame-scheduling",
+                            "--disable-d3d11",
+
+                        };
 
                         var cefMainArgs = new CefMainArgs(args);
                         var cefApp = new MainCefApp();
 
-                        if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1)
-                        {
+                        if (CefRuntime.ExecuteProcess(cefMainArgs, cefApp, IntPtr.Zero) != -1) {
                             LogManager.CefLog("CefRuntime could not execute the secondary process.");
                         }
 
+                        //LogManager.CefLog("-> InitilizeCef: 2");
                         var cefSettings = new CefSettings()
                         {
                             SingleProcess = true,
                             MultiThreadedMessageLoop = true,
                             WindowlessRenderingEnabled = true,
                             BackgroundColor = new CefColor(0, 0, 0, 0),
-
                             CachePath = Main.GTANInstallDir + "\\cef",
                             ResourcesDirPath = Main.GTANInstallDir + "\\cef",
                             LocalesDirPath = Main.GTANInstallDir + "\\cef\\locales",
                             BrowserSubprocessPath = Main.GTANInstallDir + "\\cef",
-
                             //NoSandbox = true,
                         };
-
                         CefRuntime.Initialize(cefMainArgs, cefSettings, cefApp, IntPtr.Zero);
+                        //LogManager.CefLog("-> InitilizeCef: 3");
 
                         CefRuntime.RegisterSchemeHandlerFactory("http", null, new SecureSchemeFactory());
                         CefRuntime.RegisterSchemeHandlerFactory("https", null, new SecureSchemeFactory());
                         CefRuntime.RegisterSchemeHandlerFactory("ftp", null, new SecureSchemeFactory());
                         CefRuntime.RegisterSchemeHandlerFactory("sftp", null, new SecureSchemeFactory());
+                        //LogManager.CefLog("--> InitilizeCef: End");
+
+
                     }
                     catch (Exception ex)
                     {
@@ -342,15 +335,18 @@ namespace GTANetwork.GUI
 
         internal static void Initialize(Size screenSize)
         {
+
+            //LogManager.CefLog("--> Initiatlize: Start");
             ScreenSize = screenSize;
-            if (!CefUtil.DISABLE_HOOK)
+            if (!CefUtil.DISABLE_CEF && DirectXHook == null)
             {
-                SharpDX.Configuration.EnableObjectTracking = true;
+                Configuration.EnableObjectTracking = true;
                 Configuration.EnableReleaseOnFinalizer = true;
                 Configuration.EnableTrackingReleaseOnFinalizer = true;
 
                 try
                 {
+                    LogManager.CefLog("--> Initiatlize: Creating device");
                     DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
                     //DirectXHook.Hook();
                 }
@@ -364,6 +360,7 @@ namespace GTANetwork.GUI
             //RenderThread = new Thread(RenderLoop);
             //RenderThread.IsBackground = true;
             //RenderThread.Start();
+            //LogManager.CefLog("--> Initiatlize: End");
         }
 
         internal static readonly List<Browser> Browsers = new List<Browser>();
@@ -612,7 +609,7 @@ namespace GTANetwork.GUI
             Father = father;
             if (!CefUtil.DISABLE_CEF)
             {
-
+                LogManager.CefLog("--> Browser: Start");
                 CefWindowInfo cefWindowinfo = CefWindowInfo.Create();
                 cefWindowinfo.SetAsWindowless(IntPtr.Zero, true);
                 cefWindowinfo.TransparentPaintingEnabled = true;
@@ -632,13 +629,22 @@ namespace GTANetwork.GUI
                 _client.OnCreated += (sender, args) =>
                 {
                     _browser = (CefBrowser)sender;
-                    LogManager.CefLog("Browser ready!");
+                    LogManager.CefLog("-> Browser created!");
                 };
 
                 Size = browserSize;
                 _localMode = localMode;
                 _callback = new BrowserJavascriptCallback(father, this);
-                CefBrowserHost.CreateBrowser(cefWindowinfo, _client, browserSettings);
+                try
+                {
+                    LogManager.CefLog("--> Browser: Creating Browser");
+                    CefBrowserHost.CreateBrowser(cefWindowinfo, _client, browserSettings);
+                }
+                catch (Exception e)
+                {
+                    LogManager.CefLog(e, "CreateBrowser");
+                }
+                LogManager.CefLog("--> Browser: End");
             }
         }
 
@@ -650,6 +656,18 @@ namespace GTANetwork.GUI
                 {
                     LogManager.CefLog("Trying to load page " + page + "...");
                     _browser.GetMainFrame().LoadUrl(page);
+                }
+            }
+        }
+
+        internal void GoBack()
+        {
+            if (!CefUtil.DISABLE_CEF)
+            {
+                if (_browser != null && _browser.CanGoBack)
+                {
+                    LogManager.CefLog("Trying to go back a page...");
+                    _browser.GoBack();
                 }
             }
         }

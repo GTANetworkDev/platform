@@ -302,7 +302,7 @@ namespace GTANetworkShared
         public string NametagText { get; set; }
 
         [ProtoMember(12)]
-        public int NametagSettings { get; set; }
+        public int NametagSettings { get; set; }   
     }
 
     [ProtoContract]

@@ -248,20 +248,13 @@ namespace GTANetwork.Javascript
 
             foreach (var a in tmpList)
             {
-                if (Main.ClientSideDebugging == true)
-                {
-                    try
-                    {
-                        a.Invoke();
-                    }
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
-                    }
-                }
-                else
+                try
                 {
                     a.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    LogException(ex);
                 }
             }
 
@@ -269,32 +262,23 @@ namespace GTANetwork.Javascript
             {
                 foreach (var engine in ScriptEngines)
                 {
-                    if(Main.ClientSideDebugging == true)
-                    {
-                        try
-                        {
-                            engine.Engine.Script.API.invokeUpdate();
-                        }
-                        catch (Exception ex)
-                        {
-                            LogException(ex);
-                        }
-
-                        try
-                        {
-                            engine.Engine.Script.API.processCoroutines();
-                        }
-                        catch (Exception ex)
-                        {
-                            LogException(ex);
-                        }
-                    }
-                    else
+                    try
                     {
                         engine.Engine.Script.API.invokeUpdate();
-                        engine.Engine.Script.API.processCoroutines();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogException(ex);
                     }
 
+                    try
+                    {
+                        engine.Engine.Script.API.processCoroutines();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogException(ex);
+                    }
                 }
             }
 
@@ -308,20 +292,13 @@ namespace GTANetwork.Javascript
             {
                 foreach (var engine in ScriptEngines)
                 {
-                    if(Main.ClientSideDebugging == true)
-                    {
-                        try
-                        {
-                            engine.Engine.Script.API.invokeKeyDown(sender, e);
-                        }
-                        catch (ScriptEngineException ex)
-                        {
-                            LogException(ex);
-                        }
-                    }
-                    else
+                    try
                     {
                         engine.Engine.Script.API.invokeKeyDown(sender, e);
+                    }
+                    catch (ScriptEngineException ex)
+                    {
+                        LogException(ex);
                     }
                 }
             }
@@ -335,20 +312,13 @@ namespace GTANetwork.Javascript
             {
                 foreach (var engine in ScriptEngines)
                 {
-                    if(Main.ClientSideDebugging == true)
-                    {
-                        try
-                        {
-                            engine.Engine.Script.API.invokeKeyUp(sender, e);
-                        }
-                        catch (ScriptEngineException ex)
-                        {
-                            LogException(ex);
-                        }
-                    }
-                    else
+                    try
                     {
                         engine.Engine.Script.API.invokeKeyUp(sender, e);
+                    }
+                    catch (ScriptEngineException ex)
+                    {
+                        LogException(ex);
                     }
                 }
             }
@@ -1089,7 +1059,15 @@ namespace GTANetwork.Javascript
                 Script.Yield();
             }
         }
-        
+
+        public void waitUntilCefBrowserLoaded(Browser browser)
+        {
+            while (!browser.IsLoading())
+            {
+                Script.Yield();
+            }
+        }
+
         public void setCefBrowserSize(Browser browser, double width, double height)
         {
 #if RELATIVE_CEF_POS
@@ -1218,6 +1196,12 @@ namespace GTANetwork.Javascript
             }
         }
 
+        public void goBackCefBrowser(Browser browser)
+        {
+            if (browser == null) return;
+                browser.GoBack();
+        }
+
         public bool isCefBrowserLoading(Browser browser)
         {
             return browser.IsLoading();
@@ -1235,7 +1219,7 @@ namespace GTANetwork.Javascript
                 return false;
             return true;
         }
-        
+
         public void callNative(string hash, params object[] args)
         {
             Hash ourHash;
@@ -1877,13 +1861,13 @@ namespace GTANetwork.Javascript
             }
         }
 
-        public bool getEngineStatus(LocalHandle vehicle)
+        public bool getVehicleEngineStatus(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
             if (veh != null)
             {
-                return PacketOptimization.CheckBit(veh.Flag, EntityFlag.EngineOff);
+                return !PacketOptimization.CheckBit(veh.Flag, EntityFlag.EngineOff);
             }
 
             return false;
@@ -2866,10 +2850,13 @@ namespace GTANetwork.Javascript
             Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, r,g,b,a);
         }
 
-        public void playSoundFrontEnd(string audioLib, string audioName)
+        public void playSoundFrontEnd(string soundName, string soundSetName)
         {
-            Function.Call((Hash)0x2F844A8B08D76685, audioLib, true);
-            Function.Call((Hash)0x67C540AA08E4A6F5, -1, audioName, audioLib);
+            if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
+            {
+                Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+                Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
+            }
         }
 
         public void showShard(string text, int timeout = 5000)

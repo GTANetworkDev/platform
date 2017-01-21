@@ -341,6 +341,7 @@ namespace GTANetwork.Networking
                 obj.PedArmor = (byte)player.Armor;
                 obj.PedModelHash = player.Model.Hash;
                 obj.WeaponHash = (int)player.Weapons.Current.Hash;
+                obj.WeaponAmmo = player.Weapons.Current.Ammo;
                 obj.PlayerHealth = (byte)Util.Util.Clamp(0, player.Health, 255);
                 obj.Velocity = player.Velocity.ToLVector();
 

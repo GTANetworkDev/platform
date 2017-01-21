@@ -267,7 +267,7 @@ namespace GTANetwork
                     MoveFile(file, settings.GamePath + "\\" + "Disabled" + "\\" + Path.GetFileName(file));
                 }
 
-                string[] Files = { "ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "EasyHook64.dll", "scripthookv.dll", "ScriptHookVDotNet.dll", "v8-ia32.dll", "d3d11.dll", "d3d10.dll", "d3d9.dll", "dxgi.dll" };
+                string[] Files = { "ClearScript.dll", "ClearScriptV8-32.dll", "ClearScriptV8-64.dll", "EasyHook64.dll", "scripthookv.dll",  "ScriptHookVDotNet.dll", "dinput8.dll", "v8-ia32.dll" };
                 foreach (var file in Files)
                 {
                     if (!File.Exists(settings.GamePath + "\\" + file)) continue;
@@ -382,14 +382,27 @@ namespace GTANetwork
             {
                 if (settings.OfflineMode)
                 {
-                    using (var file = new StreamWriter(File.OpenWrite(settings.GamePath + "\\commandline.txt")))
+                    if (File.Exists(settings.GamePath + "\\commandline.txt"))
                     {
-                        file.WriteLine("-scOfflineOnly");
+                        string text = File.ReadAllText(settings.GamePath + "\\commandline.txt");
+                        if (!text.Contains("-scOfflineOnly"))
+                        {
+                            File.AppendAllText(settings.GamePath + "\\commandline.txt", "-scOfflineOnly");
+                        }
+                    }
+                    else
+                    {
+                        File.AppendAllText(settings.GamePath + "\\commandline.txt", "-scOfflineOnly");
                     }
                 }
                 else
                 {
-                    if (File.Exists(settings.GamePath + "\\commandline.txt")) File.WriteAllLines(settings.GamePath + "\\commandline.txt", File.ReadLines(settings.GamePath + "\\commandline.txt").Where(l => l != "-scOfflineOnly").ToList());
+                    if (File.Exists(settings.GamePath + "\\commandline.txt"))
+                    {
+                        string text = File.ReadAllText(settings.GamePath + "\\commandline.txt");
+                        text = text.Replace("-scOfflineOnly", "");
+                        File.WriteAllText(settings.GamePath + "\\commandline.txt", text);
+                    }
                 }
             }
             catch (Exception)
@@ -424,16 +437,40 @@ namespace GTANetwork
             InjectOurselves(gta5Process);
             #endregion
 
+            #region Terminate duplicate GTA5 processes
+            var t = new Thread((ThreadStart)delegate
+            {
+                Thread.Sleep(10000);
+                while (true)
+                {
+                    foreach (var process in Process.GetProcesses().Where(x => x.ProcessName.ToString().ToLower().Contains("gta5") && x.Id != gta5Process.Id).ToList())
+                    {
+                        process.Kill();
+                        Thread.CurrentThread.Abort();
+                    }
+                    Thread.Sleep(1000);
+                }
+            });
+
+            t.Start();
+            #endregion
+
             #region Wait for GTA5 to exit
             var launcherProcess = Process.GetProcessesByName("GTAVLauncher").FirstOrDefault(p => p != null);
             while (!gta5Process.HasExited || (launcherProcess != null && !launcherProcess.HasExited)) { Thread.Sleep(1000); }
             Thread.Sleep(1000);
+            t.Abort();
             #endregion
 
             #region Cleanup
             try
             {
-                if (File.Exists(settings.GamePath + "\\commandline.txt")) File.WriteAllLines(settings.GamePath + "\\commandline.txt", File.ReadLines(settings.GamePath + "\\commandline.txt").Where(l => l != "-scOfflineOnly").ToList());
+                if (File.Exists(settings.GamePath + "\\commandline.txt"))
+                {
+                    string text = File.ReadAllText(settings.GamePath + "\\commandline.txt");
+                    text = text.Replace("-scOfflineOnly", "");
+                    File.WriteAllText(settings.GamePath + "\\commandline.txt", text);
+                }
             }
             catch (Exception)
             {

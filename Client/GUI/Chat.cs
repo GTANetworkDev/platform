@@ -164,6 +164,7 @@ namespace GTANetwork.GUI
             var keyboardState = new byte[256];
             if (shift)
                 keyboardState[(int)Keys.ShiftKey] = 0xff;
+
             if (altGr)
             {
                 keyboardState[(int)Keys.ControlKey] = 0xff;

@@ -6,7 +6,7 @@
   Name "GTA Network"
   OutFile "GTANSetup.exe"
 
-  InstallDir "$PROGRAMFILES64\GTA Network"
+  InstallDir "C:\GTANetwork"
 
   RequestExecutionLevel admin
 
