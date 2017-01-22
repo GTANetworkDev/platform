@@ -2839,6 +2839,7 @@ namespace GTANetworkServer
             {
                lock (player.Weapons) player.Weapons.Add(weaponHash, ammo);
             }
+            lock (player.Weapons) player.Weapons[weaponHash] = ammo;
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
 
             Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, 0, equipNow, ammo);
