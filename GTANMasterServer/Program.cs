@@ -896,6 +896,11 @@ namespace GTANMasterServer
                 return 404;
             };
 
+            Get["/update/version"] = _ =>
+            {
+                return File.ReadAllText("updater" + Path.DirectorySeparatorChar + "version.txt");
+            };
+
             #region CI Integreation
             //Get["/update/{channel}/version"] = parameters =>
             //{

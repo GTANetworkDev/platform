@@ -182,7 +182,7 @@ namespace GTANetwork
                 fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(GTANFolder + "bin" + "\\" + "scripts" + "\\" + "GTANetwork.dll").FileVersion);
             }
 
-            splashScreen.SetPercent(25);
+            splashScreen.SetPercent(30);
             using (var wc = new ImpatientWebClient())
             {
                 try
@@ -225,7 +225,7 @@ namespace GTANetwork
             }
             #endregion
 
-            splashScreen.SetPercent(30);
+            splashScreen.SetPercent(35);
 
             #region Check GamePath directory
             if (string.IsNullOrWhiteSpace(settings.GamePath) || !File.Exists(settings.GamePath + "\\" + "GTA5.exe"))
@@ -258,6 +258,40 @@ namespace GTANetwork
             }
             #endregion
 
+            #region Check GTA5 version
+            FileVersionInfo myGTAVersionInfo = FileVersionInfo.GetVersionInfo(settings.GamePath + "\\" + "GTA5.exe");
+
+            splashScreen.SetPercent(40);
+            using (var wc = new ImpatientWebClient())
+            {
+                try
+                {
+                    string lastVersion = wc.DownloadString(settings.MasterServerAddress.Trim('/') + $"/update/version");
+                    if (ParseableVersion.Parse(lastVersion) > ParseableVersion.Parse(myGTAVersionInfo.ProductVersion))
+                    {
+                        var updateResult =
+                            MessageBox.Show(splashScreen.SplashScreen,
+                                "You are running an outdated GTAV game version\n " +
+                                "\nLatest Version: " + lastVersion + "\nInstalled Version: " + myGTAVersionInfo.ProductVersion +
+                                "\n\nPlease update either via Steam or RGSC launcher, Continue?",
+                                "Outdated game version", MessageBoxButtons.YesNo);
+
+                        if (updateResult == DialogResult.No)
+                        {
+                            return;
+                        }
+                    }
+                }
+                catch (WebException ex)
+                {
+                    MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    if (!Directory.Exists(GTANFolder + "logs")) Directory.CreateDirectory(GTANFolder + "logs");
+
+                    File.AppendAllText(GTANFolder + "logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
+                }
+            }
+            #endregion
+
             #region Registry checking (Obsolete)
             //splashScreen.SetPercent(35);
 
@@ -279,7 +313,7 @@ namespace GTANetwork
             //#endregion
             #endregion
 
-            splashScreen.SetPercent(40);
+            splashScreen.SetPercent(45);
 
             #region Check required folders and clean up
             string Profiles = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Rockstar Games" + "\\GTA V" + "\\Profiles";
