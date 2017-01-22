@@ -127,6 +127,53 @@ namespace GTANetwork
             }
             #endregion
 
+            #region Check CEF version
+            if (!Directory.Exists(GTANFolder + "cef") || !File.Exists(GTANFolder + "cef\\libcef.dll"))
+            {
+                MessageBox.Show(splashScreen.SplashScreen, "CEF directory or one of the core CEF components is missing from the directory, please reinstall.");
+                return;
+            }
+
+            FileVersionInfo myFileVersionInfo = FileVersionInfo.GetVersionInfo(GTANFolder + "cef\\libcef.dll");
+
+            splashScreen.SetPercent(20);
+            using (var wc = new ImpatientWebClient())
+            {
+                try
+                {
+                    string lastCefVersion = wc.DownloadString(settings.MasterServerAddress.Trim('/') + $"/update/{settings.UpdateChannel}/cef/version");
+                    if (lastCefVersion != myFileVersionInfo.ProductVersion)
+                    {
+                        var updateResult =
+                            MessageBox.Show(splashScreen.SplashScreen,
+                                "New CEF Update is available! Requires a client re-install!\n " + 
+                                "\nUpdate Version: " + lastCefVersion + "\nInstalled Version: " + myFileVersionInfo.ProductVersion + 
+                                "\n\nYou must download the client installer from the website, Download now?", 
+                                "CEF Update Available",MessageBoxButtons.YesNo);
+
+                        if (updateResult == DialogResult.Yes)
+                        {
+                            Process.Start("https://download.gtanet.work/client/GTANSetup.zip");
+                            return;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                }
+                catch (WebException ex)
+                {
+                    MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    if (!Directory.Exists(GTANFolder + "logs")) Directory.CreateDirectory(GTANFolder + "logs");
+
+                    File.AppendAllText(GTANFolder + "logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
+                }
+            }
+
+
+            #endregion
+
             #region Check for new client version
 
             ParseableVersion fileVersion = new ParseableVersion(0, 0, 0, 0);
@@ -135,7 +182,7 @@ namespace GTANetwork
                 fileVersion = ParseableVersion.Parse(FileVersionInfo.GetVersionInfo(GTANFolder + "bin" + "\\" + "scripts" + "\\" + "GTANetwork.dll").FileVersion);
             }
 
-            splashScreen.SetPercent(20);
+            splashScreen.SetPercent(25);
             using (var wc = new ImpatientWebClient())
             {
                 try
