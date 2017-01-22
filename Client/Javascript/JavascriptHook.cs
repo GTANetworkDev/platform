@@ -1175,7 +1175,7 @@ namespace GTANetwork.Javascript
                     return;
                 }
 
-                string fullUri = "http://" + ParentResourceName + "/" + uri.TrimStart('/');
+                string fullUri = "https://" + ParentResourceName + "/" + uri.TrimStart('/');
 
                 browser.GoToPage(fullUri);
             }
@@ -4178,11 +4178,11 @@ namespace GTANetwork.Javascript
         //    Game.Player.Character.Weapons.Give((GTA.WeaponHash) weapon, ammo, equipNow, ammoLoaded);
         //}
 
-        //public void removeAllPlayerWeapons()
-        //{
-        //    Game.Player.Character.Weapons.RemoveAll();
-        //    CrossReference.EntryPoint.WeaponInventoryManager.Clear();
-        //}
+        public void removeAllPlayerWeapons()
+        {
+            Game.Player.Character.Weapons.RemoveAll();
+            CrossReference.EntryPoint.WeaponInventoryManager.Clear();
+        }
 
         public bool doesPlayerHaveWeapon(int weapon)
         {
