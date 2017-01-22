@@ -23,7 +23,13 @@
 Section "Client" SecDummy
 
   SetOutPath "$INSTDIR"
-  File /r "C:\GTA Network\*"
+
+${If} ${FileExists} "$INSTDIR\*"
+     RMDir /r "$INSTDIR"
+${EndIf}
+
+  File /r "C:\GTA Network Prod\*"
+
   CreateShortCut "$DESKTOP\GTA Network.lnk" "$INSTDIR\GTANLauncher.exe" ""
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
