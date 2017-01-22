@@ -363,6 +363,16 @@ namespace GTANetworkServer
             API.shared.givePlayerWeapon(this, weapon, ammo, equipNow, ammoLoaded);
         }
 
+        public void setWeaponAmmo(WeaponHash weapon, int ammo)
+        {
+            API.shared.setPlayerWeaponAmmo(this, weapon, ammo);
+        }
+
+        public int getWeaponAmmo(WeaponHash weapon)
+        {
+            return API.shared.getPlayerWeaponAmmo(this, weapon);
+        }
+
         public void removeWeapon(WeaponHash weapon)
         {
             API.shared.removePlayerWeapon(this, weapon);
