@@ -4172,17 +4172,17 @@ namespace GTANetwork.Javascript
             return new Prop(entity.Value).Model.Hash;
         }
 
-        public void givePlayerWeapon(int weapon, int ammo, bool equipNow, bool ammoLoaded)
-        {
-            CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash) weapon);
-            Game.Player.Character.Weapons.Give((GTA.WeaponHash) weapon, ammo, equipNow, ammoLoaded);
-        }
+        //public void givePlayerWeapon(int weapon, int ammo, bool equipNow, bool ammoLoaded)
+        //{
+        //    CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash) weapon);
+        //    Game.Player.Character.Weapons.Give((GTA.WeaponHash) weapon, ammo, equipNow, ammoLoaded);
+        //}
 
-        public void removeAllPlayerWeapons()
-        {
-            Game.Player.Character.Weapons.RemoveAll();
-            CrossReference.EntryPoint.WeaponInventoryManager.Clear();
-        }
+        //public void removeAllPlayerWeapons()
+        //{
+        //    Game.Player.Character.Weapons.RemoveAll();
+        //    CrossReference.EntryPoint.WeaponInventoryManager.Clear();
+        //}
 
         public bool doesPlayerHaveWeapon(int weapon)
         {
