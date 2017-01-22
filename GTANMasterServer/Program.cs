@@ -886,8 +886,17 @@ namespace GTANMasterServer
                 return Response.AsFile("updater" + Path.DirectorySeparatorChar + (string)parameters.channel + Path.DirectorySeparatorChar + "launcher" + Path.DirectorySeparatorChar + "files.zip");
             };
 
+            Get["/update/{channel}/cef/version"] = parameters =>
+            {
+                return File.ReadAllText("updater" + Path.DirectorySeparatorChar + (string)parameters.channel + Path.DirectorySeparatorChar + "cef" + Path.DirectorySeparatorChar + "version.txt");
+            };
 
+            Get["/update/{channel}/cef/files"] = parameters =>
+            {
+                return 404;
+            };
 
+            #region CI Integreation
             //Get["/update/{channel}/version"] = parameters =>
             //{
             //    var chan = (string)parameters.channel;
@@ -942,6 +951,8 @@ namespace GTANMasterServer
 
             //    return 404;
             //};
+
+            #endregion
         }
     }
 
