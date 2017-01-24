@@ -367,7 +367,7 @@ namespace GTANetwork.Javascript
             
             
             var scriptEngine = new V8ScriptEngine();
-            scriptEngine.AddHostObject("host", new HostFunctions());
+            //scriptEngine.AddHostObject("host", new HostFunctions()); // Disable an exploit where you could get reflection
             scriptEngine.AddHostObject("API", new ScriptContext(scriptEngine));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
             scriptEngine.AddHostType("List", typeof(List<>));
