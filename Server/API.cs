@@ -2849,7 +2849,10 @@ namespace GTANetworkServer
         public int getPlayerWeaponAmmo(Client player, WeaponHash weaponHash)
         {
             if (!player.Weapons.ContainsKey(weaponHash)) return 0;
-            return player.Weapons[weaponHash];
+            int ammo;
+            lock (player.Weapons) ammo = player.Weapons[weaponHash];
+
+            return ammo;
             //return fetchNativeFromPlayer<int>(player, (ulong)Hash.GET_AMMO_IN_PED_WEAPON, new LocalPlayerArgument(), (int)weaponHash);
         }
 
