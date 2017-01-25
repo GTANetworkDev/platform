@@ -40,9 +40,9 @@ namespace GTANetwork.Networking
         public static int MAX_VEHICLES = 50;
         public static int MAX_PICKUPS = 30;
         public static int MAX_BLIPS = 100;
-        public static int MAX_PLAYERS = 40;
-        public static int MAX_PEDS = 10;
-        public static int MAX_MARKERS = 100;
+        public static int MAX_PLAYERS = 100;
+        public static int MAX_PEDS = 50;
+        public static int MAX_MARKERS = 30;
         public static int MAX_LABELS = 20;
         public static int MAX_PARTICLES = 50;
 
@@ -112,6 +112,7 @@ namespace GTANetwork.Networking
 
         void StreamerTick(object sender, System.EventArgs e)
         {
+            LogManager.DebugLog("START OF STREAMER TICK");
             _playerPosition = Game.Player.Character.Position;
             if (Util.Util.ModelRequest) return;
             bool spinner = false;
@@ -160,6 +161,7 @@ namespace GTANetwork.Networking
             */
 
             StreamInProgress = false;
+            LogManager.DebugLog("END OF STREAMER TICK");
         }
     }
 
