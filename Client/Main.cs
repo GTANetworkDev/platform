@@ -2749,20 +2749,20 @@ namespace GTANetwork
                 {
                     RebuildServerBrowser();
 
-                    //if (!VerifyGameIntegrity())
-                    //{
-                    //    _mainWarning = new Warning("alert", "Could not verify game integrity.\nPlease restart your game, or update Grand Theft Auto V.");
-                    //    _mainWarning.OnAccept = () =>
-                    //    {
-                    //        if (Client != null && IsOnServer()) Client.Disconnect("Quit");
-                    //        CEFManager.Dispose();
-                    //        CEFManager.DisposeCef();
-                    //        Script.Wait(500);
-                    //        //Environment.Exit(0);
-                    //        Process.GetProcessesByName("GTA5")[0].Kill();
-                    //        Process.GetCurrentProcess().Kill();
-                    //    };
-                    //}
+                    if (!VerifyGameIntegrity())
+                    {
+                        _mainWarning = new Warning("alert", "Could not verify game integrity.\nPlease restart your game, or update Grand Theft Auto V.");
+                        _mainWarning.OnAccept = () =>
+                        {
+                            if (Client != null && IsOnServer()) Client.Disconnect("Quit");
+                            CEFManager.Dispose();
+                            CEFManager.DisposeCef();
+                            Script.Wait(500);
+                            //Environment.Exit(0);
+                            Process.GetProcessesByName("GTA5")[0].Kill();
+                            Process.GetCurrentProcess().Kill();
+                        };
+                    }
 
                     _hasInitialized = true;
                 }
