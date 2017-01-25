@@ -3897,7 +3897,7 @@ namespace GTANetwork
                 DEBUG_STEP = 32;
 
 
-                if (!RemoveGameEntities && Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
+                if (RemoveGameEntities && Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
                 {
                     _lastEntityRemoval = Util.Util.TickCount;
                     foreach (var entity in World.GetAllPeds())
