@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 
 namespace GTANetwork.Util
 {
@@ -43,16 +47,51 @@ namespace GTANetwork.Util
             }
         }
 
+        class ThreadInfo
+        {
+            public string text { get; set; }
+        }
+
         public static void DebugLog(string text)
         {
-            if (!Main.WriteDebugLog) return;
-            CreateLogDirectory();
+            if (Main.SaveDebugToFile)
+            {
+                CreateLogDirectory();
+                lock (errorLogLock)
+                {
+                    File.AppendAllText(LogDirectory + "\\Debug.log", text);
+                }
+            }
+            if (Main.PlayerSettings.DebugMode)
+            {
+                ThreadInfo threadInfo = new ThreadInfo();
+                threadInfo.text = text;
+                ThreadPool.QueueUserWorkItem(new WaitCallback(Work), threadInfo);
+            }
+        }
+
+        public static void Work(object a)
+        {
+            byte[] bytes = new byte[1024];
             try
             {
-                File.AppendAllText(LogDirectory + "\\Debug.log", text + "\r\n");
-                Debug.WriteLine(text);
+                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 11000);
+                using (Socket sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                {
+                    if (!sender.Connected)
+                    {
+                        sender.Connect(remoteEP);
+                    }
+                    ThreadInfo threadInfo = a as ThreadInfo;
+                    byte[] msg = Encoding.ASCII.GetBytes(threadInfo.text + "<EOL>");
+                    int bytesSent = sender.Send(msg);
+                }
+
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
         }
 
         public static void RuntimeLog(string text)

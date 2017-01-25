@@ -157,13 +157,14 @@ namespace GTANetwork
         public static List<int> _averagePacketSize = new List<int>();
 
         private TabTextItem _statsItem;
-        //
 
         private static bool EnableDevTool;
         internal static bool EnableMediaStream;
+        internal static bool SaveDebugToFile = false;
 
         public Main()
         {
+            Process.GetProcesses().Where(x => x.ProcessName.ToLower().StartsWith("gameoverlay")).ToList().ForEach(x => x.Kill());
 
             World.DestroyAllCameras();
 
@@ -268,14 +269,7 @@ namespace GTANetwork
             });
         }
 
-        //public static void KillCEFEnemies()
-        //{
-        //    string[] Enemies = { "Dxtory","DiscordOverlay", "GameOverlay", "Overwolf", "RTSS", "CAMFPS", "CAM_V3" };            
-        //    foreach (var name in Enemies)
-        //    {
-        //        Process.GetProcesses().Where(x => x.ProcessName.ToLower().StartsWith(name)).ToList().ForEach(x => x.Kill());
-        //    }
-        //}
+
 
         public static void ChatOnComplete(object sender, EventArgs args)
         {
@@ -305,7 +299,7 @@ namespace GTANetwork
         public static bool HasFinishedDownloading;
         public static string SocialClubName;
 
-        // Debug stuff
+        #region Debug stuff
         private bool display;
         private Ped mainPed;
         private Vehicle mainVehicle;
@@ -318,7 +312,7 @@ namespace GTANetwork
         private bool _lastVehicle;
         private bool _oldChat;
         private bool _isGoingToCar;
-        //
+        #endregion
 
         public static bool JustJoinedServer { get; set; }
         private int _currentOnlinePlayers;
@@ -351,12 +345,55 @@ namespace GTANetwork
         private string CustomAnimation;
         private int AnimationFlag;
 
-
         public static Camera MainMenuCamera;
-
 
         public static string GTANInstallDir = ((string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null));
 
+        // We want to check whether the player has the latest game version and the DLC content installed.
+        public bool VerifyGameIntegrity()
+        {
+            bool legit = true;
+
+            legit = legit && (Game.Version >= (GameVersion)27);
+
+            GTANetworkShared.VehicleHash[] dlcCars = new GTANetworkShared.VehicleHash[]
+            {
+                GTANetworkShared.VehicleHash.Trophytruck,GTANetworkShared.VehicleHash.Cliffhanger,
+                GTANetworkShared.VehicleHash.Lynx,GTANetworkShared.VehicleHash.Contender,
+                GTANetworkShared.VehicleHash.Gargoyle,GTANetworkShared.VehicleHash.Sheava,
+                GTANetworkShared.VehicleHash.Brioso,GTANetworkShared.VehicleHash.Tropos,
+                GTANetworkShared.VehicleHash.Tyrus,GTANetworkShared.VehicleHash.Rallytruck,
+                GTANetworkShared.VehicleHash.le7b,GTANetworkShared.VehicleHash.Tampa2,
+                GTANetworkShared.VehicleHash.Omnis,GTANetworkShared.VehicleHash.Trophytruck2,
+                GTANetworkShared.VehicleHash.Avarus,GTANetworkShared.VehicleHash.Blazer4,
+                GTANetworkShared.VehicleHash.Chimera,GTANetworkShared.VehicleHash.Daemon2,
+                GTANetworkShared.VehicleHash.Defiler,GTANetworkShared.VehicleHash.Esskey,
+                GTANetworkShared.VehicleHash.Faggio,GTANetworkShared.VehicleHash.Faggio3,
+                GTANetworkShared.VehicleHash.Hakuchou2,GTANetworkShared.VehicleHash.Manchez,
+                GTANetworkShared.VehicleHash.Nightblade,GTANetworkShared.VehicleHash.Raptor,
+                GTANetworkShared.VehicleHash.Ratbike,GTANetworkShared.VehicleHash.Sanctus,
+                GTANetworkShared.VehicleHash.Shotaro,GTANetworkShared.VehicleHash.Tornado6,
+                GTANetworkShared.VehicleHash.Vortex,GTANetworkShared.VehicleHash.Wolfsbane,
+                GTANetworkShared.VehicleHash.Youga2,GTANetworkShared.VehicleHash.Zombiea,
+                GTANetworkShared.VehicleHash.Zombieb, GTANetworkShared.VehicleHash.Voltic2,
+                GTANetworkShared.VehicleHash.Ruiner2, GTANetworkShared.VehicleHash.Dune4,
+                GTANetworkShared.VehicleHash.Dune5, GTANetworkShared.VehicleHash.Phantom2,
+                GTANetworkShared.VehicleHash.Technical2, GTANetworkShared.VehicleHash.Boxville5,
+                GTANetworkShared.VehicleHash.Blazer5,
+                GTANetworkShared.VehicleHash.Comet3, GTANetworkShared.VehicleHash.Diablous,
+                GTANetworkShared.VehicleHash.Diablous2, GTANetworkShared.VehicleHash.Elegy,
+                GTANetworkShared.VehicleHash.Fcr, GTANetworkShared.VehicleHash.Fcr2,
+                GTANetworkShared.VehicleHash.Italigtb, GTANetworkShared.VehicleHash.Italigtb2,
+                GTANetworkShared.VehicleHash.Nero, GTANetworkShared.VehicleHash.Nero2,
+                GTANetworkShared.VehicleHash.Penetrator, GTANetworkShared.VehicleHash.Specter,
+                GTANetworkShared.VehicleHash.Specter2, GTANetworkShared.VehicleHash.Tempesta
+            };
+
+
+            return dlcCars.Aggregate(legit, (current, car) => current && new Model((int)car).IsValid);
+        }
+
+        #region Menu
         public void GetWelcomeMessage()
         {
             ThreadPool.QueueUserWorkItem(delegate
@@ -407,51 +444,6 @@ namespace GTANetwork
             }
         }
 
-
-        // We want to check whether the player has the latest game version and the DLC content installed.
-        public bool VerifyGameIntegrity()
-        {
-            bool legit = true;
-
-            legit = legit && (Game.Version >= (GameVersion)27);
-
-            GTANetworkShared.VehicleHash[] dlcCars = new GTANetworkShared.VehicleHash[]
-            {
-                GTANetworkShared.VehicleHash.Trophytruck,GTANetworkShared.VehicleHash.Cliffhanger,
-                GTANetworkShared.VehicleHash.Lynx,GTANetworkShared.VehicleHash.Contender,
-                GTANetworkShared.VehicleHash.Gargoyle,GTANetworkShared.VehicleHash.Sheava,
-                GTANetworkShared.VehicleHash.Brioso,GTANetworkShared.VehicleHash.Tropos,
-                GTANetworkShared.VehicleHash.Tyrus,GTANetworkShared.VehicleHash.Rallytruck,
-                GTANetworkShared.VehicleHash.le7b,GTANetworkShared.VehicleHash.Tampa2,
-                GTANetworkShared.VehicleHash.Omnis,GTANetworkShared.VehicleHash.Trophytruck2,
-                GTANetworkShared.VehicleHash.Avarus,GTANetworkShared.VehicleHash.Blazer4,
-                GTANetworkShared.VehicleHash.Chimera,GTANetworkShared.VehicleHash.Daemon2,
-                GTANetworkShared.VehicleHash.Defiler,GTANetworkShared.VehicleHash.Esskey,
-                GTANetworkShared.VehicleHash.Faggio,GTANetworkShared.VehicleHash.Faggio3,
-                GTANetworkShared.VehicleHash.Hakuchou2,GTANetworkShared.VehicleHash.Manchez,
-                GTANetworkShared.VehicleHash.Nightblade,GTANetworkShared.VehicleHash.Raptor,
-                GTANetworkShared.VehicleHash.Ratbike,GTANetworkShared.VehicleHash.Sanctus,
-                GTANetworkShared.VehicleHash.Shotaro,GTANetworkShared.VehicleHash.Tornado6,
-                GTANetworkShared.VehicleHash.Vortex,GTANetworkShared.VehicleHash.Wolfsbane,
-                GTANetworkShared.VehicleHash.Youga2,GTANetworkShared.VehicleHash.Zombiea,
-                GTANetworkShared.VehicleHash.Zombieb, GTANetworkShared.VehicleHash.Voltic2,
-                GTANetworkShared.VehicleHash.Ruiner2, GTANetworkShared.VehicleHash.Dune4,
-                GTANetworkShared.VehicleHash.Dune5, GTANetworkShared.VehicleHash.Phantom2,
-                GTANetworkShared.VehicleHash.Technical2, GTANetworkShared.VehicleHash.Boxville5,
-                GTANetworkShared.VehicleHash.Blazer5,
-                GTANetworkShared.VehicleHash.Comet3, GTANetworkShared.VehicleHash.Diablous,
-                GTANetworkShared.VehicleHash.Diablous2, GTANetworkShared.VehicleHash.Elegy,
-                GTANetworkShared.VehicleHash.Fcr, GTANetworkShared.VehicleHash.Fcr2,
-                GTANetworkShared.VehicleHash.Italigtb, GTANetworkShared.VehicleHash.Italigtb2,
-                GTANetworkShared.VehicleHash.Nero, GTANetworkShared.VehicleHash.Nero2,
-                GTANetworkShared.VehicleHash.Penetrator, GTANetworkShared.VehicleHash.Specter,
-                GTANetworkShared.VehicleHash.Specter2, GTANetworkShared.VehicleHash.Tempesta
-            };
-
-
-            return dlcCars.Aggregate(legit, (current, car) => current && new Model((int)car).IsValid);
-        }
-
         private void AddToFavorites(string server)
         {
             if (string.IsNullOrWhiteSpace(server)) return;
@@ -465,11 +457,6 @@ namespace GTANetwork
         private void RemoveFromFavorites(string server)
         {
             PlayerSettings.FavoriteServers.Remove(server);
-            Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
-        }
-
-        private void SaveSettings()
-        {
             Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
@@ -597,6 +584,7 @@ namespace GTANetwork
                 return false;
             }
         }
+
         bool finished = true;
         private void RebuildServerBrowser()
         {
@@ -827,10 +815,16 @@ namespace GTANetwork
                 catch (ArgumentException) { }
             }
         }
+        #endregion
 
         private void TickSpinner()
         {
             OnTick(null, EventArgs.Empty);
+        }
+
+        private void SaveSettings()
+        {
+            Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
         public static IEnumerable<ProcessModule> GetModules()
@@ -1485,13 +1479,54 @@ namespace GTANetwork
                 #region Debug Menu
                 var DebugMenu = new TabInteractiveListItem("Debug", new List<UIMenuItem>());
                 {
-                    var expItem = new UIMenuCheckboxItem("Enable CEF Development Tools (http://localhost:9222) [Restart required]", PlayerSettings.CEFDevtool);
-                    expItem.CheckboxEvent += (sender, @checked) =>
                     {
-                        PlayerSettings.CEFDevtool = @checked;
-                        SaveSettings();
-                    };
-                    DebugMenu.Items.Add(expItem);
+                        var expItem = new UIMenuCheckboxItem("Enable CEF Development Tools (http://localhost:9222) [Restart required]", PlayerSettings.CEFDevtool);
+                        expItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            PlayerSettings.CEFDevtool = @checked;
+                            SaveSettings();
+                        };
+                        DebugMenu.Items.Add(expItem);
+                    }
+
+                    {
+                        var expItem = new UIMenuCheckboxItem("Enable Debug mode (Requires an extra tool)", PlayerSettings.DebugMode);
+                        expItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            PlayerSettings.DebugMode = @checked;
+                            SaveSettings();
+                        };
+                        DebugMenu.Items.Add(expItem);
+                    }
+
+                    {
+                        var expItem = new UIMenuCheckboxItem("Save Debug to File (Huge performance impact)", SaveDebugToFile);
+                        expItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            SaveDebugToFile = @checked;
+                            SaveSettings();
+                        };
+                        DebugMenu.Items.Add(expItem);
+                    }
+
+                    {
+                        var debugItem = new UIMenuCheckboxItem("Remove Game Entities", RemoveGameEntities);
+                        debugItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            RemoveGameEntities = @checked;
+                        };
+                        DebugMenu.Items.Add(debugItem);
+                    }
+
+                    {
+                        var debugItem = new UIMenuCheckboxItem("Show Streamer Debug Data", PedThread.StreamerDebug);
+                        debugItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            PedThread.StreamerDebug = @checked;
+                        };
+                        DebugMenu.Items.Add(debugItem);
+                    }
+
                 }
 
 
@@ -1525,14 +1560,7 @@ namespace GTANetwork
                     DebugMenu.Items.Add(debugItem);
                 }
 
-                {
-                    var debugItem = new UIMenuCheckboxItem("Despawn Entities", RemoveGameEntities);
-                    debugItem.CheckboxEvent += (sender, @checked) =>
-                    {
-                        RemoveGameEntities = @checked;
-                    };
-                    DebugMenu.Items.Add(debugItem);
-                }
+
 
                 {
                     var debugItem = new UIMenuCheckboxItem("Write Debug Info To File", false);
@@ -2097,6 +2125,7 @@ namespace GTANetwork
         private static bool _lastPedData;
         private static int _lastLightSync;
         private static int LIGHT_SYNC_RATE = 1500;
+
         /*
         public static void SendPlayerData()
         {
@@ -2447,7 +2476,6 @@ namespace GTANetwork
             }
         }
 
-
         /// <summary>
         /// Debug use only
         /// </summary>
@@ -2551,7 +2579,6 @@ namespace GTANetwork
             }
         }
         //*/
-
 
         public static SyncPed GetPedDamagedByPlayer()
         {
@@ -2659,19 +2686,6 @@ namespace GTANetwork
 
         private static int _debugStep;
 
-        public static int DEBUG_STEP
-        {
-            get { return _debugStep; }
-            set
-            {
-                _debugStep = value;
-                LogManager.DebugLog(value.ToString());
-
-                if (SlowDownClientForDebug)
-                    GTA.UI.Screen.ShowSubtitle(value.ToString());
-            }
-        }
-
         private int _debugPickup = 0;
         private int _debugmask;
         private Vehicle _debugVehicle;
@@ -2690,24 +2704,23 @@ namespace GTANetwork
         private WeaponHash _lastPlayerWeapon = WeaponHash.Unarmed;
         private PedHash _lastPlayerModel = PedHash.Clown01SMY;
 
-        // netstats
         private int _lastBytesSent;
         private int _lastBytesReceived;
         private int _lastCheck;
 
         internal static int _bytesSentPerSecond;
         internal static int _bytesReceivedPerSecond;
-        //
 
         internal static Warning _mainWarning;
         internal static string _threadsafeSubtitle;
 
         internal static bool _playerGodMode;
 
+        private long _lastEntityRemoval;
+
         public void OnTick(object sender, EventArgs e)
         {
             Main.TickCount++;
-
             try
             {
                 Ped player = Game.Player.Character;
@@ -2730,41 +2743,43 @@ namespace GTANetwork
                     GTA.UI.Screen.ShowSubtitle(_threadsafeSubtitle, 500);
                 }
 
+                DEBUG_STEP = 1;
 
                 if (!_hasInitialized)
                 {
                     RebuildServerBrowser();
 
-                    if (!VerifyGameIntegrity())
-                    {
-                        _mainWarning = new Warning("alert", "Could not verify game integrity.\nPlease restart your game, or update Grand Theft Auto V.");
-                        _mainWarning.OnAccept = () =>
-                        {
-                            if (Client != null && IsOnServer()) Client.Disconnect("Quit");
-                            CEFManager.Dispose();
-                            CEFManager.DisposeCef();
-                            Script.Wait(500);
-                            //Environment.Exit(0);
-                            Process.GetProcessesByName("GTAVLauncher")[0].Kill();
-                            Process.GetCurrentProcess().Kill();
-                        };
-                    }
+                    //if (!VerifyGameIntegrity())
+                    //{
+                    //    _mainWarning = new Warning("alert", "Could not verify game integrity.\nPlease restart your game, or update Grand Theft Auto V.");
+                    //    _mainWarning.OnAccept = () =>
+                    //    {
+                    //        if (Client != null && IsOnServer()) Client.Disconnect("Quit");
+                    //        CEFManager.Dispose();
+                    //        CEFManager.DisposeCef();
+                    //        Script.Wait(500);
+                    //        //Environment.Exit(0);
+                    //        Process.GetProcessesByName("GTA5")[0].Kill();
+                    //        Process.GetCurrentProcess().Kill();
+                    //    };
+                    //}
 
                     _hasInitialized = true;
                 }
+                DEBUG_STEP = 2;
 
                 if (!_hasPlayerSpawned && player != null && player.Handle != 0 && !Game.IsLoading)
                 {
                     GTA.UI.Screen.FadeOut(1);
-
                     ResetPlayer();
-
                     MainMenu.RefreshIndex();
                     _hasPlayerSpawned = true;
                     MainMenu.Visible = true;
                     World.RenderingCamera = MainMenuCamera;
 
                     var address = Util.Util.FindPattern("\x32\xc0\xf3\x0f\x11\x09", "xxxxxx"); // Weapon/radio slowdown
+
+                    DEBUG_STEP = 3;
 
                     if (address != IntPtr.Zero)
                     {
@@ -2773,6 +2788,8 @@ namespace GTANetwork
 
                     address = Util.Util.FindPattern("\x48\x85\xC0\x0F\x84\x00\x00\x00\x00\x8B\x48\x50", "xxxxx????xxx");
                     // unlock objects; credit goes to the GTA-MP team
+
+                    DEBUG_STEP = 4;
 
                     if (address != IntPtr.Zero)
                     {
@@ -2784,7 +2801,8 @@ namespace GTANetwork
                     GTA.UI.Screen.FadeIn(1000);
                 }
 
-                DEBUG_STEP = 0;
+                DEBUG_STEP = 5;
+
                 Game.DisableControlThisFrame(0, Control.EnterCheatCode);
                 Game.DisableControlThisFrame(0, Control.FrontendPause);
                 Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
@@ -2843,7 +2861,7 @@ namespace GTANetwork
 
                     if (!IsOnServer()) Game.EnableControlThisFrame(0, Control.FrontendPause);
                 }
-                DEBUG_STEP = 1;
+                DEBUG_STEP = 6;
 
                 if (_isGoingToCar && Game.IsControlJustPressed(0, Control.PhoneCancel))
                 {
@@ -2851,7 +2869,7 @@ namespace GTANetwork
                     _isGoingToCar = false;
                 }
 
-                DEBUG_STEP = 2;
+                #region DISABLED
                 /*
                 if (Game.Player.Character.IsInVehicle())
                 {
@@ -2946,7 +2964,6 @@ namespace GTANetwork
 
                 */
 
-                DEBUG_STEP = 3;
 #if DEBUG
             /*
             var outArg = new OutputArgument();
@@ -3261,9 +3278,8 @@ namespace GTANetwork
                 GTA.UI.Screen.ShowSubtitle("RPM: " + Game.Player.Character.CurrentVehicle.CurrentRPM + " AC: " + Game.Player.Character.CurrentVehicle.Acceleration);
             }*/
 #endif
-                DEBUG_STEP = 5;
+                #endregion
 
-                DEBUG_STEP = 6;
 
                 if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected || Client.ConnectionStatus == NetConnectionStatus.None) return;
                 // BELOW ONLY ON SERVER
@@ -3271,14 +3287,19 @@ namespace GTANetwork
                 _versionLabel.Position = new Point((int)(res.Width / 2), 0);
                 _versionLabel.TextAlignment = UIResText.Alignment.Centered;
                 _versionLabel.Draw();
+
                 DEBUG_STEP = 7;
+
                 if (_wasTyping)
                     Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
-                DEBUG_STEP = 8;
+
                 var playerCar = Game.Player.Character.CurrentVehicle;
-                DEBUG_STEP = 9;
+
+                DEBUG_STEP = 8;
+
                 Watcher.Tick();
-                DEBUG_STEP = 10;
+
+                DEBUG_STEP = 9;
 
                 _playerGodMode = Game.Player.IsInvincible;
 
@@ -3290,6 +3311,9 @@ namespace GTANetwork
                             api?.invokeonLocalPlayerShoot((int)(player.Weapons.Current?.Hash ?? 0),
                                 RaycastEverything(new Vector2(0, 0)).ToLVector()));
                 }
+
+
+                DEBUG_STEP = 10;
 
                 int netPlayerCar = 0;
                 RemoteVehicle cc = null;
@@ -3554,8 +3578,7 @@ namespace GTANetwork
                     Game.DisableControlThisFrame(0, Control.Jump);
                 }
 
-                //CRASH WORKAROUND
-                //DISABLE PARACHUTE RUINER2
+                //CRASH WORKAROUND: DISABLE PARACHUTE RUINER2
                 if (Game.Player.Character.IsInVehicle())
                 {
                     if (Game.Player.Character.CurrentVehicle.IsInAir && Game.Player.Character.CurrentVehicle.Model.Hash == 941494461)
@@ -3691,7 +3714,7 @@ namespace GTANetwork
                     Function.Call(Hash.REQUEST_SCRIPT_AUDIO_BANK, "HUD_MINI_GAME_SOUNDSET", true);
                     Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET");
                 }
-                DEBUG_STEP = 27;
+
                 /*
                 if (Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) < 8000 &&
                     Function.Call<int>(Hash.GET_TIME_SINCE_LAST_DEATH) != -1)
@@ -3874,17 +3897,18 @@ namespace GTANetwork
                 DEBUG_STEP = 32;
 
 
-                if (Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
+                if (!RemoveGameEntities && Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
                 {
                     _lastEntityRemoval = Util.Util.TickCount;
                     foreach (var entity in World.GetAllPeds())
                     {
                         if (!NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != Game.Player.Character)
                         {
-                            //entity.Kill();
+                            entity.Kill(); //"Some special peds like Epsilon guys or seashark minigame will refuse to despawn if you don't kill them first." - Guad
                             entity.Delete();
                         }
                     }
+
                     foreach (var entity in World.GetAllVehicles())
                     {
                         if (entity == null) continue;
@@ -3894,7 +3918,7 @@ namespace GTANetwork
                             entity.Delete();
                             continue;
                         }
-
+                        //TO CHECK
                         if (Util.Util.IsVehicleEmpty(entity) && !VehicleSyncManager.IsInterpolating(entity.Handle) && veh.TraileredBy == 0 && !VehicleSyncManager.IsSyncing(veh) && ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(LastCarEnter).TotalMilliseconds > 3000) || entity.Handle != Game.Player.LastVehicle?.Handle))
                         {
                             if (entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)
@@ -3908,24 +3932,28 @@ namespace GTANetwork
                         //veh.Rotation = entity.Rotation.ToLVector();
                     }
                 }
-                DEBUG_STEP = 34;
                 _whoseturnisitanyways = !_whoseturnisitanyways;
 
+                DEBUG_STEP = 34;
                 NetEntityHandler.UpdateAttachments();
-                NetEntityHandler.DrawMarkers();
-                NetEntityHandler.DrawLabels();
-                NetEntityHandler.UpdateMisc();
-                NetEntityHandler.UpdateInterpolations();
                 DEBUG_STEP = 35;
-                WeaponInventoryManager.Update();
+                NetEntityHandler.DrawMarkers();
                 DEBUG_STEP = 36;
+                NetEntityHandler.DrawLabels();
+                DEBUG_STEP = 37;
+                NetEntityHandler.UpdateMisc();
+                DEBUG_STEP = 38;
+                NetEntityHandler.UpdateInterpolations();
+                DEBUG_STEP = 39;
+                WeaponInventoryManager.Update();
+                DEBUG_STEP = 40;
+
                 /*string stats = string.Format("{0}Kb (D)/{1}Kb (U), {2}Msg (D)/{3}Msg (U)", _bytesReceived / 1000,
                     _bytesSent / 1000, _messagesReceived, _messagesSent);
                     */
                 //GTA.UI.Screen.ShowSubtitle(stats);
 
-                if (!Multithreading)
-                    PedThread.OnTick("thisaintnullnigga", e);
+                if (!Multithreading) PedThread.OnTick("thisaintnullnigga", e);
 
                 lock (_threadJumping)
                 {
@@ -3935,7 +3963,7 @@ namespace GTANetwork
                         if (action != null) action.Invoke();
                     }
                 }
-                DEBUG_STEP = 37;
+                DEBUG_STEP = 41;
             }
             catch (Exception ex) // Catch any other exception. (can prevent crash)
             {
@@ -3943,13 +3971,12 @@ namespace GTANetwork
             }
         }
 
-        private long _lastEntityRemoval;
-
         public static bool IsOnServer()
         {
             return Client != null && Client.ConnectionStatus == NetConnectionStatus.Connected;
         }
 
+        #region Download stuff
         private Thread _httpDownloadThread;
         private bool _cancelDownload;
         private void StartFileDownload(string address)
@@ -4012,6 +4039,7 @@ namespace GTANetwork
                 }
             });
         }
+        #endregion
 
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
@@ -4180,6 +4208,96 @@ namespace GTANetwork
             _currentServerPort = port == 0 ? Port : port;
         }
 
+        private void OnLocalDisconnect()
+        {
+            DEBUG_STEP = 42;
+            if (NetEntityHandler.ServerWorld?.LoadedIpl != null)
+            {
+                foreach (var ipl in NetEntityHandler.ServerWorld.LoadedIpl)
+                    Function.Call(Hash.REMOVE_IPL, ipl);
+            }
+
+            DEBUG_STEP = 43;
+            if (NetEntityHandler.ServerWorld?.RemovedIpl != null)
+                foreach (var ipl in NetEntityHandler.ServerWorld.RemovedIpl)
+                {
+                    Function.Call(Hash.REQUEST_IPL, ipl);
+                }
+
+
+            DEBUG_STEP = 44;
+
+            ClearLocalEntities();
+
+            DEBUG_STEP = 45;
+
+            ClearLocalBlips();
+
+            DEBUG_STEP = 49;
+            CameraManager.Reset();
+            NetEntityHandler.ClearAll();
+            DEBUG_STEP = 50;
+            JavascriptHook.StopAllScripts();
+            JavascriptHook.TextElements.Clear();
+            SyncCollector.ForceAimData = false;
+            StringCache.Dispose();
+            StringCache = null;
+            _threadsafeSubtitle = null;
+            _cancelDownload = true;
+            _httpDownloadThread?.Abort();
+            CefController.ShowCursor = false;
+            DEBUG_STEP = 51;
+            DownloadManager.Cancel();
+            DownloadManager.FileIntegrity.Clear();
+            Chat = _backupChat;
+            Chat.Clear();
+            WeaponInventoryManager.Clear();
+            VehicleSyncManager.StopAll();
+            HasFinishedDownloading = false;
+            ScriptChatVisible = true;
+            CanOpenChatbox = true;
+            DisplayWastedMessage = true;
+            _password = string.Empty;
+
+            UIColor = Color.White;
+
+            DEBUG_STEP = 52;
+
+            lock (CEFManager.Browsers)
+            {
+                foreach (var browser in CEFManager.Browsers)
+                {
+                    browser.Close();
+                    browser.Dispose();
+                }
+
+                CEFManager.Browsers.Clear();
+            }
+
+            CEFManager.Dispose();
+            ClearStats();
+
+            RestoreMainMenu();
+
+            DEBUG_STEP = 56;
+
+            ResetWorld();
+
+            DEBUG_STEP = 57;
+
+            ResetPlayer();
+
+            DEBUG_STEP = 58;
+
+            if (_serverProcess != null)
+            {
+                GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Shutting down server...");
+                _serverProcess.Kill();
+                _serverProcess.Dispose();
+                _serverProcess = null;
+            }
+        }
+
         public bool IsMessageTypeThreadsafe(NetIncomingMessageType msgType)
         {
             return false;
@@ -4230,7 +4348,7 @@ namespace GTANetwork
                         var len = msg.ReadInt32();
                         var data = msg.ReadBytes(len);
                         var packet = PacketOptimization.ReadLightVehicleSync(data);
-                        LogManager.DebugLog("-----RECEIVED LIGHT VEHICLE PACKET");
+                        LogManager.DebugLog("RECEIVED LIGHT VEHICLE PACKET");
                         HandleVehiclePacket(packet, false);
                     }
                     break;
@@ -4410,8 +4528,7 @@ namespace GTANetwork
                         var data = DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) as CreateEntity;
                         if (data != null && data.Properties != null)
                         {
-                            LogManager.DebugLog("CreateEntity was not null. Type: " + data.EntityType);
-                            LogManager.DebugLog("Model: " + data.Properties.ModelHash);
+                            LogManager.DebugLog("CreateEntity was not null. Type: " + data.EntityType + ", Model: " + data.Properties.ModelHash);
                             if (data.EntityType == (byte)EntityType.Vehicle)
                             {
                                 var prop = (VehicleProperties)data.Properties;
@@ -5191,7 +5308,7 @@ namespace GTANetwork
                             var reason = msg.ReadString();
                             Util.Util.SafeNotify("You have been disconnected" +
                                         (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
-                            DEBUG_STEP = 40;
+                            
                             OnLocalDisconnect();
                             break;
                     }
@@ -5374,6 +5491,8 @@ namespace GTANetwork
             //Client.Recycle(msg);
         }
 
+        #region Bullets stuff
+
         private void HandleBasicPacket(int nethandle, Vector3 position)
         {
             var syncPed = NetEntityHandler.GetPlayer(nethandle);
@@ -5402,7 +5521,7 @@ namespace GTANetwork
 
             syncPed.IsInVehicle = true;
 
-            if (fullData.VehicleHandle != null) LogManager.DebugLog("=====RECEIVED LIGHT VEHICLE PACKET " + fullData.VehicleHandle);
+            if (fullData.VehicleHandle != null) LogManager.DebugLog("RECEIVED LIGHT VEHICLE PACKET " + fullData.VehicleHandle);
 
             if (fullData.Position != null)
             {
@@ -5490,6 +5609,7 @@ namespace GTANetwork
 
             if (shooting) syncPed.AimPlayer = syncPedTarget;
         }
+        #endregion
 
         private void HandlePedPacket(PedData fullPacket, bool pure)
         {
@@ -5639,14 +5759,12 @@ namespace GTANetwork
             MainMenu.TemporarilyHidden = false;
             JustJoinedServer = false;
 
-            DEBUG_STEP = 53;
-
             MainMenu.Tabs.Remove(_serverItem);
             MainMenu.Tabs.Remove(_mainMapItem);
-            DEBUG_STEP = 54;
+
             if (!MainMenu.Tabs.Contains(_welcomePage))
                 MainMenu.Tabs.Insert(0, _welcomePage);
-            DEBUG_STEP = 55;
+
             MainMenu.RefreshIndex();
             _localMarkers.Clear();
 
@@ -5681,7 +5799,6 @@ namespace GTANetwork
 
         private void ResetWorld()
         {
-
             World.RenderingCamera = MainMenuCamera;
             MainMenu.Visible = true;
             MainMenu.TemporarilyHidden = false;
@@ -5690,96 +5807,9 @@ namespace GTANetwork
             Time = null;
             LocalTeam = -1;
             LocalDimension = 0;
-            DEBUG_STEP = 57;
 
             //Script.Wait(500);
             //Game.Player.Character.SetDefaultClothes();
-        }
-
-        private void OnLocalDisconnect()
-        {
-            if (NetEntityHandler.ServerWorld?.LoadedIpl != null)
-            {
-                foreach (var ipl in NetEntityHandler.ServerWorld.LoadedIpl)
-                    Function.Call(Hash.REMOVE_IPL, ipl);
-            }
-
-            if (NetEntityHandler.ServerWorld?.RemovedIpl != null)
-                foreach (var ipl in NetEntityHandler.ServerWorld.RemovedIpl)
-                {
-                    Function.Call(Hash.REQUEST_IPL, ipl);
-                }
-
-
-            DEBUG_STEP = 43;
-
-            ClearLocalEntities();
-
-            DEBUG_STEP = 47;
-
-            ClearLocalBlips();
-
-            DEBUG_STEP = 48;
-
-            DEBUG_STEP = 49;
-            CameraManager.Reset();
-            NetEntityHandler.ClearAll();
-            DEBUG_STEP = 50;
-            JavascriptHook.StopAllScripts();
-            JavascriptHook.TextElements.Clear();
-            SyncCollector.ForceAimData = false;
-            StringCache.Dispose();
-            StringCache = null;
-            _threadsafeSubtitle = null;
-            _cancelDownload = true;
-            _httpDownloadThread?.Abort();
-            CefController.ShowCursor = false;
-            DEBUG_STEP = 51;
-            DownloadManager.Cancel();
-            DownloadManager.FileIntegrity.Clear();
-            Chat = _backupChat;
-            Chat.Clear();
-            WeaponInventoryManager.Clear();
-            VehicleSyncManager.StopAll();
-            HasFinishedDownloading = false;
-            ScriptChatVisible = true;
-            CanOpenChatbox = true;
-            DisplayWastedMessage = true;
-            _password = string.Empty;
-
-            UIColor = Color.White;
-
-            DEBUG_STEP = 52;
-
-            lock (CEFManager.Browsers)
-            {
-                foreach (var browser in CEFManager.Browsers)
-                {
-                    browser.Close();
-                    browser.Dispose();
-                }
-
-                CEFManager.Browsers.Clear();
-            }
-
-            CEFManager.Dispose();
-            ClearStats();
-
-            RestoreMainMenu();
-
-            DEBUG_STEP = 56;
-
-            ResetWorld();
-
-            ResetPlayer();
-
-            if (_serverProcess != null)
-            {
-                GTA.UI.Screen.ShowNotification("~b~~h~GTA Network~h~~w~~n~Shutting down server...");
-                _serverProcess.Kill();
-                _serverProcess.Dispose();
-                _serverProcess = null;
-            }
         }
 
         void ClearStats()
@@ -5790,7 +5820,7 @@ namespace GTANetwork
             _messagesSent = 0;
         }
 
-        #region debug stuff
+        #region Debug stuff
 
         private DateTime _artificialLagCounter = DateTime.MinValue;
         private bool _debugStarted;
@@ -5965,6 +5995,52 @@ namespace GTANetwork
 
         #endregion
 
+        public static void SendToServer(object newData, PacketType packetType, bool important, ConnectionChannel channel)
+        {
+            var data = SerializeBinary(newData);
+            NetOutgoingMessage msg = Client.CreateMessage();
+            msg.Write((byte)packetType);
+            msg.Write(data.Length);
+            msg.Write(data);
+            Client.SendMessage(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
+        }
+
+        public static void TriggerServerEvent(string eventName, string resource, params object[] args)
+        {
+            if (!IsOnServer()) return;
+            var packet = new ScriptEventTrigger();
+            packet.EventName = eventName;
+            packet.Resource = resource;
+            packet.Arguments = ParseNativeArguments(args);
+            var bin = SerializeBinary(packet);
+
+            var msg = Client.CreateMessage();
+            msg.Write((byte)PacketType.ScriptEventTrigger);
+            msg.Write(bin.Length);
+            msg.Write(bin);
+
+            Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
+        }
+
+        internal static readonly string[] _weather = new string[]
+        {
+            "EXTRASUNNY",
+            "CLEAR",
+            "CLOUDS",
+            "SMOG",
+            "FOGGY",
+            "OVERCAST",
+            "RAIN",
+            "THUNDER",
+            "CLEARING",
+            "NEUTRAL",
+            "SNOW",
+            "BLIZZARD",
+            "SNOWLIGHT",
+            "XMAS "
+        };
+
+        #region Natives
         public static IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {
             var list = new List<object>();
@@ -6100,16 +6176,6 @@ namespace GTANetwork
             return list;
         }
 
-        public static void SendToServer(object newData, PacketType packetType, bool important, ConnectionChannel channel)
-        {
-            var data = SerializeBinary(newData);
-            NetOutgoingMessage msg = Client.CreateMessage();
-            msg.Write((byte)packetType);
-            msg.Write(data.Length);
-            msg.Write(data);
-            Client.SendMessage(msg, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
-        }
-
         public static List<NativeArgument> ParseNativeArguments(params object[] args)
         {
             var list = new List<NativeArgument>();
@@ -6205,41 +6271,6 @@ namespace GTANetwork
             return list;
         }
 
-        public static void TriggerServerEvent(string eventName, string resource, params object[] args)
-        {
-            if (!IsOnServer()) return;
-            var packet = new ScriptEventTrigger();
-            packet.EventName = eventName;
-            packet.Resource = resource;
-            packet.Arguments = ParseNativeArguments(args);
-            var bin = SerializeBinary(packet);
-
-            var msg = Client.CreateMessage();
-            msg.Write((byte)PacketType.ScriptEventTrigger);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered);
-        }
-
-        internal static readonly string[] _weather = new string[]
-        {
-            "EXTRASUNNY",
-            "CLEAR",
-            "CLOUDS",
-            "SMOG",
-            "FOGGY",
-            "OVERCAST",
-            "RAIN",
-            "THUNDER",
-            "CLEARING",
-            "NEUTRAL",
-            "SNOW",
-            "BLIZZARD",
-            "SNOWLIGHT",
-            "XMAS "
-        };
-
         public void DecodeNativeCall(NativeData obj)
         {
             if (!NativeWhitelist.IsAllowed(obj.Hash) && obj.Internal == false)
@@ -6298,8 +6329,7 @@ namespace GTANetwork
             list.AddRange(objectList.Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
 
             if (objectList.Count() > 0)
-                LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + objectList.Aggregate((f, s) => f + ", " + s));
-            LogManager.DebugLog("RETURN TYPE: " + obj.ReturnType);
+                LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + objectList.Aggregate((f, s) => f + ", " + s) + ", RETURN TYPE: " + obj.ReturnType);
             Model model = null;
             if (((int)nativeType & (int)NativeType.NeedsModel) > 0)
             {
@@ -6559,7 +6589,267 @@ namespace GTANetwork
                     return NativeType.PtfxAssetRequest;
             }
         }
+        #endregion
 
+        #region Raycast
+        public static Vector3 RaycastEverything(Vector2 screenCoord)
+        {
+            Vector3 camPos, camRot;
+
+            if (World.RenderingCamera.Handle == -1)
+            {
+                camPos = GameplayCamera.Position;
+                camRot = GameplayCamera.Rotation;
+            }
+            else
+            {
+                camPos = World.RenderingCamera.Position;
+                camRot = World.RenderingCamera.Rotation;
+            }
+
+            const float raycastToDist = 100.0f;
+            const float raycastFromDist = 1f;
+
+            var target3D = ScreenRelToWorld(camPos, camRot, screenCoord);
+            var source3D = camPos;
+
+            Entity ignoreEntity = Game.Player.Character;
+            if (Game.Player.Character.IsInVehicle())
+            {
+                ignoreEntity = Game.Player.Character.CurrentVehicle;
+            }
+
+            var dir = (target3D - source3D);
+            dir.Normalize();
+            var raycastResults = World.Raycast(source3D + dir * raycastFromDist,
+                source3D + dir * raycastToDist,
+                (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
+                , ignoreEntity);
+
+            if (raycastResults.DitHit)
+            {
+                return raycastResults.HitPosition;
+            }
+
+            return camPos + dir * raycastToDist;
+        }
+
+        public static Vector3 RaycastEverything(Vector2 screenCoord, Vector3 camPos, Vector3 camRot)
+        {
+            const float raycastToDist = 100.0f;
+            const float raycastFromDist = 1f;
+
+            var target3D = ScreenRelToWorld(camPos, camRot, screenCoord);
+            var source3D = camPos;
+
+            Entity ignoreEntity = Game.Player.Character;
+            if (Game.Player.Character.IsInVehicle())
+            {
+                ignoreEntity = Game.Player.Character.CurrentVehicle;
+            }
+
+            var dir = (target3D - source3D);
+            dir.Normalize();
+            var raycastResults = World.Raycast(source3D + dir * raycastFromDist,
+                source3D + dir * raycastToDist,
+                (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
+                , ignoreEntity);
+
+            if (raycastResults.DitHit)
+            {
+                return raycastResults.HitPosition;
+            }
+
+            return camPos + dir * raycastToDist;
+        }
+        #endregion
+
+        #region Serialization
+        public static object DeserializeBinary<T>(byte[] data)
+        {
+            object output;
+            using (var stream = new MemoryStream(data))
+            {
+                try
+                {
+                    output = Serializer.Deserialize<T>(stream);
+                }
+                catch (ProtoException)
+                {
+                    return null;
+                }
+            }
+            return output;
+        }
+        public static byte[] SerializeBinary(object data)
+        {
+            using (var stream = new MemoryStream())
+            {
+                stream.SetLength(0);
+                Serializer.Serialize(stream, data);
+                return stream.ToArray();
+            }
+        }
+        #endregion
+
+        #region Properties
+        public static void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
+        {
+            var packet = new UpdateEntity();
+            packet.EntityType = (byte)entity;
+            packet.Properties = newInfo;
+            packet.NetHandle = netId;
+            SendToServer(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
+        }
+
+        public static bool SetEntityProperty(LocalHandle entity, string key, object value)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
+            var item = NetEntityHandler.NetToStreamedItem(handle);
+            var prop = item as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key)) return false;
+
+            if (prop.SyncedProperties == null) prop.SyncedProperties = new Dictionary<string, NativeArgument>();
+
+            var nativeArg = ParseNativeArguments(value).Single();
+
+            NativeArgument oldValue = prop.SyncedProperties.Get(key);
+
+            prop.SyncedProperties.Set(key, nativeArg);
+
+
+            if (!item.LocalOnly)
+            {
+                var delta = new Delta_EntityProperties();
+                delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+                delta.SyncedProperties.Add(key, nativeArg);
+                UpdateEntityInfo(handle, EntityType.Prop, delta);
+            }
+
+            JavascriptHook.InvokeDataChangeEvent(entity, key, DecodeArgumentListPure(oldValue).FirstOrDefault());
+            return true;
+        }
+
+        public static void ResetEntityProperty(LocalHandle entity, string key)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
+            var item = NetEntityHandler.NetToStreamedItem(handle);
+            var prop = item as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key)) return;
+
+            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return;
+
+            prop.SyncedProperties.Remove(key);
+
+            if (!item.LocalOnly)
+            {
+                var delta = new Delta_EntityProperties();
+                delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+                delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
+                UpdateEntityInfo(handle, EntityType.Prop, delta);
+            }
+        }
+
+        public static bool HasEntityProperty(LocalHandle entity, string key)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
+            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key) || prop.SyncedProperties == null) return false;
+
+            return prop.SyncedProperties.ContainsKey(key);
+        }
+
+        public static object GetEntityProperty(LocalHandle entity, string key)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
+            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
+
+            if (prop == null || string.IsNullOrEmpty(key)) return null;
+
+            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return null;
+
+            var natArg = prop.SyncedProperties[key];
+
+            return DecodeArgumentListPure(natArg).Single();
+        }
+
+        public static string[] GetEntityAllProperties(LocalHandle entity)
+        {
+            var handle = NetEntityHandler.EntityToNet(entity.Value);
+            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
+
+            if (prop == null) return new string[0];
+
+            if (prop.SyncedProperties == null || prop.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
+
+            //return prop.SyncedProperties.Select(pair => DecodeArgumentListPure(pair.Value).Single().ToString()).ToArray(); //Returns all the values
+            return prop.SyncedProperties.Select(pair => pair.Key).ToArray();
+        }
+
+        public static bool SetWorldData(string key, object value)
+        {
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null) NetEntityHandler.ServerWorld.SyncedProperties = new Dictionary<string, NativeArgument>();
+
+            var nativeArg = ParseNativeArguments(value).Single();
+
+            NativeArgument oldValue = NetEntityHandler.ServerWorld.SyncedProperties.Get(key);
+
+            NetEntityHandler.ServerWorld.SyncedProperties.Set(key, nativeArg);
+
+
+            var delta = new Delta_EntityProperties();
+            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+            delta.SyncedProperties.Add(key, nativeArg);
+            UpdateEntityInfo(1, EntityType.Prop, delta);
+
+            JavascriptHook.InvokeDataChangeEvent(new LocalHandle(0), key, DecodeArgumentListPure(oldValue).FirstOrDefault());
+            return true;
+        }
+
+        public static void ResetWorldData(string key)
+        {
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null || !NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key)) return;
+
+            NetEntityHandler.ServerWorld.SyncedProperties.Remove(key);
+
+            var delta = new Delta_EntityProperties();
+            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
+            delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
+            UpdateEntityInfo(1, EntityType.Prop, delta);
+        }
+
+        public static bool HasWorldData(string key)
+        {
+            if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key) || NetEntityHandler.ServerWorld.SyncedProperties == null) return false;
+
+            return NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key);
+        }
+
+        public static object GetWorldData(string key)
+        {
+            if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key)) return null;
+
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null || !NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key)) return null;
+
+            var natArg = NetEntityHandler.ServerWorld.SyncedProperties[key];
+
+            return DecodeArgumentListPure(natArg).Single();
+        }
+
+        public static string[] GetAllWorldData()
+        {
+            if (NetEntityHandler.ServerWorld == null) return new string[0];
+
+            if (NetEntityHandler.ServerWorld.SyncedProperties == null || NetEntityHandler.ServerWorld.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
+
+            return NetEntityHandler.ServerWorld.SyncedProperties.Select(pair => pair.Key).ToArray();
+        }
+        #endregion
+
+        #region Math & Conversion
         public static int GetPedSpeed(Vector3 firstVector, Vector3 secondVector)
         {
             float speed = (firstVector - secondVector).Length();
@@ -6683,102 +6973,29 @@ namespace GTANetwork
             if (res < 0) res += 360;
             return res;
         }
+        #endregion
 
-        public static Vector3 RaycastEverything(Vector2 screenCoord)
+        public void TerminateGameScripts()
         {
-            Vector3 camPos, camRot;
-
-            if (World.RenderingCamera.Handle == -1)
-            {
-                camPos = GameplayCamera.Position;
-                camRot = GameplayCamera.Rotation;
-            }
-            else
-            {
-                camPos = World.RenderingCamera.Position;
-                camRot = World.RenderingCamera.Rotation;
-            }
-
-            const float raycastToDist = 100.0f;
-            const float raycastFromDist = 1f;
-
-            var target3D = ScreenRelToWorld(camPos, camRot, screenCoord);
-            var source3D = camPos;
-
-            Entity ignoreEntity = Game.Player.Character;
-            if (Game.Player.Character.IsInVehicle())
-            {
-                ignoreEntity = Game.Player.Character.CurrentVehicle;
-            }
-
-            var dir = (target3D - source3D);
-            dir.Normalize();
-            var raycastResults = World.Raycast(source3D + dir * raycastFromDist,
-                source3D + dir * raycastToDist,
-                (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
-                , ignoreEntity);
-
-            if (raycastResults.DitHit)
-            {
-                return raycastResults.HitPosition;
-            }
-
-            return camPos + dir * raycastToDist;
+            GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
         }
 
-        public static Vector3 RaycastEverything(Vector2 screenCoord, Vector3 camPos, Vector3 camRot)
+        public void DeleteObject(GTANetworkShared.Vector3 pos, float radius, int modelHash)
         {
-            const float raycastToDist = 100.0f;
-            const float raycastFromDist = 1f;
-
-            var target3D = ScreenRelToWorld(camPos, camRot, screenCoord);
-            var source3D = camPos;
-
-            Entity ignoreEntity = Game.Player.Character;
-            if (Game.Player.Character.IsInVehicle())
-            {
-                ignoreEntity = Game.Player.Character.CurrentVehicle;
-            }
-
-            var dir = (target3D - source3D);
-            dir.Normalize();
-            var raycastResults = World.Raycast(source3D + dir * raycastFromDist,
-                source3D + dir * raycastToDist,
-                (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
-                , ignoreEntity);
-
-            if (raycastResults.DitHit)
-            {
-                return raycastResults.HitPosition;
-            }
-
-            return camPos + dir * raycastToDist;
+            Prop returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, pos.X, pos.Y, pos.Z, radius, modelHash, 0);
+            if (returnedProp != null && returnedProp.Handle != 0) returnedProp.Delete();
         }
 
-        public static object DeserializeBinary<T>(byte[] data)
+        public static int DEBUG_STEP
         {
-            object output;
-            using (var stream = new MemoryStream(data))
+            get { return _debugStep; }
+            set
             {
-                try
-                {
-                    output = Serializer.Deserialize<T>(stream);
-                }
-                catch (ProtoException)
-                {
-                    return null;
-                }
-            }
-            return output;
-        }
+                _debugStep = value;
+                LogManager.DebugLog("LAST STEP: " + value.ToString());
 
-        public static byte[] SerializeBinary(object data)
-        {
-            using (var stream = new MemoryStream())
-            {
-                stream.SetLength(0);
-                Serializer.Serialize(stream, data);
-                return stream.ToArray();
+                if (SlowDownClientForDebug)
+                    GTA.UI.Screen.ShowSubtitle(value.ToString());
             }
         }
 
@@ -6796,172 +7013,6 @@ namespace GTANetwork
             return range.Except(portsInUse).FirstOrDefault();
         }
 
-        public static void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
-        {
-            var packet = new UpdateEntity();
-            packet.EntityType = (byte)entity;
-            packet.Properties = newInfo;
-            packet.NetHandle = netId;
-            SendToServer(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
-        }
-
-        public static bool SetEntityProperty(LocalHandle entity, string key, object value)
-        {
-            var handle = NetEntityHandler.EntityToNet(entity.Value);
-            var item = NetEntityHandler.NetToStreamedItem(handle);
-            var prop = item as EntityProperties;
-
-            if (prop == null || string.IsNullOrEmpty(key)) return false;
-
-            if (prop.SyncedProperties == null) prop.SyncedProperties = new Dictionary<string, NativeArgument>();
-
-            var nativeArg = ParseNativeArguments(value).Single();
-
-            NativeArgument oldValue = prop.SyncedProperties.Get(key);
-
-            prop.SyncedProperties.Set(key, nativeArg);
-
-
-            if (!item.LocalOnly)
-            {
-                var delta = new Delta_EntityProperties();
-                delta.SyncedProperties = new Dictionary<string, NativeArgument>();
-                delta.SyncedProperties.Add(key, nativeArg);
-                UpdateEntityInfo(handle, EntityType.Prop, delta);
-            }
-
-            JavascriptHook.InvokeDataChangeEvent(entity, key, DecodeArgumentListPure(oldValue).FirstOrDefault());
-            return true;
-        }
-
-        public static void ResetEntityProperty(LocalHandle entity, string key)
-        {
-            var handle = NetEntityHandler.EntityToNet(entity.Value);
-            var item = NetEntityHandler.NetToStreamedItem(handle);
-            var prop = item as EntityProperties;
-
-            if (prop == null || string.IsNullOrEmpty(key)) return;
-
-            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return;
-
-            prop.SyncedProperties.Remove(key);
-
-            if (!item.LocalOnly)
-            {
-                var delta = new Delta_EntityProperties();
-                delta.SyncedProperties = new Dictionary<string, NativeArgument>();
-                delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
-                UpdateEntityInfo(handle, EntityType.Prop, delta);
-            }
-        }
-
-        public static bool HasEntityProperty(LocalHandle entity, string key)
-        {
-            var handle = NetEntityHandler.EntityToNet(entity.Value);
-            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
-
-            if (prop == null || string.IsNullOrEmpty(key) || prop.SyncedProperties == null) return false;
-
-            return prop.SyncedProperties.ContainsKey(key);
-        }
-
-        public static object GetEntityProperty(LocalHandle entity, string key)
-        {
-            var handle = NetEntityHandler.EntityToNet(entity.Value);
-            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
-
-            if (prop == null || string.IsNullOrEmpty(key)) return null;
-
-            if (prop.SyncedProperties == null || !prop.SyncedProperties.ContainsKey(key)) return null;
-
-            var natArg = prop.SyncedProperties[key];
-
-            return DecodeArgumentListPure(natArg).Single();
-        }
-
-        public static string[] GetEntityAllProperties(LocalHandle entity)
-        {
-            var handle = NetEntityHandler.EntityToNet(entity.Value);
-            var prop = NetEntityHandler.NetToStreamedItem(handle) as EntityProperties;
-
-            if (prop == null) return new string[0];
-
-            if (prop.SyncedProperties == null || prop.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
-
-            //return prop.SyncedProperties.Select(pair => DecodeArgumentListPure(pair.Value).Single().ToString()).ToArray(); //Returns all the values
-            return prop.SyncedProperties.Select(pair => pair.Key).ToArray();
-        }
-
-
-        public static bool SetWorldData(string key, object value)
-        {
-            if (NetEntityHandler.ServerWorld.SyncedProperties == null) NetEntityHandler.ServerWorld.SyncedProperties = new Dictionary<string, NativeArgument>();
-
-            var nativeArg = ParseNativeArguments(value).Single();
-
-            NativeArgument oldValue = NetEntityHandler.ServerWorld.SyncedProperties.Get(key);
-
-            NetEntityHandler.ServerWorld.SyncedProperties.Set(key, nativeArg);
-
-
-            var delta = new Delta_EntityProperties();
-            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
-            delta.SyncedProperties.Add(key, nativeArg);
-            UpdateEntityInfo(1, EntityType.Prop, delta);
-
-            JavascriptHook.InvokeDataChangeEvent(new LocalHandle(0), key, DecodeArgumentListPure(oldValue).FirstOrDefault());
-            return true;
-        }
-
-        public static void ResetWorldData(string key)
-        {
-            if (NetEntityHandler.ServerWorld.SyncedProperties == null || !NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key)) return;
-
-            NetEntityHandler.ServerWorld.SyncedProperties.Remove(key);
-
-            var delta = new Delta_EntityProperties();
-            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
-            delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
-            UpdateEntityInfo(1, EntityType.Prop, delta);
-        }
-
-        public static bool HasWorldData(string key)
-        {
-            if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key) || NetEntityHandler.ServerWorld.SyncedProperties == null) return false;
-
-            return NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key);
-        }
-
-        public static object GetWorldData(string key)
-        {
-            if (NetEntityHandler.ServerWorld == null || string.IsNullOrEmpty(key)) return null;
-
-            if (NetEntityHandler.ServerWorld.SyncedProperties == null || !NetEntityHandler.ServerWorld.SyncedProperties.ContainsKey(key)) return null;
-
-            var natArg = NetEntityHandler.ServerWorld.SyncedProperties[key];
-
-            return DecodeArgumentListPure(natArg).Single();
-        }
-
-        public static string[] GetAllWorldData()
-        {
-            if (NetEntityHandler.ServerWorld == null) return new string[0];
-
-            if (NetEntityHandler.ServerWorld.SyncedProperties == null || NetEntityHandler.ServerWorld.SyncedProperties.Any(pair => string.IsNullOrEmpty(pair.Key))) return new string[0];
-
-            return NetEntityHandler.ServerWorld.SyncedProperties.Select(pair => pair.Key).ToArray();
-        }
-
-        public void TerminateGameScripts()
-        {
-            GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
-        }
-
-        public void DeleteObject(GTANetworkShared.Vector3 pos, float radius, int modelHash)
-        {
-            Prop returnedProp = Function.Call<Prop>(Hash.GET_CLOSEST_OBJECT_OF_TYPE, pos.X, pos.Y, pos.Z, radius, modelHash, 0);
-            if (returnedProp != null && returnedProp.Handle != 0) returnedProp.Delete();
-        }
     }
 
 

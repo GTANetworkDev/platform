@@ -84,6 +84,7 @@ namespace GTANetworkShared
         public bool OfflineMode { get; set; }
         public bool MediaStream { get; set; }
         public bool CEFDevtool { get; set; }
+        public bool DebugMode { get; set; }
 
         public int ChatboxXOffset { get; set; }
         public int ChatboxYOffset { get; set; }
@@ -108,6 +109,7 @@ namespace GTANetworkShared
             OfflineMode = false;
             MediaStream = false;
             CEFDevtool = false;
+            DebugMode = false;
             GamePath = null;
         }
     }
