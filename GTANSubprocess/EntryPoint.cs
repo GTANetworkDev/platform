@@ -495,12 +495,20 @@ namespace GTANetwork
             splashScreen.SetPercent(85);
 
             #region Launch the Game
-            BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(settings.GamePath + "\\" + "GTA5.exe")));
-            br.BaseStream.Position = 0x01500000;
-            byte[] array = br.ReadBytes(0x35F757);
-            string value = BitConverter.ToString(array).Replace("-", string.Empty);
+            if (Directory.GetFiles(settings.GamePath, "*.wow").Length == 0)
+            {
+                BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(settings.GamePath + "\\" + "GTA5.exe")));
+                br.BaseStream.Position = 0x01500000;
+                byte[] array = br.ReadBytes(0x35F757);
+                string value = BitConverter.ToString(array).Replace("-", string.Empty);
 
-            if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); } else { Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe"); }
+                if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); } else { Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe"); }
+            }
+            else
+            {
+                Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe");
+            }
+
             #endregion
 
             splashScreen.SetPercent(90);
