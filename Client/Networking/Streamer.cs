@@ -93,7 +93,7 @@ namespace GTANetwork.Networking
                 //In range
                 var streamedInRange = EntityMap.Where(item => isInRange(position, item.Position, GeneralStreamingRange));
 
-                var streamedPlayers = streamedInRange.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0 && isInRange(_playerPosition.ToLVector(), item.Position.ToLVector(), PlayerStreamingRange)).OrderBy(item => item.Position.DistanceToSquared(_playerPosition)).Take(MAX_PLAYERS);
+                var streamedPlayers = streamedInRange.OfType<SyncPed>().Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && isInRange(_playerPosition.ToLVector(), item.Position.ToLVector(), PlayerStreamingRange)).OrderBy(item => item.Position.DistanceToSquared(_playerPosition)).Take(MAX_PLAYERS);
                 var streamedVehicles = streamedInRange.OfType<RemoteVehicle>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0) && isInRange(position, item.Position, VehicleStreamingRange)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_VEHICLES);
                 var streamedLabels = streamedInRange.OfType<RemoteTextLabel>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0) && isInRange(position, item.Position, LabelsStreamingRange)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_LABELS);
 
