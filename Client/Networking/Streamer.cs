@@ -36,66 +36,135 @@ namespace GTANetwork.Networking
             calcucationThread.Start();
         }
 
+
+        public static int StreamedOutItems;
+        public static int StreamedOutVehicles;
+        public static int StreamedOutPlayers;
+        public static int StreamedOutLabels;
+        public static int StreamedOutObjects;
+        public static int StreamedOutPickups;
+        public static int StreamedOutBlips;
+        public static int StreamedOutMarkers;
+        public static int StreamedOutPeds;
+        public static int StreamedOutParticles;
+
+        public static int StreamedInItems;
+        public static int StreamedInVehicles;
+        public static int StreamedInLabels;
+        public static int StreamedInObjects;
+        public static int StreamedInPickups;
+        public static int StreamedInBlips;
+        public static int StreamedInMarkers;
+        public static int StreamedInPeds;
+        public static int StreamedInParticles;
+
+
         public static int MAX_OBJECTS = 1000;
-        public static int MAX_VEHICLES = 50;
+        public static int MAX_VEHICLES = 64;
         public static int MAX_PICKUPS = 30;
-        public static int MAX_BLIPS = 100;
-        public static int MAX_PLAYERS = 100;
-        public static int MAX_PEDS = 50;
+        public static int MAX_BLIPS = 80;
+        public static int MAX_PLAYERS = 251;
+        public static int MAX_PEDS = MAX_PLAYERS;
         public static int MAX_MARKERS = 30;
         public static int MAX_LABELS = 20;
         public static int MAX_PARTICLES = 50;
 
+        public static float GeneralStreamingRange = 500;
+        public static float VehicleStreamingRange = 250;
+        public static float PlayerStreamingRange = 175;
+        public static float LabelsStreamingRange = 20;
+  
         void StreamerCalculationsThread()
         {
             while (true)
             {
                 if (!Main.IsOnServer() || !Main.HasFinishedDownloading) goto endTick;
-
-                var copyMap = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap.Values);
-
-                var streamedItems = copyMap.Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2);
-
                 var position = _playerPosition.ToLVector();
 
-                var streamedObjects = streamedItems.OfType<RemoteProp>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
-                var streamedVehicles = streamedItems.OfType<RemoteVehicle>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
-                var streamedPickups = streamedItems.OfType<RemotePickup>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
-                var streamedBlips = streamedItems.OfType<RemoteBlip>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
-                var streamedPlayers = streamedItems.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).OrderBy(item => item.Position.DistanceToSquared(_playerPosition));
-                var streamedMarkers = streamedItems.OfType<RemoteMarker>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
-                var streamedLabels = streamedItems.OfType<RemoteTextLabel>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
-                var streamedPeds = streamedItems.OfType<RemotePed>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
-                var streamedParticles = streamedItems.OfType<RemoteParticle>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position));
+                var EntityMap = new List<IStreamedItem>(Main.NetEntityHandler.ClientMap.Values).Where(item => (item as RemotePlayer) == null || (item as RemotePlayer).LocalHandle != -2);
 
-                var dimensionLeftovers = streamedItems.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
+                //Non range based
+                var streamedBlips = EntityMap.OfType<RemoteBlip>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_BLIPS); 
+                var streamedOutBlips = EntityMap.OfType<RemoteBlip>().Where(item => item.Position != null && (item.Dimension != Main.LocalDimension && item.Dimension != 0));
+
+                StreamedInBlips = streamedBlips.Count();
+                StreamedOutBlips = streamedOutBlips.Count();
+
+                //In range
+                var streamedInRange = EntityMap.Where(item => isInRange(position, item.Position, GeneralStreamingRange));
+
+                var streamedPlayers = streamedInRange.OfType<SyncPed>().Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0 && isInRange(_playerPosition.ToLVector(), item.Position.ToLVector(), PlayerStreamingRange)).OrderBy(item => item.Position.DistanceToSquared(_playerPosition)).Take(MAX_PLAYERS);
+                var streamedVehicles = streamedInRange.OfType<RemoteVehicle>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0) && isInRange(position, item.Position, VehicleStreamingRange)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_VEHICLES);
+                var streamedLabels = streamedInRange.OfType<RemoteTextLabel>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0) && isInRange(position, item.Position, LabelsStreamingRange)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_LABELS);
+
+                var streamedObjects = streamedInRange.OfType<RemoteProp>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_OBJECTS); 
+                var streamedPickups = streamedInRange.OfType<RemotePickup>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_PICKUPS); 
+                var streamedMarkers = streamedInRange.OfType<RemoteMarker>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_MARKERS);
+
+                MAX_PEDS = MAX_PLAYERS - streamedPlayers.Take(MAX_PLAYERS).Count();
+                var streamedPeds = streamedInRange.OfType<RemotePed>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_PEDS); 
+                var streamedParticles = streamedInRange.OfType<RemoteParticle>().Where(item => item.Position != null && (item.Dimension == Main.LocalDimension || item.Dimension == 0)).OrderBy(item => item.Position.DistanceToSquared(position)).Take(MAX_PARTICLES);
+
+                StreamedInItems = streamedInRange.Count();
+                StreamedInObjects = streamedObjects.Count();
+                StreamedInVehicles = streamedVehicles.Count();
+                StreamedInPickups = streamedPickups.Count();
+                StreamedInMarkers = streamedMarkers.Count();
+                StreamedInLabels = streamedLabels.Count();
+                StreamedInPeds = streamedPeds.Count();
+                StreamedInParticles = streamedParticles.Count();
+
+
+                //Out of range
+                var streamedOutRange = EntityMap.Where(item => !isInRange(position, item.Position, GeneralStreamingRange));
+
+                var streamedOutPlayers = streamedInRange.OfType<SyncPed>().Where(item => !isInRange(_playerPosition.ToLVector(), item.Position.ToLVector(), PlayerStreamingRange));
+                var streamedOutVehicles = streamedInRange.OfType<RemoteVehicle>().Where(item => !isInRange(position, item.Position, VehicleStreamingRange));
+                var streamedOutLabels = streamedInRange.OfType<RemoteTextLabel>().Where(item => item.Position != null && !isInRange(position, item.Position, LabelsStreamingRange));
+
+                var streamedOutObjects = streamedInRange.OfType<RemoteProp>().Where(item => item.Position != null); 
+                var streamedOutPickups = streamedInRange.OfType<RemotePickup>().Where(item => item.Position != null);
+                var streamedOutMarkers = streamedInRange.OfType<RemoteMarker>().Where(item => item.Position != null);
+                var streamedOutPeds = streamedInRange.OfType<RemotePed>().Where(item => item.Position != null);
+                var streamedOutParticles = streamedInRange.OfType<RemoteParticle>().Where(item => item.Position != null);
+
+                StreamedOutItems = streamedOutRange.Count();
+                StreamedOutObjects = streamedOutObjects.Count();
+                StreamedOutVehicles = streamedOutVehicles.Count();
+                StreamedOutPlayers = streamedOutPlayers.Count();
+                StreamedOutMarkers = streamedOutMarkers.Count();
+                StreamedOutLabels = streamedOutLabels.Count();
+                StreamedOutPickups = streamedOutPickups.Count();
+                StreamedOutPeds = streamedOutPeds.Count();
+                StreamedOutParticles = streamedOutParticles.Count();
+
+                //Misc
+                //var dimensionLeftovers = streamedInRange.Where(item => item.StreamedIn && item.Dimension != Main.LocalDimension && item.Dimension != 0);
 
                 lock (_itemsToStreamOut)
                 {
-                    _itemsToStreamOut.AddRange(streamedBlips.Skip(MAX_BLIPS).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedPickups.Skip(MAX_PICKUPS).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedVehicles.Skip(MAX_VEHICLES).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedPlayers.Skip(MAX_PLAYERS).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedObjects.Skip(MAX_OBJECTS).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedMarkers.Skip(MAX_MARKERS).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedLabels.Skip(MAX_LABELS).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedPeds.Skip(MAX_PEDS).Where(item => item.StreamedIn));
-                    _itemsToStreamOut.AddRange(streamedParticles.Skip(MAX_PARTICLES).Where(item => item.StreamedIn));
-
-                    _itemsToStreamOut.AddRange(dimensionLeftovers);
+                    _itemsToStreamOut.AddRange(streamedOutObjects.Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedOutPickups.Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedOutVehicles.Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedOutBlips.Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedOutPlayers.Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedOutMarkers.Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedOutLabels.Where(item => item.StreamedIn));
+                    _itemsToStreamOut.AddRange(streamedOutPeds.Where(item => item.StreamedIn)); 
+                    _itemsToStreamOut.AddRange(streamedOutParticles.Where(item => item.StreamedIn));
                 }
 
                 lock (_itemsToStreamIn)
                 {
-                    _itemsToStreamIn.AddRange(streamedObjects.Take(MAX_OBJECTS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedPickups.Take(MAX_PICKUPS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedVehicles.Take(MAX_VEHICLES).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedBlips.Take(MAX_BLIPS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedPlayers.Take(MAX_PLAYERS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedMarkers.Take(MAX_MARKERS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedLabels.Take(MAX_LABELS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedPeds.Take(MAX_PEDS).Where(item => !item.StreamedIn));
-                    _itemsToStreamIn.AddRange(streamedParticles.Take(MAX_PARTICLES).Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedObjects.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedPickups.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedVehicles.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedBlips.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedPlayers.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedMarkers.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedLabels.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedPeds.Where(item => !item.StreamedIn));
+                    _itemsToStreamIn.AddRange(streamedParticles.Where(item => !item.StreamedIn));
                 }
 
                 lock (StreamedInPlayers)
@@ -108,27 +177,23 @@ namespace GTANetwork.Networking
             }
         }
 
-        public static bool StreamInProgress { private set; get; }
-
-        void StreamerTick(object sender, System.EventArgs e)
+        void StreamerTick(object sender, EventArgs e)
         {
-            LogManager.DebugLog("START OF STREAMER TICK");
             _playerPosition = Game.Player.Character.Position;
             if (Util.Util.ModelRequest) return;
-            bool spinner = false;
+            //bool spinner = false;
 
-            if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
-            {
-                /*
-                Function.Call((Hash)0xABA17D7CE615ADBF, "STRING");
-                Function.Call((Hash)0x6C188BE134E074AA, "Streaming");
-                Function.Call((Hash)0xBD12F8228410D9B4, 5);
-                spinner = true;
-                */
+            //if (_itemsToStreamIn.Count > 0 || _itemsToStreamIn.Count > 0)
+            //{
+            //    /*
+            //    Function.Call((Hash)0xABA17D7CE615ADBF, "STRING");
+            //    Function.Call((Hash)0x6C188BE134E074AA, "Streaming");
+            //    Function.Call((Hash)0xBD12F8228410D9B4, 5);
+            //    spinner = true;
+            //    */
 
-                StreamInProgress = true;
-            }
-            
+            //}
+
             lock (_itemsToStreamOut)
             {
                 LogManager.DebugLog("STREAMING OUT " + _itemsToStreamOut.Count + " ITEMS");
@@ -155,13 +220,15 @@ namespace GTANetwork.Networking
                 _itemsToStreamIn.Clear();
             }
 
-            /*
-            if (spinner)
-                Function.Call((Hash)0x10D373323E5B9C0D);
-            */
 
-            StreamInProgress = false;
-            LogManager.DebugLog("END OF STREAMER TICK");
+            //if (spinner)
+            //    Function.Call((Hash)0x10D373323E5B9C0D);
+
+        }
+
+        bool isInRange(GTANetworkShared.Vector3 Center, GTANetworkShared.Vector3 Dest, float Range)
+        {
+            return Center.Subtract(Dest).Length() < Range;
         }
     }
 
