@@ -118,15 +118,15 @@ namespace GTANetwork.Networking
                 //Out of range
                 var streamedOutRange = EntityMap.Where(item => !isInRange(position, item.Position, GeneralStreamingRange));
 
-                var streamedOutPlayers = streamedInRange.OfType<SyncPed>().Where(item => !isInRange(_playerPosition.ToLVector(), item.Position.ToLVector(), PlayerStreamingRange));
-                var streamedOutVehicles = streamedInRange.OfType<RemoteVehicle>().Where(item => !isInRange(position, item.Position, VehicleStreamingRange));
-                var streamedOutLabels = streamedInRange.OfType<RemoteTextLabel>().Where(item => item.Position != null && !isInRange(position, item.Position, LabelsStreamingRange));
+                var streamedOutPlayers = streamedOutRange.OfType<SyncPed>().Where(item => !isInRange(_playerPosition.ToLVector(), item.Position.ToLVector(), PlayerStreamingRange));
+                var streamedOutVehicles = streamedOutRange.OfType<RemoteVehicle>().Where(item => !isInRange(position, item.Position, VehicleStreamingRange));
+                var streamedOutLabels = streamedOutRange.OfType<RemoteTextLabel>().Where(item => item.Position != null && !isInRange(position, item.Position, LabelsStreamingRange));
 
-                var streamedOutObjects = streamedInRange.OfType<RemoteProp>().Where(item => item.Position != null); 
-                var streamedOutPickups = streamedInRange.OfType<RemotePickup>().Where(item => item.Position != null);
-                var streamedOutMarkers = streamedInRange.OfType<RemoteMarker>().Where(item => item.Position != null);
-                var streamedOutPeds = streamedInRange.OfType<RemotePed>().Where(item => item.Position != null);
-                var streamedOutParticles = streamedInRange.OfType<RemoteParticle>().Where(item => item.Position != null);
+                var streamedOutObjects = streamedOutRange.OfType<RemoteProp>().Where(item => item.Position != null); 
+                var streamedOutPickups = streamedOutRange.OfType<RemotePickup>().Where(item => item.Position != null);
+                var streamedOutMarkers = streamedOutRange.OfType<RemoteMarker>().Where(item => item.Position != null);
+                var streamedOutPeds = streamedOutRange.OfType<RemotePed>().Where(item => item.Position != null);
+                var streamedOutParticles = streamedOutRange.OfType<RemoteParticle>().Where(item => item.Position != null);
 
                 StreamedOutItems = streamedOutRange.Count();
                 StreamedOutObjects = streamedOutObjects.Count();
@@ -179,6 +179,7 @@ namespace GTANetwork.Networking
 
         void StreamerTick(object sender, EventArgs e)
         {
+            
             _playerPosition = Game.Player.Character.Position;
             if (Util.Util.ModelRequest) return;
             //bool spinner = false;
