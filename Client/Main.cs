@@ -1,4 +1,5 @@
 ﻿#define ATTACHSERVER
+//#define INTEGRITYCHECK
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -2748,7 +2749,7 @@ namespace GTANetwork
                 if (!_hasInitialized)
                 {
                     RebuildServerBrowser();
-
+#if INTEGRITYCHECK
                     if (!VerifyGameIntegrity())
                     {
                         _mainWarning = new Warning("alert", "Could not verify game integrity.\nPlease restart your game, or update Grand Theft Auto V.");
@@ -2763,7 +2764,7 @@ namespace GTANetwork
                             Process.GetCurrentProcess().Kill();
                         };
                     }
-
+#endif
                     _hasInitialized = true;
                 }
                 DEBUG_STEP = 2;
@@ -2869,7 +2870,7 @@ namespace GTANetwork
                     _isGoingToCar = false;
                 }
 
-                #region DISABLED
+#region DISABLED
                 /*
                 if (Game.Player.Character.IsInVehicle())
                 {
@@ -3278,7 +3279,7 @@ namespace GTANetwork
                 GTA.UI.Screen.ShowSubtitle("RPM: " + Game.Player.Character.CurrentVehicle.CurrentRPM + " AC: " + Game.Player.Character.CurrentVehicle.Acceleration);
             }*/
 #endif
-                #endregion
+#endregion
 
 
                 if (Client == null || Client.ConnectionStatus == NetConnectionStatus.Disconnected || Client.ConnectionStatus == NetConnectionStatus.None) return;
@@ -3976,7 +3977,7 @@ namespace GTANetwork
             return Client != null && Client.ConnectionStatus == NetConnectionStatus.Connected;
         }
 
-        #region Download stuff
+#region Download stuff
         private Thread _httpDownloadThread;
         private bool _cancelDownload;
         private void StartFileDownload(string address)
@@ -4039,7 +4040,7 @@ namespace GTANetwork
                 }
             });
         }
-        #endregion
+#endregion
 
         public void OnKeyDown(object sender, KeyEventArgs e)
         {
@@ -4326,7 +4327,7 @@ namespace GTANetwork
 
         private void ProcessDataMessage(NetIncomingMessage msg, PacketType type)
         {
-            #region Data
+#region Data
             LogManager.DebugLog("RECEIVED DATATYPE " + type);
             switch (type)
             {
@@ -5173,7 +5174,7 @@ namespace GTANetwork
                     }
                     break;
             }
-            #endregion
+#endregion
         }
 
         public void ProcessMessages(NetIncomingMessage msg, bool safeThreaded)
@@ -5207,7 +5208,7 @@ namespace GTANetwork
                 }
                 else if (msg.MessageType == NetIncomingMessageType.StatusChanged)
                 {
-                    #region StatusChanged
+#region StatusChanged
                     var newStatus = (NetConnectionStatus)msg.ReadByte();
                     LogManager.DebugLog("NEW STATUS: " + newStatus);
                     switch (newStatus)
@@ -5312,12 +5313,12 @@ namespace GTANetwork
                             OnLocalDisconnect();
                             break;
                     }
-                    #endregion
+#endregion
                 }
                 else if (msg.MessageType == NetIncomingMessageType.DiscoveryResponse)
                 {
 
-                    #region DiscoveryResponse
+#region DiscoveryResponse
                     var discType = msg.ReadByte();
                     var len = msg.ReadInt32();
                     var bin = msg.ReadBytes(len);
@@ -5336,7 +5337,7 @@ namespace GTANetwork
                     _currentOnlinePlayers += data.PlayerCount;
 
                     MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " + _currentOnlinePlayers;
-                    #region LAN
+#region LAN
                     if (data.LAN) //  && matchedItems.Count == 0
                     {
                         var item = new UIMenuItem(data.ServerName);
@@ -5381,7 +5382,7 @@ namespace GTANetwork
 
                         _lanBrowser.Items.Add(item);
                     }
-                    #endregion
+#endregion
 
                     foreach (var ourItem in matchedItems.Where(k => k != null))
                     {
@@ -5473,7 +5474,7 @@ namespace GTANetwork
                                 _recentBrowser.RefreshIndex();
                         }
                     }
-                    #endregion
+#endregion
                 }
             }
             catch (Exception e)
@@ -5491,7 +5492,7 @@ namespace GTANetwork
             //Client.Recycle(msg);
         }
 
-        #region Bullets stuff
+#region Bullets stuff
 
         private void HandleBasicPacket(int nethandle, Vector3 position)
         {
@@ -5609,7 +5610,7 @@ namespace GTANetwork
 
             if (shooting) syncPed.AimPlayer = syncPedTarget;
         }
-        #endregion
+#endregion
 
         private void HandlePedPacket(PedData fullPacket, bool pure)
         {
@@ -5820,7 +5821,7 @@ namespace GTANetwork
             _messagesSent = 0;
         }
 
-        #region Debug stuff
+#region Debug stuff
 
         private DateTime _artificialLagCounter = DateTime.MinValue;
         private bool _debugStarted;
@@ -5993,7 +5994,7 @@ namespace GTANetwork
 
         }
 
-        #endregion
+#endregion
 
         public static void SendToServer(object newData, PacketType packetType, bool important, ConnectionChannel channel)
         {
@@ -6040,7 +6041,7 @@ namespace GTANetwork
             "XMAS "
         };
 
-        #region Natives
+#region Natives
         public static IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {
             var list = new List<object>();
@@ -6589,9 +6590,9 @@ namespace GTANetwork
                     return NativeType.PtfxAssetRequest;
             }
         }
-        #endregion
+#endregion
 
-        #region Raycast
+#region Raycast
         public static Vector3 RaycastEverything(Vector2 screenCoord)
         {
             Vector3 camPos, camRot;
@@ -6662,9 +6663,9 @@ namespace GTANetwork
 
             return camPos + dir * raycastToDist;
         }
-        #endregion
+#endregion
 
-        #region Serialization
+#region Serialization
         public static object DeserializeBinary<T>(byte[] data)
         {
             object output;
@@ -6690,9 +6691,9 @@ namespace GTANetwork
                 return stream.ToArray();
             }
         }
-        #endregion
+#endregion
 
-        #region Properties
+#region Properties
         public static void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo)
         {
             var packet = new UpdateEntity();
@@ -6847,9 +6848,9 @@ namespace GTANetwork
 
             return NetEntityHandler.ServerWorld.SyncedProperties.Select(pair => pair.Key).ToArray();
         }
-        #endregion
+#endregion
 
-        #region Math & Conversion
+#region Math & Conversion
         public static int GetPedSpeed(Vector3 firstVector, Vector3 secondVector)
         {
             float speed = (firstVector - secondVector).Length();
@@ -6973,7 +6974,7 @@ namespace GTANetwork
             if (res < 0) res += 360;
             return res;
         }
-        #endregion
+#endregion
 
         public void TerminateGameScripts()
         {
