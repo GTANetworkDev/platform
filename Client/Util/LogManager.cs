@@ -54,15 +54,7 @@ namespace GTANetwork.Util
 
         public static void DebugLog(string text)
         {
-            if (Main.SaveDebugToFile)
-            {
-                CreateLogDirectory();
-                lock (errorLogLock)
-                {
-                    File.AppendAllText(LogDirectory + "\\Debug.log", text);
-                }
-            }
-            if (Main.PlayerSettings.DebugMode)
+            if (Main.PlayerSettings.DebugMode || Main.SaveDebugToFile)
             {
                 ThreadInfo threadInfo = new ThreadInfo();
                 threadInfo.text = text;
@@ -72,25 +64,36 @@ namespace GTANetwork.Util
 
         public static void Work(object a)
         {
-            byte[] bytes = new byte[1024];
-            try
+            ThreadInfo threadInfo = a as ThreadInfo;
+            if (Main.SaveDebugToFile)
             {
-                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 11000);
-                using (Socket sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                CreateLogDirectory();
+                lock (errorLogLock)
                 {
-                    if (!sender.Connected)
-                    {
-                        sender.Connect(remoteEP);
-                    }
-                    ThreadInfo threadInfo = a as ThreadInfo;
-                    byte[] msg = Encoding.ASCII.GetBytes(threadInfo.text + "<EOL>");
-                    int bytesSent = sender.Send(msg);
+                    File.AppendAllText(LogDirectory + "\\Debug.log" + Environment.NewLine, threadInfo.text);
                 }
-
             }
-            catch (Exception e)
+            if (Main.PlayerSettings.DebugMode)
             {
-                Console.WriteLine(e.ToString());
+                byte[] bytes = new byte[1024];
+                try
+                {
+                    IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 11000);
+                    using (Socket sender = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                    {
+                        if (!sender.Connected)
+                        {
+                            sender.Connect(remoteEP);
+                        }
+                        byte[] msg = Encoding.ASCII.GetBytes(threadInfo.text + "<EOL>");
+                        int bytesSent = sender.Send(msg);
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
         }
 
