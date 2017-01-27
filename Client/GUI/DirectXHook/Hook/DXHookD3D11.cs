@@ -89,25 +89,25 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         SharpDX.Direct3D11.Device _device;
         SwapChain _swapChain;
         SharpDX.Windows.RenderForm _renderForm;
-        Texture2D _resolvedRTShared;
-        SharpDX.DXGI.KeyedMutex _resolvedRTSharedKeyedMutex;
-        ShaderResourceView _resolvedSharedSRV;
-        ScreenAlignedQuadRenderer _saQuad;
-        Texture2D _finalRT;
-        Texture2D _resizedRT;
-        RenderTargetView _resizedRTV;
+        //Texture2D _resolvedRTShared;
+        //SharpDX.DXGI.KeyedMutex _resolvedRTSharedKeyedMutex;
+        //ShaderResourceView _resolvedSharedSRV;
+        //ScreenAlignedQuadRenderer _saQuad;
+        //Texture2D _finalRT;
+        //Texture2D _resizedRT;
+        //RenderTargetView _resizedRTV;
         #endregion
 
-        Query _query;
-        bool _queryIssued;
-        bool _finalRTMapped;
+        //Query _query;
+        //bool _queryIssued;
+        //bool _finalRTMapped;
 
-        #region Main device resources
-        Texture2D _resolvedRT;
-        SharpDX.DXGI.KeyedMutex _resolvedRTKeyedMutex;
-        SharpDX.DXGI.KeyedMutex _resolvedRTKeyedMutex_Dev2;
-        //ShaderResourceView _resolvedSRV;
-        #endregion
+        //#region Main device resources
+        //Texture2D _resolvedRT;
+        //SharpDX.DXGI.KeyedMutex _resolvedRTKeyedMutex;
+        //SharpDX.DXGI.KeyedMutex _resolvedRTKeyedMutex_Dev2;
+        ////ShaderResourceView _resolvedSRV;
+        //#endregion
 
         protected override string HookName
         {
