@@ -888,7 +888,7 @@ namespace GTANetwork.Networking
         private void VMultiVehiclePos()
         {
 
-            bool isInRange = Game.Player.Character.IsInRangeOfEx(Position, Main.VehicleStreamingRange);
+            bool isInRange = Game.Player.Character.IsInRangeOfEx(Position, StreamerThread.VehicleStreamingRange);
 
             if (isInRange)
             {
@@ -2140,7 +2140,7 @@ namespace GTANetwork.Networking
             float lerpValue = 0f;
             var length = Position.DistanceToSquared(Character.Position);
             
-            if (length > 0.05f * 0.05f && length < Main.PlayerStreamingRange * Main.PlayerStreamingRange)
+            if (length > 0.05f * 0.05f && length < StreamerThread.PlayerStreamingRange * StreamerThread.PlayerStreamingRange)
             {
                 lerpValue = lerpValue + ((tServer * 2) / 50000f);
                 if (Character.IsSwimming)
@@ -2182,7 +2182,7 @@ namespace GTANetwork.Networking
 
             Character.Quaternion = GTA.Math.Quaternion.Lerp(Character.Quaternion, Rotation.ToQuaternion(), 0.10f); // mise à jours de la rotation
 
-            if (length < Main.PlayerStreamingRange * Main.PlayerStreamingRange)
+            if (length < StreamerThread.PlayerStreamingRange * StreamerThread.PlayerStreamingRange)
             { 
                 Character.Velocity = PedVelocity; // Mise à jours de la vitesse
 
@@ -2227,7 +2227,7 @@ namespace GTANetwork.Networking
                         }
 
                         bool isAiming = Function.Call<bool>(Hash.GET_IS_TASK_ACTIVE, Character, (int)290);
-                        if (length < (Main.PlayerStreamingRange * Main.PlayerStreamingRange) / 2)
+                        if (length < (StreamerThread.PlayerStreamingRange * StreamerThread.PlayerStreamingRange) / 2)
                         {
                             if ((!isAiming || Main.TickCount % 25 == 0) && OnFootSpeed == 0)
                             {
@@ -2246,7 +2246,7 @@ namespace GTANetwork.Networking
                     {
                         Vector3 predictPosition = this.Position + (this.Position - Character.Position) + PedVelocity * 1.25f;
                         var range = predictPosition.DistanceToSquared(Character.Position);
-                        if (length < (Main.PlayerStreamingRange * Main.PlayerStreamingRange) / 2)
+                        if (length < (StreamerThread.PlayerStreamingRange * StreamerThread.PlayerStreamingRange) / 2)
                         {
                             if (OnFootSpeed == 1 && (range > 0.1f))
                             {
@@ -2375,7 +2375,7 @@ namespace GTANetwork.Networking
         private long _seatEnterStart;
         private bool _isReloading;
 
-        public float hRange = Main.GlobalStreamingRange; // 1km
+        public float hRange = StreamerThread.GeneralStreamingRange; // 1km
         private long _lastTickUpdate = Environment.TickCount;
 
         internal void DisplayLocally()
@@ -2411,7 +2411,7 @@ namespace GTANetwork.Networking
                 if (Character != null && Character.Exists())
                 {
                     bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
-                    if (UpdatePlayerPosOutOfRange(Position, Game.Player.Character.IsInRangeOfEx(Position, Main.PlayerStreamingRange))) return;
+                    if (UpdatePlayerPosOutOfRange(Position, Game.Player.Character.IsInRangeOfEx(Position, StreamerThread.PlayerStreamingRange))) return;
 
                     if ((enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar())) {
                         DrawNametag();
@@ -2510,7 +2510,7 @@ namespace GTANetwork.Networking
 
             if ((OnFootSpeed > 0 || IsAnimal(ModelHash)) && currentInterop.FinishTime != 0)
             {
-                if (Game.Player.Character.IsInRangeOfEx(newPos, Main.PlayerStreamingRange))
+                if (Game.Player.Character.IsInRangeOfEx(newPos, StreamerThread.PlayerStreamingRange))
                 {
                     Character.Velocity = PedVelocity + 10*(newPos - Character.Position);
                 }
