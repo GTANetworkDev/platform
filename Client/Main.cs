@@ -84,8 +84,6 @@ namespace GTANetwork
 
 
         public static bool BlockControls;
-        public static bool WriteDebugLog;
-        public static bool SlowDownClientForDebug;
         public static bool Multithreading;
         public static bool HTTPFileServer;
 
@@ -178,7 +176,7 @@ namespace GTANetwork
 
             CefUtil.DISABLE_CEF = PlayerSettings.DisableCEF;
 
-            PedThread.FPS = PlayerSettings.ShowFPS;
+            DebugInfo.FPS = PlayerSettings.ShowFPS;
 
             EnableMediaStream = PlayerSettings.MediaStream;
             EnableDevTool = PlayerSettings.CEFDevtool;
@@ -271,6 +269,7 @@ namespace GTANetwork
                 NativeWhitelist.Init();
                 SoundWhitelist.Init();
             });
+
         }
 
 
@@ -1139,7 +1138,7 @@ namespace GTANetwork
                     debugItem.CheckboxEvent += (sender, @checked) =>
                     {
                         PlayerSettings.ShowFPS = @checked;
-                        PedThread.FPS = @checked;
+                        DebugInfo.FPS = @checked;
                         SaveSettings();
                     };
                     GeneralMenu.Items.Add(debugItem);
@@ -1523,10 +1522,10 @@ namespace GTANetwork
                     }
 
                     {
-                        var debugItem = new UIMenuCheckboxItem("Show Streamer Debug Data", PedThread.StreamerDebug);
+                        var debugItem = new UIMenuCheckboxItem("Show Streamer Debug Data", DebugInfo.StreamerDebug);
                         debugItem.CheckboxEvent += (sender, @checked) =>
                         {
-                            PedThread.StreamerDebug = @checked;
+                            DebugInfo.StreamerDebug = @checked;
                         };
                         DebugMenu.Items.Add(debugItem);
                     }
@@ -3975,7 +3974,14 @@ namespace GTANetwork
                     */
                 //GTA.UI.Screen.ShowSubtitle(stats);
 
-                if (!Multithreading) PedThread.OnTick("thisaintnullnigga", e);
+
+                PedThread.OnTick("thisaintnullnigga", e);
+
+                DebugInfo.Draw();
+
+                //Thread calcucationThread = new Thread(Work);
+                //calcucationThread.IsBackground = true;
+                //calcucationThread.Start();
 
                 lock (_threadJumping)
                 {

@@ -185,6 +185,7 @@
     <Compile Include="GUI\DirectXHook\Hook\IDXHook.cs" />
     <Compile Include="GUI\DirectXHook\Hook\SafeHGlobal.cs" />
     <Compile Include="GUI\DirectXHook\NativeMethods.cs" />
+    <Compile Include="Util\DebugInfo.cs" />
     <Compile Include="Util\DebugWindow.cs" />
     <Compile Include="Networking\DownloadManager.cs" />
     <Compile Include="Misc\GameSettings.cs" />

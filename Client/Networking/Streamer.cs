@@ -12,6 +12,7 @@ using GTANetworkShared;
 using NativeUI;
 using Vector3 = GTA.Math.Vector3;
 using VehicleHash = GTA.VehicleHash;
+using System.Diagnostics;
 
 namespace GTANetwork.Networking
 {
@@ -20,6 +21,7 @@ namespace GTANetwork.Networking
         private List<IStreamedItem> _itemsToStreamIn;
         private List<IStreamedItem> _itemsToStreamOut;
         private Vector3 _playerPosition;
+        public static Stopwatch sw;
 
         public static SyncPed[] StreamedInPlayers;
 
@@ -186,17 +188,11 @@ namespace GTANetwork.Networking
         {   
             _playerPosition = Game.Player.Character.Position;
             if (Util.Util.ModelRequest) return;
-            bool spinner = false;
 
-            if (_itemsToStreamIn.Count > 0 || _itemsToStreamOut.Count > 0)
+            if (DebugInfo.StreamerDebug)
             {
-
-                Function.Call((Hash)0xABA17D7CE615ADBF, "STRING");
-                Function.Call((Hash)0x6C188BE134E074AA, "Streaming");
-                Function.Call((Hash)0xBD12F8228410D9B4, 5);
-                spinner = true;
-
-
+                sw = new Stopwatch();
+                sw.Start();
             }
 
             lock (_itemsToStreamOut)
@@ -225,10 +221,7 @@ namespace GTANetwork.Networking
                 _itemsToStreamIn.Clear();
             }
 
-
-            if (spinner)
-                Function.Call((Hash)0x10D373323E5B9C0D);
-
+            if (DebugInfo.StreamerDebug) sw.Stop();
         }
 
         bool isInRange(GTANetworkShared.Vector3 Center, GTANetworkShared.Vector3 Dest, float Range)
