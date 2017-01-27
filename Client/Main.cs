@@ -114,9 +114,9 @@ namespace GTANetwork
 
         public static bool OnShootingLagCompensation = true;
 
-        public static int GlobalStreamingRange = 750;
-        public static int PlayerStreamingRange = 200;
-        public static int VehicleStreamingRange = 350;
+        //public static int GlobalStreamingRange = 750;
+        //public static int PlayerStreamingRange = 200;
+        //public static int VehicleStreamingRange = 350;
         public static bool RemoveGameEntities = true;
         public static bool ChatVisible = true;
         public static bool CanOpenChatbox = true;
@@ -162,6 +162,9 @@ namespace GTANetwork
         private static bool EnableDevTool;
         internal static bool EnableMediaStream;
         internal static bool SaveDebugToFile = false;
+
+        public static bool ToggleNametagDraw = false;
+        public static bool TogglePosUpdate = false;
 
         public Main()
         {
@@ -1524,6 +1527,24 @@ namespace GTANetwork
                         debugItem.CheckboxEvent += (sender, @checked) =>
                         {
                             PedThread.StreamerDebug = @checked;
+                        };
+                        DebugMenu.Items.Add(debugItem);
+                    }
+
+                    {
+                        var debugItem = new UIMenuCheckboxItem("Disable Nametag Draw", ToggleNametagDraw);
+                        debugItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            ToggleNametagDraw = @checked;
+                        };
+                        DebugMenu.Items.Add(debugItem);
+                    }
+
+                    {
+                        var debugItem = new UIMenuCheckboxItem("Disable Position Update", TogglePosUpdate);
+                        debugItem.CheckboxEvent += (sender, @checked) =>
+                        {
+                            TogglePosUpdate = @checked;
                         };
                         DebugMenu.Items.Add(debugItem);
                     }
@@ -5260,21 +5281,21 @@ namespace GTANetwork
                                 OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
                                 VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
 
-                                try
-                                {
-                                    if (respObj.Settings.GlobalStreamingRange != 0)
-                                        GlobalStreamingRange = respObj.Settings.GlobalStreamingRange;
+                                //try
+                                //{
+                                //    if (respObj.Settings.GlobalStreamingRange != 0)
+                                //        GlobalStreamingRange = respObj.Settings.GlobalStreamingRange;
 
-                                    if (respObj.Settings.PlayerStreamingRange != 0)
-                                        PlayerStreamingRange = respObj.Settings.PlayerStreamingRange;
+                                //    if (respObj.Settings.PlayerStreamingRange != 0)
+                                //        PlayerStreamingRange = respObj.Settings.PlayerStreamingRange;
 
-                                    if (respObj.Settings.VehicleStreamingRange != 0)
-                                        VehicleStreamingRange = respObj.Settings.VehicleStreamingRange;
-                                }
-                                catch
-                                {
-                                    // Client.Disconnect("The server need to be update!");
-                                }
+                                //    if (respObj.Settings.VehicleStreamingRange != 0)
+                                //        VehicleStreamingRange = respObj.Settings.VehicleStreamingRange;
+                                //}
+                                //catch
+                                //{
+                                //    // Client.Disconnect("The server need to be update!");
+                                //}
 
 
                                 HTTPFileServer = respObj.Settings.UseHttpServer;
