@@ -2915,6 +2915,18 @@ namespace GTANetwork.Javascript
             return GTA.UI.Screen.Resolution;
         }
 
+        public int getScreenHeight()
+        {
+            SharpDX.DXGI.Factory1 dxgiFactory = new SharpDX.DXGI.Factory1();
+            return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Height;
+        }
+
+        public int getScreenWidth()
+        {
+            SharpDX.DXGI.Factory1 dxgiFactory = new SharpDX.DXGI.Factory1();
+            return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Width;
+        }
+
         public void sendNotification(string text)
         {
             Util.Util.SafeNotify(text);
