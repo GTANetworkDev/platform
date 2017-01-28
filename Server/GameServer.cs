@@ -312,13 +312,13 @@ namespace GTANetworkServer
                         wb.UploadData(MasterServer.Trim('/') + "/addserver",
                             Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(annObject)));
                     }
-                    catch (WebException ex)
+                    catch (WebException)
                     {
                         Program.Output("Failed to announce self: master server is not available at this time.");
-                        if (LogLevel >= 1)
-                        {
-                            Program.Output(ex.ToString());
-                        }
+                        //if (LogLevel >= 2)
+                        //{
+                        //    Program.Output("\n====\n" + ex.ToString() + "\n====\n");
+                        //}
                     }
                 }
             });
