@@ -526,7 +526,7 @@ namespace GTANetworkServer
         {
             var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
 
-            if (res == null) return false;
+            if (res == null || res.Settings == null) return false;
 
             return res.Settings != null &&
                    res.Settings.ContainsKey(settingName);
@@ -536,7 +536,7 @@ namespace GTANetworkServer
         {
             var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
 
-            if (res == null) return default(T);
+            if (res == null || res.Settings == null) return default(T);
 
             if (res.Settings != null &&
                 res.Settings.ContainsKey(setting))
@@ -583,7 +583,7 @@ namespace GTANetworkServer
         {
             var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
 
-            if (res == null) return;
+            if (res == null || res.Settings == null) return;
 
             if (res.Settings != null &&
                 res.Settings.ContainsKey(setting))
@@ -601,7 +601,7 @@ namespace GTANetworkServer
         {
             var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
 
-            if (res == null) return new string[0];
+            if (res == null || res.Settings == null) return new string[0];
 
             return res.Settings.Select(r => r.Key).ToArray();
         }
