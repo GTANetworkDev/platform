@@ -180,6 +180,7 @@ namespace GTANetwork.Javascript
                     lock (ScriptEngines)
                     {
                         ScriptEngines.ForEach(en => en.Engine.Script.API.invokeChatMessage(msg));
+                        Main.SendMessage(msg);
                     }
                 }
             });

@@ -272,29 +272,28 @@ namespace GTANetwork
 
         }
 
-
-
         public static void ChatOnComplete(object sender, EventArgs args)
         {
             var message = GUI.Chat.SanitizeString(Chat.CurrentInput);
             if (!string.IsNullOrWhiteSpace(message))
-            {
                 JavascriptHook.InvokeMessageEvent(message);
 
-                var obj = new ChatData()
-                {
-                    Message = message,
-                };
-                var data = SerializeBinary(obj);
-
-                var msg = Client.CreateMessage();
-                msg.Write((byte)PacketType.ChatData);
-                msg.Write(data.Length);
-                msg.Write(data);
-                Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.Chat);
-            }
-
             Chat.IsFocused = false;
+        }
+
+        public static void SendMessage(string message)
+        {
+            var obj = new ChatData()
+            {
+                Message = message,
+            };
+            var data = SerializeBinary(obj);
+
+            var msg = Client.CreateMessage();
+            msg.Write((byte)PacketType.ChatData);
+            msg.Write(data.Length);
+            msg.Write(data);
+            Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.Chat);
         }
 
         public static RelationshipGroup RelGroup;
