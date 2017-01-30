@@ -20,12 +20,8 @@ namespace GTANetwork.Networking
         {
             if (!Main.IsOnServer()) return;
             //if (sender.GetType() != typeof(string) && !Main.Multithreading) return;
-
-            if (DebugInfo.StreamerDebug)
-            {
-                sw = new Stopwatch();
-                sw.Start();
-            }
+            sw = new Stopwatch();
+            if (DebugInfo.StreamerDebug) sw.Start();
 
             for (int i = StreamerThread.StreamedInPlayers.Length - 1; i >= 0; i--) StreamerThread.StreamedInPlayers[i]?.DisplayLocally();
 

@@ -186,12 +186,9 @@ namespace GTANetwork.Networking
         {   
             _playerPosition = Game.Player.Character.Position;
             if (Util.Util.ModelRequest) return;
+            sw = new Stopwatch();
 
-            if (DebugInfo.StreamerDebug)
-            {
-                sw = new Stopwatch();
-                sw.Start();
-            }
+            if (DebugInfo.StreamerDebug) sw.Start();
 
             lock (_itemsToStreamOut)
             {

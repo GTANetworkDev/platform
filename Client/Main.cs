@@ -163,6 +163,7 @@ namespace GTANetwork
 
         public static bool ToggleNametagDraw = false;
         public static bool TogglePosUpdate = false;
+        public static bool SlowDownClientForDebug = false;
 
         public Main()
         {

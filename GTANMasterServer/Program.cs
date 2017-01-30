@@ -668,7 +668,7 @@ namespace GTANMasterServer
             //    }
             //}
 
-            if(DateTime.UtcNow.TimeOfDay.Minutes.ToString().Contains("00"))
+            if(DateTime.Now.Minute.ToString() == "0")
             {
                 lock (Program.GlobalLock)
                 {
