@@ -4124,6 +4124,11 @@ namespace GTANetworkServer
             Program.ServerInstance.SendDeleteObject(client, position, 1f, modelHash);
         }
 
+        public void setCommandErrorMessage(string msg)
+        {
+            Program.ServerInstance.ErrorCmd = msg;
+        }
+
 #endregion
     }
 }

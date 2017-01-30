@@ -186,6 +186,7 @@ namespace GTANetworkServer
         public List<string> ModWhitelist { get; set; }
         public bool UseHTTPFileServer { get; set; }
         public bool TrustClientProperties { get; set; }
+        public string ErrorCmd = "~r~ERROR:~w~ Command not found.";
 
         public BanManager BanManager;
         public ColShapeManager ColShapeManager;
@@ -1745,8 +1746,7 @@ namespace GTANResource
                                                                if (!cancelArg.Cancel)
                                                                {
                                                                    if (!CommandHandler.Parse(client, data.Message))
-                                                                       PublicAPI.sendChatMessageToPlayer(client,
-                                                                           "~r~ERROR:~w~ Command not found.");
+                                                                       PublicAPI.sendChatMessageToPlayer(client, ErrorCmd);
                                                                }
                                                            });
                                                         }
