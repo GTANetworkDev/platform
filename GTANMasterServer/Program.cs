@@ -630,7 +630,8 @@ namespace GTANMasterServer
         public Dictionary<string, int> ServersOnlineTime = JsonConvert.DeserializeObject<Dictionary<string, int>>(File.ReadAllText(Database._onlinePath));
         public MasterServerStats Stats = new MasterServerStats();
 
-        public int MaxMinutes = 10;
+        private int LastHour = DateTime.Now.Hour;
+        private int MaxMinutes = 10;
 
         public void Work()
         {
@@ -668,10 +669,11 @@ namespace GTANMasterServer
             //    }
             //}
 
-            if(DateTime.Now.Minute.ToString() == "0")
+            if (DateTime.Now.Hour > LastHour || (LastHour == 23 && DateTime.Now.Hour == 0))
             {
                 lock (Program.GlobalLock)
                 {
+                    LastHour = DateTime.Now.Hour;
                     foreach (var ip in ServersAnnounces.Keys)
                     {
                         if (ServersOnlineTime.Keys.Contains(ip))
