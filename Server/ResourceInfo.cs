@@ -404,6 +404,16 @@ namespace GTANetworkServer
             }));
         }
 
+        public void InvokePlayerWeaponAmmoChange(Client player, int weapon, int oldValue)
+        {
+            lock (_mainQueue.SyncRoot)
+                _mainQueue.Enqueue(new Action(() =>
+                {
+                    if (Language == ScriptingEngineLanguage.compiled)
+                        _compiledScript.API.invokePlayerWeaponAmmoChange(player, weapon, oldValue);
+                }));
+        }
+
         public void InvokePlayerArmorChange(Client player, int oldValue)
         {
             lock (_mainQueue.SyncRoot)

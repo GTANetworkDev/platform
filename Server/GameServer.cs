@@ -2117,6 +2117,7 @@ namespace GTANResource
                                                 var oldHealth = client.Health;
                                                 var oldArmor = client.Armor;
                                                 var oldWeap = client.CurrentWeapon;
+                                                var oldAmmo = client.Ammo;
 
                                                 client.Health = fullPacket.PlayerHealth.Value;
                                                 client.Armor = fullPacket.PedArmor.Value;
@@ -2126,6 +2127,7 @@ namespace GTANResource
                                                 client.Velocity = fullPacket.Velocity;
                                                 client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
                                                 client.Ammo = fullPacket.WeaponAmmo.Value;
+                                                client.Weapons[client.CurrentWeapon] = client.Ammo;
                                                 if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
 
                                                 if (fullPacket.PlayerHealth.Value != oldHealth)
@@ -2152,6 +2154,15 @@ namespace GTANResource
                                                         RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                         {
                                                             en.InvokePlayerWeaponChange(client, (int)oldWeap);
+                                                        }));
+                                                }
+
+                                                if (fullPacket.WeaponAmmo.Value != oldAmmo && fullPacket.WeaponHash.Value == (int)oldWeap)
+                                                {
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerWeaponAmmoChange(client, (int)oldWeap, oldAmmo);
                                                         }));
                                                 }
 
@@ -2182,23 +2193,21 @@ namespace GTANResource
                                                     NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
                                                     //NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
                                                 }
-                                                lock (operationKey)
-                                                {
-                                                    if (client.CurrentWeapon.ToString() != "Unarmed")
-                                                    {
-                                                        if(client.Weapons.ContainsKey(client.CurrentWeapon))
-                                                        {
-                                                            if (client.Ammo > client.Weapons[client.CurrentWeapon])
-                                                            {
-                                                                PublicAPI.setPlayerWeaponAmmo(client, client.CurrentWeapon, client.Weapons[client.CurrentWeapon]);
-                                                            }
-                                                            else
-                                                            {
-                                                                lock (client.Weapons) client.Weapons[client.CurrentWeapon] = client.Ammo;
-                                                            }
-                                                        }
-                                                    }
-                                                }
+
+                                                //if (client.CurrentWeapon.ToString() != "Unarmed")
+                                                //{
+                                                //    if (client.Weapons.ContainsKey(client.CurrentWeapon))
+                                                //    {
+                                                //        if (client.Ammo > oldAmmo && client.Ammo > client.Weapons[client.CurrentWeapon])
+                                                //        {
+                                                //            Program.ServerInstance.SendNativeCallToPlayer(client, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), client.CurrentWeapon, client.Weapons[client.CurrentWeapon]); //SET_PED_AMMO
+                                                //        }
+                                                //        else if (client.Ammo != client.Weapons[client.CurrentWeapon])
+                                                //        {
+                                                //            lock (client.Weapons) client.Weapons[client.CurrentWeapon] = client.Ammo;
+                                                //        }
+                                                //    }
+                                                //}
 
                                                 ResendPacket(fullPacket, client, true);
                                                 UpdateAttachables(client.handle.Value);

@@ -77,6 +77,7 @@ namespace GTANetworkServer
         public delegate void DataReceivedEvent(string data);
         public delegate void PlayerIntEvent(Client player, int oldValue);
         public delegate void PlayerWeaponEvent(Client player, WeaponHash oldValue);
+        public delegate void PlayerAmmoEvent(Client player, WeaponHash weapon, int oldValue);
         public delegate void EntityHealthEvent(NetHandle entity, float oldValue);
         public delegate void EntityBooleanEvent(NetHandle entity, bool oldValue);
         public delegate void EntityIntEvent(NetHandle entity, int index);
@@ -111,6 +112,7 @@ namespace GTANetworkServer
         public event PlayerIntEvent onPlayerHealthChange;
         public event PlayerIntEvent onPlayerArmorChange;
         public event PlayerWeaponEvent onPlayerWeaponSwitch;
+        public event PlayerAmmoEvent onPlayerWeaponAmmoChange;
         public event EntityBooleanEvent onVehicleSirenToggle;
         public event EntityIntEvent onVehicleDoorBreak;
         public event EntityIntEvent onVehicleWindowSmash;
@@ -162,6 +164,11 @@ namespace GTANetworkServer
         internal void invokePlayerWeaponSwitch(Client entity, int oldValue)
         {
             onPlayerWeaponSwitch?.Invoke(entity, (WeaponHash) oldValue);
+        }
+
+        internal void invokePlayerWeaponAmmoChange(Client entity, int weapon, int oldValue)
+        {
+            onPlayerWeaponAmmoChange?.Invoke(entity, (WeaponHash)weapon, oldValue);
         }
 
         internal void invokePlayerArmorChange(Client entity, int oldValue)
@@ -2837,9 +2844,10 @@ namespace GTANetworkServer
         {
             if (!player.Weapons.ContainsKey(weaponHash))
             {
-               lock (player.Weapons) player.Weapons.Add(weaponHash, ammo);
+                player.Weapons.Add(weaponHash, ammo);
             }
-            lock (player.Weapons) player.Weapons[weaponHash] = ammo;
+
+            lock (player.Weapons) { player.Weapons[weaponHash] = ammo; }
             Program.ServerInstance.SendServerEventToPlayer(player, ServerEventType.WeaponPermissionChange, true, (int)weaponHash, true);
 
             Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xBF0FD6E56C964FCB, new LocalPlayerArgument(), (int)weaponHash, 0, equipNow, ammo);
@@ -2849,27 +2857,23 @@ namespace GTANetworkServer
         public int getPlayerWeaponAmmo(Client player, WeaponHash weaponHash)
         {
             if (!player.Weapons.ContainsKey(weaponHash)) return 0;
-            int ammo;
-            lock (player.Weapons) ammo = player.Weapons[weaponHash];
 
-            return ammo;
+            return player.Weapons[weaponHash];
             //return fetchNativeFromPlayer<int>(player, (ulong)Hash.GET_AMMO_IN_PED_WEAPON, new LocalPlayerArgument(), (int)weaponHash);
         }
 
         public void setPlayerWeaponAmmo(Client player, WeaponHash weaponHash, int ammo)
         {
             if (!player.Weapons.ContainsKey(weaponHash)) return;
-            lock (player.Weapons)
-            {
-                player.Weapons[weaponHash] = ammo;
-                Program.ServerInstance.SendNativeCallToPlayer(player, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
-            }
+
+            player.Weapons[weaponHash] = ammo;
+            Program.ServerInstance.SendNativeCallToPlayer(player, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), (int)weaponHash, ammo); //SET_PED_AMMO
         }
 
         public void removePlayerWeapon(Client player, WeaponHash weapon)
         {
             setPlayerWeaponAmmo(player, weapon, 0);
-            if (player.Weapons.ContainsKey(weapon)) lock (player.Weapons) player.Weapons.Remove(weapon);
+            if (player.Weapons.ContainsKey(weapon)) player.Weapons.Remove(weapon);
 
             if (player.Properties.WeaponComponents.ContainsKey((int)weapon)) player.Properties.WeaponComponents.Remove((int)weapon);
             if (player.Properties.WeaponTints.ContainsKey((int)weapon)) player.Properties.WeaponTints.Remove((int)weapon);
@@ -2885,7 +2889,7 @@ namespace GTANetworkServer
 
         public void removeAllPlayerWeapons(Client player)
         {
-            lock (player.Weapons) player.Weapons.Clear();
+            player.Weapons.Clear();
             player.Properties.WeaponTints.Clear();
             player.Properties.WeaponComponents.Clear();
 
