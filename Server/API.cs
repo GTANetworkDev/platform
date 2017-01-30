@@ -731,6 +731,20 @@ namespace GTANetworkServer
             return Program.ServerInstance.Clients.FirstOrDefault(c => c.handle == handle);
         }
 
+        public T getEntityFromHandle<T>(NetHandle handle)
+        {
+            if (typeof(T) == typeof(Vehicle)) { return (T)(object)new Vehicle(this, handle); }
+            else if (typeof(T) == typeof(Client)) { return (T)(object)getPlayerFromHandle(handle); }
+            else if (typeof(T) == typeof(Object)) { return (T)(object)new Object(this, handle); }
+            else if (typeof(T) == typeof(Blip)) { return (T)(object)new Blip(this, handle); }
+            else if (typeof(T) == typeof(Pickup)) { return (T)(object)new Pickup(this, handle); }
+            else if (typeof(T) == typeof(TextLabel)) { return (T)(object)new TextLabel(this, handle); }
+            else if (typeof(T) == typeof(Ped)) { return (T)(object)new Ped(this, handle); }
+            else if (typeof(T) == typeof(ParticleEffect)) { return (T)(object)new ParticleEffect(this, handle); }
+            else if (typeof(T) == typeof(Marker)) { return (T)(object)new Marker(this, handle); }
+            return default(T);
+        }
+
         public bool isPlayerConnected(Client player)
         {
             return player.NetConnection.Status == NetConnectionStatus.Connected;
