@@ -288,6 +288,16 @@ namespace GTANetworkServer
             API.shared.sendChatMessageToPlayer(this, sender, message);
         }
 
+        public void sendNotification(string sender, string message, bool flashing = true)
+        {
+            API.shared.sendNotificationToPlayer(this, message, flashing);
+        }
+
+        public void sendPictureNotificationToPlayer(string body, string pic, int flash, int iconType, string sender, string subject)
+        {
+            API.shared.sendPictureNotificationToPlayer(this, body, pic, flash, iconType, sender, subject);
+        }
+
         public void setIntoVehicle(NetHandle car, int seat)
         {
             API.shared.setPlayerIntoVehicle(this, car, seat);

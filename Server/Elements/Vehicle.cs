@@ -107,7 +107,7 @@ namespace GTANetworkServer
         public bool engineStatus
         {
             get { return Base.getVehicleEngineStatus(this); }
-            set { Base.setVehicleEngineStatus(this, value);}
+            set { Base.setVehicleEngineStatus(this, value); }
         }
 
         public Color tyreSmokeColor
@@ -166,12 +166,52 @@ namespace GTANetworkServer
 
         public string displayName
         {
-            get { return Base.getVehicleDisplayName((VehicleHash) model); }
+            get { return Base.getVehicleDisplayName((VehicleHash)model); }
         }
 
         public Client[] occupants
         {
             get { return Base.getVehicleOccupants(this); }
+        }
+        public float maxOccupants
+        {
+            get { return Base.getVehicleMaxOccupants((VehicleHash)model); }
+        }
+
+        public float maxSpeed
+        {
+            get { return Base.getVehicleMaxSpeed((VehicleHash)model); }
+        }
+
+        public float maxAcceleration
+        {
+            get { return Base.getVehicleMaxAcceleration((VehicleHash)model); }
+        }
+
+        public float maxTraction
+        {
+            get { return Base.getVehicleMaxTraction((VehicleHash)model); }
+        }
+
+        public float maxBraking
+        {
+            get { return Base.getVehicleMaxBraking((VehicleHash)model); }
+        }
+
+        public bool locked
+        {
+            get { return Base.getVehicleLocked(this); }
+            set { Base.setVehicleLocked(this, value); }
+        }
+
+        public int Class
+        {
+            get { return Base.getVehicleClass((VehicleHash)model); }
+        }
+
+        public int ClassName
+        {
+            get { return Base.getVehicleClass((VehicleHash)model); }
         }
 
         #endregion
@@ -277,9 +317,6 @@ namespace GTANetworkServer
         {
             return Base.getVehicleNeonState(this, slot);
         }
-
-
-
         #endregion
     }
 }
