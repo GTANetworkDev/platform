@@ -3968,20 +3968,25 @@ namespace GTANetwork.Javascript
 
 #region Menus
 
-        public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
-        {
-            var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
-            return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y))) { ScaleWithSafezone = false };
-        }
+        //public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
+        //{
+        //    var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor);
+        //    return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y))) { ScaleWithSafezone = false };
+        //}
 
-        public UIMenu createMenu(string subtitle, double x, double y, int anchor)
+        public UIMenu createMenu(string title, string subtitle, double x, double y, int anchor, bool enableBanner = true)
         {
+            //var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor);
             var offset = convertAnchorPos((float)x, (float)y - 107, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
-            var newM = new UIMenu("", subtitle, new Point((int)(offset.X), (int)(offset.Y)));
-            newM.ScaleWithSafezone = false;
-            newM.SetBannerType(new UIResRectangle());
-            newM.ControlDisablingEnabled = false;
-            return newM;
+            if (string.IsNullOrEmpty(subtitle)) { subtitle = "Available Options:"; }
+            if (enableBanner) { if (string.IsNullOrEmpty(title)) title = "Menu"; } else { title = null; }
+
+            return new UIMenu(title, subtitle, new Point((int)(offset.X), (int)(offset.Y)))
+            {
+                ScaleWithSafezone = false,
+                //newM.SetBannerType(new UIResRectangle());
+                ControlDisablingEnabled = false
+            };
         }
 
         public UIMenuItem createMenuItem(string label, string description)
@@ -4061,6 +4066,68 @@ namespace GTANetwork.Javascript
         {
             return Game.GetUserInput(defaultText, maxlen);
         }
+
+        internal PointF convertAnchorPos(float x, float y, Anchor anchor, float xOffset, float yOffset)
+        {
+            var res = UIMenu.GetScreenResolutionMantainRatio();
+            //var res = getScreenResolution();
+            switch (anchor)
+            {
+                //case Anchor.TopLeft:
+                //    return new PointF(x + 10, y + 13);
+                //case Anchor.MiddleLeft:
+                //    return new PointF(x + 10, res.Height / 2 + y - 27);
+                //case Anchor.BottomLeft:
+                //    return new PointF(x + 10, res.Height - (y + 413));
+                //case Anchor.TopCenter:
+                //    return new PointF(res.Width / 2 + x - 221, y + 13);
+                //case Anchor.MiddleCenter:
+                //    return new PointF(res.Width / 2 + x - 221, res.Height / 2 + y - 27);
+                //case Anchor.BottomCenter:
+                //    return new PointF(res.Width / 2 + x - 221, res.Height - (y + 413));
+                //case Anchor.TopRight:
+                //    return new PointF(res.Width - x - 441, y + 13);
+                //case Anchor.MiddleRight:
+                //    return new PointF(res.Width - x - 441, res.Height / 2 + y - 27);
+                //case Anchor.BottomRight:
+                //    return new PointF(res.Width - x - 441, res.Height - (y + 413));
+                case Anchor.TopLeft:
+                    return new PointF(x, y);
+                case Anchor.TopCenter:
+                    return new PointF(res.Width / 2 + x, 0 + y);
+                case Anchor.TopRight:
+                    return new PointF(res.Width - x - xOffset, y);
+                case Anchor.MiddleLeft:
+                    return new PointF(x, res.Height / 2 + y - yOffset / 2);
+                case Anchor.MiddleCenter:
+                    return new PointF(res.Width / 2 + x, res.Height / 2 + y - yOffset / 2);
+                case Anchor.MiddleRight:
+                    return new PointF(res.Width - x - xOffset, res.Height / 2 + y - yOffset / 2);
+                case Anchor.BottomLeft:
+                    return new PointF(x, res.Height - y - yOffset);
+                case Anchor.BottomCenter:
+                    return new PointF(res.Width / 2 + x, res.Height - y - yOffset);
+                case Anchor.BottomRight:
+                    return new PointF(res.Width - x, res.Height - y - yOffset);
+                default:
+                    return PointF.Empty;
+            }
+        }
+
+        internal enum Anchor
+        {
+            TopLeft = 0,
+            TopCenter = 1,
+            TopRight = 2,
+            MiddleLeft = 3,
+            MiddleCenter = 4,
+            MiddleRight = 6,
+            BottomLeft = 7,
+            BottomCenter = 8,
+            BottomRight = 9,
+        }
+
+        #endregion
 
         public bool isControlJustPressed(int control)
         {
@@ -4239,50 +4306,6 @@ namespace GTANetwork.Javascript
                 World.CurrentDayTime = Main.Time.Value;
             }
         }
-
-        internal PointF convertAnchorPos(float x, float y, Anchor anchor, float xOffset, float yOffset)
-        {
-            var res = UIMenu.GetScreenResolutionMantainRatio();
-
-            switch (anchor)
-            {
-                case Anchor.TopLeft:
-                    return new PointF(x, y);
-                case Anchor.TopCenter:
-                    return new PointF(res.Width / 2 + x, 0 + y);
-                case Anchor.TopRight:
-                    return new PointF(res.Width - x - xOffset, y);
-                case Anchor.MiddleLeft:
-                    return new PointF(x, res.Height / 2 + y - yOffset / 2);
-                case Anchor.MiddleCenter:
-                    return new PointF(res.Width / 2 + x, res.Height / 2 + y - yOffset / 2);
-                case Anchor.MiddleRight:
-                    return new PointF(res.Width - x - xOffset, res.Height / 2 + y - yOffset/2);
-                case Anchor.BottomLeft:
-                    return new PointF(x, res.Height - y - yOffset);
-                case Anchor.BottomCenter:
-                    return new PointF(res.Width / 2 + x, res.Height - y - yOffset);
-                case Anchor.BottomRight:
-                    return new PointF(res.Width - x, res.Height - y - yOffset);
-                default:
-                    return PointF.Empty;
-            }
-        }
-
-        internal enum Anchor
-        {
-            TopLeft = 0,
-            TopCenter = 1,
-            TopRight = 2,
-            MiddleLeft = 3,
-            MiddleCenter = 4,
-            MiddleRight = 6,
-            BottomLeft = 7,
-            BottomCenter = 8,
-            BottomRight = 9,
-        }
-
-#endregion
     }
 
 
