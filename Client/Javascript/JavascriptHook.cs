@@ -1,4 +1,4 @@
-﻿//#define RELATIVE_CEF_POS
+﻿#define RELATIVE_CEF_POS
 
 using System;
 using System.Collections;
@@ -27,6 +27,7 @@ using Control = GTA.Control;
 using Vector3 = GTANetworkShared.Vector3;
 using VehicleHash = GTANetworkShared.VehicleHash;
 using WeaponHash = GTANetworkShared.WeaponHash;
+using System.ComponentModel;
 
 namespace GTANetwork.Javascript
 {
@@ -378,13 +379,15 @@ namespace GTANetwork.Javascript
             scriptEngine.AddHostType("Double", typeof(double));
             scriptEngine.AddHostType("Float", typeof(float));
             scriptEngine.AddHostType("KeyEventArgs", typeof(KeyEventArgs));
+            scriptEngine.AddHostType("CancelEventArgs", typeof(CancelEventArgs));
             scriptEngine.AddHostType("Keys", typeof(Keys));
             scriptEngine.AddHostType("Point", typeof(Point));
             scriptEngine.AddHostType("PointF", typeof(PointF));
             scriptEngine.AddHostType("Size", typeof(Size));
+            scriptEngine.AddHostType("Size2", typeof(SharpDX.Size2));
             scriptEngine.AddHostType("Vector3", typeof(Vector3));
             scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
-                
+            scriptEngine.AllowReflection = false;
 
             try
             {
@@ -441,7 +444,7 @@ namespace GTANetwork.Javascript
         internal static void StopScript(string resourceName)
         {
             lock (ScriptEngines)
-                    for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
                 {
                     if (ScriptEngines[i].ResourceParent != resourceName) continue;
                     ScriptEngines[i].Engine.Script.API.isDisposing = true;
@@ -865,7 +868,7 @@ namespace GTANetwork.Javascript
 
         public PointF getCursorPositionMantainRatio()
         {
-            var res = getScreenResolutionMantainRatio();
+            var res = getScreenResolutionMaintainRatio();
 
             var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
             var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
@@ -884,9 +887,9 @@ namespace GTANetwork.Javascript
         public PointF worldToScreenMantainRatio(Vector3 pos)
         {
             var p = Main.WorldToScreen(pos.ToVector());
-            var res = getScreenResolutionMantainRatio();
+            var res = getScreenResolutionMaintainRatio();
 
-            return new PointF(p.X*res.Width, p.Y*res.Height);
+            return new PointF(p.X * res.Width, p.Y * res.Height);
         }
 
         public string getCurrentResourceName()
@@ -907,7 +910,7 @@ namespace GTANetwork.Javascript
 
         public Vector3 screenToWorldMantainRatio(PointF pos)
         {
-            var res = getScreenResolutionMantainRatio();
+            var res = getScreenResolutionMaintainRatio();
             var norm = new Vector2(pos.X / res.Width, pos.Y / res.Height);
             var norm2 = new Vector2((norm.X - 0.5f) * 2f, (norm.Y - 0.5f) * 2f);
 
@@ -929,7 +932,7 @@ namespace GTANetwork.Javascript
 
         public Vector3 screenToWorldMantainRatio(PointF pos, Vector3 camPos, Vector3 camrot) // TODO: replace this with a camera object
         {
-            var res = getScreenResolutionMantainRatio();
+            var res = getScreenResolutionMaintainRatio();
             var norm = new Vector2(pos.X / res.Width, pos.Y / res.Height);
             var norm2 = new Vector2((norm.X - 0.5f) * 2f, (norm.Y - 0.5f) * 2f);
 
@@ -1014,7 +1017,7 @@ namespace GTANetwork.Javascript
         public Browser createCefBrowser(double width, double height, bool local = true)
         {
 #if RELATIVE_CEF_POS
-            var rat = getScreenResolutionMantainRatio();
+            var rat = getScreenResolutionMaintainRatio();
             var ramp = getScreenResolution();
 
             int w = (int) ((width / rat.Width) * ramp.Width);
@@ -1071,7 +1074,7 @@ namespace GTANetwork.Javascript
         public void setCefBrowserSize(Browser browser, double width, double height)
         {
 #if RELATIVE_CEF_POS
-            var rat = getScreenResolutionMantainRatio();
+            var rat = getScreenResolutionMaintainRatio();
             var ramp = getScreenResolution();
 
             int w = (int)((width / rat.Width) * ramp.Width);
@@ -1101,7 +1104,7 @@ namespace GTANetwork.Javascript
         public void setCefBrowserPosition(Browser browser, double xPos, double yPos)
         {
 #if RELATIVE_CEF_POS
-            var rat = getScreenResolutionMantainRatio();
+            var rat = getScreenResolutionMaintainRatio();
             var ramp = getScreenResolution();
 
             int w = (int)((xPos / rat.Width) * ramp.Width);
@@ -1120,13 +1123,13 @@ namespace GTANetwork.Javascript
 
         internal PointF ratioToRealRes(double x, double y)
         {
-            var rat = getScreenResolutionMantainRatio();
+            var rat = getScreenResolutionMaintainRatio();
             var ramp = getScreenResolution();
 
             float w = (float)((x / rat.Width) * ramp.Width);
             float h = (float)((y / rat.Height) * ramp.Height);
 
-            return new PointF(w,h);
+            return new PointF(w, h);
         }
 
         public void pinCefBrowser(Browser browser, double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
@@ -1222,8 +1225,7 @@ namespace GTANetwork.Javascript
 
         public void callNative(string hash, params object[] args)
         {
-            Hash ourHash;
-            if (!parseHash(hash, out ourHash))
+            if (!parseHash(hash, out Hash ourHash))
                 throw new ArgumentException("Hash \"" + hash + "\" has not been found!");
 
             if (!NativeWhitelist.IsAllowed((ulong) ourHash))
@@ -1241,8 +1243,7 @@ namespace GTANetwork.Javascript
 
         public object returnNative(string hash, int returnType, params object[] args)
         {
-            Hash ourHash;
-            if (!parseHash(hash, out ourHash))
+            if (!parseHash(hash, out Hash ourHash))
                 throw new ArgumentException("Hash \"" + hash + "\" has not been found!");
 
             if (!NativeWhitelist.IsAllowed((ulong) ourHash))
@@ -2333,8 +2334,7 @@ namespace GTANetwork.Javascript
 
             if (veh != null)
             {
-                byte r, g, b, a;
-                Util.Util.ToArgb(veh.PrimaryColor, out a, out r, out g, out b);
+                Util.Util.ToArgb(veh.PrimaryColor, out byte a, out byte r, out byte g, out byte b);
 
                 return Color.FromArgb(r, g, b);
             }
@@ -2348,8 +2348,7 @@ namespace GTANetwork.Javascript
 
             if (veh != null)
             {
-                byte r, g, b, a;
-                Util.Util.ToArgb(veh.SecondaryColor, out a, out r, out g, out b);
+                Util.Util.ToArgb(veh.SecondaryColor, out byte a, out byte r, out byte g, out byte b);
 
                 return Color.FromArgb(r, g, b);
             }
@@ -2895,11 +2894,6 @@ namespace GTANetwork.Javascript
             return JsonConvert.SerializeObject(data);
         }
 
-        public SizeF getScreenResolutionMantainRatio()
-        {
-            return UIMenu.GetScreenResolutionMantainRatio();
-        }
-
         public void sendChatMessage(string sender, string text)
         {
             Main.Chat.AddMessage(sender, text);
@@ -2910,21 +2904,21 @@ namespace GTANetwork.Javascript
             Main.Chat.AddMessage(null, text);
         }
 
+        public SizeF getScreenResolutionMaintainRatio()
+        {
+            return UIMenu.GetScreenResolutionMantainRatio();
+        }
+
         public Size getScreenResolution()
         {
-            return GTA.UI.Screen.Resolution;
+            //return GTA.UI.Screen.Resolution;
+            return Screen.PrimaryScreen.WorkingArea.Size;
         }
 
-        public int getScreenHeight()
+        public SharpDX.Size2 getScreenResolutionAccurate()
         {
             SharpDX.DXGI.Factory1 dxgiFactory = new SharpDX.DXGI.Factory1();
-            return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Height;
-        }
-
-        public int getScreenWidth()
-        {
-            SharpDX.DXGI.Factory1 dxgiFactory = new SharpDX.DXGI.Factory1();
-            return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Width;
+            return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Size;
         }
 
         public void sendNotification(string text)
@@ -2949,8 +2943,7 @@ namespace GTANetwork.Javascript
 
         public void setPlayerInvincible(bool invinc)
         {
-            var remotePlayer = Main.NetEntityHandler.EntityToStreamedItem(Game.Player.Character.Handle) as RemotePlayer;
-            if (remotePlayer != null)
+            if (Main.NetEntityHandler.EntityToStreamedItem(Game.Player.Character.Handle) is RemotePlayer remotePlayer)
             {
                 remotePlayer.IsInvincible = invinc;
             }
@@ -3103,9 +3096,11 @@ namespace GTANetwork.Javascript
 
         public LocalHandle getPlayerByName(string name)
         {
-            var opp = Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed) op).Name == name) as SyncPed;
-            if (opp != null && opp.Character != null)
+            if (Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Name == name) is SyncPed opp && opp.Character != null)
+            {
                 return new LocalHandle(opp.RemoteHandle, HandleType.NetHandle);
+            }
+
             return new LocalHandle(0);
         }
 
