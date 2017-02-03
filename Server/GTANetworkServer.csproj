@@ -125,6 +125,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constant\Color.cs" />
+    <Compile Include="Constant\LogCat.cs" />
     <Compile Include="Elements\Blip.cs" />
     <Compile Include="Elements\Entity.cs" />
     <Compile Include="Elements\Marker.cs" />

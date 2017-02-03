@@ -287,7 +287,7 @@ namespace GTANetworkServer
         public void AnnounceSelfToMaster()
         {
             if (LogLevel > 0)
-                Program.Output("Announcing self to master server...");
+                Program.Output("Announcing self to master server...", LogCat.Debug);
 
             var annThread = new Thread((ThreadStart) delegate
             {
@@ -315,7 +315,7 @@ namespace GTANetworkServer
                     }
                     catch (WebException)
                     {
-                        Program.Output("Failed to announce self: master server is not available at this time.");
+                        Program.Output("Failed to announce self: master server is not available at this time.", LogCat.Error);
                         //if (LogLevel >= 2)
                         //{
                         //    Program.Output("\n====\n" + ex.ToString() + "\n====\n");
@@ -605,13 +605,12 @@ namespace GTANetworkServer
                     }
                     else if (script.Language == ScriptingEngineLanguage.csharp)
                     {
-                        var scrTxt = File.ReadAllText(baseDir + script.Path);
-                        cSharp.Add(scrTxt);                        
+                        cSharp.Add(baseDir + script.Path);
                     }
                     else if (script.Language == ScriptingEngineLanguage.vbasic)
                     {
                         var scrTxt = File.ReadAllText(baseDir + script.Path);
-                        vBasic.Add(scrTxt);                        
+                        vBasic.Add(scrTxt);
                     }
                 }
 
@@ -620,13 +619,15 @@ namespace GTANetworkServer
                 if (cSharp.Count > 0)
                 {
                     var csharpAss = CompileScript(cSharp.ToArray(), currentResInfo.References.Select(r => r.Name).ToArray(), false);
-                    ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
+                    if (csharpAss != null)
+                        ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                 }
 
                 if (vBasic.Count > 0)
                 {
                     var vbasicAss = CompileScript(vBasic.ToArray(), currentResInfo.References.Select(r => r.Name).ToArray(), true);
-                    ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
+                    if (vbasicAss != null)
+                        ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                 }
 
                 CommandHandler.Register(ourResource);
@@ -1041,10 +1042,11 @@ namespace GTANetworkServer
             
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
-            
+
             for (int s = 0; s < script.Length; s++)
-            if (!vbBasic && script[s].TrimStart().StartsWith("public Constructor"))
             {
+                if (!vbBasic && script[s].TrimStart().StartsWith("public Constructor"))
+                {
                     script[s] = string.Format(@"
 using System;
 using System.Threading;
@@ -1062,22 +1064,29 @@ namespace GTANResource
         {0}
     }}
 }}", script[s].Replace("Constructor(", "Constructor" + s + "("), s);
+                }
             }
             
             try
             {
                 CompilerResults results;
                 results = !vbBasic
-                    ? provide.CompileAssemblyFromSource(compParams, script)
+                    ? provide.CompileAssemblyFromFile(compParams, script)
                     : vBasicProvider.CompileAssemblyFromSource(compParams, script);
 
                 if (results.Errors.HasErrors)
                 {
                     bool allWarns = true;
-                    Program.Output("Error/warning while compiling script!");
+                    Program.Output("Error/warning while compiling script!", LogCat.Warn);
                     foreach (CompilerError error in results.Errors)
                     {
-                        Program.Output(String.Format("{3} ({0}) at {2}: {1}", error.ErrorNumber, error.ErrorText, error.Line, error.IsWarning ? "Warning" : "Error"));
+                        Program.Output(
+                            String.Format("{3} ({0}) at {4}:{2}: {1}",
+                            error.ErrorNumber,
+                            error.ErrorText,
+                            error.Line,
+                            error.IsWarning ? "Warning" : "Error",
+                            error.FileName), error.IsWarning ? LogCat.Warn : LogCat.Error);
 
                         allWarns = allWarns && error.IsWarning;
                     }
@@ -1092,8 +1101,8 @@ namespace GTANResource
             }
             catch (Exception ex)
             {
-                Program.Output("Error while compiling assembly!");
-                Program.Output(ex.Message);
+                Program.Output("Error while compiling assembly!", LogCat.Error);
+                Program.Output(ex.Message, LogCat.Error);
                 Program.Output(ex.StackTrace);
 
                 Program.Output(ex.Source);

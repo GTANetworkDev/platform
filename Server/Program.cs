@@ -10,6 +10,7 @@ using System.Xml.Serialization;
 using GTANetworkShared;
 using Mono.Unix;
 using Mono.Unix.Native;
+using GTANetworkServer.Constant;
 
 namespace GTANetworkServer
 {
@@ -21,6 +22,7 @@ namespace GTANetworkServer
         private delegate bool EventHandler(CtrlType sig);
         static EventHandler _handler;
 
+        private static object _consolelock = new object();
         private static object _filelock = new object();
         private static bool _log;
 
@@ -34,14 +36,27 @@ namespace GTANetworkServer
             File.AppendAllText(path, "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str + Environment.NewLine);
         }
 
-        public static void Output(string str)
+        public static void Output(string str, LogCat category = LogCat.Info)
         {
-            Console.WriteLine("[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
+            lock (_consolelock)
+            {
+                if (category == LogCat.Info)
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                else if (category == LogCat.Warn)
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                else if (category == LogCat.Error)
+                    Console.ForegroundColor = ConsoleColor.Red;
+                else if (category == LogCat.Debug)
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.WriteLine("[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str);
+            }
 
             if (_log)
-            lock (_filelock)
             {
-                File.AppendAllText("server.log", "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str + Environment.NewLine);
+                lock (_filelock)
+                {
+                    File.AppendAllText("server.log", "[" + DateTime.Now.TimeOfDay.ToString(@"hh\:mm\:ss") + "] " + str + Environment.NewLine);
+                }
             }
         }
 
