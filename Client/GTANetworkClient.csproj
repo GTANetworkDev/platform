@@ -1,0 +1,273 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1BC495C9-DC44-478A-9E16-3FC482A8B850}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>GTANetwork</RootNamespace>
+    <AssemblyName>GTANetwork</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>bin\Release\</OutputPath>
+    <Optimize>true</Optimize>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ClearScript, Version=5.4.6.0, Culture=neutral, PublicKeyToken=935d0c957da47c73, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\ClearScript.dll</HintPath>
+    </Reference>
+    <Reference Include="EasyHook, Version=2.7.6035.0, Culture=neutral, PublicKeyToken=4b580fca19d0b0c5, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\EasyHook.dll</HintPath>
+    </Reference>
+    <Reference Include="Lidgren.Network">
+      <HintPath>..\libs\Lidgren.Network.dll</HintPath>
+    </Reference>
+    <Reference Include="NativeUI, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\NativeUI.dll</HintPath>
+    </Reference>
+    <Reference Include="NAudio">
+      <HintPath>..\libs\NAudio.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ScriptHookVDotNet, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\ScriptHookVDotNet.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.D3DCompiler, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\SharpDX.D3DCompiler.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D11, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\SharpDX.Direct3D11.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D11.Effects, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\SharpDX.Direct3D11.Effects.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.DXGI, Version=2.6.3.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\SharpDX.DXGI.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Xilium.CefGlue, Version=3.2272.2035.0, Culture=neutral, PublicKeyToken=6235298024de30d5, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\Xilium.CefGlue.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="GUI\CEFClient.cs" />
+    <Compile Include="GUI\DirectXHook\SwapchainHooker.cs" />
+    <Compile Include="GUI\SecureCefResourceHandler.cs" />
+    <Compile Include="Misc\BiDictionarity.cs" />
+    <Compile Include="Javascript\CameraManager.cs" />
+    <Compile Include="GUI\ClassicChat.cs" />
+    <Compile Include="GUI\Chat.cs" />
+    <Compile Include="Misc\ChatData.cs" />
+    <Compile Include="Util\DataCollector.cs" />
+    <Compile Include="Networking\DeltaCompressor.cs" />
+    <Compile Include="EntityMemoryHandler.cs" />
+    <Compile Include="Misc\GameScript.cs" />
+    <Compile Include="GUI\CEFManager.cs" />
+    <Compile Include="GUI\DirectXHook\Exceptions.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\BaseDXHook.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\Common\Element.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\Common\ImageElement.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\Common\IOverlay.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\Common\IOverlayElement.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\Common\Overlay.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\Common\TextElement.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\ContextState.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\DeviceManager.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\DXFont.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\DXImage.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\DXOverlayEngine.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\DXSprite.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\RendererBase.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DX11\ScreenAlignedQuadRenderer.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DXGI.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\DXHookD3D11.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\Hook.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\IDXHook.cs" />
+    <Compile Include="GUI\DirectXHook\Hook\SafeHGlobal.cs" />
+    <Compile Include="GUI\DirectXHook\NativeMethods.cs" />
+    <Compile Include="Util\DebugInfo.cs" />
+    <Compile Include="Util\DebugWindow.cs" />
+    <Compile Include="Networking\DownloadManager.cs" />
+    <Compile Include="Misc\GameSettings.cs" />
+    <Compile Include="GUI\Extern\FastBitmap.cs" />
+    <Compile Include="GUI\Extern\QuadDistort.cs" />
+    <Compile Include="GUI\Extern\RGBColor.cs" />
+    <Compile Include="GUI\TabMapItem.cs" />
+    <Compile Include="GUI\TabQuickConnectItem.cs" />
+    <Compile Include="GUI\TabWelcomeMessageItem.cs" />
+    <Compile Include="GUI\IChat.cs" />
+    <Compile Include="GUI\Warning.cs" />
+    <Compile Include="Util\InputboxThread.cs" />
+    <Compile Include="Util\Interpolator.cs" />
+    <Compile Include="Javascript\JavascriptChat.cs" />
+    <Compile Include="Javascript\JavascriptHook.cs" />
+    <Compile Include="Javascript\JavascriptXmlParser.cs" />
+    <Compile Include="Util\LogManager.cs" />
+    <Compile Include="Javascript\LoopAudioStream.cs" />
+    <Compile Include="Main.cs" />
+    <Compile Include="Util\MemoryScan.cs" />
+    <Compile Include="Util\MimeSniffer.cs" />
+    <Compile Include="Util\ModelSpoofer.cs" />
+    <Compile Include="Util\NativeWhitelist.cs" />
+    <Compile Include="Util\StickyBombTracker.cs" />
+    <Compile Include="Networking\Streamer.cs" />
+    <Compile Include="Networking\PedThread.cs" />
+    <Compile Include="Misc\Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AssemblyInfo.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Screenshot.cs" />
+    <Compile Include="Networking\StreamedItems.cs" />
+    <Compile Include="Util\StringCache.cs" />
+    <Compile Include="Util\Subtask.cs" />
+    <Compile Include="Networking\SyncEventWatcher.cs" />
+    <Compile Include="Networking\SyncSender.cs" />
+    <Compile Include="Networking\UnoccupiedVehicleSync.cs" />
+    <Compile Include="Misc\WeaponDataProvider.cs" />
+    <Compile Include="Networking\SyncPed.cs" />
+    <Compile Include="Util\Util.cs" />
+    <Compile Include="Networking\WeaponManager.cs" />
+    <Compile Include="Util\VehiclePhotos.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\GTANetworkShared.csproj">
+      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
+      <Name>GTANShared</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
+    <EmbeddedResource Include="soundlist.txt" />
+    <EmbeddedResource Include="natives.txt" />
+    <Content Include="Properties\AssemblyInfo.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AssemblyInfo.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>"C:\Program Files (x86)\Common Files\Microsoft Shared\TextTemplating\14.0\TextTransform.exe" -out "$(ProjectDir)Properties\AssemblyInfo.cs" "$(ProjectDir)Properties\AssemblyInfo.tt"</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
