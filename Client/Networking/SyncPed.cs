@@ -395,18 +395,10 @@ namespace GTANetwork.Networking
 
         #region NeoSyncPed
 
-        internal bool CreateCharacter()
+
+        bool CreateCharacter()
         {
-            float hRange = _isInVehicle ? 150f : 200f;
             var gPos = Position;
-            var inRange = Game.Player.Character.IsInRangeOfEx(gPos, hRange);
-
-            return CreateCharacter(gPos, inRange);
-        }
-
-        bool CreateCharacter(Vector3 gPos, bool InRange)
-        {
-
             if ((Character == null || !Character.Exists()) || (Character.Model.Hash != ModelHash || (Character.IsDead && PedHealth > 0)))
             {
                 LogManager.DebugLog($"{Character == null}, {Character?.Exists()}, {Character?.Position} {gPos}, {Character?.Model.Hash}, {ModelHash}, {Character?.IsDead}, {PedHealth}");
@@ -562,7 +554,7 @@ namespace GTANetwork.Networking
 
                     Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
                     DEBUG_STEP = 6;
-                    var nameText = Name == null ? "<nameless>" : Name;
+                    var nameText = Name ?? "<nameless>";
 
                     if (!string.IsNullOrEmpty(NametagText))
                         nameText = NametagText;
@@ -577,9 +569,7 @@ namespace GTANetwork.Networking
 
                     if ((NametagSettings & 2) != 0)
                     {
-                        byte r, g, b, a;
-
-                        Util.Util.ToArgb(NametagSettings >> 8, out a, out r, out g, out b);
+                        Util.Util.ToArgb(NametagSettings >> 8, out byte a, out byte r, out byte g, out byte b);
 
                         defaultColor = Color.FromArgb(r, g, b);
                     }
@@ -1577,9 +1567,7 @@ namespace GTANetwork.Networking
 				var gunEntity = Function.Call<Prop>((Hash)0x3B390A939AF0B5FC, Character);
 				if (gunEntity != null)
 				{
-					Vector3 min;
-					Vector3 max;
-					gunEntity.Model.GetDimensions(out min, out max);
+					gunEntity.Model.GetDimensions(out Vector3 min, out Vector3 max);
 					var start = gunEntity.GetOffsetInWorldCoords(min);
 					var end = gunEntity.GetOffsetInWorldCoords(max);
 					var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X),
@@ -2381,68 +2369,49 @@ namespace GTANetwork.Networking
         internal void DisplayLocally()
         {
             if (!StreamedIn || IsSpectating || (Flag & (int)EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
-            bool inRange = Game.Player.Character.IsInRangeOfEx(Position, hRange);
 
-            if (inRange)
+            if (Environment.TickCount - _lastTickUpdate > 500)
             {
-#if DEBUG
-                PedThread.InRangePlayers++;
-#endif
-                if (Environment.TickCount - _lastTickUpdate > 500)
-                {
-                    _lastTickUpdate = Environment.TickCount;
-                    if (CreateCharacter(Position, inRange)) return;
-                    if (CreateVehicle()) return;
+                _lastTickUpdate = Environment.TickCount;
+                if (CreateCharacter()) return;
+                if (CreateVehicle()) return;
 
-                    if (Character != null)
+                if (Character != null)
+                {
+                    Character.Health = PedHealth;
+                    if (IsPlayerDead && !Character.IsDead && IsInVehicle)
                     {
-                        Character.Health = PedHealth;
-                        if (IsPlayerDead && !Character.IsDead && IsInVehicle)
-                        {
-                            Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
-                            Character.IsInvincible = false;
-                            Character.Kill();
-                        }
+                        Function.Call(Hash.SET_PED_PLAYS_HEAD_ON_HORN_ANIM_WHEN_DIES_IN_VEHICLE, Character, true);
+                        Character.IsInvincible = false;
+                        Character.Kill();
+                    }
 
-                        Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
-                    }
-                    WorkaroundBlip();
+                    Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
-                if (Character != null && Character.Exists())
-                {
-                    bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
-                    if (UpdatePlayerPosOutOfRange(Position, Game.Player.Character.IsInRangeOfEx(Position, StreamerThread.PlayerStreamingRange))) return;
-
-                    if ((enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar())) {
-                        DrawNametag();
-                        return;
-                    }
-#if DEBUG
-                    if (PedThread.ToggleUpdate) {
-#endif
-                        UpdatePosition();
-#if DEBUG
-                    }
-                    if (PedThread.ToggleNametag) {
-#endif
-                        DrawNametag();
-#if DEBUG
-                    }
-#endif
-                    _lastJumping = IsJumping;
-                    _lastFreefall = IsFreefallingWithParachute;
-                    _lastShooting = IsShooting;
-                    _lastAiming = IsAiming;
-                    _lastVehicle = _isInVehicle;
-                    _lastEnteringVehicle = EnteringVehicle;
-                }
+                WorkaroundBlip();
             }
-            else
+
+            if (Character != null && Character.Exists())
             {
-                if (Character != null && Character.Exists() && Environment.TickCount - _lastTickUpdate > 500)
+                bool enteringSeat = _seatEnterStart != 0 && Util.Util.TickCount - _seatEnterStart < 500;
+                if (UpdatePlayerPosOutOfRange(Position, Game.Player.Character.IsInRangeOfEx(Position, StreamerThread.PlayerStreamingRange))) return;
+
+                if ((enteringSeat || Character.IsSubtaskActive(67) || IsBeingControlledByScript || Character.IsExitingLeavingCar()))
                 {
-                    Character.Delete();
+                    if (!Main.ToggleNametagDraw) DrawNametag();
+                    return;
                 }
+
+                if (!Main.TogglePosUpdate) UpdatePosition();
+
+                if (!Main.ToggleNametagDraw) DrawNametag();
+
+                _lastJumping = IsJumping;
+                _lastFreefall = IsFreefallingWithParachute;
+                _lastShooting = IsShooting;
+                _lastAiming = IsAiming;
+                _lastVehicle = _isInVehicle;
+                _lastEnteringVehicle = EnteringVehicle;
             }
         }
 
