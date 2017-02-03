@@ -59,7 +59,7 @@ namespace GTANetwork.Util
                 CreateLogDirectory();
                 lock (errorLogLock)
                 {
-                    File.AppendAllText(LogDirectory + "\\Debug.log" + Environment.NewLine, text);
+                    File.AppendAllText(LogDirectory + "\\Debug.log", text + Environment.NewLine);
                 }
             }
             if (Main.PlayerSettings.DebugMode)
