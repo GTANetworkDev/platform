@@ -1076,6 +1076,8 @@ namespace GTANResource
 
                 if (results.Errors.HasErrors)
                 {
+                    var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
                     bool allWarns = true;
                     Program.Output("Error/warning while compiling script!", LogCat.Warn);
                     foreach (CompilerError error in results.Errors)
@@ -1086,7 +1088,7 @@ namespace GTANResource
                             error.ErrorText,
                             error.Line,
                             error.IsWarning ? "Warning" : "Error",
-                            error.FileName), error.IsWarning ? LogCat.Warn : LogCat.Error);
+                            error.FileName.Substring(basePath.Length + 1)), error.IsWarning ? LogCat.Warn : LogCat.Error);
 
                         allWarns = allWarns && error.IsWarning;
                     }
