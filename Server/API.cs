@@ -718,7 +718,9 @@ namespace GTANetworkServer
 
         public string[] getAllResources()
         {
-            return Directory.GetDirectories("resources").Select(s => Path.GetFileName(s)).ToArray();
+            return Directory.GetDirectories("resources")
+                .Where(s => File.Exists(s + "/meta.xml"))
+                .Select(s => Path.GetFileName(s)).ToArray();
         }
 
         public void playSoundFrontEnd(Client target, string SoundName, string SoundSetName)
