@@ -15,7 +15,7 @@
  */
 
 #include "ScriptDomain.hpp"
-#define DEBUG false
+#define DEBUG true
 
 using namespace System;
 using namespace System::Threading;
