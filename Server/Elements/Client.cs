@@ -653,8 +653,17 @@ namespace GTANetworkServer
             return API.shared.hasEntityData(this, key);
         }
 
-        #endregion
+        public void triggerEvent(string eventName, params object[] args)
+        {
+            API.shared.triggerClientEvent(this, eventName, args);
+        }
 
+        public void downloadData(string data)
+        {
+            API.shared.downloadData(this, data);
+        }
+
+        #endregion
         #endregion
 
     }

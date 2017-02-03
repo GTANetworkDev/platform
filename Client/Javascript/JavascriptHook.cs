@@ -2771,11 +2771,20 @@ namespace GTANetwork.Javascript
             Main.Client.Disconnect(reason);
         }
 
-        public void setEntityPosition(LocalHandle ent, Vector3 pos)
+        public void setEntityPosition(LocalHandle ent, Vector3 pos, bool ground = false)
         {
             var handle = ent.Value;
-            if (handle > 0) new Prop(handle).Position = pos.ToVector();
-            ent.Properties<EntityProperties>().Position = pos;
+            if (ground)
+            {
+                if (handle > 0) new Prop(handle).Position = new GTA.Math.Vector3(pos.X, pos.Y, getGroundHeight(pos));
+                ent.Properties<EntityProperties>().Position = new Vector3(pos.X, pos.Y, getGroundHeight(pos));
+            }
+            else
+            {
+                if (handle > 0) new Prop(handle).Position = pos.ToVector();
+                ent.Properties<EntityProperties>().Position = pos;
+            }
+
         }
 
         public void setEntityRotation(LocalHandle ent, Vector3 rot)
@@ -4301,6 +4310,178 @@ namespace GTANetwork.Javascript
                 World.CurrentDayTime = Main.Time.Value;
             }
         }
+
+        internal string[] ScreenEffects = {
+            "SwitchHUDIn",
+            "SwitchHUDOut",
+            "FocusIn",
+            "FocusOut",
+            "MinigameEndNeutral",
+            "MinigameEndTrevor",
+            "MinigameEndFranklin",
+            "MinigameEndMichael",
+            "MinigameTransitionOut",
+            "MinigameTransitionIn",
+            "SwitchShortNeutralIn",
+            "SwitchShortFranklinIn",
+            "SwitchShortTrevorIn",
+            "SwitchShortMichaelIn",
+            "SwitchOpenMichaelIn",
+            "SwitchOpenFranklinIn",
+            "SwitchOpenTrevorIn",
+            "SwitchHUDMichaelOut",
+            "SwitchHUDFranklinOut",
+            "SwitchHUDTrevorOut",
+            "SwitchShortFranklinMid",
+            "SwitchShortMichaelMid",
+            "SwitchShortTrevorMid",
+            "DeathFailOut",
+            "CamPushInNeutral",
+            "CamPushInFranklin",
+            "CamPushInMichael",
+            "CamPushInTrevor",
+            "SwitchOpenMichaelIn",
+            "SwitchSceneFranklin",
+            "SwitchSceneTrevor",
+            "SwitchSceneMichael",
+            "SwitchSceneNeutral",
+            "MP_Celeb_Win",
+            "MP_Celeb_Win_Out",
+            "MP_Celeb_Lose",
+            "MP_Celeb_Lose_Out",
+            "DeathFailNeutralIn",
+            "DeathFailMPDark",
+            "DeathFailMPIn",
+            "MP_Celeb_Preload_Fade",
+            "PeyoteEndOut",
+            "PeyoteEndIn",
+            "PeyoteIn",
+            "PeyoteOut",
+            "MP_race_crash",
+            "SuccessFranklin",
+            "SuccessTrevor",
+            "SuccessMichael",
+            "DrugsMichaelAliensFightIn",
+            "DrugsMichaelAliensFight",
+            "DrugsMichaelAliensFightOut",
+            "DrugsTrevorClownsFightIn",
+            "DrugsTrevorClownsFight",
+            "DrugsTrevorClownsFightOut",
+            "HeistCelebPass",
+            "HeistCelebPassBW",
+            "HeistCelebEnd",
+            "HeistCelebToast",
+            "MenuMGHeistIn",
+            "MenuMGTournamentIn",
+            "MenuMGSelectionIn",
+            "ChopVision",
+            "DMT_flight_intro",
+            "DMT_flight",
+            "DrugsDrivingIn",
+            "DrugsDrivingOut",
+            "SwitchOpenNeutralFIB5",
+            "HeistLocate",
+            "MP_job_load",
+            "RaceTurbo",
+            "MP_intro_logo",
+            "HeistTripSkipFade",
+            "MenuMGHeistOut",
+            "MP_corona_switch",
+            "MenuMGSelectionTint",
+            "SuccessNeutral",
+            "ExplosionJosh3",
+            "SniperOverlay",
+            "RampageOut",
+            "Rampage",
+            "Dont_tazeme_bro",
+            "DeathFailOut",
+        };
+
+        public void playScreenEffect(string effectName, int duration, bool looped)
+        {
+            if (!ScreenEffects.Contains(effectName)) return;
+            Function.Call(Hash._START_SCREEN_EFFECT, effectName, duration, looped);
+        }
+
+        internal string[] PoliceScanner = {
+            "LAMAR_1_POLICE_LOST",
+            "SCRIPTED_SCANNER_REPORT_AH_3B_01",
+            "SCRIPTED_SCANNER_REPORT_AH_MUGGING_01",
+            "SCRIPTED_SCANNER_REPORT_AH_PREP_01",
+            "SCRIPTED_SCANNER_REPORT_AH_PREP_02",
+            "SCRIPTED_SCANNER_REPORT_ARMENIAN_1_01",
+            "SCRIPTED_SCANNER_REPORT_ARMENIAN_1_02",
+            "SCRIPTED_SCANNER_REPORT_ASS_BUS_01",
+            "SCRIPTED_SCANNER_REPORT_ASS_MULTI_01",
+            "SCRIPTED_SCANNER_REPORT_BARRY_3A_01",
+            "SCRIPTED_SCANNER_REPORT_BS_2A_01",
+            "SCRIPTED_SCANNER_REPORT_BS_2B_01",
+            "SCRIPTED_SCANNER_REPORT_BS_2B_02",
+            "SCRIPTED_SCANNER_REPORT_BS_2B_03",
+            "SCRIPTED_SCANNER_REPORT_BS_2B_04",
+            "SCRIPTED_SCANNER_REPORT_BS_PREP_A_01",
+            "SCRIPTED_SCANNER_REPORT_BS_PREP_B_01",
+            "SCRIPTED_SCANNER_REPORT_CAR_STEAL_2_01",
+            "SCRIPTED_SCANNER_REPORT_CAR_STEAL_4_01",
+            "SCRIPTED_SCANNER_REPORT_DH_PREP_1_01",
+            "SCRIPTED_SCANNER_REPORT_FIB_1_01",
+            "SCRIPTED_SCANNER_REPORT_FIN_C2_01",
+            "SCRIPTED_SCANNER_REPORT_Franklin_2_01",
+            "SCRIPTED_SCANNER_REPORT_FRANLIN_0_KIDNAP",
+            "SCRIPTED_SCANNER_REPORT_GETAWAY_01",
+            "SCRIPTED_SCANNER_REPORT_JOSH_3_01",
+            "SCRIPTED_SCANNER_REPORT_JOSH_4_01",
+            "SCRIPTED_SCANNER_REPORT_JSH_2A_01",
+            "SCRIPTED_SCANNER_REPORT_JSH_2A_02",
+            "SCRIPTED_SCANNER_REPORT_JSH_2A_03",
+            "SCRIPTED_SCANNER_REPORT_JSH_2A_04",
+            "SCRIPTED_SCANNER_REPORT_JSH_2A_05",
+            "SCRIPTED_SCANNER_REPORT_JSH_PREP_1A_01",
+            "SCRIPTED_SCANNER_REPORT_JSH_PREP_1B_01",
+            "SCRIPTED_SCANNER_REPORT_JSH_PREP_2A_01",
+            "SCRIPTED_SCANNER_REPORT_JSH_PREP_2A_02",
+            "SCRIPTED_SCANNER_REPORT_LAMAR_1_01",
+            "SCRIPTED_SCANNER_REPORT_MIC_AMANDA_01",
+            "SCRIPTED_SCANNER_REPORT_NIGEL_1A_01",
+            "SCRIPTED_SCANNER_REPORT_NIGEL_1D_01",
+            "SCRIPTED_SCANNER_REPORT_PS_2A_01",
+            "SCRIPTED_SCANNER_REPORT_PS_2A_02",
+            "SCRIPTED_SCANNER_REPORT_PS_2A_03",
+            "SCRIPTED_SCANNER_REPORT_SEC_TRUCK_01",
+            "SCRIPTED_SCANNER_REPORT_SEC_TRUCK_02",
+            "SCRIPTED_SCANNER_REPORT_SEC_TRUCK_03",
+            "SCRIPTED_SCANNER_REPORT_SIMEON_01",
+            "SCRIPTED_SCANNER_REPORT_Sol_3_01",
+            "SCRIPTED_SCANNER_REPORT_Sol_3_02"
+        };
+
+        public void playPoliceReport(string reportName)
+        {
+            if (!PoliceScanner.Contains(reportName)) return;
+            Function.Call(Hash.PLAY_POLICE_REPORT, reportName, 0.0);
+        }
+
+        public string getStreetName(Vector3 position)
+        {
+            return World.GetStreetName(position.ToVector());
+        }
+
+        public string getZoneName(Vector3 position)
+        {
+            return World.GetZoneName(position.ToVector());
+        }
+
+        public string getZoneNameLabel(Vector3 position)
+        {
+            return World.GetZoneNameLabel(position.ToVector());
+        }
+
+        public float getGroundHeight(Vector3 position)
+        {
+            return World.GetGroundHeight(position.ToVector());
+        }
+
+
     }
 
 
