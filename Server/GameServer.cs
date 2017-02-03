@@ -3775,5 +3775,14 @@ namespace GTANResource
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
+
+        public void PlayCustomPlayerAnimationStop(Client target, string animDict, string animName)
+        {
+            var obj = new SyncEvent();
+            obj.EventType = (byte)ServerEventType.PlayerAnimationStop;
+            obj.Arguments = ParseNativeArguments(target.handle.Value, animDict, animName);
+
+            SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
+        }
     }
 }

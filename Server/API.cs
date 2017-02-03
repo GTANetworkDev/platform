@@ -613,6 +613,19 @@ namespace GTANetworkServer
             return res.Settings.Select(r => r.Key).ToArray();
         }
 
+        public string getResourceSettingDescription(string resource, string setting)
+        {
+            var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
+
+            if (res == null || res.Settings == null)
+                return null;
+
+            if (!res.Settings.ContainsKey(setting))
+                return null;
+
+            return res.Settings[setting].Description;
+        }
+
         public bool doesConfigExist(string configName)
         {
             if (ResourceParent == null) throw new AccessViolationException("Illegal call to doesConfigExist inside the constructor!");
