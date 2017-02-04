@@ -3463,22 +3463,28 @@ namespace GTANetworkServer
 
         public Vector3 getEntityPosition(NetHandle entity)
         {
-            if (doesEntityExist(entity))
-            {
-                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Position ?? new Vector3();
-            }
-            return new Vector3();
+            EntityProperties props = null;
+            if (!Program.ServerInstance.NetEntityHandler.ToDict().TryGetValue(entity.Value, out props))
+                return new Vector3();
+            return props.Position ?? new Vector3();
         }
 
         public Vector3 getEntityRotation(NetHandle entity)
         {
-            if (doesEntityExist(entity))
-            {
-                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Rotation ?? new Vector3(0, 0, 0);
-            }
-            return new Vector3();
+            EntityProperties props = null;
+            if (!Program.ServerInstance.NetEntityHandler.ToDict().TryGetValue(entity.Value, out props))
+                return new Vector3();
+            return props.Rotation ?? new Vector3(0, 0, 0);
         }
-        
+
+        public Vector3 getEntityVelocity(NetHandle entity)
+        {
+            EntityProperties props = null;
+            if (!Program.ServerInstance.NetEntityHandler.ToDict().TryGetValue(entity.Value, out props))
+                return new Vector3();
+            return props.Velocity ?? new Vector3();
+        }
+
 
         public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
         {

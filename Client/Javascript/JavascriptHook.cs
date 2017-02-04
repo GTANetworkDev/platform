@@ -28,6 +28,7 @@ using Vector3 = GTANetworkShared.Vector3;
 using VehicleHash = GTANetworkShared.VehicleHash;
 using WeaponHash = GTANetworkShared.WeaponHash;
 using System.ComponentModel;
+using ProtoBuf;
 
 namespace GTANetwork.Javascript
 {
@@ -2473,6 +2474,11 @@ namespace GTANetwork.Javascript
             return Util.Util.GetPedSeat(new Ped(player.Value));
         }
 
+        public bool getPlayerSeatbelt(LocalHandle player)
+        {
+            return !Function.Call<bool>((Hash)0x7EE53118C892B513, player.Value, 32, true);
+        }
+
         public void setPlayerWeaponTint(int weapon, int tint)
         {
             Function.Call((Hash)0x50969B9B89ED5738, Game.Player.Character, weapon, tint);
@@ -4485,8 +4491,10 @@ namespace GTANetwork.Javascript
     }
 
 
+    [ProtoContract]
     public class ClientResourceSettings
     {
+        [ProtoMember(1)]
         public Dictionary<string, NativeArgument> Settings { get; set; }
     }
 }
