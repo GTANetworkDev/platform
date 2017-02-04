@@ -1880,6 +1880,8 @@ namespace GTANResource
                                                             = fullPacket.Position;
                                                         NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation
                                                             = fullPacket.Quaternion;
+                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity
+                                                            = fullPacket.Velocity;
                                                         if (fullPacket.Flag.HasValue)
                                                         {
                                                             var newDead = (fullPacket.Flag &
@@ -1951,6 +1953,8 @@ namespace GTANResource
                                                             fullPacket.Position;
                                                         NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
                                                             fullPacket.Quaternion;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
+                                                            fullPacket.Velocity;
                                                     }
                                                 }
                                                 else if (!client.CurrentVehicle.IsNull && NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
@@ -1959,9 +1963,12 @@ namespace GTANResource
                                                         NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position;
                                                     var carRot =
                                                         NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation;
+                                                    var carVel =
+                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity;
 
                                                     client.Position = carPos;
                                                     client.Rotation = carRot;
+                                                    client.Velocity = carVel;
 
                                                     if (NetEntityHandler.ToDict()
                                                         .ContainsKey(fullPacket.NetHandle.Value))
@@ -1970,6 +1977,8 @@ namespace GTANResource
                                                             carPos;
                                                         NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
                                                             carRot;
+                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
+                                                            carVel;
                                                     }
                                                 }
                                                 client.IsInVehicle = true;
@@ -2325,6 +2334,8 @@ namespace GTANResource
                                                             = fullPacket.Position;
                                                         NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation
                                                             = fullPacket.Quaternion;
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Velocity
+                                                            = fullPacket.Velocity;
 
                                                         ((VehicleProperties)
                                                             NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
