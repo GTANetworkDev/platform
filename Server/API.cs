@@ -3492,9 +3492,12 @@ namespace GTANetworkServer
             setEntityData(player, "__LAST_POSITION_SET", TickCount);
         }
 
-        public void warpPlayerOutOfVehicle(Client player, NetHandle vehicle)
+        public void warpPlayerOutOfVehicle(Client player)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xD3DBCE61A490BE02, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), 16);
+            if(player.IsInVehicle)
+            {
+                Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xD3DBCE61A490BE02, new LocalPlayerArgument(), new EntityArgument(player.vehicle.Value), 16);
+            }
         }
 
         public bool doesEntityExist(NetHandle entity)
