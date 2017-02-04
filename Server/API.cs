@@ -718,7 +718,9 @@ namespace GTANetworkServer
 
         public string[] getAllResources()
         {
-            return Directory.GetDirectories("resources").Select(s => Path.GetFileName(s)).ToArray();
+            return Directory.GetDirectories("resources")
+                .Where(s => File.Exists(s + "/meta.xml"))
+                .Select(s => Path.GetFileName(s)).ToArray();
         }
 
         public void playSoundFrontEnd(Client target, string SoundName, string SoundSetName)
@@ -978,6 +980,16 @@ namespace GTANetworkServer
         public void consoleOutput(string text, params object[] args)
         {
             Program.Output(string.Format(text, args));
+        }
+
+        public void consoleOutput(LogCat category, string text)
+        {
+            Program.Output(text, category);
+        }
+
+        public void consoleOutput(LogCat category, string text, params object[] args)
+        {
+            Program.Output(string.Format(text, args), category);
         }
 
         public void downloadData(Client target, string data)
