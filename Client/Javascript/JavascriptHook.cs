@@ -28,6 +28,7 @@ using Vector3 = GTANetworkShared.Vector3;
 using VehicleHash = GTANetworkShared.VehicleHash;
 using WeaponHash = GTANetworkShared.WeaponHash;
 using System.ComponentModel;
+using ProtoBuf;
 
 namespace GTANetwork.Javascript
 {
@@ -4490,8 +4491,10 @@ namespace GTANetwork.Javascript
     }
 
 
+    [ProtoContract]
     public class ClientResourceSettings
     {
+        [ProtoMember(1)]
         public Dictionary<string, NativeArgument> Settings { get; set; }
     }
 }
