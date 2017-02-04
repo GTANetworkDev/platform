@@ -303,9 +303,9 @@ namespace GTANetworkServer
             API.shared.setPlayerIntoVehicle(this, car, seat);
         }
 
-        public void warpOutOfVehicle(NetHandle car)
+        public void warpOutOfVehicle()
         {
-            API.shared.warpPlayerOutOfVehicle(this, car);
+            API.shared.warpPlayerOutOfVehicle(this);
         }
 
         public void setSkin(PedHash newSkin)
