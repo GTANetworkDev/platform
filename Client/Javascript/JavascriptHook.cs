@@ -2929,7 +2929,6 @@ namespace GTANetwork.Javascript
         {
             if (!config.EndsWith(".xml")) return null;
             var path = getResourceFilePath(config);
-            checkPathSafe(path);
 
             var xml = new XmlGroup();
             xml.Load(path);
@@ -3253,7 +3252,10 @@ namespace GTANetwork.Javascript
 
         public Vector3 getWaypointPosition()
         {
-            return World.WaypointPosition.ToLVector();
+            var blip = World.GetWaypointBlip();
+            if (blip == null)
+                return new Vector3();
+            return blip.Position.ToLVector();
         }
 
         public bool isWaypointSet()
@@ -3381,6 +3383,30 @@ namespace GTANetwork.Javascript
         public float getBlipScale(LocalHandle blip)
         {
             return blip.Properties<RemoteBlip>().Scale;
+        }
+
+        public void setBlipRouteVisible(LocalHandle blip, bool visible)
+        {
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
+                new Blip(blip.Value).ShowRoute = visible;
+            blip.Properties<RemoteBlip>().RouteVisible = visible;
+        }
+
+        public bool getBlipRouteVisible(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().RouteVisible;
+        }
+
+        public void setBlipRouteColor(LocalHandle blip, int color)
+        {
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
+                Function.Call(Hash.SET_BLIP_ROUTE_COLOUR, blip.Value, color);
+            blip.Properties<RemoteBlip>().RouteColor = color;
+        }
+
+        public int getBlipRouteColor(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().RouteColor;
         }
 
         public void setChatVisible(bool display)
