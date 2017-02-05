@@ -55,6 +55,18 @@ namespace GTANetworkServer
             set { Base.setBlipScale(this, value); }
         }
 
+        public bool routeVisible
+        {
+            get { return Base.getBlipRouteVisible(this); }
+            set { Base.setBlipRouteVisible(this, value); }
+        }
+
+        public int routeColor
+        {
+            get { return Base.getBlipRouteColor(this); }
+            set { Base.setBlipRouteColor(this, value); }
+        }
+
         #endregion
 
         #region Methods

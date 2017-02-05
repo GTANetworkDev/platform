@@ -3757,6 +3757,52 @@ namespace GTANetworkServer
             return 0;
         }
 
+        public void setBlipRouteVisible(NetHandle blip, bool visible)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteVisible = visible;
+
+                var delta = new Delta_BlipProperties();
+                delta.RouteVisible = visible;
+                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x4F7D8A9BFB0B43E9, blip, visible);
+        }
+
+        public bool getBlipRouteVisible(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteVisible;
+            }
+
+            return false;
+        }
+
+        public void setBlipRouteColor(NetHandle blip, int color)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteColor = color;
+
+                var delta = new Delta_BlipProperties();
+                delta.RouteColor = color;
+                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x837155CD2F63DA09, blip, color);
+        }
+
+        public int getBlipRouteColor(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteColor;
+            }
+
+            return 0;
+        }
+
         public void sendNotificationToPlayer(Client player, string message, bool flashing = false)
         {
             Program.ServerInstance.SendNativeCallToPlayer(player, false, 0x202709F4C58A0424, "STRING");
