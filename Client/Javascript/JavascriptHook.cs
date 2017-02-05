@@ -3253,7 +3253,10 @@ namespace GTANetwork.Javascript
 
         public Vector3 getWaypointPosition()
         {
-            return World.WaypointPosition.ToLVector();
+            var blip = World.GetWaypointBlip();
+            if (blip == null)
+                return new Vector3();
+            return blip.Position.ToLVector();
         }
 
         public bool isWaypointSet()
