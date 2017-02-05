@@ -74,15 +74,15 @@ namespace GTANetworkShared
     }
 
     [ProtoContract]
-    [ProtoInclude(15, typeof(VehicleProperties))]
-    [ProtoInclude(16, typeof(BlipProperties))]
-    [ProtoInclude(17, typeof(MarkerProperties))]
-    [ProtoInclude(18, typeof(PickupProperties))]
-    [ProtoInclude(19, typeof(PlayerProperties))]
-    [ProtoInclude(20, typeof(TextLabelProperties))]
-    [ProtoInclude(21, typeof(WorldProperties))]
-    [ProtoInclude(22, typeof(PedProperties))]
-    [ProtoInclude(23, typeof(ParticleProperties))]
+    [ProtoInclude(14, typeof(VehicleProperties))]
+    [ProtoInclude(15, typeof(BlipProperties))]
+    [ProtoInclude(16, typeof(MarkerProperties))]
+    [ProtoInclude(17, typeof(PickupProperties))]
+    [ProtoInclude(18, typeof(PlayerProperties))]
+    [ProtoInclude(19, typeof(TextLabelProperties))]
+    [ProtoInclude(20, typeof(WorldProperties))]
+    [ProtoInclude(21, typeof(PedProperties))]
+    [ProtoInclude(22, typeof(ParticleProperties))]
     public class EntityProperties
     {
         [ProtoMember(1)]
@@ -124,7 +124,7 @@ namespace GTANetworkShared
         [ProtoMember(13)]
         public bool IsInvincible { get; set; }
 
-        [ProtoMember(14)]
+        [ProtoMember(23)]
         public Vector3 Velocity { get; set; }
     }
 
