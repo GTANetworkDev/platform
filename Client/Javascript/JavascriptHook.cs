@@ -2476,7 +2476,10 @@ namespace GTANetwork.Javascript
 
         public bool getPlayerSeatbelt(LocalHandle player)
         {
-            return !Function.Call<bool>((Hash)0x7EE53118C892B513, player.Value, 32, true);
+            if (player.Value == Game.Player.Character.Handle) return !Game.Player.Character.GetConfigFlag(32);
+            else return !new Ped(player.Value).GetConfigFlag(32);
+
+            //return !Function.Call<bool>((Hash)0x7EE53118C892B513, player.Value, 32, true);
         }
 
         public void setPlayerWeaponTint(int weapon, int tint)
