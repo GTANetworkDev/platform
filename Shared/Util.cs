@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProtoBuf;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
@@ -6,6 +7,14 @@ using System.Windows.Forms;
 
 namespace GTANetworkShared
 {
+
+    [ProtoContract]
+    public class ClientResourceSettings
+    {
+        [ProtoMember(1)]
+        public Dictionary<string, NativeArgument> Settings { get; set; }
+    }
+
     public static class Extensions
     {
         public static float Clamp(float value, float min, float max)

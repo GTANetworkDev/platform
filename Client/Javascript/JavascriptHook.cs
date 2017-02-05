@@ -28,7 +28,6 @@ using Vector3 = GTANetworkShared.Vector3;
 using VehicleHash = GTANetworkShared.VehicleHash;
 using WeaponHash = GTANetworkShared.WeaponHash;
 using System.ComponentModel;
-using ProtoBuf;
 
 namespace GTANetwork.Javascript
 {
@@ -2476,7 +2475,10 @@ namespace GTANetwork.Javascript
 
         public bool getPlayerSeatbelt(LocalHandle player)
         {
-            return !Function.Call<bool>((Hash)0x7EE53118C892B513, player.Value, 32, true);
+            if (player.Value == Game.Player.Character.Handle) return !Game.Player.Character.GetConfigFlag(32);
+            else return !new Ped(player.Value).GetConfigFlag(32);
+
+            //return !Function.Call<bool>((Hash)0x7EE53118C892B513, player.Value, 32, true);
         }
 
         public void setPlayerWeaponTint(int weapon, int tint)
@@ -2864,50 +2866,41 @@ namespace GTANetwork.Javascript
             Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, r,g,b,a);
         }
 
-        public void playSoundFrontEnd(string soundName)
-        {
-            //if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
-            //{
-            //Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-            //Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
-            Audio.PlaySoundFrontend(soundName);
-
-            //}
-        }
-
         public void playSoundFrontEnd(string soundName, string soundSetName)
-        {
-            //if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
-            //{
-                //Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-                //Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
-                Audio.PlaySoundFrontend(soundName, soundSetName);
-
-            //}
-        }
-
-        public void playSoundFromEntity(LocalHandle entity, string soundName, string soundSetName)
         {
             if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
             {
                 Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-                Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, entity.Value, soundName, soundSetName);
+                Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
             }
         }
 
-        public void playSoundFromCoord(Vector3 position, string soundName)
-        {
-            Audio.PlaySoundAt(position.ToVector(), soundName);
-        }
+        //public void playSoundFromEntity(LocalHandle entity, string soundName, string soundSetName)
+        //{
+        //    if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
+        //    {
+        //        Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+        //        Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, -1, soundName, entity.Value, soundSetName, 0, 0);
+        //    }
+        //}
 
-        public void playSoundFromCoord(Vector3 position, string soundName, string soundSetName)
-        {
-            Audio.PlaySoundAt(position.ToVector(), soundName, soundSetName);
-        }
+        //public void playSoundFromEntity2(LocalHandle entity, string soundName, string soundSetName)
+        //{
+        //    //if (entity.IsNull) return;
+        //    Audio.PlaySoundFromEntity(new Prop(entity.Value), soundName, soundSetName);
+        //}
 
-        public void IsEntityOnScreen(LocalHandle entity)
+        //public void playSoundFromCoord(Vector3 position, string soundName, string soundSetName)
+        //{
+        //    Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+        //    Function.Call(Hash.PLAY_SOUND_FROM_COORD, soundName, position.X, position.Y, position.Z,  soundSetName, 0, 0, 0);
+        //}
+
+        public bool isEntityOnScreen(LocalHandle entity)
         {
-            Function.Call<bool>(Hash.IS_ENTITY_ON_SCREEN, entity.Value);
+            if (entity.IsNull) return false;
+            return new Prop(entity.Value).IsOnScreen;
+            //return Function.Call<bool>(Hash.IS_ENTITY_ON_SCREEN, entity.Value);
         }
 
         public void showShard(string text, int timeout = 5000)
@@ -3202,13 +3195,13 @@ namespace GTANetwork.Javascript
             return 0;
         }
 
-        public LocalHandle createVehicle(int model, Vector3 pos, float heading)
+        public LocalHandle createVehicle(int model, Vector3 pos, float heading = 0f)
         {
             var car = Main.NetEntityHandler.CreateLocalVehicle(model, pos, heading);
             return new LocalHandle(car, HandleType.LocalHandle);
         }
 
-        public LocalHandle createPed(int model, Vector3 pos, float heading)
+        public LocalHandle createPed(int model, Vector3 pos, float heading = 0f)
         {
             var ped = Main.NetEntityHandler.CreateLocalPed(model, pos, heading);
             return new LocalHandle(ped, HandleType.LocalHandle);
@@ -4552,11 +4545,4 @@ namespace GTANetwork.Javascript
 
     }
 
-
-    [ProtoContract]
-    public class ClientResourceSettings
-    {
-        [ProtoMember(1)]
-        public Dictionary<string, NativeArgument> Settings { get; set; }
-    }
 }
