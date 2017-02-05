@@ -2929,7 +2929,6 @@ namespace GTANetwork.Javascript
         {
             if (!config.EndsWith(".xml")) return null;
             var path = getResourceFilePath(config);
-            checkPathSafe(path);
 
             var xml = new XmlGroup();
             xml.Load(path);
