@@ -2858,13 +2858,50 @@ namespace GTANetwork.Javascript
             Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, r,g,b,a);
         }
 
+        public void playSoundFrontEnd(string soundName)
+        {
+            //if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
+            //{
+            //Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+            //Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
+            Audio.PlaySoundFrontend(soundName);
+
+            //}
+        }
+
         public void playSoundFrontEnd(string soundName, string soundSetName)
+        {
+            //if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
+            //{
+                //Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+                //Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
+                Audio.PlaySoundFrontend(soundName, soundSetName);
+
+            //}
+        }
+
+        public void playSoundFromEntity(LocalHandle entity, string soundName, string soundSetName)
         {
             if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
             {
                 Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-                Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
+                Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, entity.Value, soundName, soundSetName);
             }
+        }
+
+        public void playSoundFromCoord(Vector3 position, string soundName)
+        {
+            Audio.PlaySoundAt(position.ToVector(), soundName);
+        }
+
+        public void playSoundFromCoord(Vector3 position, string soundName, string soundSetName)
+        {
+            Audio.PlaySoundAt(position.ToVector(), soundName, soundSetName);
+        }
+
+        public void IsEntityOnScreen(LocalHandle entity)
+        {
+            Function.Call<bool>(Hash.IS_ENTITY_ON_SCREEN, entity.Value);
         }
 
         public void showShard(string text, int timeout = 5000)
@@ -3972,11 +4009,10 @@ namespace GTANetwork.Javascript
 
 #region Menus
 
-        //public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
-        //{
-        //    var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor);
-        //    return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y))) { ScaleWithSafezone = false };
-        //}
+        public UIMenu createMenu(string subtitle, double x, double y, int anchor)
+        {
+            return createMenu(null, subtitle, x, y, anchor, false);
+        }
 
         public UIMenu createMenu(string title, string subtitle, double x, double y, int anchor, bool enableBanner = true)
         {
