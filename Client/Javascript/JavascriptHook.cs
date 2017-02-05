@@ -3205,13 +3205,13 @@ namespace GTANetwork.Javascript
             return 0;
         }
 
-        public LocalHandle createVehicle(int model, Vector3 pos, float heading)
+        public LocalHandle createVehicle(int model, Vector3 pos, float heading = 0f)
         {
             var car = Main.NetEntityHandler.CreateLocalVehicle(model, pos, heading);
             return new LocalHandle(car, HandleType.LocalHandle);
         }
 
-        public LocalHandle createPed(int model, Vector3 pos, float heading)
+        public LocalHandle createPed(int model, Vector3 pos, float heading = 0f)
         {
             var ped = Main.NetEntityHandler.CreateLocalPed(model, pos, heading);
             return new LocalHandle(ped, HandleType.LocalHandle);
