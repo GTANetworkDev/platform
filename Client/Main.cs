@@ -260,7 +260,9 @@ namespace GTANetwork
             Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
             Audio.SetAudioFlag(AudioFlag.DisableBarks, true);
             Audio.SetAudioFlag(AudioFlag.PoliceScannerDisabled, true);
-            Function.Call((Hash)0x552369F549563AD5, false);
+            Audio.SetAudioFlag(AudioFlag.DisableFlightMusic, true);
+            Function.Call((Hash)0x552369F549563AD5, false); //_FORCE_AMBIENT_SIREN
+
 
 
             GlobalVariable.Get(2576573).Write(1);
