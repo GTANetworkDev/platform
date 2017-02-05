@@ -2866,50 +2866,41 @@ namespace GTANetwork.Javascript
             Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, r,g,b,a);
         }
 
-        public void playSoundFrontEnd(string soundName)
-        {
-            //if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
-            //{
-            //Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-            //Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
-            Audio.PlaySoundFrontend(soundName);
-
-            //}
-        }
-
         public void playSoundFrontEnd(string soundName, string soundSetName)
-        {
-            //if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
-            //{
-                //Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-                //Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
-                Audio.PlaySoundFrontend(soundName, soundSetName);
-
-            //}
-        }
-
-        public void playSoundFromEntity(LocalHandle entity, string soundName, string soundSetName)
         {
             if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
             {
                 Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-                Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, entity.Value, soundName, soundSetName);
+                Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
             }
         }
 
-        public void playSoundFromCoord(Vector3 position, string soundName)
-        {
-            Audio.PlaySoundAt(position.ToVector(), soundName);
-        }
+        //public void playSoundFromEntity(LocalHandle entity, string soundName, string soundSetName)
+        //{
+        //    if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
+        //    {
+        //        Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+        //        Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, -1, soundName, entity.Value, soundSetName, 0, 0);
+        //    }
+        //}
 
-        public void playSoundFromCoord(Vector3 position, string soundName, string soundSetName)
-        {
-            Audio.PlaySoundAt(position.ToVector(), soundName, soundSetName);
-        }
+        //public void playSoundFromEntity2(LocalHandle entity, string soundName, string soundSetName)
+        //{
+        //    //if (entity.IsNull) return;
+        //    Audio.PlaySoundFromEntity(new Prop(entity.Value), soundName, soundSetName);
+        //}
 
-        public void IsEntityOnScreen(LocalHandle entity)
+        //public void playSoundFromCoord(Vector3 position, string soundName, string soundSetName)
+        //{
+        //    Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+        //    Function.Call(Hash.PLAY_SOUND_FROM_COORD, soundName, position.X, position.Y, position.Z,  soundSetName, 0, 0, 0);
+        //}
+
+        public bool isEntityOnScreen(LocalHandle entity)
         {
-            Function.Call<bool>(Hash.IS_ENTITY_ON_SCREEN, entity.Value);
+            if (entity.IsNull) return false;
+            return new Prop(entity.Value).IsOnScreen;
+            //return Function.Call<bool>(Hash.IS_ENTITY_ON_SCREEN, entity.Value);
         }
 
         public void showShard(string text, int timeout = 5000)
