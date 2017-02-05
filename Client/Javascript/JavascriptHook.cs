@@ -4519,8 +4519,4 @@ namespace GTANetwork.Javascript
 
     }
 
-    public class ClientResourceSettings
-    {
-        public Dictionary<string, NativeArgument> Settings { get; set; }
-    }
 }
