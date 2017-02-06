@@ -80,6 +80,16 @@ namespace GTANetworkShared
             };
         }
 
+        public static float Distance(Vector3 a, Vector3 b)
+        {
+            return a.DistanceTo(b);
+        }
+
+        public static float DistanceSquared(Vector3 a, Vector3 b)
+        {
+            return a.DistanceToSquared(b);
+        }
+
         public override string ToString()
         {
             return string.Format("X: {0} Y: {1} Z: {2}", X, Y, Z);
