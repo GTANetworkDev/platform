@@ -1905,7 +1905,7 @@ namespace GTANetwork.Javascript
             return false;
         }
 
-        public void setEntityCollissionless(LocalHandle entity, bool status)
+        public void setEntityCollisionless(LocalHandle entity, bool status)
         {
             if (entity.Properties<IStreamedItem>() != null)
             {
