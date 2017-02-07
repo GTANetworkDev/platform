@@ -4544,7 +4544,7 @@ namespace GTANetwork.Javascript
             return World.GetGroundHeight(position.ToVector());
         }
 
-        public string getLabelText(string labelName)
+        public string getGameText(string labelName)
         {
             return Function.Call<string>(Hash._GET_LABEL_TEXT, labelName);
         }
