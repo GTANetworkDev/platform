@@ -81,7 +81,9 @@
     <Compile Include="GTANSchemeListener.cs" />
     <Compile Include="LauncherSettings.cs" />
     <Compile Include="MasterServerAnnounce.cs" />
-    <Compile Include="Math.cs" />
+    <Compile Include="Math\Matrix.cs" />
+    <Compile Include="Math\Quaternion.cs" />
+    <Compile Include="Math\Vector3.cs" />
     <Compile Include="NativeData.cs" />
     <Compile Include="NetHandle.cs" />
     <Compile Include="NonStandardVehicleMods.cs" />
