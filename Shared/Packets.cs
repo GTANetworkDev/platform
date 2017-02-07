@@ -370,6 +370,9 @@ namespace GTANetworkShared
 
         [ProtoMember(7)]
         public bool CEFDevtool { get; set; }
+
+        [ProtoMember(8)]
+        public bool MediaStream { get; set; }
     }
 
     

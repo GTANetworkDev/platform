@@ -386,7 +386,9 @@ namespace GTANetwork.Javascript
             scriptEngine.AddHostType("Size", typeof(Size));
             scriptEngine.AddHostType("Size2", typeof(SharpDX.Size2));
             scriptEngine.AddHostType("Vector3", typeof(Vector3));
+            scriptEngine.AddHostType("Matrix4", typeof(Matrix4));
             scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
+            scriptEngine.AddHostType("BadgeStyle", typeof(UIMenuItem.BadgeStyle));
             scriptEngine.AllowReflection = false;
 
             try
@@ -1905,7 +1907,7 @@ namespace GTANetwork.Javascript
             return false;
         }
 
-        public void setEntityCollissionless(LocalHandle entity, bool status)
+        public void setEntityCollisionless(LocalHandle entity, bool status)
         {
             if (entity.Properties<IStreamedItem>() != null)
             {
@@ -4540,6 +4542,11 @@ namespace GTANetwork.Javascript
         public float getGroundHeight(Vector3 position)
         {
             return World.GetGroundHeight(position.ToVector());
+        }
+
+        public string getGameText(string labelName)
+        {
+            return Function.Call<string>(Hash._GET_LABEL_TEXT, labelName);
         }
 
 

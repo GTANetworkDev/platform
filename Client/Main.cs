@@ -4189,6 +4189,7 @@ namespace GTANetwork
             obj.CEF = !CefUtil.DISABLE_CEF;
             obj.CEFDevtool = EnableDevTool;
             obj.GameVersion = (byte)Game.Version;
+            obj.MediaStream = EnableMediaStream;
 
             if(passProtected)
             {

@@ -1576,6 +1576,7 @@ namespace GTANResource
                                 client.CommitConnection();
                                 client.SocialClubName = connReq.SocialClubName;
                                 client.CEF = connReq.CEF;
+                                client.MediaStream = connReq.MediaStream;
                                 client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
                                 client.RemoteScriptVersion = ParseableVersion.Parse(connReq.ScriptVersion);
                                 client.GameVersion = connReq.GameVersion;
