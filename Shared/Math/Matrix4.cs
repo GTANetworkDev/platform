@@ -5,16 +5,16 @@ using System.Text;
 
 namespace GTANetworkShared
 {
-    public class Matrix
+    public class Matrix4
     {
         float m00, m01, m02, m03;
         float m10, m11, m12, m13;
         float m20, m21, m22, m23;
         float m30, m31, m32, m33;
 
-        public Matrix() { }
+        public Matrix4() { }
 
-        public Matrix(float v)
+        public Matrix4(float v)
         {
             m00 = m01 = m02 = m03 = v;
             m10 = m11 = m12 = m13 = v;
@@ -22,7 +22,15 @@ namespace GTANetworkShared
             m30 = m31 = m32 = m33 = v;
         }
 
-        public Matrix(
+        public Matrix4(double v)
+        {
+            m00 = m01 = m02 = m03 = (float)v;
+            m10 = m11 = m12 = m13 = (float)v;
+            m20 = m21 = m22 = m23 = (float)v;
+            m30 = m31 = m32 = m33 = (float)v;
+        }
+
+        public Matrix4(
             float _m00, float _m01, float _m02, float _m03,
             float _m10, float _m11, float _m12, float _m13,
             float _m20, float _m21, float _m22, float _m23,
@@ -43,9 +51,23 @@ namespace GTANetworkShared
             );
         }
 
+        public Vector3 Transform(double x, double y, double z)
+        {
+            return new Vector3(
+                (m00 * x) + (m01 * y) + (m02 * z) + m03,
+                (m10 * x) + (m11 * y) + (m12 * z) + m13,
+                (m20 * x) + (m21 * y) + (m22 * z) + m23
+            );
+        }
+
         public Vector3 Transform(Vector3 v)
         {
             return Transform(v.X, v.Y, v.Z);
+        }
+
+        public Matrix4 Multiply(Matrix4 other)
+        {
+            return this * other;
         }
 
         public override string ToString()
@@ -59,9 +81,9 @@ namespace GTANetworkShared
                 "}";
         }
 
-        public static Matrix operator *(Matrix l, Matrix r)
+        public static Matrix4 operator *(Matrix4 l, Matrix4 r)
         {
-            var ret = new Matrix();
+            var ret = new Matrix4();
 
             ret.m00 = (l.m00 * r.m00) + (l.m01 * r.m10) + (l.m02 * r.m20) + (l.m03 * r.m30);
             ret.m01 = (l.m00 * r.m01) + (l.m01 * r.m11) + (l.m02 * r.m21) + (l.m03 * r.m31);
@@ -86,11 +108,11 @@ namespace GTANetworkShared
             return ret;
         }
 
-        public static Matrix Identity
+        public static Matrix4 Identity
         {
             get
             {
-                return new Matrix(
+                return new Matrix4(
                     1, 0, 0, 0,
                     0, 1, 0, 0,
                     0, 0, 1, 0,
@@ -99,7 +121,8 @@ namespace GTANetworkShared
             }
         }
 
-        public static Matrix CreateRotationX(float rot)
+        public static Matrix4 CreateRotationX(double rot) { return CreateRotationX((float)rot); }
+        public static Matrix4 CreateRotationX(float rot)
         {
             var ret = Identity;
             ret.m11 = (float)Math.Cos(rot);
@@ -109,7 +132,8 @@ namespace GTANetworkShared
             return ret;
         }
 
-        public static Matrix CreateRotationY(float rot)
+        public static Matrix4 CreateRotationY(double rot) { return CreateRotationY((float)rot); }
+        public static Matrix4 CreateRotationY(float rot)
         {
             var ret = Identity;
             ret.m00 = (float)Math.Cos(rot);
@@ -119,7 +143,8 @@ namespace GTANetworkShared
             return ret;
         }
 
-        public static Matrix CreateRotationZ(float rot)
+        public static Matrix4 CreateRotationZ(double rot) { return CreateRotationZ((float)rot); }
+        public static Matrix4 CreateRotationZ(float rot)
         {
             var ret = Identity;
             ret.m00 = (float)Math.Cos(rot);
@@ -129,12 +154,14 @@ namespace GTANetworkShared
             return ret;
         }
 
-        public static Matrix CreateScale(float v)
+        public static Matrix4 CreateScale(double v) { return CreateScale((float)v); }
+        public static Matrix4 CreateScale(float v)
         {
             return CreateScale(v, v, v);
         }
 
-        public static Matrix CreateScale(float x, float y, float z)
+        public static Matrix4 CreateScale(double x, double y, double z) { return CreateScale((float)x, (float)y, (float)z); }
+        public static Matrix4 CreateScale(float x, float y, float z)
         {
             var ret = Identity;
             ret.m00 = x;
@@ -143,7 +170,8 @@ namespace GTANetworkShared
             return ret;
         }
 
-        public static Matrix CreateTranslation(float x, float y, float z)
+        public static Matrix4 CreateTranslation(double x, double y, double z) { return CreateTranslation((float)x, (float)y, (float)z); }
+        public static Matrix4 CreateTranslation(float x, float y, float z)
         {
             var ret = Identity;
             ret.m03 = x;

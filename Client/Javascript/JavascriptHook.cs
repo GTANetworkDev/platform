@@ -386,7 +386,7 @@ namespace GTANetwork.Javascript
             scriptEngine.AddHostType("Size", typeof(Size));
             scriptEngine.AddHostType("Size2", typeof(SharpDX.Size2));
             scriptEngine.AddHostType("Vector3", typeof(Vector3));
-            scriptEngine.AddHostType("Matrix", typeof(GTANetworkShared.Matrix));
+            scriptEngine.AddHostType("Matrix4", typeof(Matrix4));
             scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
             scriptEngine.AddHostType("BadgeStyle", typeof(UIMenuItem.BadgeStyle));
             scriptEngine.AllowReflection = false;
