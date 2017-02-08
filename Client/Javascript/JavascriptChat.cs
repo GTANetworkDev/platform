@@ -99,7 +99,7 @@ namespace GTANetwork.Javascript
             }
             set
             {
-                if (_isFocused ^ value)
+                if (_isFocused != value)
                     onFocusChange?.Invoke(value);
 
                 _isFocused = value;
