@@ -2851,7 +2851,8 @@ namespace GTANetwork
                     return;
                 }
 
-                if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping)
+                if ((Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) || Game.IsControlJustPressed(0, Control.FrontendPause))
+                    && !MainMenu.Visible && !_wasTyping)
                 {
                     MainMenu.Visible = true;
 
@@ -3776,27 +3777,17 @@ namespace GTANetwork
 
                         Control[] exceptions = new[]
                         {
-                        Control.LookLeftRight,
-                        Control.LookUpDown,
-                        Control.LookLeft,
-                        Control.LookRight,
-                        Control.LookUp,
-                        Control.LookDown,
-                    };
-
-                        /*
-                        foreach (var control in Enum.GetValues(typeof (Control)).Cast<Control>())
-                        {
-                            if (Array.IndexOf(exceptions, control) != -1) continue;
-                            Game.DisableControlThisFrame(0, control);
-                        }*/
+                            Control.LookLeftRight,
+                            Control.LookUpDown,
+                            Control.LookLeft,
+                            Control.LookRight,
+                            Control.LookUp,
+                            Control.LookDown,
+                        };
 
                         Game.DisableAllControlsThisFrame(0);
-
                         foreach (var c in exceptions)
-                        {
                             Game.EnableControlThisFrame(0, c);
-                        }
 
                         var ent = NetEntityHandler.NetToEntity(SpectatingEntity);
 
