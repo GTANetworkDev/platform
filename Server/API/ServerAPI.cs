@@ -1627,12 +1627,12 @@ namespace GTANetworkServer
 
         public void setVehicleBulletproofTyres(NetHandle vehicle, bool bulletproof)
         {
-            setVehicleMod(vehicle, 61, bulletproof ? 0x01 : 0x00);
+            setVehicleMod(vehicle, 61, bulletproof ? 0 : 1);
         }
 
         public bool getVehicleBulletproofTyres(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 61) != 0;
+            return getVehicleMod(vehicle, 61) == 0;
         }
 
         public void setVehicleNumberPlateStyle(NetHandle vehicle, int style)

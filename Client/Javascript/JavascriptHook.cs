@@ -1993,12 +1993,12 @@ namespace GTANetwork.Javascript
 
         public void setVehicleBulletproofTyres(LocalHandle vehicle, bool bulletproof)
         {
-            setVehicleMod(vehicle, 61, bulletproof ? 0x01 : 0x00);
+            setVehicleMod(vehicle, 61, bulletproof ? 0 : 1);
         }
 
         public bool getVehicleBulletproofTyres(LocalHandle vehicle)
         {
-            return getVehicleMod(vehicle, 61) != 0;
+            return getVehicleMod(vehicle, 61) == 0;
         }
 
         public void setVehicleNumberPlateStyle(LocalHandle vehicle, int style)
