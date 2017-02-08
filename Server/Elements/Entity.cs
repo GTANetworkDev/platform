@@ -4,7 +4,7 @@ namespace GTANetworkServer
 {
     public abstract class Entity
     {
-        internal Entity(API father, NetHandle handle)
+        internal Entity(ServerAPI father, NetHandle handle)
         {
             Base = father;
             this.handle = handle;
@@ -17,7 +17,7 @@ namespace GTANetworkServer
             get { return handle.Value; }
         }
 
-        protected API Base { get; set; }
+        protected ServerAPI Base { get; set; }
 
         public static implicit operator NetHandle(Entity c)
         {
