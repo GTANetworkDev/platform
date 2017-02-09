@@ -71,9 +71,9 @@ namespace GTANetwork.Networking
         public static int MAX_MARKERS = 127; //Max engine value: 128
         public static int MAX_PARTICLES = 50;
 
-        public static float GeneralStreamingRange = 500f;
-        public static float VehicleStreamingRange = 250f;
-        public static float PlayerStreamingRange = 175f;
+        public static float GeneralStreamingRange = 1000f;
+        public static float VehicleStreamingRange = 350f;
+        public static float PlayerStreamingRange = 200f;
         public static float LabelsStreamingRange = 25f;
   
         void StreamerCalculationsThread()

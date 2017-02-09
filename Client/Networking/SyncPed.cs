@@ -883,23 +883,23 @@ namespace GTANetwork.Networking
             if (isInRange)
             {
                 Vector3 vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
-                float force = 1.20f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
-                float forceVelo = 1.05f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
+                float force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
+                float forceVelo = 0.98f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
 
-                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) 
+                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) //
                 {
-                    MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * (force + 0.15f)); // Calcul
+                    MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 2f); // Calcul
                 }
                 else
                 {
-                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.25f) + (vecDif * (force)); // Calcul
+                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force); // Calcul
                 }
                 StuckVehicleCheck(Position);
             }
             else
             {
-                MainVehicle.PositionNoOffset = currentInterop.vecTarget;
-                //MainVehicle.Velocity = VehicleVelocity;
+                //MainVehicle.PositionNoOffset = currentInterop.vecTarget;
+                MainVehicle.Velocity = VehicleVelocity;
             }
 
             if (isInRange && _lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f /* && spazzout */)
@@ -2279,7 +2279,7 @@ namespace GTANetwork.Networking
                         }
                     }
                 }
-                StuckDetection();
+                //StuckDetection();
             }
         }
 
@@ -2488,7 +2488,7 @@ namespace GTANetwork.Networking
                     Character.PositionNoOffset = newPos;
                 }
 
-                StuckDetection();
+                //StuckDetection();
                 _stopTime = DateTime.Now;
                 _carPosOnUpdate = Character.Position;
             }
