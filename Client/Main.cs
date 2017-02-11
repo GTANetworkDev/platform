@@ -259,13 +259,14 @@ namespace GTANetwork
             CEFManager.InitializeCef();
             Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
             Audio.SetAudioFlag(AudioFlag.DisableBarks, true);
-            Audio.SetAudioFlag(AudioFlag.PoliceScannerDisabled, true);
             Audio.SetAudioFlag(AudioFlag.DisableFlightMusic, true);
+            Audio.SetAudioFlag(AudioFlag.PoliceScannerDisabled, true);
+            Audio.SetAudioFlag(AudioFlag.OnlyAllowScriptTriggerPoliceScanner, true);
             Function.Call((Hash)0x552369F549563AD5, false); //_FORCE_AMBIENT_SIREN
 
 
 
-            GlobalVariable.Get(2576573).Write(1);
+            GlobalVariable.Get(2576573).Write(1); //Enable MP cars?
 
             ThreadPool.QueueUserWorkItem(delegate
             {
