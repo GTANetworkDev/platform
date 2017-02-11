@@ -110,9 +110,9 @@ namespace GTANetworkShared
             Resources = new List<SettingsResFilepath>();
             OnFootLagCompensation = true;
             VehicleLagCompensation = true;
-            GlobalStreamingRange = 500;
-            PlayerStreamingRange = 175;
-            VehicleStreamingRange = 250;
+            GlobalStreamingRange = 1000;
+            PlayerStreamingRange = 250;
+            VehicleStreamingRange = 350;
             UseHTTPServer = false;
             RefreshHz = 120;
             LogLevel = 0;
