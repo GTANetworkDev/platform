@@ -208,6 +208,12 @@ namespace GTANetworkShared
 
         [ProtoMember(7)]
         public string Name { get; set; }
+
+        [ProtoMember(8)]
+        public bool RouteVisible { get; set; }
+
+        [ProtoMember(9)]
+        public int RouteColor { get; set; }
     }
 
     [ProtoContract]
@@ -520,6 +526,12 @@ namespace GTANetworkShared
 
         [ProtoMember(7)]
         public string Name { get; set; }
+
+        [ProtoMember(8)]
+        public bool? RouteVisible { get; set; }
+
+        [ProtoMember(9)]
+        public int? RouteColor { get; set; }
     }
 
     [ProtoContract]

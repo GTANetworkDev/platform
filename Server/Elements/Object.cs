@@ -4,7 +4,7 @@ namespace GTANetworkServer
 {
     public class Object : Entity
     {
-        internal Object(API father, NetHandle handle) : base(father, handle)
+        internal Object(ServerAPI father, NetHandle handle) : base(father, handle)
         {
         }
 

@@ -4,7 +4,7 @@ namespace GTANetworkServer
 {
     public class Blip : Entity
     {
-        internal Blip(API father, NetHandle handle) : base(father, handle)
+        internal Blip(ServerAPI father, NetHandle handle) : base(father, handle)
         {
         }
 
@@ -53,6 +53,18 @@ namespace GTANetworkServer
         {
             get { return Base.getBlipScale(this); }
             set { Base.setBlipScale(this, value); }
+        }
+
+        public bool routeVisible
+        {
+            get { return Base.getBlipRouteVisible(this); }
+            set { Base.setBlipRouteVisible(this, value); }
+        }
+
+        public int routeColor
+        {
+            get { return Base.getBlipRouteColor(this); }
+            set { Base.setBlipRouteColor(this, value); }
         }
 
         #endregion

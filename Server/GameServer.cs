@@ -157,7 +157,7 @@ namespace GTANetworkServer
         public NetServer Server;
         public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
-        internal API PublicAPI = new API();
+        internal SharedAPI PublicAPI = new SharedAPI();
         public int MaxPlayers { get; set; }
         public int Port { get; set; }
         public List<Client> Clients { get; set; }
@@ -1576,6 +1576,7 @@ namespace GTANResource
                                 client.CommitConnection();
                                 client.SocialClubName = connReq.SocialClubName;
                                 client.CEF = connReq.CEF;
+                                client.MediaStream = connReq.MediaStream;
                                 client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
                                 client.RemoteScriptVersion = ParseableVersion.Parse(connReq.ScriptVersion);
                                 client.GameVersion = connReq.GameVersion;

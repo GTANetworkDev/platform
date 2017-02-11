@@ -386,7 +386,9 @@ namespace GTANetwork.Javascript
             scriptEngine.AddHostType("Size", typeof(Size));
             scriptEngine.AddHostType("Size2", typeof(SharpDX.Size2));
             scriptEngine.AddHostType("Vector3", typeof(Vector3));
+            scriptEngine.AddHostType("Matrix4", typeof(Matrix4));
             scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
+            scriptEngine.AddHostType("BadgeStyle", typeof(UIMenuItem.BadgeStyle));
             scriptEngine.AllowReflection = false;
 
             try
@@ -1903,7 +1905,7 @@ namespace GTANetwork.Javascript
             return false;
         }
 
-        public void setEntityCollissionless(LocalHandle entity, bool status)
+        public void setEntityCollisionless(LocalHandle entity, bool status)
         {
             if (entity.Properties<IStreamedItem>() != null)
             {
@@ -1989,12 +1991,12 @@ namespace GTANetwork.Javascript
 
         public void setVehicleBulletproofTyres(LocalHandle vehicle, bool bulletproof)
         {
-            setVehicleMod(vehicle, 61, bulletproof ? 0x01 : 0x00);
+            setVehicleMod(vehicle, 61, bulletproof ? 0 : 1);
         }
 
         public bool getVehicleBulletproofTyres(LocalHandle vehicle)
         {
-            return getVehicleMod(vehicle, 61) != 0;
+            return getVehicleMod(vehicle, 61) == 0;
         }
 
         public void setVehicleNumberPlateStyle(LocalHandle vehicle, int style)
@@ -2920,7 +2922,6 @@ namespace GTANetwork.Javascript
         {
             if (!config.EndsWith(".xml")) return null;
             var path = getResourceFilePath(config);
-            checkPathSafe(path);
 
             var xml = new XmlGroup();
             xml.Load(path);
@@ -3244,7 +3245,10 @@ namespace GTANetwork.Javascript
 
         public Vector3 getWaypointPosition()
         {
-            return World.WaypointPosition.ToLVector();
+            var blip = World.GetWaypointBlip();
+            if (blip == null)
+                return new Vector3();
+            return blip.Position.ToLVector();
         }
 
         public bool isWaypointSet()
@@ -3367,6 +3371,30 @@ namespace GTANetwork.Javascript
         public float getBlipScale(LocalHandle blip)
         {
             return blip.Properties<RemoteBlip>().Scale;
+        }
+
+        public void setBlipRouteVisible(LocalHandle blip, bool visible)
+        {
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
+                new Blip(blip.Value).ShowRoute = visible;
+            blip.Properties<RemoteBlip>().RouteVisible = visible;
+        }
+
+        public bool getBlipRouteVisible(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().RouteVisible;
+        }
+
+        public void setBlipRouteColor(LocalHandle blip, int color)
+        {
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
+                Function.Call(Hash.SET_BLIP_ROUTE_COLOUR, blip.Value, color);
+            blip.Properties<RemoteBlip>().RouteColor = color;
+        }
+
+        public int getBlipRouteColor(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().RouteColor;
         }
 
         public void setChatVisible(bool display)
@@ -4507,6 +4535,11 @@ namespace GTANetwork.Javascript
         public float getGroundHeight(Vector3 position)
         {
             return World.GetGroundHeight(position.ToVector());
+        }
+
+        public string getGameText(string labelName)
+        {
+            return Function.Call<string>(Hash._GET_LABEL_TEXT, labelName);
         }
 
 

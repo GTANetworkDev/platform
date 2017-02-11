@@ -87,11 +87,8 @@ namespace GTANetwork.GUI
                 var rmouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorCancel);
                 var rmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorCancel);
 
-                var wumouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollUp);
-                var wumouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollUp);
-
-                var wdmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollDown);
-                var wdmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollDown);
+                var wumouseDown = Game.IsDisabledControlPressed(0, GTA.Control.CursorScrollUp);
+                var wdmouseDown = Game.IsDisabledControlPressed(0, GTA.Control.CursorScrollDown);
 
                 if (!CefUtil.DISABLE_CEF)
                 {

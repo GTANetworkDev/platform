@@ -5,7 +5,7 @@ namespace GTANetworkServer
 {
     public class Marker : Entity
     {
-        internal Marker(API father, NetHandle handle) : base(father, handle)
+        internal Marker(ServerAPI father, NetHandle handle) : base(father, handle)
         {
         }
 

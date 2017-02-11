@@ -4,7 +4,7 @@ namespace GTANetworkServer
 {
     public class ParticleEffect : Entity
     {
-        internal ParticleEffect(API father, NetHandle handle) : base(father, handle)
+        internal ParticleEffect(ServerAPI father, NetHandle handle) : base(father, handle)
         {
         }
 

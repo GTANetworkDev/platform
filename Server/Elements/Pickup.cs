@@ -4,7 +4,7 @@ namespace GTANetworkServer
 {
     public class Pickup : Entity
     {
-        internal Pickup(API father, NetHandle handle) : base(father, handle)
+        internal Pickup(ServerAPI father, NetHandle handle) : base(father, handle)
         {
         }
 
