@@ -24,7 +24,7 @@ namespace GTANetwork.Util
             try
             {
                 lock (errorLogLock)
-                    File.AppendAllText(LogDirectory + "\\" + filename + ".log", text + "\r\n");
+                    File.AppendAllText(LogDirectory + "\\" + filename + ".log", "[" + DateTime.Now.ToString("hh:mm:ss") + "] " + text + "\r\n");
             }
             catch{}
         }
@@ -34,7 +34,7 @@ namespace GTANetwork.Util
             try
             {
                 lock (errorLogLock)
-                    File.AppendAllText(LogDirectory + "\\" + "CEF.log", text + "\r\n");
+                    File.AppendAllText(LogDirectory + "\\" + "CEF.log", "[" + DateTime.Now.ToString("hh:mm:ss") + "] " + text + "\r\n");
             }
             catch { }
         }
@@ -54,12 +54,13 @@ namespace GTANetwork.Util
 
         public static void DebugLog(string text)
         {
+            //Console.WriteLine(text);
             if (Main.SaveDebugToFile)
             {
                 CreateLogDirectory();
                 lock (errorLogLock)
                 {
-                    File.AppendAllText(LogDirectory + "\\Debug.log", text + Environment.NewLine);
+                    File.AppendAllText(LogDirectory + "\\Debug.log", "[" + DateTime.Now.ToString("hh:mm:ss") + "] " + text + Environment.NewLine);
                 }
             }
             if (Main.PlayerSettings.DebugMode)
@@ -102,7 +103,7 @@ namespace GTANetwork.Util
                 CreateLogDirectory();
                 lock (errorLogLock)
                 {
-                    File.AppendAllText(LogDirectory + "\\Runtime.log", ">> " + text + "\r\n\r\n");
+                    File.AppendAllText(LogDirectory + "\\Runtime.log", "[" + DateTime.Now.ToString("hh:mm:ss") + "] " + text + "\r\n");
                 }
             }
             catch (Exception) { }

@@ -32,9 +32,11 @@ namespace GTANetwork.Util
         {
             StringBuilder sb = new StringBuilder();
 
+            Ped PlayerChar = Game.Player.Character;
+
             for (int i = 0; i < 500; i++)
             {
-                if (Game.Player.Character.IsSubtaskActive(i))
+                if (PlayerChar.IsSubtaskActive(i))
                 {
                     sb.Append(i + ",");
                 }

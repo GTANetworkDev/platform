@@ -455,14 +455,14 @@ namespace GTANetworkServer
         public T getEntityFromHandle<T>(NetHandle handle)
         {
             if (typeof(T) == typeof(Vehicle)) { return (T)(object)new Vehicle(this, handle); }
-            else if (typeof(T) == typeof(Client)) { return (T)(object)getPlayerFromHandle(handle); }
-            else if (typeof(T) == typeof(Object)) { return (T)(object)new Object(this, handle); }
-            else if (typeof(T) == typeof(Blip)) { return (T)(object)new Blip(this, handle); }
-            else if (typeof(T) == typeof(Pickup)) { return (T)(object)new Pickup(this, handle); }
-            else if (typeof(T) == typeof(TextLabel)) { return (T)(object)new TextLabel(this, handle); }
-            else if (typeof(T) == typeof(Ped)) { return (T)(object)new Ped(this, handle); }
-            else if (typeof(T) == typeof(ParticleEffect)) { return (T)(object)new ParticleEffect(this, handle); }
-            else if (typeof(T) == typeof(Marker)) { return (T)(object)new Marker(this, handle); }
+            if (typeof(T) == typeof(Client)) { return (T)(object)getPlayerFromHandle(handle); }
+            if (typeof(T) == typeof(Object)) { return (T)(object)new Object(this, handle); }
+            if (typeof(T) == typeof(Blip)) { return (T)(object)new Blip(this, handle); }
+            if (typeof(T) == typeof(Pickup)) { return (T)(object)new Pickup(this, handle); }
+            if (typeof(T) == typeof(TextLabel)) { return (T)(object)new TextLabel(this, handle); }
+            if (typeof(T) == typeof(Ped)) { return (T)(object)new Ped(this, handle); }
+            if (typeof(T) == typeof(ParticleEffect)) { return (T)(object)new ParticleEffect(this, handle); }
+            if (typeof(T) == typeof(Marker)) { return (T)(object)new Marker(this, handle); }
             return default(T);
         }
 
@@ -2521,8 +2521,7 @@ namespace GTANetworkServer
             }
         }
 
-        public void sendNativeToPlayersInRangeInDimension(Vector3 pos, float range, int dimension, Hash native,
-            params object[] args)
+        public void sendNativeToPlayersInRangeInDimension(Vector3 pos, float range, int dimension, Hash native, params object[] args)
         {
             sendNativeToPlayersInRangeInDimension(pos, range, dimension, native, args);
         }
@@ -3865,8 +3864,7 @@ namespace GTANetworkServer
             }
         }
 
-        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha,
-            int r, int g, int b, int dimension = 0)
+        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);

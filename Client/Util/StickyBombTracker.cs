@@ -1,7 +1,7 @@
 ﻿using System;
 using GTA;
 using GTANetwork.Javascript;
-using GTANetwork.Networking;
+using GTANetwork.Streamer;
 using GTANetworkShared;
 using WeaponHash = GTA.WeaponHash;
 using VehicleHash = GTA.VehicleHash;
@@ -19,8 +19,7 @@ namespace GTANetwork.Util
 
         private void OnTick(object sender, EventArgs e)
         {
-            var player = Game.Player.Character;
-
+            Ped player = Game.Player.Character;
             if (player.IsShooting && player.Weapons.Current.Hash == (WeaponHash.StickyBomb))
             {
                 _hasPlacedStickies = true;
@@ -33,7 +32,7 @@ namespace GTANetwork.Util
 
             if (Game.IsControlJustPressed(0, Control.Detonate) && _hasPlacedStickies)
             {
-                SyncEventWatcher.SendSyncEvent(SyncEventType.StickyBombDetonation, Main.NetEntityHandler.EntityToNet(Game.Player.Character.Handle));
+                SyncEventWatcher.SendSyncEvent(SyncEventType.StickyBombDetonation, Main.NetEntityHandler.EntityToNet(player.Handle));
                 JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerDetonateStickies());
                 _hasPlacedStickies = false;
             }

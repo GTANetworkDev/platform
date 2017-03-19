@@ -18,20 +18,18 @@ namespace GTANetwork.GUI
 {
 	public class ChatThread : Script
 	{
-        
 		public ChatThread()
 		{
 			base.Tick += (sender, args) =>
 			{
-			    if (Main.Chat != null && Main.ChatVisible && Main.ScriptChatVisible && Main.MainMenu != null && (!Main.MainMenu.Visible || Main.MainMenu.TemporarilyHidden))
-				{
-					Main.Chat.Tick();
+			    if (Main.Chat == null || !Main.ChatVisible || !Main.ScriptChatVisible || Main.MainMenu == null || (Main.MainMenu.Visible && !Main.MainMenu.TemporarilyHidden)) return;
 
-                    foreach (var text in JavascriptHook.TextElements)
-                    {
-                        text.Draw();
-                    }
-                }
+			    Main.Chat.Tick();
+			    var count = JavascriptHook.TextElements.Count();
+			    for (var i = 0; i < count; i++)
+			    {
+			        JavascriptHook.TextElements[i].Draw();
+			    }
 			};
 		}
 	}
@@ -106,7 +104,7 @@ namespace GTANetwork.GUI
         
         private PointF GetInputboxPos(bool scaleWithSafezone)
         {
-            var aspectRatio = (GTA.UI.Screen.Resolution.Width/(float) GTA.UI.Screen.Resolution.Height);
+            var aspectRatio = ((float)Main.screen.Width / Main.screen.Height);
             var res = UIMenu.GetScreenResolutionMantainRatio();
             var safezone = UIMenu.GetSafezoneBounds();
             PointF offset = new PointF(0, 0);
@@ -116,42 +114,42 @@ namespace GTANetwork.GUI
 
             if (Math.Abs(aspectRatio - 1.777778f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.6f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1122 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 1122 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.481481f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1054 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 1054 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.5625f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1100 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 1100 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 781 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.770833f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1216 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 1216 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.25f) < 0.001f)
             {
-                return new PointF(((safezone.X - 857 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 857 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.33333f) < 0.001f)
             {
-                return new PointF(((safezone.X - 915 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 915 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.66666f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 1158 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 778 + offset.Y) / res.Height) * Main.screen.Height);
             }
             else if (Math.Abs(aspectRatio - 1.55555f) < 0.001f)
             {
-                return new PointF(((safezone.X - 1200 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+                return new PointF(((safezone.X - 1200 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * Main.screen.Height);
             }
 
-            return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * GTA.UI.Screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * GTA.UI.Screen.Height);
+            return new PointF(((safezone.X - 1220 + offset.X) / res.Width) * Main.screen.Width, ((safezone.Y - 774 + offset.Y) / res.Height) * Main.screen.Height);
         }
 
         private bool _tick;
@@ -166,7 +164,7 @@ namespace GTANetwork.GUI
                 var pos = GetInputboxPos(Main.PlayerSettings.ScaleChatWithSafezone);
                 _mainScaleform.Render2DScreenSpace(
                     new PointF(pos.X + Main.PlayerSettings.ChatboxXOffset, pos.Y + Main.PlayerSettings.ChatboxYOffset),
-                    new PointF(GTA.UI.Screen.Width, GTA.UI.Screen.Height));
+                    new PointF(Main.screen.Width, Main.screen.Height));
                 return;
             }
 
@@ -215,7 +213,7 @@ namespace GTANetwork.GUI
                     ? UIMenu.GetSafezoneBounds() + new Size(0, 25*c)
                     : new Point(0, 25*c);
                 string output = msg.Item1;
-                var res = GTA.UI.Screen.Resolution;
+                var res = Main.screen;
 
                 int length = NativeUI.StringMeasurer.MeasureString(output);
 

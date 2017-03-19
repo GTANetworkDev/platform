@@ -10,7 +10,7 @@ using GTANetwork.Javascript;
 using GTANetwork.Util;
 using GTANetworkShared;
 
-namespace GTANetwork.Networking
+namespace GTANetwork.Streamer
 {
     internal static class DownloadManager
     {
@@ -150,13 +150,17 @@ namespace GTANetwork.Networking
             {
                 return;
             }
-            
+
             CurrentFile.Write(bytes);
-            Screen.ShowSubtitle("Downloading " +
-                            ((CurrentFile.Type == FileType.Normal || CurrentFile.Type == FileType.Script)
-                                ? CurrentFile.Filename
-                                : CurrentFile.Type.ToString()) + ": " +
-                            (CurrentFile.DataWritten/(float) CurrentFile.Length).ToString("P"));
+            if (CurrentFile.Type != FileType.EndOfTransfer)
+            {
+                Screen.ShowSubtitle("Downloading " +
+                    ((CurrentFile.Type == FileType.Normal || CurrentFile.Type == FileType.Script)
+                        ? CurrentFile.Filename
+                        : CurrentFile.Type.ToString()) + ": " +
+                    (CurrentFile.DataWritten / (float)CurrentFile.Length).ToString("P"));
+            }
+
         }
 
         internal static void End(int id)

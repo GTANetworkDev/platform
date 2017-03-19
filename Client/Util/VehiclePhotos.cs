@@ -41,7 +41,7 @@ namespace GTANetwork.Util
             var mod = new Model(hash);
             mod.Request(1000);
             currentVehicle = World.CreateVehicle(mod, StartPos, StartRot);
-            Game.Player.Character.SetIntoVehicle(currentVehicle, VehicleSeat.Driver);
+            Main.PlayerChar.SetIntoVehicle(currentVehicle, VehicleSeat.Driver);
             mod.MarkAsNoLongerNeeded();
             Script.Wait(100);
 
@@ -90,8 +90,8 @@ namespace GTANetwork.Util
 
         public void Start()
         {
-            StartPos = Game.Player.Character.Position;
-            StartRot = Game.Player.Character.Rotation.Z;
+            StartPos = Main.PlayerChar.Position;
+            StartRot = Main.PlayerChar.Rotation.Z;
 
             Started = true;
 

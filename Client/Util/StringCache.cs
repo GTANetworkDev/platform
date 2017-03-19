@@ -53,7 +53,7 @@ namespace GTANetwork.Util
                 }
             }
         }
-        
+
         public void Dispose()
         {
             lock (CachedData)
