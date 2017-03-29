@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GTA;
+using GTANetwork.Util;
 using WeaponHash = GTANetworkShared.WeaponHash;
 
 namespace GTANetwork.Streamer
@@ -26,7 +27,7 @@ namespace GTANetwork.Streamer
             {
                 if (!_playerInventory.Contains(hash))
                 {
-                    Main.PlayerChar.Weapons.Remove((GTA.WeaponHash)(int)hash);
+                    FrameworkData.PlayerChar.Ex().Weapons.Remove((GTA.WeaponHash)(int)hash);
                 }
             }
         }

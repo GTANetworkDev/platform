@@ -21,7 +21,7 @@ namespace GTANetwork.Sync
     {
         private bool CreateVehicle()
         {
-            var PlayerChar = Main.PlayerChar;
+            var PlayerChar = Game.Player.Character;
             if (_isInVehicle && MainVehicle != null && Character.IsInVehicle(MainVehicle) && PlayerChar.IsInVehicle(MainVehicle) && VehicleSeat == -1 && Function.Call<int>(Hash.GET_SEAT_PED_IS_TRYING_TO_ENTER, PlayerChar) == -1 && Util.Util.GetPedSeat(PlayerChar) == 0)
             {
                 Character.Task.WarpOutOfVehicle(MainVehicle);

@@ -162,6 +162,7 @@ namespace GTANetwork
 
         private void OnLocalDisconnect()
         {
+            StopLoadingPrompt();
             DEBUG_STEP = 42;
             if (NetEntityHandler.ServerWorld?.LoadedIpl != null)
             {
@@ -210,6 +211,7 @@ namespace GTANetwork
             CanOpenChatbox = true;
             DisplayWastedMessage = true;
             _password = string.Empty;
+
 
             UIColor = Color.White;
 
@@ -350,29 +352,23 @@ namespace GTANetwork
             }
         }
 
-        private bool isIPLocal(string ipaddress)
+        private static bool isIPLocal(string ipaddress)
         {
-            String[] straryIPAddress = ipaddress.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
             try
             {
-                int[] iaryIPAddress = new int[]
+                var straryIpAddress = ipaddress.Split(new[] { "." }, StringSplitOptions.RemoveEmptyEntries);
+                var iaryIpAddress = new[]
                 {
-                    int.Parse(straryIPAddress[0], CultureInfo.InvariantCulture),
-                    int.Parse(straryIPAddress[1], CultureInfo.InvariantCulture),
-                    int.Parse(straryIPAddress[2], CultureInfo.InvariantCulture),
-                    int.Parse(straryIPAddress[3], CultureInfo.InvariantCulture)
+                    int.Parse(straryIpAddress[0], CultureInfo.InvariantCulture),
+                    int.Parse(straryIpAddress[1], CultureInfo.InvariantCulture),
+                    int.Parse(straryIpAddress[2], CultureInfo.InvariantCulture),
+                    int.Parse(straryIpAddress[3], CultureInfo.InvariantCulture)
                 };
-                if (iaryIPAddress[0] == 10 || iaryIPAddress[0] == 127 ||
-                    (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) ||
-                    (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
-                {
-                    return true;
-                }
-                else
-                {
-                    // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
-                    return false;
-                }
+
+
+                return iaryIpAddress[0] == 10 || iaryIpAddress[0] == 127 || iaryIpAddress[0] == 192 && iaryIpAddress[1] == 168 || iaryIpAddress[0] == 172 && iaryIpAddress[1] >= 16 && iaryIpAddress[1] <= 31;
+
+                // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
             }
             catch
             {

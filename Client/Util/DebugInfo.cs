@@ -21,6 +21,11 @@ namespace GTANetwork.Util
         private DateTime _last;
         private float _fps;
         private SizeF _screenRatio;
+        private int _Peds = World.GetAllPeds().Length;
+        private int _Vehs = World.GetAllVehicles().Length;
+        private int _Blips = World.GetAllBlips().Length;
+        private int _Props = World.GetAllProps().Length;
+        private int _Entities = World.GetAllEntities().Length;
 
         public DebugInfo()
         {
@@ -36,6 +41,11 @@ namespace GTANetwork.Util
             {
                 _fps = Game.FPS;
                 _last = DateTime.Now;
+                _Peds = World.GetAllPeds().Length;
+                _Vehs = World.GetAllVehicles().Length;
+                _Blips = World.GetAllBlips().Length;
+                _Props = World.GetAllProps().Length;
+                _Entities = World.GetAllEntities().Length;
             }
 
             if (ShowFps)
@@ -45,17 +55,13 @@ namespace GTANetwork.Util
 
             if (StreamerDebug)
             {
-                //Util.DrawText("Sync: " + Sync.SyncThread.sw?.ElapsedMilliseconds + " ms", 5, position, 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
-                //Util.DrawText("OnTick: " + Main.oTsw?.ElapsedMilliseconds + " ms", 5, position + (offset * n++), 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
-                //Util.DrawText("Streamer: " + Streamer.StreamerThread.sw?.ElapsedMilliseconds + "ms", 5, position + (offset * n++), 0.35f, 255, 255, 255, 255, 0, 0, false, true, 0);
-
                 string output = "=======STREAMER INFO=======\n";
-                output += "Streamer Tick: " + StreamerThread.sw?.ElapsedMilliseconds + "ms\n\n";
-                output += "Spawned Peds: " + World.GetAllPeds().Length + "\n";
-                output += "Spawned Vehicles: " + World.GetAllVehicles().Length + "\n";
-                output += "Spawned Blips: " + World.GetAllBlips().Length + "\n";
-                output += "Spawned Props: " + World.GetAllProps().Length + "\n";
-                output += "Spawned Entities: " + World.GetAllEntities().Length + "\n";
+                output += "Model Load time: " + StreamerThread.sw?.ElapsedMilliseconds + "ms\n\n";
+                output += "Spawned Peds: " + _Peds + "\n";
+                output += "Spawned Vehicles: " + _Vehs + "\n";
+                output += "Spawned Blips: " + _Blips + "\n";
+                output += "Spawned Props: " + _Props + "\n";
+                output += "Spawned Entities: " + _Entities+ "\n";
 
                 new UIResText(output, new Point(5, Position), 0.35f) { Outline = true }.Draw(new Size());
 
@@ -66,22 +72,23 @@ namespace GTANetwork.Util
                 if (Game.IsControlJustPressed(0, Control.FrontendLeft))
                 {
                     PlayerIndex--;
-                    Screen.ShowSubtitle("NewIndex: " + PlayerIndex);
+                    Screen.ShowSubtitle("Player Index: " + PlayerIndex);
                 }
 
                 else if (Game.IsControlJustPressed(0, Control.FrontendRight))
                 {
                     PlayerIndex++;
-                    Screen.ShowSubtitle("NewIndex: " + PlayerIndex);
+                    Screen.ShowSubtitle("Player Index: " + PlayerIndex);
                 }
 
-                if (PlayerIndex >= Main.NetEntityHandler.ClientMap.OfType<SyncPed>().Count() || PlayerIndex < 0)
+                if (PlayerIndex >= StreamerThread.SyncPeds.Length || PlayerIndex < 0)
                 {
                     // wrong index
                     return;
                 }
 
-                var player = Main.NetEntityHandler.ClientMap.OfType<SyncPed>().ElementAt(PlayerIndex);
+                var player = StreamerThread.SyncPeds[PlayerIndex];
+                if (player == null) return;
                 string output = "=======PLAYER #" + PlayerIndex + " INFO=======\n";
                 output += "Name: " + player.Name + "\n";
                 output += "IsInVehicle: " + player.IsInVehicle + "\n";

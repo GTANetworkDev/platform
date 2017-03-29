@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using GTA;
+using GTA.Math;
 using GTA.Native;
 using GTANetwork.Javascript;
 using GTANetwork.Misc;
@@ -11,6 +12,7 @@ using GTANetwork.Util;
 using GTANetwork.Sync;
 using GTANetworkShared;
 using NativeUI;
+using Quaternion = GTANetworkShared.Quaternion;
 using Vector3 = GTA.Math.Vector3;
 using VehicleHash = GTA.VehicleHash;
 
@@ -96,8 +98,7 @@ namespace GTANetwork.Streamer
         }
     }
 
-
-    internal class Streamer
+    internal partial class Streamer
     {
         internal Streamer()
         {
@@ -112,275 +113,22 @@ namespace GTANetwork.Streamer
         public WorldProperties ServerWorld;
         public RemotePlayer LocalCharacter;
 
-
-        public void DrawMarkers()
-        {
-            var markers = new List<RemoteMarker>(ClientMap.Values.OfType<RemoteMarker>().Where(item => item.StreamedIn));
-
-            for (var index = markers.Count - 1; index >= 0; index--)
-            {
-                var marker = markers[index];
-                World.DrawMarker((MarkerType) marker.MarkerType, marker.Position.ToVector(),
-                    marker.Direction.ToVector(), marker.Rotation.ToVector(),
-                    marker.Scale.ToVector(),
-                    Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
-            }
-
-
-            // Uncomment to debug stuff
-            /*
-            
-            foreach (var p in ClientMap.OfType<RemoteBlip>())
-            {
-                if (p == null || p.Position == null) continue;
-                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nScale: " + p.Scale;
-
-                
-                DrawLabel3D(text, p.Position.ToVector(), 100f, 0.4f);
-            }
-            //*/
-        }
-
-
-
-
-        public void DrawLabels()
-        {
-            var labels = new List<RemoteTextLabel>(ClientMap.Values.OfType<RemoteTextLabel>().Where(item => item.StreamedIn));
-
-            for (var index = labels.Count - 1; index >= 0; index--)
-            {
-                var label = labels[index];
-                DrawLabel3D(label.Text, label.Position.ToVector(), label.Range, label.Size,
-                    Color.FromArgb(label.Alpha, label.Red, label.Green, label.Blue), label.EntitySeethrough);
-            }
-        }
-
-        internal static void DrawLabel3D(string text, Vector3 position, float range, float size)
-        {
-            DrawLabel3D(text, position, range, size, Color.White, true);
-        }
-
-        internal static void DrawLabel3D(string text, Vector3 position, float range, float size, Color col, bool entitySeethrough)
-        {
-            Vector3 origin = GameplayCamera.Position;
-            float distanceSquared = position.DistanceToSquared(origin);
-
-            if (string.IsNullOrWhiteSpace(text) ||
-                !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, position.X, position.Y, position.Z, 1f) ||
-                distanceSquared >= range * range) return;
-
-            float distance = position.DistanceTo(origin);
-
-            var flags = entitySeethrough
-                ? IntersectOptions.Map | IntersectOptions.Vegetation
-                : IntersectOptions.Everything;
-
-            var ray = World.Raycast(origin,
-                (position - origin).Normalized,
-                distance,
-                flags, Main.PlayerChar);
-
-            if (ray.HitPosition.DistanceTo(origin) >=
-                    distance)
-            {
-                var scale = Math.Max(0.3f, 1f - (distance / range));
-
-                Function.Call(Hash.SET_DRAW_ORIGIN, position.X, position.Y, position.Z);
-                new UIResText(text, Point.Empty, size * scale, col)
-                {
-                    TextAlignment = UIResText.Alignment.Centered,
-                    Outline = true
-                }.Draw();
-                Function.Call(Hash.CLEAR_DRAW_ORIGIN);
-            }
-        }
-
-
-        public IStreamedItem EntityToStreamedItem(int gameHandle)
-        {
-            return NetToStreamedItem(gameHandle, useGameHandle: true);
-        }
-
-        public IStreamedItem NetToStreamedItem(int netId, bool local = false, bool useGameHandle = false)
-        {
-            if (!useGameHandle)
-            {
-                lock (ClientMap)
-                {
-                    if (ClientMap.ContainsKey(netId)) return ClientMap[netId];
-                    return null;
-                }
-            }
-            else
-            {
-                lock (ClientMap)
-                {
-                    if (HandleMap.Reverse.ContainsKey(netId))
-                    {
-                        int remId = HandleMap.Reverse[netId];
-                        if (ClientMap.ContainsKey(remId))
-                            return ClientMap[remId];
-                    }
-
-                    if (netId == Game.Player.Character.Handle)
-                    {
-                        netId = -2;
-                        if (HandleMap.Reverse.ContainsKey(-2) && ClientMap.ContainsKey(HandleMap.Reverse[-2]))
-                            return ClientMap[HandleMap.Reverse[-2]];
-                    }
-
-                    //return ClientMap.OfType<ILocalHandleable>().FirstOrDefault(item => item.LocalHandle == netId) as IStreamedItem;
-                    return null;
-                }
-            }
-        }
-
-        public void AddLocalCharacter(int nethandle)
-        {
-            lock (ClientMap)
-            {
-                LocalCharacter = new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true };
-                ClientMap.Add(nethandle, LocalCharacter);
-                HandleMap.Add(nethandle, -2);
-            }
-        }
-
-        public Entity NetToEntity(int netId)
-        {
-            lock (ClientMap)
-            {
-                var streamedItem = NetToStreamedItem(netId);
-                var handleable = streamedItem as ILocalHandleable;
-                if (streamedItem == null) return null;
-                if (handleable == null) return new Prop(netId);
-                if (handleable.LocalHandle == -2) return Game.Player.Character;
-                if (!streamedItem.StreamedIn) return null;
-                return new Prop(handleable.LocalHandle);
-            }
-        }
-
-        public Entity NetToEntity(IStreamedItem netId)
-        {
-            lock (ClientMap)
-            {
-                var handleable = netId as ILocalHandleable;
-                if (netId == null || handleable == null) return new Prop(netId?.RemoteHandle ?? 0);
-                if (handleable.LocalHandle == -2) return Game.Player.Character;
-                return new Prop(handleable.LocalHandle);
-            }
-        }
-
-        public bool ContainsNethandle(int netHandle)
-        {
-            return NetToStreamedItem(netHandle) != null;
-        }
-
-        public bool ContainsLocalOnlyNetHandle(int localHandle)
-        {
-            return NetToStreamedItem(localHandle, true) != null;
-        }
-
-        public bool ContainsLocalHandle(int localHandle)
-        {
-            return NetToStreamedItem(localHandle, useGameHandle: true) != null;
-        }
-
-        public int EntityToNet(int entityHandle)
-        {
-            if (entityHandle == 0) return 0;
-            if (entityHandle == Game.Player.Character.Handle)
-                return HandleMap.Reverse[-2];
-            lock (ClientMap)
-            {
-                if (HandleMap.Reverse.ContainsKey(entityHandle))
-                    return HandleMap.Reverse[entityHandle];
-
-                return entityHandle;
-            }
-        }
-
-        public void Remove(IStreamedItem item)
-        {
-            lock (ClientMap)
-            {
-                if (item != null)
-                {
-                    ClientMap.Remove(item.RemoteHandle);
-                    HandleMap.Remove(item.RemoteHandle);
-                }
-            }
-        }
-
-        public void RemoveByNetHandle(int netHandle)
-        {
-            lock (ClientMap)
-            {
-                Remove(NetToStreamedItem(netHandle));
-            }
-        }
-
-        public void RemoveByLocalHandle(int localHandle)
-        {
-            lock (ClientMap) Remove(NetToStreamedItem(localHandle, true));
-        }
-
-        internal SyncPed GetPlayer(int netHandle)
-        {
-            SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
-            if (rem != null) return rem;
-
-            lock (ClientMap)
-            {
-                ClientMap.Add(netHandle, rem = new SyncPed()
-                {
-                    RemoteHandle = netHandle,
-                    EntityType = (byte)EntityType.Player,
-                    StreamedIn = false, // change me
-                    LocalOnly = false,
-
-                    BlipSprite = -1,
-                    BlipColor = -1,
-                    BlipAlpha = 255,
-                    Alpha = 255,
-                    Team = -1,
-                });
-            }
-            return rem;
-        }
-
-        public bool IsLocalPlayer(IStreamedItem item)
-        {
-            if (item == null) return false;
-            return NetToEntity(item.RemoteHandle)?.Handle == Game.Player.Character.Handle;
-        }
-
-        public bool IsBlip(int localHandle)
-        {
-            return NetToStreamedItem(localHandle, true) is RemoteBlip;
-        }
-
-        public bool IsPickup(int localHandle)
-        {
-            return NetToStreamedItem(localHandle, true) is RemotePickup;
-        }
-
-        public int Count(Type type)
-        {
-            return ClientMap.Count(item => item.GetType() == type);
-        }
-
-
         #region Create
         public RemoteVehicle CreateVehicle(int model, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, int netHash)
         {
             short vehComp = ~0;
-            if (model == unchecked((int)VehicleHash.Taxi))
-                vehComp = 1 << 5;
-            else if (model == (int)VehicleHash.Police)
-                vehComp = 1 << 2;
-            else if (model == (int)VehicleHash.Skylift)
-                vehComp = -1537;
+            switch (model)
+            {
+                case unchecked((int)VehicleHash.Taxi):
+                    vehComp = 1 << 5;
+                    break;
+                case (int)VehicleHash.Police:
+                    vehComp = 1 << 2;
+                    break;
+                case (int)VehicleHash.Skylift:
+                    vehComp = -1537;
+                    break;
+            }
 
             RemoteVehicle rem;
             lock (ClientMap)
@@ -915,7 +663,6 @@ namespace GTANetwork.Streamer
         }
         #endregion
 
-
         #region Update
         public void UpdatePlayer(int netHandle, PlayerProperties prop)
         {
@@ -1004,7 +751,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+                //if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1064,7 +811,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+                //if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1203,7 +950,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+                //if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1255,7 +1002,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+                //if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1301,7 +1048,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+                //if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1332,9 +1079,10 @@ namespace GTANetwork.Streamer
 
         public void UpdateProp(int netHandle, Delta_EntityProperties prop)
         {
-            IStreamedItem item = null;
+            IStreamedItem item;
             if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
             var veh = item as EntityProperties;
+            if (veh == null) return;
             if (prop.Position != null) veh.Position = prop.Position;
             if (prop.Rotation != null) veh.Rotation = prop.Rotation;
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
@@ -1347,12 +1095,9 @@ namespace GTANetwork.Streamer
             {
                 veh.Dimension = prop.Dimension.Value;
 
-                RemotePlayer localPl = item as RemotePlayer;
-                if (localPl != null && localPl.LocalHandle == -2)
-                {
-                    Main.LocalDimension = prop.Dimension.Value;
-                }
-                else if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
+                var localPl = item as RemotePlayer;
+                if (localPl != null && localPl.LocalHandle == -2) Main.LocalDimension = prop.Dimension.Value;
+                //else if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1373,7 +1118,9 @@ namespace GTANetwork.Streamer
                 foreach (var pair in prop.SyncedProperties)
                 {
                     if (pair.Value is LocalGamePlayerArgument)
+                    {
                         veh.SyncedProperties.Remove(pair.Key);
+                    }
                     else
                     {
                         NativeArgument oldValue = veh.SyncedProperties.Get(pair.Key);
@@ -1381,8 +1128,7 @@ namespace GTANetwork.Streamer
                         veh.SyncedProperties.Set(pair.Key, pair.Value);
 
                         var ent = new LocalHandle(NetToEntity(veh as IStreamedItem)?.Handle ?? 0);
-                        if (!ent.IsNull)
-                            JavascriptHook.InvokeDataChangeEvent(ent, pair.Key, Main.DecodeArgumentListPure(oldValue).FirstOrDefault());
+                        if (!ent.IsNull) JavascriptHook.InvokeDataChangeEvent(ent, pair.Key, Main.DecodeArgumentListPure(oldValue).FirstOrDefault());
                     }
                 }
             }
@@ -1416,7 +1162,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 blip.Dimension = prop.Dimension.Value;
-                if (blip.Dimension != Main.LocalDimension && item.StreamedIn && blip.Dimension != 0) StreamOut(item);
+                //if (blip.Dimension != Main.LocalDimension && item.StreamedIn && blip.Dimension != 0) StreamOut(item);
             }
 
             if (prop.Attachables != null) blip.Attachables = prop.Attachables;
@@ -1467,7 +1213,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
+                //if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1517,7 +1263,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
+                //if (veh.Dimension != Main.LocalDimension && veh.StreamedIn && veh.Dimension != 0) StreamOut(veh);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1565,7 +1311,7 @@ namespace GTANetwork.Streamer
             if (prop.Dimension != null)
             {
                 veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
+                //if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
             }
 
             if (prop.Attachables != null) veh.Attachables = prop.Attachables;
@@ -1636,11 +1382,15 @@ namespace GTANetwork.Streamer
                     {
                         case EntityType.Blip:
                         {
-                            var blipHandle = new Blip((item as RemoteBlip).LocalHandle)
+                            var remoteBlip = item as RemoteBlip;
+                            if (remoteBlip != null)
                             {
-                                Position =
-                                    entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector())
-                            };
+                                var blipHandle = new Blip(remoteBlip.LocalHandle)
+                                {
+                                    Position =
+                                        entityTarget.GetOffsetInWorldCoords(item.AttachedTo.PositionOffset.ToVector())
+                                };
+                            }
                         }
                             break;
                         case EntityType.Marker:
@@ -1769,15 +1519,12 @@ namespace GTANetwork.Streamer
         }
         #endregion
 
-
+        #region StreamIn
         public void StreamIn(IStreamedItem item)
         {
             if (item.StreamedIn) return;
 
             if (item.Dimension != Main.LocalDimension && item.Dimension != 0) return;
-
-            item.StreamedIn = true;
-            LogManager.DebugLog("STREAMING IN " + (EntityType)item.EntityType);
 
             switch ((EntityType)item.EntityType)
             {
@@ -1794,7 +1541,8 @@ namespace GTANetwork.Streamer
                     StreamInBlip((RemoteBlip)item);
                     break;
                 case EntityType.Player:
-                    if (item is SyncPed) ((SyncPed)item).StreamedIn = true;
+                    var ped = item as SyncPed;
+                    if (ped != null) ped.StreamedIn = true;
                     break;
                 case EntityType.Ped:
                     StreamInPed((RemotePed)item);
@@ -1808,9 +1556,10 @@ namespace GTANetwork.Streamer
                     break;
             }
 
-            if (item is ILocalHandleable)
+            var handleable = item as ILocalHandleable;
+            if (handleable != null)
             {
-                var han = item as ILocalHandleable;
+                var han = handleable;
 
                 if (han.LocalHandle != 0)
                 {
@@ -1828,7 +1577,7 @@ namespace GTANetwork.Streamer
                 }
             }
 
-            if (item is EntityProperties && ((EntityProperties)item).Attachables != null)
+            if ((item as EntityProperties)?.Attachables != null)
             {
                 foreach (var attachable in ((EntityProperties)item).Attachables)
                 {
@@ -1837,16 +1586,11 @@ namespace GTANetwork.Streamer
                 }
             }
 
-            if (item is EntityProperties && ((EntityProperties)item).AttachedTo != null)
+            if ((item as EntityProperties)?.AttachedTo != null)
             {
-                LogManager.DebugLog("ITEM " + item.RemoteHandle + " IS ATTACHED TO " + ((EntityProperties)item).AttachedTo);
-
                 var target = NetToStreamedItem(((EntityProperties)item).AttachedTo.NetHandle);
-                if (target != null)
-                {
-                    LogManager.DebugLog("ATTACHED TO " + target.GetType());
-                    AttachEntityToEntity(item, target, ((EntityProperties)item).AttachedTo);
-                }
+                if (target == null) return;
+                AttachEntityToEntity(item, target, ((EntityProperties)item).AttachedTo);
             }
         }
 
@@ -1858,83 +1602,95 @@ namespace GTANetwork.Streamer
             switch ((EntityType)item.EntityType)
             {
                 case EntityType.Prop:
-                case EntityType.Vehicle:
-                case EntityType.Ped:
-                    StreamOutEntity((ILocalHandleable)item);
-                    break;
-                case EntityType.Blip:
-                    StreamOutBlip((ILocalHandleable)item);
-                    break;
-                case EntityType.Pickup:
-                    StreamOutPickup((ILocalHandleable)item);
-                    break;
-                case EntityType.Player:
-                    if (item is SyncPed)
                     {
-                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(((SyncPed)item).Character?.Handle ?? 0), (int)EntityType.Player);
-                        ((SyncPed)item).Clear(); //Tocheck
-                        ((SyncPed)item).StreamedIn = false;
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Prop);
+                        var obj = new Prop(data.LocalHandle);
+                        if (obj.Exists()) obj.Delete();
                     }
                     break;
-                case EntityType.Marker:
-                case EntityType.TextLabel:
-                    item.StreamedIn = false;
+                case EntityType.Vehicle:
+                    {
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Vehicle);
+                        var obj = new Prop(data.LocalHandle);
+                        if (obj.Exists()) obj.Delete();
+                    }
                     break;
+                case EntityType.Ped:
+                    {
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Ped);
+                        var obj = new Prop(data.LocalHandle);
+                        if (obj.Exists()) obj.Delete();
+                    }
+                    break;
+                case EntityType.Blip:
+                    {
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Blip);
+                        var obj = new Blip(data.LocalHandle);
+                        if (obj.Exists()) obj.Remove();
+                    }
+                    break;
+                case EntityType.Pickup:
+                    {
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Pickup);
+                        var obj = new Pickup(data.LocalHandle);
+                        if (obj.Exists()) obj.Delete();
+                    }
+                    break;
+
                 case EntityType.Particle:
-                    StreamOutParticle((ILocalHandleable)item);
+                    {
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Particle);
+                        Function.Call(Hash.REMOVE_PARTICLE_FX, data.LocalHandle, false);
+                    }
+                    break;
+                case EntityType.Player:
+                    var ped = item as SyncPed;
+                    if (ped != null)
+                    {
+                        JavascriptHook.InvokeStreamOutEvent(new LocalHandle(ped.Character?.Handle ?? 0), (int)EntityType.Player);
+                        ped.Clear(); //TODO
+                    }
                     break;
             }
 
             item.StreamedIn = false;
 
-            if (item is ILocalHandleable)
+            lock (HandleMap)
             {
                 if (HandleMap.ContainsKey(item.RemoteHandle)) HandleMap.Remove(item.RemoteHandle);
             }
 
-            if (item.Attachables != null)
+            if (item.Attachables == null) return;
+            for (var index = item.Attachables.Count - 1; index >= 0; index--)
             {
-                foreach (var attachable in item.Attachables)
-                {
-                    var att = NetToStreamedItem(attachable);
-                    if (att != null) StreamOut(att);
-                }
+                var attachable = item.Attachables[index];
+                var att = NetToStreamedItem(attachable);
+                if (att != null) StreamOut(att);
             }
-        }
-
-        private void StreamOutEntity(ILocalHandleable data)
-        {
-            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)(data is RemoteVehicle ? EntityType.Vehicle : EntityType.Prop));
-            LogManager.DebugLog("PRESTREAM OUT " + data.LocalHandle);
-            new Prop(data.LocalHandle).Delete();
-            LogManager.DebugLog("POSTSTREAM OUT " + data.LocalHandle);
-            LogManager.DebugLog("POSTSTREAM OUT SUCCESS? " + !new Prop(data.LocalHandle).Exists());
         }
 
         private void StreamInVehicle(RemoteVehicle data)
         {
-            if (data == null || (object)data.Position == null || (object)data.Rotation == null) return;
+            if ((object) data?.Position == null || (object)data.Rotation == null) return;
             var model = new Model(data.ModelHash);
             if (model == null || !model.IsValid || !model.IsInCdImage) return;
-            LogManager.DebugLog("CREATING VEHICLE FOR NETHANDLE " + data.RemoteHandle);
+
             if (!model.IsLoaded) Util.Util.LoadModel(model);
+
             Function.Call(Hash.REQUEST_COLLISION_AT_COORD, data.Position.X, data.Position.Y, data.Position.Z);
             Function.Call(Hash.REQUEST_ADDITIONAL_COLLISION_AT_COORD, data.Position.X, data.Position.Y, data.Position.Z);
-            LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
 
-            LogManager.DebugLog("POSITION: " + data.Position?.ToVector());
-
-            var veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
-
-            LogManager.DebugLog("VEHICLE CREATED. NULL? " + (veh == null) + " EXISTS? " + (veh?.Exists()));
+            Vehicle veh = null;
+            if (model.IsLoaded) veh = World.CreateVehicle(model, data.Position.ToVector(), data.Rotation.Z);
 
             if (veh == null || !veh.Exists())
             {
-#if DEBUG
-                LogManager.LogException(
-                    new Exception("Vehicle was null or didnt spawn, model=" + model.Hash + ", loaded=" + model.IsLoaded +
-                                  ", vehicleHandle=" + (veh?.Handle)), "StreamInVehicle");
-#endif
                 data.StreamedIn = false;
                 return;
             }
@@ -1948,26 +1704,32 @@ namespace GTANetwork.Streamer
             Function.Call(Hash.SET_SIREN_WITH_NO_DRIVER, veh, true);
             Function.Call((Hash)0x068F64F2470F9656, false);
 
-            LogManager.DebugLog("LOCAL HANDLE: " + veh.Handle);
-            LogManager.DebugLog("POS: " + veh.Position);
-
             if ((data.PrimaryColor & 0xFF000000) > 0)
+            {
                 veh.Mods.CustomPrimaryColor = Color.FromArgb(data.PrimaryColor);
+            }
             else
+            {
                 veh.Mods.PrimaryColor = (VehicleColor)data.PrimaryColor;
+            }
 
             if ((data.SecondaryColor & 0xFF000000) > 0)
+            {
                 veh.Mods.CustomSecondaryColor = Color.FromArgb(data.SecondaryColor);
+            }
             else
+            {
                 veh.Mods.SecondaryColor = (VehicleColor)data.SecondaryColor;
+            }
 
-            veh.Mods.PearlescentColor = (VehicleColor)0;
-            veh.Mods.RimColor = (VehicleColor)0;
+            veh.Mods.PearlescentColor = 0;
+            veh.Mods.RimColor = 0;
             veh.EngineHealth = data.Health;
             veh.SirenActive = data.Siren;
             veh.Mods.LicensePlate = data.NumberPlate;
             veh.Mods.WheelType = 0;
             veh.Wash();
+
             Function.Call(Hash.SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX, veh, 0);
             Function.Call(Hash.SET_VEHICLE_WINDOW_TINT, veh, 0);
 
@@ -1979,26 +1741,25 @@ namespace GTANetwork.Streamer
                     StreamIn(trailerId);
                     var trailer = new Vehicle(((RemoteVehicle)trailerId).LocalHandle);
 
-                    if ((VehicleHash)veh.Model.Hash == VehicleHash.TowTruck ||
-                                        (VehicleHash)veh.Model.Hash == VehicleHash.TowTruck2)
+                    switch ((VehicleHash)veh.Model.Hash)
                     {
-                        Function.Call(Hash.ATTACH_VEHICLE_TO_TOW_TRUCK, veh, trailer, true, 0, 0, 0);
-                    }
-                    else if ((VehicleHash)veh.Model.Hash == VehicleHash.Cargobob ||
-                             (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob2 ||
-                             (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob3 ||
-                             (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob4)
-                    {
-                        veh.DropCargobobHook(CargobobHook.Hook);
-                        Function.Call(Hash.ATTACH_VEHICLE_TO_CARGOBOB, trailer, veh, 0, 0, 0, 0);
-                    }
-                    else
-                    {
-                        Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, veh, trailer, 4f);
+                        case VehicleHash.TowTruck:
+                        case VehicleHash.TowTruck2:
+                            Function.Call(Hash.ATTACH_VEHICLE_TO_TOW_TRUCK, veh, trailer, true, 0, 0, 0);
+                            break;
+                        case VehicleHash.Cargobob:
+                        case VehicleHash.Cargobob2:
+                        case VehicleHash.Cargobob3:
+                        case VehicleHash.Cargobob4:
+                            veh.DropCargobobHook(CargobobHook.Hook);
+                            Function.Call(Hash.ATTACH_VEHICLE_TO_CARGOBOB, trailer, veh, 0, 0, 0, 0);
+                            break;
+                        default:
+                            Function.Call(Hash.ATTACH_VEHICLE_TO_TRAILER, veh, trailer, 4f);
+                            break;
                     }
                 }
             }
-
 
             Function.Call(Hash.SET_VEHICLE_MOD_KIT, veh, 0);
 
@@ -2033,18 +1794,15 @@ namespace GTANetwork.Streamer
                 Function.Call(Hash.EXPLODE_VEHICLE, veh, false, true);
             }
             else
+            {
                 veh.IsInvincible = data.IsInvincible;
+            }
 
-            if (data.Alpha < 255) veh.Opacity = (int)data.Alpha;
-            LogManager.DebugLog("ALPHA: " + veh.Opacity);
-
+            if (data.Alpha < 255) veh.Opacity = data.Alpha;
 
             Function.Call(Hash.SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED, veh, false);
 
-            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless))
-            {
-                veh.IsCollisionEnabled = false;
-            }
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless)) veh.IsCollisionEnabled = false;
 
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.EngineOff))
             {
@@ -2060,8 +1818,7 @@ namespace GTANetwork.Streamer
             {
                 if (!Function.Call<bool>(Hash.DOES_EXTRA_EXIST, veh, i)) continue;
                 bool turnedOn = (data.VehicleComponents & 1 << i) != 0;
-                if (Function.Call<bool>(Hash.IS_VEHICLE_EXTRA_TURNED_ON, veh, i) ^ turnedOn)
-                    Function.Call(Hash.SET_VEHICLE_EXTRA, veh, i, turnedOn ? 0 : -1);
+                if (Function.Call<bool>(Hash.IS_VEHICLE_EXTRA_TURNED_ON, veh, i) ^ turnedOn) Function.Call(Hash.SET_VEHICLE_EXTRA, veh, i, turnedOn ? 0 : -1);
             }
 
             if (PacketOptimization.CheckBit(data.Flag, EntityFlag.SpecialLight))
@@ -2086,7 +1843,7 @@ namespace GTANetwork.Streamer
             {
                 if ((data.Doors & 1 << i) != 0)
                 {
-                    veh.Doors[(VehicleDoorIndex)i].Open(false, false);
+                    veh.Doors[(VehicleDoorIndex)i].Open();
                 }
             }
 
@@ -2100,22 +1857,12 @@ namespace GTANetwork.Streamer
 
             if (data.DamageModel != null) veh.SetVehicleDamageModel(data.DamageModel, false);
 
-            if (data.LocalOnly)
-            {
-                veh.LockStatus = VehicleLockStatus.CannotBeTriedToEnter;
-            }
+            if (data.LocalOnly) veh.LockStatus = VehicleLockStatus.CannotBeTriedToEnter;
 
-            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.VehicleLocked))
-            {
-                veh.LockStatus = VehicleLockStatus.CannotBeTriedToEnter;
-            }
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.VehicleLocked)) veh.LockStatus = VehicleLockStatus.CannotBeTriedToEnter;
 
-
-            LogManager.DebugLog("PROPERTIES SET");
             data.StreamedIn = true;
-            LogManager.DebugLog("DISCARDING MODEL");
-            model.MarkAsNoLongerNeeded();
-            LogManager.DebugLog("CREATEVEHICLE COMPLETE");
+            //model.MarkAsNoLongerNeeded();
 
             JavascriptHook.InvokeStreamInEvent(new LocalHandle(veh.Handle), (int)EntityType.Vehicle);
         }
@@ -2134,10 +1881,11 @@ namespace GTANetwork.Streamer
                 ourBlip = World.CreateBlip(item.Position.ToVector(), item.RangedBlip);
             }
             else
+            {
                 ourBlip = World.CreateBlip(item.Position.ToVector());
+            }
 
-            if (item.Sprite != 0)
-                ourBlip.Sprite = (BlipSprite)item.Sprite;
+            if (item.Sprite != 0) ourBlip.Sprite = (BlipSprite)item.Sprite;
             ourBlip.Color = (BlipColor)item.Color;
             ourBlip.Alpha = item.Alpha;
             ourBlip.IsShortRange = item.IsShortRange;
@@ -2151,15 +1899,9 @@ namespace GTANetwork.Streamer
             JavascriptHook.InvokeStreamInEvent(new LocalHandle(ourBlip.Handle), (int)EntityType.Blip);
         }
 
-        private void StreamOutBlip(ILocalHandleable blip)
-        {
-            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(blip.LocalHandle), (int)EntityType.Blip);
-            new Blip(blip.LocalHandle).Remove();
-        }
-
         private void StreamInParticle(RemoteParticle data)
         {
-            if (data == null || (object)data.Position == null || (object)data.Rotation == null) return;
+            if ((object) data?.Position == null || (object)data.Rotation == null) return;
 
             Util.Util.LoadPtfxAsset(data.Library);
             Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, data.Library);
@@ -2210,13 +1952,7 @@ namespace GTANetwork.Streamer
             data.StreamedIn = true;
         }
 
-        private void StreamOutParticle(ILocalHandleable particle)
-        {
-            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(particle.LocalHandle), (int)EntityType.Particle);
-            Function.Call(Hash.REMOVE_PARTICLE_FX, particle.LocalHandle, false);
-        }
-
-        private void StreamInPickup(RemotePickup pickup)
+        private static void StreamInPickup(RemotePickup pickup)
         {
             int model = 0;
 
@@ -2252,68 +1988,55 @@ namespace GTANetwork.Streamer
             JavascriptHook.InvokeStreamInEvent(new LocalHandle(newPickup), (int)EntityType.Pickup);
         }
 
-        private void StreamOutPickup(ILocalHandleable pickup)
-        {
-            JavascriptHook.InvokeStreamOutEvent(new LocalHandle(pickup.LocalHandle), (int)EntityType.Pickup);
-            Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
-        }
-
-        private void StreamInProp(RemoteProp data)
+        private static void StreamInProp(RemoteProp data)
         {
             var model = new Model(data.ModelHash);
-            LogManager.DebugLog("PROP MODEL VALID: " + model.IsValid);
             if (model == null || !model.IsValid || !model.IsInCdImage || data.Position == null || data.Rotation == null) return;
-            LogManager.DebugLog("CREATING OBJECT FOR NETHANDLE " + data.RemoteHandle);
+            if (!model.IsLoaded) Util.Util.LoadModel(model);
 
-            if (!model.IsLoaded)
+            Prop ourProp = null; 
+            if(model.IsLoaded) ourProp = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, data.Position.X, data.Position.Y, data.Position.Z, false, true, false));
+            if (ourProp == null || !ourProp.Exists())
             {
-                Util.Util.LoadModel(model);
+                data.StreamedIn = false;
+                return;
             }
 
-            LogManager.DebugLog("LOAD COMPLETE. AVAILABLE: " + model.IsLoaded);
-            var ourVeh = new Prop(Function.Call<int>(Hash.CREATE_OBJECT_NO_OFFSET, model.Hash, data.Position.X, data.Position.Y, data.Position.Z, false, true, false));
-            LogManager.DebugLog("PROP HANDLE: " + ourVeh.Handle);
-            LogManager.DebugLog("ROTATION: " + data.Rotation.GetType());
-            if (data.Rotation is Quaternion)
+            var rotation = data.Rotation as Quaternion;
+            if (rotation != null)
             {
-                ourVeh.Quaternion = ((Quaternion)data.Rotation).ToQuaternion();
+                ourProp.Quaternion = rotation.ToQuaternion();
             }
             else
             {
-                ourVeh.Rotation = data.Rotation.ToVector();
+                ourProp.Rotation = data.Rotation.ToVector();
             }
 
-            LogManager.DebugLog("SETTING MISC PROPERTIES");
+            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless)) ourProp.IsCollisionEnabled = false;
+            if (data.Alpha < 255) ourProp.Opacity = data.Alpha;
+            ourProp.IsPositionFrozen = true;
+            ourProp.LodDistance = 400;
 
-            if (data.Alpha < 255) ourVeh.Opacity = (int)data.Alpha;
-            ourVeh.IsPositionFrozen = true;
-            ourVeh.LodDistance = 3000;
-
-            if (PacketOptimization.CheckBit(data.Flag, EntityFlag.Collisionless))
-            {
-                ourVeh.IsCollisionEnabled = false;
-            }
-
+            data.LocalHandle = ourProp.Handle;
             data.StreamedIn = true;
-            data.LocalHandle = ourVeh.Handle;
-            LogManager.DebugLog("STREAMIN DONE");
 
-            model.MarkAsNoLongerNeeded();
+            //model.MarkAsNoLongerNeeded();
 
-            JavascriptHook.InvokeStreamInEvent(new LocalHandle(ourVeh.Handle), (int)EntityType.Prop);
+            JavascriptHook.InvokeStreamInEvent(new LocalHandle(ourProp.Handle), (int)EntityType.Prop);
         }
 
-        private void StreamInPed(RemotePed data)
+        private static void StreamInPed(RemotePed data)
         {
-            if ((object)data?.Position == null || (object)data.Rotation == null) return;
             var model = new Model(data.ModelHash);
-            if (!model.IsValid || !model.IsInCdImage) return;
+            if (model == null || !model.IsValid || !model.IsInCdImage || data.Position == null || data.Rotation == null) return;
             if (!model.IsLoaded) Util.Util.LoadModel(model);
 
-            var ped = World.CreatePed(model, data.Position.ToVector(), data.Rotation.Z);
-            model.MarkAsNoLongerNeeded();
+            Ped ped = null;
+            if (model.IsLoaded) ped = World.CreatePed(model, data.Position.ToVector(), data.Rotation.Z);
 
-            if (ped == null)
+            //model.MarkAsNoLongerNeeded();
+
+            if (ped == null || !ped.Exists())
             {
                 data.StreamedIn = false;
                 return;
@@ -2329,9 +2052,7 @@ namespace GTANetwork.Streamer
             ped.CanRagdoll = false;
 
             Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, ped);
-
             Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, ped, false);
-
             Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, ped, true);
             Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, ped, Game.Player, true);
             Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, ped, false);
@@ -2342,12 +2063,10 @@ namespace GTANetwork.Streamer
 
             if (!string.IsNullOrEmpty(data.LoopingAnimation))
             {
-                string[] dictsplit = data.LoopingAnimation.Split();
+                var dictsplit = data.LoopingAnimation.Split();
                 if (dictsplit.Length >= 2)
                 {
-                    Function.Call(Hash.TASK_PLAY_ANIM, ped,
-                        Util.Util.LoadAnimDictStreamer(data.LoopingAnimation.Split()[0]), data.LoopingAnimation.Split()[1],
-                        8f, 10f, -1, 1, -8f, 1, 1, 1);
+                    Function.Call(Hash.TASK_PLAY_ANIM, ped, Util.Util.LoadAnimDictStreamer(data.LoopingAnimation.Split()[0]), data.LoopingAnimation.Split()[1], 8f, 10f, -1, 1, -8f, 1, 1, 1);
                 }
                 else
                 {
@@ -2358,125 +2077,258 @@ namespace GTANetwork.Streamer
             data.LocalHandle = ped.Handle;
             data.StreamedIn = true;
         }
+        #endregion
 
-        public void AttachEntityToEntity(IStreamedItem ent, IStreamedItem entTarget, Attachment info)
+        #region Handling
+        public IStreamedItem EntityToStreamedItem(int gameHandle)
         {
-            if (!ent.StreamedIn || !entTarget.StreamedIn || info == null) return;
-            LogManager.DebugLog("AE2E_1");
-            if (entTarget.EntityType == (byte)EntityType.Blip ||
-                entTarget.EntityType == (byte)EntityType.TextLabel || // Can't attach to a blip, textlabel or marker
-                entTarget.EntityType == (byte)EntityType.Marker ||
-                ent.EntityType == (byte)EntityType.Marker ||
-                ent.EntityType == (byte)EntityType.TextLabel || // If we're attaching blip/label/marker, UpdateAttachments will take care of it for us.
-                ent.EntityType == (byte)EntityType.Blip ||
-                ent.EntityType == (byte)EntityType.Pickup) // TODO: Make pickups attachable.
-            {
-                return;
-            }
-            LogManager.DebugLog("AE2E_2");
-            var handleSource = NetToEntity(ent.RemoteHandle);
-            var handleTarget = NetToEntity(entTarget.RemoteHandle);
-            LogManager.DebugLog("AE2E_3");
-            if (handleSource == null || handleTarget == null) return;
-            LogManager.DebugLog("AE2E_4");
-            int bone = 0;
-
-            if (!string.IsNullOrWhiteSpace(info.Bone))
-            {
-                if (entTarget is RemotePlayer || entTarget is RemotePed)
-                {
-                    bone = Function.Call<int>(Hash.GET_PED_BONE_INDEX, handleTarget.Handle, (int)Enum.Parse(typeof(Bone), info.Bone, true));
-                }
-                else
-                {
-                    bone = new Prop(handleTarget.Handle).GetBoneIndex(info.Bone);
-                }
-            }
-
-            if (bone == -1) bone = 0;
-
-            LogManager.DebugLog("ATTACHING " + handleSource.Handle + " TO " + handleTarget.Handle +
-                                " WITH BONE " + bone);
-
-            Function.Call(Hash.ATTACH_ENTITY_TO_ENTITY, handleSource.Handle, handleTarget.Handle,
-                bone,
-                info.PositionOffset.X, info.PositionOffset.Y, info.PositionOffset.Z,
-                info.RotationOffset.X, info.RotationOffset.Y, info.RotationOffset.Z,
-                false, // p9
-                false, // useSoftPinning
-                false, // collision
-                false, // p12
-                2, // vertexIndex
-                true // fixedRot
-                );
+            return NetToStreamedItem(gameHandle, useGameHandle: true);
         }
 
-        public void DetachEntity(IStreamedItem ent, bool collision)
+        public IStreamedItem NetToStreamedItem(int netId, bool local = false, bool useGameHandle = false)
         {
-            if (ent == null || ent.AttachedTo == null) return;
-
-            var target = NetToStreamedItem(ent.AttachedTo.NetHandle);
-
-            if (target != null && target.Attachables != null)
+            if (!useGameHandle)
             {
-                target.Attachables.Remove(ent.RemoteHandle);
-            }
-
-            var entHandle = NetToEntity(ent.RemoteHandle);
-
-            if (entHandle != null && entHandle.Handle != 0 && !(ent is RemoteBlip))
-            {
-                Function.Call(Hash.DETACH_ENTITY, entHandle.Handle, true, collision);
-            }
-
-            ent.AttachedTo = null;
-        }
-
-        public void ReattachAllEntities(IStreamedItem ent, bool recursive)
-        {
-            var prop = ent as EntityProperties;
-            if (prop == null) return;
-            if (prop.Attachables != null)
-            {
-                LogManager.DebugLog("REATTACHING ALL ENTITIES FOR " + ent.GetType());
-
-                foreach (var i in prop.Attachables)
+                lock (ClientMap)
                 {
-                    LogManager.DebugLog("REATTACHING ENTITY " + i);
-
-                    var target = NetToStreamedItem(i);
-
-                    if (target == null) continue;
-                    AttachEntityToEntity(target, ent, ent.AttachedTo);
-
-                    if (recursive)
-                        ReattachAllEntities(target, true);
+                    return ClientMap.ContainsKey(netId) ? ClientMap[netId] : null;
                 }
             }
+            else
+            {
+                lock (ClientMap)
+                {
+                    if (HandleMap.Reverse.ContainsKey(netId))
+                    {
+                        int remId = HandleMap.Reverse[netId];
+                        if (ClientMap.ContainsKey(remId))
+                            return ClientMap[remId];
+                    }
+
+                    if (netId == Game.Player.Character.Handle)
+                    {
+                        netId = -2;
+                        if (HandleMap.Reverse.ContainsKey(-2) && ClientMap.ContainsKey(HandleMap.Reverse[-2]))
+                            return ClientMap[HandleMap.Reverse[-2]];
+                    }
+
+                    //return ClientMap.OfType<ILocalHandleable>().FirstOrDefault(item => item.LocalHandle == netId) as IStreamedItem;
+                    return null;
+                }
+            }
+        }
+
+        public void AddLocalCharacter(int nethandle)
+        {
+            lock (ClientMap)
+            {
+                LocalCharacter = new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true };
+                ClientMap.Add(nethandle, LocalCharacter);
+                HandleMap.Add(nethandle, -2);
+            }
+        }
+
+        public Entity NetToEntity(int netId)
+        {
+            lock (ClientMap)
+            {
+                var streamedItem = NetToStreamedItem(netId);
+                var handleable = streamedItem as ILocalHandleable;
+                if (streamedItem == null) return null;
+                if (handleable == null) return new Prop(netId);
+                if (handleable.LocalHandle == -2) return Game.Player.Character;
+                if (!streamedItem.StreamedIn) return null;
+                return new Prop(handleable.LocalHandle);
+            }
+        }
+
+        public Entity NetToEntity(IStreamedItem netId)
+        {
+            lock (ClientMap)
+            {
+                var handleable = netId as ILocalHandleable;
+                if (netId == null || handleable == null) return new Prop(netId?.RemoteHandle ?? 0);
+                if (handleable.LocalHandle == -2) return Game.Player.Character;
+                return new Prop(handleable.LocalHandle);
+            }
+        }
+
+        public bool ContainsNethandle(int netHandle)
+        {
+            return NetToStreamedItem(netHandle) != null;
+        }
+
+        public bool ContainsLocalOnlyNetHandle(int localHandle)
+        {
+            return NetToStreamedItem(localHandle, true) != null;
+        }
+
+        public bool ContainsLocalHandle(int localHandle)
+        {
+            return NetToStreamedItem(localHandle, useGameHandle: true) != null;
+        }
+
+        public int EntityToNet(int entityHandle)
+        {
+            if (entityHandle == 0) return 0;
+            if (entityHandle == Game.Player.Character.Handle)
+                return HandleMap.Reverse[-2];
+            lock (ClientMap)
+            {
+                if (HandleMap.Reverse.ContainsKey(entityHandle))
+                    return HandleMap.Reverse[entityHandle];
+
+                return entityHandle;
+            }
+        }
+
+        public void Remove(IStreamedItem item)
+        {
+            lock (ClientMap)
+            {
+                if (item != null)
+                {
+                    ClientMap.Remove(item.RemoteHandle);
+                    HandleMap.Remove(item.RemoteHandle);
+                }
+            }
+        }
+
+        public void RemoveByNetHandle(int netHandle)
+        {
+            lock (ClientMap)
+            {
+                Remove(NetToStreamedItem(netHandle));
+            }
+        }
+
+        public void RemoveByLocalHandle(int localHandle)
+        {
+            lock (ClientMap) Remove(NetToStreamedItem(localHandle, true));
+        }
+
+        internal SyncPed GetPlayer(int netHandle)
+        {
+            SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
+            if (rem != null) return rem;
+
+            lock (ClientMap)
+            {
+                ClientMap.Add(netHandle, rem = new SyncPed()
+                {
+                    RemoteHandle = netHandle,
+                    EntityType = (byte)EntityType.Player,
+                    StreamedIn = false, // change me
+                    LocalOnly = false,
+
+                    BlipSprite = -1,
+                    BlipColor = -1,
+                    BlipAlpha = 255,
+                    Alpha = 255,
+                    Team = -1,
+                });
+            }
+            return rem;
+        }
+
+        public bool IsLocalPlayer(IStreamedItem item)
+        {
+            if (item == null) return false;
+            return NetToEntity(item.RemoteHandle)?.Handle == Game.Player.Character.Handle;
+        }
+
+        public int Count(Type type)
+        {
+            return ClientMap.Count(item => item.GetType() == type);
         }
 
         public void ClearAll()
         {
-            LogManager.DebugLog("STARTING CLEARALL");
-
             lock (ClientMap)
             {
-                LogManager.DebugLog("HANDLEMAP LOCKED");
-                LogManager.DebugLog("HANDLEMAP SIZE: " + ClientMap.Count);
-
                 foreach (var pair in ClientMap.Values)
                 {
                     if (!pair.StreamedIn) continue;
-
                     StreamOut(pair);
                 }
-
-                LogManager.DebugLog("CLEARING LISTS");
                 ClientMap.Clear();
                 HandleMap.Clear();
                 _localHandleCounter = 0;
             }
 
         }
+        #endregion
+
+        #region Draw
+        public void DrawMarkers()
+        {
+            var markers = new List<RemoteMarker>(ClientMap.Values.OfType<RemoteMarker>().Where(item => item.StreamedIn));
+
+            for (var index = markers.Count - 1; index >= 0; index--)
+            {
+                var marker = markers[index];
+                World.DrawMarker((MarkerType)marker.MarkerType, marker.Position.ToVector(), marker.Direction.ToVector(), marker.Rotation.ToVector(), marker.Scale.ToVector(), Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
+            }
+
+            // TODO: Uncomment to debug stuff
+            /*
+            foreach (var p in ClientMap.OfType<RemoteBlip>())
+            {
+                if (p == null || p.Position == null) continue;
+                string text = (EntityType) p.EntityType + "\nId: " + p.RemoteHandle + "\nScale: " + p.Scale;
+
+                DrawLabel3D(text, p.Position.ToVector(), 100f, 0.4f);
+            }
+            */
+        }
+
+        public void DrawLabels()
+        {
+            var labels = new List<RemoteTextLabel>(ClientMap.Values.OfType<RemoteTextLabel>().Where(item => item.StreamedIn));
+            for (var index = labels.Count - 1; index >= 0; index--)
+            {
+                var label = labels[index];
+                DrawLabel3D(label.Text, label.Position.ToVector(), label.Range, label.Size, Color.FromArgb(label.Alpha, label.Red, label.Green, label.Blue), label.EntitySeethrough);
+            }
+        }
+
+        internal static void DrawLabel3D(string text, Vector3 position, float range, float size)
+        {
+            DrawLabel3D(text, position, range, size, Color.White, true);
+        }
+
+        private static void DrawLabel3D(string text, Vector3 position, float range, float size, Color col, bool entitySeethrough)
+        {
+            Vector3 origin = GameplayCamera.Position;
+            float distanceSquared = position.DistanceToSquared(origin);
+
+            if (string.IsNullOrWhiteSpace(text) ||
+                !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, position.X, position.Y, position.Z, 1f) ||
+                distanceSquared >= range * range) return;
+
+            float distance = position.DistanceTo(origin);
+
+            var flags = entitySeethrough
+                ? IntersectOptions.Map | IntersectOptions.Vegetation
+                : IntersectOptions.Everything;
+
+            var ray = World.Raycast(origin,
+                (position - origin).Normalized,
+                distance,
+                flags, FrameworkData.PlayerChar.Ex());
+
+            if (!(ray.HitPosition.DistanceTo(origin) >= distance)) return;
+
+            var scale = Math.Max(0.3f, 1f - (distance / range));
+
+            Function.Call(Hash.SET_DRAW_ORIGIN, position.X, position.Y, position.Z);
+            new UIResText(text, Point.Empty, size * scale, col)
+            {
+                TextAlignment = UIResText.Alignment.Centered,
+                Outline = true
+            }.Draw();
+            Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+        }
+        #endregion
     }
 }

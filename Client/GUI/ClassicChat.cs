@@ -25,7 +25,7 @@ namespace GTANetwork.GUI
 			    if (Main.Chat == null || !Main.ChatVisible || !Main.ScriptChatVisible || Main.MainMenu == null || (Main.MainMenu.Visible && !Main.MainMenu.TemporarilyHidden)) return;
 
 			    Main.Chat.Tick();
-			    var count = JavascriptHook.TextElements.Count();
+			    var count = JavascriptHook.TextElements.Count;
 			    for (var i = 0; i < count; i++)
 			    {
 			        JavascriptHook.TextElements[i].Draw();

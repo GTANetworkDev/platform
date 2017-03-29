@@ -476,49 +476,7 @@ namespace GTANetwork.Sync
             */
 		}
 
-	    void UpdateCurrentWeapon()
-	    {
-            if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon || DirtyWeapons)
-			{
-                //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
-                //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
-
-                //Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
-                //Character.Weapons.Select((WeaponHash)CurrentWeapon);
-
-                Character.Weapons.RemoveAll();
-			    var p = IsInVehicle ? Position : Position;
-
-			    Util.Util.LoadWeapon(CurrentWeapon);
-
-                var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, CurrentWeapon, 999, p.X, p.Y, p.Z, true, 0, 0);
-                
-                if (WeaponTints != null && WeaponTints.ContainsKey(CurrentWeapon))
-			    {
-			        var bitmap = WeaponTints[CurrentWeapon];
-
-			        Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
-			    }
-
-			    if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon) && WeaponComponents[CurrentWeapon] != null)
-			    {
-			        foreach (var comp in WeaponComponents[CurrentWeapon])
-			        {
-                        Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_WEAPON_OBJECT, wObj, comp);
-                    }
-			    }
-
-                Function.Call(Hash.GIVE_WEAPON_OBJECT_TO_PED, wObj, Character);
-
-                DirtyWeapons = false;
-			}
-
-	        if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
-	        {
-                Character.Task.ClearAll();
-	            Character.Task.ReloadWeapon();
-	        }
-		}
+	    
 
 	    void DisplayParachuteFreefall()
 	    {
@@ -1079,65 +1037,7 @@ namespace GTANetwork.Sync
 
 
         private int m_uiForceLocalCounter;
-        private void UpdatePlayerPedPos(bool updateRotation = true, bool fixWarp = true)
-        {
-            Vector3 newPos;
-
-            if (!Main.OnFootLagCompensation)
-            {
-                long currentTime = Util.Util.TickCount;
-
-                float alpha = Util.Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
-
-                Vector3 comp = Util.Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
-
-                newPos = Position + comp;
-            }
-            else
-            {
-                var latency = DataLatency + TicksSinceLastUpdate;
-                newPos = Position + PedVelocity*latency/1000;
-            }
-            Ped PlayerChar = Main.PlayerChar;
-
-            if ((OnFootSpeed > 0 || IsAnimal(ModelHash)) && currentInterop.FinishTime != 0)
-            {
-                // (PlayerChar.IsInRangeOfEx(newPos, StreamerThread.CloseRange))
-                if (PlayerChar.IsOnScreen())
-                {
-                    Character.Velocity = PedVelocity + 10*(newPos - Character.Position);
-                }
-                else
-                {
-                    Character.PositionNoOffset = newPos;
-                }
-
-                //StuckDetection();
-                _stopTime = DateTime.Now;
-                _carPosOnUpdate = Character.Position;
-            }
-            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && currentInterop.FinishTime != 0)
-            {
-                var posTarget = Util.Util.LinearVectorLerp(_carPosOnUpdate, Position + (Position - (_lastPosition ?? Position)), (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0);
-            }
-            else
-            {
-                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y, Position.Z, 0, 0, 0);
-            }
-
-            DEBUG_STEP = 33;
-
-            if (updateRotation)
-            {
-#if !DISABLE_SLERP
-                Character.Quaternion = !Character.IsSwimmingUnderWater ? GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(), Math.Min(1f, (DataLatency + TicksSinceLastUpdate)/(float) AverageLatency)) : Rotation.ToQuaternion();
-#else
-            Character.Quaternion = Rotation.ToQuaternion();
-#endif
-            }
-        }
-
+      
 
 
 #endregion

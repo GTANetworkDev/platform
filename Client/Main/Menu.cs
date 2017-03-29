@@ -38,6 +38,7 @@ namespace GTANetwork
 
         public static TabView MainMenu;
         private TabInteractiveListItem _Verified;
+        private TabInteractiveListItem _Spotlight;
         private TabInteractiveListItem _serverBrowser;
         private TabInteractiveListItem _lanBrowser;
         private TabInteractiveListItem _favBrowser;
@@ -48,10 +49,18 @@ namespace GTANetwork
         private TabMapItem _mainMapItem;
         private TabWelcomeMessageItem _welcomePage;
 
+        private static List<string> VerifiedList = new List<string>();
+        private static List<string> InternetList = new List<string>();
+
         private bool finished = true;
         private bool _hasScAvatar;
 
-        public void GetWelcomeMessage()
+        private bool ListSorting = false;
+
+        private int TotalPlayers;
+        private int TotalServers;
+
+        private void GetWelcomeMessage()
         {
             ThreadPool.QueueUserWorkItem(delegate
             {
@@ -80,7 +89,7 @@ namespace GTANetwork
             });
         }
 
-        public void UpdateSocialClubAvatar()
+        private void UpdateSocialClubAvatar()
         {
             try
             {
@@ -100,7 +109,7 @@ namespace GTANetwork
             }
         }
 
-        private void AddToFavorites(string server)
+        private static void AddToFavorites(string server)
         {
             if (string.IsNullOrWhiteSpace(server)) return;
             var split = server.Split(':');
@@ -109,7 +118,7 @@ namespace GTANetwork
             Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
 
-        private void RemoveFromFavorites(string server)
+        private static void RemoveFromFavorites(string server)
         {
             PlayerSettings.FavoriteServers.Remove(server);
             Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
@@ -167,8 +176,7 @@ namespace GTANetwork
                     PlayerSettings.RecentServers.RemoveAt(0);
                 Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
 
-                var item = new UIMenuItem(server);
-                item.Description = server;
+                var item = new UIMenuItem(server) {Description = server};
                 item.SetRightLabel(server);
                 item.Activated += (sender, selectedItem) =>
                 {
@@ -216,12 +224,11 @@ namespace GTANetwork
             _lanBrowser.RefreshIndex();
             _recentBrowser.RefreshIndex();
 
-            _currentOnlinePlayers = 0;
-            _currentOnlineServers = 0;
+            VerifiedList.Clear();
+            InternetList.Clear();
 
             var fetchThread = new Thread((ThreadStart)delegate
             {
-
                 try
                 {
                     if (Client == null)
@@ -244,16 +251,16 @@ namespace GTANetwork
                     if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress))
                         return;
 
-                    string response = String.Empty;
-                    string responseVerified = String.Empty;
+                    var response = string.Empty;
+                    var responseVerified = string.Empty;
+                    var responseStats = string.Empty;
                     try
                     {
                         using (var wc = new ImpatientWebClient())
                         {
-                            LogManager.RuntimeLog("Downloading response...");
                             response = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/servers");
                             responseVerified = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/verified");
-                            LogManager.RuntimeLog("Downloaded " + response);
+                            responseStats = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/stats");
                         }
                     }
                     catch (Exception e)
@@ -271,14 +278,14 @@ namespace GTANetwork
                         LogManager.SimpleLog("masterserver", logOutput);
                     }
 
-                    var list = new List<string>();
-                    var listVerified = new List<string>();
+                    var list = InternetList;
+                    var listVerified = VerifiedList;
 
                     if (!string.IsNullOrWhiteSpace(response))
                     {
-                        var dejson = JsonConvert.DeserializeObject<MasterServerList>(response) as MasterServerList;
+                        var dejson = JsonConvert.DeserializeObject<MasterServerList>(response);
 
-                        if (dejson != null && dejson.list != null)
+                        if (dejson?.list != null)
                         {
                             list.AddRange(dejson.list);
                         }
@@ -286,11 +293,22 @@ namespace GTANetwork
 
                     if (!string.IsNullOrWhiteSpace(responseVerified))
                     {
-                        var dejson = JsonConvert.DeserializeObject<MasterServerList>(responseVerified) as MasterServerList;
+                        var dejson = JsonConvert.DeserializeObject<MasterServerList>(responseVerified);
 
-                        if (dejson != null && dejson.list != null)
+                        if (dejson?.list != null)
                         {
                             listVerified.AddRange(dejson.list);
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(responseStats))
+                    {
+                        var dejson = JsonConvert.DeserializeObject<MasterServerStats>(responseStats);
+
+                        if (dejson != null)
+                        {
+                            TotalPlayers = dejson.TotalPlayers;
+                            TotalServers = dejson.TotalServers;
                         }
                     }
 
@@ -304,83 +322,25 @@ namespace GTANetwork
                         if (!list.Contains(server)) list.Add(server);
                     }
 
-                    list = list.Distinct().ToList();
-                    listVerified = listVerified.Distinct().ToList();
+                    list = list.Distinct().ToList(); InternetList = list;
+                    VerifiedList = listVerified.Distinct().ToList();
 
-                    foreach (var server in list)
+                    MainMenu.Money = "Servers Online: " + TotalServers + " | Players Online: " + TotalPlayers;
+
+                    for (var i = 0; i < list.Count; i++)
                     {
-                        var split = server.Split(':');
-                        if (split.Length != 2) continue;
-                        int port;
-                        if (!int.TryParse(split[1], out port))
-                            continue;
+                        if (i != 0 && i % 10 == 0) Thread.Sleep(100);
 
-                        var item = new UIMenuItem(split[0] + ":" + split[1]);
-                        item.Description = split[0] + ":" + split[1];
-
-                        int lastIndx = 0;
-
-                        try
-                        {
-                            if (!isIPLocal(Dns.GetHostAddresses(split[0])[0].ToString()))
-                            {
-                                if (_serverBrowser.Items.Count > 0)
-                                    lastIndx = _serverBrowser.Index;
-
-                                _serverBrowser.Items.Add(item);
-                                _serverBrowser.Index = lastIndx;
-                            }
-                            else
-                            {
-                                if (!_lanBrowser.Items.Any(i => i.Description == item.Description))
-                                {
-                                    if (_lanBrowser.Items.Count > 0)
-                                        lastIndx = _lanBrowser.Index;
-
-                                    _lanBrowser.Items.Add(item);
-                                    _lanBrowser.Index = lastIndx;
-                                }
-                            }
-
-                            if (listVerified.Contains(server))
-                            {
-                                _Verified.Items.Add(item);
-                                _Verified.Index = lastIndx;
-                            }
-
-                            if (PlayerSettings.RecentServers.Contains(server))
-                            {
-                                _recentBrowser.Items.Add(item);
-                                _recentBrowser.Index = lastIndx;
-                            }
-
-                            if (PlayerSettings.FavoriteServers.Contains(server))
-                            {
-                                _favBrowser.Items.Add(item);
-                                _favBrowser.Index = lastIndx;
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            LogManager.LogException(e, "DISCOVERY EXCEPTION");
-                        }
-                    }
-
-                    for (int i = 0; i < list.Count; i++)
-                    {
-                        if (i != 0 && i % 10 == 0)
-                        {
-                            Thread.Sleep(1000);
-                        }
                         var spl = list[i].Split(':');
                         if (spl.Length < 2) continue;
                         try
                         {
                             Client.DiscoverKnownPeer(Dns.GetHostAddresses(spl[0])[0].ToString(), int.Parse(spl[1]));
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
-                            LogManager.LogException(e, "DISCOVERY EXCEPTION");
+                            //Ignored
+                            //LogManager.LogException(e, "DISCOVERY EXCEPTION");
                         }
                     }
                 }
@@ -409,8 +369,7 @@ namespace GTANetwork
 
             var us = NetEntityHandler.ClientMap.Values.FirstOrDefault(p => p is RemotePlayer && ((RemotePlayer)p).LocalHandle == -2) as RemotePlayer;
 
-            if (us == null) _serverPlayers.Dictionary.Add(PlayerSettings.DisplayName, ((int)(Latency * 1000)) + "ms");
-            else  _serverPlayers.Dictionary.Add(us.Name, ((int)(Latency * 1000)) + "ms");
+            _serverPlayers.Dictionary.Add(us == null ? PlayerSettings.DisplayName : us.Name, (int) (Latency * 1000) + "ms");
 
             foreach (var ped in list)
             {
@@ -426,11 +385,23 @@ namespace GTANetwork
             }
         }
 
+        public enum Tab
+        {
+            Favorite = 1,
+            Verified = 2,
+            Spotlight = 3,
+            Internet = 4,
+            LAN = 5,
+            Recent = 6
+
+        }
         private void BuildMainMenu()
         {
-            MainMenu = new TabView("Grand Theft Auto Network");
-            MainMenu.CanLeave = false;
-            MainMenu.MoneySubtitle = "GTAN " + CurrentVersion;
+            MainMenu = new TabView("Grand Theft Auto Network")
+            {
+                CanLeave = false,
+                MoneySubtitle = "GTAN " + CurrentVersion
+            };
 
             _mainMapItem = new TabMapItem();
 
@@ -443,12 +414,14 @@ namespace GTANetwork
 
             #region ServerBrowser
             {
+                #region Quick Connect
                 var dConnect = new TabButtonArrayItem("Quick Connect");
-
                 {
-                    var ipButton = new TabButton();
-                    ipButton.Text = "IP Address";
-                    ipButton.Size = new Size(500, 40);
+                    var ipButton = new TabButton
+                    {
+                        Text = "IP Address",
+                        Size = new Size(500, 40)
+                    };
                     ipButton.Activated += (sender, args) =>
                     {
                         MainMenu.TemporarilyHidden = true;
@@ -461,18 +434,17 @@ namespace GTANetwork
                 }
 
                 {
-                    var ipButton = new TabButton();
-                    ipButton.Text = "Port";
-                    ipButton.Size = new Size(500, 40);
+                    var ipButton = new TabButton
+                    {
+                        Text = "Port",
+                        Size = new Size(500, 40)
+                    };
                     ipButton.Activated += (sender, args) =>
                     {
                         MainMenu.TemporarilyHidden = true;
                         var port = InputboxThread.GetUserInput(Port.ToString(), 30, TickSpinner);
 
-                        if (string.IsNullOrWhiteSpace(port))
-                        {
-                            port = "4499";
-                        }
+                        if (string.IsNullOrWhiteSpace(port)) port = "4499";
 
                         int newPort;
                         if (!int.TryParse(port, out newPort))
@@ -489,9 +461,11 @@ namespace GTANetwork
                 }
 
                 {
-                    var ipButton = new TabButton();
-                    ipButton.Text = "Password";
-                    ipButton.Size = new Size(500, 40);
+                    var ipButton = new TabButton
+                    {
+                        Text = "Password",
+                        Size = new Size(500, 40)
+                    };
                     ipButton.Activated += (sender, args) =>
                     {
                         MainMenu.TemporarilyHidden = true;
@@ -504,54 +478,63 @@ namespace GTANetwork
                 }
 
                 {
-                    var ipButton = new TabButton();
-                    ipButton.Text = "Connect";
-                    ipButton.Size = new Size(500, 40);
+                    var ipButton = new TabButton
+                    {
+                        Text = "Connect",
+                        Size = new Size(500, 40)
+                    };
                     ipButton.Activated += (sender, args) =>
                     {
-                        var isPassworded = false;
-                        if (!string.IsNullOrWhiteSpace(_QCpassword)) isPassworded = true;
-
+                        var isPassworded = !string.IsNullOrWhiteSpace(_QCpassword);
+                        if (string.IsNullOrWhiteSpace(_clientIp)) _clientIp = "127.0.0.1";
                         AddServerToRecent(_clientIp + ":" + Port, _QCpassword);
                         ConnectToServer(_clientIp, Port, isPassworded, _QCpassword);
                         MainMenu.TemporarilyHidden = true;
                     };
                     dConnect.Buttons.Add(ipButton);
                 }
+                #endregion
 
+                _Spotlight = new TabInteractiveListItem("Spotlight", new List<UIMenuItem>());
                 _Verified = new TabInteractiveListItem("Verified", new List<UIMenuItem>());
                 _serverBrowser = new TabInteractiveListItem("Internet", new List<UIMenuItem>());
                 _favBrowser = new TabInteractiveListItem("Favorites", new List<UIMenuItem>());
                 _lanBrowser = new TabInteractiveListItem("Local Network", new List<UIMenuItem>());
                 _recentBrowser = new TabInteractiveListItem("Recent", new List<UIMenuItem>());
 
-                _connectTab = new TabSubmenuItem("connect", new List<TabItem>() { dConnect, _favBrowser, _Verified, _serverBrowser, _lanBrowser, _recentBrowser });
+                _connectTab = new TabSubmenuItem("connect", new List<TabItem> { dConnect, _favBrowser,  _Verified, _Spotlight, _serverBrowser, _lanBrowser, _recentBrowser });
 
                 MainMenu.AddTab(_connectTab);
                 _connectTab.DrawInstructionalButtons += (sender, args) =>
                 {
                     MainMenu.DrawInstructionalButton(4, Control.Jump, "Refresh");
+                    if (Game.IsControlJustPressed(0, Control.Jump)) RebuildServerBrowser();
 
-                    if (Game.IsControlJustPressed(0, Control.Jump))
+                    #region Tabs
+                    if (_connectTab.Index == (int)Tab.Verified && _connectTab.Items[(int)Tab.Verified].Focused || _connectTab.Index == (int)Tab.Internet && _connectTab.Items[(int)Tab.Internet].Focused || _connectTab.Index == (int)Tab.LAN && _connectTab.Items[(int)Tab.LAN].Focused || _connectTab.Index == (int)Tab.Recent && _connectTab.Items[(int)Tab.Recent].Focused)
                     {
-                        RebuildServerBrowser();
-                    }
-                    #region Verified, Iternet, LAN and Recent
-                    if (_connectTab.Index == 2 && _connectTab.Items[2].Focused || _connectTab.Index == 3 && _connectTab.Items[3].Focused || _connectTab.Index == 4 && _connectTab.Items[4].Focused || _connectTab.Index == 5 && _connectTab.Items[5].Focused)
-                    {
+                        MainMenu.DrawInstructionalButton(6, Control.NextCamera, "Sort by Players");
+                        if (Game.IsControlJustPressed(0, Control.NextCamera))
+                        {
+                           ListSorting = !ListSorting;
+                           RebuildServerBrowser();
+                        }
+
+
                         MainMenu.DrawInstructionalButton(5, Control.Enter, "Add to Favorites");
                         if (Game.IsControlJustPressed(0, Control.Enter))
                         {
+                            _favBrowser.RefreshIndex();
                             var selectedServer = _serverBrowser.Items[_serverBrowser.Index];
-                            if (_connectTab.Index == 2 && _connectTab.Items[2].Focused)
+                            if (_connectTab.Index == (int)Tab.Verified && _connectTab.Items[(int)Tab.Verified].Focused)
                             {
                                 selectedServer = _Verified.Items[_Verified.Index];
                             }
-                            else if (_connectTab.Index == 4 && _connectTab.Items[4].Focused)
+                            else if (_connectTab.Index == (int)Tab.LAN && _connectTab.Items[(int)Tab.LAN].Focused)
                             {
                                 selectedServer = _lanBrowser.Items[_lanBrowser.Index];
                             }
-                            else if (_connectTab.Index == 5 && _connectTab.Items[5].Focused)
+                            else if (_connectTab.Index == (int)Tab.Recent && _connectTab.Items[(int)Tab.Recent].Focused)
                             {
                                 selectedServer = _recentBrowser.Items[_recentBrowser.Index];
                             }
@@ -571,8 +554,10 @@ namespace GTANetwork
                             {
                                 AddToFavorites(selectedServer.Description);
                                 selectedServer.SetRightBadge(UIMenuItem.BadgeStyle.Star);
-                                var item = new UIMenuItem(selectedServer.Text);
-                                item.Description = selectedServer.Description;
+                                var item = new UIMenuItem(selectedServer.Text)
+                                {
+                                    Description = selectedServer.Description
+                                };
                                 item.SetRightLabel(selectedServer.RightLabel);
                                 item.SetLeftBadge(selectedServer.LeftBadge);
                                 item.Activated += (faf, selectedItem) =>
@@ -590,11 +575,7 @@ namespace GTANetwork
 
                                         while (IsOnServer()) Script.Yield();
                                     }
-                                    bool pass = false;
-                                    if (selectedServer.LeftBadge == UIMenuItem.BadgeStyle.Lock)
-                                    {
-                                        pass = true;
-                                    }
+                                    var pass = selectedServer.LeftBadge == UIMenuItem.BadgeStyle.Lock;
 
                                     var splt = selectedServer.Description.Split(':');
 
@@ -611,8 +592,9 @@ namespace GTANetwork
                         }
                     }
                     #endregion
-                    #region Favorites
-                    if (_connectTab.Index == 1 && _connectTab.Items[1].Focused)
+
+                    #region Favorites Tab
+                    if (_connectTab.Index == (int)Tab.Favorite && _connectTab.Items[(int)Tab.Favorite].Focused)
                     {
                         MainMenu.DrawInstructionalButton(6, Control.NextCamera, "Add Server");
 
@@ -638,8 +620,7 @@ namespace GTANetwork
                             if (!PlayerSettings.FavoriteServers.Contains(serverIp))
                             {
                                 AddToFavorites(serverIp);
-                                var item = new UIMenuItem(serverIp);
-                                item.Description = serverIp;
+                                var item = new UIMenuItem(serverIp) {Description = serverIp};
                                 _favBrowser.Items.Add(item);
                             }
                             else
@@ -1013,7 +994,7 @@ namespace GTANetwork
 
             #region Host
             {
-#if ATTACHSERVER
+            #if ATTACHSERVER
                 var settingsPath = GTANInstallDir + "\\server\\settings.xml";
 
                 if (File.Exists(settingsPath) && Directory.Exists(GTANInstallDir + "\\server\\resources"))
@@ -1206,23 +1187,25 @@ namespace GTANetwork
                         new List<TabItem> { hostStart, serverSettings, resources });
                     MainMenu.AddTab(welcomeItem);
                 }
-#endif
+            #endif
             }
             #endregion
 
             #region Quit
             {
-                var welcomeItem = new TabTextItem("Quit", "Quit GTA Network", "Are you sure you want to quit Grand Theft Auto Network and return to desktop?");
-                welcomeItem.CanBeFocused = false;
+                var welcomeItem = new TabTextItem("Quit", "Quit GTA Network", "Are you sure you want to quit Grand Theft Auto Network and return to desktop?")
+                {
+                    CanBeFocused = false
+                };
                 welcomeItem.Activated += (sender, args) =>
                 {
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
                     CEFManager.Dispose();
                     CEFManager.DisposeCef();
                     Script.Wait(1000);
-                    //Environment.Exit(0);
-                    Process.GetProcessesByName("GTA5")[0].Kill();
-                    Process.GetCurrentProcess().Kill();
+                    Environment.Exit(0);
+                    //Process.GetProcessesByName("GTA5")[0].Kill();
+                    //Process.GetCurrentProcess().Kill();
                 };
                 MainMenu.Tabs.Add(welcomeItem);
             }
@@ -1234,14 +1217,15 @@ namespace GTANetwork
             _serverPlayers = new TabItemSimpleList("Players", new Dictionary<string, string>());
             #endregion
 
-            var favTab = new TabTextItem("Favorite", "Add to Favorites", "Add the current server to favorites.");
-            favTab.CanBeFocused = false;
+            var favTab = new TabTextItem("Favorite", "Add to Favorites", "Add the current server to favorites.")
+            {
+                CanBeFocused = false
+            };
             favTab.Activated += (sender, args) =>
             {
                 var serb = _currentServerIp + ":" + _currentServerPort;
                 AddToFavorites(_currentServerIp + ":" + _currentServerPort);
-                var item = new UIMenuItem(serb);
-                item.Description = serb;
+                var item = new UIMenuItem(serb) {Description = serb};
                 Util.Util.SafeNotify("Server added to favorites!");
                 item.Activated += (faf, selectedItem) =>
                 {
@@ -1274,18 +1258,22 @@ namespace GTANetwork
                 _favBrowser.Items.Add(item);
             };
 
-            var dcItem = new TabTextItem("Disconnect", "Disconnect", "Disconnect from the current server.");
-            dcItem.CanBeFocused = false;
+            var dcItem = new TabTextItem("Disconnect", "Disconnect", "Disconnect from the current server.")
+            {
+                CanBeFocused = false
+            };
             dcItem.Activated += (sender, args) =>
             {
-                if (Client != null) Client.Disconnect("Quit");
+                Client?.Disconnect("Quit");
             };
 
-            _statsItem = new TabTextItem("Statistics", "Network Statistics", "");
-            _statsItem.CanBeFocused = false;
+            _statsItem = new TabTextItem("Statistics", "Network Statistics", "") {CanBeFocused = false};
 
-            _serverItem = new TabSubmenuItem("server", new List<TabItem>() { _serverPlayers, favTab, _statsItem, dcItem });
-            _serverItem.Parent = MainMenu;
+            _serverItem = new TabSubmenuItem("server", new List<TabItem>() {_serverPlayers, favTab, _statsItem, dcItem})
+            {
+                Parent = MainMenu
+            };
+
             #endregion
 
             MainMenu.RefreshIndex();
@@ -1307,7 +1295,7 @@ namespace GTANetwork
 
         }
 
-        public void PauseMenu()
+        private void PauseMenu()
         {
             if ((Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) || Game.IsControlJustPressed(0, Control.FrontendPause)) && !MainMenu.Visible && !_wasTyping)
             {
@@ -1315,15 +1303,7 @@ namespace GTANetwork
 
                 if (!IsOnServer())
                 {
-                    if (MainMenu.Visible)
-                    {
-                        World.RenderingCamera = MainMenuCamera;
-                    }
-                    else
-                    {
-                        World.RenderingCamera = null;
-                    }
-
+                    World.RenderingCamera = MainMenu.Visible ? MainMenuCamera : null;
                 }
                 else if (MainMenu.Visible)
                 {
@@ -1360,24 +1340,25 @@ namespace GTANetwork
                 _isGoingToCar = false;
             }
 
-            if (_mainWarning != null)
-            {
-                _mainWarning.Draw();
-                return;
-            }
+            _mainWarning?.Draw();
         }
 
-        public class WelcomeSchema
+        private class WelcomeSchema
         {
             public string Title { get; set; }
             public string Message { get; set; }
             public string Picture { get; set; }
         }
 
-        public class MasterServerList
+        private class MasterServerList
         {
             public List<string> list { get; set; }
-            public List<string> listVerified { get; set; }
+        }
+
+        public class MasterServerStats
+        {
+            public int TotalPlayers { get; set; }
+            public int TotalServers { get; set; }
         }
 
     }

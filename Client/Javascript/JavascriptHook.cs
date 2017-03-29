@@ -265,45 +265,34 @@ namespace GTANetwork.Javascript
 
         internal static void OnTick(object sender, EventArgs e)
         {
+            if (!Main.IsConnected() || !Main.IsOnServer())
+            {
+                StopAllScripts();
+                return;
+            }
+
             var tmpList = new List<Action>(ThreadJumper);
             ThreadJumper.Clear();
-
-            for (var i = tmpList.Count - 1; i >= 0; i--)
+            try
             {
-                try
+                for (var i = tmpList.Count - 1; i >= 0; i--)
                 {
                     tmpList[i].Invoke();
                 }
-                catch (Exception ex)
-                {
-                    LogException(ex);
-                }
-            }
 
-            lock (ScriptEngines)
-            {
-                for (var i = ScriptEngines.Count - 1; i >= 0; i--)
+                lock (ScriptEngines)
                 {
-                    try
+                    for (var i = ScriptEngines.Count - 1; i >= 0; i--)
                     {
                         ScriptEngines[i].Engine.Script.API.invokeUpdate();
-                    }
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
-                    }
-
-                    try
-                    {
                         ScriptEngines[i].Engine.Script.API.processCoroutines();
-                    }
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
                     }
                 }
             }
-
+            catch (Exception ex)
+            {
+                LogException(ex);
+            }
         }
 
         internal static void OnKeyDown(object sender, KeyEventArgs e)
@@ -386,10 +375,8 @@ namespace GTANetwork.Javascript
 
         internal static ClientsideScriptWrapper StartScript(ClientsideScript script)
         {
-            ClientsideScriptWrapper csWrapper = null;
-            
-            
-            var scriptEngine = new V8ScriptEngine();
+            ClientsideScriptWrapper csWrapper;
+            var scriptEngine = new V8ScriptEngine(V8ScriptEngineFlags.EnableDebugging);
             //scriptEngine.AddHostObject("host", new HostFunctions()); // Disable an exploit where you could get reflection
             scriptEngine.AddHostObject("API", new ScriptContext(scriptEngine));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
@@ -427,7 +414,6 @@ namespace GTANetwork.Javascript
                 csWrapper = new ClientsideScriptWrapper(scriptEngine, script.ResourceParent, script.Filename);
                 lock (ScriptEngines) ScriptEngines.Add(csWrapper);
             }
-    
             return csWrapper;
         }
 
@@ -435,22 +421,23 @@ namespace GTANetwork.Javascript
         {
             lock (ScriptEngines)
             {
-                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                foreach (ClientsideScriptWrapper t in ScriptEngines)
                 {
-                    ScriptEngines[i].Engine.Script.API.isDisposing = true;
+                    t.Engine.Script.API.isDisposing = true;
                 }
             }
 
             lock (ScriptEngines)
             {
-                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                foreach (ClientsideScriptWrapper t in ScriptEngines)
                 {
-                    ScriptEngines[i].Engine.Interrupt();
-                    ScriptEngines[i].Engine.Script.API.invokeResourceStop();
-                    ScriptEngines[i].Engine.Dispose();
+                    t.Engine.Interrupt();
+                    t.Engine.Script.API.invokeResourceStop();
+                    t.Engine.Dispose();
                 }
                 ScriptEngines.Clear();
             }
+
             AudioDevice?.Stop();
             AudioDevice?.Dispose();
             AudioReader?.Dispose();
@@ -460,10 +447,10 @@ namespace GTANetwork.Javascript
 
             lock (CEFManager.Browsers)
             {
-                for (int i = CEFManager.Browsers.Count - 1; i >= 0; i--)
+                foreach (Browser t in CEFManager.Browsers)
                 {
-                    CEFManager.Browsers[i].Close();
-                    CEFManager.Browsers[i].Dispose();
+                    t.Close();
+                    t.Dispose();
                 }
 
                 CEFManager.Browsers.Clear();
@@ -474,10 +461,10 @@ namespace GTANetwork.Javascript
         {
             lock (ScriptEngines)
             {
-                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                foreach (ClientsideScriptWrapper t in ScriptEngines)
                 {
-                    if (ScriptEngines[i].ResourceParent != resourceName) continue;
-                    ScriptEngines[i].Engine.Script.API.isDisposing = true;
+                    if (t.ResourceParent != resourceName) continue;
+                    t.Engine.Script.API.isDisposing = true;
                 }
             }
 
@@ -485,20 +472,20 @@ namespace GTANetwork.Javascript
             var dict = Exported as IDictionary<string, object>;
             dict.Remove(resourceName);
 
-            ThreadJumper.Add(delegate
-            {
+            //ThreadJumper.Add(delegate
+            //{
                 lock (ScriptEngines)
                 {
-                    for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                    foreach (var i in ScriptEngines)
                     {
-                        if (ScriptEngines[i].ResourceParent != resourceName) continue;
-                        ScriptEngines[i].Engine.Script.API.invokeResourceStop();
-                        ScriptEngines[i].Engine.Dispose();
-                        ScriptEngines.RemoveAt(i);
+                        if (i.ResourceParent != resourceName) continue;
+                        i.Engine.Script.API.invokeResourceStop();
+                        i.Engine.Dispose();
+                        if(ScriptEngines.Contains(i)) ScriptEngines.Remove(i);
                     }
                 }
 
-            });
+            //});
         }
 
         private static void LogException(Exception ex)
@@ -539,6 +526,8 @@ namespace GTANetwork.Javascript
         List<dynamic> unblockedCoroutines = new List<dynamic>();
         List<dynamic> shouldRunNextFrame = new List<dynamic>();
         SortedList<int, dynamic> shouldRunInTime = new SortedList<int, dynamic>();
+        Dictionary<LocalHandle, int> Latencies = new Dictionary<LocalHandle, int>();
+        Dictionary<LocalHandle, string> Names = new Dictionary<LocalHandle, string>();
 
         private const float height = 1080f;
         private static float ratio = (float)Main.screen.Width / Main.screen.Height;
@@ -546,7 +535,7 @@ namespace GTANetwork.Javascript
 
         internal void processCoroutines()
         {
-            for (int i = unblockedCoroutines.Count - 1; i >= 0; i--)
+            for (int i = 0; i < unblockedCoroutines.Count; i++)
             {
                 var coroutine = unblockedCoroutines[i];
                 dynamic result;
@@ -3182,12 +3171,50 @@ namespace GTANetwork.Javascript
             return new LocalHandle(0);
         }
 
-        public string getPlayerName(LocalHandle player)
+        public string getPlayerName(LocalHandle player, bool cache = false)
         {
-            if (player == getLocalPlayer()) return Main.NetEntityHandler.ClientMap.Values.OfType<RemotePlayer>().First(op => op.LocalHandle == -2).Name;
+            if (cache && skipped < 200 && Names.ContainsKey(player))
+            {
+                skipped++;
+                return Names[player];
+            }
+            skipped = 0;
+
+            if (player == getLocalPlayer())
+            {
+                var name = Main.NetEntityHandler.ClientMap.Values.OfType<RemotePlayer>().First(op => op.LocalHandle == -2).Name;
+                if (cache)
+                {
+                    if (Names.ContainsKey(player))
+                    {
+                        Names.Add(player, name);
+                    }
+                    else
+                    {
+                        Names[player] = name;
+                    }
+                }
+                return name;
+            }
 
             var opp = findPlayer(player);
-            return opp != null ? opp.Name : "N/A";
+            if (opp != null)
+            {
+                var name = opp.Name;
+                if (cache)
+                {
+                    if (Names.ContainsKey(player))
+                    {
+                        Names.Add(player, name);
+                    }
+                    else
+                    {
+                        Names[player] = name;
+                    }
+                }
+                return name;
+            }
+            return "Not Available";
         }
 
         public void forceSendAimData(bool force)
@@ -3209,14 +3236,53 @@ namespace GTANetwork.Javascript
                 return opp.AimCoords.ToLVector();
             return new Vector3();
         }
-       
-        public int getPlayerPing(LocalHandle player)
+
+        private int skipped = 0;
+        public int getPlayerPing(LocalHandle player, bool cache = false)
         {
-            if (player == getLocalPlayer()) return (int)(Main.Latency*1000f);
+            if (cache && skipped < 200 && Latencies.ContainsKey(player))
+            {
+                skipped++;
+                return Latencies[player];
+            }
+
+            skipped = 0;
+            if (player == getLocalPlayer())
+            {
+                var latency = (int)(Main.Latency * 1000f);
+                if (cache)
+                {
+                    if (Latencies.ContainsKey(player))
+                    {
+                        Latencies.Add(player, latency);
+                    }
+                    else
+                    {
+                        Latencies[player] = latency;
+                    }
+                }
+
+                return latency;
+            }
 
             var opp = findPlayer(player);
             if (opp != null)
-                return (int)(opp.Latency * 1000f);
+            {
+                var latency = (int)(opp.Latency * 1000f);
+                if (cache)
+                {
+                    if (Latencies.ContainsKey(player))
+                    {
+                        Latencies.Add(player, latency);
+                    }
+                    else
+                    {
+                        Latencies[player] = latency;
+                    }
+                }
+                return latency;
+            }
+
             return 0;
         }
 
@@ -3644,8 +3710,8 @@ namespace GTANetwork.Javascript
 
             float w = (float)wSize / width;
             float h = (float)hSize / height;
-            float x = (((float)xPos) / width) + w * 0.5f;
-            float y = (((float)yPos) / height) + h * 0.5f;
+            float x = ((float)xPos / width) + w * 0.5f;
+            float y = ((float)yPos / height) + h * 0.5f;
 
             Function.Call(Hash.DRAW_RECT, x, y, w, h, r, g, b, alpha);
         }
@@ -3660,10 +3726,8 @@ namespace GTANetwork.Javascript
             Function.Call(Hash.SET_TEXT_FONT, font);
             Function.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
             Function.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
-            if (shadow)
-                Function.Call(Hash.SET_TEXT_DROP_SHADOW);
-            if (outline)
-                Function.Call(Hash.SET_TEXT_OUTLINE);
+            if (shadow) Function.Call(Hash.SET_TEXT_DROP_SHADOW);
+            if (outline) Function.Call(Hash.SET_TEXT_OUTLINE);
             switch (justify)
             {
                 case 1:

@@ -319,10 +319,11 @@ namespace GTANetwork
 
             var objectList = DecodeArgumentList(obj.Arguments.ToArray());
 
-            list.AddRange(objectList.Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
+            var enumerable = objectList as object[] ?? objectList.ToArray();
+            list.AddRange(enumerable.Select(ob => ob is OutputArgument ? (OutputArgument)ob : new InputArgument(ob)));
 
-            if (objectList.Count() > 0)
-                LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + objectList.Aggregate((f, s) => f + ", " + s) + ", RETURN TYPE: " + obj.ReturnType);
+            if (enumerable.Any())
+                LogManager.DebugLog("NATIVE CALL ARGUMENTS: " + enumerable.Aggregate((f, s) => f + ", " + s) + ", RETURN TYPE: " + obj.ReturnType);
             Model model = null;
             if (((int)nativeType & (int)Enums.NativeType.NeedsModel) > 0)
             {

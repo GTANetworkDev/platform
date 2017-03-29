@@ -99,6 +99,8 @@ namespace GTANetwork.Util
 
     public static class Util
     {
+
+
         //public static Vector3 
 
         public static T Clamp<T>(T min, T value, T max) where T : IComparable
@@ -191,13 +193,16 @@ namespace GTANetwork.Util
         public static void LoadModel(Model model)
         {
             if (!model.IsValid) return;
-
             LogManager.DebugLog("REQUESTING MODEL " + model.Hash);
             ModelRequest = true;
             DateTime start = DateTime.Now;
-
-            model.Request(1000);
-
+            while (!model.IsLoaded)
+            {
+                model.Request();
+                //Function.Call(Hash.REQUEST_COLLISION_FOR_MODEL, model.Hash);
+                Script.Yield();
+                if (DateTime.Now.Subtract(start).TotalMilliseconds > 1000) break;
+            }
             ModelRequest = false;
             LogManager.DebugLog("MODEL REQUESTED: " + model.IsLoaded);
         }
@@ -293,11 +298,13 @@ namespace GTANetwork.Util
                 Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, PlayerChar);
             }
 
+            PlayerChar = Game.Player.Character;
             ModelRequest = false;
             model.MarkAsNoLongerNeeded();
 
             PlayerChar.MaxHealth = 200;
             PlayerChar.Health = health;
+            FrameworkData.PlayerChar._recentPlayerChar = PlayerChar;
         }
 
         public static float Denormalize(this float h)
@@ -446,8 +453,8 @@ namespace GTANetwork.Util
                         unchecked(
                             (long)
                                 MemoryAccess.FindPattern(
-                                    (sbyte*) (patternPtr.ToPointer()),
-                                    (sbyte*) (patternPtr.ToPointer())
+                                    (sbyte*)(patternPtr.ToPointer()),
+                                    (sbyte*)(patternPtr.ToPointer())
                                     )));
             }
             finally

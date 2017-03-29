@@ -153,6 +153,7 @@
     <Compile Include="GUI\CEFClient.cs" />
     <Compile Include="GUI\DirectXHook\SwapchainHooker.cs" />
     <Compile Include="GUI\SecureCefResourceHandler.cs" />
+    <Compile Include="Javascript\Attach.cs" />
     <Compile Include="Main\Cleanup.cs" />
     <Compile Include="Main\Events.cs" />
     <Compile Include="Main\Menu.cs" />
@@ -175,6 +176,7 @@
     <Compile Include="Sync\Nametag.cs" />
     <Compile Include="Sync\OnFoot.cs" />
     <Compile Include="Sync\Vehicle.cs" />
+    <Compile Include="Util\Cache.cs" />
     <Compile Include="Util\DataCollector.cs" />
     <Compile Include="Networking\DeltaCompressor.cs" />
     <Compile Include="EntityMemoryHandler.cs" />
@@ -219,6 +221,7 @@
     <Compile Include="Javascript\JavascriptChat.cs" />
     <Compile Include="Javascript\JavascriptHook.cs" />
     <Compile Include="Javascript\JavascriptXmlParser.cs" />
+    <Compile Include="Util\LINQExtension.cs" />
     <Compile Include="Util\LogManager.cs" />
     <Compile Include="Javascript\LoopAudioStream.cs" />
     <Compile Include="Main.cs" />
@@ -254,12 +257,6 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Shared\GTANetworkShared.csproj">
-      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
-      <Name>GTANShared</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
     <EmbeddedResource Include="soundlist.txt" />
     <EmbeddedResource Include="natives.txt" />
@@ -270,6 +267,12 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\GTANetworkShared.csproj">
+      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
+      <Name>GTANetworkShared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

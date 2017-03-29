@@ -149,21 +149,21 @@ namespace GTANetwork.Streamer
                 }
                 Main.DEBUG_STEP = 912;
 
-                if (false/*car.MemoryAddress != IntPtr.Zero*/) // crash
-                {
-                    if (car.HighBeamsOn != _highBeams)
-                    {
-                        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.Highbeams, car.HighBeamsOn);
-                    }
+                //if (false/*car.MemoryAddress != IntPtr.Zero*/) // crash
+                //{
+                //    if (car.HighBeamsOn != _highBeams)
+                //    {
+                //        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.Highbeams, car.HighBeamsOn);
+                //    }
 
-                    _highBeams = car.HighBeamsOn;
-                    Main.DEBUG_STEP = 913;
-                    if (car.LightsOn != _lights)
-                    {
-                        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.NormalLights, car.LightsOn);
-                    }
-                    _lights = car.LightsOn;
-                }
+                //    _highBeams = car.HighBeamsOn;
+                //    Main.DEBUG_STEP = 913;
+                //    if (car.LightsOn != _lights)
+                //    {
+                //        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.NormalLights, car.LightsOn);
+                //    }
+                //    _lights = car.LightsOn;
+                //}
 
                 Main.DEBUG_STEP = 914;
                 Vehicle trailer;

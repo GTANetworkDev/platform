@@ -41,11 +41,7 @@ namespace GTANetwork.Streamer
         {
             foreach (var asiMod in Main.GetModules().Where(mod => mod.ModuleName.EndsWith(".asi")))
             {
-                if ((asiMod.ModuleName.ToLower() == "scripthookvdotnet.asi" ||
-                     asiMod.ModuleName.ToLower() == "scripthookv.asi"))
-                {
-                    continue;
-                }
+                if (asiMod.ModuleName.ToLower() == "scripthookvdotnet.asi" || asiMod.ModuleName.ToLower() == "scripthookv.asi") continue;
 
                 if (!whitelist.Contains(HashFile(asiMod.FileName))) return false;
             }
@@ -130,11 +126,13 @@ namespace GTANetwork.Streamer
 
         internal static ClientsideScript LoadScript(string file, string resource, string script)
         {
-            var csScript = new ClientsideScript();
+            var csScript = new ClientsideScript
+            {
+                Filename = Path.GetFileNameWithoutExtension(file)?.Replace('.', '_'),
+                ResourceParent = resource,
+                Script = script
+            };
 
-            csScript.Filename = Path.GetFileNameWithoutExtension(file)?.Replace('.', '_');
-            csScript.ResourceParent = resource;
-            csScript.Script = script;
 
             return csScript;
         }
@@ -154,7 +152,9 @@ namespace GTANetwork.Streamer
             CurrentFile.Write(bytes);
             if (CurrentFile.Type != FileType.EndOfTransfer)
             {
-                Screen.ShowSubtitle("Downloading " +
+                //Main.LoadingPromptText();
+
+                Main.LoadingPromptText("Downloading " +
                     ((CurrentFile.Type == FileType.Normal || CurrentFile.Type == FileType.Script)
                         ? CurrentFile.Filename
                         : CurrentFile.Type.ToString()) + ": " +
@@ -290,15 +290,9 @@ namespace GTANetwork.Streamer
 
         internal void Write(byte[] data)
         {
-            if (Stream != null)
-            {
-                Stream.Write(data, 0, data.Length);
-            }
+            Stream?.Write(data, 0, data.Length);
 
-            if (Data != null)
-            {
-                Data.AddRange(data);
-            }
+            Data?.AddRange(data);
 
             DataWritten += data.Length;
         }

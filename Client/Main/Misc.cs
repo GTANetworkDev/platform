@@ -1,41 +1,29 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Threading;
-using System.Windows.Forms;
-using GTA;
+﻿using GTA;
 using GTA.Math;
 using GTA.Native;
-using GTANetwork.GUI;
 using GTANetwork.Javascript;
 using GTANetwork.Misc;
 using GTANetwork.Streamer;
 using GTANetwork.Sync;
 using GTANetwork.Util;
 using GTANetworkShared;
-using Lidgren.Network;
-using Microsoft.Win32;
 using NativeUI;
-using NativeUI.PauseMenu;
-using Newtonsoft.Json;
 using ProtoBuf;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using Control = GTA.Control;
 using Vector3 = GTA.Math.Vector3;
-using WeaponHash = GTA.WeaponHash;
 using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork
 {
     public class PrintVersionThread : Script
     {
-        static UIResText _versionLabel = new UIResText("GTAN " + Main.CurrentVersion.ToString(), new Point(), 0.35f, Color.FromArgb(100, 200, 200, 200));
+        static UIResText _versionLabel = new UIResText("GTAN " + Main.CurrentVersion, new Point(), 0.35f, Color.FromArgb(100, 200, 200, 200));
 
         public PrintVersionThread()
         {
@@ -44,13 +32,12 @@ namespace GTANetwork
             _versionLabel.TextAlignment = UIResText.Alignment.Centered;
         }
 
-        public static void OnTick(object sender, EventArgs e)
+        private static void OnTick(object sender, EventArgs e)
         {
             if (!Main.IsConnected()) return;
             _versionLabel.Draw();
         }
     }
-
 
     internal partial class Main
     {
@@ -225,10 +212,8 @@ namespace GTANetwork
 
         public static void StartClientsideScripts(ScriptCollection scripts)
         {
-            if (scripts.ClientsideScripts != null)
-            {
-                JavascriptHook.StartScripts(scripts);
-            }
+            if (scripts.ClientsideScripts == null) return;
+            JavascriptHook.StartScripts(scripts);
         }
 
         public static Dictionary<int, int> CheckPlayerVehicleMods()
@@ -285,24 +270,20 @@ namespace GTANetwork
 
         public static SyncPed GetPedDamagedByPlayer()
         {
-            Ped PlayerChar = Game.Player.Character;
-            //foreach (SyncPed StreamedInPlayers in StreamerThread.StreamedInPlayers)
-            //{
-            int Length = StreamerThread.StreamedInPlayers.Length;
-            for (int i = 0; i < Length; i++)
+            var PlayerChar = FrameworkData.PlayerChar.Ex();
+            if (PlayerChar == null) return null;
+
+            SyncPed[] myBubble;
+            lock (StreamerThread.StreamedInPlayers) { myBubble = StreamerThread.StreamedInPlayers.ToArray(); }
+            var count = myBubble.Length;
+            for (var i = count - 1; i >= 0; i--)
             {
-                SyncPed StreamedInPlayers = StreamerThread.StreamedInPlayers[i];
-                if (Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, StreamedInPlayers.LocalHandle, PlayerChar, true))
-                {
-                    if (Function.Call<bool>(Hash.HAS_PED_BEEN_DAMAGED_BY_WEAPON, StreamedInPlayers.LocalHandle, PlayerChar.Weapons.Current.Model.Hash, 0))
-                    {
-                        if (Function.Call<int>(Hash.GET_WEAPON_DAMAGE_TYPE, PlayerChar.Weapons.Current.Model.Hash) == 3)
-                        {
-                            Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, StreamedInPlayers.LocalHandle);
-                            return StreamedInPlayers;
-                        }
-                    }
-                }
+                var index = StreamerThread.StreamedInPlayers[i];
+                if (!Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, index?.LocalHandle, PlayerChar, true)) continue;
+                if (!Function.Call<bool>(Hash.HAS_PED_BEEN_DAMAGED_BY_WEAPON, index?.LocalHandle, PlayerChar.Weapons.Current.Model.Hash, 0)) continue;
+                if (Function.Call<int>(Hash.GET_WEAPON_DAMAGE_TYPE, PlayerChar.Weapons.Current.Model.Hash) != 3) continue;
+                Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, index?.LocalHandle);
+                return index;
             }
             return null;
         }
@@ -310,33 +291,38 @@ namespace GTANetwork
         public static byte GetPedWalkingSpeed(Ped ped)
         {
             byte output = 0;
-            string animd;
 
-            if ((animd = SyncPed.GetAnimalAnimationDictionary(ped.Model.Hash)) != null)
+            if (SyncPed.GetAnimalAnimationDictionary(ped.Model.Hash) != null)
             {
                 // Player has an animal skin
                 var hash = (PedHash)ped.Model.Hash;
 
-                if (hash == PedHash.ChickenHawk || hash == PedHash.Cormorant || hash == PedHash.Crow ||
-                    hash == PedHash.Seagull || hash == PedHash.Pigeon)
+                switch (hash)
                 {
-                    if (ped.Velocity.Length() > 0.1) output = 1;
-                    if (ped.IsInAir || ped.Velocity.Length() > 0.5) output = 3;
-                }
-                else if (hash == PedHash.Dolphin || hash == PedHash.Fish || hash == PedHash.Humpback ||
-                         hash == PedHash.KillerWhale || hash == PedHash.Stingray || hash == PedHash.HammerShark ||
-                         hash == PedHash.TigerShark)
-                {
-                    if (ped.Velocity.Length() > 0.1) output = 1;
-                    if (ped.Velocity.Length() > 0.5) output = 2;
+                    case PedHash.ChickenHawk:
+                    case PedHash.Cormorant:
+                    case PedHash.Crow:
+                    case PedHash.Seagull:
+                    case PedHash.Pigeon:
+                        if (ped.Velocity.Length() > 0.1) output = 1;
+                        if (ped.IsInAir || ped.Velocity.Length() > 0.5) output = 3;
+                        break;
+                    case PedHash.Dolphin:
+                    case PedHash.Fish:
+                    case PedHash.Humpback:
+                    case PedHash.KillerWhale:
+                    case PedHash.Stingray:
+                    case PedHash.HammerShark:
+                    case PedHash.TigerShark:
+                        if (ped.Velocity.Length() > 0.1) output = 1;
+                        if (ped.Velocity.Length() > 0.5) output = 2;
+                        break;
                 }
             }
-            if (Function.Call<bool>(Hash.IS_PED_WALKING, ped))
-                output = 1;
-            if (Function.Call<bool>(Hash.IS_PED_RUNNING, ped))
-                output = 2;
-            if (Function.Call<bool>(Hash.IS_PED_SPRINTING, ped) || (ped.IsPlayer && Game.IsControlPressed(0, Control.Sprint)))
-                output = 3;
+            if (Function.Call<bool>(Hash.IS_PED_WALKING, ped)) output = 1;
+            if (Function.Call<bool>(Hash.IS_PED_RUNNING, ped)) output = 2;
+            if (Function.Call<bool>(Hash.IS_PED_SPRINTING, ped) || ped.IsPlayer && Game.IsControlPressed(0, Control.Sprint)) output = 3;
+
             //if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
 
             /*if (ped.IsSubtaskActive(ESubtask.AIMING_GUN))
@@ -351,33 +337,23 @@ namespace GTANetwork
 
         public static int GetCurrentVehicleWeaponHash(Ped ped)
         {
-            if (ped.IsInVehicle())
-            {
-                var outputArg = new OutputArgument();
-                var success = Function.Call<bool>(Hash.GET_CURRENT_PED_VEHICLE_WEAPON, ped, outputArg);
-                if (success)
-                {
-                    return outputArg.GetResult<int>();
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            return 0;
+            if (!ped.IsInVehicle()) return 0;
+            var outputArg = new OutputArgument();
+            var success = Function.Call<bool>(Hash.GET_CURRENT_PED_VEHICLE_WEAPON, ped, outputArg);
+            return success ? outputArg.GetResult<int>() : 0;
         }
 
         public static IEnumerable<ProcessModule> GetModules()
         {
             var modules = Process.GetCurrentProcess().Modules;
 
-            for (int i = 0; i < modules.Count; i++)
+            for (int i = modules.Count - 1; i >= 0; i--)
             {
                 yield return modules[i];
             }
         }
 
-        private void SaveSettings()
+        private static void SaveSettings()
         {
             Util.Util.SaveSettings(GTANInstallDir + "\\settings.xml");
         }
@@ -418,11 +394,96 @@ namespace GTANetwork
                 GTANetworkShared.VehicleHash.Italigtb, GTANetworkShared.VehicleHash.Italigtb2,
                 GTANetworkShared.VehicleHash.Nero, GTANetworkShared.VehicleHash.Nero2,
                 GTANetworkShared.VehicleHash.Penetrator, GTANetworkShared.VehicleHash.Specter,
-                GTANetworkShared.VehicleHash.Specter2, GTANetworkShared.VehicleHash.Tempesta
+                GTANetworkShared.VehicleHash.Specter2, GTANetworkShared.VehicleHash.Tempesta,
+                GTANetworkShared.VehicleHash.GP1, GTANetworkShared.VehicleHash.Infernus2,
+                GTANetworkShared.VehicleHash.Ruston, GTANetworkShared.VehicleHash.Turismo2,
             };
 
 
             return dlcCars.Aggregate(legit, (current, car) => current && new Model((int)car).IsValid);
+        }
+
+        private void Passenger()
+        {
+            var playerChar = Game.Player.Character;
+            if (!Game.IsControlJustPressed(0, Control.ThrowGrenade) && !Game.IsControlJustPressed(0, Control.Enter) || playerChar.IsInVehicle() || Chat.IsFocused) return;
+
+            var vehs = StreamerThread.StreamedInVehicles;
+            var veh = new Vehicle(vehs[0].LocalHandle);
+            if (!veh.Exists()) return;
+
+            var relPos = veh.GetOffsetFromWorldCoords(playerChar.Position);
+
+            if (Game.IsControlJustPressed(0, Control.Enter))
+            {
+                playerChar.Task.EnterVehicle(veh, VehicleSeat.Driver, -1, 2f);
+                _isGoingToCar = true;
+                return;
+            }
+
+            if (Game.IsControlJustPressed(0, Control.ThrowGrenade))
+            {
+                var seat = VehicleSeat.Any;
+                if (veh.PassengerCapacity > 1)
+                {
+                    if (relPos.X < 0 && relPos.Y > 0)
+                    {
+                        seat = VehicleSeat.LeftRear;
+                    }
+                    else if (relPos.X >= 0 && relPos.Y > 0)
+                    {
+                        seat = VehicleSeat.RightFront;
+                    }
+                    else if (relPos.X < 0 && relPos.Y <= 0)
+                    {
+                        seat = VehicleSeat.LeftRear;
+                    }
+                    else if (relPos.X >= 0 && relPos.Y <= 0)
+                    {
+                        seat = VehicleSeat.RightRear;
+                    }
+                }
+                else
+                {
+                    seat = VehicleSeat.Passenger;
+                }
+
+                //else if (veh.PassengerCapacity > 2 && veh.GetPedOnSeat(seat).Handle != 0)
+                //{
+                //    switch (seat)
+                //    {
+                //        case VehicleSeat.LeftRear:
+                //            for (int i = 3; i < veh.PassengerCapacity; i += 2)
+                //            {
+                //                if (veh.GetPedOnSeat((VehicleSeat) i).Handle != 0) continue;
+                //                seat = (VehicleSeat) i;
+                //                break;
+                //            }
+                //            break;
+                //        case VehicleSeat.RightRear:
+                //            for (int i = 4; i < veh.PassengerCapacity; i += 2)
+                //            {
+                //                if (veh.GetPedOnSeat((VehicleSeat) i).Handle != 0) continue;
+                //                seat = (VehicleSeat) i;
+                //                break;
+                //            }
+                //            break;
+                //    }
+                //}
+
+                if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, 0, true) && playerChar.IsIdle && !Game.Player.IsAiming)
+                {
+                    playerChar.SetIntoVehicle(veh, seat);
+                }
+                else
+                {
+                    veh.GetPedOnSeat(seat).CanBeDraggedOutOfVehicle = true;
+                    playerChar.Task.EnterVehicle(veh, seat, -1, 2f);
+                    Function.Call(Hash.KNOCK_PED_OFF_VEHICLE, veh.GetPedOnSeat(seat).Handle);
+                    Function.Call(Hash.SET_PED_CAN_BE_KNOCKED_OFF_VEHICLE, veh.GetPedOnSeat(seat).Handle, true); // 7A6535691B477C48 8A251612
+                    _isGoingToCar = true;
+                }
+            }
         }
 
         private void IntegrityCheck()
@@ -452,6 +513,14 @@ namespace GTANetwork
             {
                 returnedProp.Delete();
             }
+        }
+
+        public static void LoadingPromptText(string text)
+        {
+            Function.Call((Hash)0xABA17D7CE615ADBF, "STRING"); //_SET_LOADING_PROMPT_TEXT_ENTRY
+            Function.Call((Hash)0x6C188BE134E074AA, text); //ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME
+            Function.Call((Hash)0x10D373323E5B9C0D); //_REMOVE_LOADING_PROMPT
+            Function.Call((Hash)0xBD12F8228410D9B4, 4); //_SHOW_LOADING_PROMPT
         }
 
         public static void ShowLoadingPrompt(string text)

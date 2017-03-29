@@ -688,7 +688,7 @@ namespace GTANetworkServer
                     Downloads.Add(downloader);
                 }
 
-                if (ourResource.Info.Map != null && !string.IsNullOrWhiteSpace(ourResource.Info.Map.Path))
+                if (!string.IsNullOrWhiteSpace(ourResource.Info.Map?.Path))
                 {
                     ourResource.Map = new XmlGroup();
                     ourResource.Map.Load("resources\\" + ourResource.DirectoryName +"\\" + ourResource.Info.Map.Path);
@@ -1264,14 +1264,14 @@ namespace GTANResource
             if (pure)
             {
                 full = PacketOptimization.WritePureSync(fullPacket);
-                if (PacketOptimization.CheckBit(fullPacket.Flag.Value, VehicleDataFlags.Driver))
+                if (fullPacket.Flag != null && PacketOptimization.CheckBit(fullPacket.Flag.Value, VehicleDataFlags.Driver))
                 {
-                    basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
+                    if (fullPacket.NetHandle != null) basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
                 }
                 else if (!exception.CurrentVehicle.IsNull)
                 {
                     var carPos = NetEntityHandler.ToDict()[exception.CurrentVehicle.Value].Position;
-                    basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, carPos);
+                    if (fullPacket.NetHandle != null) basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, carPos);
                 }
             }
             else

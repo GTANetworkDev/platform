@@ -581,6 +581,11 @@ namespace GTANetworkServer
             get { return API.shared.getEntityModel(this); }
         }
 
+        public string version
+        {
+            get { return this.RemoteScriptVersion.ToString(); }
+        }
+
 
         #region Methods
 

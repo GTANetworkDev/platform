@@ -23,6 +23,9 @@ namespace GTANetwork.Sync
             var gPos = Position;
             if (Character != null && Character.Exists() && Character.Model.Hash == ModelHash && (!Character.IsDead || PedHealth <= 0)) return false;
 
+            if (Character != null && Character.Exists()) Character.Delete();
+
+
             var charModel = new Model(ModelHash);
             Util.Util.LoadModel(charModel);
             Character = World.CreatePed(charModel, gPos, _rotation.Z);
@@ -99,17 +102,15 @@ namespace GTANetwork.Sync
 
         private void UpdateOnFootPosition()
         {
-            if (!Game.Player.Character.IsOnScreen())
+            if (!Character.IsOnScreen())
             {
-                UpdatePlayerPedPos();
+                BasicPosSync();
                 return;
             }
 
             //UpdateProps();
 
-            //DEBUG_STEP = 23;
-
-            //UpdateCurrentWeapon();
+            UpdateCurrentWeapon();
 
             #region IsJumping
             if (!_lastJumping && IsJumping)
@@ -139,24 +140,25 @@ namespace GTANetwork.Sync
             #endregion
 
             #region EnteringVehicles
-            if (EnteringVehicle && !_lastEnteringVehicle)
+            if (EnteringVehicle)
             {
                 var targetVeh = Main.NetEntityHandler.NetToEntity(VehicleNetHandle);
 
                 if (targetVeh != null)
                 {
-                    Character.Task.ClearAll();
-                    Character.Task.ClearSecondary();
-                    Character.Task.ClearAllImmediately();
-                    Character.IsPositionFrozen = false;
+                    //Character.Task.ClearAll();
+                    //Character.Task.ClearSecondary();
+                    //Character.Task.ClearAllImmediately();
+                    //Character.IsPositionFrozen = false;
+                    Game.Player.Character.StaysInVehicleWhenJacked = false;
+                    Function.Call(Hash.SET_PED_CAN_BE_KNOCKED_OFF_VEHICLE, Game.Player.Character.Handle, true); // 7A6535691B477C48 8A251612
                     Character.Task.EnterVehicle(new Vehicle(targetVeh.Handle), (GTA.VehicleSeat)VehicleSeat, -1, 2f);
-                    _seatEnterStart = Util.Util.TickCount;
+
+                    //if(Game.Player.Character.SeatIndex == (VehicleSeat)VehicleSeat)
+                    //_seatEnterStart = Util.Util.TickCount;
                 }
+                return;
             }
-
-            _lastEnteringVehicle = EnteringVehicle;
-
-            if (EnteringVehicle) return;
             #endregion
 
             Character.CanBeTargetted = true;
@@ -266,18 +268,18 @@ namespace GTANetwork.Sync
             //}
             #endregion
 
-            #region IsAiming // Shooting // CustomAnimation
-            if (IsAiming && !IsCustomAnimationPlaying)
+            #region CustomAnimation // WalkAnim // IsAiming // Shooting
+            if (!IsCustomAnimationPlaying)
             {
-                DisplayAimingAnimation();
-            }
+                if (IsAiming) DisplayAimingAnimation();
 
-            if (IsShooting && !IsCustomAnimationPlaying)
-            {
-                DisplayShootingAnimation();
-            }
+                if (IsShooting) DisplayShootingAnimation();
 
-            else if (IsCustomAnimationPlaying)
+                if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat) WalkAnimation();
+
+
+            }
+            else
             {
                 //if ((CustomAnimationFlag & 48) == 48)
                 //{
@@ -287,25 +289,24 @@ namespace GTANetwork.Sync
                 //{
                 //    UpdatePlayerPedPos();
                 //}
-                UpdatePlayerPedPos();
-                DisplayCustomAnimation();
+
+                //DisplayCustomAnimation();
             }
+            BasicPosSync();
 
             #endregion
 
-            else if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
-            {
-                //UpdatePlayerPedPos();
+            //else if ( && !IsCustomAnimationPlaying)
+            //{
+            //    //UpdatePlayerPedPos();
 
-                //Walk();
+            //    //Walk();
 
-                //DisplayWalkingAnimation();
+            //    //DisplayWalkingAnimation();
 
-                WalkAnimation();
-                UpdatePlayerPedPos();
-            }
+            //}
         }
-
+        
         private void WalkAnimation()
         {
             var predictPosition = Position + (Position - Character.Position) + PedVelocity;
@@ -353,6 +354,63 @@ namespace GTANetwork.Sync
             }
         }
 
+
+        private void BasicPosSync(bool updateRotation = true)
+        {
+            Vector3 newPos;
+            if (!Main.OnFootLagCompensation)
+            {
+                long currentTime = Util.Util.TickCount;
+
+                float alpha = Util.Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+
+                Vector3 comp = Util.Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
+
+                newPos = Position + comp;
+            }
+            else
+            {
+                var latency = DataLatency + TicksSinceLastUpdate;
+                newPos = Position + PedVelocity * latency / 1000;
+            }
+            var playerChar = FrameworkData.PlayerChar.Ex();
+
+            if ((OnFootSpeed > 0 || IsAnimal(ModelHash)) && currentInterop.FinishTime != 0)
+            {
+                // (PlayerChar.IsInRangeOfEx(newPos, StreamerThread.CloseRange))
+                if (playerChar.IsOnScreen())
+                {
+                    Character.Velocity = PedVelocity + 10 * (newPos - Character.Position);
+                }
+                else
+                {
+                    Character.PositionNoOffset = newPos;
+                }
+
+                //StuckDetection();
+                _stopTime = DateTime.Now;
+                _carPosOnUpdate = Character.Position;
+            }
+
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && currentInterop.FinishTime != 0)
+            {
+                var posTarget = Util.Util.LinearVectorLerp(_carPosOnUpdate, Position + (Position - (_lastPosition ?? Position)), (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0);
+            }
+            else
+            {
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, Character, Position.X, Position.Y, Position.Z, 0, 0, 0);
+            }
+
+            if (updateRotation)
+            {
+            #if !DISABLE_SLERP
+                Character.Quaternion = !Character.IsSwimmingUnderWater ? GTA.Math.Quaternion.Slerp(Character.Quaternion, _rotation.ToQuaternion(), Math.Min(1f, (DataLatency + TicksSinceLastUpdate) / (float)AverageLatency)) : Rotation.ToQuaternion();
+            #else
+                Character.Quaternion = Rotation.ToQuaternion();
+            #endif
+            }
+        }
 
         internal void VMultiOnfootPosition()
         {
@@ -476,6 +534,48 @@ namespace GTANetwork.Sync
             }
         }
 
+        private void UpdateCurrentWeapon()
+        {
+            if (Character.Weapons.Current.Hash != (WeaponHash)CurrentWeapon || DirtyWeapons)
+            {
+                //Function.Call(Hash.GIVE_WEAPON_TO_PED, Character, CurrentWeapon, -1, true, true);
+                //Function.Call(Hash.SET_CURRENT_PED_WEAPON, Character, CurrentWeapon, true);
 
+                //Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
+                //Character.Weapons.Select((WeaponHash)CurrentWeapon);
+
+                Character.Weapons.RemoveAll();
+                var p = Position;
+
+                Util.Util.LoadWeapon(CurrentWeapon);
+
+                var wObj = Function.Call<int>(Hash.CREATE_WEAPON_OBJECT, CurrentWeapon, 999, p.X, p.Y, p.Z, true, 0, 0);
+
+                if (WeaponTints != null && WeaponTints.ContainsKey(CurrentWeapon))
+                {
+                    var bitmap = WeaponTints[CurrentWeapon];
+
+                    Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
+                }
+
+                if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon) && WeaponComponents[CurrentWeapon] != null)
+                {
+                    foreach (var comp in WeaponComponents[CurrentWeapon])
+                    {
+                        Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_WEAPON_OBJECT, wObj, comp);
+                    }
+                }
+
+                Function.Call(Hash.GIVE_WEAPON_OBJECT_TO_PED, wObj, Character);
+
+                DirtyWeapons = false;
+            }
+
+            if (!_lastReloading && IsReloading && ((IsInCover && !IsInLowCover) || !IsInCover))
+            {
+                Character.Task.ClearAll();
+                Character.Task.ReloadWeapon();
+            }
+        }
     }
 }

@@ -599,8 +599,7 @@ namespace GTANetworkServer
 
         public void delay(int ms, bool once, Action target)
         {
-            var t = new System.Timers.Timer(ms);
-            t.AutoReset = !once;
+            var t = new System.Timers.Timer(ms) {AutoReset = !once};
             t.Elapsed += (sender, args) =>
             {
                 if (ResourceParent.HasTerminated) return;

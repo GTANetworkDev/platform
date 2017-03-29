@@ -345,6 +345,8 @@ namespace GTANetworkShared
         public string Gamemode { get; set; }
         [ProtoMember(7)]
         public bool LAN { get; set; }
+        [ProtoMember(8)]
+        public string Map { get; set; }
     }
 
     [ProtoContract]

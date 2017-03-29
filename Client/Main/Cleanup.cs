@@ -42,87 +42,81 @@ namespace GTANetwork
         private static void OnTick(object sender, EventArgs e)
         {
             if (!Main.IsConnected()) return;
-            Ped PlayerChar = Game.Player.Character;
+            var playerChar = FrameworkData.PlayerChar.Ex();
+
+            //Entities
             Function.Call(Hash.SET_RANDOM_TRAINS, 0);
-            Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-            Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-            Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-            Function.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, -1);
-            Function.Call(Hash.SET_ALL_LOW_PRIORITY_VEHICLE_GENERATORS_ACTIVE, false);
-            Function.Call(Hash.SET_FAR_DRAW_VEHICLES, false);
+            Function.Call(Hash.CAN_CREATE_RANDOM_COPS, false);
 
             Function.Call(Hash.SET_PED_POPULATION_BUDGET, 0);
             Function.Call(Hash.SET_VEHICLE_POPULATION_BUDGET, 0);
 
-            //Function.Call(Hash.DESTROY_MOBILE_PHONE);
-            Function.Call((Hash)0x015C49A93E3E086E, true); //_DISABLE_PHONE_THIS_FRAME
-            Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-            Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
-            Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, PlayerChar, true, true);
-            Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, PlayerChar, true);
-            Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
-            Function.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
-            Function.Call((Hash)0xD2B315B6689D537D, Game.Player, false); //Some secret ingredient
-            Function.Call(Hash.DISPLAY_CASH, false);
-
             Function.Call(Hash.SUPPRESS_SHOCKING_EVENTS_NEXT_FRAME);
             Function.Call(Hash.SUPPRESS_AGITATION_EVENTS_NEXT_FRAME);
-            Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, PlayerChar, true);
-            Function.Call(Hash.CAN_CREATE_RANDOM_COPS, false);
 
-            Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
-            Function.Call(Hash.SET_MISSION_FLAG, Game.Player.Character, 0);
-            Function.Call(Hash._RESET_LOCALPLAYER_STATE);
-            Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
+            Function.Call(Hash.SET_FAR_DRAW_VEHICLES, false);
+            Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
+            Function.Call(Hash.SET_ALL_LOW_PRIORITY_VEHICLE_GENERATORS_ACTIVE, false);
+            Function.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, -1);
 
+            Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
+
+            //Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, PlayerChar, true, true);
+            //Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, PlayerChar, true);
+
+            //Function.Call((Hash)0xD2B315B6689D537D, Game.Player, false); //Some secret ingredient
+
+            //Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, playerChar, true);
+
+            //Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
+            //Function.Call(Hash.SET_MISSION_FLAG, Game.Player.Character, 0);
+            ////Function.Call(Hash._RESET_LOCALPLAYER_STATE);
+            //Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
+
+            Function.Call(Hash.DESTROY_MOBILE_PHONE);
+            Function.Call((Hash)0x015C49A93E3E086E, true); //_DISABLE_PHONE_THIS_FRAME
+            Function.Call(Hash.DISPLAY_CASH, false);
+
+            Function.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
 
             Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
             Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f); //SET_PLAYER_HEALTH_RECHARGE_MULTIPLIER
-            Game.MaxWantedLevel = 0;
-            Game.Player.WantedLevel = 0;
 
-            if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS))
+            FrameworkData.PlayerP.Ex().WantedLevel = 0;
+            Game.MaxWantedLevel = 0;
+
+            if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS)) Function.Call(Hash.CANCEL_STUNT_JUMP);
+
+            if (Util.Util.TickCount - _lastEntityRemoval <= 500) return;
+
+            _lastEntityRemoval = Util.Util.TickCount;
+            foreach (var entity in World.GetAllPeds())
             {
-                Function.Call(Hash.CANCEL_STUNT_JUMP);
+                if (Main.NetEntityHandler.ContainsLocalHandle(entity.Handle) || entity == playerChar) continue;
+                entity.Kill(); //"Some special peds like Epsilon guys or seashark minigame will refuse to despawn if you don't kill them first." - Guad
+                entity.Delete();
             }
 
-            if (Main.RemoveGameEntities && Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
+            foreach (var entity in World.GetAllVehicles())
             {
-                _lastEntityRemoval = Util.Util.TickCount;
-                Ped[] Peds = World.GetAllPeds();
-                int Length = Peds.Length;
-                for (int i = 0; i < Length; i++)
-                {
-                    Ped entity = Peds[i];
-                    if (!Main.NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != PlayerChar)
-                    {
-                        entity.Kill(); //"Some special peds like Epsilon guys or seashark minigame will refuse to despawn if you don't kill them first." - Guad
-                        entity.Delete();
-                    }
-                }
+                if (entity == null) continue;
+                var veh = Main.NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteVehicle;
+                if (veh != null) continue;
+                entity.Delete();
 
-                if (Main.RemoveGameEntities && Util.Util.TickCount - _lastEntityRemoval > 1000) // Save ressource
-                {
-                    _lastEntityRemoval = Util.Util.TickCount;
-                    var vehicles = World.GetAllVehicles();
-                    for (var i = 0; i < vehicles.Length; i++)
-                    {
-                        var entity = vehicles[i];
-                        if (entity == null) continue;
-                        if (Main.NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) is RemoteVehicle) continue;
-                        entity.Delete();
+                ////TO CHECK
+                //if (!Util.Util.IsVehicleEmpty(entity) || VehicleSyncManager.IsInterpolating(entity.Handle) || veh.TraileredBy != 0 || VehicleSyncManager.IsSyncing(veh) || (entity.Handle != Game.Player.LastVehicle?.Handle || !(DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds > 3000)) && entity.Handle == Game.Player.LastVehicle?.Handle) continue;
+                //if (!(entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)) continue;
 
-                        ////TO CHECK
-                        //if (!Util.Util.IsVehicleEmpty(entity) || VehicleSyncManager.IsInterpolating(entity.Handle) || veh.TraileredBy != 0 || VehicleSyncManager.IsSyncing(veh) || (entity.Handle != Game.Player.LastVehicle?.Handle || !(DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds > 3000)) && entity.Handle == Game.Player.LastVehicle?.Handle) continue;
-                        //if (!(entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)) continue;
+                //entity.PositionNoOffset = veh.Position.ToVector();
+                //entity.Quaternion = veh.Rotation.ToVector().ToQuaternion();
 
-                        //entity.PositionNoOffset = veh.Position.ToVector();
-                        //entity.Quaternion = veh.Rotation.ToVector().ToQuaternion();
-
-                        //veh.Position = entity.Position.ToLVector();
-                        //veh.Rotation = entity.Rotation.ToLVector();
-                    }
-                }
+                //veh.Position = entity.Position.ToLVector();
+                //veh.Rotation = entity.Rotation.ToLVector();
             }
         }
     }
@@ -238,29 +232,34 @@ namespace GTANetwork
 
         private void ResetPlayer()
         {
-            PlayerChar.Position = _vinewoodSign;
-            PlayerChar.IsPositionFrozen = false;
+            var playerChar = Game.Player.Character;
+
+            playerChar.Position = _vinewoodSign;
+            playerChar.IsPositionFrozen = false;
 
             CustomAnimation = null;
             AnimationFlag = 0;
 
             Util.Util.SetPlayerSkin(PedHash.Clown01SMY);
 
-            PlayerChar.MaxHealth = 200;
-            PlayerChar.Health = 200;
-            PlayerChar.SetDefaultClothes();
+            playerChar = FrameworkData.PlayerChar.Ex();
+            var player = FrameworkData.PlayerP.Ex();
+            FrameworkData.PlayerP._recentPlayer = Game.Player;
 
-            PlayerChar.IsPositionFrozen = false;
-            Game.Player.IsInvincible = false;
-            PlayerChar.IsCollisionEnabled = true;
-            PlayerChar.Opacity = 255;
-            PlayerChar.IsInvincible = false;
-            PlayerChar.Weapons.RemoveAll();
-            Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Game.Player, 1f);
-            Function.Call(Hash.SET_SWIM_MULTIPLIER_FOR_PLAYER, Game.Player, 1f);
+            playerChar.Health = 200;
+            playerChar.SetDefaultClothes();
+
+            playerChar.IsPositionFrozen = false;
+            player.IsInvincible = false;
+            playerChar.IsCollisionEnabled = true;
+            playerChar.Opacity = 255;
+            playerChar.IsInvincible = false;
+            playerChar.Weapons.RemoveAll();
+            Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, player, 1f);
+            Function.Call(Hash.SET_SWIM_MULTIPLIER_FOR_PLAYER, player, 1f);
 
             Function.Call(Hash.SET_FAKE_WANTED_LEVEL, 0);
-            Function.Call(Hash.DETACH_ENTITY, PlayerChar.Handle, true, true);
+            Function.Call(Hash.DETACH_ENTITY, playerChar.Handle, true, true);
         }
 
         private static void ResetWorld()
