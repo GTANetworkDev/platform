@@ -294,10 +294,7 @@ namespace GTANetwork.GUI
 
 					    if (!_wasMouseInput) hoverPos = center;
 
-					    if (blipInfo != null &&
-                            !string.IsNullOrEmpty(blipInfo.Name) &&
-                            hoverPos.X > pos.X - halfLen && hoverPos.Y > pos.Y - halfLen &&
-                            hoverPos.X < pos.X + halfLen && hoverPos.Y < pos.Y + halfLen) // hovering over blip
+					    if (!string.IsNullOrEmpty(blipInfo?.Name) && hoverPos.X > pos.X - halfLen && hoverPos.Y > pos.Y - halfLen && hoverPos.X < pos.X + halfLen && hoverPos.Y < pos.Y + halfLen) // hovering over blip
 					    {
                             var labelPos = pos - new Size(-32, 14);
 

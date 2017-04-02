@@ -360,9 +360,9 @@ namespace GTANetwork.Sync
             Vector3 newPos;
             if (!Main.OnFootLagCompensation)
             {
-                long currentTime = Util.Util.TickCount;
+                var currentTime = Util.Util.TickCount;
 
-                float alpha = Util.Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
+                var alpha = Util.Util.Unlerp(currentInterop.StartTime, currentTime, currentInterop.FinishTime);
 
                 Vector3 comp = Util.Util.Lerp(new Vector3(), alpha, currentInterop.vecError);
 
@@ -373,7 +373,7 @@ namespace GTANetwork.Sync
                 var latency = DataLatency + TicksSinceLastUpdate;
                 newPos = Position + PedVelocity * latency / 1000;
             }
-            var playerChar = FrameworkData.PlayerChar.Ex();
+            var playerChar = Game.Player.Character;
 
             if ((OnFootSpeed > 0 || IsAnimal(ModelHash)) && currentInterop.FinishTime != 0)
             {

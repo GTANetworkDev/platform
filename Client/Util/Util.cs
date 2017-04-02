@@ -282,8 +282,7 @@ namespace GTANetwork.Util
 
         public static void SetPlayerSkin(PedHash skin)
         {
-            Ped PlayerChar = Game.Player.Character;
-
+            var PlayerChar = Game.Player.Character;
             var health = PlayerChar.Health;
             var model = new Model(skin);
 
@@ -297,14 +296,12 @@ namespace GTANetwork.Util
                 Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
                 Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, PlayerChar);
             }
-
             PlayerChar = Game.Player.Character;
             ModelRequest = false;
-            model.MarkAsNoLongerNeeded();
+            //model.MarkAsNoLongerNeeded();
 
             PlayerChar.MaxHealth = 200;
             PlayerChar.Health = health;
-            FrameworkData.PlayerChar._recentPlayerChar = PlayerChar;
         }
 
         public static float Denormalize(this float h)

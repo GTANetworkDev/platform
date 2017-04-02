@@ -24,21 +24,21 @@ namespace GTANetwork.GUI
 
             if (browser == null) return null;
 
-            if (_cachedReferences.ContainsKey(browser.Identifier))
-                return _cachedReferences[browser.Identifier];
-            if (!DISABLE_CEF)
+            lock (CEFManager.Browsers)
             {
-                lock (CEFManager.Browsers)
+                if (_cachedReferences.ContainsKey(browser.Identifier))
+                    return _cachedReferences[browser.Identifier];
+            }
+            if (DISABLE_CEF) return null;
+            lock (CEFManager.Browsers)
+            {
+                for (var index = CEFManager.Browsers.Count - 1; index >= 0; index--)
                 {
-                    foreach (var b in CEFManager.Browsers)
-                    {
-                        if (b != null && b._browser != null && b._browser.Identifier == browser.Identifier)
-                        {
-                            father = b;
-                            _cachedReferences.Add(browser.Identifier, b);
-                            break;
-                        }
-                    }
+                    var b = CEFManager.Browsers[index];
+                    if (b?._browser == null || b._browser.Identifier != browser.Identifier) continue;
+                    father = b;
+                    _cachedReferences.Add(browser.Identifier, b);
+                    break;
                 }
             }
             return father;
@@ -89,15 +89,12 @@ namespace GTANetwork.GUI
 
                     LogManager.CefLog("-> Loading: " + requestedFile);
 
-                    if (!File.Exists(requestedFile))
-                    {
-                        LogManager.CefLog("-> Error: File does not exist!");
-                        browser.StopLoad();
-                        return SecureCefResourceHandler.FromString("404", ".txt");
-                    }
-
-                    return SecureCefResourceHandler.FromFilePath(requestedFile,
-                        MimeType.GetMimeType(Path.GetExtension(requestedFile)));
+                    if (File.Exists(requestedFile))
+                        return SecureCefResourceHandler.FromFilePath(requestedFile,
+                            MimeType.GetMimeType(Path.GetExtension(requestedFile)));
+                    LogManager.CefLog("-> Error: File does not exist!");
+                    browser.StopLoad();
+                    return SecureCefResourceHandler.FromString("404", ".txt");
                 }
             }
             catch (Exception ex)
@@ -127,7 +124,7 @@ namespace GTANetwork.GUI
         {
             //if (frame.IsMain)
             {
-                LogManager.CefLog(string.Format("-> End: {0}, {1}", browser.GetMainFrame().Url, httpStatusCode));
+                LogManager.CefLog($"-> End: {browser.GetMainFrame().Url}, {httpStatusCode}");
             }
         }
     }
@@ -186,37 +183,39 @@ namespace GTANetwork.GUI
                 LogManager.CefLog("-> Father was found!");
                 try
                 {
-                    if (name == "resourceCall")
+                    switch (name)
                     {
-                        LogManager.CefLog("-> Entering resourceCall...");
-
-                        List<object> args = new List<object>();
-
-                        for (int i = 1; i < arguments.Length; i++)
+                        case "resourceCall":
                         {
-                            args.Add(arguments[i].GetValue());
+                            LogManager.CefLog("-> Entering resourceCall...");
+
+                            List<object> args = new List<object>();
+
+                            for (int i = 1; i < arguments.Length; i++)
+                            {
+                                args.Add(arguments[i].GetValue());
+                            }
+
+                            LogManager.CefLog("-> Executing callback...");
+
+                            object output = father._callback.call(arguments[0].GetStringValue(), args.ToArray());
+
+                            LogManager.CefLog("-> Callback executed!");
+
+                            returnValue = V8Helper.CreateValue(output);
+                            exception = null;
+                            return true;
                         }
+                        case "resourceEval":
+                        {
+                            LogManager.CefLog("-> Entering resource eval");
+                            object output = father._callback.eval(arguments[0].GetStringValue());
+                            LogManager.CefLog("-> callback executed!");
 
-                        LogManager.CefLog("-> Executing callback...");
-
-                        object output = father._callback.call(arguments[0].GetStringValue(), args.ToArray());
-
-                        LogManager.CefLog("-> Callback executed!");
-
-                        returnValue = V8Helper.CreateValue(output);
-                        exception = null;
-                        return true;
-                    }
-
-                    if (name == "resourceEval")
-                    {
-                        LogManager.CefLog("-> Entering resource eval");
-                        object output = father._callback.eval(arguments[0].GetStringValue());
-                        LogManager.CefLog("-> callback executed!");
-
-                        returnValue = V8Helper.CreateValue(output);
-                        exception = null;
-                        return true;
+                            returnValue = V8Helper.CreateValue(output);
+                            exception = null;
+                            return true;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -252,10 +251,10 @@ namespace GTANetwork.GUI
             CefV8Value global = context.GetGlobal();
 
             CefV8Value func = CefV8Value.CreateFunction("resourceCall", new V8Bridge(browser));
-            global.SetValue("resourceCall", func, CefV8PropertyAttribute.None);
+            global.SetValue("resourceCall", func);
 
             CefV8Value func2 = CefV8Value.CreateFunction("resourceEval", new V8Bridge(browser));
-            global.SetValue("resourceEval", func2, CefV8PropertyAttribute.None);
+            global.SetValue("resourceEval", func2);
 
             base.OnContextCreated(browser, frame, context);
         }
@@ -355,8 +354,7 @@ namespace GTANetwork.GUI
         {
             try
             {
-                if (_imageElement != null)
-                    _imageElement.SetBitmap(new Bitmap(width, height, width*4, PixelFormat.Format32bppArgb, buffer));
+                _imageElement?.SetBitmap(new Bitmap(width, height, width*4, PixelFormat.Format32bppArgb, buffer));
             }
             catch (Exception ex)
             {
@@ -430,10 +428,7 @@ namespace GTANetwork.GUI
 
         public void Created(CefBrowser bs)
         {
-            if (this.OnCreated != null)
-            {
-                this.OnCreated(bs, EventArgs.Empty);
-            }
+            OnCreated?.Invoke(bs, EventArgs.Empty);
         }
 
         protected override CefContextMenuHandler GetContextMenuHandler()
@@ -485,24 +480,23 @@ namespace GTANetwork.GUI
                 return CefV8Value.CreateDouble((double)(float)value);
             if (value is int)
                 return CefV8Value.CreateInt((int)value);
-            if (value is string)
-                return CefV8Value.CreateString((string)value);
+            var s = value as string;
+            if (s != null)
+                return CefV8Value.CreateString(s);
             if (value is uint)
                 return CefV8Value.CreateUInt((uint)value);
-            if (value is IList)
+            var list = value as IList;
+            if (list == null) return CefV8Value.CreateUndefined();
+            var val = list;
+
+            var arr = CefV8Value.CreateArray(val.Count);
+
+            for (var i = 0; i < val.Count; i++)
             {
-                IList val = (IList) value;
-
-                var arr = CefV8Value.CreateArray(val.Count);
-
-                for (int i = 0; i < val.Count; i++)
-                {
-                    arr.SetValue(i, CreateValue(val[i]));
-                }
-
-                return arr;
+                arr.SetValue(i, CreateValue(val[i]));
             }
-            return CefV8Value.CreateUndefined();
+
+            return arr;
         }
     }
 
@@ -515,14 +509,8 @@ namespace GTANetwork.GUI
             _value = val;
         }
 
-        public object this[int index]
-        {
-            get { return _value.GetValue(index).GetValue(); }
-        }
+        public object this[int index] => _value.GetValue(index).GetValue();
 
-        public int length
-        {
-            get { return _value.GetArrayLength(); }
-        }
+        public int length => _value.GetArrayLength();
     }
 }

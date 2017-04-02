@@ -238,9 +238,9 @@ namespace GTANetwork.GUI
                         {
                             "--off-screen-rendering-enabled",
                             "--transparent-painting-enabled",
-                            //"--disable-gpu",
-                            //"--disable-gpu-compositing",
-                            //"--disable-gpu-vsync",
+                            "--disable-gpu",
+                            "--disable-gpu-compositing",
+                            "--disable-gpu-vsync",
                             "--enable-begin-frame-scheduling",
                             "--disable-d3d11",
 
@@ -329,23 +329,21 @@ namespace GTANetwork.GUI
 
             //LogManager.CefLog("--> Initiatlize: Start");
             ScreenSize = screenSize;
-            if (!CefUtil.DISABLE_CEF && DirectXHook == null)
+            if (CefUtil.DISABLE_CEF || DirectXHook != null) return;
+
+            Configuration.EnableObjectTracking = true;
+            Configuration.EnableReleaseOnFinalizer = true;
+            Configuration.EnableTrackingReleaseOnFinalizer = true;
+
+            try
             {
-                Configuration.EnableObjectTracking = true;
-                Configuration.EnableReleaseOnFinalizer = true;
-                Configuration.EnableTrackingReleaseOnFinalizer = true;
-
-                try
-                {
-                    LogManager.CefLog("--> Initiatlize: Creating device");
-                    DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
-                    //DirectXHook.Hook();
-                }
-                catch (Exception ex)
-                {
-                    LogManager.CefLog(ex, "DIRECTX START");
-                }
-
+                LogManager.CefLog("--> Initiatlize: Creating device");
+                DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
+                //DirectXHook.Hook();
+            }
+            catch (Exception ex)
+            {
+                LogManager.CefLog(ex, "DIRECTX START");
             }
 
             //RenderThread = new Thread(RenderLoop);
@@ -355,9 +353,9 @@ namespace GTANetwork.GUI
         }
 
         internal static readonly List<Browser> Browsers = new List<Browser>();
-        internal static int FPS = (int)Game.FPS;
         internal static Size ScreenSize;
         internal static ImageElement _cursor;
+        internal static bool Draw = false;
 
         internal static DXHookD3D11 DirectXHook;
 
@@ -503,6 +501,10 @@ namespace GTANetwork.GUI
         internal readonly bool _localMode;
         internal bool _hasFocused;
 
+        public CefBrowserHost GetHost()
+        {
+            return _browser.GetHost();
+        }
 
         private bool _headless = false;
         public bool Headless
@@ -611,7 +613,7 @@ namespace GTANetwork.GUI
                 {
                     JavaScriptCloseWindows = CefState.Disabled,
                     JavaScriptOpenWindows = CefState.Disabled,
-                    WindowlessFrameRate = CEFManager.FPS,
+                    WindowlessFrameRate = 30,
                     FileAccessFromFileUrls = CefState.Disabled,
                 };
 

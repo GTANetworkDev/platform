@@ -27,8 +27,7 @@ namespace GTANetwork.Streamer
 
         private static void Draw(object sender, EventArgs e)
         {
-            if (!Main.IsConnected()) return;
-            Main.NetEntityHandler.DrawLabels();
+            if (Main.IsConnected()) Main.NetEntityHandler.DrawLabels();
         }
     }
 
@@ -41,8 +40,7 @@ namespace GTANetwork.Streamer
 
         private static void Draw(object sender, EventArgs e)
         {
-            if (!Main.IsConnected()) return;
-            Main.NetEntityHandler.DrawMarkers();
+            if (Main.IsConnected()) Main.NetEntityHandler.DrawMarkers();
         }
     }
 
@@ -55,16 +53,18 @@ namespace GTANetwork.Streamer
 
         private static void Draw(object sender, EventArgs e)
         {
-            if (!Main.IsConnected()) return;
-            lock (Main._localMarkers)
+            if (Main.IsConnected())
             {
-                for (var index = Main._localMarkers.Count - 1; index >= 0; index--)
+                lock (Main._localMarkers)
                 {
-                    var marker = Main._localMarkers.ElementAt(index);
-                    World.DrawMarker((MarkerType)marker.Value.MarkerType, marker.Value.Position.ToVector(),
-                                        marker.Value.Direction.ToVector(), marker.Value.Rotation.ToVector(),
-                                        marker.Value.Scale.ToVector(),
-                                        Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
+                    for (var index = Main._localMarkers.Count - 1; index >= 0; index--)
+                    {
+                        var marker = Main._localMarkers.ElementAt(index);
+                        World.DrawMarker((MarkerType) marker.Value.MarkerType, marker.Value.Position.ToVector(),
+                            marker.Value.Direction.ToVector(), marker.Value.Rotation.ToVector(),
+                            marker.Value.Scale.ToVector(),
+                            Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
+                    }
                 }
             }
         }
@@ -79,8 +79,7 @@ namespace GTANetwork.Streamer
 
         private static void Draw(object sender, EventArgs e)
         {
-            if (!Main.IsConnected()) return;
-            Main.NetEntityHandler.UpdateAttachments();
+            if (Main.IsConnected()) Main.NetEntityHandler.UpdateAttachments();
         }
     }
 
@@ -93,8 +92,7 @@ namespace GTANetwork.Streamer
 
         private static void Draw(object sender, EventArgs e)
         {
-            if (!Main.IsConnected()) return;
-            Main.NetEntityHandler.UpdateMisc();
+            if (Main.IsConnected()) Main.NetEntityHandler.UpdateMisc();
         }
     }
 
@@ -2315,7 +2313,7 @@ namespace GTANetwork.Streamer
             var ray = World.Raycast(origin,
                 (position - origin).Normalized,
                 distance,
-                flags, FrameworkData.PlayerChar.Ex());
+                flags, Game.Player.Character);
 
             if (!(ray.HitPosition.DistanceTo(origin) >= distance)) return;
 

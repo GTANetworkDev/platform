@@ -4,10 +4,7 @@ namespace GTANetworkServer
 {
     public class API : ServerAPI
     {
-        public static ServerAPI shared
-        {
-            get { return Program.ServerInstance.PublicAPI; }
-        }
+        public static ServerAPI shared => Program.ServerInstance.PublicAPI;
 
         #region Delegates
         public delegate void EmptyEvent();

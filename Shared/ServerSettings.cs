@@ -114,7 +114,6 @@ namespace GTANetworkShared
             PlayerStreamingRange = 250;
             VehicleStreamingRange = 350;
             UseHTTPServer = false;
-            RefreshHz = 120;
             LogLevel = 0;
             EnableClientsideEntityProperties = false;
             LocalAddress = "0.0.0.0";

@@ -722,13 +722,13 @@ namespace GTANetwork.Sync
                         8f, 10f, -1, 0, -8f, 1, 1, 1);
                 }
             }
-            else
+            //else
 #endif
-            if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
-            {
-                //UpdatePlayerPedPos(false);
-                VMultiOnfootPosition();
-            }
+            //if (hands == 1 || hands == 2 || hands == 5 || hands == 6)
+            //{
+            //    //UpdatePlayerPedPos(false);
+            //    //VMultiOnfootPosition();
+            //}
 
         }
 

@@ -2342,7 +2342,7 @@ namespace GTANetworkServer
             else
                 packet.Resource = ResourceParent.ResourceParent.DirectoryName;
 
-            packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
+            packet.Arguments = GameServer.ParseNativeArguments(args);
 
             Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
         }
@@ -2355,7 +2355,7 @@ namespace GTANetworkServer
                 packet.Resource = "*";
             else
                 packet.Resource = ResourceParent.ResourceParent.DirectoryName;
-            packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
+            packet.Arguments = GameServer.ParseNativeArguments(args);
 
             Program.ServerInstance.SendToClient(player, packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
         }
@@ -2391,7 +2391,7 @@ namespace GTANetworkServer
                 Message = message,
             };
 
-            var data = Program.ServerInstance.SerializeBinary(chatObj);
+            var data = GameServer.SerializeBinary(chatObj);
 
             NetOutgoingMessage msg = Program.ServerInstance.Server.CreateMessage();
             msg.Write((byte)PacketType.ChatData);
@@ -2549,7 +2549,7 @@ namespace GTANetworkServer
 
         public T fetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
         {
-            var returnType = Program.ServerInstance.ParseReturnType(typeof(T));
+            var returnType = GameServer.ParseReturnType(typeof(T));
 
             if (returnType == null)
             {
@@ -2562,7 +2562,7 @@ namespace GTANetworkServer
 
         internal T safeFetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
         {
-            var returnType = Program.ServerInstance.ParseReturnType(typeof(T));
+            var returnType = GameServer.ParseReturnType(typeof(T));
 
             if (returnType == null)
             {
@@ -2997,7 +2997,7 @@ namespace GTANetworkServer
 
         public void kickPlayer(Client player)
         {
-            player.NetConnection.Disconnect("You have been kicked.");
+            player.NetConnection.Disconnect("You have been kicked from the server.");
         }
 
         public void banPlayer(Client player, string reason)

@@ -1,20 +1,7 @@
 ﻿#define ATTACHSERVER
 //#define INTEGRITYCHECK
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Threading;
-using System.Windows.Forms;
 using GTA;
-using GTA.Math;
 using GTA.Native;
 using GTANetwork.GUI;
 using GTANetwork.Javascript;
@@ -27,11 +14,15 @@ using Lidgren.Network;
 using Microsoft.Win32;
 using NativeUI;
 using NativeUI.PauseMenu;
-using Newtonsoft.Json;
-using ProtoBuf;
-using Control = GTA.Control;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Windows.Forms;
 using Vector3 = GTA.Math.Vector3;
-using WeaponHash = GTA.WeaponHash;
 using VehicleHash = GTA.VehicleHash;
 
 
@@ -47,11 +38,13 @@ namespace GTANetwork
                 {
                     var messages = new List<NetIncomingMessage>();
                     var msgsRead = Main.Client.ReadMessages(messages);
-                    if (msgsRead <= 0) return;
-                    var count = messages.Count;
-                    for (var i = 0; i < count; i++)
+                    if (msgsRead > 0)
                     {
-                        CrossReference.EntryPoint.ProcessMessages(messages[i], true);
+                        var count = messages.Count;
+                        for (var i = 0; i < count; i++)
+                        {
+                            CrossReference.EntryPoint.ProcessMessages(messages[i], true);
+                        }
                     }
                 }
             };
@@ -65,13 +58,15 @@ namespace GTANetwork
 
     internal partial class Main : Script
     {
+
+
         #region garbage
         public static PlayerSettings PlayerSettings;
 
         public static Size screen;
 
         public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_0_9;
-        public static readonly string experimental = "exp";
+        public static readonly string build = "exp";
 
         public static bool BlockControls;
         public static bool HTTPFileServer;
@@ -82,7 +77,7 @@ namespace GTANetwork
         internal static Streamer.Streamer NetEntityHandler;
         internal static CameraManager CameraManager;
 
-        private readonly MenuPool _menuPool;
+
 
         public static SizeF res;
 
@@ -126,18 +121,10 @@ namespace GTANetwork
         internal static UnoccupiedVehicleSync VehicleSyncManager;
         internal WeaponManager WeaponInventoryManager;
 
-        private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
+
 
         // STATS
-        public static int _bytesSent = 0;
-        public static int _bytesReceived = 0;
 
-        public static int _messagesSent = 0;
-        public static int _messagesReceived = 0;
-
-        public static List<int> _averagePacketSize = new List<int>();
-
-        private TabTextItem _statsItem;
 
         private static bool EnableDevTool;
         internal static bool EnableMediaStream;
@@ -188,7 +175,7 @@ namespace GTANetwork
 
         public static Camera MainMenuCamera;
 
-        public static string GTANInstallDir = ((string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null));
+        public static readonly string GTANInstallDir = ((string)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V", "GTANetworkInstallDir", null));
 
         private static int _debugStep;
         private bool _lastSpectating;
@@ -197,12 +184,7 @@ namespace GTANetwork
         private Dictionary<int, int> _debugSettings = new Dictionary<int, int>();
         private bool _minimapSet;
 
-        private int _lastBytesSent;
-        private int _lastBytesReceived;
-        private int _lastCheck;
 
-        internal static int _bytesSentPerSecond;
-        internal static int _bytesReceivedPerSecond;
 
         internal static Warning _mainWarning;
         internal static string _threadsafeSubtitle;
@@ -333,8 +315,18 @@ namespace GTANetwork
             {
                 NativeWhitelist.Init();
                 SoundWhitelist.Init();
+
+
             });
 
+            //var fetchThread = new Thread((ThreadStart) delegate
+            //{
+            //    var list = Process.GetProcessesByName("GameOverlayUI");
+            //    if (!list.Any()) return;
+            //    for (var index = list.Length - 1; index >= 0; index--) list[index].Kill();
+            //});
+
+            //fetchThread.Start();
 
             if (!PlayerSettings.DisableCEF)
             {
@@ -347,6 +339,7 @@ namespace GTANetwork
 
             LogManager.RuntimeLog("Checking game files integrity.");
             IntegrityCheck();
+
         }
 
         private void Init()
@@ -354,8 +347,6 @@ namespace GTANetwork
             if (_init) return;
             var player = Game.Player.Character;
             if (player == null || player.Handle == 0 || Game.IsLoading) return;
-
-            LogManager.RuntimeLog("Post-Loading Initialization.");
 
             GTA.UI.Screen.FadeOut(1);
             ResetPlayer();
@@ -369,7 +360,7 @@ namespace GTANetwork
 
             GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
             GTA.UI.Screen.FadeIn(1000);
-            LogManager.RuntimeLog("Post-Loading Initialized.");
+            _mainWarning = new Warning("",""){ Visible = false};
         }
 
         public static bool IsConnected()
@@ -380,34 +371,31 @@ namespace GTANetwork
         private void OnTick(object sender, EventArgs e)
         {
             Init();
-            PauseMenu();
 
-            //TODO: CAN BE BUGGY
-            //FrameworkData.PlayerChar.Ex().MaxHealth = 200;
+            PauseMenu();
+            _mainWarning?.Draw();
 
             if (!IsConnected()) return;
-            //if (!IsOnServer()) { return; }
 
             try
             {
-                Watcher.Tick();
-                //VehicleSyncManager.Pulse();
-                WeaponInventoryManager.Update();
+                DEBUG_STEP = 1;
+                Watcher?.Tick();
 
+                DEBUG_STEP = 2;
+                VehicleSyncManager?.Pulse();
+
+                DEBUG_STEP = 3;
+                WeaponInventoryManager?.Update();
             }
             catch (Exception ex) // Catch any other exception. (can prevent crash)
             {
                 LogManager.LogException(ex, "MAIN OnTick: STEP : " + DEBUG_STEP);
             }
 
-            //DEBUG_STEP = 7;
-
             //Spectate(res);
 
-            //if (NetEntityHandler.EntityToStreamedItem(PlayerChar.Handle) is RemotePlayer playerObj)
-            //{
-            //    Game.Player.IsInvincible = playerObj.IsInvincible;
-            //}
+            //if (NetEntityHandler.EntityToStreamedItem(PlayerChar.Handle) is RemotePlayer playerObj) Game.Player.IsInvincible = playerObj.IsInvincible;
 
             //var playerChar = FrameworkData.PlayerChar.Ex();
             //if (!string.IsNullOrWhiteSpace(CustomAnimation))
@@ -420,24 +408,7 @@ namespace GTANetwork
             //    }
             //}
 
-            //DEBUG_STEP = 16;
-
             StringCache?.Pulse();
-
-            //DEBUG_STEP = 17;
-
-            //double aver = 0;
-            //lock (_averagePacketSize)
-            //{
-            //    aver = _averagePacketSize.Count > 0 ? _averagePacketSize.Average() : 0;
-            //}
-
-            //_statsItem.Text = string.Format(
-            //        "~h~Bytes Sent~h~: {0}~n~~h~Bytes Received~h~: {1}~n~~h~Bytes Sent / Second~h~: {5}~n~~h~Bytes Received / Second~h~: {6}~n~~h~Average Packet Size~h~: {4}~n~~n~~h~Messages Sent~h~: {2}~n~~h~Messages Received~h~: {3}",
-            //        aver, _bytesSentPerSecond, _bytesReceivedPerSecond);
-
-            //DEBUG_STEP = 21;
-
             lock (_threadJumping)
             {
                 if (_threadJumping.Any())
@@ -446,71 +417,161 @@ namespace GTANetwork
                     action?.Invoke();
                 }
             }
-            //DEBUG_STEP = 41;
-            //if (DebugInfo.StreamerDebug) oTsw.Stop();
-        }
 
+        }
 
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
             Chat.OnKeyDown(e.KeyCode);
-            Passenger();
-
-            if (e.KeyCode == Keys.Escape && Client != null && Client.ConnectionStatus == NetConnectionStatus.Disconnected)
+            switch (e.KeyCode)
             {
-                Client.Disconnect("Connection canceled.");
-            }
+                case Keys.Escape:
+                    if (IsOnServer())
+                    {
+                        if (_isGoingToCar)
+                        {
+                            Game.Player.Character.Task.ClearAll();
+                            _isGoingToCar = false;
+                        }
+                    }
+                    if (Client != null && Client.ConnectionStatus == NetConnectionStatus.Disconnected)
+                    {
+                        Client.Disconnect("Quit");
+                    }
+                    break;
 
-            if (e.KeyCode == Keys.F10 && !Chat.IsFocused)
-            {
-                MainMenu.Visible = !MainMenu.Visible;
+                case Keys.P:
+                    if (IsOnServer() && !MainMenu.Visible && !Chat.IsFocused)
+                    {
+                        CanOpenChatbox = true;
+                        _mainWarning = new Warning("Disabled feature", "Game settings menu has been disabled while connected.\nDisconnect from the server first.")
+                        {
+                            OnAccept = () => { _mainWarning.Visible = false; }
+                        };
+                    }
+                    break;
 
-                if (!IsOnServer())
-                {
-                    World.RenderingCamera = MainMenu.Visible ? MainMenuCamera : null;
-                }
-                else if (MainMenu.Visible)
-                {
-                    RebuildPlayersList();
-                }
+                case Keys.F10:
+                    if (!Chat.IsFocused && !_mainWarning.Visible)
+                    {
+                        MainMenu.Visible = !MainMenu.Visible;
+                        if (!IsOnServer()) { World.RenderingCamera = MainMenu.Visible ? MainMenuCamera : null; }
+                        else if (MainMenu.Visible) { RebuildPlayersList(); }
+                        MainMenu.RefreshIndex();
+                    }
+                    break;
 
-                MainMenu.RefreshIndex();
-            }
+                case Keys.F7:
+                    if (IsOnServer())
+                    {
+                        ChatVisible = !ChatVisible;
+                        UIVisible = !UIVisible;
+                        Function.Call(Hash.DISPLAY_RADAR, UIVisible);
+                        Function.Call(Hash.DISPLAY_HUD, UIVisible);
+                    }
+                    break;
 
-            if (e.KeyCode == Keys.F7 && IsOnServer())
-            {
-                ChatVisible = !ChatVisible;
-                UIVisible = !UIVisible;
-                Function.Call(Hash.DISPLAY_RADAR, UIVisible);
-                Function.Call(Hash.DISPLAY_HUD, UIVisible);
-            }
+                case Keys.T:
+                    if (IsOnServer() && UIVisible && ChatVisible && ScriptChatVisible && CanOpenChatbox && !_mainWarning.Visible)
+                    {
+                        if (!_oldChat)
+                        {
+                            Chat.IsFocused = true;
+                            _wasTyping = true;
+                        }
+                        else
+                        {
+                            var message = Game.GetUserInput(255);
+                            if (string.IsNullOrEmpty(message)) break;
 
-            if (e.KeyCode == PlayerSettings.ScreenshotKey && IsOnServer())
-            {
-                Screenshot.TakeScreenshot();
-            }
+                            var obj = new ChatData { Message = message, };
+                            var data = SerializeBinary(obj);
 
-            if (e.KeyCode != Keys.T || !IsOnServer() || !UIVisible || !ChatVisible || !ScriptChatVisible || !CanOpenChatbox) return;
+                            var msg = Client?.CreateMessage();
+                            msg?.Write((byte)PacketType.ChatData);
+                            msg?.Write(data.Length);
+                            msg?.Write(data);
+                            Client?.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
+                        }
+                    }
+                    break;
 
-            if (!_oldChat)
-            {
-                Chat.IsFocused = true;
-                _wasTyping = true;
-            }
-            else
-            {
-                var message = Game.GetUserInput(255);
-                if (string.IsNullOrEmpty(message)) return;
+                case Keys.F:
+                    if (IsOnServer() && !Game.Player.Character.IsInVehicle() && !Chat.IsFocused)
+                    {
+                        var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
 
-                var obj = new ChatData { Message = message, };
-                var data = SerializeBinary(obj);
+                        if (!veh.Exists()) break;
+                        if (!Game.Player.Character.IsInRangeOfEx(veh.Position, 6f)) break;
 
-                var msg = Client?.CreateMessage();
-                msg?.Write((byte)PacketType.ChatData);
-                msg?.Write(data.Length);
-                msg?.Write(data);
-                Client?.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
+                        Game.Player.Character.Task.EnterVehicle(veh, VehicleSeat.Driver, -1, 2f);
+                        _isGoingToCar = true;
+                    }
+                    break;
+
+                case Keys.G:
+                    if (IsOnServer() && !Game.Player.Character.IsInVehicle() && !Chat.IsFocused)
+                    {
+                        var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
+
+                        if (!veh.Exists()) break;
+                        if (!Game.Player.Character.IsInRangeOfEx(veh.Position, 6f)) break;
+
+                        var playerChar = Game.Player.Character;
+                        var relPos = veh.GetOffsetFromWorldCoords(playerChar.Position);
+                        var seat = VehicleSeat.Any;
+
+                        if (veh.PassengerCapacity > 1)
+                        {
+                            if (relPos.X < 0 && relPos.Y > 0) {seat = VehicleSeat.LeftRear;}
+                            else if (relPos.X >= 0 && relPos.Y > 0) {seat = VehicleSeat.RightFront;}
+                            else if (relPos.X < 0 && relPos.Y <= 0) {seat = VehicleSeat.LeftRear;}
+                            else if (relPos.X >= 0 && relPos.Y <= 0) {seat = VehicleSeat.RightRear;}
+                        }
+                        else { seat = VehicleSeat.Passenger; }
+
+                        //else if (veh.PassengerCapacity > 2 && veh.GetPedOnSeat(seat).Handle != 0)
+                        //{
+                        //    switch (seat)
+                        //    {
+                        //        case VehicleSeat.LeftRear:
+                        //            for (int i = 3; i < veh.PassengerCapacity; i += 2)
+                        //            {
+                        //                if (veh.GetPedOnSeat((VehicleSeat) i).Handle != 0) continue;
+                        //                seat = (VehicleSeat) i;
+                        //                break;
+                        //            }
+                        //            break;
+                        //        case VehicleSeat.RightRear:
+                        //            for (int i = 4; i < veh.PassengerCapacity; i += 2)
+                        //            {
+                        //                if (veh.GetPedOnSeat((VehicleSeat) i).Handle != 0) continue;
+                        //                seat = (VehicleSeat) i;
+                        //                break;
+                        //            }
+                        //            break;
+                        //    }
+                        //}
+
+                        if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, 0, true) && playerChar.IsIdle && !Game.Player.IsAiming)
+                        {
+                            playerChar.SetIntoVehicle(veh, seat);
+                        }
+                        else
+                        {
+                            veh.GetPedOnSeat(seat).CanBeDraggedOutOfVehicle = true;
+                            playerChar.Task.EnterVehicle(veh, seat, -1, 2f);
+                            Function.Call(Hash.KNOCK_PED_OFF_VEHICLE, veh.GetPedOnSeat(seat).Handle);
+                            Function.Call(Hash.SET_PED_CAN_BE_KNOCKED_OFF_VEHICLE, veh.GetPedOnSeat(seat).Handle, true); // 7A6535691B477C48 8A251612
+                            _isGoingToCar = true;
+                        }
+                    }
+                    break;
+
+                default:
+                    if (e.KeyCode == PlayerSettings.ScreenshotKey && IsOnServer()) Screenshot.TakeScreenshot();
+                    break;
             }
         }
 

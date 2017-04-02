@@ -84,17 +84,14 @@ namespace GTANetworkServer
 
             ACLEnabled = conf.UseACL && File.Exists("acl.xml");
             BanManager.Initialize();
-            if (ACLEnabled)
-            {
-                ACL = new AccessControlList("acl.xml");
-            }
+
+            if (ACLEnabled) ACL = new AccessControlList("acl.xml");
 
             ConstantVehicleDataOrganizer.Initialize();
 
             if (conf.Name != null) Name = conf.Name.Substring(0, Math.Min(58, conf.Name.Length)); // 46 to fill up title + additional 12 chars for colors such as ~g~.. etc..
-            Name.Replace("¦", string.Empty);
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-            NetPeerConfiguration config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
+            var config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK");
             var lAdd = IPAddress.Parse(conf.LocalAddress);
             config.LocalAddress = lAdd;
             config.BroadcastAddress = lAdd;
@@ -132,24 +129,19 @@ namespace GTANetworkServer
             Conntimeout = conf.Conntimeout;
             AllowCEFDevTool = conf.Allowcefdevtool;
 
-            if (conf.whitelist != null && conf.whitelist != null)
+            if (conf.whitelist != null)
             {
                 ModWhitelist = conf.whitelist.Items.Select(item => item.Hash).ToList();
             }
 
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
-                var index = args.Name.IndexOf(",");
-                string actualAssembly = args.Name;
+                var index = args.Name.IndexOf(",", StringComparison.Ordinal);
+                var actualAssembly = args.Name;
 
                 if (index != -1) actualAssembly = args.Name.Substring(0, index) + ".dll";
 
-                if (AssemblyReferences.ContainsKey(actualAssembly))
-                {
-                    return Assembly.LoadFrom(AssemblyReferences[actualAssembly]);
-                }
-
-                return null;
+                return AssemblyReferences.ContainsKey(actualAssembly) ? Assembly.LoadFrom(AssemblyReferences[actualAssembly]) : null;
             };
         }
 
@@ -224,7 +216,7 @@ namespace GTANetworkServer
         ParseableVersion serverVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
 
         private DateTime _lastAnnounceDateTime;
-        public void Start(string[] filterscripts)
+        public void Start(IEnumerable<string> filterscripts)
         {
             try
             {
@@ -276,8 +268,7 @@ namespace GTANetworkServer
                 StartResource(path);
             }
 
-            StreamerThread = new Thread(Streamer.MainThread);
-            StreamerThread.IsBackground = true;
+            StreamerThread = new Thread(Streamer.MainThread) {IsBackground = true};
             StreamerThread.Start();
 
             //StressTest.Init();
@@ -295,56 +286,50 @@ namespace GTANetworkServer
                 {
                     try
                     {
-                        var annObject = new MasterServerAnnounce();
+                        var annObject = new MasterServerAnnounce
+                        {
+                            ServerName = Name,
+                            CurrentPlayers = Clients.Count,
+                            MaxPlayers = MaxPlayers,
+                            Map = CurrentMap?.DirectoryName,
+                            Gamemode = string.IsNullOrEmpty(GamemodeName)
+                                ? Gamemode?
+                                      .DirectoryName ?? "GTA Network"
+                                : GamemodeName,
+                            Port = Port,
+                            Passworded = PasswordProtected,
+                            fqdn = fqdn,
+                            ServerVersion = serverVersion.ToString()
+                        };
 
-                        annObject.ServerName = Name;
-                        annObject.CurrentPlayers = Clients.Count;
-                        annObject.MaxPlayers = MaxPlayers;
-                        annObject.Map = CurrentMap?.DirectoryName;
-                        annObject.Gamemode = string.IsNullOrEmpty(GamemodeName)
-                                        ? Gamemode?
-                                            .DirectoryName ?? "GTA Network"
-                                        : GamemodeName;
-                        annObject.Port = Port;
-                        annObject.Passworded = PasswordProtected;
-                        annObject.fqdn = fqdn;
-                        annObject.ServerVersion = serverVersion.ToString();
 
                         wb.UploadData(MasterServer.Trim('/') + "/addserver",
                             Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(annObject)));
                     }
                     catch (WebException)
                     {
-                        Program.Output("Failed to announce self: master server is not available at this time.", LogCat.Error);
+                        Program.Output("Failed to announce self: master server is not available at this time.",
+                            LogCat.Error);
                         //if (LogLevel >= 2)
                         //{
                         //    Program.Output("\n====\n" + ex.ToString() + "\n====\n");
                         //}
                     }
                 }
-            });
-            annThread.IsBackground = true;
+            }) {IsBackground = true};
             annThread.Start();
         }
 
         private bool isIPLocal(string ipaddress)
         {
-            String[] straryIPAddress = ipaddress.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-            int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0]), int.Parse(straryIPAddress[1]), int.Parse(straryIPAddress[2]), int.Parse(straryIPAddress[3]) };
-            if (iaryIPAddress[0] == 10 || (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) || (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31)))
-            {
-                return true;
-            }
-            else
-            {
-                // IP Address is "probably" public. This doesn't catch some VPN ranges like OpenVPN and Hamachi.
-                return false;
-            }
+            var straryIPAddress = ipaddress.Split(new[] { "." }, StringSplitOptions.RemoveEmptyEntries);
+            int[] iaryIPAddress = { int.Parse(straryIPAddress[0]), int.Parse(straryIPAddress[1]), int.Parse(straryIPAddress[2]), int.Parse(straryIPAddress[3]) };
+            return iaryIPAddress[0] == 10 || (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) || (iaryIPAddress[0] == 172 && (iaryIPAddress[1] >= 16 && iaryIPAddress[1] <= 31));
         }
 
-        public List<ClientsideScript> GetAllClientsideScripts()
+        public IEnumerable<ClientsideScript> GetAllClientsideScripts()
         {
-            List<ClientsideScript> allScripts = new List<ClientsideScript>();
+            var allScripts = new List<ClientsideScript>();
 
             lock (RunningResources)
             {
@@ -381,22 +366,15 @@ namespace GTANetworkServer
             {
                 Resource runningResource;
 
-                if ((runningResource = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName)) != null)
-                {
-                    return runningResource.Info;
-                }
-                else
-                {
-                    return GetStoppedResourceInfo(resourceName);
-                }
+                return (runningResource = RunningResources.FirstOrDefault(r => r.DirectoryName == resourceName)) != null ? runningResource.Info : GetStoppedResourceInfo(resourceName);
             }
         }
 
-        public Dictionary<string, CustomSetting> LoadSettings(List<MetaSetting> sets)
+        public static Dictionary<string, CustomSetting> LoadSettings(List<MetaSetting> sets)
         {
             var dict = new Dictionary<string, CustomSetting>();
 
-            if (sets != null)
+            if (sets == null) return dict;
             foreach (var setting in sets)
             {
                 dict.Set(setting.Name, new CustomSetting()
@@ -412,9 +390,13 @@ namespace GTANetworkServer
 
         public bool StartResource(string resourceName, string father = null)
         {
+            var csScripts = new List<ClientsideScript>();
             try
             {
-                if (RunningResources.Any(res => res.DirectoryName == resourceName)) return false;
+                lock (RunningResources)
+                {
+                    if (RunningResources.Any(res => res.DirectoryName == resourceName)) return false;
+                }
 
                 Program.Output("Starting " + resourceName);
 
@@ -430,12 +412,14 @@ namespace GTANetworkServer
                 ResourceInfo currentResInfo;
                 using (var str = File.OpenRead(baseDir + "meta.xml"))
                     currentResInfo = (ResourceInfo)xmlSer.Deserialize(str);
-                
-                var ourResource = new Resource();
-                ourResource.Info = currentResInfo;
-                ourResource.DirectoryName = resourceName;
-                ourResource.Engines = new List<ScriptingEngine>();
-                ourResource.ClientsideScripts = new List<ClientsideScript>();
+
+                var ourResource = new Resource
+                {
+                    Info = currentResInfo,
+                    DirectoryName = resourceName,
+                    Engines = new List<ScriptingEngine>(),
+                    ClientsideScripts = new List<ClientsideScript>()
+                };
 
                 if (ourResource.Info.Info != null && ourResource.Info.Info.Type == ResourceType.gamemode)
                 {
@@ -468,7 +452,7 @@ namespace GTANetworkServer
 
                         var keyName = ourResource.DirectoryName + "_" + filePath.Path;
 
-                        string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                        var hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
 
                         if (FileHashes.ContainsKey(keyName))
                             FileHashes[keyName] = hash;
@@ -489,7 +473,7 @@ namespace GTANetworkServer
 
                         var keyName = ourResource.DirectoryName + "_" + filePath.Path;
 
-                        string hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                        var hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
 
                         if (FileHashes.ContainsKey(keyName))
                             FileHashes[keyName] = hash;
@@ -524,19 +508,17 @@ namespace GTANetworkServer
 
                 // Load assembly references
                 if (currentResInfo.References != null)
+                {
                     foreach (var ass in currentResInfo.References)
                     {
-                        AssemblyReferences.Set(ass.Name,
-                            "resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar + ass.Name);
+                        AssemblyReferences.Set(ass.Name, "resources" + Path.DirectorySeparatorChar + resourceName + Path.DirectorySeparatorChar + ass.Name);
                     }
-                
-
-                var csScripts = new List<ClientsideScript>();
+                }
 
                 var cSharp = new List<string>();
                 var vBasic = new List<string>();
 
-                bool multithreaded = false;
+                var multithreaded = false;
 
                 if (ourResource.Info.Info != null)
                 {
@@ -545,147 +527,167 @@ namespace GTANetworkServer
 
                 foreach (var script in currentResInfo.Scripts)
                 {
-                    if (script.Language == ScriptingEngineLanguage.javascript)
+                    switch (script.Language)
                     {
-                        var scrTxt = File.ReadAllText(baseDir + script.Path);
-                        if (script.Type == ScriptType.client)
-                        {
-                            var csScript = new ClientsideScript()
+                        case ScriptingEngineLanguage.javascript:
                             {
-                                ResourceParent = resourceName,
-                                Script = scrTxt,
-                                //Filename = Path.GetFileNameWithoutExtension(script.Path)?.Replace('.', '_'),
-                                Filename = script.Path,
-                            };
+                                var scrTxt = File.ReadAllText(baseDir + script.Path);
+                                if (script.Type == ScriptType.client)
+                                {
+                                    var csScript = new ClientsideScript()
+                                    {
+                                        ResourceParent = resourceName,
+                                        Script = scrTxt,
+                                        //Filename = Path.GetFileNameWithoutExtension(script.Path)?.Replace('.', '_'),
+                                        Filename = script.Path,
+                                    };
 
-                            string hash;
+                                    string hash;
                             
-                            using (var md5 = MD5.Create())
-                            { 
-                                var myData = md5.ComputeHash(Encoding.UTF8.GetBytes(scrTxt));
-                                hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
-                                csScript.MD5Hash = hash;
+                                    using (var md5 = MD5.Create())
+                                    { 
+                                        var myData = md5.ComputeHash(Encoding.UTF8.GetBytes(scrTxt));
+                                        hash = myData.Select(byt => byt.ToString("x2")).Aggregate((left, right) => left + right);
+                                        csScript.MD5Hash = hash;
 
-                                if (FileHashes.ContainsKey(ourResource.DirectoryName + "_" + script.Path))
-                                    FileHashes[ourResource.DirectoryName + "_" + script.Path] = hash;
-                                else
-                                    FileHashes.Add(ourResource.DirectoryName + "_" + script.Path, hash);
+                                        if (FileHashes.ContainsKey(ourResource.DirectoryName + "_" + script.Path))
+                                        {
+                                            FileHashes[ourResource.DirectoryName + "_" + script.Path] = hash;
+                                        }
+                                        else
+                                        {
+                                            FileHashes.Add(ourResource.DirectoryName + "_" + script.Path, hash);
+                                        }
+
+                                    }
+
+                                    FileModule.ExportedFiles[resourceName].Add(new FileDeclaration(script.Path, hash, FileType.Script));
+
+                                    ourResource.ClientsideScripts.Add(csScript);
+                                    csScripts.Add(csScript);
+                                }
                             }
+                            break;
 
-                            FileModule.ExportedFiles[resourceName].Add(new FileDeclaration(script.Path, hash, FileType.Script));
+                        case ScriptingEngineLanguage.compiled:
+                            {
+                                try
+                                {
+                                    Program.DeleteFile(baseDir + script.Path + ":Zone.Identifier");
+                                }
+                                catch
+                                {
+                                    // ignored
+                                }
+                                Assembly ass;
 
-                            ourResource.ClientsideScripts.Add(csScript);
-                            csScripts.Add(csScript);
-                            continue;
-                        }
-                    }
-                    else if (script.Language == ScriptingEngineLanguage.compiled)
-                    {
-                        try
-                        {
-                            Program.DeleteFile(baseDir + script.Path + ":Zone.Identifier");
-                        }
-                        catch
-                        {
-                        }
-                        Assembly ass;
+                                if (ourResource.Info.Info.Shadowcopy)
+                                {
+                                    var bytes = File.ReadAllBytes(baseDir + script.Path);
+                                    ass = Assembly.Load(bytes);
+                                }
+                                else
+                                {
+                                    ass = Assembly.LoadFrom(baseDir + script.Path);
+                                }
 
-                        if (ourResource.Info.Info.Shadowcopy)
-                        {
-                            byte[] bytes = File.ReadAllBytes(baseDir + script.Path);
-                            ass = Assembly.Load(bytes);
-                        }
-                        else
-                        {
-                            ass = Assembly.LoadFrom(baseDir + script.Path);
-                        }
+                                var instances = InstantiateScripts(ass);
+                                ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
+                            }
+                            break;
 
-                        var instances = InstantiateScripts(ass);
-                        ourResource.Engines.AddRange(instances.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
-                    }
-                    else if (script.Language == ScriptingEngineLanguage.csharp)
-                    {
-                        cSharp.Add(baseDir + script.Path);
-                    }
-                    else if (script.Language == ScriptingEngineLanguage.vbasic)
-                    {
-                        var scrTxt = File.ReadAllText(baseDir + script.Path);
-                        vBasic.Add(scrTxt);
+                        case ScriptingEngineLanguage.csharp:
+                            {
+                                cSharp.Add(baseDir + script.Path);
+                            }
+                            break;
+
+                        case ScriptingEngineLanguage.vbasic:
+                            {
+                                var scrTxt = File.ReadAllText(baseDir + script.Path);
+                                vBasic.Add(scrTxt);
+                            }
+                            break;
+
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
-
-
 
                 if (cSharp.Count > 0)
                 {
                     var csharpAss = CompileScript(cSharp.ToArray(), currentResInfo.References.Select(r => r.Name).ToArray(), false);
-                    if (csharpAss != null)
-                        ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
+                    if (csharpAss != null) ourResource.Engines.AddRange(csharpAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                 }
 
                 if (vBasic.Count > 0)
                 {
                     var vbasicAss = CompileScript(vBasic.ToArray(), currentResInfo.References.Select(r => r.Name).ToArray(), true);
-                    if (vbasicAss != null)
-                        ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
+                    if (vbasicAss != null) ourResource.Engines.AddRange(vbasicAss.Select(sss => new ScriptingEngine(sss, sss.GetType().Name, ourResource, multithreaded)));
                 }
 
                 CommandHandler.Register(ourResource);
                 
                 var randGen = new Random();
-                
+
                 if (ourResource.ClientsideScripts.Count > 0 || currentResInfo.Files.Count > 0)
-                foreach (var client in Clients)
                 {
-                    var downloader = new StreamingClient(client);
-
-                    if (!UseHTTPFileServer)
+                    foreach (var client in Clients)
                     {
-                        foreach (var file in currentResInfo.Files)
+                        var downloader = new StreamingClient(client);
+
+                        if (!UseHTTPFileServer)
                         {
-                            var fileData = new StreamedData();
-                            fileData.Id = randGen.Next(int.MaxValue);
-                            fileData.Type = FileType.Normal;
-                            fileData.Data =
-                                File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
-                                                  ourResource.DirectoryName +
-                                                  Path.DirectorySeparatorChar +
-                                                  file.Path);
-                            fileData.Name = file.Path;
-                            fileData.Resource = ourResource.DirectoryName;
-                            fileData.Hash = FileHashes.ContainsKey(ourResource.DirectoryName + "_" + file.Path)
-                                ? FileHashes[ourResource.DirectoryName + "_" + file.Path]
-                                : null;
+                            foreach (var file in currentResInfo.Files)
+                            {
+                                var fileData = new StreamedData
+                                {
+                                    Id = randGen.Next(int.MaxValue),
+                                    Type = FileType.Normal,
+                                    Data = File.ReadAllBytes("resources" + Path.DirectorySeparatorChar +
+                                                             ourResource.DirectoryName +
+                                                             Path.DirectorySeparatorChar +
+                                                             file.Path),
+                                    Name = file.Path,
+                                    Resource = ourResource.DirectoryName,
+                                    Hash = FileHashes.ContainsKey(ourResource.DirectoryName + "_" + file.Path)
+                                        ? FileHashes[ourResource.DirectoryName + "_" + file.Path]
+                                        : null
+                                };
 
-                            downloader.Files.Add(fileData);
+                                downloader.Files.Add(fileData);
+                            }
                         }
-                    }
-                    else
-                    {
-                        var msg = Server.CreateMessage();
-                        msg.Write((byte)PacketType.RedownloadManifest);
-                        client.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
-                    }
+                        else
+                        {
+                            var msg = Server.CreateMessage();
+                            msg.Write((byte)PacketType.RedownloadManifest);
+                            client.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
+                        }
 
-                    foreach (var script in ourResource.ClientsideScripts)
-                    {
-                        var scriptData = new StreamedData();
-                        scriptData.Id = randGen.Next(int.MaxValue);
-                        scriptData.Data = Encoding.UTF8.GetBytes(script.Script);
-                        scriptData.Type = FileType.Script;
-                        scriptData.Resource = script.ResourceParent;
-                        scriptData.Hash = script.MD5Hash;
-                        scriptData.Name = script.Filename;
-                        downloader.Files.Add(scriptData);
+                        foreach (var script in ourResource.ClientsideScripts)
+                        {
+                            var scriptData = new StreamedData
+                            {
+                                Id = randGen.Next(int.MaxValue),
+                                Data = Encoding.UTF8.GetBytes(script.Script),
+                                Type = FileType.Script,
+                                Resource = script.ResourceParent,
+                                Hash = script.MD5Hash,
+                                Name = script.Filename
+                            };
+                            downloader.Files.Add(scriptData);
+                        }
+
+                        var endStream = new StreamedData
+                        {
+                            Id = randGen.Next(int.MaxValue),
+                            Data = new byte[] { 0xDE, 0xAD, 0xF0, 0x0D },
+                            Type = FileType.EndOfTransfer
+                        };
+                        downloader.Files.Add(endStream);
+                        Downloads.Add(downloader);
                     }
-
-                    var endStream = new StreamedData();
-                    endStream.Id = randGen.Next(int.MaxValue);
-                    endStream.Data = new byte[] { 0xDE, 0xAD, 0xF0, 0x0D };
-                    endStream.Type = FileType.EndOfTransfer;
-                    downloader.Files.Add(endStream);
-
-                    Downloads.Add(downloader);
                 }
 
                 if (!string.IsNullOrWhiteSpace(ourResource.Info.Map?.Path))
@@ -695,32 +697,37 @@ namespace GTANetworkServer
 
                     LoadMap(ourResource, ourResource.Map, ourResource.Info.Map.Dimension);
 
-                    if (ourResource.Info.Info.Type == ResourceType.gamemode)
+                    switch (ourResource.Info.Info.Type)
                     {
-                        if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
-                        ourResource.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
-                    }
-                    else if (ourResource.Info.Info.Type == ResourceType.map)
-                    {
-                        if (string.IsNullOrWhiteSpace(ourResource.Info.Info.Gamemodes))
-                        {}
-                        else if (ourResource.Info.Info.Gamemodes?.Split(',').Length != 1 && Gamemode == null)
-                        {}
-                        else if (ourResource.Info.Info.Gamemodes?.Split(',').Length == 1 && (Gamemode == null || !ourResource.Info.Info.Gamemodes.Split(',').Contains(Gamemode.DirectoryName)))
-                        {
+                        case ResourceType.gamemode:
                             if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
-                            StartResource(ourResource.Info.Info.Gamemodes?.Split(',')[0]);
+                            ourResource.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
+                            break;
+                        case ResourceType.map:
+                            if (string.IsNullOrWhiteSpace(ourResource.Info.Info.Gamemodes))
+                            {}
+                            else if (ourResource.Info.Info.Gamemodes?.Split(',').Length != 1 && Gamemode == null)
+                            {}
+                            else if (ourResource.Info.Info.Gamemodes?.Split(',').Length == 1 && (Gamemode == null || !ourResource.Info.Info.Gamemodes.Split(',').Contains(Gamemode.DirectoryName)))
+                            {
+                                if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
+                                StartResource(ourResource.Info.Info.Gamemodes?.Split(',')[0]);
 
-                            CurrentMap = ourResource;
-                            Gamemode.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
-                        }
-                        else if (Gamemode != null && ourResource.Info.Info.Gamemodes.Split(',').Contains(Gamemode.DirectoryName))
-                        {
-                            Program.Output("Starting map " + ourResource.DirectoryName + "!");
-                            if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
-                            CurrentMap = ourResource;
-                            Gamemode.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
-                        }
+                                CurrentMap = ourResource;
+                                Gamemode.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
+                            }
+                            else if (Gamemode != null && ourResource.Info.Info.Gamemodes.Split(',').Contains(Gamemode.DirectoryName))
+                            {
+                                Program.Output("Starting map " + ourResource.DirectoryName + "!");
+                                if (CurrentMap != null) StopResource(CurrentMap.DirectoryName);
+                                CurrentMap = ourResource;
+                                Gamemode.Engines.ForEach(cs => cs.InvokeMapChange(ourResource.DirectoryName, ourResource.Map));
+                            }
+                            break;
+                        case ResourceType.script:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
 
@@ -732,21 +739,13 @@ namespace GTANetworkServer
 
                     foreach (var func in ourResource.Info.ExportedFunctions)
                     {
-                        ScriptingEngine engine;
-                        if (string.IsNullOrEmpty(func.Path))
-                            engine = ourResource.Engines.SingleOrDefault();
-                        else
-                            engine = ourResource.Engines.FirstOrDefault(en => en.Filename == func.Path);
+                        var engine = string.IsNullOrEmpty(func.Path) ? ourResource.Engines.SingleOrDefault() : ourResource.Engines.FirstOrDefault(en => en.Filename == func.Path);
 
                         if (engine == null) continue;
 
                         if (string.IsNullOrWhiteSpace(func.EventName))
                         {
-                            ExportedFunctionDelegate punchthrough = new ExportedFunctionDelegate((ExportedFunctionDelegate)
-                                delegate (object[] parameters)
-                                {
-                                    return engine.InvokeMethod(func.Name, parameters);
-                                });
+                            ExportedFunctionDelegate punchthrough = parameters => engine.InvokeMethod(func.Name, parameters);
                             resPoolDict.Add(func.Name, punchthrough);
                         }
                         else
@@ -767,16 +766,12 @@ namespace GTANetworkServer
 
                                 resPoolDict.Add(func.EventName, null);
 
-                                ExportedEvent punchthrough = new ExportedEvent((ExportedEvent)
-                                    delegate(dynamic[] parameters)
-                                    {
-                                        ExportedEvent e = resPoolDict[func.EventName] as ExportedEvent;
+                                var punchthrough = new ExportedEvent(delegate(dynamic[] parameters)
+                                {
+                                    var e = resPoolDict[func.EventName] as ExportedEvent;
 
-                                        if (e != null)
-                                        {
-                                            e.Invoke(parameters);
-                                        }
-                                    });
+                                    e?.Invoke(parameters);
+                                });
 
                                 eventInfo.AddEventHandler(engine._compiledScript, punchthrough);
                             }
@@ -850,7 +845,7 @@ namespace GTANetworkServer
             if (CurrentMap == ourRes) CurrentMap = null;
 
             var gPool = ExportedFunctions as IDictionary<string, object>;
-            if (gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
+            if (gPool != null && gPool.ContainsKey(ourRes.DirectoryName)) gPool.Remove(ourRes.DirectoryName);
             CommandHandler.Unregister(ourRes.DirectoryName);
             FileModule.ExportedFiles.Remove(resourceName);
             lock (RunningResources)
@@ -1004,15 +999,14 @@ namespace GTANetworkServer
                 !t.IsInterface &&
                 !t.IsAbstract)
                 .Where(t => typeof(Script).IsAssignableFrom(t));
-            if (!validTypes.Any())
-            {
-                yield break;
-            }
-            foreach (var type in validTypes)
+            var enumerable = validTypes as Type[] ?? validTypes.ToArray();
+
+            if (!enumerable.Any()) yield break;
+
+            foreach (var type in enumerable)
             {
                 var obj = Activator.CreateInstance(type) as Script;
-                if (obj != null)
-                    yield return obj;
+                if (obj != null) yield return obj;
             }
         }
 
@@ -1035,15 +1029,13 @@ namespace GTANetworkServer
 
             foreach (var s in references)
             {
-                if (File.Exists(AssemblyReferences[s]))
-                    compParams.ReferencedAssemblies.Add(AssemblyReferences[s]);
-                else compParams.ReferencedAssemblies.Add(s);
+                compParams.ReferencedAssemblies.Add(File.Exists(AssemblyReferences[s]) ? AssemblyReferences[s] : s);
             }
             
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
 
-            for (int s = 0; s < script.Length; s++)
+            for (var s = 0; s < script.Length; s++)
             {
                 if (!vbBasic && script[s].TrimStart().StartsWith("public Constructor"))
                 {
@@ -1069,8 +1061,7 @@ namespace GTANResource
             
             try
             {
-                CompilerResults results;
-                results = !vbBasic
+                var results = !vbBasic
                     ? provide.CompileAssemblyFromFile(compParams, script)
                     : vBasicProvider.CompileAssemblyFromSource(compParams, script);
 
@@ -1078,17 +1069,20 @@ namespace GTANResource
                 {
                     var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-                    bool allWarns = true;
+                    var allWarns = true;
                     Program.Output("Error/warning while compiling script!", LogCat.Warn);
                     foreach (CompilerError error in results.Errors)
                     {
-                        Program.Output(
-                            String.Format("{3} ({0}) at {4}:{2}: {1}",
-                            error.ErrorNumber,
-                            error.ErrorText,
-                            error.Line,
-                            error.IsWarning ? "Warning" : "Error",
-                            error.FileName.Substring(basePath.Length + 1)), error.IsWarning ? LogCat.Warn : LogCat.Error);
+                        if (basePath != null)
+                        {
+                            Program.Output(
+                                string.Format("{3} ({0}) at {4}:{2}: {1}",
+                                    error.ErrorNumber,
+                                    error.ErrorText,
+                                    error.Line,
+                                    error.IsWarning ? "Warning" : "Error",
+                                    error.FileName.Substring(basePath.Length + 1)), error.IsWarning ? LogCat.Warn : LogCat.Error);
+                        }
 
                         allWarns = allWarns && error.IsWarning;
                     }
@@ -1114,10 +1108,12 @@ namespace GTANResource
 
         public void UpdateEntityInfo(int netId, EntityType entity, Delta_EntityProperties newInfo, Client exclude = null)
         {
-            var packet = new UpdateEntity();
-            packet.EntityType = (byte)entity;
-            packet.Properties = newInfo;
-            packet.NetHandle = netId;
+            var packet = new UpdateEntity
+            {
+                EntityType = (byte) entity,
+                Properties = newInfo,
+                NetHandle = netId
+            };
             if (exclude == null)
                 Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
             else
@@ -1126,26 +1122,26 @@ namespace GTANResource
 
         internal void ResendPacket(PedData fullPacket, Client exception, bool pure)
         {
-            byte[] full = new byte[0];
-            byte[] basic = new byte[0];
+            byte[] full;
+            var basic = new byte[0];
 
             if (pure)
             {
                 full = PacketOptimization.WritePureSync(fullPacket);
-                basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
+                if (fullPacket.NetHandle != null) basic = PacketOptimization.WriteBasicSync(fullPacket.NetHandle.Value, fullPacket.Position);
             }
             else
             {
                 full = PacketOptimization.WriteLightSync(fullPacket);
             }
 
-            foreach(var client in exception.Streamer.GetNearClients())
+            foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.Fake) continue;
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client == exception) continue;
 
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
                 if (pure)
                 {
                     if (client.Position == null) continue;
@@ -1153,17 +1149,15 @@ namespace GTANResource
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                        if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
-                        { 
-                            msg.Write((byte) PacketType.BasicSync);
-                            msg.Write(basic.Length);
-                            msg.Write(basic);
-                            Server.SendMessage(msg, client.NetConnection,
-                                NetDeliveryMethod.UnreliableSequenced,
-                                (int) ConnectionChannel.BasicSync);
+                        if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+                        msg.Write((byte) PacketType.BasicSync);
+                        msg.Write(basic.Length);
+                        msg.Write(basic);
+                        Server.SendMessage(msg, client.NetConnection,
+                            NetDeliveryMethod.UnreliableSequenced,
+                            (int) ConnectionChannel.BasicSync);
 
-                            client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
-                        }
+                        client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
                     }
                     else
                     {
@@ -1192,31 +1186,24 @@ namespace GTANResource
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client == exception) continue;
 
-                NetOutgoingMessage msg = Server.CreateMessage();
-                if (pure)
-                {
-                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
+                var msg = Server.CreateMessage();
+                if (!pure) continue;
 
-                    if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
-                    {
-                        msg.Write((byte)PacketType.BasicSync);
-                        msg.Write(basic.Length);
-                        msg.Write(basic);
-                        Server.SendMessage(msg, client.NetConnection,
-                            NetDeliveryMethod.UnreliableSequenced,
-                            (int)ConnectionChannel.BasicSync);
+                var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                        client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
-                    }
-                }
+                if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+
+                msg.Write((byte)PacketType.BasicSync);
+                msg.Write(basic.Length);
+                msg.Write(basic);
+                Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
+                client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
             }
         }
 
         internal void ResendBulletPacket(int netHandle, Vector3 aim, bool shooting, Client exception)
         {
-            byte[] full = new byte[0];
-
-            full = PacketOptimization.WriteBulletSync(netHandle, shooting, aim);
+            var full = PacketOptimization.WriteBulletSync(netHandle, shooting, aim);
 
             foreach (var client in exception.Streamer.GetNearClients())
             {
@@ -1224,7 +1211,7 @@ namespace GTANResource
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
                 if (client.Position.DistanceToSquared(exception.Position) > GlobalStreamingRange * GlobalStreamingRange) continue; // 1km
 
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
                 msg.Write((byte)PacketType.BulletSync);
                 msg.Write(full.Length);
                 msg.Write(full);
@@ -1236,9 +1223,7 @@ namespace GTANResource
 
         internal void ResendBulletPacket(int netHandle, int netHandleTarget, bool shooting, Client exception)
         {
-            byte[] full = new byte[0];
-
-            full = PacketOptimization.WriteBulletSync(netHandle, shooting, netHandleTarget);
+            var full = PacketOptimization.WriteBulletSync(netHandle, shooting, netHandleTarget);
 
             foreach (var client in exception.Streamer.GetNearClients())
             {
@@ -1246,20 +1231,18 @@ namespace GTANResource
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
                 if (client.Position.DistanceToSquared(exception.Position) > GlobalStreamingRange * GlobalStreamingRange) continue; // 1km
 
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
                 msg.Write((byte)PacketType.BulletPlayerSync);
                 msg.Write(full.Length);
                 msg.Write(full);
-                Server.SendMessage(msg, client.NetConnection,
-                    NetDeliveryMethod.ReliableSequenced,
-                    (int)ConnectionChannel.BulletSync);
+                Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.BulletSync);
             }
         }
 
         internal void ResendPacket(VehicleData fullPacket, Client exception, bool pure)
         {
-            byte[] full = new byte[0];
-            byte[] basic = new byte[0];
+            byte[] full;
+            var basic = new byte[0];
 
             if (pure)
             {
@@ -1284,7 +1267,7 @@ namespace GTANResource
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
                 if (pure)
                 {
                     if (client.Position == null) continue;
@@ -1292,17 +1275,13 @@ namespace GTANResource
                     {
                         var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                        if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
-                        {
-                            msg.Write((byte) PacketType.BasicSync);
-                            msg.Write(basic.Length);
-                            msg.Write(basic);
-                            Server.SendMessage(msg, client.NetConnection,
-                                NetDeliveryMethod.UnreliableSequenced,
-                                (int) ConnectionChannel.BasicSync);
+                        if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+                        msg.Write((byte) PacketType.BasicSync);
+                        msg.Write(basic.Length);
+                        msg.Write(basic);
+                        Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int) ConnectionChannel.BasicSync);
 
-                            client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
-                        }
+                        client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
                     }
                     else
                     {
@@ -1330,40 +1309,32 @@ namespace GTANResource
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                NetOutgoingMessage msg = Server.CreateMessage();
-                if (pure)
-                {
-                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
+                var msg = Server.CreateMessage();
+                if (!pure) continue;
+                var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                    if (lastUpdateReceived == 0 || Program.GetTicks() - lastUpdateReceived > 1000)
-                    {
-                        msg.Write((byte)PacketType.BasicSync);
-                        msg.Write(basic.Length);
-                        msg.Write(basic);
-                        Server.SendMessage(msg, client.NetConnection,
-                            NetDeliveryMethod.UnreliableSequenced,
-                            (int)ConnectionChannel.BasicSync);
+                if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+                msg.Write((byte)PacketType.BasicSync);
+                msg.Write(basic.Length);
+                msg.Write(basic);
+                Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
 
-                        client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
-                    }
-                }
+                client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
             }
         }
 
         internal void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
         {
-            byte[] full = new byte[0];
-            byte[] basic = new byte[0];
 
-            full = PacketOptimization.WriteUnOccupiedVehicleSync(fullPacket);
-            basic = PacketOptimization.WriteBasicUnOccupiedVehicleSync(fullPacket);
+            var full = PacketOptimization.WriteUnOccupiedVehicleSync(fullPacket);
+            var basic = PacketOptimization.WriteBasicUnOccupiedVehicleSync(fullPacket);
 
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
                 if (client.Position == null) continue;
                 if (client.Position.DistanceToSquared(fullPacket.Position) < (GlobalStreamingRange * GlobalStreamingRange) / 2) // 500 m
                 {
@@ -1387,7 +1358,7 @@ namespace GTANResource
 
             foreach (var client in exception.Streamer.GetFarClients())
             {
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
 
                 msg.Write((byte)PacketType.BasicUnoccupiedVehSync);
                 msg.Write(basic.Length);
@@ -1398,92 +1369,86 @@ namespace GTANResource
             }
         }
 
-        private void LogException(Exception ex, string resourceName)
-        {
-            Program.Output("RESOURCE EXCEPTION FROM " + resourceName + ": " + ex.Message);
-            Program.Output(ex.StackTrace);
-        }
-
         public void ProcessMessages()
         {
-            List<NetIncomingMessage> messages = new List<NetIncomingMessage>();
-            int msgsRead = Server.ReadMessages(messages);
-            if (msgsRead > 0)
-                foreach (var msg in messages)
+            var messages = new List<NetIncomingMessage>();
+            var msgsRead = Server.ReadMessages(messages);
+            if (msgsRead <= 0) return;
+            foreach (var msg in messages)
+            {
+                Client client = null;
+                lock (Clients)
                 {
-                    Client client = null;
-                    lock (Clients)
+                    foreach (var c in Clients)
                     {
-                        foreach (Client c in Clients)
-                        {
-                            if (c != null && c.NetConnection != null &&
-                                c.NetConnection.RemoteUniqueIdentifier != 0 &&
-                                msg.SenderConnection != null &&
-                                c.NetConnection.RemoteUniqueIdentifier == msg.SenderConnection.RemoteUniqueIdentifier)
-                            {
-                                client = c;
-                                break;
-                            }
-                        }
+                        if (c == null || c.NetConnection == null || c.NetConnection.RemoteUniqueIdentifier == 0 || msg.SenderConnection == null || c.NetConnection.RemoteUniqueIdentifier != msg.SenderConnection.RemoteUniqueIdentifier) continue;
+                        client = c;
+                        break;
                     }
-                    if (client == null) client = new Client(msg.SenderConnection);
-                    PacketType packetType = PacketType.ConnectionPacket;
+                }
+                if (client == null) client = new Client(msg.SenderConnection);
+                var packetType = PacketType.ConnectionPacket;
 
-                    try
+                try
+                {
+                    switch (msg.MessageType)
                     {
-                        switch (msg.MessageType)
-                        {
-                            case NetIncomingMessageType.UnconnectedData:
-                                try
+                        case NetIncomingMessageType.UnconnectedData:
+                            try
+                            {
+                                var isPing = msg.ReadString();
+                                if (isPing == "ping")
                                 {
-                                    var isPing = msg.ReadString();
-                                    if (isPing == "ping")
-                                    {
-                                        //if (LogLevel > 0) Program.Output("INFO: Received a ping, responding..");
+                                    //if (LogLevel > 0) Program.Output("INFO: Received a ping, responding..");
 
-                                        var pong = Server.CreateMessage();
-                                        pong.Write("pong");
-                                        //Server.SendUnconnectedMessage(pong, msg.SenderEndPoint.Address.ToString(), msg.SenderEndPoint.Port);
-                                        Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
-                                    }
-                                    if (isPing == "query")
-                                    {
-                                        //Program.Output("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
-                                        var pong = Server.CreateMessage();
-                                        pong.Write(Name + "%" + PasswordProtected + "%" + Clients.Count + "%" + MaxPlayers + "%" + GamemodeName);
-                                        Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
-                                    }
+                                    var pong = Server.CreateMessage();
+                                    pong.Write("pong");
+                                    //Server.SendUnconnectedMessage(pong, msg.SenderEndPoint.Address.ToString(), msg.SenderEndPoint.Port);
+                                    Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                 }
-                                catch (Exception) { }
-                                break;
-                            case NetIncomingMessageType.DiscoveryResponse:
-                                break;
-                            case NetIncomingMessageType.VerboseDebugMessage:
-                                if (LogLevel > 2)
-                                    Program.Output("[VERBOSE] " + msg.ReadString());
-                                break;
-                            case NetIncomingMessageType.DebugMessage:
-                                if (LogLevel > 1)
-                                    Program.Output("[DEBUG] " + msg.ReadString());
-                                break;
-                            case NetIncomingMessageType.WarningMessage:
-                                Program.ToFile("attack.log", msg.ReadString());
-                                break;
-                            case NetIncomingMessageType.ErrorMessage:
-                                if (LogLevel > 0)
-                                    Program.Output("[ERROR] " + msg.ReadString());
-                                break;
-                            case NetIncomingMessageType.ConnectionLatencyUpdated:
-                                client.Latency = msg.ReadFloat();
-                                break;
-
-                            case NetIncomingMessageType.ConnectionApproval:
-                                if (connBlock.Contains(client.NetConnection.RemoteEndPoint.Address))
+                                if (isPing == "query")
                                 {
-                                    client.NetConnection.Deny("Denied access due to suspected connection exploit.");
-                                    continue;
+                                    //Program.Output("INFO: query received from " + msg.SenderEndPoint.Address.ToString());
+                                    var pong = Server.CreateMessage();
+                                    pong.Write(Name + "%" + PasswordProtected + "%" + Clients.Count + "%" + MaxPlayers + "%" + GamemodeName);
+                                    Server.SendMessage(pong, client.NetConnection, NetDeliveryMethod.ReliableOrdered);
                                 }
-                                if (Conntimeout)
+                            }
+                            catch (Exception)
+                            {
+                                // ignored
+                            }
+                            break;
+                        case NetIncomingMessageType.DiscoveryResponse:
+                            break;
+                        case NetIncomingMessageType.VerboseDebugMessage:
+                            if (LogLevel > 2)
+                                Program.Output("[VERBOSE] " + msg.ReadString());
+                            break;
+                        case NetIncomingMessageType.DebugMessage:
+                            if (LogLevel > 1)
+                                Program.Output("[DEBUG] " + msg.ReadString());
+                            break;
+                        case NetIncomingMessageType.WarningMessage:
+                            Program.ToFile("attack.log", msg.ReadString());
+                            break;
+                        case NetIncomingMessageType.ErrorMessage:
+                            if (LogLevel > 0)
+                                Program.Output("[ERROR] " + msg.ReadString());
+                            break;
+                        case NetIncomingMessageType.ConnectionLatencyUpdated:
+                            client.Latency = msg.ReadFloat();
+                            break;
+
+                        case NetIncomingMessageType.ConnectionApproval:
+                            if (connBlock.Contains(client.NetConnection.RemoteEndPoint.Address))
+                            {
+                                client.NetConnection.Deny("Denied access due to suspected connection exploit.");
+                                continue;
+                            }
+                            if (Conntimeout)
+                            {
+                                lock (queue)
                                 {
                                     if (queue.ContainsKey(client.NetConnection.RemoteEndPoint))
                                     {
@@ -1495,105 +1460,92 @@ namespace GTANResource
                                         queue.Add(client.NetConnection.RemoteEndPoint, DateTime.Now);
                                     }
                                 }
-                                Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address.ToString() + ":" + client.NetConnection.RemoteEndPoint.Port.ToString() + "]");
+                            }
+                            Program.Output("Initiating connection: [" + client.NetConnection.RemoteEndPoint.Address + ":" + client.NetConnection.RemoteEndPoint.Port + "]");
 
-                                var type = msg.ReadByte();
-                                var leng = msg.ReadInt32();
-                                ConnectionRequest connReq = null;
-                                try
+                            msg.ReadByte();
+                            var leng = msg.ReadInt32();
+                            ConnectionRequest connReq = null;
+                            try
+                            {
+                                connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
+                            }
+                            catch (EndOfStreamException e)
+                            {
+                                if (client.NetConnection.RemoteEndPoint != null)
                                 {
-                                    connReq = DeserializeBinary<ConnectionRequest>(msg.ReadBytes(leng)) as ConnectionRequest;
+                                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address + "]");
+
+                                    if (LogLevel > 1) Program.Output("[DEBUG]" + e);
+                                    if (LogLevel > 2) Program.Output("[VERBOSE]" + connReq);
+
+                                    client.NetConnection.Deny("Denied access due to suspected connection exploit.");
                                 }
-                                catch (EndOfStreamException e)
-                                //catch (Exception e)
+                                continue;
+                            }
+
+                            if (string.IsNullOrWhiteSpace(connReq?.DisplayName) || string.IsNullOrWhiteSpace(connReq.SocialClubName) || string.IsNullOrWhiteSpace(connReq.ScriptVersion))
+                            {
+                                client.NetConnection.Deny("Outdated version!\nPlease update your client.");
+                                continue;
+                            }
+
+                            var cVersion = ParseableVersion.Parse(connReq.ScriptVersion);
+                            if (cVersion < MinimumClientVersion || cVersion < VersionCompatibility.LastCompatibleClientVersion)
+                            {
+                                client.NetConnection.Deny("Outdated version!\nPlease update your client.");
+                                continue;
+                            }
+
+                            if (BanManager.IsClientBanned(client))
+                            {
+                                client.NetConnection.Deny("You are banned from the server.");
+                                continue;
+                            }
+
+                            if (PasswordProtected && !string.IsNullOrWhiteSpace(Password))
+                            {
+                                if (Password != connReq.Password)
                                 {
-                                    if (client.NetConnection.RemoteEndPoint != null)
-                                    {
-                                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
-
-                                        if (LogLevel > 1) Program.Output("[DEBUG]" + e.ToString());
-                                        if (LogLevel > 2) Program.Output("[VERBOSE]" + connReq.ToString());
-                                        //if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
-
-                                        client.NetConnection.Deny("Denied access due to suspected connection exploit.");
-                                    }
+                                    client.NetConnection.Deny("Wrong password!");
+                                    Program.Output("Player connection refused: wrong password. (" + client.NetConnection.RemoteEndPoint.Address + ")");
                                     continue;
                                 }
+                            }
 
-                                if (connReq == null || string.IsNullOrWhiteSpace(connReq.DisplayName) || string.IsNullOrWhiteSpace(connReq.SocialClubName) || string.IsNullOrWhiteSpace(connReq.ScriptVersion))
+                            lock (Clients)
+                            {
+                                var duplicate = 0;
+                                var displayname = connReq.DisplayName;
+
+                                while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
                                 {
-                                    client.NetConnection.Deny("Outdated version. Please update your client.");
-                                    continue;
+                                    duplicate++;
+                                    connReq.DisplayName = displayname + " (" + duplicate + ")";
                                 }
+                            }
 
-                                var cVersion = ParseableVersion.Parse(connReq.ScriptVersion);
-                                if (cVersion < MinimumClientVersion || cVersion < VersionCompatibility.LastCompatibleClientVersion)
-                                {
-                                    client.NetConnection.Deny("Outdated version. Please update your client.");
-                                    continue;
-                                }
+                            client.CommitConnection();
+                            client.SocialClubName = connReq.SocialClubName;
+                            client.CEF = connReq.CEF;
+                            client.MediaStream = connReq.MediaStream;
+                            client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
+                            client.RemoteScriptVersion = ParseableVersion.Parse(connReq.ScriptVersion);
+                            client.GameVersion = connReq.GameVersion;
+                            ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
 
-                                if (BanManager.IsClientBanned(client))
-                                {
-                                    client.NetConnection.Deny("You are banned.");
-                                    continue;
-                                }
+                            if (!AllowCEFDevTool && connReq.CEFDevtool)
+                            {
+                                client.NetConnection.Deny("CEF DevTool is not allowed.");
+                                Program.Output("Player connection refused: CEF Devtool enabled. (" + client.NetConnection.RemoteEndPoint.Address + ")");
+                                continue;
+                            }
 
-                                //int clients = 0;
-                                //lock (Clients) clients = Clients.Count;
-                                //if (clients <= MaxPlayers) //Useless, it is checked in Lidgren.
-                                //{
-                                if (PasswordProtected && !string.IsNullOrWhiteSpace(Password))
-                                {
-                                    if (Password != connReq.Password)
-                                    {
-                                        client.NetConnection.Deny("Wrong password.");
-                                        Program.Output("Player connection refused: wrong password. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                                        continue;
-                                    }
-                                }
-
-                                lock (Clients)
-                                {
-                                    int duplicate = 0;
-                                    string displayname = connReq.DisplayName;
-
-                                    //REWORK NEEDED
-                                    //if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
-                                    //{
-                                    //    client.NetConnection.Deny("Duplicate RGSC handle.");
-                                    //    Program.Output("Player connection refused: duplicate RGSC. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                                    //    continue;
-                                    //}
-
-                                    while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
-                                    {
-                                        duplicate++;
-                                        connReq.DisplayName = displayname + " (" + duplicate + ")";
-                                    }
-                                }
-
-                                client.CommitConnection();
-                                client.SocialClubName = connReq.SocialClubName;
-                                client.CEF = connReq.CEF;
-                                client.MediaStream = connReq.MediaStream;
-                                client.Name = AllowDisplayNames ? connReq.DisplayName : connReq.SocialClubName;
-                                client.RemoteScriptVersion = ParseableVersion.Parse(connReq.ScriptVersion);
-                                client.GameVersion = connReq.GameVersion;
-                                ((PlayerProperties)NetEntityHandler.ToDict()[client.handle.Value]).Name = client.Name;
-
-                                if (!AllowCEFDevTool && connReq.CEFDevtool)
-                                {
-                                    client.NetConnection.Deny("CEF DevTool is not allowed.");
-                                    Program.Output("Player connection refused: CEF Devtool enabled. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                                    continue;
-                                }
-
-                                var respObj = new ConnectionResponse();
-
-                                respObj.ServerVersion = serverVersion.ToString();
-                                respObj.CharacterHandle = client.handle.Value;
-                                respObj.Settings = new SharedSettings()
+                            var respObj = new ConnectionResponse
+                            {
+                                ServerVersion = serverVersion.ToString(),
+                                CharacterHandle = client.handle.Value,
+                                Settings = new SharedSettings()
                                 {
                                     OnFootLagCompensation = OnFootLagComp,
                                     VehicleLagCompensation = VehLagComp,
@@ -1602,75 +1554,66 @@ namespace GTANResource
                                     VehicleStreamingRange = VehicleStreamingRange,
                                     ModWhitelist = ModWhitelist,
                                     UseHttpServer = UseHTTPFileServer,
-                                };
-
-                                var channelHail = Server.CreateMessage();
-                                var respBin = SerializeBinary(respObj);
-
-                                channelHail.Write(respBin.Length);
-                                channelHail.Write(respBin);
-
-                                var cancelArgs = new CancelEventArgs();
-
-                                lock (RunningResources)
-                                    RunningResources.ForEach(
-                                        fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client, cancelArgs)));
-
-                                if (cancelArgs.Cancel)
-                                {
-                                    client.NetConnection.Deny(cancelArgs.Reason ?? "");
-                                    Program.Output("Connection denied: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
-                                    continue;
                                 }
-                                else
-                                {
-                                    Clients.Add(client);
-                                    Server.Configuration.CurrentPlayers = Clients.Count;
-                                    client.NetConnection.Approve(channelHail);
-                                    Program.Output("Processing connection: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
+                            };
 
-                                }
-                                //   }
-                                //   else //Unreachable code
-                                //   {
-                                //       client.NetConnection.Deny("Server is full");
-                                //       Program.Output("Player connection refused: server full. (" + client.NetConnection.RemoteEndPoint.Address.ToString() + ")");
-                                //       continue;
-                                //   }
-                                break;
-                            case NetIncomingMessageType.StatusChanged:
-                                var newStatus = (NetConnectionStatus)msg.ReadByte();
+                            var channelHail = Server.CreateMessage();
+                            var respBin = SerializeBinary(respObj);
 
-                                if (newStatus == NetConnectionStatus.Connected)
-                                {
-                                }
-                                else if (newStatus == NetConnectionStatus.Disconnected)
+                            channelHail.Write(respBin.Length);
+                            channelHail.Write(respBin);
+
+                            var cancelArgs = new CancelEventArgs();
+
+                            lock (RunningResources)
+                            {
+                                RunningResources.ForEach(fs => fs.Engines.ForEach(en => en.InvokePlayerBeginConnect(client, cancelArgs)));
+                            }
+
+                            if (cancelArgs.Cancel)
+                            {
+                                client.NetConnection.Deny(cancelArgs.Reason ?? "");
+                                Program.Output("Connection denied: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address + "]");
+                            }
+                            else
+                            {
+                                Clients.Add(client);
+                                Server.Configuration.CurrentPlayers = Clients.Count;
+                                client.NetConnection.Approve(channelHail);
+                                Program.Output("Processing connection: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address + "]");
+
+                            }
+                            break;
+
+                        case NetIncomingMessageType.StatusChanged:
+                            var newStatus = (NetConnectionStatus)msg.ReadByte();
+
+                            switch (newStatus)
+                            {
+                                case NetConnectionStatus.Connected:
+                                    break;
+
+                                case NetConnectionStatus.Disconnected:
                                 {
                                     var reason = msg.ReadString();
                                     if (Clients.Contains(client))
                                     {
                                         lock (RunningResources)
-                                            RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                            {
-                                                en.InvokePlayerDisconnected(client, reason);
-                                            }));
+                                        {
+                                            RunningResources.ForEach(fs => fs.Engines.ForEach(en => { en.InvokePlayerDisconnected(client, reason); }));
+                                        }
 
                                         UnoccupiedVehicleManager.UnsyncAllFrom(client);
 
                                         lock (Clients)
                                         {
-                                            var dcObj = new PlayerDisconnect()
-                                            {
-                                                Id = client.handle.Value,
-                                            };
+                                            var dcObj = new PlayerDisconnect() { Id = client.handle.Value };
 
                                             SendToAll(dcObj, PacketType.PlayerDisconnect, true, ConnectionChannel.EntityBackend);
 
-                                            Program.Output("Player disconnected: " + client.SocialClubName + " (" +
-                                                            client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], reason: " + reason);
+                                            Program.Output("Player disconnected: " + client.SocialClubName + " (" + client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address + "], reason: " + reason);
 
-                                            if (client.CurrentVehicle.Value != 0 && VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) && VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
-                                                VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
+                                            if (client.CurrentVehicle.Value != 0 && VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) && VehicleOccupants[client.CurrentVehicle.Value].Contains(client)) VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
 
                                             Clients.Remove(client);
                                             Server.Configuration.CurrentPlayers = Clients.Count;
@@ -1680,790 +1623,786 @@ namespace GTANResource
                                             Downloads.RemoveAll(d => d.Parent == client);
                                         }
                                     }
+                                    break;
                                 }
-                                break;
-                            case NetIncomingMessageType.DiscoveryRequest:
-                                NetOutgoingMessage response = Server.CreateMessage();
-                                var obj = new DiscoveryResponse();
-                                obj.ServerName = Name;
-                                obj.MaxPlayers = (short)MaxPlayers;
-                                obj.PasswordProtected = PasswordProtected;
-                                //lock (RunningResources)
-                                //{
-                                obj.Gamemode = string.IsNullOrEmpty(GamemodeName)
+                            }
+                            break;
+                        case NetIncomingMessageType.DiscoveryRequest:
+                            var response = Server.CreateMessage();
+                            var obj = new DiscoveryResponse
+                            {
+                                ServerName = Name,
+                                MaxPlayers = (short) MaxPlayers,
+                                PasswordProtected = PasswordProtected,
+                                Gamemode = string.IsNullOrEmpty(GamemodeName)
                                     ? Gamemode?
-                                        .DirectoryName ?? "GTA Network"
-                                    : GamemodeName;
-                                //}
-                                //lock (Clients)
-                                obj.PlayerCount =
-                                    (short)
-                                        Clients.Count;//(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
-                                obj.Port = Port;
-                                obj.LAN = isIPLocal(msg.SenderEndPoint.Address.ToString());
+                                          .DirectoryName ?? "GTA Network"
+                                    : GamemodeName,
+                                PlayerCount = (short)
+                                    Clients.Count,
+                                Port = Port,
+                                LAN = isIPLocal(msg.SenderEndPoint.Address.ToString())
+                            };
+                            //lock (RunningResources)
+                            //{
+                            //}
+                            //lock (Clients)
+                            //(c => DateTime.Now.Subtract(c.LastUpdate).TotalMilliseconds < 60000);
 
-                                if ((obj.LAN && AnnounceToLAN) || !obj.LAN)
+                            if (obj.LAN && AnnounceToLAN || !obj.LAN)
+                            {
+                                var bin = SerializeBinary(obj);
+
+                                response.Write((byte)PacketType.DiscoveryResponse);
+                                response.Write(bin.Length);
+                                response.Write(bin);
+
+                                Server.SendDiscoveryResponse(response, msg.SenderEndPoint);
+
+                            }
+                            break;
+
+                        case NetIncomingMessageType.Data:
+
+                            packetType = (PacketType)msg.ReadByte();
+
+                            switch (packetType)
+                            {
+                                case PacketType.ChatData:
                                 {
-                                    var bin = SerializeBinary(obj);
-
-                                    response.Write((byte)PacketType.DiscoveryResponse);
-                                    response.Write(bin.Length);
-                                    response.Write(bin);
-
-                                    Server.SendDiscoveryResponse(response, msg.SenderEndPoint);
-
-                                }
-                                break;
-
-                            case NetIncomingMessageType.Data:
-
-                                packetType = (PacketType)msg.ReadByte();
-
-                                switch (packetType)
-                                {
-                                    case PacketType.ChatData:
+                                    try
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var data = DeserializeBinary<ChatData>(msg.ReadBytes(len)) as ChatData;
+                                        if (data != null)
                                         {
-                                            try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var data = DeserializeBinary<ChatData>(msg.ReadBytes(len)) as ChatData;
-                                                if (data != null)
-                                                {
-                                                    var pass = true;
-                                                    var command = data.Message.StartsWith("/");
+                                            var pass = true;
+                                            var command = data.Message.StartsWith("/");
 
-                                                    if (command)
+                                            if (command)
+                                            {
+                                                if (ACLEnabled)
+                                                {
+                                                    pass = ACL.DoesUserHaveAccessToCommand(client, data.Message.Split()[0].TrimStart('/'));
+                                                }
+
+                                                if (pass)
+                                                {
+                                                    ThreadPool.QueueUserWorkItem(delegate
                                                     {
-                                                        if (ACLEnabled)
+                                                        var cancelArg = new CancelEventArgs();
+
+                                                        lock (RunningResources)
                                                         {
-                                                            pass = ACL.DoesUserHaveAccessToCommand(client, data.Message.Split()[0].TrimStart('/'));
+                                                            RunningResources.ForEach(
+                                                                fs =>
+                                                                    fs.Engines.ForEach(
+                                                                        en =>
+                                                                            en.InvokeChatCommand(client,
+                                                                                data.Message, cancelArg)));
                                                         }
 
-                                                        if (pass)
+                                                        if (!cancelArg.Cancel)
                                                         {
-                                                            ThreadPool.QueueUserWorkItem((WaitCallback)delegate
-                                                           {
-                                                               var cancelArg = new CancelEventArgs();
-
-                                                               lock (RunningResources)
-                                                               {
-                                                                   RunningResources.ForEach(
-                                                                       fs =>
-                                                                           fs.Engines.ForEach(
-                                                                               en =>
-                                                                                   en.InvokeChatCommand(client,
-                                                                                       data.Message, cancelArg)));
-                                                               }
-
-                                                               if (!cancelArg.Cancel)
-                                                               {
-                                                                   if (!CommandHandler.Parse(client, data.Message))
-                                                                       PublicAPI.sendChatMessageToPlayer(client, ErrorCmd);
-                                                               }
-                                                           });
+                                                            if (!CommandHandler.Parse(client, data.Message))
+                                                                PublicAPI.sendChatMessageToPlayer(client, ErrorCmd);
                                                         }
-                                                        else
-                                                        {
-                                                            var chatObj = new ChatData()
-                                                            {
-                                                                Sender = "",
-                                                                Message = "You don't have access to this command!",
-                                                            };
-
-                                                            var binData = Program.ServerInstance.SerializeBinary(chatObj);
-
-                                                            NetOutgoingMessage respMsg = Program.ServerInstance.Server.CreateMessage();
-                                                            respMsg.Write((byte)PacketType.ChatData);
-                                                            respMsg.Write(binData.Length);
-                                                            respMsg.Write(binData);
-                                                            client.NetConnection.SendMessage(respMsg, NetDeliveryMethod.ReliableOrdered, 0);
-                                                        }
-
-                                                        continue;
-                                                    }
-
-                                                    ThreadPool.QueueUserWorkItem((WaitCallback)delegate
-                                                   {
-                                                       lock (RunningResources)
-                                                           RunningResources.ForEach(
-                                                               fs =>
-                                                                   fs.Engines.ForEach(
-                                                                       en =>
-                                                                           pass =
-                                                                               pass &&
-                                                                               en.InvokeChatMessage(client,
-                                                                                   data.Message)));
-
-                                                       if (pass)
-                                                       {
-                                                           data.Id = client.NetConnection.RemoteUniqueIdentifier;
-                                                           data.Sender = client.Name;
-                                                           SendToAll(data, PacketType.ChatData, true,
-                                                               ConnectionChannel.Chat);
-                                                           Program.Output(data.Sender + ": " + data.Message);
-                                                       }
-                                                   });
-                                                }
-                                            }
-                                            catch (IndexOutOfRangeException)
-                                            {
-                                            }
-                                        }
-                                        break;
-                                    case PacketType.VehiclePureSync:
-                                        {
-                                            try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var bin = msg.ReadBytes(len);
-
-                                                var fullPacket = PacketOptimization.ReadPureVehicleSync(bin);
-
-                                                fullPacket.NetHandle = client.handle.Value;
-
-                                                if (fullPacket.PlayerHealth.Value != client.Health)
-                                                {
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerHealthChange(client, client.Health);
-                                                        }));
-                                                }
-
-                                                if (fullPacket.PedArmor.Value != client.Armor)
-                                                {
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerArmorChange(client, client.Armor);
-                                                        }));
-                                                }
-
-                                                if (fullPacket.WeaponHash != null && fullPacket.WeaponHash.Value != (int)client.CurrentWeapon)
-                                                {
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerWeaponChange(client, (int)client.CurrentWeapon);
-                                                        }));
-                                                }
-
-                                                client.Health = fullPacket.PlayerHealth.Value;
-                                                client.Armor = fullPacket.PedArmor.Value;
-                                                client.LastVehicleFlag = fullPacket.Flag.Value;
-                                                client.LastUpdate = DateTime.Now;
-
-                                                if (fullPacket.WeaponHash != null)
-                                                    client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
-
-                                                if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
-                                                    VehicleDataFlags.HasAimData) && fullPacket.AimCoords != null)
-                                                {
-                                                    client.LastAimPos = fullPacket.AimCoords;
+                                                    });
                                                 }
                                                 else
                                                 {
-                                                    client.LastAimPos = null;
+                                                    var chatObj = new ChatData()
+                                                    {
+                                                        Sender = "",
+                                                        Message = "You don't have access to this command!",
+                                                    };
+
+                                                    var binData = SerializeBinary(chatObj);
+
+                                                    var respMsg = Program.ServerInstance.Server.CreateMessage();
+                                                    respMsg.Write((byte)PacketType.ChatData);
+                                                    respMsg.Write(binData.Length);
+                                                    respMsg.Write(binData);
+                                                    client.NetConnection.SendMessage(respMsg, NetDeliveryMethod.ReliableOrdered, 0);
                                                 }
 
-                                                if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
-                                                    VehicleDataFlags.Driver))
-                                                {
-                                                    client.Position = fullPacket.Position;
-                                                    client.Rotation = fullPacket.Quaternion;
-                                                    client.Velocity = fullPacket.Velocity;
-
-                                                    if (!client.CurrentVehicle.IsNull &&
-                                                        NetEntityHandler.ToDict()
-                                                            .ContainsKey(client.CurrentVehicle.Value))
-                                                    {
-                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position
-                                                            = fullPacket.Position;
-                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation
-                                                            = fullPacket.Quaternion;
-                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity
-                                                            = fullPacket.Velocity;
-                                                        if (fullPacket.Flag.HasValue)
-                                                        {
-                                                            var newDead = (fullPacket.Flag &
-                                                                           (byte)VehicleDataFlags.VehicleDead) > 0;
-                                                            if (!((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                .IsDead && newDead)
-                                                            {
-                                                                lock (RunningResources)
-                                                                    RunningResources.ForEach(
-                                                                        fs => fs.Engines.ForEach(en =>
-                                                                        {
-                                                                            en.InvokeVehicleDeath(client.CurrentVehicle);
-                                                                        }));
-                                                            }
-
-                                                            ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                .IsDead = newDead;
-                                                        }
-
-                                                        if (fullPacket.VehicleHealth.HasValue)
-                                                        {
-                                                            if (fullPacket.VehicleHealth.Value != ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                .Health)
-                                                            {
-                                                                lock (RunningResources)
-                                                                    RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                                    {
-                                                                        en.InvokeVehicleHealthChange(client, ((VehicleProperties)
-                                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                                .Health);
-                                                                    }));
-                                                            }
-
-                                                            ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                .Health = fullPacket.VehicleHealth.Value;
-                                                        }
-
-                                                        if (fullPacket.Flag.HasValue)
-                                                        {
-                                                            if ((fullPacket.Flag &
-                                                                (byte)VehicleDataFlags.SirenActive) != 0 ^ ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                .Siren)
-                                                            {
-                                                                lock (RunningResources)
-                                                                    RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                                    {
-                                                                        en.InvokeVehicleSirenToggle(client, ((VehicleProperties)
-                                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                                .Siren);
-                                                                    }));
-                                                            }
-
-                                                            ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
-                                                                .Siren = (fullPacket.Flag &
-                                                                          (byte)VehicleDataFlags.SirenActive) > 0;
-                                                        }
-                                                    }
-
-                                                    if (NetEntityHandler.ToDict()
-                                                        .ContainsKey(fullPacket.NetHandle.Value))
-                                                    {
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
-                                                            fullPacket.Position;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
-                                                            fullPacket.Quaternion;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
-                                                            fullPacket.Velocity;
-                                                    }
-                                                }
-                                                else if (!client.CurrentVehicle.IsNull && NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
-                                                {
-                                                    var carPos =
-                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position;
-                                                    var carRot =
-                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation;
-                                                    var carVel =
-                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity;
-
-                                                    client.Position = carPos;
-                                                    client.Rotation = carRot;
-                                                    client.Velocity = carVel;
-
-                                                    if (NetEntityHandler.ToDict()
-                                                        .ContainsKey(fullPacket.NetHandle.Value))
-                                                    {
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
-                                                            carPos;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
-                                                            carRot;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
-                                                            carVel;
-                                                    }
-                                                }
-                                                client.IsInVehicle = true;
-
-                                                ResendPacket(fullPacket, client, true);
-
-                                                UpdateAttachables(client.handle.Value);
-                                                UpdateAttachables(client.CurrentVehicle.Value);
+                                                continue;
                                             }
-                                            catch (IndexOutOfRangeException)
+
+                                            ThreadPool.QueueUserWorkItem(delegate
                                             {
-                                            }
+                                                lock (RunningResources)
+                                                    RunningResources.ForEach(
+                                                        fs =>
+                                                            fs.Engines.ForEach(
+                                                                en =>
+                                                                    pass =
+                                                                        pass &&
+                                                                        en.InvokeChatMessage(client,
+                                                                            data.Message)));
+
+                                                if (pass)
+                                                {
+                                                    data.Id = client.NetConnection.RemoteUniqueIdentifier;
+                                                    data.Sender = client.Name;
+                                                    SendToAll(data, PacketType.ChatData, true,
+                                                        ConnectionChannel.Chat);
+                                                    Program.Output(data.Sender + ": " + data.Message);
+                                                }
+                                            });
                                         }
-                                        break;
-                                    case PacketType.VehicleLightSync:
+                                    }
+                                    catch (IndexOutOfRangeException)
+                                    {
+                                    }
+                                }
+                                    break;
+                                case PacketType.VehiclePureSync:
+                                {
+                                    try
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var bin = msg.ReadBytes(len);
+
+                                        var fullPacket = PacketOptimization.ReadPureVehicleSync(bin);
+
+                                        fullPacket.NetHandle = client.handle.Value;
+
+                                        if (fullPacket.PlayerHealth.Value != client.Health)
                                         {
-                                            try
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerHealthChange(client, client.Health);
+                                                }));
+                                        }
+
+                                        if (fullPacket.PedArmor.Value != client.Armor)
+                                        {
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerArmorChange(client, client.Armor);
+                                                }));
+                                        }
+
+                                        if (fullPacket.WeaponHash != null && fullPacket.WeaponHash.Value != (int)client.CurrentWeapon)
+                                        {
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerWeaponChange(client, (int)client.CurrentWeapon);
+                                                }));
+                                        }
+
+                                        client.Health = fullPacket.PlayerHealth.Value;
+                                        client.Armor = fullPacket.PedArmor.Value;
+                                        client.LastVehicleFlag = fullPacket.Flag.Value;
+                                        client.LastUpdate = DateTime.Now;
+
+                                        if (fullPacket.WeaponHash != null)
+                                            client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
+
+                                        if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
+                                                VehicleDataFlags.HasAimData) && fullPacket.AimCoords != null)
+                                        {
+                                            client.LastAimPos = fullPacket.AimCoords;
+                                        }
+                                        else
+                                        {
+                                            client.LastAimPos = null;
+                                        }
+
+                                        if (PacketOptimization.CheckBit(fullPacket.Flag.Value,
+                                            VehicleDataFlags.Driver))
+                                        {
+                                            client.Position = fullPacket.Position;
+                                            client.Rotation = fullPacket.Quaternion;
+                                            client.Velocity = fullPacket.Velocity;
+
+                                            if (!client.CurrentVehicle.IsNull &&
+                                                NetEntityHandler.ToDict()
+                                                    .ContainsKey(client.CurrentVehicle.Value))
                                             {
-                                                var len = msg.ReadInt32();
-                                                var bin = msg.ReadBytes(len);
-
-                                                var fullPacket = PacketOptimization.ReadLightVehicleSync(bin);
-
-                                                fullPacket.NetHandle = client.handle.Value;
-                                                fullPacket.Latency = client.Latency;
-
-                                                client.IsInVehicle = true;
-                                                client.VehicleSeat = fullPacket.VehicleSeat.Value;
-
-                                                var car = new NetHandle(fullPacket.VehicleHandle.Value);
-
-                                                if (!client.IsInVehicleInternal || client.VehicleHandleInternal != car.Value)
+                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position
+                                                    = fullPacket.Position;
+                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation
+                                                    = fullPacket.Quaternion;
+                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity
+                                                    = fullPacket.Velocity;
+                                                if (fullPacket.Flag.HasValue)
                                                 {
-                                                    if (!VehicleOccupants.ContainsKey(car.Value))
+                                                    var newDead = (fullPacket.Flag &
+                                                                   (byte)VehicleDataFlags.VehicleDead) > 0;
+                                                    if (!((VehicleProperties)
+                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                            .IsDead && newDead)
                                                     {
-                                                        VehicleOccupants.Add(car.Value, new List<Client>());
+                                                        lock (RunningResources)
+                                                            RunningResources.ForEach(
+                                                                fs => fs.Engines.ForEach(en =>
+                                                                {
+                                                                    en.InvokeVehicleDeath(client.CurrentVehicle);
+                                                                }));
                                                     }
-
-                                                    if (!VehicleOccupants[car.Value].Contains(client))
-                                                        VehicleOccupants[car.Value].Add(client);
-
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerEnterVehicle(client, car);
-                                                        }));
-                                                }
-
-                                                client.IsInVehicleInternal = true;
-                                                client.VehicleHandleInternal = car.Value;
-                                                client.CurrentVehicle = car;
-
-
-                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
-                                                {
-                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
-                                                        fullPacket.PedModelHash.Value;
-                                                }
-
-                                                if (fullPacket.Trailer != null)
-                                                {
-                                                    var trailer =
-                                                        ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .Trailer;
-                                                    if (NetEntityHandler.ToDict().ContainsKey(trailer))
-                                                    {
-                                                        NetEntityHandler.ToDict()[trailer].Position = fullPacket.Trailer;
-                                                    }
-                                                }
-
-
-                                                if (fullPacket.DamageModel != null)
-                                                {
-                                                    if (((VehicleProperties)
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).DamageModel ==
-                                                        null)
-                                                    {
-                                                        ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .DamageModel = new VehicleDamageModel();
-                                                    }
-
-                                                    var oldDoors = ((VehicleProperties)
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                        .DamageModel.BrokenDoors;
-
-                                                    var oldWindows = ((VehicleProperties)
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                        .DamageModel.BrokenWindows;
 
                                                     ((VehicleProperties)
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                        .DamageModel = fullPacket.DamageModel;
+                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                        .IsDead = newDead;
+                                                }
 
-                                                    if ((oldDoors ^ fullPacket.DamageModel.BrokenDoors) != 0)
+                                                if (fullPacket.VehicleHealth.HasValue)
+                                                {
+                                                    if (fullPacket.VehicleHealth.Value != ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                        .Health)
                                                     {
-                                                        lock (RunningResources)
-                                                        {
-                                                            for (int k = 0; k < 8; k++)
-                                                            {
-                                                                if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
-                                                                     1 << k) == 0) continue;
-                                                                var localCopy = fullPacket.VehicleHandle.Value;
-                                                                RunningResources.ForEach(
-                                                                    fs => fs.Engines.ForEach(en =>
-                                                                    {
-                                                                        en.InvokeVehicleDoorBreak(
-                                                                            new NetHandle(localCopy),
-                                                                            k);
-                                                                    }));
-                                                            }
-                                                        }
-                                                    }
-
-
-                                                    if ((oldWindows ^ fullPacket.DamageModel.BrokenWindows) != 0)
-                                                    {
-                                                        lock (RunningResources)
-                                                        {
-                                                            for (int k = 0; k < 8; k++)
-                                                            {
-                                                                if (((oldDoors ^ fullPacket.DamageModel.BrokenWindows) &
-                                                                     1 << k) == 0) continue;
-                                                                var localCopy = fullPacket.VehicleHandle.Value;
-
-                                                                RunningResources.ForEach(
-                                                                    fs => fs.Engines.ForEach(en =>
-                                                                    {
-                                                                        en.InvokeVehicleWindowBreak(
-                                                                            new NetHandle(localCopy),
-                                                                            k);
-                                                                    }));
-                                                            }
-                                                        }
-                                                    }
-                                                }
-
-                                                ResendPacket(fullPacket, client, false);
-                                            }
-                                            catch (IndexOutOfRangeException) { }
-                                            catch (KeyNotFoundException) { } //Proper fix is needed but this isn't very problematic
-                                        }
-                                        break;
-                                    case PacketType.PedPureSync:
-                                        {
-                                            try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var bin = msg.ReadBytes(len);
-
-                                                var fullPacket = PacketOptimization.ReadPurePedSync(bin);
-
-                                                fullPacket.NetHandle = client.handle.Value;
-
-                                                var oldHealth = client.Health;
-                                                var oldArmor = client.Armor;
-                                                var oldWeap = client.CurrentWeapon;
-                                                var oldAmmo = client.Ammo;
-
-                                                client.Health = fullPacket.PlayerHealth.Value;
-                                                client.Armor = fullPacket.PedArmor.Value;
-                                                client.Position = fullPacket.Position;
-                                                client.LastUpdate = DateTime.Now;
-                                                client.Rotation = fullPacket.Quaternion;
-                                                client.Velocity = fullPacket.Velocity;
-                                                client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
-                                                client.Ammo = fullPacket.WeaponAmmo.Value;
-                                                client.Weapons[client.CurrentWeapon] = client.Ammo;
-                                                if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
-
-                                                if (fullPacket.PlayerHealth.Value != oldHealth)
-                                                {
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerHealthChange(client, oldHealth);
-                                                        }));
-                                                }
-
-                                                if (fullPacket.PedArmor.Value != oldArmor)
-                                                {
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerArmorChange(client, oldArmor);
-                                                        }));
-                                                }
-
-                                                if (fullPacket.WeaponHash.Value != (int)oldWeap)
-                                                {
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerWeaponChange(client, (int)oldWeap);
-                                                        }));
-                                                }
-
-                                                if (fullPacket.WeaponAmmo.Value != oldAmmo && fullPacket.WeaponHash.Value == (int)oldWeap)
-                                                {
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerWeaponAmmoChange(client, (int)oldWeap, oldAmmo);
-                                                        }));
-                                                }
-
-                                                if (client.IsInVehicleInternal && !client.CurrentVehicle.IsNull)
-                                                {
-                                                    if (client.CurrentVehicle.Value != 0 &&
-                                                        VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) &&
-                                                        VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
-                                                        VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
-
-                                                        
-
-                                                    lock (RunningResources)
-                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerExitVehicle(client, client.CurrentVehicle);
-                                                        }));
-                                                }
-   
-                                                client.IsInVehicleInternal = false;
-                                                client.IsInVehicle = false;
-                                                client.CurrentVehicle = new NetHandle(0);
-                                                client.VehicleHandleInternal = 0;
-
-                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
-                                                {
-                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
-                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
-                                                    //NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.HasValue ? fullPacket.PedModelHash.Value : 0;
-                                                }
-
-                                                //if (client.CurrentWeapon.ToString() != "Unarmed")
-                                                //{
-                                                //    if (client.Weapons.ContainsKey(client.CurrentWeapon))
-                                                //    {
-                                                //        if (client.Ammo > oldAmmo && client.Ammo > client.Weapons[client.CurrentWeapon])
-                                                //        {
-                                                //            Program.ServerInstance.SendNativeCallToPlayer(client, false, (ulong)Hash.SET_PED_AMMO, new LocalPlayerArgument(), client.CurrentWeapon, client.Weapons[client.CurrentWeapon]); //SET_PED_AMMO
-                                                //        }
-                                                //        else if (client.Ammo != client.Weapons[client.CurrentWeapon])
-                                                //        {
-                                                //            lock (client.Weapons) client.Weapons[client.CurrentWeapon] = client.Ammo;
-                                                //        }
-                                                //    }
-                                                //}
-
-                                                ResendPacket(fullPacket, client, true);
-                                                UpdateAttachables(client.handle.Value);
-                                                //SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
-                                            }
-                                            catch (IndexOutOfRangeException)
-                                            {
-                                            }
-                                        }
-                                        break;
-                                    case PacketType.PedLightSync:
-                                        {
-                                            try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var bin = msg.ReadBytes(len);
-
-                                                var fullPacket = PacketOptimization.ReadLightPedSync(bin);
-
-                                                fullPacket.NetHandle = client.handle.Value;
-                                                fullPacket.Latency = client.Latency;
-
-                                                if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
-                                                {
-                                                    if (client.ModelHash == 0) client.ModelHash = fullPacket.PedModelHash.Value;
-
-                                                    var oldValue = client.ModelHash;
-                                                    if (oldValue != fullPacket.PedModelHash.Value)
-                                                    {
-                                                        client.ModelHash = fullPacket.PedModelHash.Value;
-                                                        NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash = fullPacket.PedModelHash.Value;
                                                         lock (RunningResources)
                                                             RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
                                                             {
-                                                                en.InvokePlayerModelChange(client, oldValue);
+                                                                en.InvokeVehicleHealthChange(client, ((VehicleProperties)
+                                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                    .Health);
+                                                            }));
+                                                    }
+
+                                                    ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                        .Health = fullPacket.VehicleHealth.Value;
+                                                }
+
+                                                if (fullPacket.Flag.HasValue)
+                                                {
+                                                    if ((fullPacket.Flag &
+                                                         (byte)VehicleDataFlags.SirenActive) != 0 ^ ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                        .Siren)
+                                                    {
+                                                        lock (RunningResources)
+                                                            RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                            {
+                                                                en.InvokeVehicleSirenToggle(client, ((VehicleProperties)
+                                                                        NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                    .Siren);
+                                                            }));
+                                                    }
+
+                                                    ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                        .Siren = (fullPacket.Flag &
+                                                                  (byte)VehicleDataFlags.SirenActive) > 0;
+                                                }
+                                            }
+
+                                            if (NetEntityHandler.ToDict()
+                                                .ContainsKey(fullPacket.NetHandle.Value))
+                                            {
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
+                                                    fullPacket.Position;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
+                                                    fullPacket.Quaternion;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
+                                                    fullPacket.Velocity;
+                                            }
+                                        }
+                                        else if (!client.CurrentVehicle.IsNull && NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
+                                        {
+                                            var carPos =
+                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position;
+                                            var carRot =
+                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation;
+                                            var carVel =
+                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity;
+
+                                            client.Position = carPos;
+                                            client.Rotation = carRot;
+                                            client.Velocity = carVel;
+
+                                            if (NetEntityHandler.ToDict()
+                                                .ContainsKey(fullPacket.NetHandle.Value))
+                                            {
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
+                                                    carPos;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
+                                                    carRot;
+                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
+                                                    carVel;
+                                            }
+                                        }
+                                        client.IsInVehicle = true;
+
+                                        ResendPacket(fullPacket, client, true);
+
+                                        UpdateAttachables(client.handle.Value);
+                                        UpdateAttachables(client.CurrentVehicle.Value);
+                                    }
+                                    catch (IndexOutOfRangeException)
+                                    {
+                                    }
+                                }
+                                    break;
+                                case PacketType.VehicleLightSync:
+                                {
+                                    try
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var bin = msg.ReadBytes(len);
+
+                                        var fullPacket = PacketOptimization.ReadLightVehicleSync(bin);
+
+                                        fullPacket.NetHandle = client.handle.Value;
+                                        fullPacket.Latency = client.Latency;
+
+                                        client.IsInVehicle = true;
+                                        client.VehicleSeat = fullPacket.VehicleSeat.Value;
+
+                                        var car = new NetHandle(fullPacket.VehicleHandle.Value);
+
+                                        if (!client.IsInVehicleInternal || client.VehicleHandleInternal != car.Value)
+                                        {
+                                            if (!VehicleOccupants.ContainsKey(car.Value))
+                                            {
+                                                VehicleOccupants.Add(car.Value, new List<Client>());
+                                            }
+
+                                            if (!VehicleOccupants[car.Value].Contains(client))
+                                                VehicleOccupants[car.Value].Add(client);
+
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerEnterVehicle(client, car);
+                                                }));
+                                        }
+
+                                        client.IsInVehicleInternal = true;
+                                        client.VehicleHandleInternal = car.Value;
+                                        client.CurrentVehicle = car;
+
+
+                                        if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
+                                        {
+                                            NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
+                                                fullPacket.PedModelHash.Value;
+                                        }
+
+                                        if (fullPacket.Trailer != null)
+                                        {
+                                            var trailer =
+                                                ((VehicleProperties)
+                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                .Trailer;
+                                            if (NetEntityHandler.ToDict().ContainsKey(trailer))
+                                            {
+                                                NetEntityHandler.ToDict()[trailer].Position = fullPacket.Trailer;
+                                            }
+                                        }
+
+
+                                        if (fullPacket.DamageModel != null)
+                                        {
+                                            if (((VehicleProperties)
+                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value]).DamageModel ==
+                                                null)
+                                            {
+                                                ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .DamageModel = new VehicleDamageModel();
+                                            }
+
+                                            var oldDoors = ((VehicleProperties)
+                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                .DamageModel.BrokenDoors;
+
+                                            var oldWindows = ((VehicleProperties)
+                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                .DamageModel.BrokenWindows;
+
+                                            ((VehicleProperties)
+                                                    NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                .DamageModel = fullPacket.DamageModel;
+
+                                            if ((oldDoors ^ fullPacket.DamageModel.BrokenDoors) != 0)
+                                            {
+                                                lock (RunningResources)
+                                                {
+                                                    for (int k = 0; k < 8; k++)
+                                                    {
+                                                        if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
+                                                             1 << k) == 0) continue;
+                                                        var localCopy = fullPacket.VehicleHandle.Value;
+                                                        RunningResources.ForEach(
+                                                            fs => fs.Engines.ForEach(en =>
+                                                            {
+                                                                en.InvokeVehicleDoorBreak(
+                                                                    new NetHandle(localCopy),
+                                                                    k);
                                                             }));
                                                     }
                                                 }
-                                                ResendPacket(fullPacket, client, false);
                                             }
-                                            catch (IndexOutOfRangeException)
-                                            { }
-                                        }
-                                        break;
-                                    case PacketType.BulletSync:
-                                        {
-                                            try
+
+
+                                            if ((oldWindows ^ fullPacket.DamageModel.BrokenWindows) != 0)
                                             {
-                                                var len = msg.ReadInt32();
-                                                var bin = msg.ReadBytes(len);
-
-                                                int netHandle;
-                                                bool shooting;
-                                                Vector3 aimPoint;
-
-                                                shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out aimPoint);
-
-                                                netHandle = client.handle.Value;
-
-                                                ResendBulletPacket(netHandle, aimPoint, shooting, client);
-                                            }
-                                            catch
-                                            { }
-                                        }
-                                        break;
-                                    case PacketType.BulletPlayerSync:
-                                        {
-                                            try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var bin = msg.ReadBytes(len);
-
-                                                int netHandle;
-                                                bool shooting;
-                                                int netHandleTarget;
-
-                                                shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out netHandleTarget);
-
-                                                netHandle = client.handle.Value;
-
-                                                ResendBulletPacket(netHandle, netHandleTarget, shooting, client);
-                                            }
-                                            catch
-                                            { }
-                                        }
-                                        break;
-                                    case PacketType.UnoccupiedVehSync:
-                                        {
-                                            try
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var bin = msg.ReadBytes(len);
-
-                                                for (int i = 0; i < bin[0]; i++)
+                                                lock (RunningResources)
                                                 {
-                                                    var cVehBin = bin.Skip(1 + 46 * i).Take(46).ToArray();
-
-                                                    var fullPacket = PacketOptimization.ReadUnoccupiedVehicleSync(cVehBin);
-
-                                                    if (NetEntityHandler.ToDict()
-                                                        .ContainsKey(fullPacket.VehicleHandle.Value))
+                                                    for (int k = 0; k < 8; k++)
                                                     {
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position
-                                                            = fullPacket.Position;
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation
-                                                            = fullPacket.Quaternion;
-                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Velocity
-                                                            = fullPacket.Velocity;
+                                                        if (((oldDoors ^ fullPacket.DamageModel.BrokenWindows) &
+                                                             1 << k) == 0) continue;
+                                                        var localCopy = fullPacket.VehicleHandle.Value;
 
-                                                        ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .Tires = fullPacket.PlayerHealth.Value;
-
-                                                        if (((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .DamageModel == null) ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .DamageModel = new VehicleDamageModel();
-
-                                                        var oldDoors = ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .DamageModel.BrokenWindows;
-                                                        var oldWindows = ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .DamageModel.BrokenDoors;
-
-                                                        ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .DamageModel.BrokenWindows =
-                                                            fullPacket.DamageModel.BrokenWindows;
-                                                        ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                            .DamageModel.BrokenDoors =
-                                                            fullPacket.DamageModel.BrokenDoors;
-
-                                                        if ((oldDoors ^ fullPacket.DamageModel.BrokenDoors) != 0)
-                                                        {
-                                                            lock (RunningResources)
+                                                        RunningResources.ForEach(
+                                                            fs => fs.Engines.ForEach(en =>
                                                             {
-                                                                for (int k = 0; k < 8; k++)
-                                                                {
-                                                                    if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
-                                                                         1 << k) == 0) continue;
-
-                                                                    RunningResources.ForEach(
-                                                                        fs => fs.Engines.ForEach(en =>
-                                                                        {
-                                                                            en.InvokeVehicleDoorBreak(new NetHandle(fullPacket.VehicleHandle.Value), k);
-                                                                        }));
-                                                                }
-                                                            }
-                                                        }
-
-
-                                                        if ((oldWindows ^ fullPacket.DamageModel.BrokenWindows) != 0)
-                                                        {
-                                                            lock (RunningResources)
-                                                            {
-                                                                for (int k = 0; k < 8; k++)
-                                                                {
-                                                                    if (((oldDoors ^ fullPacket.DamageModel.BrokenWindows) &
-                                                                         1 << k) == 0) continue;
-
-                                                                    RunningResources.ForEach(
-                                                                        fs => fs.Engines.ForEach(en =>
-                                                                        {
-                                                                            en.InvokeVehicleWindowBreak(new NetHandle(fullPacket.VehicleHandle.Value), k);
-                                                                        }));
-                                                                }
-                                                            }
-                                                        }
-
-                                                        if (fullPacket.Flag.HasValue)
-                                                        {
-                                                            var newDead = (fullPacket.Flag &
-                                                                           (byte)VehicleDataFlags.VehicleDead) > 0;
-                                                            var oldDead = ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
-                                                                    ])
-                                                                .IsDead;
-
-                                                            ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
-                                                                .IsDead = newDead;
-
-                                                            if (!oldDead && newDead)
-                                                            {
-                                                                lock (RunningResources)
-                                                                    RunningResources.ForEach(
-                                                                        fs => fs.Engines.ForEach(en =>
-                                                                        {
-                                                                            en.InvokeVehicleDeath(new NetHandle(fullPacket.VehicleHandle.Value));
-                                                                        }));
-                                                            }
-                                                        }
-
-                                                        if (fullPacket.VehicleHealth.HasValue)
-                                                        {
-                                                            var oldValue = ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
-                                                                    ])
-                                                                .Health;
-
-                                                            ((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
-                                                                    ])
-                                                                .Health = fullPacket.VehicleHealth.Value;
-
-                                                            if (fullPacket.VehicleHealth.Value != oldValue)
-                                                            {
-                                                                lock (RunningResources)
-                                                                    RunningResources.ForEach(
-                                                                        fs => fs.Engines.ForEach(en =>
-                                                                        {
-                                                                            en.InvokeVehicleHealthChange(client,
-                                                                                oldValue);
-                                                                        }));
-                                                            }
-                                                        }
+                                                                en.InvokeVehicleWindowBreak(
+                                                                    new NetHandle(localCopy),
+                                                                    k);
+                                                            }));
                                                     }
-
-                                                    ResendUnoccupiedPacket(fullPacket, client);
-
-                                                    UpdateAttachables(fullPacket.VehicleHandle.Value);
                                                 }
                                             }
-                                            catch (IndexOutOfRangeException ex)
-                                            {
-                                                if (LogLevel > 0) Program.Output(ex.ToString());
-                                            }
                                         }
-                                        break;
-                                    case PacketType.ConnectionPacket:
+
+                                        ResendPacket(fullPacket, client, false);
+                                    }
+                                    catch (IndexOutOfRangeException) { }
+                                    catch (KeyNotFoundException) { } //Proper fix is needed but this isn't very problematic
+                                }
+                                    break;
+                                case PacketType.PedPureSync:
+                                {
+                                    try
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var bin = msg.ReadBytes(len);
+
+                                        var fullPacket = PacketOptimization.ReadPurePedSync(bin);
+
+                                        fullPacket.NetHandle = client.handle.Value;
+
+                                        var oldHealth = client.Health;
+                                        var oldArmor = client.Armor;
+                                        var oldWeap = client.CurrentWeapon;
+                                        var oldAmmo = client.Ammo;
+
+                                        client.Health = fullPacket.PlayerHealth.Value;
+                                        client.Armor = fullPacket.PedArmor.Value;
+                                        client.Position = fullPacket.Position;
+                                        client.LastUpdate = DateTime.Now;
+                                        client.Rotation = fullPacket.Quaternion;
+                                        client.Velocity = fullPacket.Velocity;
+                                        client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
+                                        client.Ammo = fullPacket.WeaponAmmo.Value;
+                                        client.Weapons[client.CurrentWeapon] = client.Ammo;
+                                        if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
+
+                                        if (fullPacket.PlayerHealth.Value != oldHealth)
                                         {
-                                            /*try
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerHealthChange(client, oldHealth);
+                                                }));
+                                        }
+
+                                        if (fullPacket.PedArmor.Value != oldArmor)
+                                        {
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerArmorChange(client, oldArmor);
+                                                }));
+                                        }
+
+                                        if (fullPacket.WeaponHash.Value != (int)oldWeap)
+                                        {
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerWeaponChange(client, (int)oldWeap);
+                                                }));
+                                        }
+
+                                        if (fullPacket.WeaponAmmo.Value != oldAmmo && fullPacket.WeaponHash.Value == (int)oldWeap)
+                                        {
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerWeaponAmmoChange(client, (int)oldWeap, oldAmmo);
+                                                }));
+                                        }
+
+                                        if (client.IsInVehicleInternal && !client.CurrentVehicle.IsNull)
+                                        {
+                                            if (client.CurrentVehicle.Value != 0 &&
+                                                VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) &&
+                                                VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
+                                                VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
+
+                                                        
+
+                                            lock (RunningResources)
+                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerExitVehicle(client, client.CurrentVehicle);
+                                                }));
+                                        }
+   
+                                        client.IsInVehicleInternal = false;
+                                        client.IsInVehicle = false;
+                                        client.CurrentVehicle = new NetHandle(0);
+                                        client.VehicleHandleInternal = 0;
+
+                                        if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
+                                        {
+                                            NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position = fullPacket.Position;
+                                            NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation = fullPacket.Quaternion;
+                                        }
+
+                                        ResendPacket(fullPacket, client, true);
+                                        UpdateAttachables(client.handle.Value);
+                                        //SendToAll(data, PacketType.PedPositionData, false, client, ConnectionChannel.PositionData);
+                                    }
+                                    catch (IndexOutOfRangeException)
+                                    {
+                                    }
+                                }
+                                    break;
+                                case PacketType.PedLightSync:
+                                    {
+                                        try
+                                        {
+                                            var len = msg.ReadInt32();
+                                            var bin = msg.ReadBytes(len);
+
+                                            var fullPacket = PacketOptimization.ReadLightPedSync(bin);
+
+                                            fullPacket.NetHandle = client.handle.Value;
+                                            fullPacket.Latency = client.Latency;
+
+                                            if (NetEntityHandler.ToDict().ContainsKey(fullPacket.NetHandle.Value))
+                                            {
+                                                if (client.ModelHash == 0) client.ModelHash = fullPacket.PedModelHash.Value;
+
+                                                var oldValue = client.ModelHash;
+                                                if (oldValue != fullPacket.PedModelHash.Value)
+                                                {
+                                                    client.ModelHash = fullPacket.PedModelHash.Value;
+                                                    NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].ModelHash =
+                                                        fullPacket.PedModelHash.Value;
+                                                    lock (RunningResources)
+                                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                        {
+                                                            en.InvokePlayerModelChange(client, oldValue);
+                                                        }));
+                                                }
+                                            }
+                                            ResendPacket(fullPacket, client, false);
+                                        }
+                                        catch (IndexOutOfRangeException)
+                                        {
+                                            // ignored
+                                        }
+                                    }
+                                    break;
+                                case PacketType.BulletSync:
+                                {
+                                    try
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var bin = msg.ReadBytes(len);
+
+                                        int netHandle;
+                                        Vector3 aimPoint;
+
+                                        var shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out aimPoint);
+
+                                        netHandle = client.handle.Value;
+
+                                        ResendBulletPacket(netHandle, aimPoint, shooting, client);
+                                    }
+                                    catch
+                                    {
+                                        // ignored
+                                    }
+                                }
+                                    break;
+                                case PacketType.BulletPlayerSync:
+                                {
+                                    try
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var bin = msg.ReadBytes(len);
+
+                                        int netHandle;
+                                        int netHandleTarget;
+
+                                        var shooting = PacketOptimization.ReadBulletSync(bin, out netHandle, out netHandleTarget);
+
+                                        netHandle = client.handle.Value;
+
+                                        ResendBulletPacket(netHandle, netHandleTarget, shooting, client);
+                                    }
+                                    catch
+                                    {
+                                        // ignored
+                                    }
+                                }
+                                    break;
+                                case PacketType.UnoccupiedVehSync:
+                                {
+                                    try
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var bin = msg.ReadBytes(len);
+
+                                        for (int i = 0; i < bin[0]; i++)
+                                        {
+                                            var cVehBin = bin.Skip(1 + 46 * i).Take(46).ToArray();
+
+                                            var fullPacket = PacketOptimization.ReadUnoccupiedVehicleSync(cVehBin);
+
+                                            if (NetEntityHandler.ToDict()
+                                                .ContainsKey(fullPacket.VehicleHandle.Value))
+                                            {
+                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Position
+                                                    = fullPacket.Position;
+                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Rotation
+                                                    = fullPacket.Quaternion;
+                                                NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value].Velocity
+                                                    = fullPacket.Velocity;
+
+                                                ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .Tires = fullPacket.PlayerHealth.Value;
+
+                                                if (((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .DamageModel == null) ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .DamageModel = new VehicleDamageModel();
+
+                                                var oldDoors = ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .DamageModel.BrokenWindows;
+                                                var oldWindows = ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .DamageModel.BrokenDoors;
+
+                                                ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .DamageModel.BrokenWindows =
+                                                    fullPacket.DamageModel.BrokenWindows;
+                                                ((VehicleProperties)
+                                                        NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                    .DamageModel.BrokenDoors =
+                                                    fullPacket.DamageModel.BrokenDoors;
+
+                                                if ((oldDoors ^ fullPacket.DamageModel.BrokenDoors) != 0)
+                                                {
+                                                    lock (RunningResources)
+                                                    {
+                                                        for (int k = 0; k < 8; k++)
+                                                        {
+                                                            if (((oldDoors ^ fullPacket.DamageModel.BrokenDoors) &
+                                                                 1 << k) == 0) continue;
+
+                                                            RunningResources.ForEach(
+                                                                fs => fs.Engines.ForEach(en =>
+                                                                {
+                                                                    if (fullPacket.VehicleHandle != null)
+                                                                        en.InvokeVehicleDoorBreak(new NetHandle(fullPacket.VehicleHandle.Value), k);
+                                                                }));
+                                                        }
+                                                    }
+                                                }
+
+
+                                                if ((oldWindows ^ fullPacket.DamageModel.BrokenWindows) != 0)
+                                                {
+                                                    lock (RunningResources)
+                                                    {
+                                                        for (int k = 0; k < 8; k++)
+                                                        {
+                                                            if (((oldDoors ^ fullPacket.DamageModel.BrokenWindows) &
+                                                                 1 << k) == 0) continue;
+
+                                                            RunningResources.ForEach(
+                                                                fs => fs.Engines.ForEach(en =>
+                                                                {
+                                                                    if (fullPacket.VehicleHandle != null)
+                                                                        en.InvokeVehicleWindowBreak(new NetHandle(fullPacket.VehicleHandle.Value), k);
+                                                                }));
+                                                        }
+                                                    }
+                                                }
+
+                                                if (fullPacket.Flag.HasValue)
+                                                {
+                                                    var newDead = (fullPacket.Flag &
+                                                                   (byte)VehicleDataFlags.VehicleDead) > 0;
+                                                    var oldDead = ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
+                                                            ])
+                                                        .IsDead;
+
+                                                    ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value])
+                                                        .IsDead = newDead;
+
+                                                    if (!oldDead && newDead)
+                                                    {
+                                                        lock (RunningResources)
+                                                            RunningResources.ForEach(
+                                                                fs => fs.Engines.ForEach(en =>
+                                                                {
+                                                                    if (fullPacket.VehicleHandle != null)
+                                                                        en.InvokeVehicleDeath(new NetHandle(fullPacket.VehicleHandle.Value));
+                                                                }));
+                                                    }
+                                                }
+
+                                                if (fullPacket.VehicleHealth.HasValue)
+                                                {
+                                                    var oldValue = ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
+                                                            ])
+                                                        .Health;
+
+                                                    ((VehicleProperties)
+                                                            NetEntityHandler.ToDict()[fullPacket.VehicleHandle.Value
+                                                            ])
+                                                        .Health = fullPacket.VehicleHealth.Value;
+
+                                                    if (fullPacket.VehicleHealth.Value != oldValue)
+                                                    {
+                                                        lock (RunningResources)
+                                                            RunningResources.ForEach(
+                                                                fs => fs.Engines.ForEach(en =>
+                                                                {
+                                                                    en.InvokeVehicleHealthChange(client,
+                                                                        oldValue);
+                                                                }));
+                                                    }
+                                                }
+                                            }
+
+                                            ResendUnoccupiedPacket(fullPacket, client);
+
+                                            UpdateAttachables(fullPacket.VehicleHandle.Value);
+                                        }
+                                    }
+                                    catch (IndexOutOfRangeException ex)
+                                    {
+                                        if (LogLevel > 0) Program.Output(ex.ToString());
+                                    }
+                                }
+                                    break;
+                                case PacketType.ConnectionPacket:
+                                {
+                                    /*try
                                             {
                                                 var len = msg.ReadInt32();
                                                 var data =
@@ -2476,365 +2415,391 @@ namespace GTANResource
                                             catch (IndexOutOfRangeException)
                                             {
                                             }*/
-                                        }
-                                        break;
-                                    case PacketType.SyncEvent:
-                                        {
-                                            var len = msg.ReadInt32();
-                                            var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
-                                            if (data != null)
-                                            {
-                                                SendToAll(data, PacketType.SyncEvent, true, client, ConnectionChannel.NativeCall);
-                                                HandleSyncEvent(client, data);
-                                            }
+                                }
+                                    break;
+                                case PacketType.SyncEvent:
+                                {
+                                    var len = msg.ReadInt32();
+                                    var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
+                                    if (data != null)
+                                    {
+                                        SendToAll(data, PacketType.SyncEvent, true, client, ConnectionChannel.NativeCall);
+                                        HandleSyncEvent(client, data);
+                                    }
 
-                                        }
-                                        break;
-                                    case PacketType.ScriptEventTrigger:
-                                        {
-                                            var len = msg.ReadInt32();
-                                            var data =
-                                                DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
-                                            if (data != null)
-                                            {
-                                                lock (RunningResources)
-                                                    RunningResources.ForEach(
-                                                        en =>
-                                                        {
-                                                            if (en.DirectoryName != data.Resource) return;
-
-                                                            en.Engines.ForEach(fs =>
-                                                            {
-                                                                fs.InvokeClientEvent(client, data.EventName,
-                                                                    DecodeArgumentListPure(data.Arguments?.ToArray() ??
-                                                                                           new NativeArgument[0])
-                                                                        .ToArray());
-                                                            });
-                                                        });
-                                            }
-                                        }
-                                        break;
-                                    case PacketType.NativeResponse:
-                                        {
-                                            var len = msg.ReadInt32();
-                                            var data = DeserializeBinary<NativeResponse>(msg.ReadBytes(len)) as NativeResponse;
-
-                                            if (data == null || !_callbacks.ContainsKey(data.Id)) continue;
-                                            object resp = null;
-                                            if (data.Response is IntArgument)
-                                            {
-                                                resp = ((IntArgument)data.Response).Data;
-                                            }
-                                            else if (data.Response is UIntArgument)
-                                            {
-                                                resp = ((UIntArgument)data.Response).Data;
-                                            }
-                                            else if (data.Response is StringArgument)
-                                            {
-                                                resp = ((StringArgument)data.Response).Data;
-                                            }
-                                            else if (data.Response is FloatArgument)
-                                            {
-                                                resp = ((FloatArgument)data.Response).Data;
-                                            }
-                                            else if (data.Response is BooleanArgument)
-                                            {
-                                                resp = ((BooleanArgument)data.Response).Data;
-                                            }
-                                            else if (data.Response is Vector3Argument)
-                                            {
-                                                var tmp = (Vector3Argument)data.Response;
-                                                resp = new Vector3()
+                                }
+                                    break;
+                                case PacketType.ScriptEventTrigger:
+                                {
+                                    var len = msg.ReadInt32();
+                                    var data =
+                                        DeserializeBinary<ScriptEventTrigger>(msg.ReadBytes(len)) as ScriptEventTrigger;
+                                    if (data != null)
+                                    {
+                                        lock (RunningResources)
+                                            RunningResources.ForEach(
+                                                en =>
                                                 {
-                                                    X = tmp.X,
-                                                    Y = tmp.Y,
-                                                    Z = tmp.Z,
-                                                };
-                                            }
-                                            if (_callbacks.ContainsKey(data.Id))
-                                                _callbacks[data.Id].Invoke(resp);
-                                            _callbacks.Remove(data.Id);
-                                        }
-                                        break;
-                                    case PacketType.FileAcceptDeny:
-                                        {
-                                            var fileId = msg.ReadInt32();
-                                            var hasBeenAccepted = msg.ReadBoolean();
-                                            var ourD = Downloads.FirstOrDefault(d => d.Parent == client);
-                                            if (ourD != null && ourD.Files.Count > 0 && ourD.Files[0].Id == fileId &&
-                                                !ourD.Files[0].Accepted)
-                                            {
-                                                if (!hasBeenAccepted)
-                                                    ourD.Files.RemoveAt(0);
-                                                else
-                                                    ourD.Files[0].Accepted = true;
-                                            }
-                                        }
-                                        break;
-                                    case PacketType.ConnectionConfirmed:
-                                        {
-                                            var state = msg.ReadBoolean();
-                                            if (!state)
-                                            {
-                                                var delta = new Delta_PlayerProperties();
-                                                delta.Name = client.Name;
-                                                UpdateEntityInfo(client.handle.Value, EntityType.Player, delta, client);
+                                                    if (en.DirectoryName != data.Resource) return;
 
-                                                var mapObj = new ServerMap();
-                                                mapObj.World =
-                                                    Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1);
-
-                                                foreach (var pair in NetEntityHandler.ToCopy())
-                                                {
-                                                    if (pair.Value.EntityType == (byte)EntityType.Vehicle)
+                                                    en.Engines.ForEach(fs =>
                                                     {
-                                                        mapObj.Vehicles.Add(pair.Key, (VehicleProperties)pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Prop)
-                                                    {
-                                                        mapObj.Objects.Add(pair.Key, pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Blip)
-                                                    {
-                                                        mapObj.Blips.Add(pair.Key, (BlipProperties)pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Marker)
-                                                    {
-                                                        mapObj.Markers.Add(pair.Key, (MarkerProperties)pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Pickup)
-                                                    {
-                                                        if (!((PickupProperties)pair.Value).PickedUp)
-                                                            mapObj.Pickups.Add(pair.Key, (PickupProperties)pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Player)
-                                                    {
-                                                        mapObj.Players.Add(pair.Key, (PlayerProperties)pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.TextLabel)
-                                                    {
-                                                        mapObj.TextLabels.Add(pair.Key, (TextLabelProperties)pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Ped)
-                                                    {
-                                                        mapObj.Peds.Add(pair.Key, (PedProperties)pair.Value);
-                                                    }
-                                                    else if (pair.Value.EntityType == (byte)EntityType.Particle)
-                                                    {
-                                                        mapObj.Particles.Add(pair.Key, (ParticleProperties)pair.Value);
-                                                    }
-                                                }
-
-                                                // TODO: replace this filth
-                                                var r = new Random();
-
-                                                var mapData = new StreamedData();
-                                                mapData.Id = r.Next(int.MaxValue);
-                                                mapData.Data = SerializeBinary(mapObj);
-                                                mapData.Type = FileType.Map;
-
-                                                var downloader = new StreamingClient(client);
-                                                downloader.Files.Add(mapData);
-
-                                                if (!UseHTTPFileServer)
-                                                {
-                                                    foreach (var resource in RunningResources)
-                                                    {
-                                                        foreach (var file in resource.Info.Files)
-                                                        {
-                                                            var fileData = new StreamedData();
-                                                            fileData.Id = r.Next(int.MaxValue);
-                                                            fileData.Type = FileType.Normal;
-                                                            fileData.Data =
-                                                                File.ReadAllBytes("resources" +
-                                                                                  Path.DirectorySeparatorChar +
-                                                                                  resource.DirectoryName +
-                                                                                  Path.DirectorySeparatorChar +
-                                                                                  file.Path);
-                                                            fileData.Name = file.Path;
-                                                            fileData.Resource = resource.DirectoryName;
-                                                            fileData.Hash =
-                                                                FileHashes.ContainsKey(resource.DirectoryName + "_" +
-                                                                                       file.Path)
-                                                                    ? FileHashes[
-                                                                        resource.DirectoryName + "_" + file.Path]
-                                                                    : null;
-                                                            downloader.Files.Add(fileData);
-                                                        }
-                                                    }
-                                                }
-
-                                                foreach (var script in GetAllClientsideScripts())
-                                                {
-                                                    var scriptData = new StreamedData();
-                                                    scriptData.Id = r.Next(int.MaxValue);
-                                                    scriptData.Data = Encoding.UTF8.GetBytes(script.Script);
-                                                    scriptData.Type = FileType.Script;
-                                                    scriptData.Resource = script.ResourceParent;
-                                                    scriptData.Hash = script.MD5Hash;
-                                                    scriptData.Name = script.Filename;
-                                                    downloader.Files.Add(scriptData);
-                                                }
-
-                                                var endStream = new StreamedData();
-                                                endStream.Id = r.Next(int.MaxValue);
-                                                endStream.Data = new byte[] { 0xDE, 0xAD, 0xF0, 0x0D };
-                                                endStream.Type = FileType.EndOfTransfer;
-                                                downloader.Files.Add(endStream);
-
-
-                                                Downloads.Add(downloader);
-
-                                                lock (RunningResources)
-                                                    RunningResources.ForEach(
-                                                        fs => fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerConnected(client);
-                                                        }));
-
-                                                Program.Output("Connection established: " + client.SocialClubName + " (" +
-                                                                client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "]");
-                                            }
-                                            else
-                                            {
-                                                var length = msg.ReadInt32();
-                                                string[] resources = new string[length];
-
-                                                for (int i = 0; i < length; i++)
-                                                {
-                                                    resources[i] = msg.ReadString();
-                                                }
-
-                                                lock (RunningResources)
-                                                    RunningResources.ForEach(fs =>
-                                                    {
-                                                        if (Array.IndexOf(resources, fs.DirectoryName) == -1) return;
-
-                                                        fs.Engines.ForEach(en =>
-                                                        {
-                                                            en.InvokePlayerDownloadFinished(client);
-                                                        });
+                                                        fs.InvokeClientEvent(client, data.EventName,
+                                                            DecodeArgumentListPure(data.Arguments?.ToArray() ??
+                                                                                   new NativeArgument[0])
+                                                                .ToArray());
                                                     });
+                                                });
+                                    }
+                                }
+                                    break;
+                                case PacketType.NativeResponse:
+                                {
+                                    var len = msg.ReadInt32();
+                                    var data = DeserializeBinary<NativeResponse>(msg.ReadBytes(len)) as NativeResponse;
 
-                                                StressTest.HasPlayers = true;
-                                            }
-
-                                            break;
-                                        }
-                                    case PacketType.PlayerKilled:
+                                    if (data == null || !_callbacks.ContainsKey(data.Id)) continue;
+                                    object resp = null;
+                                    var argument = data.Response as IntArgument;
+                                    if (argument != null)
+                                    {
+                                        resp = argument.Data;
+                                    }
+                                    else if (data.Response is UIntArgument)
+                                    {
+                                        resp = ((UIntArgument)data.Response).Data;
+                                    }
+                                    else if (data.Response is StringArgument)
+                                    {
+                                        resp = ((StringArgument)data.Response).Data;
+                                    }
+                                    else if (data.Response is FloatArgument)
+                                    {
+                                        resp = ((FloatArgument)data.Response).Data;
+                                    }
+                                    else if (data.Response is BooleanArgument)
+                                    {
+                                        resp = ((BooleanArgument)data.Response).Data;
+                                    }
+                                    else if (data.Response is Vector3Argument)
+                                    {
+                                        var tmp = (Vector3Argument)data.Response;
+                                        resp = new Vector3()
                                         {
-                                            var reason = msg.ReadInt32();
-                                            var weapon = msg.ReadInt32();
+                                            X = tmp.X,
+                                            Y = tmp.Y,
+                                            Z = tmp.Z,
+                                        };
+                                    }
+                                    if (_callbacks.ContainsKey(data.Id))
+                                        _callbacks[data.Id].Invoke(resp);
+                                    _callbacks.Remove(data.Id);
+                                }
+                                    break;
+                                case PacketType.FileAcceptDeny:
+                                {
+                                    var fileId = msg.ReadInt32();
+                                    var hasBeenAccepted = msg.ReadBoolean();
+                                    var ourD = Downloads.FirstOrDefault(d => d.Parent == client);
+                                    if (ourD != null && ourD.Files.Count > 0 && ourD.Files[0].Id == fileId && !ourD.Files[0].Accepted)
+                                    {
+                                        if (!hasBeenAccepted)
+                                        {
+                                            ourD.Files.RemoveAt(0);
+                                        }
+                                        else
+                                        {
+                                            ourD.Files[0].Accepted = true;
+                                            
+                                        }
+                                    }
+                                }
+                                    break;
+                                case PacketType.ConnectionConfirmed:
+                                {
+                                    var state = msg.ReadBoolean();
+                                    if (!state)
+                                    {
+                                        var delta = new Delta_PlayerProperties {Name = client.Name};
+                                        UpdateEntityInfo(client.handle.Value, EntityType.Player, delta, client);
 
+                                        var mapObj = new ServerMap
+                                        {
+                                            World =
+                                                Program.ServerInstance.NetEntityHandler.NetToProp<WorldProperties>(1)
+                                        };
+
+                                        foreach (var pair in NetEntityHandler.ToCopy())
+                                        {
+                                            if (pair.Value.EntityType == (byte)EntityType.Vehicle)
+                                            {
+                                                mapObj.Vehicles.Add(pair.Key, (VehicleProperties)pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.Prop)
+                                            {
+                                                mapObj.Objects.Add(pair.Key, pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.Blip)
+                                            {
+                                                mapObj.Blips.Add(pair.Key, (BlipProperties)pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.Marker)
+                                            {
+                                                mapObj.Markers.Add(pair.Key, (MarkerProperties)pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.Pickup)
+                                            {
+                                                if (!((PickupProperties)pair.Value).PickedUp)
+                                                    mapObj.Pickups.Add(pair.Key, (PickupProperties)pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.Player)
+                                            {
+                                                mapObj.Players.Add(pair.Key, (PlayerProperties)pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.TextLabel)
+                                            {
+                                                mapObj.TextLabels.Add(pair.Key, (TextLabelProperties)pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.Ped)
+                                            {
+                                                mapObj.Peds.Add(pair.Key, (PedProperties)pair.Value);
+                                            }
+                                            else if (pair.Value.EntityType == (byte)EntityType.Particle)
+                                            {
+                                                mapObj.Particles.Add(pair.Key, (ParticleProperties)pair.Value);
+                                            }
+                                        }
+
+                                        // TODO: replace this filth
+                                        var r = new Random();
+
+                                        var mapData = new StreamedData
+                                        {
+                                            Id = r.Next(int.MaxValue),
+                                            Data = SerializeBinary(mapObj),
+                                            Type = FileType.Map
+                                        };
+
+                                        var downloader = new StreamingClient(client);
+                                        downloader.Files.Add(mapData);
+
+                                        if (!UseHTTPFileServer)
+                                        {
                                             lock (RunningResources)
                                             {
-                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                                foreach (var resource in RunningResources)
                                                 {
-                                                    en.InvokePlayerDeath(client, reason, weapon);
-                                                }));
-                                            }
-
-                                            PublicAPI.setEntityData(client, "__LAST_PLAYER_DEATH", PublicAPI.TickCount);
-                                        }
-                                        break;
-                                    case PacketType.PlayerRespawned:
-                                        {
-                                            PublicAPI.removeAllPlayerWeapons(client);
-                                            PublicAPI.stopPlayerAnimation(client);
-
-                                            lock (RunningResources)
-                                                RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
-                                                {
-                                                    en.InvokePlayerRespawn(client);
-                                                }));
-
-                                            PublicAPI.setEntityData(client, "__LAST_PLAYER_RESPAWN", PublicAPI.TickCount);
-                                        }
-                                        break;
-                                    case PacketType.UpdateEntityProperties:
-                                        {
-                                            if (TrustClientProperties)
-                                            {
-                                                var len = msg.ReadInt32();
-                                                var data =
-                                                    DeserializeBinary<UpdateEntity>(msg.ReadBytes(len)) as UpdateEntity;
-                                                if (data != null && data.Properties != null)
-                                                {
-                                                    var item =
-                                                        NetEntityHandler.NetToProp<EntityProperties>(data.NetHandle);
-
-                                                    if (item != null)
+                                                    foreach (var file in resource.Info.Files)
                                                     {
-                                                        if (data.Properties.SyncedProperties != null)
+                                                        var fileData = new StreamedData
                                                         {
-                                                            if (item.SyncedProperties == null)
-                                                                item.SyncedProperties =
-                                                                    new Dictionary<string, NativeArgument>();
-                                                            foreach (var pair in data.Properties.SyncedProperties)
-                                                            {
-                                                                if (pair.Value is LocalGamePlayerArgument)
-                                                                    item.SyncedProperties.Remove(pair.Key);
-                                                                else
+                                                            Id = r.Next(int.MaxValue),
+                                                            Type = FileType.Normal,
+                                                            Data = File.ReadAllBytes("resources" +
+                                                                                     Path.DirectorySeparatorChar +
+                                                                                     resource.DirectoryName +
+                                                                                     Path.DirectorySeparatorChar +
+                                                                                     file.Path),
+                                                            Name = file.Path,
+                                                            Resource = resource.DirectoryName,
+                                                            Hash = FileHashes.ContainsKey(resource.DirectoryName + "_" +
+                                                                                          file.Path)
+                                                                ? FileHashes[
+                                                                    resource.DirectoryName + "_" + file.Path]
+                                                                : null
+                                                        };
+                                                        downloader.Files.Add(fileData);
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        foreach (var script in GetAllClientsideScripts())
+                                        {
+                                            var scriptData = new StreamedData
+                                            {
+                                                Id = r.Next(int.MaxValue),
+                                                Data = Encoding.UTF8.GetBytes(script.Script),
+                                                Type = FileType.Script,
+                                                Resource = script.ResourceParent,
+                                                Hash = script.MD5Hash,
+                                                Name = script.Filename
+                                            };
+                                            downloader.Files.Add(scriptData);
+                                        }
+
+                                        var endStream = new StreamedData
+                                        {
+                                            Id = r.Next(int.MaxValue),
+                                            Data = new byte[] {0xDE, 0xAD, 0xF0, 0x0D},
+                                            Type = FileType.EndOfTransfer
+                                        };
+                                        downloader.Files.Add(endStream);
+
+
+                                        Downloads.Add(downloader);
+
+                                        lock (RunningResources)
+                                            RunningResources.ForEach(
+                                                fs => fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerConnected(client);
+                                                }));
+
+                                        Program.Output("Connection established: " + client.SocialClubName + " (" +
+                                                       client.Name + ") [" + client.NetConnection.RemoteEndPoint.Address + "]");
+                                    }
+                                    else
+                                    {
+                                        var length = msg.ReadInt32();
+                                        string[] resources = new string[length];
+
+                                        for (int i = 0; i < length; i++)
+                                        {
+                                            resources[i] = msg.ReadString();
+                                        }
+
+                                        lock (RunningResources)
+                                            RunningResources.ForEach(fs =>
+                                            {
+                                                if (Array.IndexOf(resources, fs.DirectoryName) == -1) return;
+
+                                                fs.Engines.ForEach(en =>
+                                                {
+                                                    en.InvokePlayerDownloadFinished(client);
+                                                });
+                                            });
+
+                                        StressTest.HasPlayers = true;
+                                    }
+
+                                    break;
+                                }
+                                case PacketType.PlayerKilled:
+                                {
+                                    var reason = msg.ReadInt32();
+                                    var weapon = msg.ReadInt32();
+
+                                    lock (RunningResources)
+                                    {
+                                        RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                        {
+                                            en.InvokePlayerDeath(client, reason, weapon);
+                                        }));
+                                    }
+
+                                    PublicAPI.setEntityData(client, "__LAST_PLAYER_DEATH", PublicAPI.TickCount);
+                                }
+                                    break;
+                                case PacketType.PlayerRespawned:
+                                    {
+                                        PublicAPI.removeAllPlayerWeapons(client);
+                                        PublicAPI.stopPlayerAnimation(client);
+
+                                        lock (RunningResources)
+                                        {
+                                            RunningResources.ForEach(fs => fs.Engines.ForEach(en =>
+                                            {
+                                                en.InvokePlayerRespawn(client);
+                                            }));
+                                        }
+
+                                        PublicAPI.setEntityData(client, "__LAST_PLAYER_RESPAWN", PublicAPI.TickCount);
+                                    }
+                                    break;
+                                case PacketType.UpdateEntityProperties:
+                                {
+                                    if (TrustClientProperties)
+                                    {
+                                        var len = msg.ReadInt32();
+                                        var data = DeserializeBinary<UpdateEntity>(msg.ReadBytes(len)) as UpdateEntity;
+                                        if (data?.Properties != null)
+                                        {
+                                            var item = NetEntityHandler.NetToProp<EntityProperties>(data.NetHandle);
+
+                                            if (item != null)
+                                            {
+                                                if (data.Properties.SyncedProperties != null)
+                                                {
+                                                    if (item.SyncedProperties == null)
+                                                        item.SyncedProperties =
+                                                            new Dictionary<string, NativeArgument>();
+                                                    foreach (var pair in data.Properties.SyncedProperties)
+                                                    {
+                                                        if (pair.Value is LocalGamePlayerArgument)
+                                                            item.SyncedProperties.Remove(pair.Key);
+                                                        else
+                                                        {
+                                                            object oldValue =
+                                                                DecodeArgumentListPure(
+                                                                    item.SyncedProperties.Get(pair.Key));
+                                                            item.SyncedProperties.Set(pair.Key, pair.Value);
+                                                            var ent = new NetHandle(data.NetHandle);
+                                                            lock (RunningResources)
                                                                 {
-                                                                    object oldValue =
-                                                                        DecodeArgumentListPure(
-                                                                            item.SyncedProperties.Get(pair.Key));
-                                                                    item.SyncedProperties.Set(pair.Key, pair.Value);
-                                                                    NetHandle ent = new NetHandle(data.NetHandle);
-                                                                    lock (RunningResources)
-                                                                        RunningResources.ForEach(
-                                                                            fs => fs.Engines.ForEach(en =>
-                                                                            {
-                                                                                en.InvokeEntityDataChange(ent, pair.Key,
-                                                                                    oldValue);
-                                                                            }));
+                                                                    RunningResources.ForEach(
+                                                                    fs => fs.Engines.ForEach(en =>
+                                                                    {
+                                                                        en.InvokeEntityDataChange(ent, pair.Key,
+                                                                            oldValue);
+                                                                    }));
                                                                 }
                                                             }
-                                                        }
                                                     }
-
-                                                    UpdateEntityInfo(data.NetHandle, (EntityType)data.EntityType,
-                                                        data.Properties, client);
                                                 }
                                             }
 
+                                            UpdateEntityInfo(data.NetHandle, (EntityType)data.EntityType,
+                                                data.Properties, client);
                                         }
-                                        break;
+                                    }
+
                                 }
-                                break;
-                            default:
-                                if (LogLevel > 0) Program.Output("WARN: Unhandled type: " + msg.MessageType);
-                                break;
-                        }
-                    }
-                    catch (InvalidCastException)
-                    {
-                        Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address.ToString() + "], Message type: " + msg.MessageType + " |" + " Packet type: " + packetType + " |" + " Exception: InvalidCastException");
-                        if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Program.Output("EXCEPTION IN MESSAGEPUMP, MSG TYPE: " + msg.MessageType + " DATA TYPE: " + packetType);
-                        // Program.Output(ex.ToString());
-                        if (LogLevel > 0)
-                        {
-                            Program.Output("--> Exception in the Netcode.");
-                            Program.Output("--> Message type: " + msg.MessageType + " |" + " Packet type: " + packetType);
-                            Program.Output("\n===\n" + ex.ToString() + "\n===");
-                        }
-                    }
-                    finally
-                    {
-                        Server.Recycle(msg);
+                                    break;
+                                
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+                            break;
+                        case NetIncomingMessageType.Error:
+                            break;
+                        case NetIncomingMessageType.Receipt:
+                            break;
+                        case NetIncomingMessageType.NatIntroductionSuccess:
+                            break;
+                        default:
+                            if (LogLevel > 0) Program.Output("WARN: Unhandled type: " + msg.MessageType);
+                            break;
                     }
                 }
+                catch (InvalidCastException)
+                {
+                    Program.ToFile("attack.log", "Suspected connection exploit [" + client.NetConnection.RemoteEndPoint.Address + "], Message type: " + msg.MessageType + " |" + " Packet type: " + packetType + " |" + " Exception: InvalidCastException");
+                    if (!connBlock.Contains(client.NetConnection.RemoteEndPoint.Address)) connBlock.Add(client.NetConnection.RemoteEndPoint.Address);
+                }
+                catch (Exception ex)
+                {
+                    // Program.Output("EXCEPTION IN MESSAGEPUMP, MSG TYPE: " + msg.MessageType + " DATA TYPE: " + packetType);
+                    // Program.Output(ex.ToString());
+                    if (LogLevel > 0)
+                    {
+                        Program.Output("--> Exception in the Netcode.");
+                        Program.Output("--> Message type: " + msg.MessageType + " |" + " Packet type: " + packetType);
+                        Program.Output("\n===\n" + ex + "\n===");
+                    }
+                }
+                finally
+                {
+                    Server.Recycle(msg);
+                }
+            }
         }
 
         private void UpdateAttachables(int root)
         {
             var prop = NetEntityHandler.NetToProp<EntityProperties>(root);
 
-            if (prop == null || prop.Attachables == null) return;
+            if (prop?.Attachables == null) return;
 
             foreach (var attachable in prop.Attachables)
             {
@@ -2863,15 +2828,17 @@ namespace GTANResource
 
                 try
                 {
-                    for (int i = RunningResources.Count - 1; i >= 0; i--)
+                    lock (RunningResources)
                     {
-                        StopResource(RunningResources[i].DirectoryName);
+                        for (int i = RunningResources.Count - 1; i >= 0; i--)
+                        {
+                            StopResource(RunningResources[i].DirectoryName);
+                        }
                     }
 
                     for (int i = Clients.Count - 1; i >= 0; i--)
                     {
-                        if (!Clients[i].Fake)
-                            Clients[i].NetConnection.Disconnect("Server is shutting down");
+                        if (!Clients[i].Fake) Clients[i].NetConnection.Disconnect("Server shutdown.");
                     }
 
                     ColShapeManager.Shutdown();
@@ -2890,50 +2857,46 @@ namespace GTANResource
                 {
                     if (Downloads[i].Files.Count > 0)
                     {
-                        if (Downloads[i].Parent.NetConnection.CanSendImmediately(NetDeliveryMethod.ReliableOrdered,
-                            (int)ConnectionChannel.FileTransfer))
+                        if (!Downloads[i].Parent.NetConnection.CanSendImmediately(NetDeliveryMethod.ReliableOrdered, (int) ConnectionChannel.FileTransfer)) continue;
+                        if (!Downloads[i].Files[0].HasStarted)
                         {
-                            if (!Downloads[i].Files[0].HasStarted)
+                            var notifyObj = new DataDownloadStart
                             {
-                                var notifyObj = new DataDownloadStart();
-                                notifyObj.FileType = (byte)Downloads[i].Files[0].Type;
-                                notifyObj.ResourceParent = Downloads[i].Files[0].Resource;
-                                notifyObj.FileName = Downloads[i].Files[0].Name;
-                                notifyObj.Id = Downloads[i].Files[0].Id;
-                                notifyObj.Length = Downloads[i].Files[0].Data.Length;
-                                notifyObj.Md5Hash = Downloads[i].Files[0].Hash;
-                                SendToClient(Downloads[i].Parent, notifyObj, PacketType.FileTransferRequest, true, ConnectionChannel.FileTransfer);
-                                Downloads[i].Files[0].HasStarted = true;
-                            }
-
-                            if (!Downloads[i].Files[0].Accepted) continue;
-
-                            var remaining = Downloads[i].Files[0].Data.Length - Downloads[i].Files[0].BytesSent;
-                            int sendBytes = (remaining > Downloads[i].ChunkSize
-                                ? Downloads[i].ChunkSize
-                                : (int) remaining);
-
-                            var updateObj = Server.CreateMessage();
-                            updateObj.Write((byte) PacketType.FileTransferTick);
-                            updateObj.Write(Downloads[i].Files[0].Id);
-                            updateObj.Write(sendBytes);
-                            updateObj.Write(Downloads[i].Files[0].Data, (int)Downloads[i].Files[0].BytesSent, sendBytes);
-                            Downloads[i].Files[0].BytesSent += sendBytes;
-
-                            Server.SendMessage(updateObj, Downloads[i].Parent.NetConnection,
-                                NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
-
-                            if (remaining - sendBytes <= 0)
-                            {
-                                var endObject = Server.CreateMessage();
-                                endObject.Write((byte)PacketType.FileTransferComplete);
-                                endObject.Write(Downloads[i].Files[0].Id);
-
-                                Server.SendMessage(endObject, Downloads[i].Parent.NetConnection,
-                                    NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
-                                Downloads[i].Files.RemoveAt(0);
-                            }
+                                FileType = (byte) Downloads[i].Files[0].Type,
+                                ResourceParent = Downloads[i].Files[0].Resource,
+                                FileName = Downloads[i].Files[0].Name,
+                                Id = Downloads[i].Files[0].Id,
+                                Length = Downloads[i].Files[0].Data.Length,
+                                Md5Hash = Downloads[i].Files[0].Hash
+                            };
+                            SendToClient(Downloads[i].Parent, notifyObj, PacketType.FileTransferRequest, true, ConnectionChannel.FileTransfer);
+                            Downloads[i].Files[0].HasStarted = true;
                         }
+
+                        if (!Downloads[i].Files[0].Accepted) continue;
+
+                        var remaining = Downloads[i].Files[0].Data.Length - Downloads[i].Files[0].BytesSent;
+                        var sendBytes = (remaining > Downloads[i].ChunkSize
+                            ? Downloads[i].ChunkSize
+                            : (int) remaining);
+
+                        var updateObj = Server.CreateMessage();
+                        updateObj.Write((byte) PacketType.FileTransferTick);
+                        updateObj.Write(Downloads[i].Files[0].Id);
+                        updateObj.Write(sendBytes);
+                        updateObj.Write(Downloads[i].Files[0].Data, (int)Downloads[i].Files[0].BytesSent, sendBytes);
+                        Downloads[i].Files[0].BytesSent += sendBytes;
+
+                        Server.SendMessage(updateObj, Downloads[i].Parent.NetConnection, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
+
+                        if (remaining - sendBytes > 0) continue;
+
+                        var endObject = Server.CreateMessage();
+                        endObject.Write((byte)PacketType.FileTransferComplete);
+                        endObject.Write(Downloads[i].Files[0].Id);
+
+                        Server.SendMessage(endObject, Downloads[i].Parent.NetConnection, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.FileTransfer);
+                        Downloads[i].Files.RemoveAt(0);
                     }
                     else
                     {
@@ -2965,11 +2928,9 @@ namespace GTANResource
             {
                 for (int i = RunningResources.Count - 1; i >= 0; i--)
                 {
-                    if (RunningResources[i].Engines.Any(en => en.HasTerminated))
-                    {
-                        Program.Output("TERMINATING RESOURCE " + RunningResources[i].DirectoryName + " BECAUSE AN ENGINE HAS BEEN TERMINATED.");
-                        RunningResources.RemoveAt(i);
-                    }
+                    if (!RunningResources[i].Engines.Any(en => en.HasTerminated)) continue;
+                    Program.Output("TERMINATING RESOURCE " + RunningResources[i].DirectoryName + " BECAUSE AN ENGINE HAS BEEN TERMINATED.");
+                    RunningResources.RemoveAt(i);
                 }
             }
             lock (queue)
@@ -2984,15 +2945,15 @@ namespace GTANResource
             }
             lock (Clients)
             {
-                for (int i = Clients.Count - 1; i >= 0; i--) // Kick AFK players
+                for (var i = Clients.Count - 1; i >= 0; i--) // Kick AFK players
                 {
-                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 70)
+                    //if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 70)
+                    //{
+                    //    Clients.Remove(Clients[i]);
+                    //}
+                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 10)
                     {
-                        Clients.Remove(Clients[i]);
-                    }
-                    else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 5)
-                    {
-                        Clients[i].NetConnection.Disconnect("Timeout");
+                        Clients[i].NetConnection.Disconnect("Timed out.");
                         //DisconnectClient(Clients[i], "Timeout");
                     }
 
@@ -3090,7 +3051,10 @@ namespace GTANResource
                         if (!((PickupProperties) NetEntityHandler.ToDict()[pickupId]).PickedUp)
                         {
                             ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).PickedUp = true;
-                            RunningResources.ForEach(res => res.Engines.ForEach(en => en.InvokePlayerPickup(sender, new NetHandle(pickupId))));
+                            lock (RunningResources)
+                            {
+                                RunningResources.ForEach(res => res.Engines.ForEach(en => en.InvokePlayerPickup(sender, new NetHandle(pickupId))));
+                            }
                             if (((PickupProperties)NetEntityHandler.ToDict()[pickupId]).RespawnTime > 0)
                                 PickupManager.Add(pickupId);
 
@@ -3120,15 +3084,16 @@ namespace GTANResource
             }
         }
 
-        public IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
+        public static IEnumerable<object> DecodeArgumentList(params NativeArgument[] args)
         {
             var list = new List<object>();
 
             foreach (var arg in args)
             {
-                if (arg is IntArgument)
+                var argument = arg as IntArgument;
+                if (argument != null)
                 {
-                    list.Add(((IntArgument)arg).Data);
+                    list.Add(argument.Data);
                 }
                 else if (arg is UIntArgument)
                 {
@@ -3160,15 +3125,16 @@ namespace GTANResource
             return list;
         }
 
-        public IEnumerable<object> DecodeArgumentListPure(params NativeArgument[] args)
+        public static IEnumerable<object> DecodeArgumentListPure(params NativeArgument[] args)
         {
             var list = new List<object>();
 
             foreach (var arg in args)
             {
-                if (arg is IntArgument)
+                var argument = arg as IntArgument;
+                if (argument != null)
                 {
-                    list.Add(((IntArgument)arg).Data);
+                    list.Add(argument.Data);
                 }
                 else if (arg is UIntArgument)
                 {
@@ -3197,14 +3163,10 @@ namespace GTANResource
                 }
                 else if (arg is ListArgument)
                 {
-                    List<object> output = new List<object>();
+                    var output = new List<object>();
                     var larg = (ListArgument)arg;
                     output.AddRange(DecodeArgumentListPure(larg.Data.ToArray()));
                     list.Add(output);
-                }
-                else if (args == null)
-                {
-                    list.Add(null);
                 }
             }
 
@@ -3214,13 +3176,11 @@ namespace GTANResource
         public void SendToClient(Client c, object newData, PacketType packetType, bool important, ConnectionChannel channel)
         {
             var data = SerializeBinary(newData);
-            NetOutgoingMessage msg = Server.CreateMessage();
+            var msg = Server.CreateMessage();
             msg.Write((byte)packetType);
             msg.Write(data.Length);
             msg.Write(data);
-            Server.SendMessage(msg, c.NetConnection,
-                important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.UnreliableSequenced,
-                (int)channel);
+            Server.SendMessage(msg, c.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.UnreliableSequenced, (int)channel);
         }
 
         public void SendToAll(object newData, PacketType packetType, bool important, ConnectionChannel channel)
@@ -3230,7 +3190,7 @@ namespace GTANResource
             {
                 if (client.Fake) continue;
                 var data = SerializeBinary(newData);
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
                 msg.Write((byte)packetType);
                 msg.Write(data.Length);
                 msg.Write(data);
@@ -3247,7 +3207,7 @@ namespace GTANResource
             {
                 if (client == exclude || client.Fake) continue;
                 var data = SerializeBinary(newData);
-                NetOutgoingMessage msg = Server.CreateMessage();
+                var msg = Server.CreateMessage();
                 msg.Write((byte)packetType);
                 msg.Write(data.Length);
                 msg.Write(data);
@@ -3273,7 +3233,7 @@ namespace GTANResource
             }
         }
 
-        public byte[] SerializeBinary(object data)
+        public static byte[] SerializeBinary(object data)
         {
             using (var stream = new MemoryStream())
             {
@@ -3287,7 +3247,7 @@ namespace GTANResource
             //lock (Clients) return (byte)(((Clients.IndexOf(conn)) % 31) + 1);
         //}
 
-        public NativeArgument ParseReturnType(Type t)
+        public static NativeArgument ParseReturnType(Type t)
         {
             if (t == typeof(int))
             {
@@ -3323,7 +3283,7 @@ namespace GTANResource
             }
         }
 
-        public List<NativeArgument> ParseNativeArguments(params object[] args)
+        public static List<NativeArgument> ParseNativeArguments(params object[] args)
         {
             var list = new List<NativeArgument>();
             foreach (var o in args)
@@ -3398,7 +3358,7 @@ namespace GTANResource
                 {
                     var larg = new ListArgument();
                     var l = ((IList) o);
-                    object[] array = new object[l.Count];
+                    var array = new object[l.Count];
                     l.CopyTo(array, 0);
                     larg.Data = new List<NativeArgument>(ParseNativeArguments(array));
                     list.Add(larg);
@@ -3414,10 +3374,12 @@ namespace GTANResource
 
         public void SendDeleteObject(Client player, Vector3 pos, float radius, int modelHash)
         {
-            var obj = new ObjectData();
-            obj.Position = pos;
-            obj.Radius = radius;
-            obj.modelHash = modelHash;
+            var obj = new ObjectData
+            {
+                Position = pos,
+                Radius = radius,
+                modelHash = modelHash
+            };
             var bin = SerializeBinary(obj);
 
             var msg = Server.CreateMessage();
@@ -3429,10 +3391,12 @@ namespace GTANResource
 
         public void SendNativeCallToPlayer(Client player, bool safe, ulong hash, params object[] arguments)
         {
-            var obj = new NativeData();
-            obj.Hash = hash;
-            obj.Internal = safe;
-            obj.Arguments = ParseNativeArguments(arguments);
+            var obj = new NativeData
+            {
+                Hash = hash,
+                Internal = safe,
+                Arguments = ParseNativeArguments(arguments)
+            };
             var bin = SerializeBinary(obj);
 
             var msg = Server.CreateMessage();
@@ -3444,12 +3408,14 @@ namespace GTANResource
 
         public void SendNativeCallToAllPlayers(bool safe, ulong hash, params object[] arguments)
         {
-            var obj = new NativeData();
-            obj.Hash = hash;
-            obj.Internal = safe;
-            obj.Arguments = ParseNativeArguments(arguments);
-            obj.ReturnType = null;
-            obj.Id = 0;
+            var obj = new NativeData
+            {
+                Hash = hash,
+                Internal = safe,
+                Arguments = ParseNativeArguments(arguments),
+                ReturnType = null,
+                Id = 0
+            };
 
             var bin = SerializeBinary(obj);
 
@@ -3475,7 +3441,7 @@ namespace GTANResource
                 output = o;
             }, args);
 
-            DateTime start = DateTime.Now;
+            var start = DateTime.Now;
             while (output == null && DateTime.Now.Subtract(start).Milliseconds < 10000)
             {}
             
@@ -3486,12 +3452,14 @@ namespace GTANResource
         public void GetNativeCallFromPlayer(Client player, bool safe, uint salt, ulong hash, NativeArgument returnType, Action<object> callback,
             params object[] arguments)
         {
-            var obj = new NativeData();
-            obj.Hash = hash;
-            obj.ReturnType = returnType;
-            obj.Id = salt;
-            obj.Arguments = ParseNativeArguments(arguments);
-            obj.Internal = safe;
+            var obj = new NativeData
+            {
+                Hash = hash,
+                ReturnType = returnType,
+                Id = salt,
+                Arguments = ParseNativeArguments(arguments),
+                Internal = safe
+            };
 
             var bin = SerializeBinary(obj);
 
@@ -3512,12 +3480,14 @@ namespace GTANResource
 
             var r = new Random();
 
-            var mapData = new StreamedData();
-            mapData.Id = r.Next(int.MaxValue);
-            mapData.Data = bytes;
-            mapData.Type = FileType.CustomData;
-            mapData.Resource = resourceSource;
-            mapData.Name = "data";
+            var mapData = new StreamedData
+            {
+                Id = r.Next(int.MaxValue),
+                Data = bytes,
+                Type = FileType.CustomData,
+                Resource = resourceSource,
+                Name = "data"
+            };
 
             lock (Downloads)
             {
@@ -3542,16 +3512,17 @@ namespace GTANResource
 
             if (prop == null) return;
 
-            var mov = new Movement();
-            mov.ServerStartTime = Program.GetTicks();
-            mov.Duration = duration;
-            mov.StartVector = prop.Position;
-            mov.EndVector = target;
-            mov.Start = 0;
+            var mov = new Movement
+            {
+                ServerStartTime = Program.GetTicks(),
+                Duration = duration,
+                StartVector = prop.Position,
+                EndVector = target,
+                Start = 0
+            };
             prop.PositionMovement = mov;
 
-            var delta = new Delta_EntityProperties();
-            delta.PositionMovement = mov;
+            var delta = new Delta_EntityProperties {PositionMovement = mov};
             UpdateEntityInfo(entity, EntityType.Prop, delta);
         }
 
@@ -3561,16 +3532,17 @@ namespace GTANResource
 
             if (prop == null) return;
 
-            var mov = new Movement();
-            mov.ServerStartTime = Program.GetTicks();
-            mov.Duration = duration;
-            mov.StartVector = prop.Position;
-            mov.EndVector = target;
-            mov.Start = 0;
+            var mov = new Movement
+            {
+                ServerStartTime = Program.GetTicks(),
+                Duration = duration,
+                StartVector = prop.Position,
+                EndVector = target,
+                Start = 0
+            };
             prop.RotationMovement = mov;
 
-            var delta = new Delta_EntityProperties();
-            delta.RotationMovement = mov;
+            var delta = new Delta_EntityProperties {RotationMovement = mov};
             UpdateEntityInfo(entity, EntityType.Prop, delta);
         }
 
@@ -3584,13 +3556,14 @@ namespace GTANResource
 
             var nativeArg = ParseNativeArguments(value).Single();
 
-            object oldValue = DecodeArgumentListPure(prop.SyncedProperties.Get(key)).FirstOrDefault();
+            var oldValue = DecodeArgumentListPure(prop.SyncedProperties.Get(key)).FirstOrDefault();
 
             prop.SyncedProperties.Set(key, nativeArg);
 
-            var delta = new Delta_EntityProperties();
-            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
-            delta.SyncedProperties.Add(key, nativeArg);
+            var delta = new Delta_EntityProperties
+            {
+                SyncedProperties = new Dictionary<string, NativeArgument> {{key, nativeArg}}
+            };
             UpdateEntityInfo(entity, world ? EntityType.World : EntityType.Prop, delta);
 
             var ent = new NetHandle(entity);
@@ -3614,9 +3587,10 @@ namespace GTANResource
 
             prop.SyncedProperties.Remove(key);
 
-            var delta = new Delta_EntityProperties();
-            delta.SyncedProperties = new Dictionary<string, NativeArgument>();
-            delta.SyncedProperties.Add(key, new LocalGamePlayerArgument());
+            var delta = new Delta_EntityProperties
+            {
+                SyncedProperties = new Dictionary<string, NativeArgument> {{key, new LocalGamePlayerArgument()}}
+            };
             UpdateEntityInfo(entity, world ? EntityType.World : EntityType.Prop, delta);
         }
 
@@ -3661,9 +3635,11 @@ namespace GTANResource
                 ((PlayerProperties) NetEntityHandler.ToDict()[target.handle.Value]).Team = newTeam;
             }
 
-            var obj = new SyncEvent();
-            obj.EventType = (byte) ServerEventType.PlayerTeamChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, newTeam);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerTeamChange,
+                Arguments = ParseNativeArguments(target.handle.Value, newTeam)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3675,18 +3651,22 @@ namespace GTANResource
                 ((PlayerProperties)NetEntityHandler.ToDict()[target.handle.Value]).BlipColor = newColor;
             }
 
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerBlipColorChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, newColor);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerBlipColorChange,
+                Arguments = ParseNativeArguments(target.handle.Value, newColor)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void ChangePlayerBlipColorForPlayer(Client target, int newColor, Client forPlayer)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerBlipColorChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, newColor);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerBlipColorChange,
+                Arguments = ParseNativeArguments(target.handle.Value, newColor)
+            };
 
             SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3698,18 +3678,22 @@ namespace GTANResource
                 ((PlayerProperties)NetEntityHandler.ToDict()[target.handle.Value]).BlipSprite = newSprite;
             }
 
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerBlipSpriteChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, newSprite);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerBlipSpriteChange,
+                Arguments = ParseNativeArguments(target.handle.Value, newSprite)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void ChangePlayerBlipSpriteForPlayer(Client target, int newSprite, Client forPlayer)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerBlipSpriteChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, newSprite);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerBlipSpriteChange,
+                Arguments = ParseNativeArguments(target.handle.Value, newSprite)
+            };
 
             SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
@@ -3721,89 +3705,109 @@ namespace GTANResource
                 ((PlayerProperties)NetEntityHandler.ToDict()[target.handle.Value]).BlipAlpha = (byte)newAlpha;
             }
 
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, newAlpha);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerBlipAlphaChange,
+                Arguments = ParseNativeArguments(target.handle.Value, newAlpha)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void ChangePlayerBlipAlphaForPlayer(Client target, int newAlpha, Client forPlayer)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerBlipAlphaChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, newAlpha);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerBlipAlphaChange,
+                Arguments = ParseNativeArguments(target.handle.Value, newAlpha)
+            };
 
             SendToClient(forPlayer, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void SendServerEvent(ServerEventType type, params object[] arg)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)type;
-            obj.Arguments = ParseNativeArguments(arg);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) type,
+                Arguments = ParseNativeArguments(arg)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void SendServerEventToPlayer(Client target, ServerEventType type, params object[] arg)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)type;
-            obj.Arguments = ParseNativeArguments(arg);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) type,
+                Arguments = ParseNativeArguments(arg)
+            };
 
             SendToClient(target, obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void DetachEntity(int nethandle, bool collision)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.EntityDetachment;
-            obj.Arguments = ParseNativeArguments(nethandle, collision);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.EntityDetachment,
+                Arguments = ParseNativeArguments(nethandle, collision)
+            };
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void SetPlayerOnSpectate(Client target, bool spectating)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, spectating);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerSpectatorChange,
+                Arguments = ParseNativeArguments(target.handle.Value, spectating)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void SetPlayerOnSpectatePlayer(Client spectator, Client target)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerSpectatorChange;
-            obj.Arguments = ParseNativeArguments(spectator.handle.Value, true, target.handle.Value);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerSpectatorChange,
+                Arguments = ParseNativeArguments(spectator.handle.Value, true, target.handle.Value)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void PlayCustomPlayerAnimation(Client target, int flag, string animDict, string animName)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerAnimationStart;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, flag, animDict, animName);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerAnimationStart,
+                Arguments = ParseNativeArguments(target.handle.Value, flag, animDict, animName)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void PlayCustomPlayerAnimationStop(Client target)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerAnimationStop;
-            obj.Arguments = ParseNativeArguments(target.handle.Value);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerAnimationStop,
+                Arguments = ParseNativeArguments(target.handle.Value)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }
 
         public void PlayCustomPlayerAnimationStop(Client target, string animDict, string animName)
         {
-            var obj = new SyncEvent();
-            obj.EventType = (byte)ServerEventType.PlayerAnimationStop;
-            obj.Arguments = ParseNativeArguments(target.handle.Value, animDict, animName);
+            var obj = new SyncEvent
+            {
+                EventType = (byte) ServerEventType.PlayerAnimationStop,
+                Arguments = ParseNativeArguments(target.handle.Value, animDict, animName)
+            };
 
             SendToAll(obj, PacketType.ServerEvent, true, ConnectionChannel.EntityBackend);
         }

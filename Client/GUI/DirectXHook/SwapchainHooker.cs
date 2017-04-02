@@ -1,5 +1,6 @@
 ﻿using System;
 using GTA;
+using Xilium.CefGlue;
 
 namespace GTANetwork.GUI.DirectXHook
 {
@@ -9,12 +10,11 @@ namespace GTANetwork.GUI.DirectXHook
         {
             if (CefUtil.DISABLE_CEF) return;
 
-            bool hooked = false;
+            var hooked = false;
 
             Present += (sender, args) =>
             {
-                if (CEFManager.DirectXHook != null && !Main.MainMenu.Visible)
-                    CEFManager.DirectXHook.ManualPresentHook((IntPtr) sender);
+                if (CEFManager.Draw && !Main.MainMenu.Visible && !Main._mainWarning.Visible && CEFManager.DirectXHook != null) CEFManager.DirectXHook.ManualPresentHook((IntPtr) sender);
             };
 
             Tick += (sender, args) =>

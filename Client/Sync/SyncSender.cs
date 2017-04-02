@@ -88,21 +88,21 @@ namespace GTANetwork.Streamer
                                 LogManager.LogException(ex, "SENDPLAYERDATA");
                             }
 
-                            Main._bytesSent += lightBin.Length;
-                            Main._messagesSent++;
+                            Main.BytesSent += lightBin.Length;
+                            Main.MessagesSent++;
                         }
 
                         lastPedData = true;
 
-                        lock (Main._averagePacketSize)
+                        lock (Main.AveragePacketSize)
                         {
-                            Main._averagePacketSize.Add(bin.Length);
-                            if (Main._averagePacketSize.Count > 10)
-                                Main._averagePacketSize.RemoveAt(0);
+                            Main.AveragePacketSize.Add(bin.Length);
+                            if (Main.AveragePacketSize.Count > 10)
+                                Main.AveragePacketSize.RemoveAt(0);
                         }
 
-                        Main._bytesSent += bin.Length;
-                        Main._messagesSent++;
+                        Main.BytesSent += bin.Length;
+                        Main.MessagesSent++;
                     }
                     else
                     {
@@ -146,21 +146,21 @@ namespace GTANetwork.Streamer
                                 LogManager.LogException(ex, "SENDPLAYERDATA");
                             }
 
-                            Main._bytesSent += lightBin.Length;
-                            Main._messagesSent++;
+                            Main.BytesSent += lightBin.Length;
+                            Main.MessagesSent++;
                         }
 
                         lastPedData = false;
 
-                        lock (Main._averagePacketSize)
+                        lock (Main.AveragePacketSize)
                         {
-                            Main._averagePacketSize.Add(bin.Length);
-                            if (Main._averagePacketSize.Count > 10)
-                                Main._averagePacketSize.RemoveAt(0);
+                            Main.AveragePacketSize.Add(bin.Length);
+                            if (Main.AveragePacketSize.Count > 10)
+                                Main.AveragePacketSize.RemoveAt(0);
                         }
 
-                        Main._bytesSent += bin.Length;
-                        Main._messagesSent++;
+                        Main.BytesSent += bin.Length;
+                        Main.MessagesSent++;
                     }
                 }
                 catch (Exception ex)
@@ -480,8 +480,8 @@ namespace GTANetwork.Streamer
 
                     Main.Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.BulletSync);
 
-                    Main._bytesSent += bin.Length;
-                    Main._messagesSent++;
+                    Main.BytesSent += bin.Length;
+                    Main.MessagesSent++;
                 }
                 else if (!sendShootingPacket && _lastShooting && DateTime.Now.Subtract(_lastShot).TotalMilliseconds > 50)
                 {
@@ -507,8 +507,8 @@ namespace GTANetwork.Streamer
 
                     Main.Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.BulletSync);
 
-                    Main._bytesSent += bin.Length;
-                    Main._messagesSent++;
+                    Main.BytesSent += bin.Length;
+                    Main.MessagesSent++;
                 }
             }
         }

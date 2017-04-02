@@ -45,10 +45,7 @@ namespace GTANetworkServer
 
         public NetHandle handle { get; set; }
 
-        internal PlayerProperties Properties
-        {
-            get { return Program.ServerInstance.NetEntityHandler.ToDict()[handle.Value] as PlayerProperties; }
-        }
+        internal PlayerProperties Properties => Program.ServerInstance.NetEntityHandler.ToDict()[handle.Value] as PlayerProperties;
 
         internal void CommitConnection()
         {
@@ -73,14 +70,11 @@ namespace GTANetworkServer
         public override bool Equals(object obj)
         {
             Client target;
-            if ((target = obj as Client) != null)
-            {
-                if (NetConnection == null || target.NetConnection == null)
-                    return handle == target.handle;
+            if ((target = obj as Client) == null) return false;
+            if (NetConnection == null || target.NetConnection == null)
+                return handle == target.handle;
 
-                return NetConnection.RemoteUniqueIdentifier == target.NetConnection.RemoteUniqueIdentifier;
-            }
-            return false;
+            return NetConnection.RemoteUniqueIdentifier == target.NetConnection.RemoteUniqueIdentifier;
         }
 
         public static bool operator ==(Client left, Client right)

@@ -211,6 +211,7 @@ namespace GTANetwork
             CanOpenChatbox = true;
             DisplayWastedMessage = true;
             _password = string.Empty;
+            CEFManager.Draw = false;
 
 
             UIColor = Color.White;
@@ -294,60 +295,66 @@ namespace GTANetwork
             return range.Except(portsInUse).FirstOrDefault();
         }
 
-        public void HandleUnoccupiedVehicleSync(VehicleData data)
+        public static void HandleUnoccupiedVehicleSync(VehicleData data)
         {
-            var car = NetEntityHandler.NetToStreamedItem(data.VehicleHandle.Value) as RemoteVehicle;
-
-            if (car != null)
+            if (data.VehicleHandle != null)
             {
-                car.Health = data.VehicleHealth.Value;
-                car.IsDead = (data.Flag & (int)VehicleDataFlags.VehicleDead) != 0;
+                var car = NetEntityHandler.NetToStreamedItem(data.VehicleHandle.Value) as RemoteVehicle;
 
-                if (car.DamageModel == null) car.DamageModel = new VehicleDamageModel();
-                car.DamageModel.BrokenWindows = data.DamageModel.BrokenWindows;
-                car.DamageModel.BrokenDoors = data.DamageModel.BrokenDoors;
-
-                car.Tires = data.PlayerHealth.Value;
-
-                if (car.StreamedIn)
+                if (car != null)
                 {
-                    var ent = NetEntityHandler.NetToEntity(data.VehicleHandle.Value);
+                    if (data.VehicleHealth != null) car.Health = data.VehicleHealth.Value;
+                    car.IsDead = (data.Flag & (int)VehicleDataFlags.VehicleDead) != 0;
 
-                    if (ent != null)
+                    if (car.DamageModel == null) car.DamageModel = new VehicleDamageModel();
+                    car.DamageModel.BrokenWindows = data.DamageModel.BrokenWindows;
+                    car.DamageModel.BrokenDoors = data.DamageModel.BrokenDoors;
+
+                    if (data.PlayerHealth != null)
                     {
-                        if (data.Velocity != null)
+                        car.Tires = data.PlayerHealth.Value;
+
+                        if (car.StreamedIn)
                         {
-                            VehicleSyncManager.Interpolate(data.VehicleHandle.Value, ent.Handle, data.Position.ToVector(), data.Velocity, data.Quaternion.ToVector());
+                            var ent = NetEntityHandler.NetToEntity(data.VehicleHandle.Value);
+
+                            if (ent != null)
+                            {
+                                if (data.Velocity != null)
+                                {
+                                    VehicleSyncManager.Interpolate(data.VehicleHandle.Value, ent.Handle, data.Position.ToVector(), data.Velocity, data.Quaternion.ToVector());
+                                }
+                                else
+                                {
+                                    car.Position = data.Position;
+                                    car.Rotation = data.Quaternion;
+                                }
+
+                                var veh = new Vehicle(ent.Handle);
+
+                                veh.SetVehicleDamageModel(car.DamageModel);
+
+                                veh.EngineHealth = car.Health;
+                                if (!ent.IsDead && car.IsDead)
+                                {
+                                    ent.IsInvincible = false;
+                                    veh.Explode();
+                                }
+
+                                for (int i = 0; i < 8; i++)
+                                {
+                                    bool busted = (data.PlayerHealth.Value & (byte)(1 << i)) != 0;
+                                    if (busted && !veh.IsTireBurst(i)) veh.Wheels[i].Burst();
+                                    else if (!busted && veh.IsTireBurst(i)) veh.Wheels[i].Fix();
+                                }
+                            }
                         }
                         else
                         {
                             car.Position = data.Position;
                             car.Rotation = data.Quaternion;
                         }
-
-                        var veh = new Vehicle(ent.Handle);
-
-                        veh.SetVehicleDamageModel(car.DamageModel);
-
-                        veh.EngineHealth = car.Health;
-                        if (!ent.IsDead && car.IsDead)
-                        {
-                            ent.IsInvincible = false;
-                            veh.Explode();
-                        }
-
-                        for (int i = 0; i < 8; i++)
-                        {
-                            bool busted = (data.PlayerHealth.Value & (byte)(1 << i)) != 0;
-                            if (busted && !veh.IsTireBurst(i)) veh.Wheels[i].Burst();
-                            else if (!busted && veh.IsTireBurst(i)) veh.Wheels[i].Fix();
-                        }
                     }
-                }
-                else
-                {
-                    car.Position = data.Position;
-                    car.Rotation = data.Quaternion;
                 }
             }
         }

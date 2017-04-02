@@ -27,7 +27,7 @@ namespace GTANetwork.Streamer
             {
                 if (!_playerInventory.Contains(hash))
                 {
-                    FrameworkData.PlayerChar.Ex().Weapons.Remove((GTA.WeaponHash)(int)hash);
+                    Game.Player.Character.Weapons.Remove((GTA.WeaponHash)(int)hash);
                 }
             }
         }

@@ -104,11 +104,11 @@ namespace GTANetwork
 
                         if (startSyncing)
                         {
-                            //VehicleSyncManager.StartSyncing(veh);
+                            VehicleSyncManager.StartSyncing(veh);
                         }
                         else
                         {
-                            //VehicleSyncManager.StopSyncing(veh);
+                            VehicleSyncManager.StopSyncing(veh);
                         }
                     }
                     break;
@@ -122,7 +122,7 @@ namespace GTANetwork
 
                         if (data != null)
                         {
-                            //HandleUnoccupiedVehicleSync(data);
+                            HandleUnoccupiedVehicleSync(data);
                         }
                     }
                     break;
@@ -134,7 +134,7 @@ namespace GTANetwork
 
                         if (data != null)
                         {
-                            //HandleUnoccupiedVehicleSync(data);
+                            HandleUnoccupiedVehicleSync(data);
                         }
                     }
                     break;
@@ -222,59 +222,53 @@ namespace GTANetwork
                         //LogManager.DebugLog("Received CreateEntity");
                         if (DeserializeBinary<CreateEntity>(msg.ReadBytes(len)) is CreateEntity data && data.Properties != null)
                         {
-                            LogManager.DebugLog("CreateEntity was not null. Type: " + data.EntityType + ", Model: " + data.Properties.ModelHash);
                             switch (data.EntityType)
                             {
                                 case (byte)EntityType.Vehicle:
                                     {
-                                        var prop = (VehicleProperties)data.Properties;
-                                        var veh = NetEntityHandler.CreateVehicle(data.NetHandle, prop);
+                                        NetEntityHandler.CreateVehicle(data.NetHandle, (VehicleProperties)data.Properties);
                                         //if (NetEntityHandler.Count(typeof(RemoteVehicle)) < StreamerThread.MAX_VEHICLES)
                                         //    NetEntityHandler.StreamIn(veh);
                                     }
                                     break;
                                 case (byte)EntityType.Prop:
                                     {
-                                        var prop = NetEntityHandler.CreateObject(data.NetHandle, data.Properties);
+                                        NetEntityHandler.CreateObject(data.NetHandle, data.Properties);
                                         //if (NetEntityHandler.Count(typeof(RemoteProp)) < StreamerThread.MAX_OBJECTS)
                                         //    NetEntityHandler.StreamIn(prop);
                                     }
                                     break;
                                 case (byte)EntityType.Blip:
                                     {
-                                        var prop = (BlipProperties)data.Properties;
-                                        var blip = NetEntityHandler.CreateBlip(data.NetHandle, prop);
+                                        NetEntityHandler.CreateBlip(data.NetHandle, (BlipProperties)data.Properties);
                                         //if (NetEntityHandler.Count(typeof(RemoteBlip)) < StreamerThread.MAX_BLIPS)
                                         //    NetEntityHandler.StreamIn(blip);
                                     }
                                     break;
                                 case (byte)EntityType.Marker:
                                     {
-                                        var prop = (MarkerProperties)data.Properties;
-                                        var mark = NetEntityHandler.CreateMarker(data.NetHandle, prop);
-                                        if (NetEntityHandler.Count(typeof(RemoteMarker)) < StreamerThread.MAX_MARKERS)
-                                            NetEntityHandler.StreamIn(mark);
+                                        NetEntityHandler.CreateMarker(data.NetHandle, (MarkerProperties)data.Properties);
+                                        //if (NetEntityHandler.Count(typeof(RemoteMarker)) < StreamerThread.MAX_MARKERS)
+                                        //    NetEntityHandler.StreamIn(mark);
                                     }
                                     break;
                                 case (byte)EntityType.Pickup:
                                     {
-                                        var prop = (PickupProperties)data.Properties;
-                                        var pickup = NetEntityHandler.CreatePickup(data.NetHandle, prop);
+                                        NetEntityHandler.CreatePickup(data.NetHandle, (PickupProperties)data.Properties);
                                         //if (NetEntityHandler.Count(typeof(RemotePickup)) < StreamerThread.MAX_PICKUPS)
                                         //    NetEntityHandler.StreamIn(pickup);
                                     }
                                     break;
                                 case (byte)EntityType.TextLabel:
                                     {
-                                        var prop = (TextLabelProperties)data.Properties;
-                                        var label = NetEntityHandler.CreateTextLabel(data.NetHandle, prop);
+                                        NetEntityHandler.CreateTextLabel(data.NetHandle, (TextLabelProperties)data.Properties);
                                         //if (NetEntityHandler.Count(typeof(RemoteTextLabel)) < StreamerThread.MAX_LABELS)
                                         //    NetEntityHandler.StreamIn(label);
                                     }
                                     break;
                                 case (byte)EntityType.Ped:
                                     {
-                                        var ped = NetEntityHandler.CreatePed(data.NetHandle, data.Properties as PedProperties);
+                                        NetEntityHandler.CreatePed(data.NetHandle, data.Properties as PedProperties);
                                         //if (NetEntityHandler.Count(typeof(RemotePed)) < StreamerThread.MAX_PEDS)
                                         //    NetEntityHandler.StreamIn(ped);
                                     }
@@ -282,11 +276,8 @@ namespace GTANetwork
                                 case (byte)EntityType.Particle:
                                     {
                                         var ped = NetEntityHandler.CreateParticle(data.NetHandle, data.Properties as ParticleProperties);
-                                        if (NetEntityHandler.Count(typeof(RemoteParticle)) < StreamerThread.MAX_PARTICLES)
-                                            NetEntityHandler.StreamIn(ped);
+                                        if (NetEntityHandler.Count(typeof(RemoteParticle)) < StreamerThread.MAX_PARTICLES) NetEntityHandler.StreamIn(ped);
                                     }
-                                    break;
-                                default:
                                     break;
                             }
                         }
@@ -313,7 +304,7 @@ namespace GTANetwork
                                     NetEntityHandler.UpdatePickup(data.NetHandle, data.Properties as Delta_PickupProperties);
                                     break;
                                 case EntityType.Prop:
-                                    //NetEntityHandler.UpdateProp(data.NetHandle, data.Properties);
+                                    NetEntityHandler.UpdateProp(data.NetHandle, data.Properties);
                                     break;
                                 case EntityType.Vehicle:
                                     NetEntityHandler.UpdateVehicle(data.NetHandle, data.Properties as Delta_VehicleProperties);
@@ -880,8 +871,8 @@ namespace GTANetwork
             //LogManager.DebugLog("RECEIVED MESSAGE " + msg.MessageType);
             try
             {
-                _messagesReceived++;
-                _bytesReceived += msg.LengthBytes;
+                MessagesReceived++;
+                BytesReceived += msg.LengthBytes;
                 switch (msg.MessageType)
                 {
                     case NetIncomingMessageType.Data:
@@ -910,12 +901,16 @@ namespace GTANetwork
                                 StringCache = new StringCache();
                                 break;
                             case NetConnectionStatus.Connected:
-                                AddServerToRecent(_currentServerIp, "");
+                                foreach (var i in InternetList)
+                                {
+                                    var spl = i.Split(':');
+                                    if (_currentServerIp == Dns.GetHostAddresses(spl[0])[0].ToString()) _currentServerIp = spl[0];
+                                }
+                                AddServerToRecent(_currentServerIp + ":" + _currentServerPort);
                                 Util.Util.SafeNotify("Connection established!");
                                 var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
-                                var respObj =
-                                    DeserializeBinary<ConnectionResponse>(
-                                        msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
+                                var respObj = DeserializeBinary<ConnectionResponse>(msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
+
                                 if (respObj == null)
                                 {
                                     Util.Util.SafeNotify("ERROR WHILE READING REMOTE HAIL MESSAGE");
@@ -932,10 +927,8 @@ namespace GTANetwork
 
                                 MainMenu.Tabs.Remove(_welcomePage);
 
-                                if (!MainMenu.Tabs.Contains(_serverItem))
-                                    MainMenu.Tabs.Insert(0, _serverItem);
-                                if (!MainMenu.Tabs.Contains(_mainMapItem))
-                                    MainMenu.Tabs.Insert(0, _mainMapItem);
+                                if (!MainMenu.Tabs.Contains(_serverItem)) MainMenu.Tabs.Insert(0, _serverItem);
+                                if (!MainMenu.Tabs.Contains(_mainMapItem)) MainMenu.Tabs.Insert(0, _mainMapItem);
 
                                 MainMenu.RefreshIndex();
 
@@ -944,30 +937,18 @@ namespace GTANetwork
                                     OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
                                     VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
 
-                                    //try
-                                    //{
-                                    //    if (respObj.Settings.GlobalStreamingRange != 0)
-                                    //        GlobalStreamingRange = respObj.Settings.GlobalStreamingRange;
-
-                                    //    if (respObj.Settings.PlayerStreamingRange != 0)
-                                    //        PlayerStreamingRange = respObj.Settings.PlayerStreamingRange;
-
-                                    //    if (respObj.Settings.VehicleStreamingRange != 0)
-                                    //        VehicleStreamingRange = respObj.Settings.VehicleStreamingRange;
-                                    //}
-                                    //catch
-                                    //{
-                                    //    // Client.Disconnect("The server need to be update!");
-                                    //}
-
-
                                     HTTPFileServer = respObj.Settings.UseHttpServer;
 
                                     if (respObj.Settings.ModWhitelist != null)
                                     {
                                         if (!DownloadManager.ValidateExternalMods(respObj.Settings.ModWhitelist))
                                         {
-                                            Client.Disconnect("Some mods are not whitelisted");
+                                            Client.Disconnect("");
+                                            MainMenu.Visible = false;
+                                            _mainWarning = new Warning("Failed to connect", "Unallowed mods!\nThe server has strictly disallowed the use of non-whitelisted mods.")
+                                            {
+                                                OnAccept = () => { _mainWarning.Visible = false; MainMenu.Visible = true; }
+                                            };
                                         }
 
                                     }
@@ -975,9 +956,14 @@ namespace GTANetwork
 
                                 if (ParseableVersion.Parse(respObj.ServerVersion) < VersionCompatibility.LastCompatibleServerVersion)
                                 {
-                                    Client.Disconnect("Server is outdated.");
-                                }
+                                    Client.Disconnect("");
+                                    MainMenu.Visible = false;
+                                    _mainWarning = new Warning("Failed to connect", "Outdated server!\nPlease inform the server administrator of the issue.")
+                                    {
+                                        OnAccept = () => { _mainWarning.Visible = false; }
+                                    };
 
+                                }
 
                                 if (HTTPFileServer)
                                 {
@@ -994,9 +980,24 @@ namespace GTANetwork
                                 break;
                             case NetConnectionStatus.Disconnected:
                                 var reason = msg.ReadString();
-                                Util.Util.SafeNotify("You have been disconnected" +
-                                                     (string.IsNullOrEmpty(reason) ? " from the server." : ": " + reason));
+
                                 OnLocalDisconnect();
+                                if (!string.IsNullOrEmpty(reason) && reason != "Quit" && reason != "Switching servers")
+                                {
+                                    MainMenu.Visible = false;
+                                    _mainWarning = new Warning("Disconnected", reason)
+                                    {
+                                        OnAccept = () =>
+                                        {
+                                            _mainWarning.Visible = false;
+                                            MainMenu.Visible = true;
+                                        }
+                                    };
+                                }
+                                else
+                                {
+                                    Util.Util.SafeNotify("Disconnected: " + reason);
+                                }
                                 break;
                         }
                         break;
@@ -1037,36 +1038,47 @@ namespace GTANetwork
 
                         if (data.PasswordProtected) ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
 
-                        var gMsg = msg;
-                        ourItem.Activated += (sender, selectedItem) =>
+                        if (ourItem.Text != itemText && ourItem.Text != ourItem.Description)
                         {
-                            if (IsOnServer())
+                            var gMsg = msg;
+                            ourItem.Activated += (sender, selectedItem) =>
                             {
-                                Client.Disconnect("Switching servers");
-
-                                NetEntityHandler.ClearAll();
-
-                                if (Npcs != null)
+                                if (IsOnServer())
                                 {
-                                    lock (Npcs)
-                                    {
-                                        for (var index = Npcs.ToList().Count - 1; index >= 0; index--)
-                                        {
-                                            Npcs.ToList()[index].Value.Clear();
-                                        }
-                                        Npcs.Clear();
-                                    }
-                                }
-                                while (IsOnServer()) Script.Yield();
-                            }
-                            var pass = data.PasswordProtected;
-                            ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port, pass);
-                            MainMenu.TemporarilyHidden = true;
-                            _connectTab.RefreshIndex();
-                        };
+                                    Client.Disconnect("Switching servers");
 
-                        if (!_serverBrowser.Items.Contains(ourItem)) _serverBrowser.Items.Insert(_serverBrowser.Items.Count, ourItem);
-                        if (ListSorting) _serverBrowser.Items = _serverBrowser.Items.OrderByDescending(o => Convert.ToInt32(o.RightLabel.GetBetween(" - ", "/"))).ToList();
+                                    NetEntityHandler.ClearAll();
+
+                                    if (Npcs != null)
+                                    {
+                                        lock (Npcs)
+                                        {
+                                            for (var index = Npcs.ToList().Count - 1; index >= 0; index--)
+                                            {
+                                                Npcs.ToList()[index].Value.Clear();
+                                            }
+                                            Npcs.Clear();
+                                        }
+                                    }
+                                    while (IsOnServer()) Script.Yield();
+                                }
+                                var pass = data.PasswordProtected;
+                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port, pass);
+                                MainMenu.TemporarilyHidden = true;
+                                _connectTab.RefreshIndex();
+                            };
+                        }
+
+
+                        if (!_serverBrowser.Items.Contains(ourItem))
+                        {
+                            if (_serverBrowser.Items.Any(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString())) _serverBrowser.Items.Remove(_serverBrowser.Items.First(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString()));
+                            _serverBrowser.Items.Insert(_serverBrowser.Items.Count, ourItem);
+                        }
+                        if (ListSorting)
+                        {
+                            _serverBrowser.Items = _serverBrowser.Items.OrderByDescending(o => Convert.ToInt32(o.RightLabel.GetBetween(" - ", "/"))).ToList();
+                        }
                         _serverBrowser.RefreshIndex();
 
                         if (!_Verified.Items.Contains(ourItem) && VerifiedList.Contains(itemText))
@@ -1074,17 +1086,20 @@ namespace GTANetwork
                             _Verified.Items.Insert(_Verified.Items.Count, ourItem);
                         }
 
-                        if (!_favBrowser.Items.Contains(ourItem) && PlayerSettings.FavoriteServers.Contains(itemText))
+                        if (PlayerSettings.FavoriteServers.Contains(itemText))
                         {
+                            if (_favBrowser.Items.Any(i => i.Description == ourItem.Description)) _favBrowser.Items.Remove(_favBrowser.Items.FirstOrDefault(i => i.Description == ourItem.Description));
                             _favBrowser.Items.Insert(_favBrowser.Items.Count, ourItem);
                         }
 
-                        if (!_recentBrowser.Items.Contains(ourItem) && PlayerSettings.RecentServers.Contains(itemText))
+                        if (PlayerSettings.RecentServers.Contains(itemText))
                         {
+                            if (_recentBrowser.Items.Any(i => i.Description == ourItem.Description)) _recentBrowser.Items.Remove(_recentBrowser.Items.FirstOrDefault(i => i.Description == ourItem.Description));
+                            if (_recentBrowser.Items.Any(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString())) _recentBrowser.Items.Remove(_recentBrowser.Items.FirstOrDefault(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString()));
                             _recentBrowser.Items.Insert(_recentBrowser.Items.Count, ourItem);
                         }
 
-                        if (isIPLocal(msg.SenderEndPoint.Address.ToString()) && !_lanBrowser.Items.Contains(ourItem))
+                        if (isIPLocal(msg.SenderEndPoint.Address.ToString()) && !_lanBrowser.Items.Contains(ourItem) && _lanBrowser.Items.All(i => i.Description != ourItem.Description))
                         {
                             _lanBrowser.Items.Insert(_lanBrowser.Items.Count, ourItem);
                         }

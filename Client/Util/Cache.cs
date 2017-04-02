@@ -37,45 +37,45 @@ namespace GTANetwork.Util
             }
         }
 
-        public class PlayerChar
-        {
-            private static Data _data;
-            public PlayerChar()
-            {
-                _data = new Data();
-            }
+        //public class PlayerChar
+        //{
+        //    private static Data _data;
+        //    public PlayerChar()
+        //    {
+        //        _data = new Data();
+        //    }
 
-            public static Ped _recentPlayerChar = Game.Player.Character;
+        //    public static Ped _recentPlayerChar = Game.Player.Character;
 
-            public static Ped Ex()
-            {
-                _data.Skipped++;
-                if (_data.Skipped <= Count) return _recentPlayerChar;
-                _recentPlayerChar = Game.Player.Character;
-                _data.Skipped = 0;
-                return _recentPlayerChar;
-            }
-        }
+        //    public static Ped Ex()
+        //    {
+        //        _data.Skipped++;
+        //        if (_data.Skipped <= Count) return _recentPlayerChar;
+        //        _recentPlayerChar = Game.Player.Character;
+        //        _data.Skipped = 0;
+        //        return _recentPlayerChar;
+        //    }
+        //}
 
-        public class PlayerP
-        {
-            private static Data _data;
-            public PlayerP()
-            {
-                _data = new Data();
-            }
+        //public class PlayerP
+        //{
+        //    private static Data _data;
+        //    public PlayerP()
+        //    {
+        //        _data = new Data();
+        //    }
 
-            public static Player _recentPlayer = Game.Player;
+        //    public static Player _recentPlayer = Game.Player;
 
-            public static Player Ex()
-            {
-                _data.Skipped++;
-                if (_data.Skipped <= Count) return _recentPlayer;
-                _recentPlayer = Game.Player;
-                _data.Skipped = 0;
-                return _recentPlayer;
-            }
-        }
+        //    public static Player Ex()
+        //    {
+        //        _data.Skipped++;
+        //        if (_data.Skipped <= Count) return _recentPlayer;
+        //        _recentPlayer = Game.Player;
+        //        _data.Skipped = 0;
+        //        return _recentPlayer;
+        //    }
+        //}
 
 
     }
