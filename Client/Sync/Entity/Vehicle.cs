@@ -202,8 +202,7 @@ namespace GTANetwork.Sync
         private void VMultiVehiclePos()
         {
             //bool isInRange = Game.Player.Character.IsInRangeOfEx(Position, StreamerThread.LongRange);
-
-            if (Game.Player.Character.IsOnScreen()) 
+            if (Character.IsOnScreen()) 
             {
                 var vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
                 var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
@@ -281,7 +280,6 @@ namespace GTANetwork.Sync
             }
 #endif
         }
-
 
         private int _mUiForceLocalZCounter;
         private void DisplayVehiclePosition()
@@ -367,8 +365,6 @@ namespace GTANetwork.Sync
 
             return false;
         }
-
-
 
         void UpdateVehicleMountedWeapon()
         {
@@ -568,10 +564,5 @@ namespace GTANetwork.Sync
                 }
             }
         }
-
-
-
-
-
     }
 }

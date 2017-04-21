@@ -1527,30 +1527,66 @@ namespace GTANetwork.Streamer
             switch ((EntityType)item.EntityType)
             {
                 case EntityType.Vehicle:
-                    StreamInVehicle((RemoteVehicle)item);
+                    {
+                        StreamInVehicle((RemoteVehicle)item);
+                    }
                     break;
+
                 case EntityType.Prop:
-                    StreamInProp((RemoteProp)item);
+                    {
+                        StreamInProp((RemoteProp)item);
+                    }
                     break;
+
                 case EntityType.Pickup:
-                    StreamInPickup((RemotePickup)item);
+                    {
+                        StreamInPickup((RemotePickup)item);
+                    }
                     break;
+
                 case EntityType.Blip:
-                    StreamInBlip((RemoteBlip)item);
+                    {
+                        StreamInBlip((RemoteBlip)item);
+                    }
                     break;
+
                 case EntityType.Player:
-                    var ped = item as SyncPed;
-                    if (ped != null) ped.StreamedIn = true;
+                    {
+                        var ped = item as SyncPed;
+                        if (ped != null)
+                        {
+                            ped.StreamedIn = true;
+                            JavascriptHook.InvokeStreamInEvent(new LocalHandle(ped.LocalHandle), (int)EntityType.Player);
+                        }
+                    }
                     break;
+
                 case EntityType.Ped:
-                    StreamInPed((RemotePed)item);
+                    {
+                        StreamInPed((RemotePed)item);
+                    }
                     break;
+
                 case EntityType.Marker:
-                case EntityType.TextLabel:
-                    item.StreamedIn = true;
+                    {
+                        item.StreamedIn = true;
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Marker);
+                    }
                     break;
+
+                case EntityType.TextLabel:
+                    {
+                        item.StreamedIn = true;
+                        var data = (ILocalHandleable)item;
+                        JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.TextLabel);
+                    }
+                    break;
+
                 case EntityType.Particle:
-                    StreamInParticle((RemoteParticle)item);
+                    {
+                        StreamInParticle((RemoteParticle)item);
+                    }
                     break;
             }
 
@@ -1558,38 +1594,36 @@ namespace GTANetwork.Streamer
             if (handleable != null)
             {
                 var han = handleable;
+                if (han.LocalHandle == 0) return;
 
-                if (han.LocalHandle != 0)
+                lock (HandleMap)
                 {
-                    lock (HandleMap)
+                    if (HandleMap.ContainsKey(item.RemoteHandle))
                     {
-                        if (HandleMap.ContainsKey(item.RemoteHandle))
-                        {
-                            HandleMap[item.RemoteHandle] = han.LocalHandle;
-                        }
-                        else
-                        {
-                            HandleMap.Add(item.RemoteHandle, han.LocalHandle);
-                        }
+                        HandleMap[item.RemoteHandle] = han.LocalHandle;
+                    }
+                    else
+                    {
+                        HandleMap.Add(item.RemoteHandle, han.LocalHandle);
                     }
                 }
             }
 
-            if ((item as EntityProperties)?.Attachables != null)
-            {
-                foreach (var attachable in ((EntityProperties)item).Attachables)
-                {
-                    var att = NetToStreamedItem(attachable);
-                    if (att != null) StreamIn(att);
-                }
-            }
+            //if ((item as EntityProperties)?.Attachables != null)
+            //{
+            //    foreach (var attachable in ((EntityProperties)item).Attachables)
+            //    {
+            //        var att = NetToStreamedItem(attachable);
+            //        if (att != null) StreamIn(att);
+            //    }
+            //}
 
-            if ((item as EntityProperties)?.AttachedTo != null)
-            {
-                var target = NetToStreamedItem(((EntityProperties)item).AttachedTo.NetHandle);
-                if (target == null) return;
-                AttachEntityToEntity(item, target, ((EntityProperties)item).AttachedTo);
-            }
+            //if ((item as EntityProperties)?.AttachedTo != null)
+            //{
+            //    var target = NetToStreamedItem(((EntityProperties)item).AttachedTo.NetHandle);
+            //    if (target == null) return;
+            //    AttachEntityToEntity(item, target, ((EntityProperties)item).AttachedTo);
+            //}
         }
 
         public void StreamOut(IStreamedItem item)
@@ -1661,16 +1695,19 @@ namespace GTANetwork.Streamer
 
             lock (HandleMap)
             {
-                if (HandleMap.ContainsKey(item.RemoteHandle)) HandleMap.Remove(item.RemoteHandle);
+                if (HandleMap.ContainsKey(item.RemoteHandle))
+                {
+                    HandleMap.Remove(item.RemoteHandle);
+                }
             }
 
-            if (item.Attachables == null) return;
-            for (var index = item.Attachables.Count - 1; index >= 0; index--)
-            {
-                var attachable = item.Attachables[index];
-                var att = NetToStreamedItem(attachable);
-                if (att != null) StreamOut(att);
-            }
+            //if (item.Attachables == null) return;
+            //for (var index = item.Attachables.Count - 1; index >= 0; index--)
+            //{
+            //    var attachable = item.Attachables[index];
+            //    var att = NetToStreamedItem(attachable);
+            //    if (att != null) StreamOut(att);
+            //}
         }
 
         private void StreamInVehicle(RemoteVehicle data)
@@ -1948,6 +1985,7 @@ namespace GTANetwork.Streamer
 
             data.LocalHandle = handle;
             data.StreamedIn = true;
+            JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Particle);
         }
 
         private static void StreamInPickup(RemotePickup pickup)
@@ -2074,6 +2112,8 @@ namespace GTANetwork.Streamer
 
             data.LocalHandle = ped.Handle;
             data.StreamedIn = true;
+
+            JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Ped);
         }
         #endregion
 

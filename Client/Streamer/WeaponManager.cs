@@ -7,37 +7,57 @@ using WeaponHash = GTANetworkShared.WeaponHash;
 
 namespace GTANetwork.Streamer
 {
-    internal class WeaponManager
+    public class WeaponManager : Script
     {
-        private List<WeaponHash> _playerInventory = new List<WeaponHash>
+
+        public WeaponManager()
         {
-            WeaponHash.Unarmed,
+            Tick += OnTick;
+        }
+
+        private static void OnTick(object sender, EventArgs e)
+        {
+            if (Main.IsConnected())
+            {
+                Update();
+            }
+        }
+
+        private static List<WeaponHash> _playerInventory = new List<WeaponHash>
+        {
+            WeaponHash.Unarmed
         };
 
-        internal void Clear()
+        public void Clear()
         {
             _playerInventory.Clear();
             _playerInventory.Add(WeaponHash.Unarmed);
         }
 
-        internal void Update()
+        private static DateTime LastDateTime = DateTime.Now;
+        internal static void Update()
         {
-            var weapons = Enum.GetValues(typeof (WeaponHash)).Cast<WeaponHash>();
-            foreach (var hash in weapons)
+            if (DateTime.Now.Subtract(LastDateTime).TotalMilliseconds >= 500)
             {
-                if (!_playerInventory.Contains(hash))
+                LastDateTime = DateTime.Now;
+                var weapons = Enum.GetValues(typeof(WeaponHash)).Cast<WeaponHash>();
+                foreach (var hash in weapons)
                 {
-                    Game.Player.Character.Weapons.Remove((GTA.WeaponHash)(int)hash);
+                    if (!_playerInventory.Contains(hash) && hash != WeaponHash.Unarmed)
+                    {
+                        Game.Player.Character.Weapons.Remove((GTA.WeaponHash)(int)hash);
+                    }
                 }
             }
+
         }
 
-        internal void Allow(WeaponHash hash)
+        public void Allow(WeaponHash hash)
         {
             if (!_playerInventory.Contains(hash)) _playerInventory.Add(hash);
         }
 
-        internal void Deny(WeaponHash hash)
+        public void Deny(WeaponHash hash)
         {
             _playerInventory.Remove(hash);
         }

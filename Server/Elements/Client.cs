@@ -22,6 +22,7 @@ namespace GTANetworkServer
         internal NetConnection NetConnection { get; private set; }
 
         internal string SocialClubName { get; set; }
+        internal bool ConnectionConfirmed { get; set; }
         internal string Name { get; set; }
         internal bool CEF { get; set; }
         internal bool MediaStream { get; set; }

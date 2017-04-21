@@ -212,38 +212,28 @@ namespace GTANetwork.Sync
         {
             if (inCover)
             {
-                if (IsShooting && !IsAiming)
-                {
-                    if (IsInLowCover)
-                        return coverFacingLeft ? "blindfire_low_l_aim_med" : "blindfire_low_r_aim_med";
-                    return coverFacingLeft ? "blindfire_hi_l_aim_med" : "blindfire_hi_r_aim_med";
-                }
-
-                return coverFacingLeft ? "idle_l_corner" : "idle_r_corner";
+                if (!IsShooting || IsAiming) return coverFacingLeft ? "idle_l_corner" : "idle_r_corner";
+                if (IsInLowCover) return coverFacingLeft ? "blindfire_low_l_aim_med" : "blindfire_low_r_aim_med";
+                return coverFacingLeft ? "blindfire_hi_l_aim_med" : "blindfire_hi_r_aim_med";
             }
 
             if (IsOnLadder)
             {
                 if (Math.Abs(PedVelocity.Z) < 0.5) return "base_left_hand_up";
-                else if (PedVelocity.Z > 0) return "climb_up";
-                else if (PedVelocity.Z < 0)
+                if (PedVelocity.Z > 0) return "climb_up";
+                if (PedVelocity.Z < 0)
                 {
-                    if (PedVelocity.Z < -2f)
-                        return "slide_climb_down";
-                    return "climb_down";
+                    return PedVelocity.Z < -2f ? "slide_climb_down" : "climb_down";
                 }
             }
 
-            if (IsVaulting) return "standclimbup_180_low";
+            return IsVaulting ? "standclimbup_180_low" : GetAnimalAnimationName(ModelHash, speed);
 
-            if (GetAnimalAnimationName(ModelHash, speed) != null)
-                return GetAnimalAnimationName(ModelHash, speed);
             /*
             if (speed == 0) return "idle";
             if (speed == 1) return "walk";
             if (speed == 2) return "run";
             if (speed == 3) return "sprint";*/
-            return null;
         }
 
         internal static bool IsAnimal(int model)
@@ -509,10 +499,10 @@ namespace GTANetwork.Sync
 
         internal void Clear()
         {
-            if (_aimingProp != null)
+            if (_entityToAimAt != null)
             {
-                _aimingProp.Delete();
-                _aimingProp = null;
+                _entityToAimAt.Delete();
+                _entityToAimAt = null;
             }
 
             LogManager.DebugLog("CLEAR FOR " + Name);

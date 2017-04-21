@@ -1022,7 +1022,7 @@ namespace GTANetwork.Javascript
             return Main.DisplayWastedMessage;
         }
 
-        public Browser createCefBrowser(double width, double height, bool local = true)
+        public Browser createCefBrowser(double width, double height, bool local = true, bool focus = true)
         {
 #if RELATIVE_CEF_POS
             var rat = getScreenResolutionMaintainRatio();
@@ -1034,9 +1034,23 @@ namespace GTANetwork.Javascript
             int w = (int) width;
             int h = (int) height;
 #endif
+
             var newBrowser = new Browser(Engine, new Size(w, h), local);
             CEFManager.Browsers.Add(newBrowser);
+
+            if (!newBrowser._hasFocused && focus)
+            {
+                newBrowser._browser.GetHost().SetFocus(true);
+                newBrowser._browser.GetHost().SendFocusEvent(true);
+                newBrowser._hasFocused = true;
+            }
             return newBrowser;
+        }
+
+        public void setCefBrowserFocus(Browser browser, bool focus)
+        {
+            browser.GetHost().SetFocus(focus);
+            browser.GetHost().SendFocusEvent(focus);
         }
 
         public void destroyCefBrowser(Browser browser)
@@ -4461,7 +4475,44 @@ namespace GTANetwork.Javascript
             return Function.Call<string>(Hash._GET_LABEL_TEXT, labelName);
         }
 
+        private static bool SnowState = false;
+        public bool toggleSnow()
+        {
+            var addr = Util.Util.FindPattern("\x74\x25\xB9\x40\x00\x00\x00\xE8\x00\x00\xC4\xFF", "xxxx???x??xx");
 
+
+            //4c 6f 61 64 69 6e 67 20 47 54 41 4e 65 74 77 6f 72 6b
+
+
+            var original = Util.Util.ReadMemory(addr, 20);
+
+            if (!SnowState)
+            {
+                Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, "XMAS");
+
+                Function.Call(Hash._SET_FORCE_VEHICLE_TRAILS, true);
+                Function.Call(Hash._SET_FORCE_PED_FOOTSTEPS_TRACKS, true);
+
+                if (addr != IntPtr.Zero)
+                {
+                    Util.Util.WriteMemory(addr, 0x90, 20);
+                }
+            }
+            else
+            {
+                Function.Call(Hash.CLEAR_WEATHER_TYPE_PERSIST);
+                Function.Call(Hash.SET_WEATHER_TYPE_NOW, "CLEAR");
+                Function.Call(Hash._SET_FORCE_VEHICLE_TRAILS, false);
+                Function.Call(Hash._SET_FORCE_PED_FOOTSTEPS_TRACKS, false);
+
+                if (addr != IntPtr.Zero)
+                {
+                    Util.Util.WriteMemory(addr, original);
+                }
+            }
+            SnowState = !SnowState;
+            return SnowState;
+        }
     }
 
 }

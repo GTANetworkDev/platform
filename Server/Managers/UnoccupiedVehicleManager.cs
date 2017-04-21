@@ -9,8 +9,8 @@ namespace GTANetworkServer.Managers
 {
     internal class UnoccupiedVehicleManager
     {
-        private const int UPDATE_RATE = 500;
-        private const float SYNC_RANGE = 130;
+        private const int UPDATE_RATE = 250;
+        private const float SYNC_RANGE = 180;
         private const float SYNC_RANGE_SQUARED = SYNC_RANGE*SYNC_RANGE;
         private const float DROPOFF = 30;
         private const float DROPOFF_SQUARED = DROPOFF*DROPOFF;
@@ -58,8 +58,7 @@ namespace GTANetworkServer.Managers
         {
             for (var index = Program.ServerInstance.PublicAPI.getAllVehicles().Count - 1; index >= 0; index--)
             {
-                var vehicle = Program.ServerInstance.PublicAPI.getAllVehicles()[index];
-                UpdateVehicle(vehicle.Value, Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value));
+                UpdateVehicle(Program.ServerInstance.PublicAPI.getAllVehicles()[index].Value, Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(Program.ServerInstance.PublicAPI.getAllVehicles()[index].Value));
             }
         }
 
@@ -78,10 +77,10 @@ namespace GTANetworkServer.Managers
 
             if (prop.Position == null) return;
 
-            var players = Program.ServerInstance.PublicAPI.getAllPlayers().Where(c => (c.Properties.Dimension == prop.Dimension || prop.Dimension == 0) && c.Position != null).OrderBy(c => c.Position.DistanceToSquared(prop.Position)).Take(1).ToArray();
+            var players = Program.ServerInstance.PublicAPI.getAllPlayers().Where(c => (c.Properties.Dimension == prop.Dimension || prop.Dimension == 0) && c.Position != null).OrderBy(c => c.Position.DistanceToSquared2D(prop.Position)).Take(1).ToArray();
             if (players[0] == null) return;
 
-            if (players[0].Position.DistanceToSquared(prop.Position) < SYNC_RANGE_SQUARED/2 && (players[0].Properties.Dimension == prop.Dimension || prop.Dimension == 0))
+            if (players[0].Position.DistanceToSquared(prop.Position) < SYNC_RANGE_SQUARED && (players[0].Properties.Dimension == prop.Dimension || prop.Dimension == 0))
             {
                 if (Syncer.ContainsKey(handle))
                 {

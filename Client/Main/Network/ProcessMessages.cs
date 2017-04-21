@@ -1077,7 +1077,17 @@ namespace GTANetwork
                         }
                         if (ListSorting)
                         {
-                            _serverBrowser.Items = _serverBrowser.Items.OrderByDescending(o => Convert.ToInt32(o.RightLabel.GetBetween(" - ", "/"))).ToList();
+                            try
+                            {
+                                _serverBrowser.Items = _serverBrowser.Items
+                                    .OrderByDescending(o => Convert.ToInt32(o.RightLabel.GetBetween(" - ", "/")))
+                                    .ToList();
+                                
+                            }
+                            catch (FormatException)
+                            {
+                                //Ignored
+                            }
                         }
                         _serverBrowser.RefreshIndex();
 

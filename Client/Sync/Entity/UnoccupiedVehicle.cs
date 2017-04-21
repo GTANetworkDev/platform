@@ -17,10 +17,12 @@ namespace GTANetwork.Streamer
         private static long _lastEntityRemoval;
         private static void OnTick(object sender, EventArgs e)
         {
-            if (Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
+            if (Main.IsConnected() && Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
             {
                 _lastEntityRemoval = Util.Util.TickCount;
                 RemoteVehicle[] myCars;
+                if (StreamerThread.StreamedInVehicles == null || StreamerThread.StreamedInVehicles.Length == 0) return;
+
                 lock (StreamerThread.StreamedInVehicles)
                 {
                     myCars = StreamerThread.StreamedInVehicles.ToArray();

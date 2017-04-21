@@ -83,18 +83,17 @@ namespace GTANetwork
 
             Chat.Init();
 
-            if (Client == null)
+            Client.Shutdown("Shutdown");
+            Wait(1000);
+            var cport = GetOpenUdpPort();
+            if (cport == 0)
             {
-                var cport = GetOpenUdpPort();
-                if (cport == 0)
-                {
-                    Util.Util.SafeNotify("No available UDP port was found.");
-                    return;
-                }
-                _config.Port = cport;
-                Client = new NetClient(_config);
-                Client.Start();
+                Util.Util.SafeNotify("No available UDP port was found.");
+                return;
             }
+            _config.Port = cport;
+            Client = new NetClient(_config);
+            Client.Start();
 
             lock (Npcs) Npcs = new Dictionary<string, SyncPed>();
             lock (_tickNatives) _tickNatives = new Dictionary<string, NativeData>();
@@ -283,16 +282,25 @@ namespace GTANetwork
 
         public int GetOpenUdpPort()
         {
-            var startingAtPort = 6000;
-            var maxNumberOfPortsToCheck = 500;
+
+
+            var startingAtPort = 49152;
+            var maxNumberOfPortsToCheck = 65535;
             var range = Enumerable.Range(startingAtPort, maxNumberOfPortsToCheck);
+            var enumerable = range as IList<int> ?? range.ToList();
             var portsInUse =
-                from p in range
+                from p in enumerable
                 join used in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners()
             on p equals used.Port
                 select p;
 
-            return range.Except(portsInUse).FirstOrDefault();
+            var inUse = portsInUse as IList<int> ?? portsInUse.ToList();
+
+            Random rand = new Random();
+            int toTake = rand.Next(0, inUse.Count);
+
+
+            return enumerable.Except(inUse).ElementAtOrDefault(toTake);
         }
 
         public static void HandleUnoccupiedVehicleSync(VehicleData data)

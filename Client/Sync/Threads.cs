@@ -26,7 +26,7 @@ namespace GTANetwork.Sync
             SyncPed[] myBubble;
             lock (StreamerThread.StreamedInPlayers) { myBubble = StreamerThread.StreamedInPlayers.ToArray(); }
             var length = myBubble.Length;
-            for (var i = length - 1; i >= 0; i--) { myBubble[i]?.DisplayLocally(); }
+            for (var i = length - 1; i >= 0; i--) { myBubble[i]?.Render(); }
 
 
             if (DebugInfo.StreamerDebug) sw.Stop();

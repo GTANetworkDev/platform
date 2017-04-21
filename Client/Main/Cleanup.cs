@@ -43,6 +43,8 @@ namespace GTANetwork
         {
             if (Main.IsConnected())
             {
+                Function.Call((Hash) 0xB96B00E976BE977F, 0.0);
+
                 Function.Call(Hash.SET_RANDOM_TRAINS, 0);
                 Function.Call(Hash.CAN_CREATE_RANDOM_COPS, false);
 

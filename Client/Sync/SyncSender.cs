@@ -45,9 +45,10 @@ namespace GTANetwork.Streamer
                 if (lastPacket == null) continue;
                 try
                 {
-                    if (lastPacket is PedData)
+                    var data = lastPacket as PedData;
+                    if (data != null)
                     {
-                        var bin = PacketOptimization.WritePureSync((PedData) lastPacket);
+                        var bin = PacketOptimization.WritePureSync(data);
 
                         var msg = Main.Client.CreateMessage();
                         msg.Write((byte) PacketType.PedPureSync);
@@ -71,7 +72,7 @@ namespace GTANetwork.Streamer
 
                             LogManager.DebugLog("SENDING LIGHT VEHICLE SYNC");
 
-                            var lightBin = PacketOptimization.WriteLightSync((PedData) lastPacket);
+                            var lightBin = PacketOptimization.WriteLightSync(data);
 
                             var lightMsg = Main.Client.CreateMessage();
                             lightMsg.Write((byte) PacketType.PedLightSync);

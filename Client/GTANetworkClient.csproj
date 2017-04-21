@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GTANetwork</RootNamespace>
     <AssemblyName>GTANetwork</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
@@ -89,7 +89,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\EasyHook.dll</HintPath>
     </Reference>
-    <Reference Include="Lidgren.Network">
+    <Reference Include="Lidgren.Network, Version=2012.1.7.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>
     <Reference Include="NativeUI, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
@@ -100,7 +101,7 @@
       <HintPath>..\libs\NAudio.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
@@ -173,8 +174,8 @@
     <Compile Include="Sync\Interpolation.cs" />
     <Compile Include="Sync\Misc.cs" />
     <Compile Include="Sync\Nametag.cs" />
-    <Compile Include="Sync\OnFoot.cs" />
-    <Compile Include="Sync\Vehicle.cs" />
+    <Compile Include="Sync\Entity\OnFoot.cs" />
+    <Compile Include="Sync\Entity\Vehicle.cs" />
     <Compile Include="Util\Cache.cs" />
     <Compile Include="Util\DataCollector.cs" />
     <Compile Include="Networking\DeltaCompressor.cs" />
@@ -242,7 +243,7 @@
     <Compile Include="Util\Subtask.cs" />
     <Compile Include="Sync\SyncEventWatcher.cs" />
     <Compile Include="Sync\SyncSender.cs" />
-    <Compile Include="Sync\UnoccupiedVehicleSync.cs" />
+    <Compile Include="Sync\Entity\UnoccupiedVehicle.cs" />
     <Compile Include="Misc\WeaponDataProvider.cs" />
     <Compile Include="Sync\SyncPed.cs" />
     <Compile Include="Util\Util.cs" />

@@ -272,7 +272,7 @@ namespace GTANetwork
                 }
             };
 
-            _config = new NetPeerConfiguration("GRANDTHEFTAUTONETWORK") { Port = 8888, ConnectionTimeout = 30f };
+            _config = new NetPeerConfiguration("GTANETWORK") { Port = 8888, ConnectionTimeout = 30f };
             _config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
 
             LogManager.RuntimeLog("Building menu.");
@@ -386,7 +386,7 @@ namespace GTANetwork
                 VehicleSyncManager?.Pulse();
 
                 DEBUG_STEP = 3;
-                WeaponInventoryManager?.Update();
+                WeaponManager.Update();
             }
             catch (Exception ex) // Catch any other exception. (can prevent crash)
             {

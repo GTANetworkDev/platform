@@ -23,7 +23,7 @@ namespace GTANetwork.GUI
 
         public static bool ShowCursor
         {
-            get { return _showCursor; }
+            get => _showCursor;
             set
             {
                 if (!_showCursor && value)
@@ -88,14 +88,13 @@ namespace GTANetwork.GUI
                     {
                         if (!browser.IsInitialized()) continue;
 
-                        if (!browser._hasFocused)
-                        {
-                            browser._browser.GetHost().SetFocus(true);
-
-                            browser._browser.GetHost().SetFocus(true);
-                            browser._browser.GetHost().SendFocusEvent(true);
-                            browser._hasFocused = true;
-                        }
+                        //if (!browser._hasFocused)
+                        //{
+                        //    browser._browser.GetHost().SetFocus(true);
+                        //    //browser._browser.GetHost().SetFocus(true);
+                        //    browser._browser.GetHost().SendFocusEvent(true);
+                        //    browser._hasFocused = true;
+                        //}
 
                         if (mouseX > browser.Position.X && mouseY > browser.Position.Y &&
                             mouseX < browser.Position.X + browser.Size.Width &&

@@ -436,12 +436,32 @@ namespace GTANetwork.Util
             }
         }
 
+        public static void WriteMemory(IntPtr pointer, byte[] value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                MemoryAccess.WriteByte(pointer + i, value[i]);
+            }
+        }
+
+        public static byte[] ReadMemory(IntPtr pointer, int length)
+        {
+            byte[] memory = new byte[length];
+            for (int i = 0; i < length; i++)
+            {
+                memory[i] = MemoryAccess.ReadByte(pointer + i);
+            }
+            return memory;
+        }
+
+
+
         public static unsafe IntPtr FindPattern(string bytes, string mask)
         {
             var patternPtr = Marshal.StringToHGlobalAnsi(bytes);
             var maskPtr = Marshal.StringToHGlobalAnsi(bytes);
 
-            IntPtr output = IntPtr.Zero;
+            IntPtr output;
 
             try
             {
@@ -450,8 +470,8 @@ namespace GTANetwork.Util
                         unchecked(
                             (long)
                                 MemoryAccess.FindPattern(
-                                    (sbyte*)(patternPtr.ToPointer()),
-                                    (sbyte*)(patternPtr.ToPointer())
+                                    (sbyte*)patternPtr.ToPointer(),
+                                    (sbyte*)patternPtr.ToPointer()
                                     )));
             }
             finally

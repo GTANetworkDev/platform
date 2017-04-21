@@ -36,17 +36,23 @@ namespace GTANetwork.Sync
 
     internal partial class SyncPed : RemotePlayer
     {
-        internal void DisplayLocally()
+        internal void Render()
         {
-            if (!StreamedIn && IsSpectating || (Flag & (int)EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
+            if (!StreamedIn) return; //|| (Flag & (int)EntityFlag.PlayerSpectating) != 0 || && IsSpectating
+            if (string.IsNullOrEmpty(Name)) return;
+            if (ModelHash == 0) return;
+
+            // Does not return if:
+            // ** Entity is Streamed in
+            // ** Name is not Null or Empty
+            // ** ModelHash is not 0
+
             if (Character != null && Character.Exists())
             {
-                if (_isInVehicle) UpdateVehiclePosition(); else UpdateOnFootPosition();
-
-
-                // USE ON SCREEN RENDERING
-                //OUT OF RANGE ENTITIES ARE NOT STREAMED IN, THUS MAKING THIS OBSOLETE
-                //if (UpdatePlayerPosOutOfRange(Position, Main.PlayerChar.IsInRangeOfEx(Position, StreamerThread.CloseRange))) return;
+                if (_isInVehicle)
+                    UpdateVehiclePosition();
+                else
+                    UpdateOnFootPosition();
 
                 _lastJumping = IsJumping;
                 _lastFreefall = IsFreefallingWithParachute;
@@ -62,7 +68,7 @@ namespace GTANetwork.Sync
                 if (CreateCharacter()) return;
                 if (CreateVehicle()) return;
 
-                if (Character != null)
+                if (Character != null && Character.Exists())
                 {
                     Character.Health = PedHealth;
                     if (IsPlayerDead && !Character.IsDead && IsInVehicle)
@@ -74,7 +80,7 @@ namespace GTANetwork.Sync
 
                     Function.Call(Hash.SET_PED_CONFIG_FLAG, Character, 400, true); // Can attack friendlies
                 }
-                WorkaroundBlip();
+                //WorkaroundBlip();
             }
         }
 
@@ -86,7 +92,7 @@ namespace GTANetwork.Sync
         internal int VehicleNetHandle;
         internal Vector3 _rotation;
         internal bool _isInVehicle;
-        internal bool IsJumping;
+
         internal Animation CurrentAnimation;
         internal int ModelHash;
         internal int CurrentWeapon;
@@ -326,7 +332,7 @@ namespace GTANetwork.Sync
         private bool _lastAiming;
         private float _lastSpeed;
         private bool _lastShooting;
-        private bool _lastJumping;
+
         private bool _blip;
         private bool _justEnteredVeh;
         private bool _playingGetupAnim;
@@ -345,16 +351,7 @@ namespace GTANetwork.Sync
         private Vector3 _lastStart;
         private Vector3 _lastEnd;
 
-        private bool _lastReloading;
-        internal bool IsReloading
-        {
-            get { return _isReloading; }
-            set
-            {
-                _lastReloading = _isReloading;
-                _isReloading = value;
-            }
-        }
+
 
         private int _playerSeat;
         private bool _lastDrivebyShooting;
@@ -881,7 +878,6 @@ namespace GTANetwork.Sync
 	    void DisplayShootingAnimation()
 	    {
             var hands = GetWeaponHandsHeld(CurrentWeapon);
-            if (IsReloading) return;
 			if (hands == 3 || hands == 4 || hands == 0)
 			{
 				DisplayMeleeAnimation(hands);
@@ -938,14 +934,6 @@ namespace GTANetwork.Sync
 	            }
 	        }
 	    }
-
-
-        private Vector3 _lastAimCoords;
-        private Prop _aimingProp;
-        private Prop _followProp;
-        private long lastAimSet;
-
-        private bool lastMoving;
 
 
         internal void StuckDetection()
@@ -1028,7 +1016,7 @@ namespace GTANetwork.Sync
 
         private int DEBUG_STEP_backend;
         private long _seatEnterStart;
-        private bool _isReloading;
+
 
         public float hRange = StreamerThread.GlobalRange; // 1km
         private long _lastTickUpdate = Environment.TickCount;
