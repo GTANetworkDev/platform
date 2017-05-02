@@ -565,43 +565,46 @@ namespace GTANetwork.Util
             float x = (float)(xPos) / width;
             float y = (float)(yPos) / height;
 
-            Function.Call(Hash.SET_TEXT_FONT, font);
-            Function.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
-            Function.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
+            CallCollection thisCol = new CallCollection();
+
+            thisCol.Call(Hash.SET_TEXT_FONT, font);
+            thisCol.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
+            thisCol.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
             if (shadow)
-                Function.Call(Hash.SET_TEXT_DROP_SHADOW);
+                thisCol.Call(Hash.SET_TEXT_DROP_SHADOW);
             if (outline)
-                Function.Call(Hash.SET_TEXT_OUTLINE);
+                thisCol.Call(Hash.SET_TEXT_OUTLINE);
             switch (justify)
             {
                 case 1:
-                    Function.Call(Hash.SET_TEXT_CENTRE, true);
+                    thisCol.Call(Hash.SET_TEXT_CENTRE, true);
                     break;
                 case 2:
-                    Function.Call(Hash.SET_TEXT_RIGHT_JUSTIFY, true);
-                    Function.Call(Hash.SET_TEXT_WRAP, 0, x);
+                    thisCol.Call(Hash.SET_TEXT_RIGHT_JUSTIFY, true);
+                    thisCol.Call(Hash.SET_TEXT_WRAP, 0, x);
                     break;
             }
 
             if (wordWrap != 0)
             {
                 float xsize = (float)(xPos + wordWrap) / width;
-                Function.Call(Hash.SET_TEXT_WRAP, x, xsize);
+                thisCol.Call(Hash.SET_TEXT_WRAP, x, xsize);
             }
 
-            Function.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
+            thisCol.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
 
             const int maxStringLength = 99;
 
             for (int i = 0; i < caption.Length; i += maxStringLength)
             {
-                Function.Call((Hash)0x6C188BE134E074AA,
+                thisCol.Call((Hash)0x6C188BE134E074AA,
                     caption.Substring(i,
                             System.Math.Min(maxStringLength, caption.Length - i)));
                 //Function.Call((Hash)0x6C188BE134E074AA, caption.Substring(i, System.Math.Min(maxStringLength, caption.Length - i)));
             }
 
-            Function.Call(Hash._DRAW_TEXT, x, y);
+            thisCol.Call(Hash._DRAW_TEXT, x, y);
+            thisCol.Execute();
         }
 
         public static float GetOffsetDegrees(float a, float b)

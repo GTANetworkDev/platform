@@ -289,7 +289,7 @@ namespace GTANetworkServer
             API.shared.sendChatMessageToPlayer(this, sender, message);
         }
 
-        public void sendNotification(string sender, string message, bool flashing = true)
+        public void sendNotification(string message, bool flashing = true)
         {
             API.shared.sendNotificationToPlayer(this, message, flashing);
         }

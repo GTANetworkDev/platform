@@ -194,8 +194,7 @@ namespace GTANetworkServer
         public FileServer FileServer;
 
         private Dictionary<string, string> FileHashes { get; set; }
-        public Dictionary<NetHandle, Dictionary<string, object>> EntityProperties = 
-            new Dictionary<NetHandle, Dictionary<string, object>>();
+        public Dictionary<NetHandle, Dictionary<string, object>> EntityProperties = new Dictionary<NetHandle, Dictionary<string, object>>();
         public Dictionary<string, object> WorldProperties = new Dictionary<string, object>();
 
         public Dictionary<int, List<Client>> VehicleOccupants = new Dictionary<int, List<Client>>();
@@ -1398,7 +1397,7 @@ namespace GTANResource
                     {
                         case NetIncomingMessageType.DiscoveryRequest:
                             {
-                                Program.Output("Discovery Request from: [" + msg.SenderEndPoint.Address.ToString() + ":" + msg.SenderEndPoint.Port + "] " + msg.SenderConnection.RemoteUniqueIdentifier);
+                                //Program.Output("Discovery Request from: [" + msg.SenderEndPoint.Address.ToString() + ":" + msg.SenderEndPoint.Port + "] " + msg.SenderConnection.RemoteUniqueIdentifier);
                                 var response = Server.CreateMessage();
                                 var obj = new DiscoveryResponse
                                 {
@@ -2936,11 +2935,16 @@ namespace GTANResource
             {
                 for (var i = Clients.Count - 1; i >= 0; i--) // Kick AFK players
                 {
-                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 10)
+                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 70)
                     {
-                        Clients[i].NetConnection.Disconnect("Timed out.");
                         Clients.Remove(Clients[i]);
                     }
+                    else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 5)
+                    {
+                        Clients[i].NetConnection.Disconnect("Timed out.");
+                        //DisconnectClient(Clients[i], "Timeout");
+                    }
+
                 }
             }
         }
@@ -3433,8 +3437,7 @@ namespace GTANResource
         }
 
         private Dictionary<uint, Action<object>> _callbacks = new Dictionary<uint, Action<object>>();
-        public void GetNativeCallFromPlayer(Client player, bool safe, uint salt, ulong hash, NativeArgument returnType, Action<object> callback,
-            params object[] arguments)
+        public void GetNativeCallFromPlayer(Client player, bool safe, uint salt, ulong hash, NativeArgument returnType, Action<object> callback, params object[] arguments)
         {
             var obj = new NativeData
             {

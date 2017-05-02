@@ -32,6 +32,7 @@ namespace GTANetwork.Sync
             if (!Main.UIVisible) return;
             if ((NametagSettings & 1) != 0) return;
 
+           // CallCollection thisCollection = new CallCollection();
 
             if (!StreamedIn && IsSpectating || (Flag & (int)EntityFlag.PlayerSpectating) != 0 || ModelHash == 0 || string.IsNullOrEmpty(Name)) return;
             if(Character != null && Character.Exists())
@@ -41,13 +42,12 @@ namespace GTANetwork.Sync
                 {
                     if (Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, PlayerChar, Character, 17)) //Natives can slow down
                     {
-                        Vector3 targetPos;
-                        targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
+                        var targetPos = Character.GetBoneCoord(Bone.IK_Head) + new Vector3(0, 0, 0.5f);
 
                         targetPos += Character.Velocity / Game.FPS;
 
                         Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
-                        DEBUG_STEP = 6;
+
                         var nameText = Name ?? "<nameless>";
 
                         if (!string.IsNullOrEmpty(NametagText))
@@ -70,7 +70,6 @@ namespace GTANetwork.Sync
 
                         Util.Util.DrawText(nameText, 0, 0, 0.4f * sizeOffset, defaultColor.R, defaultColor.G, defaultColor.B, 255, 0, 1, false, true, 0);
 
-                        DEBUG_STEP = 7;
                         if (Character != null)
                         {
                             var armorColor = Color.FromArgb(200, 220, 220, 220);
@@ -87,7 +86,7 @@ namespace GTANetwork.Sync
                             Util.Util.DrawRectangle(-71 * sizeOffset, 40 * sizeOffset, (142 * Math.Min(Math.Max((PedHealth / 100f), 0f), 1f)) * sizeOffset, 12 * sizeOffset,
                                 50, 250, 50, 150);
                         }
-                        DEBUG_STEP = 8;
+
                         Function.Call(Hash.CLEAR_DRAW_ORIGIN);
                     }
                 }

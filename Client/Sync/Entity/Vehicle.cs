@@ -85,24 +85,24 @@ namespace GTANetwork.Sync
 
             if (IsCustomAnimationPlaying) DisplayCustomAnimation();
 
-            if (ExitingVehicle && !_lastExitingVehicle)
-            {
-                Character.Task.ClearAll();
-                Character.Task.ClearSecondary();
+            //if (ExitingVehicle && !_lastExitingVehicle)
+            //{
+            //    Character.Task.ClearAll();
+            //    Character.Task.ClearSecondary();
 
-                if (Speed < 1f)
-                {
-                    Character.Task.LeaveVehicle(MainVehicle, false);
-                }
-                else
-                {
-                    Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
-                }
-            }
+            //    if (Speed < 1f)
+            //    {
+            //        Character.Task.LeaveVehicle(MainVehicle, false);
+            //    }
+            //    else
+            //    {
+            //        Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
+            //    }
+            //}
 
             if (!ExitingVehicle && _lastExitingVehicle) DirtyWeapons = true;
 
-            _lastExitingVehicle = ExitingVehicle;
+            //_lastExitingVehicle = ExitingVehicle;
 
             if (ExitingVehicle) return;
 
@@ -201,37 +201,28 @@ namespace GTANetwork.Sync
 
         private void VMultiVehiclePos()
         {
-            //bool isInRange = Game.Player.Character.IsInRangeOfEx(Position, StreamerThread.LongRange);
-            if (Character.IsOnScreen()) 
+            var vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
+            var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
+            var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
+
+            if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) //
             {
-                var vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
-                var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
-                var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
-
-                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) //
-                {
-                    MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f); // Calcul
-                }
-                else
-                {
-                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force); // Calcul
-                }
-
-                StuckVehicleCheck(Position);
-
-                if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f)
-                {
-                    MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
-                }
-                else
-                {
-                    MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
-                }
+                MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f); // Calcul
             }
             else
             {
-                //MainVehicle.PositionNoOffset = currentInterop.vecTarget;
-                MainVehicle.Velocity = VehicleVelocity;
+                MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force); // Calcul
+            }
+
+            StuckVehicleCheck(Position);
+
+            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f)
+            {
+                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+            }
+            else
+            {
+                MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
             }
         }
 
