@@ -124,11 +124,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="API\CancelEventArgs.cs" />
-    <Compile Include="API\ResourceAbortedException.cs" />
-    <Compile Include="API\ServerAPI.cs" />
-    <Compile Include="API\Script.cs" />
-    <Compile Include="API\SharedAPI.cs" />
     <Compile Include="Constant\Color.cs" />
     <Compile Include="Constant\LogCat.cs" />
     <Compile Include="Elements\Blip.cs" />
@@ -141,7 +136,7 @@
     <Compile Include="Elements\TextLabel.cs" />
     <Compile Include="Elements\Vehicle.cs" />
     <Compile Include="Managers\AccessControlList.cs" />
-    <Compile Include="API\API.cs" />
+    <Compile Include="API.cs" />
     <Compile Include="Managers\Bans.cs" />
     <Compile Include="Constant\ChatData.cs" />
     <Compile Include="Elements\Client.cs" />

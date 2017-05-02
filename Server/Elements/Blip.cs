@@ -4,7 +4,7 @@ namespace GTANetworkServer
 {
     public class Blip : Entity
     {
-        internal Blip(ServerAPI father, NetHandle handle) : base(father, handle)
+        internal Blip(API father, NetHandle handle) : base(father, handle)
         {
         }
 

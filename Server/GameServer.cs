@@ -151,7 +151,7 @@ namespace GTANetworkServer
         public NetServer Server;
         public TaskFactory ConcurrentFactory;
         internal List<StreamingClient> Downloads;
-        internal SharedAPI PublicAPI = new SharedAPI();
+        internal API PublicAPI = new API();
         public int MaxPlayers { get; set; }
         public int Port { get; set; }
         public List<Client> Clients { get; set; }

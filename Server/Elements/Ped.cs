@@ -4,7 +4,7 @@ namespace GTANetworkServer
 {
     public class Ped : Entity
     {
-        internal Ped(ServerAPI father, NetHandle handle) : base(father, handle)
+        internal Ped(API father, NetHandle handle) : base(father, handle)
         {
         }
 

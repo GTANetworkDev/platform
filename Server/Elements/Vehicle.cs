@@ -5,7 +5,7 @@ namespace GTANetworkServer
 {
     public class Vehicle : Entity
     {
-        internal Vehicle(ServerAPI father, NetHandle handle) : base(father, handle)
+        internal Vehicle(API father, NetHandle handle) : base(father, handle)
         {
         }
 
