@@ -1170,8 +1170,8 @@ namespace GTANetwork
                     CEFManager.Dispose();
                     CEFManager.DisposeCef();
 
-                    Script.Wait(500);
-                    Environment.Exit(0);
+                    //Script.Wait(500);
+                    //Environment.Exit(0);
                     Process.GetProcessesByName("GTA5")[0].Kill();
                     Process.GetCurrentProcess().Kill();
                 };

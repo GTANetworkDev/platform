@@ -1038,12 +1038,12 @@ namespace GTANetwork.Javascript
             var newBrowser = new Browser(Engine, new Size(w, h), local);
             CEFManager.Browsers.Add(newBrowser);
 
-            if (!newBrowser._hasFocused && focus)
-            {
-                newBrowser._browser.GetHost().SetFocus(true);
-                newBrowser._browser.GetHost().SendFocusEvent(true);
-                newBrowser._hasFocused = true;
-            }
+            //if (!newBrowser._hasFocused && focus)
+            //{
+            //    newBrowser._browser.GetHost().SetFocus(true);
+            //    newBrowser._browser.GetHost().SendFocusEvent(true);
+            //    newBrowser._hasFocused = true;
+            //}
             return newBrowser;
         }
 
