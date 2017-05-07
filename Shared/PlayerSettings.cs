@@ -6,7 +6,6 @@ namespace GTANetworkShared
     public class PlayerSettings
     {
         public string DisplayName { get; set; }
-        public string MasterServerAddress { get; set; }
         public List<string> FavoriteServers { get; set; }
         public List<string> RecentServers { get; set; }
         public bool ScaleChatWithSafezone { get; set; }
@@ -31,7 +30,6 @@ namespace GTANetworkShared
 
         public PlayerSettings()
         {
-            MasterServerAddress = "https://master.gtanet.work/";
             FavoriteServers = new List<string>();
             RecentServers = new List<string>();
             ScaleChatWithSafezone = true;

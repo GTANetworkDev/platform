@@ -29,7 +29,7 @@ namespace GTANetwork.Sync
 
         internal void DrawNametag()
         {
-            if (!Main.UIVisible) return;
+            if (!Main.UIVisible || Main._mainWarning.Visible) return;
             if ((NametagSettings & 1) != 0) return;
 
            // CallCollection thisCollection = new CallCollection();

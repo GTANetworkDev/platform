@@ -138,84 +138,6 @@ namespace GTANetwork
                         }
                     }
                     break;
-                case PacketType.NpcVehPositionData:
-                    //{
-                    //    //var len = msg.ReadInt32();
-                    //    //var data = DeserializeBinary<VehicleData>(msg.ReadBytes(len)) as VehicleData;
-                    //    //if (data == null) return;
-                    //    /*
-                    //    lock (Npcs)
-                    //    {
-                    //        if (!Npcs.ContainsKey(data.Name))
-                    //        {
-                    //            var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                    //                //data.Quaternion.ToQuaternion(), false);
-                    //                data.Quaternion.ToVector(), false);
-                    //            Npcs.Add(data.Name, repr);
-                    //            Npcs[data.Name].Name = "";
-                    //            Npcs[data.Name].Host = data.Id;
-                    //        }
-                    //        if (Npcs[data.Name].Character != null)
-                    //            NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
-
-                    //        Npcs[data.Name].LastUpdateReceived = DateTime.Now;
-                    //        Npcs[data.Name].VehiclePosition =
-                    //            data.Position.ToVector();
-                    //        Npcs[data.Name].ModelHash = data.PedModelHash;
-                    //        Npcs[data.Name].VehicleHash =
-                    //            data.VehicleModelHash;
-                    //        Npcs[data.Name].VehicleRotation =
-                    //            data.Quaternion.ToVector();
-                    //        //data.Quaternion.ToQuaternion();
-                    //        Npcs[data.Name].PedHealth = data.PlayerHealth;
-                    //        Npcs[data.Name].VehicleHealth = data.VehicleHealth;
-                    //        //Npcs[data.Name].VehiclePrimaryColor = data.PrimaryColor;
-                    //        //Npcs[data.Name].VehicleSecondaryColor = data.SecondaryColor;
-                    //        Npcs[data.Name].VehicleSeat = data.VehicleSeat;
-                    //        Npcs[data.Name].IsInVehicle = true;
-
-                    //        Npcs[data.Name].IsHornPressed = data.IsPressingHorn;
-                    //        Npcs[data.Name].Speed = data.Speed;
-                    //        Npcs[data.Name].Siren = data.IsSirenActive;
-                    //    }*/
-                    //}
-                    break;
-                case PacketType.ConnectionPacket:
-                    //{
-                    //    //var len = msg.ReadInt32();
-                    //    //var data = DeserializeBinary<PedData>(msg.ReadBytes(len)) as PedData;
-                    //    //if (data == null) return;
-                    //    /*
-                    //    lock (Npcs)
-                    //    {
-                    //        if (!Npcs.ContainsKey(data.Name))
-                    //        {
-                    //            var repr = new SyncPed(data.PedModelHash, data.Position.ToVector(),
-                    //                //data.Quaternion.ToQuaternion(), false);
-                    //                data.Quaternion.ToVector(), false);
-                    //            Npcs.Add(data.Name, repr);
-                    //            Npcs[data.Name].Name = "";
-                    //            Npcs[data.Name].Host = data.Id;
-                    //        }
-                    //        if (Npcs[data.Name].Character != null)
-                    //            NetEntityHandler.SetEntity(data.NetHandle, Npcs[data.Name].Character.Handle);
-
-                    //        Npcs[data.Name].LastUpdateReceived = DateTime.Now;
-                    //        Npcs[data.Name].Position = data.Position.ToVector();
-                    //        Npcs[data.Name].ModelHash = data.PedModelHash;
-                    //        //Npcs[data.Name].Rotation = data.Quaternion.ToVector();
-                    //        Npcs[data.Name].Rotation = data.Quaternion.ToVector();
-                    //        Npcs[data.Name].PedHealth = data.PlayerHealth;
-                    //        Npcs[data.Name].IsInVehicle = false;
-                    //        Npcs[data.Name].AimCoords = data.AimCoords.ToVector();
-                    //        Npcs[data.Name].CurrentWeapon = data.WeaponHash;
-                    //        Npcs[data.Name].IsAiming = data.IsAiming;
-                    //        Npcs[data.Name].IsJumping = data.IsJumping;
-                    //        Npcs[data.Name].IsShooting = data.IsShooting;
-                    //        Npcs[data.Name].IsParachuteOpen = data.IsParachuteOpen;
-                    //    }*/
-                    //}
-                    break;
                 case PacketType.CreateEntity:
                     {
                         var len = msg.ReadInt32();
@@ -934,8 +856,8 @@ namespace GTANetwork
 
                                 if (respObj.Settings != null)
                                 {
-                                    OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
-                                    VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
+                                    //OnFootLagCompensation = respObj.Settings.OnFootLagCompensation;
+                                    //VehicleLagCompensation = respObj.Settings.VehicleLagCompensation;
 
                                     HTTPFileServer = respObj.Settings.UseHttpServer;
 

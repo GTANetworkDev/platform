@@ -90,12 +90,13 @@ namespace GTANetwork
                 {
                     using (var wc = new ImpatientWebClient())
                     {
-                        var rawJson = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim('/') + "/welcome.json");
+                        const string masterServerAddress = "http://master.gtanet.work";
+                        var rawJson = wc.DownloadString(masterServerAddress.Trim('/') + "/welcome.json");
                         var jsonObj = JsonConvert.DeserializeObject<WelcomeSchema>(rawJson);
                         if (jsonObj == null) throw new WebException();
                         if (!File.Exists(GTANInstallDir + "images\\" + jsonObj.Picture))
                         {
-                            wc.DownloadFile(PlayerSettings.MasterServerAddress.Trim('/') + "/pictures/" + jsonObj.Picture, GTANInstallDir + "\\images\\" + jsonObj.Picture);
+                            wc.DownloadFile(masterServerAddress.Trim('/') + "/pictures/" + jsonObj.Picture, GTANInstallDir + "\\images\\" + jsonObj.Picture);
                         }
 
                         _welcomePage.Text = jsonObj.Message;
@@ -226,9 +227,11 @@ namespace GTANetwork
 
                     Client.DiscoverLocalPeers(Port);
 
-                    LogManager.RuntimeLog("Contacting " + PlayerSettings.MasterServerAddress);
+                    const string masterServerAddress = "http://master.gtanet.work";
 
-                    if (string.IsNullOrEmpty(PlayerSettings.MasterServerAddress)) return;
+                    LogManager.RuntimeLog("Contacting " + masterServerAddress);
+
+                    if (string.IsNullOrEmpty(masterServerAddress)) return;
 
                     var response = string.Empty;
                     var responseVerified = string.Empty;
@@ -237,9 +240,9 @@ namespace GTANetwork
                     {
                         using (var wc = new ImpatientWebClient())
                         {
-                            response = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/servers");
-                            responseVerified = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/verified");
-                            responseStats = wc.DownloadString(PlayerSettings.MasterServerAddress.Trim() + "/stats");
+                            response = wc.DownloadString(masterServerAddress.Trim() + "/servers");
+                            responseVerified = wc.DownloadString(masterServerAddress.Trim() + "/verified");
+                            responseStats = wc.DownloadString(masterServerAddress.Trim() + "/stats");
                         }
                     }
                     catch (Exception e)

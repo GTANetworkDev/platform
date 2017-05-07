@@ -36,30 +36,30 @@ namespace GTANetwork.Sync
             if (_isInVehicle)
             {
                 if (_lastPosition == null) return;
-                if (Main.VehicleLagCompensation)
-                {
+                //if (Main.VehicleLagCompensation)
+                //{
 
                     var dir = Position - _lastPosition.Value;
                     currentInterop.vecTarget = Position + dir;
                     currentInterop.vecError = dir;
                     //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
                     //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-                }
-                else
-                {
-                    var dir = Position - _lastPosition.Value;
-                    currentInterop.vecTarget = Position;
-                    currentInterop.vecError = dir;
-                    currentInterop.vecError *= Util.Util.Lerp(0.25f, Util.Util.Unlerp(100, 100, 400), 1f);
-                }
+                //}
+                //else
+                //{
+                //    var dir = Position - _lastPosition.Value;
+                //    currentInterop.vecTarget = Position;
+                //    currentInterop.vecError = dir;
+                //    currentInterop.vecError *= Util.Util.Lerp(0.25f, Util.Util.Unlerp(100, 100, 400), 1f);
+                //}
 
                 if (MainVehicle != null)
                     currentInterop.vecStart = MainVehicle.Position;
             }
             else
             {
-                if (Main.OnFootLagCompensation)
-                {
+                //if (Main.OnFootLagCompensation)
+                //{
                     var dir = Position - _lastPosition;
                     currentInterop.vecTarget = Position; // + dir;
                     currentInterop.vecError = dir ?? new Vector3();
@@ -67,15 +67,15 @@ namespace GTANetwork.Sync
 
                     //MainVehicle == null ? dir : MainVehicle.Position - currentInterop.vecTarget;
                     //currentInterop.vecError *= Util.Lerp(0.25f, Util.Unlerp(100, 100, 400), 1f);
-                }
-                else
-                {
-                    var dir = Position - _lastPosition;
+                //}
+                //else
+                //{
+                //    var dir = Position - _lastPosition;
 
-                    currentInterop.vecTarget = Position;
-                    currentInterop.vecError = dir ?? new Vector3();
-                    currentInterop.vecError *= Util.Util.Lerp(0.25f, Util.Util.Unlerp(100, 100, 400), 1f);
-                }
+                //    currentInterop.vecTarget = Position;
+                //    currentInterop.vecError = dir ?? new Vector3();
+                //    currentInterop.vecError *= Util.Util.Lerp(0.25f, Util.Util.Unlerp(100, 100, 400), 1f);
+                //}
 
                 if (Character != null)
                     currentInterop.vecStart = Character.Position;

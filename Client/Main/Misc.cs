@@ -267,21 +267,25 @@ namespace GTANetwork
             return _pedClothes;
         }
 
-        public static SyncPed GetPedDamagedByPlayer()
+        public static SyncPed GetPedWeHaveDamaged()
         {
-            var PlayerChar = Game.Player.Character;
-            if (PlayerChar == null) return null;
+            var us = Game.Player.Character;
 
-            SyncPed[] myBubble;
-            lock (StreamerThread.StreamedInPlayers) { myBubble = StreamerThread.StreamedInPlayers.ToArray(); }
-            var count = myBubble.Length;
-            for (var i = count - 1; i >= 0; i--)
+            SyncPed[] myArray;
+
+            lock (StreamerThread.StreamedInPlayers) myArray = StreamerThread.StreamedInPlayers.ToArray();
+
+            for (var i = 0; i < myArray.Length; i++)
             {
-                var index = StreamerThread.StreamedInPlayers[i];
-                if (!Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, index?.LocalHandle, PlayerChar, true)) continue;
-                if (!Function.Call<bool>(Hash.HAS_PED_BEEN_DAMAGED_BY_WEAPON, index?.LocalHandle, PlayerChar.Weapons.Current.Model.Hash, 0)) continue;
-                if (Function.Call<int>(Hash.GET_WEAPON_DAMAGE_TYPE, PlayerChar.Weapons.Current.Model.Hash) != 3) continue;
-                Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, index?.LocalHandle);
+                var index = myArray[i];
+                if (index == null) continue;
+
+                var them = new Ped(index.LocalHandle);
+                if (!them.HasBeenDamagedBy(us)) continue;
+
+                Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, them);
+                Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, us);
+                Util.Util.SafeNotify("Shot at" + index.Name + " " + DateTime.Now.Millisecond);
                 return index;
             }
             return null;

@@ -19,14 +19,6 @@ using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork.Sync
 {
-    internal enum SynchronizationMode
-    {
-        Dynamic,
-        DeadReckoning,
-        Teleport,
-        TeleportRudimentary,
-    }
-
     internal class Animation
     {
         internal string Dictionary { get; set; }
@@ -49,10 +41,15 @@ namespace GTANetwork.Sync
 
             if (Character != null && Character.Exists())
             {
+
                 if (_isInVehicle)
+                {
                     UpdateVehiclePosition();
+                }
                 else
+                {
                     UpdateOnFootPosition();
+                }
 
                 _lastJumping = IsJumping;
                 _lastFreefall = IsFreefallingWithParachute;
@@ -84,8 +81,6 @@ namespace GTANetwork.Sync
             }
         }
 
-
-        internal SynchronizationMode SyncMode;
         internal long Host;
         internal Ped Character;
         internal Vector3 _position;
@@ -100,7 +95,8 @@ namespace GTANetwork.Sync
         internal bool IsAiming;
         internal Vector3 AimCoords;
 
-        internal SyncPed AimPlayer;
+        internal Ped AimPlayer;
+        internal bool AimedAtPlayer;
 
         internal float Latency;
         internal bool IsHornPressed;
@@ -120,11 +116,13 @@ namespace GTANetwork.Sync
         private bool _lastSwimming;
         internal float VehicleRPM;
 	    internal float SteeringScale;
-        internal bool EnteringVehicle;
-        private bool _lastEnteringVehicle;
+
         internal bool IsOnFire;
         private bool _lastFire;
         internal bool IsBeingControlledByScript;
+
+        internal bool EnteringVehicle;
+        private bool _lastEnteringVehicle;
 
         internal bool ExitingVehicle;
         private bool _lastExitingVehicle;
@@ -158,26 +156,6 @@ namespace GTANetwork.Sync
         internal bool IsPlayerDead;
         internal bool DirtyWeapons;
 
-        private object _secondSnapshot;
-        private object _firstSnapshot;
-
-        private int _secondSnapshotTime;
-        private int _firstSnapshotTime;
-
-        internal object Snapshot
-        {
-            get { return _firstSnapshot; }
-            set
-            {
-                _secondSnapshot = _firstSnapshot;
-                _firstSnapshot = value;
-
-                _secondSnapshotTime = _firstSnapshotTime;
-                _firstSnapshotTime = Environment.TickCount;
-            }
-        }
-
-
         internal bool IsSpectating;
 
         internal bool Debug;
@@ -185,7 +163,7 @@ namespace GTANetwork.Sync
         private DateTime _stopTime;
         internal float Speed
         {
-            get { return _speed; }
+            get => _speed;
             set
             {
                 _lastSpeed = _speed;
@@ -197,14 +175,11 @@ namespace GTANetwork.Sync
 
         internal bool IsParachuteOpen;
 
-        internal double AverageLatency
-        {
-            get { return _latencyAverager.Count == 0 ? 0 : _latencyAverager.Average(); }
-        }
+        internal double AverageLatency => _latencyAverager.Count == 0 ? 0 : _latencyAverager.Average();
 
         internal long LastUpdateReceived
         {
-            get { return _lastUpdateReceived; }
+            get => _lastUpdateReceived;
             set
             {
                 if (_lastUpdateReceived != 0)
@@ -218,19 +193,9 @@ namespace GTANetwork.Sync
             }
         }
 
-        internal long TicksSinceLastUpdate
-        {
-            get { return Util.Util.TickCount - LastUpdateReceived; }
-        }
+        internal long TicksSinceLastUpdate => Util.Util.TickCount - LastUpdateReceived;
 
-        internal int DataLatency
-        {
-            get
-            {
-                //if (Debug) return Main._debugInterval;
-                return (int)(((Latency * 1000) / 2) + ((Main.Latency * 1000) / 2));
-            }
-        }
+        internal int DataLatency => (int)(((Latency * 1000) / 2) + (Main.Latency * 1000) / 2);
 
         internal Dictionary<int, int> VehicleMods
         {
@@ -260,7 +225,7 @@ namespace GTANetwork.Sync
         private Vector3 _lastVehVel;
         internal Vector3 VehicleVelocity
         {
-            get { return _vehicleVelocity; }
+            get => _vehicleVelocity;
             set
             {
                 _lastVehVel = _vehicleVelocity;
@@ -283,7 +248,7 @@ namespace GTANetwork.Sync
         private Vector3? _lastPosition;
         internal new Vector3 Position
         {
-            get { return _position; }
+            get => _position;
             set
             {
                 _lastPosition = _position;
@@ -294,7 +259,7 @@ namespace GTANetwork.Sync
         private Vector3? _lastVehicleRotation;
         internal Vector3 VehicleRotation
         {
-            get { return _vehicleRotation; }
+            get => _vehicleRotation;
             set
             {
                 _lastVehicleRotation = _vehicleRotation;
@@ -305,7 +270,7 @@ namespace GTANetwork.Sync
         private Vector3? _lastRotation;
         internal new Vector3 Rotation
         {
-            get { return _rotation; }
+            get => _rotation;
             set
             {
                 _lastRotation = _rotation;
@@ -313,20 +278,6 @@ namespace GTANetwork.Sync
             }
         }
 
-
-
-        internal int DEBUG_STEP
-        {
-            get { return DEBUG_STEP_backend; }
-            set
-            {
-                DEBUG_STEP_backend = value;
-                LogManager.DebugLog("NEXTSTEP FOR " + Name + ": " + value);
-
-                if (Main.SlowDownClientForDebug)
-                    GTA.UI.Screen.ShowSubtitle(Name + "-sp" + value.ToString());
-            }
-        }
 
         private bool _lastVehicle;
         private bool _lastAiming;
@@ -389,11 +340,7 @@ namespace GTANetwork.Sync
         private long _lastUpdateReceived;
         private float _speed;
         private Vector3 _vehicleVelocity;
-        private string lastMeleeAnim;
-        private float meleeanimationend;
-        private float meleeDamageStart;
-        private float meleeDamageEnd;
-        private bool meleeSwingDone;
+
         private bool _lastFreefall;
         private DateTime _lastRocketshot;
         private int _lastVehicleAimUpdate;
@@ -408,37 +355,6 @@ namespace GTANetwork.Sync
         internal long CustomAnimationStartTime;
 
         #region NeoSyncPed
-
-
-
-
-        //TODO: Use this
-	    bool UpdatePlayerPosOutOfRange(Vector3 gPos, bool inRange)
-	    {
-			if (!inRange)
-			{
-			    var delta = Util.Util.TickCount - LastUpdateReceived;
-                if (delta < 10000)
-				{
-				    Vector3 lastPos = _lastPosition == null ? Position : _lastPosition.Value;
-
-				    if (!_isInVehicle)
-				    {
-				        Character.PositionNoOffset = Vector3.Lerp(lastPos, gPos, Math.Min(1f, delta / 1000f));
-				    }
-					else if (MainVehicle != null && GetResponsiblePed(MainVehicle).Handle == Character.Handle)
-					{
-					    MainVehicle.PositionNoOffset = Vector3.Lerp(lastPos, gPos, Math.Min(1f, delta / 1000f));
-                        #if !DISABLE_ROTATION_SIM
-                        if (_lastVehiclePos != null)
-                            MainVehicle.Quaternion = Main.DirectionToRotation(_lastVehiclePos.Value - gPos).ToQuaternion();
-                        #endif
-					}
-                }
-				return true;
-			}
-		    return false;
-	    }
 
 	    void WorkaroundBlip()
 	    {
@@ -465,6 +381,10 @@ namespace GTANetwork.Sync
             */
 		}
 
+
+
+
+        private int _mUiForceLocalCounter;
         internal void StuckDetection()
         {
 #if !DISABLE_UNDER_FLOOR_FIX
@@ -522,8 +442,8 @@ namespace GTANetwork.Sync
 
             // Only force position if needed for at least two consecutive calls
             if (!bForceLocalZ && !bForceLocalXY)
-                m_uiForceLocalCounter = 0;
-            else if (m_uiForceLocalCounter++ > 1)
+                _mUiForceLocalCounter = 0;
+            else if (_mUiForceLocalCounter++ > 1)
             {
                 Vector3 targetPos = Character.Position;
 
@@ -543,15 +463,10 @@ namespace GTANetwork.Sync
 #endif
         }
 
-        private int DEBUG_STEP_backend;
         private long _seatEnterStart;
 
         private long _lastTickUpdate = Environment.TickCount;
 
-
-
-
-        private int m_uiForceLocalCounter;
       
 
 

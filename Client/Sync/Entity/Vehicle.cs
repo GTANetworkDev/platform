@@ -41,19 +41,19 @@ namespace GTANetwork.Sync
 
             MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
 
-            if (MainVehicle == null || MainVehicle.Handle == 0)
-            {
-                Character.Position = Position;
-                return true;
-            }
+            //if (MainVehicle == null || MainVehicle.Handle == 0)
+            //{
+            //    Character.Position = Position;
+            //    return true;
+            //}
 
-            if (PlayerChar.IsInVehicle(MainVehicle) && VehicleSeat == Util.Util.GetPedSeat(PlayerChar))
-            {
-                if (DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds < 1000) return true;
+            //if (PlayerChar.IsInVehicle(MainVehicle) && VehicleSeat == Util.Util.GetPedSeat(PlayerChar))
+            //{
+            //    if (DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds < 1000) return true;
 
-                PlayerChar.Task.WarpOutOfVehicle(MainVehicle);
-                NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage("~r~Car jacked!", 3000);
-            }
+            //    PlayerChar.Task.WarpOutOfVehicle(MainVehicle);
+            //    NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage("~r~Car jacked!", 3000);
+            //}
 
             if (MainVehicle != null && MainVehicle.Handle != 0)
             {
@@ -65,11 +65,25 @@ namespace GTANetwork.Sync
                 //{
                 //    Character.PositionNoOffset = MainVehicle.Position;
                 //}
-                Character.PositionNoOffset = MainVehicle.Position;
+                //Character.PositionNoOffset = MainVehicle.Position;
 
                 MainVehicle.IsEngineRunning = true;
                 MainVehicle.IsInvincible = true;
-                Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
+                if (EnteringVehicle)
+                {
+                    Character.Task.EnterVehicle(MainVehicle, (VehicleSeat)VehicleSeat, -1, 2f);
+                    while (Character.IsSubtaskActive(ESubtask.ENTERING_VEHICLE_GENERAL) || Character.IsSubtaskActive(ESubtask.ENTERING_VEHICLE_ENTERING))
+                    {
+                        Script.Yield();
+                        Script.Wait(2000);
+                        Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
+                    }
+                }
+                else
+                {
+                    Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
+                }
+                
             }
             _lastVehicle = true;
             _justEnteredVeh = true;
@@ -85,24 +99,27 @@ namespace GTANetwork.Sync
 
             if (IsCustomAnimationPlaying) DisplayCustomAnimation();
 
-            //if (ExitingVehicle && !_lastExitingVehicle)
-            //{
-            //    Character.Task.ClearAll();
-            //    Character.Task.ClearSecondary();
+            if (ExitingVehicle && !_lastExitingVehicle)
+            {
+                Character.Task.ClearAll();
+                Character.Task.ClearSecondary();
 
-            //    if (Speed < 1f)
-            //    {
-            //        Character.Task.LeaveVehicle(MainVehicle, false);
-            //    }
-            //    else
-            //    {
-            //        Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
-            //    }
-            //}
+                if (Speed < 1f)
+                {
+                    MainVehicle.Doors[(VehicleDoorIndex)VehicleSeat + 1].Open(true, true);
+                    Character.Task.LeaveVehicle(MainVehicle, false);
+                    Script.Wait(2000);
+                    Character.PositionNoOffset = Position;
+                }
+                else
+                {
+                    Function.Call(Hash.TASK_LEAVE_VEHICLE, Character, MainVehicle, 4160);
+                }
+            }
 
             if (!ExitingVehicle && _lastExitingVehicle) DirtyWeapons = true;
 
-            //_lastExitingVehicle = ExitingVehicle;
+            _lastExitingVehicle = ExitingVehicle;
 
             if (ExitingVehicle) return;
 
@@ -197,6 +214,12 @@ namespace GTANetwork.Sync
 
             MainVehicle.CurrentRPM = VehicleRPM;
             MainVehicle.SteeringAngle = SteeringScale.ToRadians();
+
+            if (MainVehicle.ClassType == VehicleClass.Helicopters)
+            {
+                Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, MainVehicle.GetHashCode());
+                Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, MainVehicle);
+            }
         }
 
         private void VMultiVehiclePos()
@@ -214,7 +237,7 @@ namespace GTANetwork.Sync
                 MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force); // Calcul
             }
 
-            StuckVehicleCheck(Position);
+            //StuckVehicleCheck(Position);
 
             if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f)
             {

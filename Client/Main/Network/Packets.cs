@@ -1,4 +1,5 @@
-﻿using GTA;
+﻿using System;
+using GTA;
 using GTANetwork.Streamer;
 using GTANetwork.Util;
 using GTANetworkShared;
@@ -12,6 +13,7 @@ namespace GTANetwork
 
         private void HandlePedPacket(PedData fullPacket, bool pure)
         {
+            if (fullPacket.NetHandle == null) return;
             var syncPed = NetEntityHandler.GetPlayer(fullPacket.NetHandle.Value);
 
 
@@ -93,6 +95,7 @@ namespace GTANetwork
 
         private void HandleVehiclePacket(VehicleData fullData, bool purePacket)
         {
+            if (fullData.NetHandle == null) return;
             var syncPed = NetEntityHandler.GetPlayer(fullData.NetHandle.Value);
 
             syncPed.IsInVehicle = true;
@@ -169,21 +172,25 @@ namespace GTANetwork
 
         private void HandleBulletPacket(int netHandle, bool shooting, Vector3 aim)
         {
+            //Util.Util.SafeNotify("Handling Bullet - " + DateTime.Now.Millisecond);
             var syncPed = NetEntityHandler.GetPlayer(netHandle);
 
             syncPed.IsShooting = shooting;
+            syncPed.AimedAtPlayer = false;
 
             if (shooting) syncPed.AimCoords = aim;
         }
 
         private void HandleBulletPacket(int netHandle, bool shooting, int netHandleTarget)
         {
+            //Util.Util.SafeNotify("Handling PlayerBullet - " + DateTime.Now.Millisecond);
             var syncPed = NetEntityHandler.GetPlayer(netHandle);
-            var syncPedTarget = NetEntityHandler.GetPlayer(netHandleTarget);
+            var syncPedTarget = NetEntityHandler.NetToEntity(netHandleTarget);
 
             syncPed.IsShooting = shooting;
+            syncPed.AimedAtPlayer = true;
 
-            if (shooting) syncPed.AimPlayer = syncPedTarget;
+            if (shooting) syncPed.AimPlayer = new Ped(syncPedTarget.Handle);
         }
     }
 }

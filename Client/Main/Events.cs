@@ -58,7 +58,7 @@ namespace GTANetwork
         {
             var player = Game.Player.Character;
             #region invokeonLocalPlayerShoot
-            if (player.IsShooting)
+            if (player != null && player.IsShooting)
             {
                 JavascriptHook.InvokeCustomEvent(api => api?.invokeonLocalPlayerShoot((int)(player.Weapons.Current?.Hash ?? 0), Main.RaycastEverything(new Vector2(0, 0)).ToLVector()));
             }

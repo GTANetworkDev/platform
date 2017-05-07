@@ -11,7 +11,7 @@ namespace GTANetwork.Streamer
 {
     public class UnoccupiedVehSync : Script
     {
-        public UnoccupiedVehSync() { Tick += OnTick; }
+        public UnoccupiedVehSync() { /*Tick += OnTick;*/ }
         private static long _lastCheck;
 
         private static long _lastEntityRemoval;

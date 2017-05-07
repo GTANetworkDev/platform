@@ -34,9 +34,6 @@ namespace GTANetworkShared
         [XmlElement("password")]
         public string Password { get; set; }
 
-        [XmlElement("masterserver")]
-        public string MasterServer { get; set; }
-
         [XmlElement("resource")]
         public List<SettingsResFilepath> Resources { get; set; }
 
@@ -106,7 +103,6 @@ namespace GTANetworkShared
             UseACL = true;
             AnnounceToLan = true;
             AutoUpdateMinClientVersion = true;
-            MasterServer = "http://master.gtanet.work";
             Resources = new List<SettingsResFilepath>();
             OnFootLagCompensation = true;
             VehicleLagCompensation = true;

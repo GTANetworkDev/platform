@@ -44,8 +44,8 @@ namespace GTANetwork.Streamer
         public const int MAX_MARKERS = 120; //Max engine value: 128
         public const int MAX_PARTICLES = 50;
 
-        public const float GlobalRange = 1500f;
-        public const float LongRange = 1000f;
+        public const float GlobalRange = 2000f;
+        public const float LongRange = 1500f;
         public const float CloseRange = 500f;
 
 
@@ -133,10 +133,10 @@ namespace GTANetwork.Streamer
 
                 var Peds = entityMap.OfType<RemotePed>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
                 MAX_PEDS = MAX_PLAYERS - streamedInPlayers.Take(MAX_PLAYERS).Count();
-                var streamedInPeds = Peds.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, CloseRange)).ToArray();
+                var streamedInPeds = Peds.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, LongRange)).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInPeds.Take(MAX_PEDS).Where(item => !item.StreamedIn));
 
-                var streamedOutPeds = Peds.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRange(position, item.Position, CloseRange)) && item.StreamedIn);
+                var streamedOutPeds = Peds.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRange(position, item.Position, LongRange)) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInPeds.Skip(MAX_PEDS).Where(item => item.StreamedIn));

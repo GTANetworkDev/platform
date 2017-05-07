@@ -115,8 +115,7 @@ namespace GTANetwork.Streamer
                         msg.Write(bin);
                         try
                         {
-                            Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced,
-                                (int) ConnectionChannel.PureSync);
+                            Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, (int) ConnectionChannel.PureSync);
                         }
                         catch (Exception ex)
                         {
@@ -138,8 +137,7 @@ namespace GTANetwork.Streamer
                             lightMsg.Write(lightBin);
                             try
                             {
-                                Main.Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced,
-                                    (int) ConnectionChannel.LightSync);
+                                Main.Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced, (int) ConnectionChannel.LightSync);
                             }
                             catch (Exception ex)
                             {
@@ -185,6 +183,8 @@ namespace GTANetwork.Streamer
         private static bool _lastShooting;
         private static bool _lastBullet;
         private static DateTime _lastShot;
+        private static bool sent = true;
+
 
         public SyncCollector()
         {
@@ -413,8 +413,7 @@ namespace GTANetwork.Streamer
 
                 if (!WeaponDataProvider.IsWeaponAutomatic(unchecked ((GTANetworkShared.WeaponHash) obj.WeaponHash.Value)))
                 {
-                    sendShootingPacket = (shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
-                                          !player.IsSubtaskActive(ESubtask.MELEE_COMBAT));
+                    sendShootingPacket = (shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) && !player.IsSubtaskActive(ESubtask.MELEE_COMBAT));
                 }
                 else
                 {
@@ -439,31 +438,28 @@ namespace GTANetwork.Streamer
                     if (!sendShootingPacket && _lastShooting && !_lastBullet)
                     {
                         _lastBullet = true;
+                        _lastShooting = false;
                         return;
                     }
                 }
 
                 _lastBullet = false;
 
-                if (player.IsRagdoll)
-                    sendShootingPacket = false;
+                if (player.IsRagdoll) sendShootingPacket = false;
 
-                if (!player.IsSubtaskActive(ESubtask.MELEE_COMBAT) && player.Weapons.Current.Ammo == 0)
-                    sendShootingPacket = false;
+                if (!player.IsSubtaskActive(ESubtask.MELEE_COMBAT) && player.Weapons.Current.Ammo == 0) sendShootingPacket = false;
 
-                
-                if (sendShootingPacket && !_lastShooting)
+                if (sendShootingPacket && !_lastShooting && DateTime.Now.Subtract(_lastShot).TotalMilliseconds > 50)
                 {
+                    Util.Util.SafeNotify("Sending BPacket " + DateTime.Now.Millisecond);
+                    sent = false;
                     _lastShooting = true;
-
                     _lastShot = DateTime.Now;
 
                     var msg = Main.Client.CreateMessage();
-                    byte[] bin = null;
-                    SyncPed syncPlayer = null;
+                    byte[] bin;
 
-                    if (Main.OnShootingLagCompensation)
-                        syncPlayer = Main.GetPedDamagedByPlayer();
+                    var syncPlayer = Main.GetPedWeHaveDamaged();
 
                     if (syncPlayer != null)
                     {
@@ -478,39 +474,29 @@ namespace GTANetwork.Streamer
 
                     msg.Write(bin.Length);
                     msg.Write(bin);
-
                     Main.Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.BulletSync);
-
                     Main.BytesSent += bin.Length;
                     Main.MessagesSent++;
                 }
-                else if (!sendShootingPacket && _lastShooting && DateTime.Now.Subtract(_lastShot).TotalMilliseconds > 50)
+                else if (!sendShootingPacket && !sent && DateTime.Now.Subtract(_lastShot).TotalMilliseconds > 50)
                 {
+                    Util.Util.SafeNotify("Sending NPacket " + DateTime.Now.Millisecond);
+                    sent = true;
                     _lastShooting = false;
+                    _lastShot = DateTime.Now;
 
                     var msg = Main.Client.CreateMessage();
-                    byte[] bin = null;
-                    SyncPed syncPlayer = null;
-                    if (Main.OnShootingLagCompensation)
-                        syncPlayer = Main.GetPedDamagedByPlayer();
-                    if (syncPlayer != null)
-                    {
-                        bin = PacketOptimization.WriteBulletSync(0, false, syncPlayer.RemoteHandle);
-                        msg.Write((byte)PacketType.BulletPlayerSync);
-                    }
-                    else
-                    {
-                        bin = PacketOptimization.WriteBulletSync(0, false, aimCoord.ToLVector());
-                        msg.Write((byte)PacketType.BulletSync);
-                    }
+
+                    byte[] bin = PacketOptimization.WriteBulletSync(0, false, aimCoord.ToLVector());
+                    msg.Write((byte)PacketType.BulletSync);
+
                     msg.Write(bin.Length);
                     msg.Write(bin);
-
                     Main.Client.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.BulletSync);
-
                     Main.BytesSent += bin.Length;
                     Main.MessagesSent++;
                 }
+
             }
         }
 

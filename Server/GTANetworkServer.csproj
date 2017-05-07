@@ -151,6 +151,8 @@
     <Compile Include="Constant\NativeHashes.cs" />
     <Compile Include="Constant\PedHashes.cs" />
     <Compile Include="Managers\PickupManager.cs" />
+    <Compile Include="Packets.cs" />
+    <Compile Include="ProcessMessages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -163,6 +165,7 @@
     <Compile Include="ResourceInfo.cs" />
     <Compile Include="Managers\NetEntityHandler.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Resources.cs" />
     <Compile Include="XmlParser.cs" />
   </ItemGroup>
   <ItemGroup>

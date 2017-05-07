@@ -13,7 +13,6 @@ using GTANetworkShared;
 using Lidgren.Network;
 using Microsoft.Win32;
 using NativeUI;
-using NativeUI.PauseMenu;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -90,12 +89,7 @@ namespace GTANetwork
         private static NetPeerConfiguration _config;
         public static ParseableVersion CurrentVersion = ParseableVersion.FromAssembly(Assembly.GetExecutingAssembly());
 
-        internal static SynchronizationMode GlobalSyncMode;
         public static bool LerpRotaion = true;
-        public static bool VehicleLagCompensation = true;
-        public static bool OnFootLagCompensation = true;
-
-        public static bool OnShootingLagCompensation = true;
 
         public static bool _wasTyping;
 
@@ -501,6 +495,7 @@ namespace GTANetwork
                     if (IsOnServer() && !Game.Player.Character.IsInVehicle() && !Chat.IsFocused)
                     {
                         var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
+
 
                         if (!veh.Exists()) break;
                         if (!Game.Player.Character.IsInRangeOfEx(veh.Position, 6f)) break;
