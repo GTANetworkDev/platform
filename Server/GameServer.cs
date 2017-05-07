@@ -504,12 +504,11 @@ namespace GTANetworkServer
             {
                 compParams.ReferencedAssemblies.Add(File.Exists(AssemblyReferences[s]) ? AssemblyReferences[s] : s);
             }
-            
+
             compParams.GenerateInMemory = true;
             compParams.GenerateExecutable = false;
 
-            for (var s = 0; s < script.Length; s++)
-            {
+            for (int s = 0; s < script.Length; s++)
                 if (!vbBasic && script[s].TrimStart().StartsWith("public Constructor"))
                 {
                     script[s] = string.Format(@"
@@ -530,19 +529,17 @@ namespace GTANResource
     }}
 }}", script[s].Replace("Constructor(", "Constructor" + s + "("), s);
                 }
-            }
-            
+
             try
             {
                 var results = !vbBasic
-                    ? provide.CompileAssemblyFromFile(compParams, script)
+                    ? provide.CompileAssemblyFromSource(compParams, script)
                     : vBasicProvider.CompileAssemblyFromSource(compParams, script);
 
                 if (results.Errors.HasErrors)
                 {
                     var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-                    var allWarns = true;
+                    bool allWarns = true;
                     Program.Output("Error/warning while compiling script!", LogCat.Warn);
                     foreach (CompilerError error in results.Errors)
                     {
@@ -556,11 +553,12 @@ namespace GTANResource
                                     error.IsWarning ? "Warning" : "Error",
                                     error.FileName.Substring(basePath.Length + 1)), error.IsWarning ? LogCat.Warn : LogCat.Error);
                         }
+                        Program.Output(String.Format("{3} ({0}) at {2}: {1}", error.ErrorNumber, error.ErrorText, error.Line, error.IsWarning ? "Warning" : "Error"));
 
                         allWarns = allWarns && error.IsWarning;
                     }
 
-                    
+
                     if (!allWarns)
                         return null;
                 }
