@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GTANetworkServer</RootNamespace>
     <AssemblyName>GTANetworkServer</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
@@ -81,7 +81,8 @@
     <SignManifests>false</SignManifests>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Lidgren.Network">
+    <Reference Include="Lidgren.Network, Version=2012.1.7.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin">
@@ -103,9 +104,8 @@
     <Reference Include="Nancy.Owin">
       <HintPath>..\libs\Nancy.Owin.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Owin">
       <HintPath>..\libs\Owin.dll</HintPath>
@@ -125,6 +125,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constant\Color.cs" />
+    <Compile Include="Constant\LogCat.cs" />
     <Compile Include="Elements\Blip.cs" />
     <Compile Include="Elements\Entity.cs" />
     <Compile Include="Elements\Marker.cs" />
@@ -150,6 +151,8 @@
     <Compile Include="Constant\NativeHashes.cs" />
     <Compile Include="Constant\PedHashes.cs" />
     <Compile Include="Managers\PickupManager.cs" />
+    <Compile Include="Packets.cs" />
+    <Compile Include="ProcessMessages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -162,6 +165,7 @@
     <Compile Include="ResourceInfo.cs" />
     <Compile Include="Managers\NetEntityHandler.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Resources.cs" />
     <Compile Include="XmlParser.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -186,7 +190,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MultiTheftAutoShared\GTANetworkShared.csproj">
+    <ProjectReference Include="..\Shared\GTANetworkShared.csproj">
       <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
       <Name>GTANetworkShared</Name>
     </ProjectReference>

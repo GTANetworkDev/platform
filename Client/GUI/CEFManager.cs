@@ -23,7 +23,7 @@ namespace GTANetwork.GUI
 
         public static bool ShowCursor
         {
-            get { return _showCursor; }
+            get => _showCursor;
             set
             {
                 if (!_showCursor && value)
@@ -56,57 +56,45 @@ namespace GTANetwork.GUI
         {
             Tick += (sender, args) =>
             {
-                if (ShowCursor)
+                if (!CefUtil.DISABLE_CEF && ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
-                    if (CefUtil.DISABLE_CEF)
-                        Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
-                }
-                else
-                {
-                    return;
-                }
+                    Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
 
-                var res = GTA.UI.Screen.Resolution;
-                var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
-                var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
+                    var res = Main.screen;
+                    var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
+                    var mouseY = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorY) * res.Height;
 
-                _lastMousePoint = new PointF(mouseX, mouseY);
+                    _lastMousePoint = new PointF(mouseX, mouseY);
 
-                if (CEFManager._cursor != null)
-                {
-                    CEFManager._cursor.Location = new Point((int)mouseX, (int)mouseY);
-                }
+                    if (CEFManager._cursor != null)
+                    {
+                        CEFManager._cursor.Location = new Point((int)mouseX, (int)mouseY);
+                    }
 
 
-                var mouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorAccept);
-                var mouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorAccept);
-                var mouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorAccept);
+                    var mouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorAccept);
+                    var mouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorAccept);
+                    var mouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorAccept);
 
-                var rmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorCancel);
-                var rmouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorCancel);
-                var rmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorCancel);
+                    var rmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorCancel);
+                    var rmouseDownRN = Game.IsDisabledControlPressed(0, GTA.Control.CursorCancel);
+                    var rmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorCancel);
 
-                var wumouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollUp);
-                var wumouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollUp);
+                    var wumouseDown = Game.IsDisabledControlPressed(0, GTA.Control.CursorScrollUp);
+                    var wdmouseDown = Game.IsDisabledControlPressed(0, GTA.Control.CursorScrollDown);
 
-                var wdmouseDown = Game.IsDisabledControlJustPressed(0, GTA.Control.CursorScrollDown);
-                var wdmouseUp = Game.IsDisabledControlJustReleased(0, GTA.Control.CursorScrollDown);
-
-                if (!CefUtil.DISABLE_CEF)
-                {
                     foreach (var browser in CEFManager.Browsers)
                     {
                         if (!browser.IsInitialized()) continue;
 
-                        if (!browser._hasFocused)
-                        {
-                            browser._browser.GetHost().SetFocus(true);
-
-                            browser._browser.GetHost().SetFocus(true);
-                            browser._browser.GetHost().SendFocusEvent(true);
-                            browser._hasFocused = true;
-                        }
+                        //if (!browser._hasFocused)
+                        //{
+                        //    browser._browser.GetHost().SetFocus(true);
+                        //    //browser._browser.GetHost().SetFocus(true);
+                        //    browser._browser.GetHost().SendFocusEvent(true);
+                        //    browser._hasFocused = true;
+                        //}
 
                         if (mouseX > browser.Position.X && mouseY > browser.Position.Y &&
                             mouseX < browser.Position.X + browser.Size.Width &&
@@ -340,23 +328,21 @@ namespace GTANetwork.GUI
 
             //LogManager.CefLog("--> Initiatlize: Start");
             ScreenSize = screenSize;
-            if (!CefUtil.DISABLE_CEF && DirectXHook == null)
+            if (CefUtil.DISABLE_CEF || DirectXHook != null) return;
+
+            Configuration.EnableObjectTracking = true;
+            Configuration.EnableReleaseOnFinalizer = true;
+            Configuration.EnableTrackingReleaseOnFinalizer = true;
+
+            try
             {
-                Configuration.EnableObjectTracking = true;
-                Configuration.EnableReleaseOnFinalizer = true;
-                Configuration.EnableTrackingReleaseOnFinalizer = true;
-
-                try
-                {
-                    LogManager.CefLog("--> Initiatlize: Creating device");
-                    DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
-                    //DirectXHook.Hook();
-                }
-                catch (Exception ex)
-                {
-                    LogManager.CefLog(ex, "DIRECTX START");
-                }
-
+                LogManager.CefLog("--> Initiatlize: Creating device");
+                DirectXHook = new DXHookD3D11(screenSize.Width, screenSize.Height);
+                //DirectXHook.Hook();
+            }
+            catch (Exception ex)
+            {
+                LogManager.CefLog(ex, "DIRECTX START");
             }
 
             //RenderThread = new Thread(RenderLoop);
@@ -366,9 +352,9 @@ namespace GTANetwork.GUI
         }
 
         internal static readonly List<Browser> Browsers = new List<Browser>();
-        internal static int FPS = (int)Game.FPS;
         internal static Size ScreenSize;
         internal static ImageElement _cursor;
+        internal static bool Draw = false;
 
         internal static DXHookD3D11 DirectXHook;
 
@@ -514,6 +500,10 @@ namespace GTANetwork.GUI
         internal readonly bool _localMode;
         internal bool _hasFocused;
 
+        public CefBrowserHost GetHost()
+        {
+            return _browser.GetHost();
+        }
 
         private bool _headless = false;
         public bool Headless
@@ -622,7 +612,7 @@ namespace GTANetwork.GUI
                 {
                     JavaScriptCloseWindows = CefState.Disabled,
                     JavaScriptOpenWindows = CefState.Disabled,
-                    WindowlessFrameRate = CEFManager.FPS,
+                    WindowlessFrameRate = 30,
                     FileAccessFromFileUrls = CefState.Disabled,
                 };
 

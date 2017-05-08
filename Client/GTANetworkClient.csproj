@@ -14,12 +14,13 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -89,7 +90,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\EasyHook.dll</HintPath>
     </Reference>
-    <Reference Include="Lidgren.Network">
+    <Reference Include="Lidgren.Network, Version=2012.1.7.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\Lidgren.Network.dll</HintPath>
     </Reference>
     <Reference Include="NativeUI, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
@@ -99,9 +101,8 @@
     <Reference Include="NAudio">
       <HintPath>..\libs\NAudio.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
@@ -153,11 +154,30 @@
     <Compile Include="GUI\CEFClient.cs" />
     <Compile Include="GUI\DirectXHook\SwapchainHooker.cs" />
     <Compile Include="GUI\SecureCefResourceHandler.cs" />
+    <Compile Include="Javascript\Attach.cs" />
+    <Compile Include="Main\Cleanup.cs" />
+    <Compile Include="Main\Events.cs" />
+    <Compile Include="Main\Menu.cs" />
+    <Compile Include="Main\Misc.cs" />
+    <Compile Include="Main\Natives.cs" />
+    <Compile Include="Main\Network\Download.cs" />
+    <Compile Include="Main\Network\MainNetwork.cs" />
+    <Compile Include="Main\Network\Packets.cs" />
+    <Compile Include="Main\Spectate.cs" />
     <Compile Include="Misc\BiDictionarity.cs" />
     <Compile Include="Javascript\CameraManager.cs" />
     <Compile Include="GUI\ClassicChat.cs" />
     <Compile Include="GUI\Chat.cs" />
     <Compile Include="Misc\ChatData.cs" />
+    <Compile Include="Main\Network\ProcessMessages.cs" />
+    <Compile Include="Main\Properties.cs" />
+    <Compile Include="Streamer\Main.cs" />
+    <Compile Include="Sync\Interpolation.cs" />
+    <Compile Include="Sync\Misc.cs" />
+    <Compile Include="Sync\Nametag.cs" />
+    <Compile Include="Sync\Entity\OnFoot.cs" />
+    <Compile Include="Sync\Entity\Vehicle.cs" />
+    <Compile Include="Util\Cache.cs" />
     <Compile Include="Util\DataCollector.cs" />
     <Compile Include="Networking\DeltaCompressor.cs" />
     <Compile Include="EntityMemoryHandler.cs" />
@@ -186,7 +206,6 @@
     <Compile Include="GUI\DirectXHook\Hook\SafeHGlobal.cs" />
     <Compile Include="GUI\DirectXHook\NativeMethods.cs" />
     <Compile Include="Util\DebugInfo.cs" />
-    <Compile Include="Util\DebugWindow.cs" />
     <Compile Include="Networking\DownloadManager.cs" />
     <Compile Include="Misc\GameSettings.cs" />
     <Compile Include="GUI\Extern\FastBitmap.cs" />
@@ -197,11 +216,13 @@
     <Compile Include="GUI\TabWelcomeMessageItem.cs" />
     <Compile Include="GUI\IChat.cs" />
     <Compile Include="GUI\Warning.cs" />
+    <Compile Include="Util\Enums.cs" />
     <Compile Include="Util\InputboxThread.cs" />
     <Compile Include="Util\Interpolator.cs" />
     <Compile Include="Javascript\JavascriptChat.cs" />
     <Compile Include="Javascript\JavascriptHook.cs" />
     <Compile Include="Javascript\JavascriptXmlParser.cs" />
+    <Compile Include="Util\LINQExtension.cs" />
     <Compile Include="Util\LogManager.cs" />
     <Compile Include="Javascript\LoopAudioStream.cs" />
     <Compile Include="Main.cs" />
@@ -210,25 +231,24 @@
     <Compile Include="Util\ModelSpoofer.cs" />
     <Compile Include="Util\NativeWhitelist.cs" />
     <Compile Include="Util\StickyBombTracker.cs" />
-    <Compile Include="Networking\Streamer.cs" />
-    <Compile Include="Networking\PedThread.cs" />
-    <Compile Include="Misc\Program.cs" />
+    <Compile Include="Streamer\StreamerThread.cs" />
+    <Compile Include="Sync\Threads.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>AssemblyInfo.tt</DependentUpon>
     </Compile>
     <Compile Include="Util\Screenshot.cs" />
-    <Compile Include="Networking\StreamedItems.cs" />
+    <Compile Include="Streamer\StreamedItems.cs" />
     <Compile Include="Util\StringCache.cs" />
     <Compile Include="Util\Subtask.cs" />
-    <Compile Include="Networking\SyncEventWatcher.cs" />
-    <Compile Include="Networking\SyncSender.cs" />
-    <Compile Include="Networking\UnoccupiedVehicleSync.cs" />
+    <Compile Include="Sync\SyncEventWatcher.cs" />
+    <Compile Include="Sync\SyncSender.cs" />
+    <Compile Include="Sync\Entity\UnoccupiedVehicle.cs" />
     <Compile Include="Misc\WeaponDataProvider.cs" />
-    <Compile Include="Networking\SyncPed.cs" />
+    <Compile Include="Sync\SyncPed.cs" />
     <Compile Include="Util\Util.cs" />
-    <Compile Include="Networking\WeaponManager.cs" />
+    <Compile Include="Streamer\WeaponManager.cs" />
     <Compile Include="Util\VehiclePhotos.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -238,13 +258,6 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MultiTheftAutoShared\GTANetworkShared.csproj">
-      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
-      <Name>GTANShared</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="GUI\DirectXHook\sharpdx_direct3d11_effects_x64.dll" />
     <EmbeddedResource Include="soundlist.txt" />
     <EmbeddedResource Include="natives.txt" />
     <Content Include="Properties\AssemblyInfo.tt">
@@ -254,6 +267,12 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\GTANetworkShared.csproj">
+      <Project>{9a4e6062-2cc6-40a4-a2cd-a8ec6cca2e8e}</Project>
+      <Name>GTANetworkShared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

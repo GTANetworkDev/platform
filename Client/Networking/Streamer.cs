@@ -71,9 +71,9 @@ namespace GTANetwork.Networking
         public static int MAX_MARKERS = 127; //Max engine value: 128
         public static int MAX_PARTICLES = 50;
 
-        public static float GeneralStreamingRange = 500f;
-        public static float VehicleStreamingRange = 250f;
-        public static float PlayerStreamingRange = 175f;
+        public static float GeneralStreamingRange = 1000f;
+        public static float VehicleStreamingRange = 350f;
+        public static float PlayerStreamingRange = 200f;
         public static float LabelsStreamingRange = 25f;
   
         void StreamerCalculationsThread()
@@ -941,52 +941,54 @@ namespace GTANetwork.Networking
         {
             IStreamedItem item = null;
             if (prop == null || (item = NetToStreamedItem(netHandle)) == null) return;
-            var veh = item as RemoteBlip;
-            if (prop.Sprite != null) veh.Sprite = prop.Sprite.Value;
-            if (prop.Scale != null) veh.Scale = prop.Scale.Value;
-            if (prop.Color != null) veh.Color = prop.Color.Value;
-            if (prop.IsShortRange != null) veh.IsShortRange = prop.IsShortRange.Value;
-            if (prop.AttachedNetEntity != null) veh.AttachedNetEntity = prop.AttachedNetEntity.Value;
-            if (prop.Position != null) veh.Position = prop.Position;
-            if (prop.Rotation != null) veh.Rotation = prop.Rotation;
-            if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
-            if (prop.EntityType != null) veh.EntityType = prop.EntityType.Value;
-            if (prop.Alpha != null) veh.Alpha = prop.Alpha.Value;
-            if (prop.Flag != null) veh.Flag = prop.Flag.Value;
-            if (prop.RangedBlip != null) veh.RangedBlip = prop.RangedBlip.Value;
-            if (prop.IsInvincible != null) veh.IsInvincible = prop.IsInvincible.Value;
-            if (prop.Name != null) veh.Name = prop.Name;
+            var blip = item as RemoteBlip;
+            if (prop.Sprite != null) blip.Sprite = prop.Sprite.Value;
+            if (prop.Scale != null) blip.Scale = prop.Scale.Value;
+            if (prop.Color != null) blip.Color = prop.Color.Value;
+            if (prop.IsShortRange != null) blip.IsShortRange = prop.IsShortRange.Value;
+            if (prop.AttachedNetEntity != null) blip.AttachedNetEntity = prop.AttachedNetEntity.Value;
+            if (prop.Position != null) blip.Position = prop.Position;
+            if (prop.Rotation != null) blip.Rotation = prop.Rotation;
+            if (prop.ModelHash != null) blip.ModelHash = prop.ModelHash.Value;
+            if (prop.EntityType != null) blip.EntityType = prop.EntityType.Value;
+            if (prop.Alpha != null) blip.Alpha = prop.Alpha.Value;
+            if (prop.Flag != null) blip.Flag = prop.Flag.Value;
+            if (prop.RangedBlip != null) blip.RangedBlip = prop.RangedBlip.Value;
+            if (prop.IsInvincible != null) blip.IsInvincible = prop.IsInvincible.Value;
+            if (prop.Name != null) blip.Name = prop.Name;
+            if (prop.RouteVisible != null) blip.RouteVisible = prop.RouteVisible.Value;
+            if (prop.RouteColor != null) blip.RouteColor = prop.RouteColor.Value;
 
             if (prop.Dimension != null)
             {
-                veh.Dimension = prop.Dimension.Value;
-                if (veh.Dimension != Main.LocalDimension && item.StreamedIn && veh.Dimension != 0) StreamOut(item);
+                blip.Dimension = prop.Dimension.Value;
+                if (blip.Dimension != Main.LocalDimension && item.StreamedIn && blip.Dimension != 0) StreamOut(item);
             }
 
-            if (prop.Attachables != null) veh.Attachables = prop.Attachables;
+            if (prop.Attachables != null) blip.Attachables = prop.Attachables;
             if (prop.AttachedTo != null)
             {
-                veh.AttachedTo = prop.AttachedTo;
+                blip.AttachedTo = prop.AttachedTo;
                 var attachedTo = NetToStreamedItem(prop.AttachedTo.NetHandle);
                 if (attachedTo != null)
                 {
-                    AttachEntityToEntity(veh as IStreamedItem, attachedTo, prop.AttachedTo);
+                    AttachEntityToEntity(blip as IStreamedItem, attachedTo, prop.AttachedTo);
                 }
             }
             if (prop.SyncedProperties != null)
             {
-                if (veh.SyncedProperties == null) veh.SyncedProperties = new Dictionary<string, NativeArgument>();
+                if (blip.SyncedProperties == null) blip.SyncedProperties = new Dictionary<string, NativeArgument>();
                 foreach (var pair in prop.SyncedProperties)
                 {
                     if (pair.Value is LocalGamePlayerArgument)
-                        veh.SyncedProperties.Remove(pair.Key);
+                        blip.SyncedProperties.Remove(pair.Key);
                     else
-                        veh.SyncedProperties.Set(pair.Key, pair.Value);
+                        blip.SyncedProperties.Set(pair.Key, pair.Value);
                 }
             }
 
-            if (prop.PositionMovement != null) veh.PositionMovement = prop.PositionMovement;
-            if (prop.RotationMovement != null) veh.RotationMovement = prop.RotationMovement;
+            if (prop.PositionMovement != null) blip.PositionMovement = prop.PositionMovement;
+            if (prop.RotationMovement != null) blip.RotationMovement = prop.RotationMovement;
         }
 
         public void UpdateMarker(int netHandle, Delta_MarkerProperties prop, bool localOnly = false)
@@ -1486,6 +1488,8 @@ namespace GTANetwork.Networking
                     RotationMovement = prop.RotationMovement,
                     Flag = prop.Flag,
                     Name = prop.Name,
+                    RouteVisible = prop.RouteVisible,
+                    RouteColor = prop.RouteColor,
 
                     StreamedIn = false,
                     LocalOnly = false,
@@ -2169,6 +2173,8 @@ namespace GTANetwork.Networking
             ourBlip.Alpha = item.Alpha;
             ourBlip.IsShortRange = item.IsShortRange;
             ourBlip.Scale = item.Scale;
+            ourBlip.ShowRoute = item.RouteVisible;
+            Function.Call(Hash.SET_BLIP_ROUTE_COLOUR, ourBlip, item.RouteColor);
 
             item.StreamedIn = true;
             item.LocalHandle = ourBlip.Handle;

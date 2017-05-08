@@ -9,148 +9,125 @@ namespace GTANetworkServer.Managers
 {
     internal class UnoccupiedVehicleManager
     {
-        private const int UPDATE_RATE = 500;
-        private const float SYNC_RANGE = 130;
+        private const int UPDATE_RATE = 250;
+        private const float SYNC_RANGE = 180;
         private const float SYNC_RANGE_SQUARED = SYNC_RANGE*SYNC_RANGE;
         private const float DROPOFF = 30;
         private const float DROPOFF_SQUARED = DROPOFF*DROPOFF;
 
         private long _lastUpdate;
 
-        private Dictionary<int, Client> Syncers = new Dictionary<int, Client>();
+        private Dictionary<int, Client> Syncer = new Dictionary<int, Client>();
 
         public void Pulse()
         {
-            if (Program.GetTicks() - _lastUpdate > UPDATE_RATE)
-            {
-                _lastUpdate = Program.GetTicks();
-
-                Task.Run((Action)Update);
-            }
+            if (Program.GetTicks() - _lastUpdate <= UPDATE_RATE) return;
+            _lastUpdate = Program.GetTicks();
+            Task.Run((Action)Update);
         }
 
         public Client GetSyncer(int handle)
         {
-            return Syncers.Get(handle);
+            return Syncer.Get(handle);
         }
 
         public void UnsyncAllFrom(Client player)
         {
-            for (int i = Syncers.Count - 1; i >= 0; i--)
+            for (var i = Syncer.Count - 1; i >= 0; i--)
             {
-                var el = Syncers.ElementAt(i);
+                var el = Syncer.ElementAt(i);
 
                 if (el.Value == player)
                 {
-                    Syncers.Remove(el.Key);
+                    StopSync(el.Value, el.Key);
+                    Syncer.Remove(el.Key);
                 }
             }
         }
-        
-        public static bool IsVehicleUnoccupied(NetHandle vehicle)
+
+        private static bool IsVehicleUnoccupied(NetHandle vehicle)
         {
             var players = Program.ServerInstance.PublicAPI.getAllPlayers();
             var vehicles = Program.ServerInstance.NetEntityHandler.ToCopy().Select(pair => pair.Value).Where(p => p is VehicleProperties).Cast<VehicleProperties>();
             var prop = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value);
 
-            return players.TrueForAll(c => c.CurrentVehicle != vehicle) && vehicles.All(v => v.Trailer != vehicle.Value) &&
-                   prop.AttachedTo == null;
+            return players.TrueForAll(c => c.CurrentVehicle != vehicle) && vehicles.All(v => v.Trailer != vehicle.Value) && prop.AttachedTo == null;
         }
 
-        public void Update()
+        private void Update()
         {
-            foreach (var vehicle in Program.ServerInstance.PublicAPI.getAllVehicles())
+            for (var index = Program.ServerInstance.PublicAPI.getAllVehicles().Count - 1; index >= 0; index--)
             {
-                UpdateVehicle(vehicle.Value, Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value));
+                UpdateVehicle(Program.ServerInstance.PublicAPI.getAllVehicles()[index].Value, Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(Program.ServerInstance.PublicAPI.getAllVehicles()[index].Value));
             }
         }
 
-        public void UpdateVehicle(int handle, VehicleProperties prop)
+        private void UpdateVehicle(int handle, EntityProperties prop)
         {
             if (handle == 0 || prop == null) return;
-            if (!IsVehicleUnoccupied(new NetHandle(handle)))
-            {
-                if (Syncers.ContainsKey(handle))
-                {
-                    StopSync(Syncers[handle], handle);
-                }
 
+            if (!IsVehicleUnoccupied(new NetHandle(handle))) //OCCUPIED
+            {
+                if (Syncer.ContainsKey(handle))
+                {
+                    StopSync(Syncer[handle], handle);
+                }
                 return;
             }
 
-            if (Syncers.ContainsKey(handle)) // This vehicle already has a syncer
+            if (prop.Position == null) return;
+
+            var players = Program.ServerInstance.PublicAPI.getAllPlayers().Where(c => (c.Properties.Dimension == prop.Dimension || prop.Dimension == 0) && c.Position != null).OrderBy(c => c.Position.DistanceToSquared2D(prop.Position)).Take(1).ToArray();
+            if (players[0] == null) return;
+
+            if (players[0].Position.DistanceToSquared(prop.Position) < SYNC_RANGE_SQUARED && (players[0].Properties.Dimension == prop.Dimension || prop.Dimension == 0))
             {
-                if (Syncers[handle].Position.DistanceToSquared(prop.Position) > SYNC_RANGE_SQUARED || (Syncers[handle].Properties.Dimension != prop.Dimension && prop.Dimension != 0))
+                if (Syncer.ContainsKey(handle))
                 {
-                    StopSync(Syncers[handle], handle);
-
-                    FindSyncer(handle, prop);
+                    if (Syncer[handle] != players[0])
+                    {
+                        StopSync(Syncer[handle], handle);
+                        StartSync(players[0], handle);
+                    }
                 }
-            }
-            else // This car has no syncer
-            {
-                FindSyncer(handle, prop);
-            }
-        }
-
-        public void OverrideSyncer(int vehicleHandle, Client newSyncer)
-        {
-            if (Syncers.ContainsKey(vehicleHandle)) // We are currently syncing this vehicle
-            {
-                if (Syncers[vehicleHandle] == newSyncer) return;
-
-                StopSync(Syncers[vehicleHandle], vehicleHandle);
-                Syncers[vehicleHandle] = newSyncer;
+                else
+                {
+                    StartSync(players[0], handle);
+                }
             }
             else
             {
-                Syncers.Add(vehicleHandle, newSyncer);
-            }
-
-            StartSync(newSyncer, vehicleHandle);
-        }
-
-        public void FindSyncer(int handle, VehicleProperties prop)
-        {
-            if (prop.Position == null) return;
-
-            var players =
-                Program.ServerInstance.PublicAPI.getAllPlayers()
-                    .Where(c => (c.Properties.Dimension == prop.Dimension || prop.Dimension == 0) && c.Position != null)
-                    .OrderBy(c => c.Position.DistanceToSquared(prop.Position));
-
-            Client targetPlayer;
-
-            if ((targetPlayer = players.FirstOrDefault()) != null && targetPlayer.Position.DistanceToSquared(prop.Position) < SYNC_RANGE_SQUARED - DROPOFF_SQUARED)
-            {
-                StartSync(targetPlayer, handle);
+                if (Syncer.ContainsKey(handle))
+                {
+                    StopSync(players[0], handle);
+                }
             }
         }
 
-        public void StartSync(Client player, int vehicle)
+        private void StartSync(Client player, int vehicle)
         {
             var packet = Program.ServerInstance.Server.CreateMessage();
             packet.Write((byte)PacketType.UnoccupiedVehStartStopSync);
             packet.Write(vehicle);
             packet.Write(true);
 
-            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableOrdered,
-                (int) ConnectionChannel.SyncEvent);
+            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableUnordered, (int)ConnectionChannel.SyncEvent);
+            //Console.WriteLine("[DEBUG MESSAGE] [+] Starting sync for: " + player.Name + " | Vehicle: " + vehicle);
 
-            Syncers.Set(vehicle, player);
+            Syncer.Set(vehicle, player);
         }
 
-        public void StopSync(Client player, int vehicle)
+        private void StopSync(Client player, int vehicle)
         {
             var packet = Program.ServerInstance.Server.CreateMessage();
             packet.Write((byte)PacketType.UnoccupiedVehStartStopSync);
             packet.Write(vehicle);
             packet.Write(false);
 
-            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableOrdered,
-                (int)ConnectionChannel.SyncEvent);
+            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableUnordered, (int)ConnectionChannel.SyncEvent);
+            //Console.WriteLine("[DEBUG MESSAGE] [-] Stopping sync for: " + player.Name + " | Vehicle: " + vehicle);
 
-            Syncers.Remove(vehicle);
+            Syncer.Remove(vehicle);
         }
     }
 }

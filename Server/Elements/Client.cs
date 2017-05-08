@@ -22,8 +22,10 @@ namespace GTANetworkServer
         internal NetConnection NetConnection { get; private set; }
 
         internal string SocialClubName { get; set; }
+        internal bool ConnectionConfirmed { get; set; }
         internal string Name { get; set; }
         internal bool CEF { get; set; }
+        internal bool MediaStream { get; set; }
         internal float Latency { get; set; }
         internal ParseableVersion RemoteScriptVersion { get; set; }
         internal int GameVersion { get; set; }
@@ -44,10 +46,7 @@ namespace GTANetworkServer
 
         public NetHandle handle { get; set; }
 
-        internal PlayerProperties Properties
-        {
-            get { return Program.ServerInstance.NetEntityHandler.ToDict()[handle.Value] as PlayerProperties; }
-        }
+        internal PlayerProperties Properties => Program.ServerInstance.NetEntityHandler.ToDict()[handle.Value] as PlayerProperties;
 
         internal void CommitConnection()
         {
@@ -72,14 +71,11 @@ namespace GTANetworkServer
         public override bool Equals(object obj)
         {
             Client target;
-            if ((target = obj as Client) != null)
-            {
-                if (NetConnection == null || target.NetConnection == null)
-                    return handle == target.handle;
+            if ((target = obj as Client) == null) return false;
+            if (NetConnection == null || target.NetConnection == null)
+                return handle == target.handle;
 
-                return NetConnection.RemoteUniqueIdentifier == target.NetConnection.RemoteUniqueIdentifier;
-            }
-            return false;
+            return NetConnection.RemoteUniqueIdentifier == target.NetConnection.RemoteUniqueIdentifier;
         }
 
         public static bool operator ==(Client left, Client right)
@@ -160,6 +156,11 @@ namespace GTANetworkServer
         public bool isCEFenabled
         {
             get { return CEF; }
+        }
+
+        public bool isMediaStreamEnabled
+        {
+            get { return MediaStream; }
         }
 
         public Vector3 velocity
@@ -288,7 +289,7 @@ namespace GTANetworkServer
             API.shared.sendChatMessageToPlayer(this, sender, message);
         }
 
-        public void sendNotification(string sender, string message, bool flashing = true)
+        public void sendNotification(string message, bool flashing = true)
         {
             API.shared.sendNotificationToPlayer(this, message, flashing);
         }
@@ -303,9 +304,9 @@ namespace GTANetworkServer
             API.shared.setPlayerIntoVehicle(this, car, seat);
         }
 
-        public void warpOutOfVehicle(NetHandle car)
+        public void warpOutOfVehicle()
         {
-            API.shared.warpPlayerOutOfVehicle(this, car);
+            API.shared.warpPlayerOutOfVehicle(this);
         }
 
         public void setSkin(PedHash newSkin)
@@ -573,6 +574,11 @@ namespace GTANetworkServer
         public int model
         {
             get { return API.shared.getEntityModel(this); }
+        }
+
+        public string version
+        {
+            get { return this.RemoteScriptVersion.ToString(); }
         }
 
 

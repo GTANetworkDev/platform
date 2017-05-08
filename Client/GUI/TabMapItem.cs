@@ -7,7 +7,8 @@ using System.Windows.Forms;
 using GTA;
 using GTA.Math;
 using GTA.Native;
-using GTANetwork.Networking;
+using GTANetwork.Streamer;
+using GTANetwork.Sync;
 using GTANetwork.Util;
 using NativeUI;
 using NativeUI.PauseMenu;
@@ -64,8 +65,9 @@ namespace GTANetwork.GUI
             {
                 if (!_focused && value)
                 {
+                    Ped PlayerChar = Game.Player.Character;
                     Main.MainMenu.HideTabs = true;
-                    var newPos = World3DToMap2D(Game.Player.Character.Position);
+                    var newPos = World3DToMap2D(PlayerChar.Position);
                     Position = new PointF(newPos.Width/Zoom, newPos.Height/Zoom);
                     _justOpened_mouse = true;
                     _justOpened_kb = true;
@@ -254,10 +256,11 @@ namespace GTANetwork.GUI
 
                 const float playerScale = 0.8f;
 
+                Ped PlayerChar = Game.Player.Character;
                 Util.Util.DxDrawTexture(0, BLIP_PATH + "player.png",
-                    newPos.X + World3DToMap2D(Game.Player.Character.Position).Width,
-                    newPos.Y + World3DToMap2D(Game.Player.Character.Position).Height, 32* playerScale, 32* playerScale,
-                    -Game.Player.Character.Rotation.Z, 255, 255, 255, 255, true);
+                    newPos.X + World3DToMap2D(PlayerChar.Position).Width,
+                    newPos.Y + World3DToMap2D(PlayerChar.Position).Height, 32* playerScale, 32* playerScale,
+                    -PlayerChar.Rotation.Z, 255, 255, 255, 255, true);
 
                 
 
@@ -291,10 +294,7 @@ namespace GTANetwork.GUI
 
 					    if (!_wasMouseInput) hoverPos = center;
 
-					    if (blipInfo != null &&
-                            !string.IsNullOrEmpty(blipInfo.Name) &&
-                            hoverPos.X > pos.X - halfLen && hoverPos.Y > pos.Y - halfLen &&
-                            hoverPos.X < pos.X + halfLen && hoverPos.Y < pos.Y + halfLen) // hovering over blip
+					    if (!string.IsNullOrEmpty(blipInfo?.Name) && hoverPos.X > pos.X - halfLen && hoverPos.Y > pos.Y - halfLen && hoverPos.X < pos.X + halfLen && hoverPos.Y < pos.Y + halfLen) // hovering over blip
 					    {
                             var labelPos = pos - new Size(-32, 14);
 
@@ -536,10 +536,8 @@ namespace GTANetwork.GUI
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
-            float ratio = (float)screenw / screenh;
+            float ratio = (float)Main.screen.Width / Main.screen.Height;
             var width = height * ratio;
 
 
@@ -556,10 +554,8 @@ namespace GTANetwork.GUI
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
-            float ratio = (float)screenw / screenh;
+            float ratio = (float)Main.screen.Width / Main.screen.Height;
             var width = height * ratio;
 
 

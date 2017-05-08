@@ -135,6 +135,8 @@ namespace GTANetwork.Networking
                             bool syncUnocVeh = false;
                             syncUnocVeh = (dist) > 2f ||
                                           ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 2f ||
+                                          (ent.Velocity.LengthSquared() == 0 && vehicle.Velocity.LengthSquared() > 0) ||
+                                          Math.Abs(ent.Velocity.LengthSquared() - vehicle.Velocity.LengthSquared()) > 2f ||
                                           Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f ||
                                           Util.Util.BuildTyreFlag(new Vehicle(ent.Handle)) != vehicle.Tires ||
                                           vehicle.DamageModel == null ||
@@ -145,6 +147,7 @@ namespace GTANetwork.Networking
                             {
                                 vehicle.Position = ent.Position.ToLVector();
                                 vehicle.Rotation = ent.Rotation.ToLVector();
+                                vehicle.Velocity = ent.Velocity.ToLVector();
                                 vehicle.Health = veh.EngineHealth;
                                 vehicle.Tires = (byte)Util.Util.BuildTyreFlag(veh);
                                 if (vehicle.DamageModel == null) vehicle.DamageModel = new VehicleDamageModel();

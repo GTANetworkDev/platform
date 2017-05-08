@@ -16,7 +16,7 @@ namespace GTANetwork.Util
             var t = new Thread((ThreadStart) delegate
             {
                 var destinationFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments,
-                    Environment.SpecialFolderOption.Create) + "\\Rockstar Games\\GTA V\\GTA Network\\Screenshots";
+                    Environment.SpecialFolderOption.Create) + "\\GTA Network\\Screenshots";
                 if (!Directory.Exists(destinationFolder)) Directory.CreateDirectory(destinationFolder);
 
                 var gta5Proc = Process.GetProcessesByName("GTA5")[0];

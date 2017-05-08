@@ -7,7 +7,7 @@ namespace GTANetwork.Javascript
 {
     public class XmlGroup
     {
-        internal XmlDocument _mapDocument;
+        private XmlDocument _mapDocument;
 
         internal void Load(string path)
         {
@@ -15,7 +15,7 @@ namespace GTANetwork.Javascript
             _mapDocument.Load(path);
         }
 
-        internal void Load(XmlNode node)
+        private void Load(XmlNode node)
         {
             _mapDocument = new XmlDocument();
             _mapDocument.ImportNode(node, false);

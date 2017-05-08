@@ -883,23 +883,23 @@ namespace GTANetwork.Networking
             if (isInRange)
             {
                 Vector3 vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
-                float force = 1.20f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
-                float forceVelo = 1.05f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
+                float force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
+                float forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
 
-                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) 
+                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length()) //
                 {
-                    MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * (force + 0.15f)); // Calcul
+                    MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f); // Calcul
                 }
                 else
                 {
-                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.25f) + (vecDif * (force)); // Calcul
+                    MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force); // Calcul
                 }
                 StuckVehicleCheck(Position);
             }
             else
             {
-                MainVehicle.PositionNoOffset = currentInterop.vecTarget;
-                //MainVehicle.Velocity = VehicleVelocity;
+                //MainVehicle.PositionNoOffset = currentInterop.vecTarget;
+                MainVehicle.Velocity = VehicleVelocity;
             }
 
             if (isInRange && _lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f /* && spazzout */)
@@ -1560,7 +1560,7 @@ namespace GTANetwork.Networking
             var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character,
 						lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
 
-			UpdatePlayerPedPos();
+			//UpdatePlayerPedPos();
 
 			if (!meleeSwingDone && CurrentWeapon != unchecked((int)WeaponHash.Unarmed))
 			{
@@ -1631,28 +1631,21 @@ namespace GTANetwork.Networking
 				secondaryAnimDict = "melee@unarmed@streamed_core_fps";
 				secAnim = "idle";
 			}
-			//
 
 			var animDict = GetAnimDictionary();
             
-			if (animDict != null &&
-				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
-					3))
+			if (animDict != null && !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
 			{
-				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,
-					8f, 10f, -1, 0, -8f, 1, 1, 1);
+				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim, 8f, 10f, -1, 0, -8f, 1, 1, 1);
 			}
 
-			if (secondaryAnimDict != null &&
-				!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, secAnim,
-					3))
+			if (secondaryAnimDict != null && !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, secAnim, 3))
 			{
                 Character.Task.ClearSecondary();
-				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(secondaryAnimDict), secAnim,
-					8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
+				Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(secondaryAnimDict), secAnim, 8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
 			}
 
-			UpdatePlayerPedPos();
+			//UpdatePlayerPedPos();
 		}
 
 	    void DisplayAimingAnimation()
@@ -2042,9 +2035,8 @@ namespace GTANetwork.Networking
 
                 if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
                 {
-                    UpdatePlayerPedPos();
-                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0],
-                        getupAnim[1]);
+                    //UpdatePlayerPedPos();
+                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0],getupAnim[1]);
 
                     if (currentTime >= 0.7f)
                     {
@@ -2078,7 +2070,6 @@ namespace GTANetwork.Networking
             {
                 DisplayShootingAnimation();
             }
-
             else if (IsCustomAnimationPlaying)
             {
                 if ((CustomAnimationFlag & 48) == 48)
@@ -2091,16 +2082,18 @@ namespace GTANetwork.Networking
                 }
                 DisplayCustomAnimation();
             }
-
-
-            DEBUG_STEP = 32;
-            if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
+            else
             {
-                //UpdatePlayerPedPos();
 
-                //DisplayWalkingAnimation();
+                DEBUG_STEP = 32;
+                if (!IsAiming && !IsShooting && !IsJumping && !IsInMeleeCombat && !IsCustomAnimationPlaying)
+                {
+                    //UpdatePlayerPedPos();
 
-                VMultiOnfootPosition();
+                    //DisplayWalkingAnimation();
+
+                    VMultiOnfootPosition();
+                }
             }
 
 			return false;
@@ -2142,9 +2135,9 @@ namespace GTANetwork.Networking
                     var tmpPosition = Vector3.Lerp(
                         new Vector3(Character.Position.X, Character.Position.Y, Character.Position.Z),
                         new GTA.Math.Vector3(
-                            Position.X + ((PedVelocity.X / 5)),
-                            Position.Y + ((PedVelocity.Y / 5)),
-                            Position.Z + ((PedVelocity.Z / 5))),
+                            Position.X + ((PedVelocity.X / 7)),
+                            Position.Y + ((PedVelocity.Y / 7)),
+                            Position.Z + ((PedVelocity.Z / 10))),
                         lerpValue);
                     Character.PositionNoOffset = tmpPosition;
                 }
@@ -2190,7 +2183,7 @@ namespace GTANetwork.Networking
                 }
                 else
                 {
-                    if (IsAiming && !IsReloading)
+                    if (IsAiming && !IsReloading && !IsInMeleeCombat)
                     {
                         if (_aimingProp != null && _aimingProp.Exists())
                         {
@@ -2279,7 +2272,7 @@ namespace GTANetwork.Networking
                         }
                     }
                 }
-                StuckDetection();
+                //StuckDetection();
             }
         }
 
@@ -2317,24 +2310,26 @@ namespace GTANetwork.Networking
                     bForceLocalZ = true;
                 }
             }
+            /*
+             if (Math.Abs(vecRemoteMovement.X) < 0.01f)
+             {
+                 float fLocalErrorX = Math.Abs(vecLocalError.X);
+                 if (fLocalErrorX > 0.1f && fLocalErrorX < 10)
+                 {
+                     bForceLocalXY = true;
+                 }
+             }
 
-            if (Math.Abs(vecRemoteMovement.X) < 0.01f)
-            {
-                float fLocalErrorX = Math.Abs(vecLocalError.X);
-                if (fLocalErrorX > 0.1f && fLocalErrorX < 10)
-                {
-                    bForceLocalXY = true;
-                }
-            }
 
-            if (Math.Abs(vecRemoteMovement.Y) < 0.01f)
-            {
-                float fLocalErrorY = Math.Abs(vecLocalError.Y);
-                if (fLocalErrorY > 0.1f && fLocalErrorY < 10)
-                {
-                    bForceLocalXY = true;
-                }
-            }
+             if (Math.Abs(vecRemoteMovement.Y) < 0.01f)
+             {
+                 float fLocalErrorY = Math.Abs(vecLocalError.Y);
+                 if (fLocalErrorY > 0.1f && fLocalErrorY < 10)
+                 {
+                     bForceLocalXY = true;
+                 }
+             }
+             */
 
             // Only force position if needed for at least two consecutive calls
             if (!bForceLocalZ && !bForceLocalXY)

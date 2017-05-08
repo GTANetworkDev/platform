@@ -38,12 +38,12 @@ namespace GTANetworkServer.Managers
 
         public IEnumerable<Client> GetNearClients()
         {
-            return new List<Client>(_ordered.Take(40));
+            return new List<Client>(_ordered.Take(250));
         }
 
         public IEnumerable<Client> GetFarClients()
         {
-            return new List<Client>(_ordered.Skip(40));
+            return new List<Client>(_ordered.Skip(250));
         }
 
         public void Pulse()

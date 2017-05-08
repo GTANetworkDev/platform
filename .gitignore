@@ -169,7 +169,6 @@ ClientBin/
 *~
 *.dbmdl
 *.dbproj.schemaview
-*.pfx
 *.publishsettings
 node_modules/
 orleans.codegen.cs
@@ -212,3 +211,6 @@ _Pvt_Extensions/
 ModelManifest.xml
 
 .db
+
+# GTA Network generated files
+AssemblyInfo.cs

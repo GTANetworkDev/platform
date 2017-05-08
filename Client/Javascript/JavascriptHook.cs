@@ -1,7 +1,6 @@
-﻿#define RELATIVE_CEF_POS
+﻿//#define RELATIVE_CEF_POS
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Dynamic;
@@ -14,8 +13,9 @@ using GTA;
 using GTA.Math;
 using GTA.Native;
 using GTANetwork.GUI;
-using GTANetwork.Networking;
+using GTANetwork.Streamer;
 using GTANetwork.Util;
+using GTANetwork.Sync;
 using GTANetworkShared;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.V8;
@@ -105,7 +105,7 @@ namespace GTANetwork.Javascript
 
         internal static void DisposeAudio()
         {
-            var t = new Thread((ThreadStart)delegate
+            var t = new Thread((ThreadStart) delegate
             {
                 try
                 {
@@ -119,8 +119,7 @@ namespace GTANetwork.Javascript
                 {
                     LogManager.LogException(ex, "DISPOSEAUDIO");
                 }
-            });
-            t.IsBackground = true;
+            }) {IsBackground = true};
             t.Start();
         }
     }
@@ -150,17 +149,19 @@ namespace GTANetwork.Javascript
         internal static WaveOutEvent AudioDevice { get; set; }
         internal static WaveStream AudioReader { get; set; }
 
-        private static ExpandoObject Exported { get; set; }
+        internal static ExpandoObject Exported { get; set; }
 
         internal static void InvokeServerEvent(string eventName, string resource, object[] arguments)
         {
             ThreadJumper.Add(() =>
             {
-                lock (ScriptEngines) ScriptEngines.ForEach(en =>
+                lock (ScriptEngines)
+
+                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
                 {
-                    if (resource != "*" && en.ResourceParent != resource) return;
-                    en.Engine.Script.API.invokeServerEvent(eventName, arguments);
-                });
+                    if (resource != "*" && ScriptEngines[i].ResourceParent != resource) return;
+                    ScriptEngines[i].Engine.Script.API.invokeServerEvent(eventName, arguments);
+                }
             });
         }
 
@@ -173,14 +174,20 @@ namespace GTANetwork.Javascript
                 {
                     lock (ScriptEngines)
                     {
-                        ScriptEngines.ForEach(en => en.Engine.Script.API.invokeChatCommand(msg));
+                        for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                        {
+                            ScriptEngines[index].Engine.Script.API.invokeChatCommand(msg);
+                        }
                     }
                 }
                 else
                 {
                     lock (ScriptEngines)
                     {
-                        ScriptEngines.ForEach(en => en.Engine.Script.API.invokeChatMessage(msg));
+                        for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                        {
+                            ScriptEngines[index].Engine.Script.API.invokeChatMessage(msg);
+                        }
                     }
                 }
             });
@@ -192,7 +199,10 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    ScriptEngines.ForEach(en => func(en.Engine.Script.API));
+                    for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                    {
+                        func(ScriptEngines[index].Engine.Script.API);
+                    }
                 }
             });
         }
@@ -203,7 +213,10 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    ScriptEngines.ForEach(en => en.Engine.Script.API.invokeEntityStreamIn(handle, type));
+                    for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                    {
+                        ScriptEngines[index].Engine.Script.API.invokeEntityStreamIn(handle, type);
+                    }
                 }
             });
         }
@@ -214,7 +227,10 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    ScriptEngines.ForEach(en => en.Engine.Script.API.invokeEntityStreamOut(handle, type));
+                    for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                    {
+                        ScriptEngines[index].Engine.Script.API.invokeEntityStreamOut(handle, type);
+                    }
                 }
             });
         }
@@ -225,7 +241,10 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    ScriptEngines.ForEach(en => en.Engine.Script.API.invokeEntityDataChange(handle, key, oldValue));
+                    for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                    {
+                        ScriptEngines[index].Engine.Script.API.invokeEntityDataChange(handle, key, oldValue);
+                    }
                 }
             });
         }
@@ -237,90 +256,75 @@ namespace GTANetwork.Javascript
                 lock (ScriptEngines)
                 {
                     foreach (var res in ScriptEngines.Where(en => en.ResourceParent == resource))
+                    {
                         res.Engine.Script.API.invokeCustomDataReceived(data);
+                    }
                 }
             });
         }
 
-        internal void OnTick(object sender, EventArgs e)
+        internal static void OnTick(object sender, EventArgs e)
         {
             var tmpList = new List<Action>(ThreadJumper);
             ThreadJumper.Clear();
-
-            foreach (var a in tmpList)
+            try
             {
-                try
+                for (var i = tmpList.Count - 1; i >= 0; i--)
                 {
-                    a.Invoke();
+                    tmpList[i].Invoke();
                 }
-                catch (Exception ex)
-                {
-                    LogException(ex);
-                }
-            }
 
-            lock (ScriptEngines)
-            {
-                foreach (var engine in ScriptEngines)
+                lock (ScriptEngines)
                 {
-                    try
+                    for (var i = ScriptEngines.Count - 1; i >= 0; i--)
                     {
-                        engine.Engine.Script.API.invokeUpdate();
-                    }
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
-                    }
-
-                    try
-                    {
-                        engine.Engine.Script.API.processCoroutines();
-                    }
-                    catch (Exception ex)
-                    {
-                        LogException(ex);
+                        ScriptEngines[i].Engine.Script.API.invokeUpdate();
+                        ScriptEngines[i].Engine.Script.API.processCoroutines();
                     }
                 }
             }
-
+            catch (Exception ex)
+            {
+                LogException(ex);
+            }
         }
 
-        internal void OnKeyDown(object sender, KeyEventArgs e)
+        internal static void OnKeyDown(object sender, KeyEventArgs e)
         {
             if (Main.Chat == null || Main.Chat.IsFocused || Main.MainMenu.Visible) return;
 
             lock (ScriptEngines)
             {
-                foreach (var engine in ScriptEngines)
+                for (var i = ScriptEngines.Count - 1; i >= 0; i--)
                 {
-                    try
-                    {
-                        engine.Engine.Script.API.invokeKeyDown(sender, e);
-                    }
-                    catch (ScriptEngineException ex)
-                    {
-                        LogException(ex);
-                    }
+                    //try
+                    //{
+                        ScriptEngines[i].Engine.Script.API.invokeKeyDown(sender, e);
+                    //}
+                    //catch (ScriptEngineException ex)
+                    //{
+                    //    LogException(ex);
+                    //}
                 }
             }
         }
 
-        internal void OnKeyUp(object sender, KeyEventArgs e)
+        internal static void OnKeyUp(object sender, KeyEventArgs e)
         {
             if (Main.Chat == null || Main.Chat.IsFocused) return;
 
             lock (ScriptEngines)
             {
-                foreach (var engine in ScriptEngines)
-                {
-                    try
-                    {
-                        engine.Engine.Script.API.invokeKeyUp(sender, e);
-                    }
-                    catch (ScriptEngineException ex)
-                    {
-                        LogException(ex);
-                    }
+                for (var i = ScriptEngines.Count - 1; i >= 0; i--)
+                { 
+                    //try
+                    //{
+                    ScriptEngines[i].Engine.Script.API.invokeKeyUp(sender, e);
+                    //}
+                    //catch (ScriptEngineException ex)
+                    //{
+                    //    LogException(ex);
+                    //}
                 }
             }
         }
@@ -331,14 +335,14 @@ namespace GTANetwork.Javascript
 
             ThreadJumper.Add(() =>
             {
-                List<ClientsideScriptWrapper> scripts = localSc.Select(StartScript).ToList();
+                var scripts = localSc.Select(StartScript).ToList();
 
                 var exportedDict = Exported as IDictionary<string, object>;
 
                 foreach (var group in scripts.GroupBy(css => css.ResourceParent))
                 {
                     dynamic thisRes = new ExpandoObject();
-                    var thisResDict = thisRes as IDictionary<string, object>;
+                    var thisResDict = (IDictionary<string, object>) thisRes;
 
                     foreach (var compiledResources in group)
                     {
@@ -353,8 +357,9 @@ namespace GTANetwork.Javascript
                     exportedDict.Add(group.Key, thisRes);
                 }
 
-                foreach (var cr in scripts)
+                for (var index = scripts.Count - 1; index >= 0; index--)
                 {
+                    var cr = scripts[index];
                     cr.Engine.AddHostObject("exported", Exported);
 
                     cr.Engine.Script.API.invokeResourceStart();
@@ -364,10 +369,8 @@ namespace GTANetwork.Javascript
 
         internal static ClientsideScriptWrapper StartScript(ClientsideScript script)
         {
-            ClientsideScriptWrapper csWrapper = null;
-            
-            
-            var scriptEngine = new V8ScriptEngine();
+            ClientsideScriptWrapper csWrapper;
+            var scriptEngine = new V8ScriptEngine(V8ScriptEngineFlags.EnableDebugging);
             //scriptEngine.AddHostObject("host", new HostFunctions()); // Disable an exploit where you could get reflection
             scriptEngine.AddHostObject("API", new ScriptContext(scriptEngine));
             scriptEngine.AddHostType("Enumerable", typeof(Enumerable));
@@ -386,7 +389,9 @@ namespace GTANetwork.Javascript
             scriptEngine.AddHostType("Size", typeof(Size));
             scriptEngine.AddHostType("Size2", typeof(SharpDX.Size2));
             scriptEngine.AddHostType("Vector3", typeof(Vector3));
+            scriptEngine.AddHostType("Matrix4", typeof(Matrix4));
             scriptEngine.AddHostType("menuControl", typeof(UIMenu.MenuControls));
+            scriptEngine.AddHostType("BadgeStyle", typeof(UIMenuItem.BadgeStyle));
             scriptEngine.AllowReflection = false;
 
             try
@@ -403,25 +408,30 @@ namespace GTANetwork.Javascript
                 csWrapper = new ClientsideScriptWrapper(scriptEngine, script.ResourceParent, script.Filename);
                 lock (ScriptEngines) ScriptEngines.Add(csWrapper);
             }
-    
             return csWrapper;
         }
 
         internal static void StopAllScripts()
         {
-            for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+            lock (ScriptEngines)
             {
-                ScriptEngines[i].Engine.Script.API.isDisposing = true;
+                foreach (var t in ScriptEngines)
+                {
+                    t.Engine.Script.API.isDisposing = true;
+                }
             }
 
-            foreach (var engine in ScriptEngines)
+            lock (ScriptEngines)
             {
-                engine.Engine.Interrupt();
-                engine.Engine.Script.API.invokeResourceStop();
-                engine.Engine.Dispose();
+                foreach (var t in ScriptEngines)
+                {
+                    t.Engine.Interrupt();
+                    t.Engine.Script.API.invokeResourceStop();
+                    t.Engine.Dispose();
+                }
+                ScriptEngines.Clear();
             }
 
-            ScriptEngines.Clear();
             AudioDevice?.Stop();
             AudioDevice?.Dispose();
             AudioReader?.Dispose();
@@ -431,10 +441,10 @@ namespace GTANetwork.Javascript
 
             lock (CEFManager.Browsers)
             {
-                foreach (var browser in CEFManager.Browsers)
+                foreach (var t in CEFManager.Browsers)
                 {
-                    browser.Close();
-                    browser.Dispose();
+                    t.Close();
+                    t.Dispose();
                 }
 
                 CEFManager.Browsers.Clear();
@@ -444,11 +454,13 @@ namespace GTANetwork.Javascript
         internal static void StopScript(string resourceName)
         {
             lock (ScriptEngines)
+            {
                 for (int i = ScriptEngines.Count - 1; i >= 0; i--)
                 {
                     if (ScriptEngines[i].ResourceParent != resourceName) continue;
                     ScriptEngines[i].Engine.Script.API.isDisposing = true;
                 }
+            }
 
             var dict = Exported as IDictionary<string, object>;
             dict.Remove(resourceName);
@@ -456,6 +468,7 @@ namespace GTANetwork.Javascript
             ThreadJumper.Add(delegate
             {
                 lock (ScriptEngines)
+                {
                     for (int i = ScriptEngines.Count - 1; i >= 0; i--)
                     {
                         if (ScriptEngines[i].ResourceParent != resourceName) continue;
@@ -463,15 +476,18 @@ namespace GTANetwork.Javascript
                         ScriptEngines[i].Engine.Dispose();
                         ScriptEngines.RemoveAt(i);
                     }
+                }
+
             });
         }
+
 
         private static void LogException(Exception ex)
         {
             Func<string, int, string[]> splitter = (string input, int everyN) =>
             {
                 var list = new List<string>();
-                for (int i = 0; i < input.Length; i += everyN)
+                for (var i = 0; i < input.Length; i += everyN)
                 {
                     list.Add(input.Substring(i, Math.Min(everyN, input.Length - i)));
                 }
@@ -479,10 +495,11 @@ namespace GTANetwork.Javascript
             };
 
             Util.Util.SafeNotify("~r~~h~Clientside Javascript Error~h~~w~");
-            
-            foreach (var s in splitter(ex.Message, 99))
+
+            var count = splitter(ex.Message, 99).Length;
+            for (var index = 0; index < count; index++)
             {
-                Util.Util.SafeNotify(s);
+                Util.Util.SafeNotify(splitter(ex.Message, 99)[index]);
             }
 
             LogManager.LogException(ex, "CLIENTSIDE SCRIPT ERROR");
@@ -495,6 +512,7 @@ namespace GTANetwork.Javascript
         {
             Engine = engine;
         }
+
         internal bool isDisposing;
         internal string ParentResourceName;
         internal V8ScriptEngine Engine;
@@ -502,28 +520,33 @@ namespace GTANetwork.Javascript
         List<dynamic> unblockedCoroutines = new List<dynamic>();
         List<dynamic> shouldRunNextFrame = new List<dynamic>();
         SortedList<int, dynamic> shouldRunInTime = new SortedList<int, dynamic>();
+        Dictionary<LocalHandle, int> Latencies = new Dictionary<LocalHandle, int>();
+        Dictionary<LocalHandle, string> Names = new Dictionary<LocalHandle, string>();
+
+        private const float height = 1080f;
+        private static float ratio = (float)Main.screen.Width / Main.screen.Height;
+        private static float width = height * ratio;
 
         internal void processCoroutines()
         {
-            foreach (var coroutine in unblockedCoroutines)
+            for (int i = 0; i < unblockedCoroutines.Count; i++)
             {
+                var coroutine = unblockedCoroutines[i];
                 dynamic result;
-                if (!(result = coroutine.next()).done)
+                if ((result = coroutine.next()).done) continue;
+                dynamic value = result.value;
+                if (value is int)
                 {
-                    dynamic value = result.value;
-                    if (value is int)
+                    int offset = (int) value;
+                    int nextRun = Environment.TickCount + offset;
+                    if (!shouldRunInTime.ContainsKey(nextRun))
                     {
-                        int offset = (int) value;
-                        int nextRun = Environment.TickCount + offset;
-                        if (!shouldRunInTime.ContainsKey(nextRun))
-                        {
-                            shouldRunInTime.Add(nextRun, coroutine);
-                        }
+                        shouldRunInTime.Add(nextRun, coroutine);
                     }
-                    else
-                    {
-                        shouldRunNextFrame.Add(coroutine);
-                    }
+                }
+                else
+                {
+                    shouldRunNextFrame.Add(coroutine);
                 }
             }
 
@@ -695,10 +718,10 @@ namespace GTANetwork.Javascript
             return Main.CameraManager.GetActive();
         }
 
-        public void setCameraShake(GlobalCamera cam, string shakeType, float amplitute)
+        public void setCameraShake(GlobalCamera cam, string shakeType, double amplitute)
         {
             cam.Shake = shakeType;
-            cam.ShakeAmp = amplitute;
+            cam.ShakeAmp = (float)amplitute;
 
             if (cam.CamObj != null && cam.Active)
             {
@@ -752,13 +775,13 @@ namespace GTANetwork.Javascript
             return cam.Rotation;
         }
 
-        public void setCameraFov(GlobalCamera cam, float fov)
+        public void setCameraFov(GlobalCamera cam, double fov)
         {
-            cam.Fov = fov;
+            cam.Fov = (float)fov;
 
             if (cam.CamObj != null && cam.Active)
             {
-                cam.CamObj.FieldOfView = fov;
+                cam.CamObj.FieldOfView = (float)fov;
             }
         }
 
@@ -950,33 +973,18 @@ namespace GTANetwork.Javascript
 
             private RaycastResult wrapper;
 
-            public bool didHitAnything
-            {
-                get { return wrapper.DitHit; }
-            }
+            public bool didHitAnything => wrapper.DitHit;
 
-            public bool didHitEntity
-            {
-                get { return wrapper.DitHitEntity; }
-            }
+            public bool didHitEntity => wrapper.DitHitEntity;
 
-            public LocalHandle hitEntity
-            {
-                get { return new LocalHandle(wrapper.HitEntity?.Handle ?? 0); }
-            }
+            public LocalHandle hitEntity => new LocalHandle(wrapper.HitEntity?.Handle ?? 0);
 
-            public Vector3 hitCoords
-            {
-                get { return wrapper.HitPosition.ToLVector(); }
-            }
+            public Vector3 hitCoords => wrapper.HitPosition.ToLVector();
         }
 
         public Raycast createRaycast(Vector3 start, Vector3 end, int flag, LocalHandle? ignoreEntity)
         {
-            if (ignoreEntity != null)
-                return new Raycast(World.Raycast(start.ToVector(), end.ToVector(), (IntersectOptions) flag, new Prop(ignoreEntity.Value.Value)));
-            else
-                return new Raycast(World.Raycast(start.ToVector(), end.ToVector(), (IntersectOptions)flag));
+            return ignoreEntity != null ? new Raycast(World.Raycast(start.ToVector(), end.ToVector(), (IntersectOptions) flag, new Prop(ignoreEntity.Value.Value))) : new Raycast(World.Raycast(start.ToVector(), end.ToVector(), (IntersectOptions)flag));
         }
 
         public Vector3 getGameplayCamPos()
@@ -1014,7 +1022,7 @@ namespace GTANetwork.Javascript
             return Main.DisplayWastedMessage;
         }
 
-        public Browser createCefBrowser(double width, double height, bool local = true)
+        public Browser createCefBrowser(double width, double height, bool local = true, bool focus = true)
         {
 #if RELATIVE_CEF_POS
             var rat = getScreenResolutionMaintainRatio();
@@ -1026,9 +1034,23 @@ namespace GTANetwork.Javascript
             int w = (int) width;
             int h = (int) height;
 #endif
+
             var newBrowser = new Browser(Engine, new Size(w, h), local);
             CEFManager.Browsers.Add(newBrowser);
+
+            //if (!newBrowser._hasFocused && focus)
+            //{
+            //    newBrowser._browser.GetHost().SetFocus(true);
+            //    newBrowser._browser.GetHost().SendFocusEvent(true);
+            //    newBrowser._hasFocused = true;
+            //}
             return newBrowser;
+        }
+
+        public void setCefBrowserFocus(Browser browser, bool focus)
+        {
+            browser.GetHost().SetFocus(focus);
+            browser.GetHost().SendFocusEvent(focus);
         }
 
         public void destroyCefBrowser(Browser browser)
@@ -1132,35 +1154,32 @@ namespace GTANetwork.Javascript
             return new PointF(w, h);
         }
 
-        public void pinCefBrowser(Browser browser, double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
-        {
-            browser.Pinned = new PointF[4];
-#if RELATIVE_CEF_POS
-            browser.Pinned[0] = ratioToRealRes(x1, y1);
-            browser.Pinned[1] = ratioToRealRes(x2, y2);
-            browser.Pinned[2] = ratioToRealRes(x3, y3);
-            browser.Pinned[3] = ratioToRealRes(x4, y4);
-#else
-            browser.Pinned[0] = new PointF((float)x1, (float)y1);
-            browser.Pinned[1] = new PointF((float)x2, (float)y2);
-            browser.Pinned[2] = new PointF((float)x3, (float)y3);
-            browser.Pinned[3] = new PointF((float)x4, (float)y4);
-#endif
-        }
+//        public void pinCefBrowser(Browser browser, double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
+//        {
+//            browser.Pinned = new PointF[4];
+//#if RELATIVE_CEF_POS
+//            browser.Pinned[0] = ratioToRealRes(x1, y1);
+//            browser.Pinned[1] = ratioToRealRes(x2, y2);
+//            browser.Pinned[2] = ratioToRealRes(x3, y3);
+//            browser.Pinned[3] = ratioToRealRes(x4, y4);
+//#else
+//            browser.Pinned[0] = new PointF((float)x1, (float)y1);
+//            browser.Pinned[1] = new PointF((float)x2, (float)y2);
+//            browser.Pinned[2] = new PointF((float)x3, (float)y3);
+//            browser.Pinned[3] = new PointF((float)x4, (float)y4);
+//#endif
+//        }
 
-        public void clearCefPinning(Browser browser)
-        {
-            browser.Pinned = null;
-        }
+        //public void clearCefPinning(Browser browser)
+        //{
+        //    browser.Pinned = null;
+        //}
 
         public void verifyIntegrityOfCache()
         {
-            if (!DownloadManager.CheckFileIntegrity())
-            {
-                Main.Client.Disconnect("Quit");
-                DownloadManager.FileIntegrity.Clear();
-                return;
-            }
+            if (DownloadManager.CheckFileIntegrity()) return;
+            Main.Client.Disconnect("Quit");
+            DownloadManager.FileIntegrity.Clear();
         }
 
         public void loadPageCefBrowser(Browser browser, string uri)
@@ -1178,7 +1197,7 @@ namespace GTANetwork.Javascript
                     return;
                 }
 
-                string fullUri = "https://" + ParentResourceName + "/" + uri.TrimStart('/');
+                var fullUri = "https://" + ParentResourceName + "/" + uri.TrimStart('/');
 
                 browser.GoToPage(fullUri);
             }
@@ -1201,8 +1220,7 @@ namespace GTANetwork.Javascript
 
         public void goBackCefBrowser(Browser browser)
         {
-            if (browser == null) return;
-                browser.GoBack();
+            browser?.GoBack();
         }
 
         public bool isCefBrowserLoading(Browser browser)
@@ -1210,16 +1228,40 @@ namespace GTANetwork.Javascript
             return browser.IsLoading();
         }
 
+        public void setCefDrawState(bool state)
+        {
+            CEFManager.Draw = state;
+        }
+
+        public void setCefFramerate(Browser browser, int fps)
+        {
+            if (fps > 60) fps = 60;
+            else if (fps < 1) fps = 1;
+
+            browser.GetHost().SetWindowlessFrameRate(fps);
+        }
+
+        private DateTime _last;
+        private static int _fps = 30;
+        public int getGameFramerate(Browser browser, int fps)
+        {
+            if (DateTime.Now.Subtract(_last).TotalMilliseconds <= 500)
+            {
+                return _fps;
+            }
+            _fps = Convert.ToInt32(Game.FPS);
+            return _fps;
+        }
+
+        public bool isCefDrawEnabled()
+        {
+            return CEFManager.Draw;
+        }
+
         private bool parseHash(string hash, out Hash result)
         {
-            if (hash.StartsWith("0x"))
-            {
-                result = (Hash) ulong.Parse(hash.Substring(2), NumberStyles.HexNumber);
-                return true;
-            }
-
-            if (!Hash.TryParse(hash, out result))
-                return false;
+            if (!hash.StartsWith("0x")) return Hash.TryParse(hash, out result);
+            result = (Hash) ulong.Parse(hash.Substring(2), NumberStyles.HexNumber);
             return true;
         }
 
@@ -1409,86 +1451,37 @@ namespace GTANetwork.Javascript
 
         public bool isPlayerAiming(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-            {
-                return new Ped(player.Value).IsAiming;
-            }
-            else
-            {
-                return findPlayer(player).IsAiming;
-            }
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsAiming : findPlayer(player).IsAiming;
         }
 
         public bool isPlayerShooting(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-            {
-                return new Ped(player.Value).IsShooting;
-            }
-            else
-            {
-                return findPlayer(player).IsShooting;
-            }
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsShooting : findPlayer(player).IsShooting;
         }
 
         public bool isPlayerReloading(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-            {
-                return new Ped(player.Value).IsReloading;
-            }
-            else
-            {
-                return findPlayer(player).IsReloading;
-            }
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsReloading : findPlayer(player).IsReloading;
         }
 
         public bool isPlayerInCover(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-            {
-                return new Ped(player.Value).IsInCover();
-            }
-            else
-            {
-                return findPlayer(player).IsInCover;
-            }
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsInCover() : findPlayer(player).IsInCover;
         }
 
         public bool isPlayerOnLadder(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-            {
-                return Subtask.IsSubtaskActive(player.Value, ESubtask.USING_LADDER);
-            }
-            else
-            {
-                return findPlayer(player).IsOnLadder;
-            }
+            return player.Value == Game.Player.Character.Handle ? Subtask.IsSubtaskActive(player.Value, ESubtask.USING_LADDER) : findPlayer(player).IsOnLadder;
         }
 
         public Vector3 getPlayerAimingPoint(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-            {
-                return Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
-            }
-            else
-            {
-                return findPlayer(player).AimCoords.ToLVector();
-            }
+            return player.Value == Game.Player.Character.Handle ? Main.RaycastEverything(new Vector2(0, 0)).ToLVector() : findPlayer(player).AimCoords.ToLVector();
         }
 
         public bool isPlayerDead(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-            {
-                return Game.Player.Character.IsDead;
-            }
-            else
-            {
-                return findPlayer(player).IsPlayerDead;
-            }
+            return player.Value == Game.Player.Character.Handle ? Game.Player.Character.IsDead : findPlayer(player).IsPlayerDead;
         }
 
         public bool doesEntityExist(LocalHandle entity)
@@ -1513,18 +1506,16 @@ namespace GTANetwork.Javascript
             return Main._playerGodMode;
         }
 
-        public void createParticleEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position,
-            Vector3 rotation, float scale)
+        public void createParticleEffectOnPosition(string ptfxLibrary, string ptfxName, Vector3 position, Vector3 rotation, double scale)
         {
             Util.Util.LoadPtfxAsset(ptfxLibrary);
             Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, ptfxLibrary);
             Function.Call((Hash) 0x25129531F77B9ED3, ptfxName, position.X, position.Y, position.Z, rotation.X,
                 rotation.Y, rotation.Z,
-                scale, 0, 0, 0);
+                (float)scale, 0, 0, 0);
         }
 
-        public void createParticleEffectOnEntity(string ptfxLibrary, string ptfxName, LocalHandle entity, Vector3 offset,
-            Vector3 rotation, float scale, int boneIndex = -1)
+        public void createParticleEffectOnEntity(string ptfxLibrary, string ptfxName, LocalHandle entity, Vector3 offset, Vector3 rotation, double scale, int boneIndex = -1)
         {
             Util.Util.LoadPtfxAsset(ptfxLibrary);
             Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, ptfxLibrary);
@@ -1533,7 +1524,7 @@ namespace GTANetwork.Javascript
             {
                 Function.Call((Hash) 0x0D53A3B8DA0809D2, ptfxName, entity.Value, offset.X, offset.Y, offset.Z,
                     rotation.X, rotation.Y, rotation.Z,
-                    scale, 0, 0, 0);
+                    (float)scale, 0, 0, 0);
             }
             else
             {
@@ -1543,49 +1534,42 @@ namespace GTANetwork.Javascript
             }
         }
 
-        public void createExplosion(int explosionType, Vector3 position, float damageScale)
+        public void createExplosion(int explosionType, Vector3 position, double damageScale)
         {
-            Function.Call((Hash) 0xE3AD2BDBAEE269AC, position.X, position.Y, position.Z, explosionType, damageScale,
+            Function.Call((Hash) 0xE3AD2BDBAEE269AC, position.X, position.Y, position.Z, explosionType, (float)damageScale,
                 true, false);
         }
 
-        public void createOwnedExplosion(LocalHandle owner, int explosionType, Vector3 position, float damageScale)
+        public void createOwnedExplosion(LocalHandle owner, int explosionType, Vector3 position, double damageScale)
         {
-            Function.Call((Hash)0x172AA1B624FA1013, owner.Value, position.X, position.Y, position.Z, explosionType, damageScale, true, false, 1f);
+            Function.Call((Hash)0x172AA1B624FA1013, owner.Value, position.X, position.Y, position.Z, explosionType, (float)damageScale, true, false, 1f);
         }
 
-        public void createProjectile(int weapon, Vector3 start, Vector3 target, int damage, float speed = -1, int dimension = 0)
+        public void createProjectile(int weapon, Vector3 start, Vector3 target, int damage, double speed = -1, int dimension = 0)
         {
-            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, (int)weapon, null, true, false, speed);
+            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, weapon, null, true, false, (float)speed);
         }
 
-        public void createOwnedProjectile(LocalHandle owner, int weapon, Vector3 start, Vector3 target, int damage, float speed = -1, int dimension = 0)
+        public void createOwnedProjectile(LocalHandle owner, int weapon, Vector3 start, Vector3 target, int damage, double speed = -1, int dimension = 0)
         {
-            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, (int)weapon, owner.Value, true, false, speed);
+            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, start.X, start.Y, start.Z, target.X, target.Y, target.Z, damage, 1, weapon, owner.Value, true, false, (float)speed);
         }
 
         public void setVehicleLivery(LocalHandle vehicle, int livery)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                veh.Livery = livery;
-                if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.Livery = livery;
-            }
+            if (veh == null) return;
+            veh.Livery = livery;
+            if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.Livery = livery;
         }
 
         public int getVehicleLivery(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return new Vehicle(vehicle.Value).Mods.Livery;
-
-                return veh.Livery;
-            }
-            return 0;
+            if (veh == null) return 0;
+            return veh.StreamedIn ? new Vehicle(vehicle.Value).Mods.Livery : veh.Livery;
         }
 
         public void setVehicleLocked(LocalHandle vehicle, bool locked)
@@ -1606,11 +1590,7 @@ namespace GTANetwork.Javascript
 
         public bool getVehicleLocked(LocalHandle vehicle)
         {
-            if (doesEntityExist(vehicle))
-            {
-                return PacketOptimization.CheckBit(vehicle.Properties<EntityProperties>().Flag, EntityFlag.VehicleLocked);
-            }
-            return false;
+            return doesEntityExist(vehicle) && PacketOptimization.CheckBit(vehicle.Properties<EntityProperties>().Flag, EntityFlag.VehicleLocked);
         }
 
         public LocalHandle getVehicleTrailer(LocalHandle vehicle)
@@ -1635,50 +1615,39 @@ namespace GTANetwork.Javascript
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return new Vehicle(vehicle.Value).SirenActive;
-
-                return veh.Siren;
-            }
-            return false;
+            if (veh == null) return false;
+            return veh.StreamedIn ? new Vehicle(vehicle.Value).SirenActive : veh.Siren;
         }
 
         public bool isVehicleTyrePopped(LocalHandle vehicle, int tyre)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return Util.Util.BuildTyreArray(new Vehicle(vehicle.Value))[tyre];
+            if (veh == null) return false;
+            if (veh.StreamedIn) return Util.Util.BuildTyreArray(new Vehicle(vehicle.Value))[tyre];
 
-                return (veh.Tires & (1 << tyre)) != 0;
-            }
-
-            return false;
+            return (veh.Tires & (1 << tyre)) != 0;
         }
 
         public void popVehicleTyre(LocalHandle vehicle, int tyre, bool pop)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
+            if (veh == null) return;
+            if (veh.StreamedIn)
             {
-                if (veh.StreamedIn)
-                {
-                    if (pop)
-                        new Vehicle(vehicle.Value).Wheels[tyre].Burst();
-                    else new Vehicle(vehicle.Value).Wheels[tyre].Fix();
-                }
-
                 if (pop)
-                {
-                    veh.Tires |= (byte)(1 << tyre);
-                }
-                else
-                {
-                    veh.Tires &= (byte)~(1 << tyre);
-                }
+                    new Vehicle(vehicle.Value).Wheels[tyre].Burst();
+                else new Vehicle(vehicle.Value).Wheels[tyre].Fix();
+            }
+
+            if (pop)
+            {
+                veh.Tires |= (byte)(1 << tyre);
+            }
+            else
+            {
+                veh.Tires &= (byte)~(1 << tyre);
             }
         }
 
@@ -1686,68 +1655,56 @@ namespace GTANetwork.Javascript
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return new Vehicle(vehicle.Value).Doors[(VehicleDoorIndex)door].IsBroken;
+            if (veh == null) return false;
+            if (veh.StreamedIn) return new Vehicle(vehicle.Value).Doors[(VehicleDoorIndex)door].IsBroken;
 
-                return (veh.Doors & (1 << door)) != 0;
-            }
-
-            return false;
+            return (veh.Doors & (1 << door)) != 0;
         }
 
         public void setVehicleDoorState(LocalHandle vehicle, int door, bool open)
         {
-            if (doesEntityExist(vehicle))
+            if (!doesEntityExist(vehicle)) return;
+            var prop = vehicle.Properties<RemoteVehicle>();
+
+            if (open) prop.Doors |= (byte)(1 << door);
+            else prop.Doors &= (byte)~(1 << door);
+
+            if (open)
             {
-                var prop = vehicle.Properties<RemoteVehicle>();
-
-                if (open) prop.Doors |= (byte)(1 << door);
-                else prop.Doors &= (byte)~(1 << door);
-
-                if (open)
-                {
-                    Function.Call(Hash.SET_VEHICLE_DOOR_OPEN, vehicle.Value, door, false, false);
-                }
-                else
-                {
-                    Function.Call(Hash.SET_VEHICLE_DOOR_SHUT, vehicle.Value, door, false);
-                }
+                Function.Call(Hash.SET_VEHICLE_DOOR_OPEN, vehicle.Value, door, false, false);
+            }
+            else
+            {
+                Function.Call(Hash.SET_VEHICLE_DOOR_SHUT, vehicle.Value, door, false);
             }
         }
 
         public bool getVehicleDoorState(LocalHandle vehicle, int door)
         {
-            if (doesEntityExist(vehicle))
-            {
-                var prop = vehicle.Properties<RemoteVehicle>();
+            if (!doesEntityExist(vehicle)) return false;
+            var prop = vehicle.Properties<RemoteVehicle>();
 
-                return (prop.Doors & (1 << door)) != 0;
-            }
-
-            return false;
+            return (prop.Doors & (1 << door)) != 0;
         }
 
         public void breakVehicleTyre(LocalHandle vehicle, int door, bool breakDoor)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
+            if (veh == null) return;
+            if (veh.StreamedIn)
             {
-                if (veh.StreamedIn)
-                {
-                    if (breakDoor)
-                        new Vehicle(vehicle.Value).Doors[(VehicleDoorIndex)door].Break(true);
-                }
-
                 if (breakDoor)
-                {
-                    veh.Doors |= (byte)(1 << door);
-                }
-                else
-                {
-                    veh.Doors &= (byte)~(1 << door);
-                }
+                    new Vehicle(vehicle.Value).Doors[(VehicleDoorIndex)door].Break(true);
+            }
+
+            if (breakDoor)
+            {
+                veh.Doors |= (byte)(1 << door);
+            }
+            else
+            {
+                veh.Doors &= (byte)~(1 << door);
             }
         }
 
@@ -1755,38 +1712,32 @@ namespace GTANetwork.Javascript
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return !new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].IsIntact;
+            if (veh == null) return false;
+            if (veh.StreamedIn) return !new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].IsIntact;
 
-                if (veh.DamageModel == null) return false;
-                return (veh.DamageModel.BrokenWindows & (1 << window)) != 0;
-            }
-
-            return false;
+            if (veh.DamageModel == null) return false;
+            return (veh.DamageModel.BrokenWindows & (1 << window)) != 0;
         }
 
         public void breakVehicleWindow(LocalHandle vehicle, int window, bool breakWindow)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
+            if (veh == null) return;
+            if (veh.StreamedIn)
             {
-                if (veh.StreamedIn)
-                {
-                    if (breakWindow)
-                        new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].Smash();
-                    else new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].Repair();
-                }
-
                 if (breakWindow)
-                {
-                    veh.Tires |= (byte)(1 << window);
-                }
-                else
-                {
-                    veh.Tires &= (byte)~(1 << window);
-                }
+                    new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].Smash();
+                else new Vehicle(vehicle.Value).Windows[(VehicleWindowIndex)window].Repair();
+            }
+
+            if (breakWindow)
+            {
+                veh.Tires |= (byte)(1 << window);
+            }
+            else
+            {
+                veh.Tires &= (byte)~(1 << window);
             }
         }
 
@@ -1794,72 +1745,57 @@ namespace GTANetwork.Javascript
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) new Vehicle(vehicle.Value).ToggleExtra(slot, enabled);
+            if (veh == null) return;
+            if (veh.StreamedIn) new Vehicle(vehicle.Value).ToggleExtra(slot, enabled);
 
-                if (enabled)
-                    veh.VehicleComponents |= (short)(1 << slot);
-                else
-                    veh.VehicleComponents &= (short)~(1 << slot);
-            }
+            if (enabled)
+                veh.VehicleComponents |= (short)(1 << slot);
+            else
+                veh.VehicleComponents &= (short)~(1 << slot);
         }
 
         public bool getVehicleExtra(LocalHandle vehicle, int slot)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return new Vehicle(vehicle.Value).IsExtraOn(slot);
-                return (veh.VehicleComponents & (1 << slot)) != 0;
-            }
-
-            return false;
+            if (veh == null) return false;
+            if (veh.StreamedIn) return new Vehicle(vehicle.Value).IsExtraOn(slot);
+            return (veh.VehicleComponents & (1 << slot)) != 0;
         }
 
         public void setVehicleNumberPlate(LocalHandle vehicle, string plate)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) new Vehicle(veh.LocalHandle).Mods.LicensePlate = plate;
-                veh.NumberPlate = plate;
-            }
+            if (veh == null) return;
+            if (veh.StreamedIn) new Vehicle(veh.LocalHandle).Mods.LicensePlate = plate;
+            veh.NumberPlate = plate;
         }
 
         public string getVehicleNumberPlate(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return new Vehicle(veh.LocalHandle).Mods.LicensePlate;
-                return veh.NumberPlate;
-            }
-
-            return null;
+            if (veh == null) return null;
+            return veh.StreamedIn ? new Vehicle(veh.LocalHandle).Mods.LicensePlate : veh.NumberPlate;
         }
 
         public void setVehicleEngineStatus(LocalHandle vehicle, bool turnedOn)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
+            if (veh == null) return;
+            if (!turnedOn)
             {
-                if (!turnedOn)
-                {
-                    veh.Flag = (byte)PacketOptimization.SetBit(veh.Flag, EntityFlag.EngineOff);
-                }
-                else
-                {
-                    veh.Flag = (byte)PacketOptimization.ResetBit(veh.Flag, EntityFlag.EngineOff);
-                }
-
-                new Vehicle(vehicle.Value).IsEngineRunning = turnedOn;
-                new Vehicle(vehicle.Value).IsDriveable = !turnedOn;
+                veh.Flag = (byte)PacketOptimization.SetBit(veh.Flag, EntityFlag.EngineOff);
             }
+            else
+            {
+                veh.Flag = (byte)PacketOptimization.ResetBit(veh.Flag, EntityFlag.EngineOff);
+            }
+
+            new Vehicle(vehicle.Value).IsEngineRunning = turnedOn;
+            new Vehicle(vehicle.Value).IsDriveable = !turnedOn;
         }
 
         public bool getVehicleEngineStatus(LocalHandle vehicle)
@@ -1878,34 +1814,27 @@ namespace GTANetwork.Javascript
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
+            if (veh == null) return;
+            if (veh.StreamedIn)
             {
-                if (veh.StreamedIn)
-                {
-                    new Vehicle(vehicle.Value).TaxiLightOn = status;
-                    new Vehicle(vehicle.Value).SearchLightOn = status;
-                }
-
-                if (status)
-                    veh.Flag = (byte) PacketOptimization.SetBit(veh.Flag, EntityFlag.SpecialLight);
-                else
-                    veh.Flag = (byte) PacketOptimization.ResetBit(veh.Flag, EntityFlag.SpecialLight);
+                new Vehicle(vehicle.Value).TaxiLightOn = status;
+                new Vehicle(vehicle.Value).SearchLightOn = status;
             }
+
+            if (status)
+                veh.Flag = (byte) PacketOptimization.SetBit(veh.Flag, EntityFlag.SpecialLight);
+            else
+                veh.Flag = (byte) PacketOptimization.ResetBit(veh.Flag, EntityFlag.SpecialLight);
         }
 
         public bool getVehicleSpecialLightStatus(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                return PacketOptimization.CheckBit(veh.Flag, EntityFlag.SpecialLight);
-            }
-
-            return false;
+            return veh != null && PacketOptimization.CheckBit(veh.Flag, EntityFlag.SpecialLight);
         }
 
-        public void setEntityCollissionless(LocalHandle entity, bool status)
+        public void setEntityCollisionless(LocalHandle entity, bool status)
         {
             if (entity.Properties<IStreamedItem>() != null)
             {
@@ -1991,12 +1920,12 @@ namespace GTANetwork.Javascript
 
         public void setVehicleBulletproofTyres(LocalHandle vehicle, bool bulletproof)
         {
-            setVehicleMod(vehicle, 61, bulletproof ? 0x01 : 0x00);
+            setVehicleMod(vehicle, 61, bulletproof ? 0 : 1);
         }
 
         public bool getVehicleBulletproofTyres(LocalHandle vehicle)
         {
-            return getVehicleMod(vehicle, 61) != 0;
+            return getVehicleMod(vehicle, 61) == 0;
         }
 
         public void setVehicleNumberPlateStyle(LocalHandle vehicle, int style)
@@ -2039,7 +1968,6 @@ namespace GTANetwork.Javascript
             return getVehicleMod(vehicle, 65);
         }
 
-        
         public void setVehicleModColor1(LocalHandle vehicle, int r, int g, int b)
         {
             setVehicleMod(vehicle, 66, Color.FromArgb(r,g,b).ToArgb());
@@ -2089,9 +2017,9 @@ namespace GTANetwork.Javascript
             return getVehicleMod(vehicle, 69);
         }
 
-        public void setVehicleEnginePowerMultiplier(LocalHandle vehicle, float mult)
+        public void setVehicleEnginePowerMultiplier(LocalHandle vehicle, double mult)
         {
-            setVehicleMod(vehicle, 70, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
+            setVehicleMod(vehicle, 70, BitConverter.ToInt32(BitConverter.GetBytes((float)mult), 0));
         }
 
         public float getVehicleEnginePowerMultiplier(LocalHandle vehicle)
@@ -2099,9 +2027,9 @@ namespace GTANetwork.Javascript
             return BitConverter.ToSingle(BitConverter.GetBytes(getVehicleMod(vehicle, 70)), 0);
         }
 
-        public void setVehicleEngineTorqueMultiplier(LocalHandle vehicle, float mult)
+        public void setVehicleEngineTorqueMultiplier(LocalHandle vehicle, double mult)
         {
-            setVehicleMod(vehicle, 71, BitConverter.ToInt32(BitConverter.GetBytes(mult), 0));
+            setVehicleMod(vehicle, 71, BitConverter.ToInt32(BitConverter.GetBytes((float)mult), 0));
         }
 
         public float getVehicleEngineTorqueMultiplier(LocalHandle vehicle)
@@ -2159,37 +2087,37 @@ namespace GTANetwork.Javascript
         public string getVehicleDisplayName(int model)
         {
             return Function.Call<string>(Hash._GET_LABEL_TEXT,
-                Function.Call<string>(Hash.GET_DISPLAY_NAME_FROM_VEHICLE_MODEL, (int) model));
+                Function.Call<string>(Hash.GET_DISPLAY_NAME_FROM_VEHICLE_MODEL, model));
         }
 
         public float getVehicleMaxSpeed(int model)
         {
-            return Function.Call<float>((Hash)0xF417C2502FFFED43, (int)model);
+            return Function.Call<float>((Hash)0xF417C2502FFFED43, model);
         }
 
         public float getVehicleMaxBraking(int model)
         {
-            return Function.Call<float>((Hash)0xDC53FD41B4ED944C, (int)model);
+            return Function.Call<float>((Hash)0xDC53FD41B4ED944C, model);
         }
 
         public float getVehicleMaxTraction(int model)
         {
-            return Function.Call<float>((Hash)0x539DE94D44FDFD0D, (int)model);
+            return Function.Call<float>((Hash)0x539DE94D44FDFD0D, model);
         }
 
         public float getVehicleMaxAcceleration(int model)
         {
-            return Function.Call<float>((Hash)0x8C044C5C84505B6A, (int)model);
+            return Function.Call<float>((Hash)0x8C044C5C84505B6A, model);
         }
 
         public float getVehicleMaxOccupants(int model)
         {
-            return Function.Call<int>(Hash._GET_VEHICLE_MODEL_MAX_NUMBER_OF_PASSENGERS, (int)model);
+            return Function.Call<int>(Hash._GET_VEHICLE_MODEL_MAX_NUMBER_OF_PASSENGERS, model);
         }
 
         public int getVehicleClass(int model)
         {
-            return Function.Call<int>(Hash.GET_VEHICLE_CLASS_FROM_NAME, (int)model);
+            return Function.Call<int>(Hash.GET_VEHICLE_CLASS_FROM_NAME, model);
         }
 
         public void detonatePlayerStickies()
@@ -2211,10 +2139,7 @@ namespace GTANetwork.Javascript
         {
             var p = player.Properties<PlayerProperties>();
 
-            if (show)
-                p.NametagSettings = PacketOptimization.ResetBit(p.NametagSettings, 1);
-            else
-                p.NametagSettings = PacketOptimization.SetBit(p.NametagSettings, 1);
+            p.NametagSettings = show ? PacketOptimization.ResetBit(p.NametagSettings, 1) : PacketOptimization.SetBit(p.NametagSettings, 1);
         }
 
         public bool getPlayerNametagVisible(LocalHandle player)
@@ -2282,107 +2207,83 @@ namespace GTANetwork.Javascript
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                veh.PrimaryColor = color;
+            if (veh == null) return;
+            veh.PrimaryColor = color;
 
-                if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.PrimaryColor = (VehicleColor) color;
-            }
+            if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.PrimaryColor = (VehicleColor) color;
         }
 
         public void setVehicleSecondaryColor(LocalHandle vehicle, int color)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                veh.SecondaryColor = color;
+            if (veh == null) return;
+            veh.SecondaryColor = color;
 
-                if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.SecondaryColor = (VehicleColor)color;
-            }
+            if (veh.StreamedIn) new Vehicle(vehicle.Value).Mods.SecondaryColor = (VehicleColor)color;
         }
 
         public void setVehicleCustomPrimaryColor(LocalHandle vehicle, int r, int g, int b)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                veh.PrimaryColor = Color.FromArgb(0x01, r, g, b).ToArgb();
+            if (veh == null) return;
+            veh.PrimaryColor = Color.FromArgb(0x01, r, g, b).ToArgb();
 
-                if (veh.StreamedIn)
-                    new Vehicle(vehicle.Value).Mods.CustomPrimaryColor = Color.FromArgb(0x01, r, g, b);
-            }
+            if (veh.StreamedIn)
+                new Vehicle(vehicle.Value).Mods.CustomPrimaryColor = Color.FromArgb(0x01, r, g, b);
         }
 
         public void setVehicleCustomSecondaryColor(LocalHandle vehicle, int r, int g, int b)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                veh.SecondaryColor = Color.FromArgb(0x01, r,g,b).ToArgb();
+            if (veh == null) return;
+            veh.SecondaryColor = Color.FromArgb(0x01, r,g,b).ToArgb();
 
-                if (veh.StreamedIn)
-                    new Vehicle(vehicle.Value).Mods.CustomSecondaryColor = Color.FromArgb(0x01, r, g, b);
-            }
+            if (veh.StreamedIn)
+                new Vehicle(vehicle.Value).Mods.CustomSecondaryColor = Color.FromArgb(0x01, r, g, b);
         }
 
         public Color getVehicleCustomPrimaryColor(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                Util.Util.ToArgb(veh.PrimaryColor, out byte a, out byte r, out byte g, out byte b);
+            if (veh == null) return Color.White;
+            Util.Util.ToArgb(veh.PrimaryColor, out byte a, out byte r, out byte g, out byte b);
 
-                return Color.FromArgb(r, g, b);
-            }
-
-            return Color.White;
+            return Color.FromArgb(r, g, b);
         }
 
         public Color getVehicleCustomSecondaryColor(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                Util.Util.ToArgb(veh.SecondaryColor, out byte a, out byte r, out byte g, out byte b);
+            if (veh == null) return Color.White;
+            Util.Util.ToArgb(veh.SecondaryColor, out byte a, out byte r, out byte g, out byte b);
 
-                return Color.FromArgb(r, g, b);
-            }
-
-            return Color.White;
+            return Color.FromArgb(r, g, b);
         }
 
         public int getVehiclePrimaryColor(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn) return (int)new Vehicle(vehicle.Value).Mods.PrimaryColor;
+            if (veh == null) return 0;
+            if (veh.StreamedIn) return (int)new Vehicle(vehicle.Value).Mods.PrimaryColor;
 
-                return veh.PrimaryColor;
-            }
-
-            return 0;
+            return veh.PrimaryColor;
         }
 
         public int getVehicleSecondaryColor(LocalHandle vehicle)
         {
             var veh = vehicle.Properties<RemoteVehicle>();
 
-            if (veh != null)
-            {
-                if (veh.StreamedIn)
-                    return (int)new Vehicle(vehicle.Value).Mods.SecondaryColor;
+            if (veh == null) return 0;
+            if (veh.StreamedIn)
+                return (int)new Vehicle(vehicle.Value).Mods.SecondaryColor;
 
-                return veh.SecondaryColor;
-            }
-
-            return 0;
+            return veh.SecondaryColor;
         }
 
         public void setPlayerClothes(LocalHandle player, int slot, int drawable, int texture)
@@ -2415,9 +2316,7 @@ namespace GTANetwork.Javascript
 
             Function.Call((Hash)0x0943E5B8E078E76E, player.Value, slot);
 
-            if (pl.Accessories == null) return;
-
-            pl.Accessories.Remove((byte) slot);
+            pl.Accessories?.Remove((byte) slot);
         }
         
         public int vehicleNameToModel(string modelName)
@@ -2443,14 +2342,11 @@ namespace GTANetwork.Javascript
         public void loadInterior(Vector3 pos)
         {
             int interior;
-            if ((interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, pos.X, pos.Y, pos.Z)) != 0)
-            {
-                Function.Call((Hash)0x2CA429C029CCF247, interior); // LOAD_INTERIOR
-                Function.Call(Hash.SET_INTERIOR_ACTIVE, interior, true);
-                Function.Call(Hash.DISABLE_INTERIOR, interior, false);
-                if (Function.Call<bool>(Hash.IS_INTERIOR_CAPPED, interior))
-                    Function.Call(Hash.CAP_INTERIOR, interior, false);
-            }
+            if ((interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, pos.X, pos.Y, pos.Z)) == 0) return;
+            Function.Call((Hash)0x2CA429C029CCF247, interior); // LOAD_INTERIOR
+            Function.Call(Hash.SET_INTERIOR_ACTIVE, interior, true);
+            Function.Call(Hash.DISABLE_INTERIOR, interior, false);
+            if (Function.Call<bool>(Hash.IS_INTERIOR_CAPPED, interior)) Function.Call(Hash.CAP_INTERIOR, interior, false);
         }
 
         public void clearPlayerTasks()
@@ -2473,10 +2369,20 @@ namespace GTANetwork.Javascript
             return Util.Util.GetPedSeat(new Ped(player.Value));
         }
 
+        public bool getPlayerSeatbelt(LocalHandle player)
+        {
+            Ped PlayerChar = Game.Player.Character;
+            if (player.Value == PlayerChar.Handle) return !PlayerChar.GetConfigFlag(32);
+            return !new Ped(player.Value).GetConfigFlag(32);
+
+            //return !Function.Call<bool>((Hash)0x7EE53118C892B513, player.Value, 32, true);
+        }
+
         public void setPlayerWeaponTint(int weapon, int tint)
         {
-            Function.Call((Hash)0x50969B9B89ED5738, Game.Player.Character, weapon, tint);
-            ((RemotePlayer) Main.NetEntityHandler.NetToStreamedItem(Game.Player.Character.Handle, useGameHandle: true))
+            Ped PlayerChar = Game.Player.Character;
+            Function.Call((Hash)0x50969B9B89ED5738, PlayerChar, weapon, tint);
+            ((RemotePlayer) Main.NetEntityHandler.NetToStreamedItem(PlayerChar.Handle, useGameHandle: true))
                 .WeaponTints[weapon] = (byte) tint;
         }
 
@@ -2806,9 +2712,8 @@ namespace GTANetwork.Javascript
 
         public int getPlayerHealth(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-                return Game.Player.Character.Health;
-            else return findPlayer(player).PedHealth;
+            Ped PlayerChar = Game.Player.Character;
+            return player.Value == PlayerChar.Handle ? PlayerChar.Health : findPlayer(player).PedHealth;
         }
 
         public void setTextLabelText(LocalHandle label, string text)
@@ -2860,11 +2765,36 @@ namespace GTANetwork.Javascript
 
         public void playSoundFrontEnd(string soundName, string soundSetName)
         {
-            if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
-            {
-                Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
-                Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
-            }
+            if (!SoundWhitelist.IsAllowed(soundName) || !SoundWhitelist.IsAllowed(soundSetName)) return;
+            Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+            Function.Call((Hash)0x67C540AA08E4A6F5, -1, soundName, soundSetName);
+        }
+
+        //public void playSoundFromEntity(LocalHandle entity, string soundName, string soundSetName)
+        //{
+        //    if (SoundWhitelist.IsAllowed(soundName) && SoundWhitelist.IsAllowed(soundSetName))
+        //    {
+        //        Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+        //        Function.Call(Hash.PLAY_SOUND_FROM_ENTITY, -1, soundName, entity.Value, soundSetName, 0, 0);
+        //    }
+        //}
+
+        //public void playSoundFromEntity2(LocalHandle entity, string soundName, string soundSetName)
+        //{
+        //    //if (entity.IsNull) return;
+        //    Audio.PlaySoundFromEntity(new Prop(entity.Value), soundName, soundSetName);
+        //}
+
+        //public void playSoundFromCoord(Vector3 position, string soundName, string soundSetName)
+        //{
+        //    Function.Call((Hash)0x2F844A8B08D76685, soundSetName, true);
+        //    Function.Call(Hash.PLAY_SOUND_FROM_COORD, soundName, position.X, position.Y, position.Z,  soundSetName, 0, 0, 0);
+        //}
+
+        public bool isEntityOnScreen(LocalHandle entity)
+        {
+            return !entity.IsNull && new Prop(entity.Value).IsOnScreen;
+            //return Function.Call<bool>(Hash.IS_ENTITY_ON_SCREEN, entity.Value);
         }
 
         public void showShard(string text, int timeout = 5000)
@@ -2886,7 +2816,6 @@ namespace GTANetwork.Javascript
         {
             if (!config.EndsWith(".xml")) return null;
             var path = getResourceFilePath(config);
-            checkPathSafe(path);
 
             var xml = new XmlGroup();
             xml.Load(path);
@@ -2913,6 +2842,11 @@ namespace GTANetwork.Javascript
             Main.Chat.AddMessage(null, text);
         }
 
+        public SizeF getScreenResolutionMantainRatio()
+        {
+            return UIMenu.GetScreenResolutionMantainRatio();
+        }
+
         public SizeF getScreenResolutionMaintainRatio()
         {
             return UIMenu.GetScreenResolutionMantainRatio();
@@ -2921,12 +2855,13 @@ namespace GTANetwork.Javascript
         public Size getScreenResolution()
         {
             //return GTA.UI.Screen.Resolution;
-            return Screen.PrimaryScreen.WorkingArea.Size;
+            //return Screen.PrimaryScreen.WorkingArea.Size;
+            return Main.screen;
         }
 
         public SharpDX.Size2 getScreenResolutionAccurate()
         {
-            SharpDX.DXGI.Factory1 dxgiFactory = new SharpDX.DXGI.Factory1();
+            var dxgiFactory = new SharpDX.DXGI.Factory1();
             return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Size;
         }
 
@@ -2982,9 +2917,8 @@ namespace GTANetwork.Javascript
 
         public int getPlayerArmor(LocalHandle player)
         {
-            if (player.Value == Game.Player.Character.Handle)
-                return Game.Player.Character.Armor;
-            else return findPlayer(player).PedArmor;
+            var PlayerChar = Game.Player.Character;
+            return player.Value == PlayerChar.Handle ? PlayerChar.Armor : findPlayer(player).PedArmor;
         }
 
         public LocalHandle[] getStreamedPlayers()
@@ -3033,14 +2967,12 @@ namespace GTANetwork.Javascript
 
         public LocalHandle[] getAllPlayers()
         {
-            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is SyncPed).Cast<SyncPed>()
-                .Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
+            return StreamerThread.SyncPeds.Select(op => new LocalHandle(op.RemoteHandle)).ToArray();
         }
 
         public LocalHandle[] getAllVehicles()
         {
-            return Main.NetEntityHandler.ClientMap.Values.Where(item => item is RemoteVehicle)
-                .Cast<RemoteVehicle>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
+            return Main.NetEntityHandler.ClientMap.Values.OfType<RemoteVehicle>().Select(op => new LocalHandle(op.RemoteHandle, HandleType.NetHandle)).ToArray();
         }
 
         public LocalHandle[] getAllObjects()
@@ -3089,23 +3021,12 @@ namespace GTANetwork.Javascript
 
         private SyncPed findPlayer(LocalHandle player)
         {
-            lock (Main.NetEntityHandler.ClientMap)
-                foreach (var p in Main.NetEntityHandler.ClientMap.Values.Where(op => op is SyncPed).Cast<SyncPed>())
-                {
-                    if (player.HandleType == HandleType.GameHandle &&
-                        p.Character != null && p.Character.Handle == player.Value)
-                        return p;
-                    else if (player.HandleType == HandleType.NetHandle &&
-                             p.RemoteHandle == player.Value)
-                        return p;
-                }
-
-            return null;
+            return StreamerThread.SyncPeds.FirstOrDefault(p => p.RemoteHandle == player.Value || p.LocalHandle == player.Value);
         }
 
         public LocalHandle getPlayerByName(string name)
         {
-            if (Main.NetEntityHandler.ClientMap.Values.FirstOrDefault(op => op is SyncPed && ((SyncPed)op).Name == name) is SyncPed opp && opp.Character != null)
+            if (StreamerThread.SyncPeds.FirstOrDefault(op => op.Name == name) is SyncPed opp && opp.Character != null)
             {
                 return new LocalHandle(opp.RemoteHandle, HandleType.NetHandle);
             }
@@ -3113,20 +3034,45 @@ namespace GTANetwork.Javascript
             return new LocalHandle(0);
         }
 
-        public string getPlayerName(LocalHandle player)
+        public string getPlayerName(LocalHandle player, bool cache = false)
         {
+            if (cache && skipped < 200 && Names.ContainsKey(player))
+            {
+                skipped++;
+                return Names[player];
+            }
+            skipped = 0;
+
             if (player == getLocalPlayer())
             {
-                return
-                    ((RemotePlayer)
-                        Main.NetEntityHandler.ClientMap.Values.First(
-                            op => op is RemotePlayer && ((RemotePlayer) op).LocalHandle == -2)).Name;
+                var name = Main.NetEntityHandler.ClientMap.Values.OfType<RemotePlayer>().First(op => op.LocalHandle == -2).Name;
+                if (!cache) return name;
+                if (Names.ContainsKey(player))
+                {
+                    Names.Add(player, name);
+                }
+                else
+                {
+                    Names[player] = name;
+                }
+                return name;
             }
 
             var opp = findPlayer(player);
-            if (opp != null)
-                return opp.Name;
-            return null;
+            if (opp == null) return "Not Available";
+            {
+                var name = opp.Name;
+                if (!cache) return name;
+                if (Names.ContainsKey(player))
+                {
+                    Names.Add(player, name);
+                }
+                else
+                {
+                    Names[player] = name;
+                }
+                return name;
+            }
         }
 
         public void forceSendAimData(bool force)
@@ -3144,31 +3090,63 @@ namespace GTANetwork.Javascript
             if (player == getLocalPlayer()) return Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
 
             var opp = findPlayer(player);
-            if (opp != null)
-                return opp.AimCoords.ToLVector();
-            return new Vector3();
+            return opp != null ? opp.AimCoords.ToLVector() : new Vector3();
         }
-        
 
-        public int getPlayerPing(LocalHandle player)
+        private int skipped = 0;
+        public int getPlayerPing(LocalHandle player, bool cache = false)
         {
-            if (player == getLocalPlayer()) return (int)(Main.Latency*1000f);
+            if (cache && skipped < 200 && Latencies.ContainsKey(player))
+            {
+                skipped++;
+                return Latencies[player];
+            }
+
+            skipped = 0;
+            if (player == getLocalPlayer())
+            {
+                var latency = (int)(Main.Latency * 1000f);
+                if (!cache) return latency;
+
+                if (Latencies.ContainsKey(player))
+                {
+                    Latencies.Add(player, latency);
+                }
+                else
+                {
+                    Latencies[player] = latency;
+                }
+
+                return latency;
+            }
 
             var opp = findPlayer(player);
-            if (opp != null)
-                return (int)(opp.Latency * 1000f);
-            return 0;
+            if (opp == null) return 0;
+            {
+                var latency = (int)(opp.Latency * 1000f);
+                if (!cache) return latency;
+
+                if (Latencies.ContainsKey(player))
+                {
+                    Latencies.Add(player, latency);
+                }
+                else
+                {
+                    Latencies[player] = latency;
+                }
+                return latency;
+            }
         }
 
-        public LocalHandle createVehicle(int model, Vector3 pos, float heading)
+        public LocalHandle createVehicle(int model, Vector3 pos, Vector3 rot)
         {
-            var car = Main.NetEntityHandler.CreateLocalVehicle(model, pos, heading);
+            var car = Main.NetEntityHandler.CreateLocalVehicle(model, pos, rot.Z);
             return new LocalHandle(car, HandleType.LocalHandle);
         }
 
-        public LocalHandle createPed(int model, Vector3 pos, float heading)
+        public LocalHandle createPed(int model, Vector3 pos, Vector3 rot)
         {
-            var ped = Main.NetEntityHandler.CreateLocalPed(model, pos, heading);
+            var ped = Main.NetEntityHandler.CreateLocalPed(model, pos, rot.Z);
             return new LocalHandle(ped, HandleType.LocalHandle);
         }
 
@@ -3198,19 +3176,13 @@ namespace GTANetwork.Javascript
 
         public Vector3 getBlipPosition(LocalHandle blip)
         {
-            if (new Blip(blip.Value).Exists())
-            {
-                return new Blip(blip.Value).Position.ToLVector();
-            }
-            else
-            {
-                return blip.Properties<RemoteBlip>().Position;
-            }
+            return new Blip(blip.Value).Exists() ? new Blip(blip.Value).Position.ToLVector() : blip.Properties<RemoteBlip>().Position;
         }
 
         public Vector3 getWaypointPosition()
         {
-            return World.WaypointPosition.ToLVector();
+            var blip = World.GetWaypointBlip();
+            return blip == null ? new Vector3() : blip.Position.ToLVector();
         }
 
         public bool isWaypointSet()
@@ -3322,22 +3294,41 @@ namespace GTANetwork.Javascript
                 new Blip(blip.Value).ShowRoute = show;
             }
         }
-        
+
         public void setBlipScale(LocalHandle blip, double scale)
         {
-            setBlipScale(blip, (float) scale);
-        }
-
-        public void setBlipScale(LocalHandle blip, float scale)
-        {
             if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
-                new Blip(blip.Value).Scale = scale;
-            blip.Properties<RemoteBlip>().Scale = scale;
+                new Blip(blip.Value).Scale = (float)scale;
+            blip.Properties<RemoteBlip>().Scale = (float)scale;
         }
 
         public float getBlipScale(LocalHandle blip)
         {
             return blip.Properties<RemoteBlip>().Scale;
+        }
+
+        public void setBlipRouteVisible(LocalHandle blip, bool visible)
+        {
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
+                new Blip(blip.Value).ShowRoute = visible;
+            blip.Properties<RemoteBlip>().RouteVisible = visible;
+        }
+
+        public bool getBlipRouteVisible(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().RouteVisible;
+        }
+
+        public void setBlipRouteColor(LocalHandle blip, int color)
+        {
+            if (blip.Properties<IStreamedItem>() == null || blip.Properties<RemoteBlip>().StreamedIn)
+                Function.Call(Hash.SET_BLIP_ROUTE_COLOUR, blip.Value, color);
+            blip.Properties<RemoteBlip>().RouteColor = color;
+        }
+
+        public int getBlipRouteColor(LocalHandle blip)
+        {
+            return blip.Properties<RemoteBlip>().RouteColor;
         }
 
         public void setChatVisible(bool display)
@@ -3354,8 +3345,8 @@ namespace GTANetwork.Javascript
         {
             float outp = 0;
 
-            if (Main._averagePacketSize.Count > 0)
-                outp = (float)Main._averagePacketSize.Average();
+            if (Main.AveragePacketSize.Count > 0)
+                outp = (float)Main.AveragePacketSize.Average();
 
             return outp;
         }
@@ -3438,8 +3429,7 @@ namespace GTANetwork.Javascript
 
         public void setMarkerScale(LocalHandle marker, Vector3 scale)
         {
-            var delta = new Delta_MarkerProperties();
-            delta.Scale = scale;
+            var delta = new Delta_MarkerProperties {Scale = scale};
 
             Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
         }
@@ -3451,8 +3441,7 @@ namespace GTANetwork.Javascript
 
         public void setMarkerDirection(LocalHandle marker, Vector3 dir)
         {
-            var delta = new Delta_MarkerProperties();
-            delta.Direction = dir;
+            var delta = new Delta_MarkerProperties {Direction = dir};
 
             Main.NetEntityHandler.UpdateMarker(marker.Value, delta, true);
         }
@@ -3503,9 +3492,9 @@ namespace GTANetwork.Javascript
             return (from.Properties<IStreamedItem>().AttachedTo?.NetHandle ?? 0) == to.Properties<IStreamedItem>().RemoteHandle;
         }
 
-        public LocalHandle createTextLabel(string text, Vector3 pos, float range, float size, bool entitySeethrough = false)
+        public LocalHandle createTextLabel(string text, Vector3 pos, double range, double size, bool entitySeethrough = false)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), range, size, entitySeethrough, 0), HandleType.LocalHandle);
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalLabel(text, pos.ToVector(), (float)range, (float)size, entitySeethrough, 0), HandleType.LocalHandle);
         }
 
         internal string getResourceFilePath(string fileName)
@@ -3537,17 +3526,14 @@ namespace GTANetwork.Javascript
             Util.Util.DxDrawTexture(60, path, pos.X, pos.Y, size.Width, size.Height, (float) rotation, 255, 255, 255, 255);
         }
 
-        public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading,
-            int r, int g, int b, int alpha)
+        public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading, int r, int g, int b, int alpha)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
             const float hh = 1080f;
-            float ratio = (float)screenw / screenh;
+            float ratio = (float)Main.screen.Width / Main.screen.Height;
             var ww = hh * ratio;
 
 
@@ -3562,40 +3548,27 @@ namespace GTANetwork.Javascript
         public void drawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
-            const float height = 1080f;
-            float ratio = (float)screenw / screenh;
-            var width = height*ratio;
 
             float w = (float)wSize / width;
             float h = (float)hSize / height;
-            float x = (((float)xPos) / width) + w * 0.5f;
-            float y = (((float)yPos) / height) + h * 0.5f;
+            float x = ((float)xPos / width) + w * 0.5f;
+            float y = ((float)yPos / height) + h * 0.5f;
 
             Function.Call(Hash.DRAW_RECT, x, y, w, h, r, g, b, alpha);
         }
 
-        public void drawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
-            int justify, bool shadow, bool outline, int wordWrap)
+        public void drawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font, int justify, bool shadow, bool outline, int wordWrap)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
-            const float height = 1080f;
-            float ratio = (float)screenw / screenh;
-            var width = height * ratio;
 
-            float x = (float)(xPos) / width;
-            float y = (float)(yPos) / height;
+            float x = (float) xPos / width;
+            float y = (float) yPos / height;
 
             Function.Call(Hash.SET_TEXT_FONT, font);
             Function.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
             Function.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
-            if (shadow)
-                Function.Call(Hash.SET_TEXT_DROP_SHADOW);
-            if (outline)
-                Function.Call(Hash.SET_TEXT_OUTLINE);
+            if (shadow) Function.Call(Hash.SET_TEXT_DROP_SHADOW);
+            if (outline) Function.Call(Hash.SET_TEXT_OUTLINE);
             switch (justify)
             {
                 case 1:
@@ -3618,14 +3591,14 @@ namespace GTANetwork.Javascript
             //NativeUI.UIResText.AddLongString(caption);
 
             const int maxStringLength = 99;
-
-            for (int i = 0; i < caption.Length; i += maxStringLength)
+            int count = caption.Length;
+            for (int i = 0; i < count; i += maxStringLength)
             {
-                Function.Call((Hash) 0x6C188BE134E074AA,
-                    new InputArgument(
-                        Main.StringCache.GetCached(caption.Substring(i,
-                            System.Math.Min(maxStringLength, caption.Length - i)))));
-                //Function.Call((Hash)0x6C188BE134E074AA, caption.Substring(i, System.Math.Min(maxStringLength, caption.Length - i)));
+                //Function.Call((Hash) 0x6C188BE134E074AA,
+                //    new InputArgument(
+                //        Main.StringCache.GetCached(caption.Substring(i,
+                //            System.Math.Min(maxStringLength, caption.Length - i)))));
+                Function.Call((Hash)0x6C188BE134E074AA, caption.Substring(i, System.Math.Min(maxStringLength, caption.Length - i)));
             }
 
             Function.Call(Hash._DRAW_TEXT, x, y);
@@ -3670,22 +3643,22 @@ namespace GTANetwork.Javascript
             return Function.Call<bool>(Hash.IS_ENTITY_AN_OBJECT, ent.Value);
         }
 
-        public float toFloat(double d)
-        {
-            return (float) d;
-        }
+        //public float toFloat(double d)
+        //{
+        //    return (float) d;
+        //}
 
-        public struct fArg
+        internal struct fArg
         {
             public float Value;
 
             public fArg(double f)
             {
-                Value = (float) f;
+                Value = (float)f;
             }
         }
 
-        public fArg f(double value)
+        internal fArg f(double value)
         {
             return new fArg(value);
         }
@@ -3693,10 +3666,16 @@ namespace GTANetwork.Javascript
         public void sleep(int ms)
         {
             var start = DateTime.Now;
+            //do
+            //{
+            //    if (isDisposing) throw new Exception("resource is terminating");
+            //    Script.Wait(0);
+            //} while (DateTime.Now.Subtract(start).TotalMilliseconds < ms);
+
             do
             {
                 if (isDisposing) throw new Exception("resource is terminating");
-                Script.Wait(0);
+                Script.Yield();
             } while (DateTime.Now.Subtract(start).TotalMilliseconds < ms);
         }
 
@@ -3784,7 +3763,7 @@ namespace GTANetwork.Javascript
         public delegate void EntityEvent(LocalHandle entity);
         public delegate void PlayerKilledEvent(LocalHandle killer, int weapon);
         public delegate void IntChangeEvent(int oldValue);
-        public delegate void BoolChangeEvent(bool oldValue);
+        //public delegate void BoolChangeEvent(bool oldValue);
         public delegate void PlayerDamageEvent(LocalHandle attacker, int weaponUsed, int boneHit);
         public delegate void PlayerMeleeDamageEvent(LocalHandle attacker, int weaponUsed);
         public delegate void WeaponShootEvent(int weaponUsed, Vector3 aimCoords);
@@ -3972,25 +3951,37 @@ namespace GTANetwork.Javascript
 
 #region Menus
 
-        //public UIMenu createMenu(string banner, string subtitle, double x, double y, int anchor)
-        //{
-        //    var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor);
-        //    return new UIMenu(banner, subtitle, new Point((int)(offset.X), (int)(offset.Y))) { ScaleWithSafezone = false };
-        //}
-
-        public UIMenu createMenu(string title, string subtitle, double x, double y, int anchor, bool enableBanner = true)
+        public UIMenu createMenu(string title, double x, double y, int anchor)
         {
-            //var offset = convertAnchorPos((float)x, (float)y, (Anchor)anchor);
-            var offset = convertAnchorPos((float)x, (float)y - 107, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
-            if (string.IsNullOrEmpty(subtitle)) { subtitle = "Available Options:"; }
-            if (enableBanner) { if (string.IsNullOrEmpty(title)) title = "Menu"; } else { title = null; }
+            return createMenu(null, title, x, y, anchor, false);
+        }
 
-            return new UIMenu(title, subtitle, new Point((int)(offset.X), (int)(offset.Y)))
+        public UIMenu createMenu(string title, string subtitle, double x, double y, int anchor, bool enableBanner = true, bool disableControls = false, bool scaleWithSafezone = false)
+        {
+            var offset = convertAnchorPos((float)x, (float)y - 107, (Anchor)anchor, 431f, 107f + 38 + 38f * 10);
+            if (string.IsNullOrEmpty(subtitle))
             {
-                ScaleWithSafezone = false,
-                //newM.SetBannerType(new UIResRectangle());
-                ControlDisablingEnabled = false
+                subtitle = "Available Options:";
+            }
+
+            if (string.IsNullOrEmpty(title))
+            {
+                title = "Menu";
+            }
+
+            var newM = new UIMenu(title, subtitle, new Point((int)offset.X, (int)offset.Y))
+            {
+                ScaleWithSafezone = scaleWithSafezone,
+                ControlDisablingEnabled = disableControls,
+                
             };
+
+            if (enableBanner)
+            {
+                newM.SetBannerType(new UIResRectangle());
+            }
+
+            return newM;
         }
 
         public UIMenuItem createMenuItem(string label, string description)
@@ -4030,14 +4021,12 @@ namespace GTANetwork.Javascript
 
             menu.Draw();
 
-            if (menu.Visible)
-            {
-                Game.DisableControlThisFrame(0, Control.NextCamera);
-                Game.DisableControlThisFrame(0, Control.NextWeapon);
-                Game.DisableControlThisFrame(0, Control.VehicleNextRadio);
-                Game.DisableControlThisFrame(0, Control.LookLeftRight);
-                Game.DisableControlThisFrame(0, Control.LookUpDown);
-            }
+            if (!menu.Visible) return;
+            Game.DisableControlThisFrame(0, Control.NextCamera);
+            Game.DisableControlThisFrame(0, Control.NextWeapon);
+            Game.DisableControlThisFrame(0, Control.VehicleNextRadio);
+            Game.DisableControlThisFrame(0, Control.LookLeftRight);
+            Game.DisableControlThisFrame(0, Control.LookUpDown);
         }
 
         public void setMenuBannerSprite(UIMenu menu, string spritedict, string spritename)
@@ -4188,9 +4177,9 @@ namespace GTANetwork.Javascript
             return Game.GetDisabledControlNormal(0, (GTA.Control)control);
         }
 
-        public void setControlNormal(int control, float value)
+        public void setControlNormal(int control, double value)
         {
-            Game.SetControlNormal(0, (GTA.Control)control, value);
+            Game.SetControlNormal(0, (GTA.Control)control, (float)value);
         }
 
         public bool isChatOpen()
@@ -4232,7 +4221,7 @@ namespace GTANetwork.Javascript
 
         public int getEntityType(LocalHandle entity)
         {
-            return (int) entity.Properties<IStreamedItem>().EntityType;
+            return entity.Properties<IStreamedItem>().EntityType;
         }
 
         public int getEntityTransparency(LocalHandle entity)
@@ -4258,7 +4247,7 @@ namespace GTANetwork.Javascript
         //public void givePlayerWeapon(int weapon, int ammo, bool equipNow, bool ammoLoaded)
         //{
         //    CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash) weapon);
-        //    Game.Player.Character.Weapons.Give((GTA.WeaponHash) weapon, ammo, equipNow, ammoLoaded);
+        //    Main.PlayerChar.Weapons.Give((GTA.WeaponHash) weapon, ammo, equipNow, ammoLoaded);
         //}
 
         public void removeAllPlayerWeapons()
@@ -4279,13 +4268,13 @@ namespace GTANetwork.Javascript
 
         public void setWeather(int weather)
         {
-            if (weather >= 0 && weather < Main._weather.Length)
-                Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Main._weather[weather]);
+            if (weather >= 0 && weather < Enums._weather.Length)
+                Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Enums._weather[weather]);
         }
 
         public int getWeather()
         {
-            return Array.IndexOf(Main._weather, Main.Weather.ToUpper());
+            return Array.IndexOf(Enums._weather, Main.Weather.ToUpper());
         }
 
         public void resetWeather()
@@ -4481,12 +4470,49 @@ namespace GTANetwork.Javascript
             return World.GetGroundHeight(position.ToVector());
         }
 
+        public string getGameText(string labelName)
+        {
+            return Function.Call<string>(Hash._GET_LABEL_TEXT, labelName);
+        }
 
+        private static bool SnowState = false;
+        public bool toggleSnow()
+        {
+            var addr = Util.Util.FindPattern("\x74\x25\xB9\x40\x00\x00\x00\xE8\x00\x00\xC4\xFF", "xxxx???x??xx");
+
+
+            //4c 6f 61 64 69 6e 67 20 47 54 41 4e 65 74 77 6f 72 6b
+
+
+            var original = Util.Util.ReadMemory(addr, 20);
+
+            if (!SnowState)
+            {
+                Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, "XMAS");
+
+                Function.Call(Hash._SET_FORCE_VEHICLE_TRAILS, true);
+                Function.Call(Hash._SET_FORCE_PED_FOOTSTEPS_TRACKS, true);
+
+                if (addr != IntPtr.Zero)
+                {
+                    Util.Util.WriteMemory(addr, 0x90, 20);
+                }
+            }
+            else
+            {
+                Function.Call(Hash.CLEAR_WEATHER_TYPE_PERSIST);
+                Function.Call(Hash.SET_WEATHER_TYPE_NOW, "CLEAR");
+                Function.Call(Hash._SET_FORCE_VEHICLE_TRAILS, false);
+                Function.Call(Hash._SET_FORCE_PED_FOOTSTEPS_TRACKS, false);
+
+                if (addr != IntPtr.Zero)
+                {
+                    Util.Util.WriteMemory(addr, original);
+                }
+            }
+            SnowState = !SnowState;
+            return SnowState;
+        }
     }
 
-
-    public class ClientResourceSettings
-    {
-        public Dictionary<string, NativeArgument> Settings { get; set; }
-    }
 }

@@ -78,7 +78,7 @@ namespace GTANetwork.Javascript
             if (key == Keys.Escape)
             {
                 IsFocused = false;
-                CurrentInput = "";
+                CurrentInput = string.Empty;
             }
 
 
@@ -99,7 +99,7 @@ namespace GTANetwork.Javascript
             }
             set
             {
-                if (_isFocused ^ value)
+                if (_isFocused != value)
                     onFocusChange?.Invoke(value);
 
                 _isFocused = value;
@@ -127,12 +127,16 @@ namespace GTANetwork.Javascript
                 if (sender.Length == 9) sender = null;
             }
 
-            var finalMsg = "";
+            var finalMsg = string.Empty;
 
             if (string.IsNullOrEmpty(sender))
+            {
                 finalMsg = message;
+            }
             else
+            {
                 finalMsg = sender + ": " + message;
+            }
 
             switch ((StringSanitation) SanitationLevel)
             {
@@ -144,7 +148,7 @@ namespace GTANetwork.Javascript
                     break;
             }
 
-            var tempCol = textColor == null ? Color.White : textColor.Value;
+            var tempCol = textColor ?? Color.White;
             
             onAddMessageRequest?.Invoke(finalMsg, textColor.HasValue, tempCol.R, tempCol.G, tempCol.B);
         }

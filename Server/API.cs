@@ -325,15 +325,9 @@ namespace GTANetworkServer
 
         #region Functions
 
-        public static API shared
-        {
-            get { return Program.ServerInstance.PublicAPI; }
-        }
+        public static API shared => Program.ServerInstance.PublicAPI;
 
-        public long TickCount
-        {
-            get { return DateTime.Now.Ticks/10000; }
-        }
+        public long TickCount => DateTime.Now.Ticks/10000;
 
         public string getResourceFolder()
         {
@@ -347,82 +341,44 @@ namespace GTANetworkServer
 
         public string getResourceName(string resource)
         {
-            if (doesResourceExist(resource))
-            {
-                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Name;
-            }
-
-            return null;
+            return doesResourceExist(resource) ? Program.ServerInstance.GetResourceInfo(resource)?.Info?.Name : null;
         }
 
         public string getResourceDescription(string resource)
         {
-            if (doesResourceExist(resource))
-            {
-                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Description;
-            }
-
-            return null;
+            return doesResourceExist(resource) ? Program.ServerInstance.GetResourceInfo(resource)?.Info?.Description : null;
         }
 
         public string getResourceAuthor(string resource)
         {
-            if (doesResourceExist(resource))
-            {
-                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Author;
-            }
-
-            return null;
+            return doesResourceExist(resource) ? Program.ServerInstance.GetResourceInfo(resource)?.Info?.Author : null;
         }
 
         public string getResourceVersion(string resource)
         {
-            if (doesResourceExist(resource))
-            {
-                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Version;
-            }
-
-            return null;
+            return doesResourceExist(resource) ? Program.ServerInstance.GetResourceInfo(resource)?.Info?.Version : null;
         }
 
         public ResourceType getResourceType(string resource)
         {
-            if (doesResourceExist(resource))
-            {
-                return Program.ServerInstance.GetResourceInfo(resource)?.Info?.Type ?? ResourceType.script;
-            }
-
-            return ResourceType.script;
+            return doesResourceExist(resource)
+                ? (Program.ServerInstance.GetResourceInfo(resource)?.Info?.Type ?? ResourceType.script)
+                : ResourceType.script;
         }
 
         public string[] getResourceCommands(string resource)
         {
-            if (isResourceRunning(resource))
-            {
-                return Program.ServerInstance.CommandHandler.GetResourceCommands(resource);
-            }
-
-            return new string[0];
+            return isResourceRunning(resource) ? Program.ServerInstance.CommandHandler.GetResourceCommands(resource) : new string[0];
         }
 
         public CommandInfo[] getResourceCommandInfos(string resource)
         {
-            if (isResourceRunning(resource))
-            {
-                return Program.ServerInstance.CommandHandler.GetResourceCommandInfos(resource);
-            }
-
-            return new CommandInfo[0];
+            return isResourceRunning(resource) ? Program.ServerInstance.CommandHandler.GetResourceCommandInfos(resource) : new CommandInfo[0];
         }
 
         public CommandInfo getResourceCommandInfo(string resource, string command)
         {
-            if (isResourceRunning(resource))
-            {
-                return Program.ServerInstance.CommandHandler.GetCommandInfo(resource, command);
-            }
-
-            return default(CommandInfo);
+            return isResourceRunning(resource) ? Program.ServerInstance.CommandHandler.GetCommandInfo(resource, command) : default(CommandInfo);
         }
 
         public string[] getMapGamemodes(string resource)
@@ -613,6 +569,19 @@ namespace GTANetworkServer
             return res.Settings.Select(r => r.Key).ToArray();
         }
 
+        public string getResourceSettingDescription(string resource, string setting)
+        {
+            var res = Program.ServerInstance.RunningResources.FirstOrDefault(r => r.DirectoryName == resource);
+
+            if (res == null || res.Settings == null)
+                return null;
+
+            if (!res.Settings.ContainsKey(setting))
+                return null;
+
+            return res.Settings[setting].Description;
+        }
+
         public bool doesConfigExist(string configName)
         {
             if (ResourceParent == null) throw new AccessViolationException("Illegal call to doesConfigExist inside the constructor!");
@@ -705,7 +674,9 @@ namespace GTANetworkServer
 
         public string[] getAllResources()
         {
-            return Directory.GetDirectories("resources").Select(s => Path.GetFileName(s)).ToArray();
+            return Directory.GetDirectories("resources")
+                .Where(s => File.Exists(s + "/meta.xml"))
+                .Select(s => Path.GetFileName(s)).ToArray();
         }
 
         public void playSoundFrontEnd(Client target, string SoundName, string SoundSetName)
@@ -734,14 +705,14 @@ namespace GTANetworkServer
         public T getEntityFromHandle<T>(NetHandle handle)
         {
             if (typeof(T) == typeof(Vehicle)) { return (T)(object)new Vehicle(this, handle); }
-            else if (typeof(T) == typeof(Client)) { return (T)(object)getPlayerFromHandle(handle); }
-            else if (typeof(T) == typeof(Object)) { return (T)(object)new Object(this, handle); }
-            else if (typeof(T) == typeof(Blip)) { return (T)(object)new Blip(this, handle); }
-            else if (typeof(T) == typeof(Pickup)) { return (T)(object)new Pickup(this, handle); }
-            else if (typeof(T) == typeof(TextLabel)) { return (T)(object)new TextLabel(this, handle); }
-            else if (typeof(T) == typeof(Ped)) { return (T)(object)new Ped(this, handle); }
-            else if (typeof(T) == typeof(ParticleEffect)) { return (T)(object)new ParticleEffect(this, handle); }
-            else if (typeof(T) == typeof(Marker)) { return (T)(object)new Marker(this, handle); }
+            if (typeof(T) == typeof(Client)) { return (T)(object)getPlayerFromHandle(handle); }
+            if (typeof(T) == typeof(Object)) { return (T)(object)new Object(this, handle); }
+            if (typeof(T) == typeof(Blip)) { return (T)(object)new Blip(this, handle); }
+            if (typeof(T) == typeof(Pickup)) { return (T)(object)new Pickup(this, handle); }
+            if (typeof(T) == typeof(TextLabel)) { return (T)(object)new TextLabel(this, handle); }
+            if (typeof(T) == typeof(Ped)) { return (T)(object)new Ped(this, handle); }
+            if (typeof(T) == typeof(ParticleEffect)) { return (T)(object)new ParticleEffect(this, handle); }
+            if (typeof(T) == typeof(Marker)) { return (T)(object)new Marker(this, handle); }
             return default(T);
         }
 
@@ -878,8 +849,7 @@ namespace GTANetworkServer
 
         public void delay(int ms, bool once, Action target)
         {
-            var t = new System.Timers.Timer(ms);
-            t.AutoReset = !once;
+            var t = new System.Timers.Timer(ms) {AutoReset = !once};
             t.Elapsed += (sender, args) =>
             {
                 if (ResourceParent.HasTerminated) return;
@@ -967,6 +937,16 @@ namespace GTANetworkServer
             Program.Output(string.Format(text, args));
         }
 
+        public void consoleOutput(LogCat category, string text)
+        {
+            Program.Output(text, category);
+        }
+
+        public void consoleOutput(LogCat category, string text, params object[] args)
+        {
+            Program.Output(string.Format(text, args), category);
+        }
+
         public void downloadData(Client target, string data)
         {
             if (ResourceParent == null || ResourceParent.ResourceParent == null) throw new NullReferenceException("Illegal call to sendCustomData inside constructor!");
@@ -992,8 +972,10 @@ namespace GTANetworkServer
                     Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x9B1E824FFBB7027A, new EntityArgument(entity.Value));
 
                 var delta = new Delta_EntityProperties();
-                delta.Alpha = (byte) newAlpha;
-                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+
+                delta.Alpha = (byte)newAlpha;
+                GameServer.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+
             }
         }
 
@@ -1015,7 +997,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_EntityProperties();
                 delta.Dimension = dimension;
-                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+                GameServer.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
 
                 KeyValuePair<int, EntityProperties> pair;
                 if (
@@ -1029,7 +1011,7 @@ namespace GTANetworkServer
 
                     var deltaBlip = new Delta_EntityProperties();
                     deltaBlip.Dimension = dimension;
-                    Program.ServerInstance.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
+                    GameServer.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
                 }
 
                 if (
@@ -1043,7 +1025,7 @@ namespace GTANetworkServer
 
                     var deltaBlip = new Delta_EntityProperties();
                     deltaBlip.Dimension = dimension;
-                    Program.ServerInstance.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
+                    GameServer.UpdateEntityInfo(pair.Key, EntityType.Prop, deltaBlip);
                 }
 
                 if (Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Attachables != null)
@@ -1072,7 +1054,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_EntityProperties();
                 delta.IsInvincible = invincible;
-                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+                GameServer.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
 
                 sendNativeToAllPlayers(0x3882114BDE571AD4, entity, invincible);
             }
@@ -1137,7 +1119,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagText = text;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
         }
 
         public string getPlayerNametag(Client player)
@@ -1151,7 +1133,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagText = " ";
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
         }
 
         public void setPlayerNametagVisible(Client player, bool visible)
@@ -1163,7 +1145,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagSettings = player.Properties.NametagSettings;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
         }
 
         public bool getPlayerNametagVisible(Client player)
@@ -1180,7 +1162,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagSettings = player.Properties.NametagSettings;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
         }
 
         public Color getPlayerNametagColor(Client player)
@@ -1208,7 +1190,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.NametagSettings = player.Properties.NametagSettings;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
         }
 
         public void setPlayerToSpectator(Client player)
@@ -1218,7 +1200,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Flag = player.Properties.Flag;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public void setPlayerToSpectatePlayer(Client player, Client target)
@@ -1228,7 +1210,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Flag = player.Properties.Flag;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public void unspectatePlayer(Client player)
@@ -1238,7 +1220,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Flag = player.Properties.Flag;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public bool isPlayerSpectating(Client player)
@@ -1258,7 +1240,7 @@ namespace GTANetworkServer
                 var delta = new Delta_VehicleProperties();
                 delta.IsDead = true;
                 delta.Health = -100;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1271,7 +1253,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.Livery = livery;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1314,7 +1296,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1388,7 +1370,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.Tires = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).Tires;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1429,7 +1411,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.DamageModel = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1505,7 +1487,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.DamageModel = Program.ServerInstance.NetEntityHandler.NetToProp<VehicleProperties>(vehicle.Value).DamageModel;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1529,7 +1511,7 @@ namespace GTANetworkServer
                 var delta = new Delta_VehicleProperties();
                 delta.VehicleComponents = ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value])
                         .VehicleComponents;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1552,7 +1534,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.NumberPlate = plate;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -1588,7 +1570,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_EntityProperties();
                 delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Prop, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Prop, delta);
             }
         }
 
@@ -1625,7 +1607,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_EntityProperties();
                 delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value].Flag;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Prop, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Prop, delta);
             }
         }
 
@@ -1661,7 +1643,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_EntityProperties();
                 delta.Flag = Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Flag;
-                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
+                GameServer.UpdateEntityInfo(entity.Value, EntityType.Prop, delta);
             }
         }
 
@@ -1865,8 +1847,10 @@ namespace GTANetworkServer
                 ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods.Set((byte)modType, mod);
 
                 var delta = new Delta_VehicleProperties();
-                delta.Mods = ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+
+                delta.Mods = ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods;
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+
             }
         }
 
@@ -1891,17 +1875,17 @@ namespace GTANetworkServer
 
             var delta = new Delta_VehicleProperties();
             delta.Mods = ((VehicleProperties)Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Mods;
-            Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+            GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
         }
 
         public void setVehicleBulletproofTyres(NetHandle vehicle, bool bulletproof)
         {
-            setVehicleMod(vehicle, 61, bulletproof ? 0x01 : 0x00);
+            setVehicleMod(vehicle, 61, bulletproof ? 0 : 1);
         }
 
         public bool getVehicleBulletproofTyres(NetHandle vehicle)
         {
-            return getVehicleMod(vehicle, 61) != 0;
+            return getVehicleMod(vehicle, 61) == 0;
         }
 
         public void setVehicleNumberPlateStyle(NetHandle vehicle, int style)
@@ -2122,7 +2106,7 @@ namespace GTANetworkServer
                 
                 var delta = new Delta_PlayerProperties();
                 delta.ModelHash = (int)modelHash;
-                Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+                GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
             }
 
             setPlayerDefaultClothes(player);
@@ -2141,7 +2125,7 @@ namespace GTANetworkServer
                 delta.Textures = new Dictionary<byte, byte>();
                 delta.Accessories = new Dictionary<byte, Tuple<byte, byte>>();
                 delta.Props = new Dictionary<byte, byte>();
-                Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+                GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
             }
         }
 
@@ -2218,7 +2202,7 @@ namespace GTANetworkServer
 
                     var delta = new Delta_PedProperties();
                     delta.LoopingAnimation = prop.LoopingAnimation;
-                    Program.ServerInstance.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
+                    GameServer.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
                 }
 
                 sendNativeToAllPlayers(0xEA47FE3719165B94, ped, animDict, animName, -8f, -10f, -1, looped ? 1 : 0, 8f, false, false, false);
@@ -2234,7 +2218,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_PedProperties();
                 delta.LoopingAnimation = prop.LoopingAnimation;
-                Program.ServerInstance.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
+                GameServer.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
 
                 sendNativeToAllPlayers(0x142A02425FF02BD9, ped, scenario, 0, false);
             }
@@ -2249,7 +2233,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_PedProperties();
                 delta.LoopingAnimation = prop.LoopingAnimation;
-                Program.ServerInstance.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
+                GameServer.UpdateEntityInfo(ped.Value, EntityType.Ped, delta);
 
                 sendNativeToAllPlayers(0xE1EF3C1216AFF2CD, ped);
             }
@@ -2284,7 +2268,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.PrimaryColor = color;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -2297,7 +2281,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.PrimaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -2311,7 +2295,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.SecondaryColor = color;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -2324,7 +2308,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.SecondaryColor = Extensions.FromArgb(1, (byte)red, (byte)green, (byte)blue);
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
         }
 
@@ -2417,7 +2401,7 @@ namespace GTANetworkServer
                 delta.Props =
                     ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value])
                         .Props;
-                Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+                GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
             }
         }
 
@@ -2456,7 +2440,7 @@ namespace GTANetworkServer
                 delta.Accessories =
                     ((PlayerProperties) Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value])
                         .Accessories;
-                Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+                GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
             }
         }
 
@@ -2471,7 +2455,7 @@ namespace GTANetworkServer
                 delta.Accessories =
                     ((PlayerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[player.handle.Value])
                         .Accessories;
-                Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+                GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
             }
         }
 
@@ -2612,7 +2596,7 @@ namespace GTANetworkServer
             else
                 packet.Resource = ResourceParent.ResourceParent.DirectoryName;
 
-            packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
+            packet.Arguments = GameServer.ParseNativeArguments(args);
 
             Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
         }
@@ -2625,7 +2609,7 @@ namespace GTANetworkServer
                 packet.Resource = "*";
             else
                 packet.Resource = ResourceParent.ResourceParent.DirectoryName;
-            packet.Arguments = Program.ServerInstance.ParseNativeArguments(args);
+            packet.Arguments = GameServer.ParseNativeArguments(args);
 
             Program.ServerInstance.SendToClient(player, packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
         }
@@ -2661,7 +2645,7 @@ namespace GTANetworkServer
                 Message = message,
             };
 
-            var data = Program.ServerInstance.SerializeBinary(chatObj);
+            var data = GameServer.SerializeBinary(chatObj);
 
             NetOutgoingMessage msg = Program.ServerInstance.Server.CreateMessage();
             msg.Write((byte)PacketType.ChatData);
@@ -2692,7 +2676,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Name = newName;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta);
 
             return true;
         }
@@ -2790,8 +2774,7 @@ namespace GTANetworkServer
             }
         }
 
-        public void sendNativeToPlayersInRangeInDimension(Vector3 pos, float range, int dimension, Hash native,
-            params object[] args)
+        public void sendNativeToPlayersInRangeInDimension(Vector3 pos, float range, int dimension, Hash native, params object[] args)
         {
             sendNativeToPlayersInRangeInDimension(pos, range, dimension, native, args);
         }
@@ -2818,10 +2801,9 @@ namespace GTANetworkServer
             sendNativeToPlayersInDimension(dimension, (ulong) native, args);
         }
 
-        public T fetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
+        public static T fetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
         {
-            var returnType = Program.ServerInstance.ParseReturnType(typeof (T));
-
+            var returnType = GameServer.ParseReturnType(typeof(T));
             if (returnType == null)
             {
                 throw new ArgumentException("Type \"" + typeof(T) + "\" is not a valid return type.");
@@ -2831,9 +2813,9 @@ namespace GTANetworkServer
                 returnType, args);
         }
 
-        internal T safeFetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
+        internal static T safeFetchNativeFromPlayer<T>(Client player, ulong longHash, params object[] args)
         {
-            var returnType = Program.ServerInstance.ParseReturnType(typeof(T));
+            var returnType = GameServer.ParseReturnType(typeof(T));
 
             if (returnType == null)
             {
@@ -2844,7 +2826,7 @@ namespace GTANetworkServer
                 returnType, args);
         }
 
-        public T fetchNativeFromPlayer<T>(Client player, Hash native, params object[] args)
+        public static T fetchNativeFromPlayer<T>(Client player, Hash native, params object[] args)
         {
             return fetchNativeFromPlayer<T>(player, (ulong) native, args);
         }
@@ -2898,7 +2880,7 @@ namespace GTANetworkServer
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public void removeAllPlayerWeapons(Client player)
@@ -2916,7 +2898,7 @@ namespace GTANetworkServer
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public void setPlayerWeaponTint(Client player, WeaponHash weapon, WeaponTint tint)
@@ -2927,7 +2909,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponTints = player.Properties.WeaponTints;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public WeaponTint getPlayerWeaponTint(Client player, WeaponHash weapon)
@@ -2963,7 +2945,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public void removePlayerWeaponComponent(Client player, WeaponHash weapon, WeaponComponent component)
@@ -2977,7 +2959,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.WeaponComponents = player.Properties.WeaponComponents;
-            Program.ServerInstance.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
+            GameServer.UpdateEntityInfo(player.handle.Value, EntityType.Player, delta, player);
         }
 
         public WeaponComponent[] getAllWeaponComponents(WeaponHash weapon)
@@ -3268,7 +3250,7 @@ namespace GTANetworkServer
 
         public void kickPlayer(Client player)
         {
-            player.NetConnection.Disconnect("You have been kicked.");
+            player.NetConnection.Disconnect("You have been kicked from the server.");
         }
 
         public void banPlayer(Client player, string reason)
@@ -3302,8 +3284,9 @@ namespace GTANetworkServer
 		        Program.ServerInstance.NetEntityHandler.ToDict()[netHandle.Value].Position = newPosition;
 
                 var delta = new Delta_EntityProperties();
-	            delta.Position = newPosition;
-                Program.ServerInstance.UpdateEntityInfo(netHandle.Value, EntityType.Prop, delta);
+
+                delta.Position = newPosition;
+                GameServer.UpdateEntityInfo(netHandle.Value, EntityType.Prop, delta);
 
 	            setEntityData(netHandle, "__LAST_POSITION_SET", TickCount);
 	        }
@@ -3354,11 +3337,11 @@ namespace GTANetworkServer
 
                 var ent1 = new Delta_EntityProperties();
                 ent1.AttachedTo = info;
-                Program.ServerInstance.UpdateEntityInfo(entity.Value, EntityType.Prop, ent1);
+                GameServer.UpdateEntityInfo(entity.Value, EntityType.Prop, ent1);
 
                 var ent2 = new Delta_EntityProperties();
                 ent2.Attachables = Program.ServerInstance.NetEntityHandler.NetToProp<EntityProperties>(entityTarget.Value).Attachables;
-                Program.ServerInstance.UpdateEntityInfo(entityTarget.Value, EntityType.Prop, ent2);
+                GameServer.UpdateEntityInfo(entityTarget.Value, EntityType.Prop, ent2);
             }
         }
 
@@ -3432,28 +3415,34 @@ namespace GTANetworkServer
 
                 var delta = new Delta_EntityProperties();
                 delta.Rotation = newRotation;
-                Program.ServerInstance.UpdateEntityInfo(netHandle.Value, EntityType.Prop, delta);
+                GameServer.UpdateEntityInfo(netHandle.Value, EntityType.Prop, delta);
             }
 		}
 
         public Vector3 getEntityPosition(NetHandle entity)
         {
-            if (doesEntityExist(entity))
-            {
-                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Position ?? new Vector3();
-            }
-            return new Vector3();
+            EntityProperties props = null;
+            if (!Program.ServerInstance.NetEntityHandler.ToDict().TryGetValue(entity.Value, out props))
+                return new Vector3();
+            return props.Position ?? new Vector3();
         }
 
         public Vector3 getEntityRotation(NetHandle entity)
         {
-            if (doesEntityExist(entity))
-            {
-                return Program.ServerInstance.NetEntityHandler.ToDict()[entity.Value].Rotation ?? new Vector3(0, 0, 0);
-            }
-            return new Vector3();
+            EntityProperties props = null;
+            if (!Program.ServerInstance.NetEntityHandler.ToDict().TryGetValue(entity.Value, out props))
+                return new Vector3();
+            return props.Rotation ?? new Vector3(0, 0, 0);
         }
-        
+
+        public Vector3 getEntityVelocity(NetHandle entity)
+        {
+            EntityProperties props = null;
+            if (!Program.ServerInstance.NetEntityHandler.ToDict().TryGetValue(entity.Value, out props))
+                return new Vector3();
+            return props.Velocity ?? new Vector3();
+        }
+
 
         public void setPlayerIntoVehicle(Client player, NetHandle vehicle, int seat)
         {
@@ -3467,9 +3456,12 @@ namespace GTANetworkServer
             setEntityData(player, "__LAST_POSITION_SET", TickCount);
         }
 
-        public void warpPlayerOutOfVehicle(Client player, NetHandle vehicle)
+        public void warpPlayerOutOfVehicle(Client player)
         {
-            Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xD3DBCE61A490BE02, new LocalPlayerArgument(), new EntityArgument(vehicle.Value), 16);
+            if(player.IsInVehicle)
+            {
+                Program.ServerInstance.SendNativeCallToPlayer(player, false, 0xD3DBCE61A490BE02, new LocalPlayerArgument(), new EntityArgument(player.vehicle.Value), 16);
+            }
         }
 
         public bool doesEntityExist(NetHandle entity)
@@ -3485,7 +3477,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_VehicleProperties();
                 delta.Health = health;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
 
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x45F6D8EEF34ABEF1, vehicle, health);
@@ -3538,7 +3530,7 @@ namespace GTANetworkServer
                 ((VehicleProperties) Program.ServerInstance.NetEntityHandler.ToDict()[vehicle.Value]).Health = 1000f;
                 var delta = new Delta_VehicleProperties();
                 delta.Health = 1000f;
-                Program.ServerInstance.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
+                GameServer.UpdateEntityInfo(vehicle.Value, EntityType.Vehicle, delta);
             }
 
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x115722B1B9C14C1C, vehicle);
@@ -3573,7 +3565,7 @@ namespace GTANetworkServer
                 ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Color = color;
                 var delta = new Delta_BlipProperties();
                 delta.Color = color;
-                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
 
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x03D7FB09E75D6B7E, blip, color);
@@ -3597,7 +3589,7 @@ namespace GTANetworkServer
                 ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Name = name;
                 var delta = new Delta_BlipProperties();
                 delta.Name = name;
-                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
         }
 
@@ -3617,7 +3609,7 @@ namespace GTANetworkServer
                 ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Alpha = (byte)alpha;
                 var delta = new Delta_BlipProperties();
                 delta.Alpha = (byte)alpha;
-                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
 
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x45FF974EEE1C8734, blip, alpha);
@@ -3640,7 +3632,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_BlipProperties();
                 delta.IsShortRange = range;
-                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xBE8BE4FE60E27B72, blip, range);
         }
@@ -3662,7 +3654,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_BlipProperties();
                 delta.Position = newPos;
-                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xAE2AF67E9D9AF65D, blip, newPos.X, newPos.Y, newPos.Z);
         }
@@ -3685,7 +3677,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_BlipProperties();
                 delta.Sprite = sprite;
-                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xDF735600A4696DAF, blip, sprite);
         }
@@ -3708,7 +3700,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_BlipProperties();
                 delta.Scale = scale;
-                Program.ServerInstance.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
             }
             Program.ServerInstance.SendNativeCallToAllPlayers(false, 0xD38744167B2FA257, blip, scale);
         }
@@ -3720,6 +3712,52 @@ namespace GTANetworkServer
                 return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).Scale;
             }
             
+            return 0;
+        }
+
+        public void setBlipRouteVisible(NetHandle blip, bool visible)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteVisible = visible;
+
+                var delta = new Delta_BlipProperties();
+                delta.RouteVisible = visible;
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x4F7D8A9BFB0B43E9, blip, visible);
+        }
+
+        public bool getBlipRouteVisible(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteVisible;
+            }
+
+            return false;
+        }
+
+        public void setBlipRouteColor(NetHandle blip, int color)
+        {
+            if (doesEntityExist(blip))
+            {
+                ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteColor = color;
+
+                var delta = new Delta_BlipProperties();
+                delta.RouteColor = color;
+                GameServer.UpdateEntityInfo(blip.Value, EntityType.Blip, delta);
+            }
+            Program.ServerInstance.SendNativeCallToAllPlayers(false, 0x837155CD2F63DA09, blip, color);
+        }
+
+        public int getBlipRouteColor(NetHandle blip)
+        {
+            if (doesEntityExist(blip))
+            {
+                return ((BlipProperties)Program.ServerInstance.NetEntityHandler.ToDict()[blip.Value]).RouteColor;
+            }
+
             return 0;
         }
 
@@ -3767,7 +3805,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_MarkerProperties();
                 delta.MarkerType = type;
-                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+                GameServer.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
             }
         }
 
@@ -3789,7 +3827,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_MarkerProperties();
                 delta.Scale = scale;
-                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+                GameServer.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
             }
         }
 
@@ -3811,7 +3849,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_MarkerProperties();
                 delta.Direction = dir;
-                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+                GameServer.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
             }
         }
 
@@ -3839,7 +3877,7 @@ namespace GTANetworkServer
                 delta.Red = (byte)red;
                 delta.Green = (byte)green;
                 delta.Blue = (byte)blue;
-                Program.ServerInstance.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+                GameServer.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
             }
         }
 
@@ -3871,7 +3909,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_TextLabelProperties();
                 delta.Text = newText;
-                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+                GameServer.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
             }
         }
 
@@ -3893,7 +3931,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_TextLabelProperties();
                 delta.Range = newRange;
-                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+                GameServer.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
             }
         }
 
@@ -3921,7 +3959,7 @@ namespace GTANetworkServer
                 delta.Red = red;
                 delta.Green = green;
                 delta.Blue = blue;
-                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+                GameServer.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
             }
         }
 
@@ -3949,7 +3987,7 @@ namespace GTANetworkServer
 
                 var delta = new Delta_TextLabelProperties();
                 delta.EntitySeethrough = seethrough;
-                Program.ServerInstance.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
+                GameServer.UpdateEntityInfo(label.Value, EntityType.TextLabel, delta);
             }
         }
 
@@ -4079,8 +4117,7 @@ namespace GTANetworkServer
             }
         }
 
-        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha,
-            int r, int g, int b, int dimension = 0)
+        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
         {
             var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension));
             lock (ResourceEntities) ResourceEntities.Add(ent);

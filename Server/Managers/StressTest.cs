@@ -46,7 +46,7 @@ namespace GTANetworkServer
 
             var delta = new Delta_PlayerProperties();
             delta.Name = data.Name;
-            Program.ServerInstance.UpdateEntityInfo(data.handle.Value, EntityType.Player, delta, data);
+            GameServer.UpdateEntityInfo(data.handle.Value, EntityType.Player, delta, data);
 
             Program.Output("Adding player " + data.Name);
         }

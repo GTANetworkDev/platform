@@ -35,25 +35,22 @@ namespace GTANetwork.Util
 
         private int _internalId;
 
-        public int Raw
-        {
-            get
-            {
-                return _internalId;
-            }
-        }
+        public int Raw => _internalId;
 
         public int Value
         {
             get
             {
-                if (HandleType == HandleType.LocalHandle)
+                switch (HandleType)
                 {
-                    return Main.NetEntityHandler.NetToEntity(Main.NetEntityHandler.NetToStreamedItem(_internalId, true))?.Handle ?? 0;
-                }
-                else if (HandleType == HandleType.NetHandle)
-                {
-                    return Main.NetEntityHandler.NetToEntity(_internalId)?.Handle ?? 0;
+                    case HandleType.LocalHandle:
+                        return Main.NetEntityHandler.NetToEntity(Main.NetEntityHandler.NetToStreamedItem(_internalId, true))?.Handle ?? 0;
+                    case HandleType.NetHandle:
+                        return Main.NetEntityHandler.NetToEntity(_internalId)?.Handle ?? 0;
+                    case HandleType.GameHandle:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
 
                 return _internalId;
@@ -97,17 +94,13 @@ namespace GTANetwork.Util
             return Value.ToString();
         }
 
-        public bool IsNull
-        {
-            get
-            {
-                return Value == 0;
-            }
-        }
+        public bool IsNull => Value == 0;
     }
 
     public static class Util
     {
+
+
         //public static Vector3 
 
         public static T Clamp<T>(T min, T value, T max) where T : IComparable
@@ -130,7 +123,7 @@ namespace GTANetwork.Util
 
         public static string ToF2(this Vector3 vector)
         {
-            return string.Format("X:{0:F2} Y:{1:F2} Z:{2:F2}", vector.X, vector.Y, vector.Y);
+            return $"X:{vector.X:F2} Y:{vector.Y:F2} Z:{vector.Y:F2}";
         }
 
         public static bool IsExitingLeavingCar(this Ped player)
@@ -200,7 +193,6 @@ namespace GTANetwork.Util
         public static void LoadModel(Model model)
         {
             if (!model.IsValid) return;
-
             LogManager.DebugLog("REQUESTING MODEL " + model.Hash);
             ModelRequest = true;
             DateTime start = DateTime.Now;
@@ -209,7 +201,6 @@ namespace GTANetwork.Util
                 model.Request();
                 //Function.Call(Hash.REQUEST_COLLISION_FOR_MODEL, model.Hash);
                 Script.Yield();
-
                 if (DateTime.Now.Subtract(start).TotalMilliseconds > 1000) break;
             }
             ModelRequest = false;
@@ -224,17 +215,14 @@ namespace GTANetwork.Util
             var start = Util.TickCount;
             while (!Function.Call<bool>(Hash.HAS_WEAPON_ASSET_LOADED, model))
             {
-                Function.Call(Hash.REQUEST_WEAPON_ASSET, model, 31, 0);
                 Script.Yield();
+                Function.Call(Hash.REQUEST_WEAPON_ASSET, model, 31, 0);
 
                 if (Util.TickCount - start > 500) break;
             }
         }
 
-        public static long TickCount
-        {
-            get { return DateTime.Now.Ticks / 10000; }
-        }
+        public static long TickCount => DateTime.Now.Ticks / 10000;
 
         public static int BuildTyreFlag(Vehicle veh)
         {
@@ -294,24 +282,26 @@ namespace GTANetwork.Util
 
         public static void SetPlayerSkin(PedHash skin)
         {
-            var health = Game.Player.Character.Health;
+            var PlayerChar = Game.Player.Character;
+            var health = PlayerChar.Health;
             var model = new Model(skin);
 
+            ModelRequest = true;
             model.Request(1000);
 
             if (model.IsInCdImage && model.IsValid)
             {
-                while (!model.IsLoaded)
-                    Script.Wait(15);
+                while (!model.IsLoaded) Script.Yield();
 
                 Function.Call(Hash.SET_PLAYER_MODEL, Game.Player, model.Hash);
-                Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Game.Player.Character);
+                Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, PlayerChar);
             }
+            PlayerChar = Game.Player.Character;
+            ModelRequest = false;
+            //model.MarkAsNoLongerNeeded();
 
-            model.MarkAsNoLongerNeeded();
-
-            Game.Player.Character.MaxHealth = 200;
-            Game.Player.Character.Health = health;
+            PlayerChar.MaxHealth = 200;
+            PlayerChar.Health = health;
         }
 
         public static float Denormalize(this float h)
@@ -347,7 +337,10 @@ namespace GTANetwork.Util
                 {
                     GTA.UI.Screen.ShowNotification(msg);
                 }
-                catch (Exception) { }
+                catch (Exception)
+                {
+                    // ignored
+                }
             }
         }
 
@@ -366,6 +359,11 @@ namespace GTANetwork.Util
             return veh.Mods[(VehicleModType)id].Index = var;
         }
 
+        public static bool IsOnScreen(this Entity entity)
+        {
+            return entity != null && entity.IsOnScreen;
+        }
+
         public static bool IsInRangeOfEx(this Entity ent, Vector3 pos, float range)
         {
             return ent.Position.DistanceToSquared(pos) < (range*range);
@@ -374,12 +372,11 @@ namespace GTANetwork.Util
         public static VehicleDamageModel GetVehicleDamageModel(this Vehicle veh)
         {
             if (veh == null || !veh.Exists()) return new VehicleDamageModel();
-            var mod = new VehicleDamageModel();
-            
-
-            mod.BrokenDoors = 0;
-            mod.BrokenWindows = 0;
-
+            var mod = new VehicleDamageModel()
+            {
+                BrokenDoors = 0,
+                BrokenWindows = 0
+            };
             for (int i = 0; i < 8; i++)
             {
                 if (veh.Doors[(VehicleDoorIndex)i].IsBroken) mod.BrokenDoors |= (byte)(1 << i);
@@ -439,12 +436,32 @@ namespace GTANetwork.Util
             }
         }
 
+        public static void WriteMemory(IntPtr pointer, byte[] value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                MemoryAccess.WriteByte(pointer + i, value[i]);
+            }
+        }
+
+        public static byte[] ReadMemory(IntPtr pointer, int length)
+        {
+            byte[] memory = new byte[length];
+            for (int i = 0; i < length; i++)
+            {
+                memory[i] = MemoryAccess.ReadByte(pointer + i);
+            }
+            return memory;
+        }
+
+
+
         public static unsafe IntPtr FindPattern(string bytes, string mask)
         {
             var patternPtr = Marshal.StringToHGlobalAnsi(bytes);
             var maskPtr = Marshal.StringToHGlobalAnsi(bytes);
 
-            IntPtr output = IntPtr.Zero;
+            IntPtr output;
 
             try
             {
@@ -453,8 +470,8 @@ namespace GTANetwork.Util
                         unchecked(
                             (long)
                                 MemoryAccess.FindPattern(
-                                    (sbyte*) (patternPtr.ToPointer()),
-                                    (sbyte*) (patternPtr.ToPointer())
+                                    (sbyte*)patternPtr.ToPointer(),
+                                    (sbyte*)patternPtr.ToPointer()
                                     )));
             }
             finally
@@ -468,13 +485,11 @@ namespace GTANetwork.Util
 
         private static int _idX;
         private static int _lastframe;
+        
         public static void DxDrawTexture(int idx, string filename, float xPos, float yPos, float txdWidth, float txdHeight, float rot, int r, int g, int b, int a, bool centered = false)
         {
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
-
             const float height = 1080f;
-            float ratio = (float)screenw / screenh;
+            float ratio = (float)Main.screen.Width / Main.screen.Height;
             float width = height * ratio;
 
             float reduceX = xPos / width;
@@ -511,10 +526,8 @@ namespace GTANetwork.Util
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, dict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, dict, true);
 
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
             const float hh = 1080f;
-            float ratio = (float)screenw / screenh;
+            float ratio = (float)Main.screen.Width / Main.screen.Height;
             var ww = hh * ratio;
 
 
@@ -529,10 +542,8 @@ namespace GTANetwork.Util
         public static void DrawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
-            float ratio = (float)screenw / screenh;
+            float ratio = (float)Main.screen.Width / Main.screen.Height;
             var width = height * ratio;
 
             float w = (float)wSize / width;
@@ -547,52 +558,53 @@ namespace GTANetwork.Util
             int justify, bool shadow, bool outline, int wordWrap)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
-            int screenw = GTA.UI.Screen.Resolution.Width;
-            int screenh = GTA.UI.Screen.Resolution.Height;
             const float height = 1080f;
-            float ratio = (float)screenw / screenh;
+            float ratio = (float)Main.screen.Width / Main.screen.Height;
             var width = height * ratio;
 
             float x = (float)(xPos) / width;
             float y = (float)(yPos) / height;
 
-            Function.Call(Hash.SET_TEXT_FONT, font);
-            Function.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
-            Function.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
+            CallCollection thisCol = new CallCollection();
+
+            thisCol.Call(Hash.SET_TEXT_FONT, font);
+            thisCol.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
+            thisCol.Call(Hash.SET_TEXT_COLOUR, r, g, b, alpha);
             if (shadow)
-                Function.Call(Hash.SET_TEXT_DROP_SHADOW);
+                thisCol.Call(Hash.SET_TEXT_DROP_SHADOW);
             if (outline)
-                Function.Call(Hash.SET_TEXT_OUTLINE);
+                thisCol.Call(Hash.SET_TEXT_OUTLINE);
             switch (justify)
             {
                 case 1:
-                    Function.Call(Hash.SET_TEXT_CENTRE, true);
+                    thisCol.Call(Hash.SET_TEXT_CENTRE, true);
                     break;
                 case 2:
-                    Function.Call(Hash.SET_TEXT_RIGHT_JUSTIFY, true);
-                    Function.Call(Hash.SET_TEXT_WRAP, 0, x);
+                    thisCol.Call(Hash.SET_TEXT_RIGHT_JUSTIFY, true);
+                    thisCol.Call(Hash.SET_TEXT_WRAP, 0, x);
                     break;
             }
 
             if (wordWrap != 0)
             {
                 float xsize = (float)(xPos + wordWrap) / width;
-                Function.Call(Hash.SET_TEXT_WRAP, x, xsize);
+                thisCol.Call(Hash.SET_TEXT_WRAP, x, xsize);
             }
 
-            Function.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
+            thisCol.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
 
             const int maxStringLength = 99;
 
             for (int i = 0; i < caption.Length; i += maxStringLength)
             {
-                Function.Call((Hash)0x6C188BE134E074AA,
+                thisCol.Call((Hash)0x6C188BE134E074AA,
                     caption.Substring(i,
                             System.Math.Min(maxStringLength, caption.Length - i)));
                 //Function.Call((Hash)0x6C188BE134E074AA, caption.Substring(i, System.Math.Min(maxStringLength, caption.Length - i)));
             }
 
-            Function.Call(Hash._DRAW_TEXT, x, y);
+            thisCol.Call(Hash._DRAW_TEXT, x, y);
+            thisCol.Execute();
         }
 
         public static float GetOffsetDegrees(float a, float b)
@@ -653,11 +665,13 @@ namespace GTANetwork.Util
             float yawOver2 = vect.X * 0.5f; // pitch
             float sinYawOver2 = (float)Math.Sin((double)yawOver2);
             float cosYawOver2 = (float)Math.Cos((double)yawOver2);
-            Quaternion result = new Quaternion();
-            result.X = cosYawOver2 * cosPitchOver2 * cosRollOver2 + sinYawOver2 * sinPitchOver2 * sinRollOver2;
-            result.Y = cosYawOver2 * cosPitchOver2 * sinRollOver2 - sinYawOver2 * sinPitchOver2 * cosRollOver2;
-            result.Z = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2;
-            result.W = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2;
+            Quaternion result = new Quaternion()
+            {
+                X = cosYawOver2 * cosPitchOver2 * cosRollOver2 + sinYawOver2 * sinPitchOver2 * sinRollOver2,
+                Y = cosYawOver2 * cosPitchOver2 * sinRollOver2 - sinYawOver2 * sinPitchOver2 * cosRollOver2,
+                Z = cosYawOver2 * sinPitchOver2 * cosRollOver2 + sinYawOver2 * cosPitchOver2 * sinRollOver2,
+                W = sinYawOver2 * cosPitchOver2 * cosRollOver2 - cosYawOver2 * sinPitchOver2 * sinRollOver2
+            };
             return result;
         }
 
@@ -722,11 +736,8 @@ namespace GTANetwork.Util
 
             DateTime endtime = DateTime.UtcNow + new TimeSpan(0, 0, 0, 0, 5000);
 
-            bool wasLoading = false;
-
             while (!Function.Call<bool>(Hash.HAS_NAMED_PTFX_ASSET_LOADED, dict))
             {
-                wasLoading = true;
                 LogManager.DebugLog("DICTIONARY HAS NOT BEEN LOADED. YIELDING...");
                 Script.Yield();
                 Function.Call(Hash.REQUEST_NAMED_PTFX_ASSET, dict);
@@ -866,7 +877,7 @@ namespace GTANetwork.Util
 
                 if (string.IsNullOrWhiteSpace(settings.DisplayName))
                 {
-                    settings.DisplayName = string.IsNullOrWhiteSpace(GTA.Game.Player.Name) ? "Player" : GTA.Game.Player.Name;
+                    settings.DisplayName = string.IsNullOrWhiteSpace(Game.Player.Name) ? "Player" : Game.Player.Name;
                 }
 
                 if (settings.DisplayName.Length > 32)

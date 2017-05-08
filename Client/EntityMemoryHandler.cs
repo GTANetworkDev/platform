@@ -36,8 +36,8 @@ namespace GTANetwork
 
         public unsafe void tick(object sender, EventArgs e)
         {
-            var car = Game.Player.Character.CurrentVehicle;
-            MS.CurrentEntity = Game.Player.Character;
+            var car = Main.PlayerChar.CurrentVehicle;
+            MS.CurrentEntity = Main.PlayerChar;
             MS.Update();
 
             if (car != null)
@@ -321,7 +321,7 @@ namespace GTANetwork
 
         public void Update()
         {
-            //var currentVeh = Game.Player.Character.CurrentVehicle;
+            //var currentVeh = Main.PlayerChar.CurrentVehicle;
 
             if (Game.IsControlJustPressed(0, Control.Jump))
             {
@@ -597,7 +597,7 @@ namespace GTANetwork
 
         public void Update()
         {
-            //var currentVeh = Game.Player.Character.CurrentVehicle;
+            //var currentVeh = Main.PlayerChar.CurrentVehicle;
 
             if (Game.IsControlJustPressed(0, Control.Jump))
             {
