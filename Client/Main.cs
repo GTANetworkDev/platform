@@ -438,7 +438,6 @@ namespace GTANetwork
                 case Keys.P:
                     if (IsOnServer() && !MainMenu.Visible && !Chat.IsFocused)
                     {
-                        CanOpenChatbox = true;
                         _mainWarning = new Warning("Disabled feature", "Game settings menu has been disabled while connected.\nDisconnect from the server first.")
                         {
                             OnAccept = () => { _mainWarning.Visible = false; }
