@@ -436,7 +436,7 @@ namespace GTANetwork
                     break;
 
                 case Keys.P:
-                    if (IsOnServer() && !MainMenu.Visible && !Chat.IsFocused)
+                    if (IsOnServer() && !MainMenu.Visible && !Chat.IsFocused && !CefController.ShowCursor)
                     {
                         _mainWarning = new Warning("Disabled feature", "Game settings menu has been disabled while connected.\nDisconnect from the server first.")
                         {
