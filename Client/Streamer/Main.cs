@@ -1570,16 +1570,16 @@ namespace GTANetwork.Streamer
                 case EntityType.Marker:
                     {
                         item.StreamedIn = true;
-                        var data = (ILocalHandleable)item;
-                        JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Marker);
+                        //var data = (ILocalHandleable)item;
+                        //JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Marker);
                     }
                     break;
 
                 case EntityType.TextLabel:
                     {
                         item.StreamedIn = true;
-                        var data = (ILocalHandleable)item;
-                        JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.TextLabel);
+                        //var data = (ILocalHandleable)item;
+                        //JavascriptHook.InvokeStreamInEvent(new LocalHandle(data.LocalHandle), (int)EntityType.TextLabel);
                     }
                     break;
 
