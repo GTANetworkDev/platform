@@ -251,6 +251,7 @@ namespace GTANetwork
                         var lh = new LocalHandle(h);
                         JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerExitVehicle(lh));
                         _lastVehicleSiren = false;
+                        _lastPlayerCar = null;
                     }
 
                     //invokeonPlayerEnterVehicle
@@ -265,12 +266,10 @@ namespace GTANetwork
 
                         var handle = new LocalHandle(playerCar.Handle);
                         JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerEnterVehicle(handle));
+                        LastCarEnter = DateTime.Now;
+                        _lastPlayerCar = playerCar;
                     }
-
                 }
-
-                LastCarEnter = DateTime.Now;
-                _lastPlayerCar = playerCar;
                 #endregion
 
                 #region invokeonVehicleSirenToggle
@@ -292,6 +291,33 @@ namespace GTANetwork
 
                 _lastVehicleSiren = siren;
                 #endregion
+            }
+            else
+            {
+                if (_lastPlayerCar != null)
+                {
+                    var c = Main.NetEntityHandler.EntityToStreamedItem(_lastPlayerCar.Handle) as RemoteVehicle;
+
+                    if (Main.VehicleSyncManager.IsSyncing(c))
+                    {
+                        _lastPlayerCar.IsInvincible = c?.IsInvincible ?? false;
+                    }
+                    else
+                    {
+                        _lastPlayerCar.IsInvincible = true;
+                    }
+
+                    if (c != null)
+                    {
+                        Function.Call(Hash.SET_VEHICLE_ENGINE_ON, _lastPlayerCar, !PacketOptimization.CheckBit(c.Flag, EntityFlag.EngineOff), true, true);
+                    }
+
+                    var h = _lastPlayerCar.Handle;
+                    var lh = new LocalHandle(h);
+                    JavascriptHook.InvokeCustomEvent(api => api?.invokeonPlayerExitVehicle(lh));
+                    _lastVehicleSiren = false;
+                    _lastPlayerCar = null;
+                }
             }
             
         }
