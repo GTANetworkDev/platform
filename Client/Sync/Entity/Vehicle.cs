@@ -95,25 +95,23 @@ namespace GTANetwork.Sync
             }
         }
 
+        private float _thislastSpeed = 0f;
         private void DisplayVehiclePosition()
         {
             //var spazzout = (_spazzout_prevention != null && DateTime.Now.Subtract(_spazzout_prevention.Value).TotalMilliseconds > 200);
             if (_lastPosition != null)
             {
+                var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+                _thislastSpeed = Speed;
+
                 var vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
-                var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (Speed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
-                var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (Speed / 750); // calcul de la force à appliquer au vecteur
+                var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (thisSpeed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
+                var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (thisSpeed / 750); // calcul de la force à appliquer au vecteur
 
-                if (MainVehicle.Velocity.Length() > VehicleVelocity.Length())
-                {
-                    MainVehicle.Velocity = Vector3.Lerp(MainVehicle.Velocity, VehicleVelocity * forceVelo + (vecDif * 3f), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency)); // Calcul
-                }
-                else
-                {
-                    MainVehicle.Velocity = Vector3.Lerp(MainVehicle.Velocity, VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency)); // Calcul
-                }
+                //MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f);
+                MainVehicle.Velocity = Vector3.Lerp(MainVehicle.Velocity, (VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force)), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
 
-                if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f)
+                if (_lastVehicleRotation != null)
                 {
                     MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
                 }
@@ -146,7 +144,7 @@ namespace GTANetwork.Sync
                     MainVehicle.Doors[(VehicleDoorIndex)VehicleSeat + 1].Open(true, true);
                     Character.Task.LeaveVehicle(MainVehicle, false);
                     Script.Yield();
-                    Script.Wait(2000);
+                    Script.Wait(1500);
                     Character.PositionNoOffset = Position;
                 }
                 else
@@ -170,7 +168,7 @@ namespace GTANetwork.Sync
                 while (Character.IsSubtaskActive(ESubtask.ENTERING_VEHICLE_GENERAL) || Character.IsSubtaskActive(ESubtask.ENTERING_VEHICLE_ENTERING))
                 {
                     Script.Yield();
-                    Script.Wait(2000);
+                    Script.Wait(1500);
                     Character.SetIntoVehicle(MainVehicle, (VehicleSeat)VehicleSeat);
                 }
             }
@@ -267,7 +265,7 @@ namespace GTANetwork.Sync
 
             thisCollection.Execute();
 
-            MainVehicle.CurrentRPM = Util.Util.Lerp(MainVehicle.CurrentRPM, VehicleRPM, Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+            MainVehicle.CurrentRPM = VehicleRPM;
             MainVehicle.SteeringAngle = Util.Util.Lerp(MainVehicle.SteeringAngle.ToRadians(), SteeringScale.ToRadians(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
         }
 

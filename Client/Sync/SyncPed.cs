@@ -168,7 +168,7 @@ namespace GTANetwork.Sync
         internal bool Braking;
 
 
-
+        private float _lastSpeed;
         internal float Speed
         {
             get => _speed;
@@ -288,7 +288,6 @@ namespace GTANetwork.Sync
 
         private bool _lastVehicle;
         private bool _lastAiming;
-        private float _lastSpeed;
         private bool _lastShooting;
 
         private bool _blip;
