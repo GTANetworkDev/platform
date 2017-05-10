@@ -95,13 +95,13 @@ namespace GTANetwork.Sync
             }
         }
 
-        private float _thislastSpeed = 0f;
+        private float _thislastSpeed;
         private void DisplayVehiclePosition()
         {
-            //var spazzout = (_spazzout_prevention != null && DateTime.Now.Subtract(_spazzout_prevention.Value).TotalMilliseconds > 200);
             if (_lastPosition != null)
             {
-                var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+                var avrLat = Math.Min(1.5f, TicksSinceLastUpdate / (float) AverageLatency);
+                var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, avrLat);
                 _thislastSpeed = Speed;
 
                 var vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
@@ -109,23 +109,17 @@ namespace GTANetwork.Sync
                 var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (thisSpeed / 750); // calcul de la force à appliquer au vecteur
 
                 //MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f);
-                MainVehicle.Velocity = Vector3.Lerp(MainVehicle.Velocity, (VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force)), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+                MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force);
 
                 if (_lastVehicleRotation != null)
                 {
-                    MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+                    MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), avrLat);
                 }
                 else
                 {
                     MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
                 }
             }
-            //else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && _lastPosition != null && spazzout && currentInterop.FinishTime > 0)
-            //{
-            //    var dir = Position - _lastPosition.Value;
-            //    var posTarget = Util.Util.LinearVectorLerp(_carPosOnUpdate, Position + dir, (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
-            //    Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
-            //}
             else
             {
                 MainVehicle.PositionNoOffset = Position;
