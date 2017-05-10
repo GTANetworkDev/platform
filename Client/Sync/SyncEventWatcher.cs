@@ -66,10 +66,8 @@ namespace GTANetwork.Streamer
         {
             if (!Main.IsOnServer()) return;
 
-            Main.DEBUG_STEP = 901;
             var player = Game.Player.Character;
             var car = player.CurrentVehicle;
-            Main.DEBUG_STEP = 902;
             foreach (var pickup in Main.NetEntityHandler.ClientMap.Where(item => item is RemotePickup).Cast<RemotePickup>())
             {
                 if (!pickup.StreamedIn || !Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup.LocalHandle)) continue;
@@ -98,46 +96,37 @@ namespace GTANetwork.Streamer
                     new Prop(obj).IsCollisionEnabled = true;
                 }
             }
-            Main.DEBUG_STEP = 903;
 
             if (Environment.TickCount - _lastCheck < 1000) return;
             _lastCheck = Environment.TickCount;
 
             if (car != _lastCar)
             {
-                Main.DEBUG_STEP = 904;
                 _lastLandingGear = 0;
                 for (int i = 0; i < _doors.Length; i++)
                 {
                     _doors[i] = false;
                 }
-                Main.DEBUG_STEP = 905;
                 for (int i = 0; i < _tires.Length; i++)
                 {
                     _tires[i] = false;
                 }
-                Main.DEBUG_STEP = 906;
                 _highBeams = false;
                 _lights = true;
                 _lastTrailer = null;
-                Main.DEBUG_STEP = 907;
                 _radioStation = 0;
             }
             _lastCar = car;
-            Main.DEBUG_STEP = 908;
 
             if (player.IsInVehicle() && Util.Util.GetResponsiblePed(player.CurrentVehicle).Handle == player.Handle)
             {
-                Main.DEBUG_STEP = 909;
                 int carNetHandle = Main.NetEntityHandler.EntityToNet(car.Handle);
-                Main.DEBUG_STEP = 910;
                 var lg = Function.Call<int>(Hash._GET_VEHICLE_LANDING_GEAR, car);
                 if (lg != _lastLandingGear)
                 {
                     SendSyncEvent(SyncEventType.LandingGearChange, carNetHandle, lg);
                 }
                 _lastLandingGear = lg;
-                Main.DEBUG_STEP = 911;
                 for (int i = 0; i < _doors.Length; i++)
                 {
                     bool isOpen = false;
@@ -147,7 +136,6 @@ namespace GTANetwork.Streamer
                     }
                     _doors[i] = isOpen;
                 }
-                Main.DEBUG_STEP = 912;
 
                 //if (false/*car.MemoryAddress != IntPtr.Zero*/) // crash
                 //{
@@ -165,19 +153,23 @@ namespace GTANetwork.Streamer
                 //    _lights = car.LightsOn;
                 //}
 
-                Main.DEBUG_STEP = 914;
                 Vehicle trailer;
-                Main.DEBUG_STEP = 915;
-                if ((VehicleHash) car.Model.Hash == VehicleHash.TowTruck ||
-                    (VehicleHash) car.Model.Hash == VehicleHash.TowTruck2)
-                    trailer = GetVehicleTowtruckVehicle(car);
-                else if ((VehicleHash) car.Model.Hash == VehicleHash.Cargobob ||
-                         (VehicleHash) car.Model.Hash == VehicleHash.Cargobob2 ||
-                         (VehicleHash)car.Model.Hash == VehicleHash.Cargobob3 ||
-                         (VehicleHash)car.Model.Hash == VehicleHash.Cargobob4)
-                    trailer = GetVehicleCargobobVehicle(car);
-                else trailer = GetVehicleTrailerVehicle(car);
-                Main.DEBUG_STEP = 916;
+                switch ((VehicleHash) car.Model.Hash)
+                {
+                    case VehicleHash.TowTruck:
+                    case VehicleHash.TowTruck2:
+                        trailer = GetVehicleTowtruckVehicle(car);
+                        break;
+                    case VehicleHash.Cargobob:
+                    case VehicleHash.Cargobob2:
+                    case VehicleHash.Cargobob3:
+                    case VehicleHash.Cargobob4:
+                        trailer = GetVehicleCargobobVehicle(car);
+                        break;
+                    default:
+                        trailer = GetVehicleTrailerVehicle(car);
+                        break;
+                }
                 if (_lastTrailer != trailer)
                 {
                     if (trailer == null)
@@ -206,7 +198,6 @@ namespace GTANetwork.Streamer
                         }
                     }
                 }
-                Main.DEBUG_STEP = 917;
                 _lastTrailer = trailer;
 
                 for (int i = 0; i < _tires.Length; i++)
@@ -222,7 +213,6 @@ namespace GTANetwork.Streamer
                     }
                     _tires[i] = isBusted;
                 }
-                Main.DEBUG_STEP = 918;
 
                 var newStation = (int) Game.RadioStation;
 
@@ -233,7 +223,6 @@ namespace GTANetwork.Streamer
                 }
 
                 _radioStation = newStation;
-                Main.DEBUG_STEP = 919;
             }
         }
     }

@@ -177,6 +177,8 @@
     <Compile Include="Sync\Nametag.cs" />
     <Compile Include="Sync\Entity\OnFoot.cs" />
     <Compile Include="Sync\Entity\Vehicle.cs" />
+    <Compile Include="Sync\SyncSender\PedData.cs" />
+    <Compile Include="Sync\SyncSender\VehicleData.cs" />
     <Compile Include="Util\Cache.cs" />
     <Compile Include="Util\DataCollector.cs" />
     <Compile Include="Networking\DeltaCompressor.cs" />
@@ -243,7 +245,7 @@
     <Compile Include="Util\StringCache.cs" />
     <Compile Include="Util\Subtask.cs" />
     <Compile Include="Sync\SyncEventWatcher.cs" />
-    <Compile Include="Sync\SyncSender.cs" />
+    <Compile Include="Sync\SyncSender\SyncSender.cs" />
     <Compile Include="Sync\Entity\UnoccupiedVehicle.cs" />
     <Compile Include="Misc\WeaponDataProvider.cs" />
     <Compile Include="Sync\SyncPed.cs" />
@@ -274,6 +276,7 @@
       <Name>GTANetworkShared</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

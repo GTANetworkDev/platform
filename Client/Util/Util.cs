@@ -256,9 +256,9 @@ namespace GTANetwork.Util
         }
 
         // Dirty & dangerous
-        public static dynamic Lerp(dynamic from, float fAlpha, dynamic to)
+        public static dynamic Lerp(dynamic from, dynamic to, float fAlpha)
         {
-            return ((to - from)*fAlpha + from);
+            return ((to - from) * fAlpha + from);
         }
 
         public static int GetStationId()

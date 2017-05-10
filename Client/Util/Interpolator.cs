@@ -106,7 +106,7 @@ namespace GTANetwork.Util
             float fAlpha = Util.Unlerp(left.Ticks, ulTimeEval, right.Ticks);
 
             // Lerp between right.pos and left.pos
-            output = Util.Lerp(left.Data, fAlpha, right.Data);
+            output = Util.Lerp(left.Data, right.Data, fAlpha);
             return true;
         }
 

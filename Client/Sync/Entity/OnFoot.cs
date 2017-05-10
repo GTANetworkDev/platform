@@ -250,10 +250,6 @@ namespace GTANetwork.Sync
                 {
                     Character.Velocity = target + 2 * (posTarget - Character.Position);
                 }
-
-                _stopTime = DateTime.Now;
-                _carPosOnUpdate = Character.Position;
-
                 return;
             }
             else if (!ragdoll && Character.IsRagdoll)
@@ -938,14 +934,17 @@ namespace GTANetwork.Sync
             UpdatePosition();
         }
 
-        private void UpdatePosition(bool updateRotation = true, bool updateVelocity = true)
+        private void UpdatePosition(bool updatePosition = true, bool updateRotation = true, bool updateVelocity = true)
         {
-            var lerpValue = (DataLatency * 2) / 50000f;
+            if (updatePosition)
+            {
+                var lerpValue = (DataLatency * 2) / 50000f;
 
-            var biDimensionalPos = Vector2.Lerp(new Vector2(Character.Position.X, Character.Position.Y), new Vector2(Position.X + (PedVelocity.X / 5), Position.Y + (PedVelocity.Y / 5)), lerpValue);
-            var triDimensionalPos = Vector3.Lerp(new Vector3(biDimensionalPos.X, biDimensionalPos.Y, Character.Position.Z), new Vector3(biDimensionalPos.X, biDimensionalPos.Y, Position.Z), 0.1f);
+                var biDimensionalPos = Vector2.Lerp(new Vector2(Character.Position.X, Character.Position.Y), new Vector2(Position.X + (PedVelocity.X / 5), Position.Y + (PedVelocity.Y / 5)), lerpValue);
+                var zPos = Util.Util.Lerp(Character.Position.Z, Position.Z, 0.1f);
 
-            Character.PositionNoOffset = triDimensionalPos;
+                Character.PositionNoOffset = new Vector3(biDimensionalPos.X, biDimensionalPos.Y, zPos);
+            }
 
             if (updateRotation) Character.Quaternion = GTA.Math.Quaternion.Lerp(Character.Quaternion, Rotation.ToQuaternion(), 0.10f);
 
@@ -961,21 +960,16 @@ namespace GTANetwork.Sync
             var secondaryAnimDict = GetSecondaryAnimDict();
             var flag = GetAnimFlag();
 
-            if (animDict != null && !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
-                    3))
+            if (animDict != null && !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
             {
-                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,
-                    8f, 10f, -1, flag, -8f, 1, 1, 1);
+                Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim, 8f, 10f, -1, flag, -8f, 1, 1, 1);
             }
 
             if (displaySecondary)
             {
-                if (secondaryAnimDict != null &&
-                    !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim,
-                        3))
+                if (secondaryAnimDict != null && !Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, secondaryAnimDict, ourAnim, 3))
                 {
-                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(secondaryAnimDict), ourAnim,
-                        8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
+                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(secondaryAnimDict), ourAnim, 8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
                 }
                 else if (secondaryAnimDict == null)
                 {

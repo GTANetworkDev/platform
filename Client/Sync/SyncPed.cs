@@ -92,14 +92,13 @@ namespace GTANetwork.Sync
         internal int ModelHash;
         internal int CurrentWeapon;
         internal int Ammo;
-        internal bool IsAiming;
         internal Vector3 AimCoords;
 
         internal Ped AimPlayer;
         internal bool AimedAtPlayer;
 
         internal float Latency;
-        internal bool IsHornPressed;
+
         internal bool _isRagdoll;
         internal Vehicle MainVehicle { get; set; }
         internal bool IsInActionMode;
@@ -110,8 +109,6 @@ namespace GTANetwork.Sync
         internal bool IsCoveringToLeft;
         internal bool IsInMeleeCombat;
         internal bool IsFreefallingWithParachute;
-        internal bool IsShooting;
-        internal bool IsInBurnout;
         private bool _lastBurnout;
         private bool _lastSwimming;
         internal float VehicleRPM;
@@ -123,8 +120,6 @@ namespace GTANetwork.Sync
 
         internal bool EnteringVehicle;
         private bool _lastEnteringVehicle;
-
-        internal bool ExitingVehicle;
         private bool _lastExitingVehicle;
 
         internal int VehicleSeat;
@@ -132,6 +127,7 @@ namespace GTANetwork.Sync
 
         internal float VehicleHealth;
 
+        internal bool Debug;
         internal int VehicleHash
         {
             get
@@ -150,18 +146,29 @@ namespace GTANetwork.Sync
         internal Vector3 _vehicleRotation;
         internal int VehiclePrimaryColor;
         internal int VehicleSecondaryColor;
-        internal bool Siren;
+        
         internal int PedArmor;
-        internal bool IsVehDead;
-        internal bool IsPlayerDead;
+        
+
         internal bool DirtyWeapons;
 
         internal bool IsSpectating;
 
-        internal bool Debug;
-        
-        private DateTime _stopTime;
+
+        //Packets
+        //Flags
+        internal bool IsVehDead;
+        internal bool IsHornPressed;
+        internal bool Siren;
+        internal bool IsShooting;
+        internal bool IsAiming;
+        internal bool IsInBurnout;
+        internal bool ExitingVehicle;
+        internal bool IsPlayerDead;
         internal bool Braking;
+
+
+
         internal float Speed
         {
             get => _speed;
@@ -207,7 +214,6 @@ namespace GTANetwork.Sync
                 _vehicleMods = value;
             }
         }
-        private Vector3 _carPosOnUpdate;
         /*
         private Vector3? _lastVehiclePos;
         internal Vector3 VehiclePosition

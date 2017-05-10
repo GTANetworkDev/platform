@@ -316,7 +316,7 @@ namespace GTANetwork.Streamer
 
                 alpha = Util.Util.Clamp(0f, alpha, 1.5f);
 
-                Vector3 comp = Util.Util.Lerp(new Vector3(), alpha, NetInterpolation.vecError);
+                Vector3 comp = Util.Util.Lerp(new Vector3(), NetInterpolation.vecError, alpha);
 
                 if (alpha == 1.5f)
                 {
