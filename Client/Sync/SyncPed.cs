@@ -161,6 +161,7 @@ namespace GTANetwork.Sync
         internal bool Debug;
         
         private DateTime _stopTime;
+        internal bool Braking;
         internal float Speed
         {
             get => _speed;

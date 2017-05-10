@@ -201,7 +201,7 @@ namespace GTANetwork.Sync
 
             _lastBurnout = IsInBurnout;
 
-            Function.Call(Hash.SET_VEHICLE_BRAKE_LIGHTS, MainVehicle, Speed > 0.2 && _lastSpeed > Speed);
+            thisCollection.Call(Hash.SET_VEHICLE_BRAKE_LIGHTS, MainVehicle, Braking);
 
             if (MainVehicle.SirenActive && !Siren)
             {

@@ -134,6 +134,7 @@ namespace GTANetwork
                 syncPed.IsInBurnout = (fullData.Flag.Value & (short)VehicleDataFlags.BurnOut) > 0;
                 syncPed.ExitingVehicle = (fullData.Flag.Value & (short)VehicleDataFlags.ExitingVehicle) != 0;
                 syncPed.IsPlayerDead = (fullData.Flag.Value & (int)VehicleDataFlags.PlayerDead) != 0;
+                syncPed.Braking = (fullData.Flag.Value & (short)VehicleDataFlags.Braking) != 0;
             }
 
             if (fullData.WeaponHash != null)

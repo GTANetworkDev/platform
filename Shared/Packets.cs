@@ -112,6 +112,7 @@ namespace GTANetworkShared
         BurnOut = 1 << 7,
         ExitingVehicle = 1 << 8,
         PlayerDead = 1 << 9,
+        Braking = 1 << 10,
     }
     
     [Flags]
