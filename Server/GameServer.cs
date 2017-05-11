@@ -851,7 +851,7 @@ namespace GTANResource
                                     var wh = (WeaponHash)PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash);
                                     if (!sender.Weapons.ContainsKey(wh))
                                     {
-                                        sender.Weapons.Add(wh, 0);
+                                        sender.Weapons.Add(wh, ((PickupProperties)NetEntityHandler.ToDict()[pickupId]).Amount);
                                     }
                                     else
                                     {
