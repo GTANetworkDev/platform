@@ -215,7 +215,7 @@ namespace GTANetworkServer
 
                 var msg = Server.CreateMessage();
                 if (client.Position == null) continue;
-                if (client.Position.DistanceToSquared(fullPacket.Position) < 10000) // 500 m
+                if (client.Position.DistanceToSquared(fullPacket.Position) < 20000)
                 {
                     msg.Write((byte)PacketType.UnoccupiedVehSync);
                     msg.Write(full.Length);
@@ -257,7 +257,7 @@ namespace GTANetworkServer
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
-                if (client.Position.DistanceToSquared(exception.Position) > 1000) continue; // 1km
+                //if (range && client.Position.DistanceToSquared(exception.Position) > 80000) continue;
 
                 var msg = Server.CreateMessage();
                 msg.Write((byte)PacketType.BulletSync);
@@ -277,7 +277,7 @@ namespace GTANetworkServer
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
-                if (client.Position.DistanceToSquared(exception.Position) > 1000) continue; // 1km
+                //if (range && client.Position.DistanceToSquared(exception.Position) > 80000) continue; 
 
                 var msg = Server.CreateMessage();
                 msg.Write((byte)PacketType.BulletPlayerSync);

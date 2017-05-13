@@ -275,9 +275,8 @@ namespace GTANetwork
 
             lock (StreamerThread.StreamedInPlayers) myArray = StreamerThread.StreamedInPlayers.ToArray();
 
-            for (var i = 0; i < myArray.Length; i++)
+            foreach (var index in myArray)
             {
-                var index = myArray[i];
                 if (index == null) continue;
 
                 var them = new Ped(index.LocalHandle);
@@ -285,7 +284,7 @@ namespace GTANetwork
 
                 Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, them);
                 Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, us);
-                Util.Util.SafeNotify("Shot at" + index.Name + " " + DateTime.Now.Millisecond);
+                //Util.Util.SafeNotify("Shot at" + index.Name + " " + DateTime.Now.Millisecond);
                 return index;
             }
             return null;
