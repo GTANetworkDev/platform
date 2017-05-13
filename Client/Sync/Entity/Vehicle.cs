@@ -100,6 +100,7 @@ namespace GTANetwork.Sync
         {
             if (_lastPosition != null)
             {
+                if (currentInterop.vecStart.DistanceTo(Position) > 4) return; // Just set postion if they're far away
                 var avrLat = Math.Min(1.5f, TicksSinceLastUpdate / (float) AverageLatency);
                 var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, avrLat);
                 _thislastSpeed = Speed;
