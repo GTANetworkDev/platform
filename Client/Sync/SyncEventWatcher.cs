@@ -68,7 +68,7 @@ namespace GTANetwork.Streamer
 
             var player = Game.Player.Character;
             var car = player.CurrentVehicle;
-            foreach (var pickup in Main.NetEntityHandler.ClientMap.Where(item => item is RemotePickup).Cast<RemotePickup>())
+            foreach (var pickup in Main.NetEntityHandler.ClientMap.Values.Where(item => item is RemotePickup).Cast<RemotePickup>())
             {
                 if (!pickup.StreamedIn || !Function.Call<bool>(Hash.DOES_PICKUP_EXIST, pickup.LocalHandle)) continue;
                 if (!player.IsInRangeOfEx(Function.Call<GTA.Math.Vector3>(Hash.GET_PICKUP_COORDS, pickup.LocalHandle), 20f)) continue;

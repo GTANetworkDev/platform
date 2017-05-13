@@ -848,7 +848,15 @@ namespace GTANResource
                                 PickupToWeapon.Translate(
                                     ((PickupProperties) NetEntityHandler.ToDict()[pickupId]).ModelHash) != 0)
                             {
-                                sender.Weapons.Add((WeaponHash) PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash), 0);
+                                    var wh = (WeaponHash)PickupToWeapon.Translate(((PickupProperties)NetEntityHandler.ToDict()[pickupId]).ModelHash);
+                                    if (!sender.Weapons.ContainsKey(wh))
+                                    {
+                                        sender.Weapons.Add(wh, 0);
+                                    }
+                                    else
+                                    {
+                                        PublicAPI.setPlayerWeaponAmmo(sender, wh, sender.getWeaponAmmo(wh) + ((PickupProperties)NetEntityHandler.ToDict()[pickupId]).Amount);
+                                    }
                             }
                         }
                     }
