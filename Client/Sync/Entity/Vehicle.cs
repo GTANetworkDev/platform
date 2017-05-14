@@ -41,19 +41,19 @@ namespace GTANetwork.Sync
 
             MainVehicle = new Vehicle(Main.NetEntityHandler.NetToEntity(VehicleNetHandle)?.Handle ?? 0);
 
-            //if (MainVehicle == null || MainVehicle.Handle == 0)
-            //{
-            //    Character.Position = Position;
-            //    return true;
-            //}
+            if (MainVehicle == null || MainVehicle.Handle == 0)
+            {
+                Character.Position = Position;
+                return true;
+            }
 
-            //if (PlayerChar.IsInVehicle(MainVehicle) && VehicleSeat == Util.Util.GetPedSeat(PlayerChar))
-            //{
-            //    if (DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds < 1000) return true;
+            if (playerChar.IsInVehicle(MainVehicle) && VehicleSeat == Util.Util.GetPedSeat(playerChar))
+            {
+                //if (DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds < 2000) return true;
 
-            //    PlayerChar.Task.WarpOutOfVehicle(MainVehicle);
-            //    NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage("~r~Car jacked!", 3000);
-            //}
+                playerChar.Task.WarpOutOfVehicle(MainVehicle);
+                //NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage("~r~Car jacked!", 3000);
+            }
 
             if (MainVehicle != null && MainVehicle.Handle != 0)
             {
@@ -100,6 +100,7 @@ namespace GTANetwork.Sync
         {
             if (_lastPosition != null)
             {
+                if (currentInterop.vecStart.DistanceTo(Position) > 4) return; // Just set postion if they're far away
                 var avrLat = Math.Min(1.5f, TicksSinceLastUpdate / (float) AverageLatency);
                 var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, avrLat);
                 _thislastSpeed = Speed;

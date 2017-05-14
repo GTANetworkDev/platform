@@ -417,6 +417,12 @@ namespace GTANetwork
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Alt && e.KeyCode == Keys.F4)
+            {
+                if (Client != null && IsOnServer()) Client.Disconnect("Quit");
+                Process.GetProcessesByName("GTA5")[0].Kill();
+                Process.GetCurrentProcess().Kill();
+            }
             Chat.OnKeyDown(e.KeyCode);
             switch (e.KeyCode)
             {

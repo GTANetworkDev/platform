@@ -79,6 +79,7 @@ namespace GTANetwork
                     break;
                 case PacketType.BulletSync:
                     {
+                        //Util.Util.SafeNotify("Bullet Packet" + DateTime.Now.Millisecond);
                         var len = msg.ReadInt32();
                         var data = msg.ReadBytes(len);
 
@@ -90,6 +91,7 @@ namespace GTANetwork
                     break;
                 case PacketType.BulletPlayerSync:
                     {
+                        //Util.Util.SafeNotify("Bullet Player Packet" + DateTime.Now.Millisecond);
                         var len = msg.ReadInt32();
                         var data = msg.ReadBytes(len);
 

@@ -1091,6 +1091,7 @@ namespace GTANetwork.Javascript
             {
                 Script.Yield();
             }
+            Script.Wait(50);
         }
 
         public void setCefBrowserSize(Browser browser, double width, double height)
