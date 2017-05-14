@@ -187,11 +187,13 @@ namespace GTANetwork
             //Util.Util.SafeNotify("Handling PlayerBullet - " + DateTime.Now.Millisecond);
             var syncPed = NetEntityHandler.GetPlayer(netHandle);
             var syncPedTarget = NetEntityHandler.NetToEntity(netHandleTarget);
+            if (syncPed.StreamedIn && syncPedTarget != null)
+            {
+                syncPed.IsShooting = shooting;
+                syncPed.AimedAtPlayer = true;
 
-            syncPed.IsShooting = shooting;
-            syncPed.AimedAtPlayer = true;
-
-            if (shooting) syncPed.AimPlayer = new Ped(syncPedTarget.Handle);
+                if (shooting) syncPed.AimPlayer = new Ped(syncPedTarget.Handle);
+            }
         }
     }
 }
