@@ -852,7 +852,7 @@ namespace GTANetworkServer
             var t = new System.Timers.Timer(ms) {AutoReset = !once};
             t.Elapsed += (sender, args) =>
             {
-                if (ResourceParent.HasTerminated) return;
+                if (ResourceParent != null && ResourceParent.HasTerminated) return;
 
                 try
                 {
