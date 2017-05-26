@@ -2379,7 +2379,7 @@ namespace GTANetworkServer
 
         public List<Client> getPlayersInRadiusOfPosition(float radius, Vector3 position)
         {
-            Func<Client, bool> filterByRadius = player => 
+            Func<Client, bool> filterByRadius = player => player != null && 
                 Math.Pow(position.X - player.Position.X, 2) + 
                 Math.Pow(position.Y - player.Position.Y, 2) + 
                 Math.Pow(position.Z - player.Position.Z, 2) < Math.Pow(radius, 2);
