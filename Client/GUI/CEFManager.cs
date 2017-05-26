@@ -59,7 +59,6 @@ namespace GTANetwork.GUI
                 if (!CefUtil.DISABLE_CEF && ShowCursor)
                 {
                     Game.DisableAllControlsThisFrame(0);
-                    Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
 
                     var res = Main.screen;
                     var mouseX = Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)GTA.Control.CursorX) * res.Width;
@@ -137,6 +136,10 @@ namespace GTANetwork.GUI
                                     .SendMouseWheelEvent(ev, 0, 30);
                         }
                     }
+                }
+                else if (ShowCursor)
+                {
+                    Function.Call(Hash._SHOW_CURSOR_THIS_FRAME);
                 }
             };
 

@@ -2798,6 +2798,11 @@ namespace GTANetwork.Javascript
             //return Function.Call<bool>(Hash.IS_ENTITY_ON_SCREEN, entity.Value);
         }
 
+        public void displayHelpTextThisFrame(string text)
+        {
+            Function.Call(Hash.DISPLAY_HELP_TEXT_THIS_FRAME, text, false);
+        }
+
         public void showShard(string text, int timeout = 5000)
         {
             NativeUI.BigMessageThread.MessageInstance.ShowMissionPassedMessage(text, timeout);
