@@ -111,7 +111,7 @@ namespace GTANetworkServer.Managers
             packet.Write(vehicle);
             packet.Write(true);
 
-            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableUnordered, (int)ConnectionChannel.SyncEvent);
+            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
             //Console.WriteLine("[DEBUG MESSAGE] [+] Starting sync for: " + player.Name + " | Vehicle: " + vehicle);
 
             Syncer.Set(vehicle, player);
@@ -124,7 +124,7 @@ namespace GTANetworkServer.Managers
             packet.Write(vehicle);
             packet.Write(false);
 
-            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableUnordered, (int)ConnectionChannel.SyncEvent);
+            Program.ServerInstance.Server.SendMessage(packet, player.NetConnection, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.SyncEvent);
             //Console.WriteLine("[DEBUG MESSAGE] [-] Stopping sync for: " + player.Name + " | Vehicle: " + vehicle);
 
             Syncer.Remove(vehicle);
