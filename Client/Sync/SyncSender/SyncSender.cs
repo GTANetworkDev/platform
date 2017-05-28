@@ -1,17 +1,9 @@
 ﻿using System;
 using System.Threading;
 using GTA;
-using GTA.Math;
-using GTA.Native;
-using GTANetwork.Misc;
 using GTANetwork.Util;
-using GTANetwork.Sync;
 using GTANetworkShared;
 using Lidgren.Network;
-using Vector3 = GTA.Math.Vector3;
-using WeaponHash = GTA.WeaponHash;
-using VehicleHash = GTA.VehicleHash;
-using System.Collections.Generic;
 
 namespace GTANetwork.Streamer
 {
@@ -27,7 +19,7 @@ namespace GTANetwork.Streamer
 
             while (true)
             {
-                if (!Main.IsOnServer())
+                if (!Main.IsConnected())
                 {
                     Thread.Sleep(100);
                     continue;
@@ -53,16 +45,15 @@ namespace GTANetwork.Streamer
                         msg.Write(bin.Length);
                         msg.Write(bin);
 
-                        try
-                        {
-                            Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced,
-                                (int) ConnectionChannel.PureSync);
-                        }
-                        catch (Exception ex)
-                        {
-                            Util.Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
-                            LogManager.LogException(ex, "SENDPLAYERDATA");
-                        }
+                        //try
+                        //{
+                            Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, (int) ConnectionChannel.PureSync);
+                        //}
+                        //catch (Exception ex)
+                        //{
+                        //    Util.Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
+                        //    LogManager.LogException(ex, "SENDPLAYERDATA");
+                        //}
 
                         if (!lastPedData || Environment.TickCount - lastLightSyncSent > LIGHT_SYNC_RATE)
                         {
@@ -76,16 +67,15 @@ namespace GTANetwork.Streamer
                             lightMsg.Write((byte) PacketType.PedLightSync);
                             lightMsg.Write(lightBin.Length);
                             lightMsg.Write(lightBin);
-                            try
-                            {
-                                Main.Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced,
-                                    (int) ConnectionChannel.LightSync);
-                            }
-                            catch (Exception ex)
-                            {
-                                Util.Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
-                                LogManager.LogException(ex, "SENDPLAYERDATA");
-                            }
+                            //try
+                            //{
+                                Main.Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced, (int) ConnectionChannel.LightSync);
+                            //}
+                            //catch (Exception ex)
+                            //{
+                            //    Util.Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
+                            //    LogManager.LogException(ex, "SENDPLAYERDATA");
+                            //}
 
                             Main.BytesSent += lightBin.Length;
                             Main.MessagesSent++;
@@ -111,15 +101,15 @@ namespace GTANetwork.Streamer
                         msg.Write((byte) PacketType.VehiclePureSync);
                         msg.Write(bin.Length);
                         msg.Write(bin);
-                        try
-                        {
+                        //try
+                        //{
                             Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, (int) ConnectionChannel.PureSync);
-                        }
-                        catch (Exception ex)
-                        {
-                            Util.Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
-                            LogManager.LogException(ex, "SENDPLAYERDATA");
-                        }
+                        //}
+                        //catch (Exception ex)
+                        //{
+                        //    Util.Util.SafeNotify("FAILED TO SEND DATA: " + ex.Message);
+                        //    LogManager.LogException(ex, "SENDPLAYERDATA");
+                        //}
 
                         if (lastPedData || Environment.TickCount - lastLightSyncSent > LIGHT_SYNC_RATE)
                         {
@@ -133,15 +123,15 @@ namespace GTANetwork.Streamer
                             lightMsg.Write((byte) PacketType.VehicleLightSync);
                             lightMsg.Write(lightBin.Length);
                             lightMsg.Write(lightBin);
-                            try
-                            {
+                            //try
+                            //{
                                 Main.Client.SendMessage(lightMsg, NetDeliveryMethod.ReliableSequenced, (int) ConnectionChannel.LightSync);
-                            }
-                            catch (Exception ex)
-                            {
-                                Util.Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
-                                LogManager.LogException(ex, "SENDPLAYERDATA");
-                            }
+                            //}
+                            //catch (Exception ex)
+                            //{
+                            //    Util.Util.SafeNotify("FAILED TO SEND LIGHT DATA: " + ex.Message);
+                            //    LogManager.LogException(ex, "SENDPLAYERDATA");
+                            //}
 
                             Main.BytesSent += lightBin.Length;
                             Main.MessagesSent++;
