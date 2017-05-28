@@ -539,7 +539,7 @@ namespace GTANetwork.Util
             Function.Call(Hash.DRAW_SPRITE, dict, txtName, xx, yy, w, h, heading, r, g, b, alpha);
         }
 
-        public static void DrawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha)
+        public static void DrawRectangle(double xPos, double yPos, double wSize, double hSize, int r, int g, int b, int alpha, CallCollection thisCol = null)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
             const float height = 1080f;
@@ -551,11 +551,18 @@ namespace GTANetwork.Util
             float x = (((float)xPos) / width) + w * 0.5f;
             float y = (((float)yPos) / height) + h * 0.5f;
 
-            Function.Call(Hash.DRAW_RECT, x, y, w, h, r, g, b, alpha);
+            if (thisCol == null)
+            {
+                Function.Call(Hash.DRAW_RECT, x, y, w, h, r, g, b, alpha);
+            }
+            else
+            {
+                thisCol.Call(Hash.DRAW_RECT, x, y, w, h, r, g, b, alpha);
+            }
         }
 
         public static void DrawText(string caption, double xPos, double yPos, double scale, int r, int g, int b, int alpha, int font,
-            int justify, bool shadow, bool outline, int wordWrap)
+            int justify, bool shadow, bool outline, int wordWrap, CallCollection thisCol = null)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
             const float height = 1080f;
@@ -564,8 +571,12 @@ namespace GTANetwork.Util
 
             float x = (float)(xPos) / width;
             float y = (float)(yPos) / height;
-
-            CallCollection thisCol = new CallCollection();
+            bool localCollection = false;
+            if (thisCol == null)
+            {
+                localCollection = true;
+                thisCol = new CallCollection();
+            }
 
             thisCol.Call(Hash.SET_TEXT_FONT, font);
             thisCol.Call(Hash.SET_TEXT_SCALE, 1.0f, scale);
@@ -604,7 +615,10 @@ namespace GTANetwork.Util
             }
 
             thisCol.Call(Hash._DRAW_TEXT, x, y);
-            thisCol.Execute();
+            if (localCollection)
+            {
+                thisCol.Execute();
+            }
         }
 
         public static float GetOffsetDegrees(float a, float b)

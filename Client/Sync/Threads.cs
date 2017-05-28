@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Threading;
+using GTA.Native;
 
 namespace GTANetwork.Sync
 {
@@ -25,12 +26,9 @@ namespace GTANetwork.Sync
 
             SyncPed[] myBubble;
             lock (StreamerThread.StreamedInPlayers) { myBubble = StreamerThread.StreamedInPlayers.ToArray(); }
-            var length = myBubble.Length;
-            for (var i = length - 1; i >= 0; i--) { myBubble[i]?.Render(); }
-
+            for (var i = myBubble.Length - 1; i >= 0; i--) { myBubble[i]?.Render(); }
 
             if (DebugInfo.StreamerDebug) sw.Stop();
-
         }
     }
 
@@ -43,9 +41,10 @@ namespace GTANetwork.Sync
             if (!Main.IsConnected() || !Main.IsOnServer()) return;
 
             SyncPed[] myBubble;
-            lock (StreamerThread.StreamedInPlayers) { myBubble = StreamerThread.StreamedInPlayers.ToArray(); }
-            var length = myBubble.Length;
-            for (var i = length - 1; i >= 0; i--) { myBubble[i]?.DrawNametag(); }
+            CallCollection nametagCollection = new CallCollection();
+            lock (StreamerThread.StreamedInPlayers) { myBubble = StreamerThread.StreamedInPlayers.Take(50).ToArray(); }
+            for (var i = myBubble.Length - 1; i >= 0; i--) { myBubble[i]?.DrawNametag(nametagCollection); }
+            nametagCollection.Execute();
         }
     }
 
