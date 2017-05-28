@@ -104,9 +104,9 @@ namespace GTANetwork.Sync
                 var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, avrLat);
                 _thislastSpeed = Speed;
 
-                var vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
-                var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (thisSpeed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
-                var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (thisSpeed / 750); // calcul de la force à appliquer au vecteur
+                var vecDif = Position - currentInterop.vecStart; 
+                var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (thisSpeed / 250); 
+                var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (thisSpeed / 750);
 
                 //MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f);
                 MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force);

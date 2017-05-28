@@ -107,15 +107,22 @@ namespace GTANetwork.Streamer
 
             Vehicle trailer;
 
-            if ((VehicleHash)veh.Model.Hash == VehicleHash.TowTruck ||
-                (VehicleHash)veh.Model.Hash == VehicleHash.TowTruck2)
-                trailer = veh.TowedVehicle;
-            else if ((VehicleHash)veh.Model.Hash == VehicleHash.Cargobob ||
-                     (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob2 ||
-                     (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob3 ||
-                     (VehicleHash)veh.Model.Hash == VehicleHash.Cargobob4)
-                trailer = SyncEventWatcher.GetVehicleCargobobVehicle(veh);
-            else trailer = SyncEventWatcher.GetVehicleTrailerVehicle(veh);
+            switch ((VehicleHash)veh.Model.Hash)
+            {
+                case VehicleHash.TowTruck:
+                case VehicleHash.TowTruck2:
+                    trailer = veh.TowedVehicle;
+                    break;
+                case VehicleHash.Cargobob:
+                case VehicleHash.Cargobob2:
+                case VehicleHash.Cargobob3:
+                case VehicleHash.Cargobob4:
+                    trailer = SyncEventWatcher.GetVehicleCargobobVehicle(veh);
+                    break;
+                default:
+                    trailer = SyncEventWatcher.GetVehicleTrailerVehicle(veh);
+                    break;
+            }
 
             if (trailer != null && trailer.Exists())
             {
@@ -123,7 +130,9 @@ namespace GTANetwork.Streamer
             }
 
             if (Util.Util.GetResponsiblePed(veh) == player)
+            {
                 obj.DamageModel = veh.GetVehicleDamageModel();
+            }
 
             lock (Lock)
             {
