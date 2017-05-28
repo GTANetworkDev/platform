@@ -11,41 +11,43 @@ namespace GTANetwork.Streamer
 {
     public class UnoccupiedVehSync : Script
     {
-        public UnoccupiedVehSync() { /*Tick += OnTick;*/ }
-        private static long _lastCheck;
+        public UnoccupiedVehSync() { Tick += OnTick; }
 
-        private static long _lastEntityRemoval;
+        private static long _lastTick;
         private static void OnTick(object sender, EventArgs e)
         {
-            if (Main.IsConnected() && Util.Util.TickCount - _lastEntityRemoval > 500) // Save ressource
+            if (Main.IsConnected() && Util.Util.TickCount - _lastTick > 500) // Save ressource
             {
-                _lastEntityRemoval = Util.Util.TickCount;
-                RemoteVehicle[] myCars;
+                _lastTick = Util.Util.TickCount;
                 if (StreamerThread.StreamedInVehicles == null || StreamerThread.StreamedInVehicles.Length == 0) return;
 
-                lock (StreamerThread.StreamedInVehicles)
-                {
-                    myCars = StreamerThread.StreamedInVehicles.ToArray();
-                }
+                RemoteVehicle[] myCars;
+                lock (StreamerThread.StreamedInVehicles) { myCars = StreamerThread.StreamedInVehicles.ToArray(); }
 
                 for (var index = myCars.Length - 1; index >= 0; index--)
                 {
-                    var entity_ = myCars[index];
-                    if (entity_ == null) continue;
+                    var remoteEntity = myCars[index];
+                    if (remoteEntity == null) continue;
 
-                    var entity = new Vehicle(entity_.LocalHandle);
+                    var localEntity = new Vehicle(remoteEntity.LocalHandle);
 
-                    if (Util.Util.IsVehicleEmpty(entity) && !Main.VehicleSyncManager.IsInterpolating(entity.Handle) &&
-                        entity_.TraileredBy == 0 && !Main.VehicleSyncManager.IsSyncing(entity_) &&
-                        ((entity.Handle == Game.Player.LastVehicle?.Handle &&
-                          DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds > 3000) ||
-                         entity.Handle != Game.Player.LastVehicle?.Handle))
+                    var isEmpty = Util.Util.IsVehicleEmpty(localEntity);
+                    var isIntepolating = Main.VehicleSyncManager.IsInterpolating(localEntity.Handle);
+                    var isTrailered = remoteEntity.TraileredBy != 0;
+                    var isSyncing = Main.VehicleSyncManager.IsSyncing(remoteEntity);
+                    var isLastVeh = localEntity.Handle == Game.Player.LastVehicle?.Handle;
+                    var isLastVehTimeout = DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds > 3000;
+                    var isFar = localEntity.Position.DistanceToSquared(remoteEntity.Position.ToVector()) > 2f;
+
+                    //if (Util.Util.IsVehicleEmpty(entity) && !Main.VehicleSyncManager.IsInterpolating(entity.Handle) &&
+                    //    entity_.TraileredBy == 0 && !Main.VehicleSyncManager.IsSyncing(entity_) &&
+                    //    ((entity.Handle == Game.Player.LastVehicle?.Handle && DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds > 3000) ||
+                    //     entity.Handle != Game.Player.LastVehicle?.Handle))
+
+                    if (isEmpty && !isIntepolating && !isTrailered && !isSyncing && isLastVeh && isFar)
                     {
-                        if (entity.Position.DistanceToSquared(entity_.Position.ToVector()) > 2f)
-                        {
-                            entity.PositionNoOffset = entity_.Position.ToVector();
-                            entity.Quaternion = entity_.Rotation.ToVector().ToQuaternion();
-                        }
+                        localEntity.PositionNoOffset = remoteEntity.Position.ToVector();
+                        localEntity.Rotation = remoteEntity.Rotation.ToVector();
                     }
 
                     //veh.Position = entity.Position.ToLVector();
@@ -175,8 +177,7 @@ namespace GTANetwork.Streamer
                                 if (!veh.Windows[(VehicleWindowIndex)i].IsIntact) BrokenWindows |= (byte)(1 << i);
                             }
 
-                            var syncUnocVeh = dist > 2f ||
-                                          ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 2f ||
+                            var syncUnocVeh = dist > 2f || ent.Rotation.DistanceToSquared(vehicle.Rotation.ToVector()) > 2f ||
                                           Math.Abs(new Vehicle(ent.Handle).EngineHealth - vehicle.Health) > 1f ||
                                           Util.Util.BuildTyreFlag(new Vehicle(ent.Handle)) != vehicle.Tires ||
                                           vehicle.DamageModel == null ||
