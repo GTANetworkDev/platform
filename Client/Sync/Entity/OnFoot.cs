@@ -31,7 +31,8 @@ namespace GTANetwork.Sync
                 var gPos = Position;
                 var charModel = new Model(ModelHash);
                 Util.Util.LoadModel(charModel);
-                Character = World.CreatePed(charModel, gPos, _rotation.Z);
+                Character = new Ped(Function.Call<int>(Hash.CREATE_PED, 26, charModel.Hash, gPos.X, gPos.Y, gPos.Z, _rotation.Z, false, false));
+                //Character = World.CreatePed(charModel, gPos, _rotation.Z);
                 //charModel.MarkAsNoLongerNeeded();
 
                 if (Character == null) return true;
@@ -40,7 +41,7 @@ namespace GTANetwork.Sync
 
                 Character.CanBeTargetted = true;
                 Character.BlockPermanentEvents = true;
-                Function.Call(Hash.TASK_SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, Character, true);
+                //Function.Call(Hash.TASK_SET_BLOCKING_OF_NON_TEMPORARY_EVENTS, Character, true);
                 //Character.IsInvincible = true;
                 Character.CanRagdoll = false;
                 Character.CanSufferCriticalHits = false;
@@ -48,21 +49,18 @@ namespace GTANetwork.Sync
                 if (Team == -1 || Team != Main.LocalTeam)
                 {
                     Character.RelationshipGroup = Main.RelGroup;
-                    Function.Call(Hash.SET_PED_RELATIONSHIP_GROUP_DEFAULT_HASH, Character, Main.RelGroup);
+                    //Function.Call(Hash.SET_PED_RELATIONSHIP_GROUP_DEFAULT_HASH, Character, Main.RelGroup);
                 }
                 else
                 {
                     Character.RelationshipGroup = Main.FriendRelGroup;
-                    Function.Call(Hash.SET_PED_RELATIONSHIP_GROUP_DEFAULT_HASH, Character, Main.FriendRelGroup);
+                    //Function.Call(Hash.SET_PED_RELATIONSHIP_GROUP_DEFAULT_HASH, Character, Main.FriendRelGroup);
                 }
 
                 Character.FiringPattern = FiringPattern.FullAuto;
-
                 Function.Call(Hash.SET_PED_DEFAULT_COMPONENT_VARIATION, Character); //BUG: <- Maybe causes crash?
-
                 Function.Call(Hash.SET_PED_CAN_EVASIVE_DIVE, Character, false);
                 Function.Call(Hash.SET_PED_DROPS_WEAPONS_WHEN_DEAD, Character, false);
-
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, Character, true);
                 Function.Call(Hash.SET_PED_CAN_BE_TARGETTED_BY_PLAYER, Character, Game.Player, true);
                 Function.Call(Hash.SET_PED_GET_OUT_UPSIDE_DOWN_VEHICLE, Character, false);

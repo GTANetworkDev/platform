@@ -87,13 +87,14 @@ namespace GTANetwork
                 thisCol.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
                 thisCol.Call((Hash) 0x5DB660B38DD98A31, Game.Player, 0f); //SET_PLAYER_HEALTH_RECHARGE_MULTIPLIER
 
+
+                thisCol.Call(Hash.SET_PLAYER_WANTED_LEVEL, Game.Player, 0, false);
+                thisCol.Call(Hash.SET_PLAYER_WANTED_LEVEL_NOW, Game.Player, false);
+                thisCol.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
+
+                if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS)) thisCol.Call(Hash.CANCEL_STUNT_JUMP);
+
                 thisCol.Execute();
-
-                Game.Player.WantedLevel = 0;
-                Game.MaxWantedLevel = 0;
-
-                if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS)) Function.Call(Hash.CANCEL_STUNT_JUMP);
-
                 if (DateTime.Now.Subtract(LastDateTime).TotalMilliseconds >= 500)
                 {
                     var playerChar = Game.Player.Character;
@@ -120,8 +121,6 @@ namespace GTANetwork
                     }
                 }
             }
-
-            //Entities
         }
     }
 
@@ -149,40 +148,58 @@ namespace GTANetwork
 
         private static void OnTick(object sender, EventArgs e)
         {
-            Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
-            Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
-            Game.DisableControlThisFrame(0, Control.EnterCheatCode);
+            CallCollection thisCol = new CallCollection();
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendSocialClub, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendSocialClubSecondary, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.EnterCheatCode, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.SpecialAbility, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.SpecialAbilityPC, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.SpecialAbilitySecondary, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.CharacterWheel, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Phone, true);
+            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Duck, true);
 
-            Game.DisableControlThisFrame(0, Control.SpecialAbility);
-            Game.DisableControlThisFrame(0, Control.SpecialAbilityPC);
-            Game.DisableControlThisFrame(0, Control.SpecialAbilitySecondary);
-            Game.DisableControlThisFrame(0, Control.CharacterWheel);
-            Game.DisableControlThisFrame(0, Control.Phone);
-            Game.DisableControlThisFrame(0, Control.Duck);
+            //Game.DisableControlThisFrame(0, Control.FrontendSocialClub);
+            //Game.DisableControlThisFrame(0, Control.FrontendSocialClubSecondary);
+            //Game.DisableControlThisFrame(0, Control.EnterCheatCode);
+
+            //Game.DisableControlThisFrame(0, Control.SpecialAbility);
+            //Game.DisableControlThisFrame(0, Control.SpecialAbilityPC);
+            //Game.DisableControlThisFrame(0, Control.SpecialAbilitySecondary);
+            //Game.DisableControlThisFrame(0, Control.CharacterWheel);
+            //Game.DisableControlThisFrame(0, Control.Phone);
+            //Game.DisableControlThisFrame(0, Control.Duck);
 
             if (Main.IsConnected())
             {
-                Game.DisableControlThisFrame(0, Control.FrontendPause);
-                Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendPause, true);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendPauseAlternate, true);
+                //Game.DisableControlThisFrame(0, Control.FrontendPause);
+                //Game.DisableControlThisFrame(0, Control.FrontendPauseAlternate);
             }
 
             var playerChar = Game.Player.Character;
             if (playerChar.IsJumping)
             {
                 //Game.DisableControlThisFrame(0, Control.MeleeAttack1);
-                Game.DisableControlThisFrame(0, Control.MeleeAttackLight);
+                //Game.DisableControlThisFrame(0, Control.MeleeAttackLight);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.MeleeAttackLight, true);
+
             }
 
             if (playerChar.IsRagdoll)
             {
-                Game.DisableControlThisFrame(0, Control.Attack);
-                Game.DisableControlThisFrame(0, Control.Attack2);
+                //Game.DisableControlThisFrame(0, Control.Attack);
+                //Game.DisableControlThisFrame(0, Control.Attack2);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Attack, true);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Attack2, true);
+
             }
 
-            if (Game.IsControlPressed(0, Control.Aim) && !playerChar.IsInVehicle() &&
-                playerChar.Weapons.Current.Hash != WeaponHash.Unarmed)
+            if (Game.IsControlPressed(0, Control.Aim) && !playerChar.IsInVehicle() && playerChar.Weapons.Current.Hash != WeaponHash.Unarmed)
             {
-                Game.DisableControlThisFrame(0, Control.Jump);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Jump, true);
+                //Game.DisableControlThisFrame(0, Control.Jump);
             }
 
             //CRASH WORKAROUND: DISABLE PARACHUTE RUINER2
@@ -190,15 +207,20 @@ namespace GTANetwork
             {
                 if (playerChar.CurrentVehicle.IsInAir && playerChar.CurrentVehicle.Model.Hash == 941494461)
                 {
-                    Game.DisableAllControlsThisFrame(0);
+                    thisCol.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
+                    //Game.DisableAllControlsThisFrame(0);
                 }
             }
 
             if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, playerChar) == 2)
             {
-                Game.DisableControlThisFrame(0, Control.Aim);
-                Game.DisableControlThisFrame(0, Control.Attack);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Aim, true);
+                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Attack, true);
+
+                //Game.DisableControlThisFrame(0, Control.Aim);
+                //Game.DisableControlThisFrame(0, Control.Attack);
             }
+            thisCol.Execute();
         }
     }
 

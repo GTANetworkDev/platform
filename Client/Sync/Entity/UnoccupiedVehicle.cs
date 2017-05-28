@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GTA;
+using GTA.Native;
 using GTANetwork.Util;
 using GTANetworkShared;
 using Lidgren.Network;
@@ -16,13 +17,14 @@ namespace GTANetwork.Streamer
         private static long _lastTick;
         private static void OnTick(object sender, EventArgs e)
         {
-            if (Main.IsConnected() && Util.Util.TickCount - _lastTick > 500) // Save ressource
+            //CallCollection thisCol = new CallCollection();
+            if (Main.IsConnected() && Util.Util.TickCount - _lastTick > 1000) // Save ressource
             {
                 _lastTick = Util.Util.TickCount;
                 if (StreamerThread.StreamedInVehicles == null || StreamerThread.StreamedInVehicles.Length == 0) return;
 
                 RemoteVehicle[] myCars;
-                lock (StreamerThread.StreamedInVehicles) { myCars = StreamerThread.StreamedInVehicles.ToArray(); }
+                lock (StreamerThread.StreamedInVehicles) { myCars = StreamerThread.StreamedInVehicles.Take(50).ToArray(); }
 
                 for (var index = myCars.Length - 1; index >= 0; index--)
                 {
@@ -48,6 +50,7 @@ namespace GTANetwork.Streamer
                     {
                         localEntity.PositionNoOffset = remoteEntity.Position.ToVector();
                         localEntity.Rotation = remoteEntity.Rotation.ToVector();
+                        //thisCol.Call(Hash.SET_ENTITY_ROTATION, localEntity, value.X, value.Y, value.Z, 2, 1);
                     }
 
                     //veh.Position = entity.Position.ToLVector();
