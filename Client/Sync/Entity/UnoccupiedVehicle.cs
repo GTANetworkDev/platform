@@ -245,7 +245,7 @@ namespace GTANetwork.Streamer
                         msg.Write(buffer.Count);
                         msg.Write(buffer.ToArray());
 
-                        Main.Client.SendMessage(msg, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.UnoccupiedVeh);
+                        Main.Client.SendMessage(msg, NetDeliveryMethod.Unreliable, (int)ConnectionChannel.UnoccupiedVeh);
 
                         Main.BytesSent += buffer.Count;
                         Main.MessagesSent++;

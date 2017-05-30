@@ -14,7 +14,7 @@ namespace GTANetwork
             packet.EntityType = (byte)entity;
             packet.Properties = newInfo;
             packet.NetHandle = netId;
-            SendToServer(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
+            SendToServer(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.EntityBackend);
         }
 
         public static bool SetEntityProperty(LocalHandle entity, string key, object value)

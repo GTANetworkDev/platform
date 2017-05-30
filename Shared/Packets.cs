@@ -145,13 +145,13 @@ namespace GTANetworkShared
         NativeCall = 2,
         Chat = 3,
         EntityBackend = 4,
-        PositionData = 5,
+        ClientEvent = 5,
         SyncEvent = 6,
         PureSync = 7,
         LightSync = 8,
         BasicSync = 9,
         BulletSync = 10,
-        UnoccupiedVeh = 11,
+        UnoccupiedVeh = 11
     }
 
     

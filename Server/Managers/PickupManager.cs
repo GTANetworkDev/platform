@@ -52,7 +52,7 @@ namespace GTANetworkServer.Managers
             packet.Properties = prop;
             packet.NetHandle = netHandle;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
         }
     }
 }

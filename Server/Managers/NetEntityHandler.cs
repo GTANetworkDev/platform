@@ -146,7 +146,7 @@ namespace GTANetworkServer
             packet.EntityType = (byte) EntityType.Vehicle;
             packet.NetHandle = localEntityHash;
             packet.Properties = obj;
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -173,7 +173,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -200,7 +200,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -231,7 +231,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -260,7 +260,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -287,7 +287,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -315,7 +315,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -350,7 +350,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -381,7 +381,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -407,7 +407,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -438,7 +438,7 @@ namespace GTANetworkServer
             packet.Properties = obj;
             packet.NetHandle = localEntityHash;
 
-            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.CreateEntity, true, ConnectionChannel.EntityBackend);
 
             return localEntityHash;
         }
@@ -449,7 +449,7 @@ namespace GTANetworkServer
 
             var packet = new DeleteEntity();
             packet.NetHandle = netId;
-            Program.ServerInstance.SendToAll(packet, PacketType.DeleteEntity, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.DeleteEntity, true, ConnectionChannel.EntityBackend);
 
             lock (ServerEntities) ServerEntities.Remove(netId);
         }

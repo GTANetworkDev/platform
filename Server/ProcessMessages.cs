@@ -245,8 +245,7 @@ namespace GTANetworkServer
                                         {
                                             var dcObj = new PlayerDisconnect() { Id = client.handle.Value };
 
-                                            SendToAll(dcObj, PacketType.PlayerDisconnect, true,
-                                                ConnectionChannel.EntityBackend);
+                                            SendToAll(dcObj, PacketType.PlayerDisconnect, true, ConnectionChannel.SyncEvent);
 
                                             Program.Output("Player disconnected: " + client.SocialClubName + " (" +
                                                            client.Name + ") [" +
@@ -1212,8 +1211,7 @@ namespace GTANetworkServer
                                     var data = DeserializeBinary<SyncEvent>(msg.ReadBytes(len)) as SyncEvent;
                                     if (data != null)
                                     {
-                                        SendToAll(data, PacketType.SyncEvent, true, client,
-                                            ConnectionChannel.NativeCall);
+                                        SendToAll(data, PacketType.SyncEvent, true, client, ConnectionChannel.SyncEvent);
                                         HandleSyncEvent(client, data);
                                     }
                                 }

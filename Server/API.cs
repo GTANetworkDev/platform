@@ -2598,20 +2598,17 @@ namespace GTANetworkServer
 
             packet.Arguments = GameServer.ParseNativeArguments(args);
 
-            Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToAll(packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.ClientEvent);
         }
 
         public void triggerClientEvent(Client player, string eventName, params object[] args)
         {
             var packet = new ScriptEventTrigger();
             packet.EventName = eventName;
-            if (ResourceParent == null)
-                packet.Resource = "*";
-            else
-                packet.Resource = ResourceParent.ResourceParent.DirectoryName;
+            packet.Resource = ResourceParent == null ? "*" : ResourceParent.ResourceParent.DirectoryName;
             packet.Arguments = GameServer.ParseNativeArguments(args);
 
-            Program.ServerInstance.SendToClient(player, packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.NativeCall);
+            Program.ServerInstance.SendToClient(player, packet, PacketType.ScriptEventTrigger, true, ConnectionChannel.ClientEvent);
         }
 
         public void sendChatMessageToAll(string message)

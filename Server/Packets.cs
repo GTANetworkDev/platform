@@ -35,9 +35,9 @@ namespace GTANetworkServer
                 NetHandle = netId
             };
             if (exclude == null)
-                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.NativeCall);
+                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, ConnectionChannel.EntityBackend);
             else
-                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, exclude, ConnectionChannel.NativeCall);
+                Program.ServerInstance.SendToAll(packet, PacketType.UpdateEntityProperties, true, exclude, ConnectionChannel.EntityBackend);
         }
 
 
@@ -302,6 +302,7 @@ namespace GTANetworkServer
         public void SendToAll(object newData, PacketType packetType, bool important, ConnectionChannel channel)
         {
             lock (Clients)
+            {
                 foreach (var client in Clients)
                 {
                     if (client.Fake) continue;
@@ -310,27 +311,26 @@ namespace GTANetworkServer
                     msg.Write((byte)packetType);
                     msg.Write(data.Length);
                     msg.Write(data);
-                    Server.SendMessage(msg, client.NetConnection,
-                        important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
-                        (int)channel);
+                    Server.SendMessage(msg, client.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
                 }
+            }
         }
 
         public void SendToAll(object newData, PacketType packetType, bool important, Client exclude, ConnectionChannel channel)
         {
             lock (Clients)
+            {
                 foreach (var client in Clients)
                 {
                     if (client == exclude || client.Fake) continue;
                     var data = SerializeBinary(newData);
                     var msg = Server.CreateMessage();
-                    msg.Write((byte)packetType);
+                    msg.Write((byte) packetType);
                     msg.Write(data.Length);
                     msg.Write(data);
-                    Server.SendMessage(msg, client.NetConnection,
-                        important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced,
-                        (int)channel);
+                    Server.SendMessage(msg, client.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int) channel);
                 }
+            }
         }
 
         public void SendDeleteObject(Client player, Vector3 pos, float radius, int modelHash)
@@ -347,7 +347,7 @@ namespace GTANetworkServer
             msg.Write((byte)PacketType.DeleteObject);
             msg.Write(bin.Length);
             msg.Write(bin);
-            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.Default);
+            player.NetConnection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, (int)ConnectionChannel.EntityBackend);
         }
 
 
