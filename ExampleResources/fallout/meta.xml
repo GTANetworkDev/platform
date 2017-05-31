@@ -1,5 +1,0 @@
-<meta>
-    <info name="Fallout" author="Guadmaz" type="gamemode" async="true" />
-    <script src="fallout.js" type="client" lang="javascript"/>
-    <script src="fallout.cs" type="server" lang="csharp"/>
-</meta>
