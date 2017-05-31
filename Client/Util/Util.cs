@@ -842,11 +842,24 @@ namespace GTANetwork.Util
 
         public static int GetPedSeat(Ped ped)
         {
-            if (ped == null || !ped.IsInVehicle()) return -3;
-            if (ped.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver) == ped) return (int)VehicleSeat.Driver;
-            for (int i = 0; i < ped.CurrentVehicle.PassengerCapacity; i++)
+            var vehicle = ped != null ? ped.CurrentVehicle : null;
+            if (vehicle == null) return -3;
+            if (vehicle.GetPedOnSeat(VehicleSeat.Driver) == ped) return (int)VehicleSeat.Driver;
+            for (int i = 0; i < vehicle.PassengerCapacity; i++)
             {
-                if (ped.CurrentVehicle.GetPedOnSeat((VehicleSeat)i) == ped)
+                if (vehicle.GetPedOnSeat((VehicleSeat)i) == ped)
+                    return i;
+            }
+            return -3;
+        }
+
+        public static int GetPedSeatAtVehicle(Ped ped, Vehicle vehicle)
+        {
+            if (ped == null || vehicle == null) return -3;
+            if (vehicle.GetPedOnSeat(VehicleSeat.Driver) == ped) return (int)VehicleSeat.Driver;
+            for (int i = 0; i < vehicle.PassengerCapacity; i++)
+            {
+                if (vehicle.GetPedOnSeat((VehicleSeat)i) == ped)
                     return i;
             }
             return -3;

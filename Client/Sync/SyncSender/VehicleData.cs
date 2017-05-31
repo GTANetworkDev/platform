@@ -18,7 +18,7 @@ namespace GTANetwork.Streamer
             var obj = new VehicleData
             {
                 Position = veh.Position.ToLVector(),
-                VehicleHandle = Main.NetEntityHandler.EntityToNet(player.CurrentVehicle.Handle),
+                VehicleHandle = Main.NetEntityHandler.EntityToNet(veh.Handle),
                 Quaternion = veh.Rotation.ToLVector(),
                 PedModelHash = player.Model.Hash,
                 PlayerHealth = (byte)Util.Util.Clamp(0, player.Health, 255),
@@ -26,7 +26,7 @@ namespace GTANetwork.Streamer
                 Velocity = veh.Velocity.ToLVector(),
                 PedArmor = (byte)player.Armor,
                 RPM = veh.CurrentRPM,
-                VehicleSeat = (short)Util.Util.GetPedSeat(player),
+                VehicleSeat = (short)Util.Util.GetPedSeatAtVehicle(player, veh),
                 Flag = 0,
                 Steering = veh.SteeringAngle,
             };
@@ -70,7 +70,9 @@ namespace GTANetwork.Streamer
             }
             else
             {
-                if ((player.IsSubtaskActive(200) || player.IsSubtaskActive(190)) &&
+                bool usingVehicleWeapon = player.IsSubtaskActive(200) || player.IsSubtaskActive(190);
+
+                if (usingVehicleWeapon &&
                     Game.IsEnabledControlPressed(0, Control.Attack) &&
                     player.Weapons.Current?.AmmoInClip != 0)
                 {
@@ -78,7 +80,7 @@ namespace GTANetwork.Streamer
                     obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                 }
 
-                if (((player.IsSubtaskActive(200) || player.IsSubtaskActive(190)) &&
+                if ((usingVehicleWeapon &&
                      player.Weapons.Current?.AmmoInClip != 0) ||
                     (player.Weapons.Current?.Hash == WeaponHash.Unarmed &&
                      player.IsSubtaskActive(200)))

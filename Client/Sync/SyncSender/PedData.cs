@@ -28,6 +28,8 @@ namespace GTANetwork.Streamer
                 aimCoord = Main.RaycastEverything(new Vector2(0, 0));
             }
 
+            Weapon currentWeapon = player.Weapons.Current;
+
             var obj = new PedData
             {
                 AimCoords = aimCoord.ToLVector(),
@@ -35,8 +37,8 @@ namespace GTANetwork.Streamer
                 Quaternion = player.Rotation.ToLVector(),
                 PedArmor = (byte) player.Armor,
                 PedModelHash = player.Model.Hash,
-                WeaponHash = (int) player.Weapons.Current.Hash,
-                WeaponAmmo = player.Weapons.Current.Ammo,
+                WeaponHash = (int)currentWeapon.Hash,
+                WeaponAmmo = currentWeapon.Ammo,
                 PlayerHealth = (byte) Util.Util.Clamp(0, player.Health, 255),
                 Velocity = player.Velocity.ToLVector(),
                 Flag = 0
