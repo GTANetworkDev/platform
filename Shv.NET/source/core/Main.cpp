@@ -113,13 +113,6 @@ void ManagedD3DCall(void *swapchain)
     ScriptHook::Domain->DoD3DCall(swapchain);
 }
 
-// workaround for an unmanaged code
-unsigned long long GetOfflinePathAddr()
-{
-	return GTA::Native::MemoryAccess::FindPattern("\x48\x83\x3D\x00\x00\x00\x00\x00\x88\x05\x00\x00\x00\x00\x75\x0B",
-		"xxx????xxx????xx");
-}
-
 #pragma unmanaged
 
 #include <Main.h>
@@ -128,22 +121,8 @@ unsigned long long GetOfflinePathAddr()
 bool sGameReloaded = false;
 PVOID sMainFib = nullptr, sScriptFib = nullptr;
 
-void ForceOffline()
-{
-	uintptr_t address = GetOfflinePathAddr();
-
-	if (address)
-	{
-		address += 8;
-
-		unsigned long dwProtect{};
-		unsigned long dwProtect2{};
-
-		VirtualProtect((void*)address, 0x6ui64, 0x40u, &dwProtect);
-		memset((void*)address, 0x90, 6);
-		VirtualProtect((void*)address, 0x6ui64, dwProtect, &dwProtect2);
-	}
-}
+void ForceOffline();
+void HookGameText();
 
 void ScriptMain()
 {
@@ -201,6 +180,7 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
 			keyboardHandlerRegister(&ScriptKeyboardMessage);
             presentCallbackRegister(&DXGIPresent);			
 			ForceOffline();
+			HookGameText();
 			break;
 		case DLL_PROCESS_DETACH:
 			DeleteFiber(sScriptFib);

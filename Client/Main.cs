@@ -359,7 +359,12 @@ namespace GTANetwork
 
         public static bool IsConnected()
         {
-            return Client != null && Client.ConnectionStatus != NetConnectionStatus.Disconnected && Client.ConnectionStatus != NetConnectionStatus.None;
+            if (Client == null)
+                return false;
+
+            var status = Client.ConnectionStatus;
+
+            return status != NetConnectionStatus.Disconnected && status != NetConnectionStatus.None;
         }
 
         private void OnTick(object sender, EventArgs e)
