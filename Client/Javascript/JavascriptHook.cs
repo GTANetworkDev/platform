@@ -3524,12 +3524,12 @@ namespace GTANetwork.Javascript
             return (entity - destination).LengthSquared() < (range*range);
         }
         
-        public void dxDrawTexture(string path, Point pos, Size size, double rotation = 0)
+        public void dxDrawTexture(string path, Point pos, Size size, double rotation = 0, int r = 255, int g = 255, int b = 255, int a = 255)
         {
             if (!Main.UIVisible || Main.MainMenu.Visible) return;
             if (!isPathSafe(path)) throw new Exception("Illegal path for texture!");
             path = getResourceFilePath(path);
-            Util.Util.DxDrawTexture(60, path, pos.X, pos.Y, size.Width, size.Height, (float) rotation, 255, 255, 255, 255);
+            Util.Util.DxDrawTexture(60, path, pos.X, pos.Y, size.Width, size.Height, (float) rotation, r, g, b, a);
         }
 
         public void drawGameTexture(string dict, string txtName, double x, double y, double width, double height, double heading, int r, int g, int b, int alpha)
