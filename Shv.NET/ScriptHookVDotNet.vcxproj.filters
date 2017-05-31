@@ -22,6 +22,9 @@
     <Filter Include="scripting\NaturalMotion">
       <UniqueIdentifier>{7d70b8bd-e3f7-4ac8-975f-9757c66b19bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="minhook">
+      <UniqueIdentifier>{d223f5ce-8339-45cd-a87f-0832258ee423}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\core\Main.cpp">
@@ -55,6 +58,24 @@
       <Filter>scripting\Math</Filter>
     </ClCompile>
     <ClCompile Include="source\AssemblyInfo.cpp" />
+    <ClCompile Include="source\core\Hooks.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\buffer.cpp">
+      <Filter>minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\HDE\hde32.cpp">
+      <Filter>minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\HDE\hde64.cpp">
+      <Filter>minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\hook.cpp">
+      <Filter>minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\trampoline.cpp">
+      <Filter>minhook</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\core\Native.hpp">
@@ -89,6 +110,27 @@
     </ClInclude>
     <ClInclude Include="source\core\CallCollection.hpp">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\buffer.h">
+      <Filter>minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\trampoline.h">
+      <Filter>minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\table32.h">
+      <Filter>minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\table64.h">
+      <Filter>minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\hde32.h">
+      <Filter>minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\hde64.h">
+      <Filter>minhook</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\pstdint.h">
+      <Filter>minhook</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
