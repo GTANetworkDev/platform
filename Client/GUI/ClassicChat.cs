@@ -360,7 +360,7 @@ namespace GTANetwork.GUI
                     {
                         try
                         {
-                            str = Clipboard.GetText();
+                            str = Clipboard.GetText().Replace(Environment.NewLine, " ");
                         }
                         catch{}
                     });
