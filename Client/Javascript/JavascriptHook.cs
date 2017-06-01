@@ -156,11 +156,17 @@ namespace GTANetwork.Javascript
             ThreadJumper.Add(() =>
             {
                 lock (ScriptEngines)
-
                 for (int i = ScriptEngines.Count - 1; i >= 0; i--)
                 {
-                    if (resource != "*" && ScriptEngines[i].ResourceParent != resource) continue;
-                    ScriptEngines[i].Engine.Script.API.invokeServerEvent(eventName, arguments);
+                    try
+                    {
+                        if (resource != "*" && ScriptEngines[i].ResourceParent != resource) continue;
+                        ScriptEngines[i].Engine.Script.API.invokeServerEvent(eventName, arguments);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogException(ex);
+                    }
                 }
             });
         }
