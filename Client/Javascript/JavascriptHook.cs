@@ -159,7 +159,7 @@ namespace GTANetwork.Javascript
 
                 for (int i = ScriptEngines.Count - 1; i >= 0; i--)
                 {
-                    if (resource != "*" && ScriptEngines[i].ResourceParent != resource) return;
+                    if (resource != "*" && ScriptEngines[i].ResourceParent != resource) continue;
                     ScriptEngines[i].Engine.Script.API.invokeServerEvent(eventName, arguments);
                 }
             });
