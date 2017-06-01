@@ -17,7 +17,7 @@
 #include "ScriptDomain.hpp"
 //#include "windows.h"
 //#include "string"
-#define DEBUG true
+#define DEBUG false
 
 using namespace System;
 using namespace System::Threading;

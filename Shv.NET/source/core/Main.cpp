@@ -1,4 +1,4 @@
-#define DEBUG true
+#define DEBUG false
 /**
  * Copyright (C) 2015 crosire
  *
