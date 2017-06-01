@@ -58,7 +58,7 @@ namespace GTANetwork
                 {
                     PlayerChar.Opacity = 0;
                     PlayerChar.IsPositionFrozen = true;
-                    Game.Player.IsInvincible = true;
+                    PlayerChar.IsInvincible = true;
                     PlayerChar.IsCollisionEnabled = false;
 
                     Control[] exceptions = new[]

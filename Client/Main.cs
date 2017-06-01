@@ -392,7 +392,7 @@ namespace GTANetwork
                 LogManager.LogException(ex, "MAIN OnTick: STEP : " + DEBUG_STEP);
             }
 
-            //Spectate(res);
+            Spectate(res);
 
             //if (NetEntityHandler.EntityToStreamedItem(PlayerChar.Handle) is RemotePlayer playerObj) Game.Player.IsInvincible = playerObj.IsInvincible;
 
