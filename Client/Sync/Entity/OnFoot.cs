@@ -31,9 +31,9 @@ namespace GTANetwork.Sync
                 var gPos = Position;
                 var charModel = new Model(ModelHash);
                 Util.Util.LoadModel(charModel);
-                Character = new Ped(Function.Call<int>(Hash.CREATE_PED, 26, charModel.Hash, gPos.X, gPos.Y, gPos.Z, _rotation.Z, false, false));
-                //Character = World.CreatePed(charModel, gPos, _rotation.Z);
-                //charModel.MarkAsNoLongerNeeded();
+                //Character = new Ped(Function.Call<int>(Hash.CREATE_PED, 26, charModel.Hash, gPos.X, gPos.Y, gPos.Z, _rotation.Z, false, false));
+                Character = World.CreatePed(charModel, gPos, _rotation.Z);
+                charModel.MarkAsNoLongerNeeded();
 
                 if (Character == null) return true;
 
@@ -531,12 +531,10 @@ namespace GTANetwork.Sync
             if (ourAnim != null && animDict != null)
             {
                 var flag = GetAnimFlag();
-                if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim,
-                    3))
+                if (!Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, animDict, ourAnim, 3))
                 {
                     Character.Task.ClearAll();
-                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim,
-                        8f, 10f, -1, flag, -8f, 1, 1, 1);
+                    Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(animDict), ourAnim, 8f, 10f, -1, flag, -8f, 1, 1, 1);
                 }
             }
             else
@@ -568,35 +566,36 @@ namespace GTANetwork.Sync
 
                 #endregion
 
-                if (!Character.IsSubtaskActive(ESubtask.AIMING_GUN))
+                if (_entityToAimAt != null && _entityToAimAt.Exists() && _entityToWalkTo != null && _entityToWalkTo.Exists() && Character.Exists())
                 {
-                    if (OnFootSpeed > 0)
+                    if (!Character.IsSubtaskActive(ESubtask.AIMING_GUN))
                     {
-                        Function.Call(Hash.TASK_GO_TO_ENTITY_WHILE_AIMING_AT_ENTITY, Character, _entityToWalkTo,
-                            _entityToAimAt, (float) OnFootSpeed, false, 10000, 10000, true, true,
-                            (uint) FiringPattern.FullAuto);
-                        Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, 0.25f);
+                        if (OnFootSpeed > 0)
+                        {
+                            Function.Call(Hash.TASK_GO_TO_ENTITY_WHILE_AIMING_AT_ENTITY, Character, _entityToWalkTo, _entityToAimAt, (float)OnFootSpeed, false, 10000, 10000, true, true, (uint)FiringPattern.FullAuto);
+                            Function.Call(Hash.SET_PED_DESIRED_MOVE_BLEND_RATIO, Character, 0.25f);
+                        }
+                        else
+                        {
+                            _steadyAim = true;
+                            Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _entityToAimAt, -1, true);
+                        }
                     }
                     else
                     {
-                        _steadyAim = true;
-                        Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _entityToAimAt, -1, true);
+                        if (OnFootSpeed > 0 && _steadyAim)
+                        {
+                            _steadyAim = false;
+                            Character.Task.ClearAll();
+                        }
+                        else if (OnFootSpeed == 0 && !_steadyAim)
+                        {
+                            Character.Task.ClearAll();
+                            _steadyAim = true;
+                            Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _entityToAimAt, -1, true);
+                        }
                     }
-                }
-                else
-                {
-                    if (OnFootSpeed > 0 && _steadyAim)
-                    {
-                        _steadyAim = false;
-                        Character.Task.ClearAll();
-                    }
-                    else if (OnFootSpeed == 0 && !_steadyAim)
-                    {
-                        Character.Task.ClearAll();
-                        _steadyAim = true;
-                        Function.Call(Hash.TASK_AIM_GUN_AT_ENTITY, Character, _entityToAimAt, -1, true);
-                    }
-                }
+                }   
             }
         }
 

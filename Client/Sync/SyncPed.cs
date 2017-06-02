@@ -62,8 +62,15 @@ namespace GTANetwork.Sync
             if (Environment.TickCount - _lastTickUpdate > 500)
             {
                 _lastTickUpdate = Environment.TickCount;
-                if (CreateCharacter()) return;
-                if (CreateVehicle()) return;
+                try
+                {
+                    if (CreateCharacter()) return;
+                    if (CreateVehicle()) return;
+                }
+                catch
+                {
+                    // ignored
+                }
 
                 if (Character != null && Character.Exists())
                 {
