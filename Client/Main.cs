@@ -352,6 +352,8 @@ namespace GTANetwork
             DisableSlowMo();
             UnlockObjects();
 
+            Game.TimeScale = 1;
+
             GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
             GTA.UI.Screen.FadeIn(1000);
             _mainWarning = new Warning("",""){ Visible = false};
