@@ -156,7 +156,7 @@ namespace GTANetwork.Javascript
             ThreadJumper.Add(() =>
             {
                 lock (ScriptEngines)
-                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                for (int i = 0; i < ScriptEngines.Count; i++)
                 {
                     try
                     {
@@ -190,7 +190,7 @@ namespace GTANetwork.Javascript
                 {
                     lock (ScriptEngines)
                     {
-                        for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                        for (var index = 0; index < ScriptEngines.Count; index++)
                         {
                             ScriptEngines[index].Engine.Script.API.invokeChatMessage(msg);
                         }
@@ -219,7 +219,7 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                    for (var index = 0; index < ScriptEngines.Count; index++)
                     {
                         ScriptEngines[index].Engine.Script.API.invokeEntityStreamIn(handle, type);
                     }
@@ -233,7 +233,7 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                    for (var index = 0; index < ScriptEngines.Count; index++)
                     {
                         ScriptEngines[index].Engine.Script.API.invokeEntityStreamOut(handle, type);
                     }
@@ -247,7 +247,7 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    for (var index = ScriptEngines.Count - 1; index >= 0; index--)
+                    for (var index = 0; index < ScriptEngines.Count; index++)
                     {
                         ScriptEngines[index].Engine.Script.API.invokeEntityDataChange(handle, key, oldValue);
                     }
@@ -275,14 +275,14 @@ namespace GTANetwork.Javascript
             ThreadJumper.Clear();
             try
             {
-                for (var i = tmpList.Count - 1; i >= 0; i--)
+                for (var i = 0; i < tmpList.Count; i++)
                 {
                     tmpList[i].Invoke();
                 }
 
                 lock (ScriptEngines)
                 {
-                    for (var i = ScriptEngines.Count - 1; i >= 0; i--)
+                    for (var i = 0; i < ScriptEngines.Count; i++)
                     {
                         ScriptEngines[i].Engine.Script.API.invokeUpdate();
                         ScriptEngines[i].Engine.Script.API.processCoroutines();
@@ -301,7 +301,7 @@ namespace GTANetwork.Javascript
 
             lock (ScriptEngines)
             {
-                for (var i = ScriptEngines.Count - 1; i >= 0; i--)
+                for (var i = 0; i < ScriptEngines.Count; i++)
                 {
                     //try
                     //{
@@ -321,7 +321,7 @@ namespace GTANetwork.Javascript
 
             lock (ScriptEngines)
             {
-                for (var i = ScriptEngines.Count - 1; i >= 0; i--)
+                for (var i = 0; i < ScriptEngines.Count; i++)
                 { 
                     //try
                     //{
@@ -461,7 +461,7 @@ namespace GTANetwork.Javascript
         {
             lock (ScriptEngines)
             {
-                for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                for (int i = 0; i < ScriptEngines.Count; i++)
                 {
                     if (ScriptEngines[i].ResourceParent != resourceName) continue;
                     ScriptEngines[i].Engine.Script.API.isDisposing = true;
@@ -475,7 +475,7 @@ namespace GTANetwork.Javascript
             {
                 lock (ScriptEngines)
                 {
-                    for (int i = ScriptEngines.Count - 1; i >= 0; i--)
+                    for (int i = 0; i < ScriptEngines.Count; i++)
                     {
                         if (ScriptEngines[i].ResourceParent != resourceName) continue;
                         ScriptEngines[i].Engine.Script.API.invokeResourceStop();

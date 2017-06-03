@@ -253,7 +253,7 @@ namespace GTANetwork.Streamer
                 }
             }
 
-            for (int i = Interpolations.Count - 1; i >= 0; i--)
+            for (int i = 0; i < Interpolations.Count; i++)
             {
                 var pair = Interpolations.ElementAt(i);
 
