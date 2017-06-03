@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>gtanetwork.api</id>
-    <version>0.1.385.714</version>
+    <version>0.1.517.602</version>
     <title>GTA Network Scripting API Libraries</title>
     <authors>GTA Network Dev Team</authors>
     <owners>GTA Network Dev Team</owners>
@@ -10,9 +10,9 @@
     <iconUrl>https://forum.gtanet.work/favicon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
 	<description>The required development libraries to access the API offered by the GTA Network Platform.</description>
-    <releaseNotes>Release notes can be read from here: https://goo.gl/B89aSc</releaseNotes>
-    <copyright></copyright>
-    <tags>gtan server gta network api</tags>
+    <releaseNotes>Release notes can be read from here: https://forum.gtanet.work/index.php?threads/gta-network-client-server-update-june-1st-2017.4445/</releaseNotes>
+    <copyright>Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)</copyright>
+    <tags>gtan server gta network api server five gta5 gtamod api scripting</tags>
   </metadata>
      <files>
          <file src="bin\Release\GTANetworkServer.exe" target="lib\GTANetworkServer.exe" />
