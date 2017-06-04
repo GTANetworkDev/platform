@@ -166,7 +166,7 @@ namespace GTANetwork.Sync
             }
             #endregion
 
-            UpdateProps();
+            //UpdateProps();
 
             UpdateCurrentWeapon();
 
@@ -293,53 +293,54 @@ namespace GTANetwork.Sync
             {
                 if (!IsReloading)
                 {
+                    bool IsNotInLowCover = ((IsInCover && !IsInLowCover) || !IsInCover);
+
                     if (lastMeleeAnim != null)
                     {
                         var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
                         if (currentTime >= meleeanimationend)
                         {
                             lastMeleeAnim = null;
+
+                            if (IsNotInLowCover)
+                            {
+                                Character.Task.ClearSecondary();
+                            }
                         }
                     }
-
-                    if (IsInMeleeCombat && !IsShooting && lastMeleeAnim == null && ((IsInCover && !IsInLowCover) || !IsInCover))
+                    else if (IsInMeleeCombat && !IsShooting && IsNotInLowCover)
                     {
                         DisplayMeleeCombat();
                     }
-                    else if (lastMeleeAnim == null && ((IsInCover && !IsInLowCover) || !IsInCover))
+                    else  if (!IsAiming && !IsShooting && !IsJumping && !IsRagdoll && IsNotInLowCover)
                     {
-                        Character.Task.ClearSecondary();
+                        WalkAnimation();
                     }
+                    else if (IsJumping && !_lastJumping)
+                    {
+                        Character.Task.Jump();
+                    }
+                    else
+                    {
+                        if (IsAiming)
+                        {
+                            DisplayAimAnimation();
+                        }
 
-                    if (IsAiming)
-                    {
-                        DisplayAimAnimation();
-                    }
-
-                    if (IsShooting)
-                    {
-                        DisplayShootingAnimation();
-                    }
+                        if (IsShooting)
+                        {
+                            DisplayShootingAnimation();
+                        }
+                        else if ((IsInCover || IsInLowCover))
+                        {
+                            DisplayWalkingAnimation();
+                        }
+                    }                          
                 }
-
-                if (IsJumping && !_lastJumping)
-                {
-                    Character.Task.Jump();
-                }
-
-                if (IsReloading && !_lastReloading && !Character.IsSubtaskActive(ESubtask.RELOADING))
+                else if(!_lastReloading && !Character.IsSubtaskActive(ESubtask.RELOADING))
                 {
                     Character.Task.ClearAll();
                     Character.Task.ReloadWeapon();
-
-                }
-                if (!IsAiming && !IsShooting && !IsReloading && !IsJumping && !IsRagdoll && ((IsInCover && !IsInLowCover) || !IsInCover))
-                {
-                    WalkAnimation();
-                }
-                else if ((IsInCover || IsInLowCover) && !IsShooting)
-                {
-                    DisplayWalkingAnimation();
                 }
             }
             else
@@ -422,7 +423,7 @@ namespace GTANetwork.Sync
                 meleeSwingDone = false;
                 meleeSwingEnd = true;
             }
-            UpdatePosition();
+            //UpdatePosition();
         }
 
         private void DisplayMeleeAnimation(int hands)
@@ -477,7 +478,7 @@ namespace GTANetwork.Sync
             Character.Quaternion = Rotation.ToQuaternion();
 #endif
 
-            UpdatePosition();
+            //UpdatePosition();
         }
 
         private void DisplayMeleeCombat()
@@ -506,7 +507,7 @@ namespace GTANetwork.Sync
                 //Character.Task.ClearSecondary();
                 Function.Call(Hash.TASK_PLAY_ANIM, Character, Util.Util.LoadDict(secondaryAnimDict), secAnim, 8f, 10f, -1, 32 | 16 | 1, -8f, 1, 1, 1);
             }
-            UpdatePosition();
+            //UpdatePosition();
         }
 
         private bool _steadyAim;
@@ -928,7 +929,7 @@ namespace GTANetwork.Sync
                     }
                     break;
             }
-            UpdatePosition();
+            //UpdatePosition();
         }
 
         private void UpdatePosition(bool updatePosition = true, bool updateRotation = true, bool updateVelocity = true)
@@ -1023,12 +1024,16 @@ namespace GTANetwork.Sync
                     Function.Call(Hash.SET_WEAPON_OBJECT_TINT_INDEX, wObj, bitmap);
                 }
 
-                if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon) && WeaponComponents[CurrentWeapon] != null)
+                if (WeaponComponents != null && WeaponComponents.ContainsKey(CurrentWeapon))
                 {
-                    for (var index = WeaponComponents[CurrentWeapon].Count - 1; index >= 0; index--)
+                    List<int> component = WeaponComponents[CurrentWeapon];
+
+                    if (component != null)
                     {
-                        var comp = WeaponComponents[CurrentWeapon][index];
-                        Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_WEAPON_OBJECT, wObj, comp);
+                        for (var index = component.Count - 1; index >= 0; index--)
+                        {
+                            Function.Call(Hash.GIVE_WEAPON_COMPONENT_TO_WEAPON_OBJECT, wObj, component[index]);
+                        }
                     }
                 }
 
