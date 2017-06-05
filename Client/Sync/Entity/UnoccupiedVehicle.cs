@@ -322,6 +322,9 @@ namespace GTANetwork.Streamer
 
                 if (alpha == 1.5f)
                 {
+                    if (NetInterpolation.vecTarget.DistanceToSquared(_entity.Position) > 16.0)
+                        _entity.Position = NetInterpolation.vecTarget;
+
                     NetInterpolation.FinishTime = 0;
                     _entity.Velocity = new Vector3();
                     HasFinished = true;
