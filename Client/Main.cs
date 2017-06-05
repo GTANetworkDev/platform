@@ -352,6 +352,8 @@ namespace GTANetwork
             DisableSlowMo();
             UnlockObjects();
 
+            Game.TimeScale = 1;
+
             GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
             GTA.UI.Screen.FadeIn(1000);
             _mainWarning = new Warning("",""){ Visible = false};
@@ -425,6 +427,10 @@ namespace GTANetwork
             if (e.Alt && e.KeyCode == Keys.F4)
             {
                 if (Client != null && IsOnServer()) Client.Disconnect("Quit");
+                CEFManager.Draw = false;
+                CEFManager.Dispose();
+                CEFManager.DisposeCef();
+
                 Process.GetProcessesByName("GTA5")[0].Kill();
                 Process.GetCurrentProcess().Kill();
             }

@@ -150,13 +150,19 @@ namespace GTANetwork
 
             Function.Call(Hash.CLEAR_ALL_BROKEN_GLASS);
 
+            DisableSlowMo();
+
+            Game.TimeScale = 1;
+
+            ResetPlayer();
+
             _currentServerIp = ip;
             _currentServerPort = port == 0 ? Port : port;
         }
 
         public static bool IsOnServer()
         {
-            return Client != null && Client.ConnectionStatus == NetConnectionStatus.Connected;
+            return Client?.ConnectionStatus == NetConnectionStatus.Connected;
         }
 
         private void OnLocalDisconnect()
@@ -171,11 +177,12 @@ namespace GTANetwork
 
             DEBUG_STEP = 43;
             if (NetEntityHandler.ServerWorld?.RemovedIpl != null)
+            {
                 foreach (var ipl in NetEntityHandler.ServerWorld.RemovedIpl)
                 {
                     Function.Call(Hash.REQUEST_IPL, ipl);
                 }
-
+            }
 
             DEBUG_STEP = 44;
 

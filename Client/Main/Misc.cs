@@ -349,7 +349,7 @@ namespace GTANetwork
         {
             var modules = Process.GetCurrentProcess().Modules;
 
-            for (int i = modules.Count - 1; i >= 0; i--)
+            for (int i = 0; i < modules.Count; i++)
             {
                 yield return modules[i];
             }

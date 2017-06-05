@@ -104,7 +104,7 @@ namespace GTANetwork
             confirmObj.Write(true);
             confirmObj.Write(resources.Count);
 
-            for (int i = resources.Count - 1; i >= 0; i--)
+            for (int i = 0; i < resources.Count; i++)
             {
                 confirmObj.Write(resources[i]);
             }

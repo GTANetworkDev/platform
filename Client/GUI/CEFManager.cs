@@ -307,6 +307,11 @@ namespace GTANetwork.GUI
 
             DirectXHook?.Dispose();
             DirectXHook = null;
+            
+            foreach (var browser in CEFManager.Browsers)
+            {
+                browser.Dispose();
+            }
         }
 
         internal static void SetMouseHidden(bool hidden)
@@ -773,6 +778,7 @@ namespace GTANetwork.GUI
         {
             if (!CefUtil.DISABLE_CEF)
             {
+                Close();
                 _browser = null;
             }
         }
