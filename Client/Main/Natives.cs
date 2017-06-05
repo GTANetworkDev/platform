@@ -141,7 +141,7 @@ namespace GTANetwork
                     }
                     else if (ent is ILocalHandleable)
                     {
-                        list.Add(new LocalHandle(NetEntityHandler.NetToEntity(ent)?.Handle ?? 0));
+                        list.Add(new LocalHandle(ent.RemoteHandle));
                     }
                     else
                     {
