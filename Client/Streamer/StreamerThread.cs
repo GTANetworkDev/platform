@@ -119,7 +119,7 @@ namespace GTANetwork.Streamer
                 #endregion
 
                 #region Other Shit
-                var Markers = entityMap.OfType<RemoteBlip>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
+                var Markers = entityMap.OfType<RemoteMarker>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
                 var streamedInMarkers = Markers.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, GlobalRange)).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInMarkers.Take(MAX_MARKERS).Where(item => !item.StreamedIn));
 

@@ -1520,7 +1520,7 @@ namespace GTANetwork.Streamer
         #region StreamIn
         public void StreamIn(IStreamedItem item)
         {
-            if (item.StreamedIn) return;
+            //if (item.StreamedIn) return;
 
             if (item.Dimension != Main.LocalDimension && item.Dimension != 0) return;
 
