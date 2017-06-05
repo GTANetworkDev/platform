@@ -1458,27 +1458,27 @@ namespace GTANetwork.Javascript
 
         public bool isPlayerAiming(LocalHandle player)
         {
-            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsAiming : findPlayer(player).IsAiming;
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsAiming : (findPlayer(player).Action == PedAction.Aiming);
         }
 
         public bool isPlayerShooting(LocalHandle player)
         {
-            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsShooting : findPlayer(player).IsShooting;
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsShooting : (findPlayer(player).Action == PedAction.Shooting);
         }
 
         public bool isPlayerReloading(LocalHandle player)
         {
-            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsReloading : findPlayer(player).IsReloading;
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsReloading : (findPlayer(player).Action == PedAction.IsReloading);
         }
 
         public bool isPlayerInCover(LocalHandle player)
         {
-            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsInCover() : findPlayer(player).IsInCover;
+            return player.Value == Game.Player.Character.Handle ? new Ped(player.Value).IsInCover() : (findPlayer(player).Action == PedAction.IsInCover);
         }
 
         public bool isPlayerOnLadder(LocalHandle player)
         {
-            return player.Value == Game.Player.Character.Handle ? Subtask.IsSubtaskActive(player.Value, ESubtask.USING_LADDER) : findPlayer(player).IsOnLadder;
+            return player.Value == Game.Player.Character.Handle ? Subtask.IsSubtaskActive(player.Value, ESubtask.USING_LADDER) : (findPlayer(player).Action == PedAction.IsOnLadder);
         }
 
         public Vector3 getPlayerAimingPoint(LocalHandle player)

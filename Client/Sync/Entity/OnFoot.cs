@@ -112,7 +112,7 @@ namespace GTANetwork.Sync
         private bool _lastJumping;
         private void UpdateOnFootPosition()
         {
-            if (EnteringVehicle) return;
+            if (Action == PedAction.EnteringVehicle) return;
 
             if (!_init)
             {
@@ -169,40 +169,147 @@ namespace GTANetwork.Sync
             //UpdateProps();
 
             UpdateCurrentWeapon();
+            UpdatePosition();
 
-            #region IsOnFire
-            if (!_lastFire && IsOnFire)
+            /*
+             * TODO:
+             * better shooting
+            */
+
+            if (IsCustomAnimationPlaying)
             {
-                Character.IsInvincible = false;
-                if (_scriptFire != 0) Function.Call(Hash.REMOVE_SCRIPT_FIRE, _scriptFire);
-                _scriptFire = Function.Call<int>(Hash.START_ENTITY_FIRE, Character);
+                DisplayCustomAnimation();
             }
-            else if (_lastFire && !IsOnFire)
+            else if (_playingGetupAnim)
             {
-                Function.Call(Hash.STOP_ENTITY_FIRE, Character);
-                //Character.IsInvincible = true;
-                if (Character.IsDead) Function.Call(Hash.RESURRECT_PED, Character);
+                var getupAnim = GetAnimalGetUpAnimation().Split();
 
-                if (_scriptFire != 0) Function.Call(Hash.REMOVE_SCRIPT_FIRE, _scriptFire);
+                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
+                {
+                    //UpdatePlayerPedPos();
+                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0], getupAnim[1]);
 
-                _scriptFire = 0;
-            }
-            _lastFire = IsOnFire;
-            #endregion
+                    if (!(currentTime >= 0.7f)) return;
+                    Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
+                    Character.Task.ClearAll();
+                    _playingGetupAnim = false;
+                }
 
-            #region ParachuteFreefall
-            if (IsFreefallingWithParachute)
-            {
-                DisplayParachuteFreefall();
                 return;
             }
-            #endregion
 
-            #region IsParachuteOpen
-            if (IsParachuteOpen)
+            if (StoredAction != Action)
             {
-                DisplayOpenParachute();
-                return;
+                switch (StoredAction)
+                {
+                    case PedAction.OnFire:
+                        {
+                            Function.Call(Hash.STOP_ENTITY_FIRE, Character);
+                            //Character.IsInvincible = true;
+                            if (Character.IsDead) Function.Call(Hash.RESURRECT_PED, Character);
+
+                            if (_scriptFire != 0) Function.Call(Hash.REMOVE_SCRIPT_FIRE, _scriptFire);
+
+                            _scriptFire = 0;
+                        } break;
+
+                    case PedAction.Ragdoll:
+                        {
+                            Character.CanRagdoll = false;
+                            Character.Task.ClearAllImmediately();
+                            //Character.PositionNoOffset = Position;
+
+                            if (!IsPlayerDead)
+                            {
+                                Function.Call(Hash.TASK_PLAY_ANIM, Character,
+                                    Util.Util.LoadDict("anim@sports@ballgame@handball@"), "ball_get_up",
+                                    12f, 12f, -1, 0, -10f, 1, 1, 1);
+
+                                _playingGetupAnim = true;
+                            }
+                        } break;
+                }
+            }
+
+            if (StoredAction != Action)
+            {
+                switch (Action)
+                {
+                    // todo:  DisplayShootingAnimation();
+
+                    case PedAction.OnFire:
+                        {
+                            Character.IsInvincible = false;
+                            if (_scriptFire != 0) Function.Call(Hash.REMOVE_SCRIPT_FIRE, _scriptFire);
+                            _scriptFire = Function.Call<int>(Hash.START_ENTITY_FIRE, Character);
+                        } break;
+                    case PedAction.InFreefall:
+                        {
+                            DisplayParachuteFreefall();
+                        } break;
+
+                    case PedAction.ParachuteOpen:
+                        {
+                            DisplayOpenParachute();
+                        } break;
+                    case PedAction.Ragdoll:
+                        {
+                            if (!Character.IsRagdoll)
+                            {
+                                Character.CanRagdoll = true;
+                                Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 50000, 60000, 0, 1, 1, 1);
+                            }
+
+                            var dir = Position - (_lastPosition ?? Position);
+                            var vdir = PedVelocity - _lastPedVel;
+                            var target = Util.Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
+                                TicksSinceLastUpdate,
+                                (int)AverageLatency);
+
+                            var posTarget = Util.Util.LinearVectorLerp(Position, Position + dir,
+                                TicksSinceLastUpdate,
+                                (int)AverageLatency);
+
+                            const int PED_INTERPOLATION_WARP_THRESHOLD = 15;
+                            const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
+
+                            float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
+                                                PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
+
+                            if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold)
+                            {
+                                Character.PositionNoOffset = currentInterop.vecTarget;
+                            }
+                            else
+                            {
+                                Character.Velocity = target + 2 * (posTarget - Character.Position);
+                            }
+                        } break;
+                    case PedAction.InMeleeCombat:                        
+                        {
+                            DisplayMeleeCombat();
+                        } break;
+                    case PedAction.Jumping:
+                        {
+                            Character.Task.Jump();
+                        } break;
+
+                    case PedAction.Aiming:
+                        {
+                            DisplayAimAnimation();
+                        } break;
+
+                    case PedAction.IsInCover:
+                    case PedAction.IsInLowerCover:
+                        {
+                            DisplayWalkingAnimation();
+                        } break;
+
+                    default:
+                        {
+                            WalkAnimation();
+                        } break;
+                }            
             }
 
             if (_parachuteProp != null)
@@ -211,46 +318,7 @@ namespace GTANetwork.Sync
                 _parachuteProp = null;
             }
 
-            #endregion
-
-            #region Ragdoll
-            var ragdoll = IsRagdoll || IsPlayerDead;
-
-            if (ragdoll)
-            {
-                if (!Character.IsRagdoll)
-                {
-                    Character.CanRagdoll = true;
-                    Function.Call(Hash.SET_PED_TO_RAGDOLL, Character, 50000, 60000, 0, 1, 1, 1);
-                }
-
-                var dir = Position - (_lastPosition ?? Position);
-                var vdir = PedVelocity - _lastPedVel;
-                var target = Util.Util.LinearVectorLerp(PedVelocity, PedVelocity + vdir,
-                    TicksSinceLastUpdate,
-                    (int)AverageLatency);
-
-                var posTarget = Util.Util.LinearVectorLerp(Position, Position + dir,
-                    TicksSinceLastUpdate,
-                    (int)AverageLatency);
-
-                const int PED_INTERPOLATION_WARP_THRESHOLD = 15;
-                const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
-
-                float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD +
-                                    PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
-
-                if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold)
-                {
-                    Character.PositionNoOffset = currentInterop.vecTarget;
-                }
-                else
-                {
-                    Character.Velocity = target + 2 * (posTarget - Character.Position);
-                }
-                return;
-            }
-            else if (!ragdoll && Character.IsRagdoll)
+            if (Action != PedAction.Ragdoll && Character.IsRagdoll)
             {
                 Character.CanRagdoll = false;
                 Character.Task.ClearAllImmediately();
@@ -266,86 +334,6 @@ namespace GTANetwork.Sync
                 }
 
                 return;
-            }
-            #endregion
-
-            #region GetUp
-            if (_playingGetupAnim)
-            {
-                var getupAnim = GetAnimalGetUpAnimation().Split();
-
-                if (Function.Call<bool>(Hash.IS_ENTITY_PLAYING_ANIM, Character, getupAnim[0], getupAnim[1], 3))
-                {
-                    //UpdatePlayerPedPos();
-                    var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, getupAnim[0], getupAnim[1]);
-
-                    if (!(currentTime >= 0.7f)) return;
-                    Character.Task.ClearAnimation(getupAnim[0], getupAnim[1]);
-                    Character.Task.ClearAll();
-                    _playingGetupAnim = false;
-                }
-            }
-            #endregion
-
-            UpdatePosition();
-
-            if (!IsCustomAnimationPlaying)
-            {
-                if (!IsReloading)
-                {
-                    bool IsNotInLowCover = ((IsInCover && !IsInLowCover) || !IsInCover);
-
-                    if (lastMeleeAnim != null)
-                    {
-                        var currentTime = Function.Call<float>(Hash.GET_ENTITY_ANIM_CURRENT_TIME, Character, lastMeleeAnim.Split()[0], lastMeleeAnim.Split()[1]);
-                        if (currentTime >= meleeanimationend)
-                        {
-                            lastMeleeAnim = null;
-
-                            if (IsNotInLowCover)
-                            {
-                                Character.Task.ClearSecondary();
-                            }
-                        }
-                    }
-                    else if (IsInMeleeCombat && !IsShooting && IsNotInLowCover)
-                    {
-                        DisplayMeleeCombat();
-                    }
-                    else  if (!IsAiming && !IsShooting && !IsJumping && !IsRagdoll && IsNotInLowCover)
-                    {
-                        WalkAnimation();
-                    }
-                    else if (IsJumping && !_lastJumping)
-                    {
-                        Character.Task.Jump();
-                    }
-                    else
-                    {
-                        if (IsAiming)
-                        {
-                            DisplayAimAnimation();
-                        }
-
-                        if (IsShooting)
-                        {
-                            DisplayShootingAnimation();
-                        }
-                        else if ((IsInCover || IsInLowCover))
-                        {
-                            DisplayWalkingAnimation();
-                        }
-                    }                          
-                }
-                else if(!_lastReloading && !Character.IsSubtaskActive(ESubtask.RELOADING))
-                {
-                    Character.Task.ClearAll();
-                    Character.Task.ReloadWeapon();
-                }
-            }
-            else
-            {
-                DisplayCustomAnimation();
             }
         }
 
@@ -513,7 +501,7 @@ namespace GTANetwork.Sync
         private bool _steadyAim;
         private Prop _entityToAimAt;
         private Prop _entityToWalkTo;
-        private bool _lastReloading;
+        /*private bool _lastReloading;
         private bool _isReloading;
         internal bool IsReloading
         {
@@ -523,11 +511,12 @@ namespace GTANetwork.Sync
                 _lastReloading = _isReloading;
                 _isReloading = value;
             }
-        }
+        }*/
 
         private void DisplayAimAnimation()
         {
-            var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
+            // todo: IsCoveringToLeft is probably (obviously?) broken
+            var ourAnim = GetMovementAnim(OnFootSpeed, Action == PedAction.IsInCover, Action == PedAction.IsInCoverFacingLeft);
             var animDict = GetAnimDictionary(ourAnim);
             if (ourAnim != null && animDict != null)
             {
@@ -661,7 +650,9 @@ namespace GTANetwork.Sync
 
         private void DisplayWeaponShootingAnimation()
         {
-            var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
+            bool IsInCover = Action == PedAction.IsInCover;
+
+            var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, Action == PedAction.IsInCoverFacingLeft);
             var animDict = GetAnimDictionary(ourAnim);
 
             //var playerHealth = BitConverter.GetBytes(Main.PlayerChar.Health);
@@ -951,9 +942,11 @@ namespace GTANetwork.Sync
 
         private void DisplayWalkingAnimation(bool displaySecondary = true)
         {
-            if (IsReloading || (IsInCover && IsShooting && !IsAiming)) return;
+            bool IsInCover = Action == PedAction.IsInCover;
 
-            var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, IsCoveringToLeft);
+            if (Action != PedAction.IsReloading || (IsInCover/* && IsShooting*/ && Action != PedAction.Shooting)) return;
+
+            var ourAnim = GetMovementAnim(OnFootSpeed, IsInCover, Action == PedAction.IsInCoverFacingLeft);
             var animDict = GetAnimDictionary(ourAnim);
             var secondaryAnimDict = GetSecondaryAnimDict();
             var flag = GetAnimFlag();
