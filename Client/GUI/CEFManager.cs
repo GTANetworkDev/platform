@@ -312,6 +312,7 @@ namespace GTANetwork.GUI
             {
                 browser.Dispose();
             }
+            Browsers.Clear();
         }
 
         internal static void SetMouseHidden(bool hidden)
@@ -679,9 +680,9 @@ namespace GTANetwork.GUI
                 _client.Close();
 
                 if (_browser == null) return;
-                var host = _browser.GetHost();
-                host.CloseBrowser(true);
-                host.Dispose();
+                //var host = _browser.GetHost();
+                //host.CloseBrowser(true);
+                //host.Dispose();
                 _browser.Dispose();
             }
         }
