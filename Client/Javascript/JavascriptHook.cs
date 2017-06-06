@@ -4256,6 +4256,11 @@ namespace GTANetwork.Javascript
             return new Prop(entity.Value).Model.Hash;
         }
 
+        public int getEntityBoneIndexByName(LocalHandle entity, string boneName)
+        {
+            return Function.Call<int>(Hash.GET_ENTITY_BONE_INDEX_BY_NAME, entity.Value, boneName);
+        }
+
         //public void givePlayerWeapon(int weapon, int ammo, bool equipNow, bool ammoLoaded)
         //{
         //    CrossReference.EntryPoint.WeaponInventoryManager.Allow((WeaponHash) weapon);
