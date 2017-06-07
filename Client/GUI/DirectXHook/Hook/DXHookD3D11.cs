@@ -417,23 +417,26 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     {
                         DebugMessage("ManualPresentHook:2");
                         NewSwapchain = true;
-                        List<IOverlayElement> oldOverlays = null;
+                        List<IOverlay> oldOverlays = null;
 
                         if (OverlayEngine != null)
                         {
                             DebugMessage("ManualPresentHook:3");
-                            if (OverlayEngine.Overlays.Count > 0 && OverlayEngine.Overlays[0].Elements != null)
+                            if (OverlayEngine.Overlays != null && OverlayEngine.Overlays.Count > 0)
                             {
                                 DebugMessage("ManualPresentHook:4");
-                                oldOverlays = new List<IOverlayElement>(OverlayEngine.Overlays[0].Elements);
+                                oldOverlays = new List<IOverlay>(OverlayEngine.Overlays);
 
-                                foreach (var element in oldOverlays)
+                                foreach (var overlay in oldOverlays)
                                 {
-                                    if (element is ImageElement)
+                                    foreach (var element in overlay.Elements)
                                     {
-                                        DebugMessage("ManualPresentHook:5");
-                                        ((ImageElement) element).Image?.Dispose();
-                                        ((ImageElement) element).Image = null;
+                                        if (element is ImageElement)
+                                        {
+                                            DebugMessage("ManualPresentHook:5");
+                                            ((ImageElement)element).Image?.Dispose();
+                                            ((ImageElement)element).Image = null;
+                                        }
                                     }
                                 }
                             }
@@ -449,13 +452,16 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                         if (oldOverlays != null)
                         {
                             DebugMessage("ManualPresentHook:8");
-                            OverlayEngine.Overlays[0].Elements = oldOverlays;
+                            OverlayEngine.Overlays = oldOverlays;
                         }
                         DebugMessage("ManualPresentHook:9");
                         if (ObligatoryElement != null)
                         {
                             DebugMessage("ManualPresentHook:10");
-                            OverlayEngine.Overlays[0].Elements.Add(ObligatoryElement);
+                            foreach(var overlay in OverlayEngine.Overlays)
+                            {
+                                overlay.Elements.Add(ObligatoryElement);
+                            }
                         }
                         DebugMessage("ManualPresentHook:11");
                         OverlayEngine.Initialise(swapChain);
