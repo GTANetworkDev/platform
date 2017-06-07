@@ -325,8 +325,7 @@ namespace GTANetwork.GUI
                 _cursor = new ImageElement(null, true);
                 _cursor.SetBitmap(cursorPic);
                 _cursor.Hidden = true;
-                DirectXHook.ObligatoryElement = _cursor;
-                //DirectXHook.AddImage(_cursor, 1);
+                DirectXHook.AddImage(_cursor, 1);
             }
 
             _cursor.Hidden = hidden;
