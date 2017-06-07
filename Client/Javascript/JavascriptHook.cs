@@ -1250,7 +1250,7 @@ namespace GTANetwork.Javascript
 
         private DateTime _last;
         private static int _fps = 30;
-        public int getGameFramerate(Browser browser, int fps)
+        public int getGameFramerate()
         {
             if (DateTime.Now.Subtract(_last).TotalMilliseconds <= 500)
             {
