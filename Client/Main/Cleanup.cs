@@ -44,27 +44,33 @@ namespace GTANetwork
             if (Main.IsConnected())
             {
                 CallCollection thisCol = new CallCollection();
-                thisCol.Call((Hash) 0xB96B00E976BE977F, 0.0);
+
+                //thisCol.Call((Hash) 0xB96B00E976BE977F, 0.0); //_SET_WAVES_INTENSITY
 
                 thisCol.Call(Hash.SET_RANDOM_TRAINS, 0);
                 thisCol.Call(Hash.CAN_CREATE_RANDOM_COPS, false);
 
-                thisCol.Call(Hash.SET_PED_POPULATION_BUDGET, 0);
-                thisCol.Call(Hash.SET_VEHICLE_POPULATION_BUDGET, 0);
-
-                thisCol.Call(Hash.SUPPRESS_SHOCKING_EVENTS_NEXT_FRAME);
-                thisCol.Call(Hash.SUPPRESS_AGITATION_EVENTS_NEXT_FRAME);
-
-                thisCol.Call(Hash.SET_FAR_DRAW_VEHICLES, false);
-                thisCol.Call((Hash) 0xF796359A959DF65D, false); // Display distant vehicles
-                thisCol.Call(Hash.SET_ALL_LOW_PRIORITY_VEHICLE_GENERATORS_ACTIVE, false);
                 thisCol.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, -1);
-
-                thisCol.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                thisCol.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
                 thisCol.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                thisCol.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                thisCol.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
+
+                if (Main.RemoveGameEntities)
+                {
+                    thisCol.Call(Hash.SET_PED_POPULATION_BUDGET, 0);
+                    thisCol.Call(Hash.SET_VEHICLE_POPULATION_BUDGET, 0);
+
+                    thisCol.Call(Hash.SUPPRESS_SHOCKING_EVENTS_NEXT_FRAME);
+                    thisCol.Call(Hash.SUPPRESS_AGITATION_EVENTS_NEXT_FRAME);
+
+                    thisCol.Call(Hash.SET_FAR_DRAW_VEHICLES, false);
+                    thisCol.Call((Hash)0xF796359A959DF65D, false); // _DISPLAY_DISTANT_VEHICLES
+                    thisCol.Call(Hash.SET_ALL_LOW_PRIORITY_VEHICLE_GENERATORS_ACTIVE, false);
+
+                    thisCol.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+                    thisCol.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+                    thisCol.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+                    thisCol.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
+                }
+
 
                 //Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, PlayerChar, true, true);
                 //Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, PlayerChar, true);
@@ -87,7 +93,6 @@ namespace GTANetwork
                 thisCol.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
                 thisCol.Call((Hash) 0x5DB660B38DD98A31, Game.Player, 0f); //SET_PLAYER_HEALTH_RECHARGE_MULTIPLIER
 
-
                 thisCol.Call(Hash.SET_PLAYER_WANTED_LEVEL, Game.Player, 0, false);
                 thisCol.Call(Hash.SET_PLAYER_WANTED_LEVEL_NOW, Game.Player, false);
                 thisCol.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
@@ -95,6 +100,9 @@ namespace GTANetwork
                 if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS)) thisCol.Call(Hash.CANCEL_STUNT_JUMP);
 
                 thisCol.Execute();
+
+                if (!Main.RemoveGameEntities) return;
+
                 if (DateTime.Now.Subtract(LastDateTime).TotalMilliseconds >= 500)
                 {
                     var playerChar = Game.Player.Character;
