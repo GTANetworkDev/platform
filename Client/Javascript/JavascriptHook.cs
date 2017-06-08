@@ -4487,6 +4487,11 @@ namespace GTANetwork.Javascript
             return Function.Call<string>(Hash._GET_LABEL_TEXT, labelName);
         }
 
+        public void toggleGameAIEntities(bool state)
+        {
+            Main.RemoveGameEntities = state;
+        }
+
         private static bool SnowState = false;
         public bool toggleSnow()
         {
