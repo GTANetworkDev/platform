@@ -182,9 +182,9 @@ namespace GTANetworkServer
             try
             {
                 object objectToReturn = null;
-                bool hasValue = false;
-                lock (_mainQueue.SyncRoot)
-                _mainQueue.Enqueue(new Action(() =>
+                //lock (_mainQueue.SyncRoot)
+                //_mainQueue.Enqueue(
+                Task waiter = Task.Factory.StartNew(new Action(() =>
                 {
                     if (Language == ScriptingEngineLanguage.compiled)
                     {
@@ -192,17 +192,14 @@ namespace GTANetworkServer
                         if (mi == null)
                         {
                             Program.Output("METHOD NOT ACCESSIBLE OR NOT FOUND: " + method);
-                            hasValue = true;
                             return;
                         }
                         
                         objectToReturn = mi.Invoke(_compiledScript, args == null ? null : args.Length == 0 ? null : args);
-                        hasValue = true;
                     }
                 }));
 
-                while (!hasValue) { }
-
+                waiter.Wait();
                 return objectToReturn;
             }
             catch (Exception e)
