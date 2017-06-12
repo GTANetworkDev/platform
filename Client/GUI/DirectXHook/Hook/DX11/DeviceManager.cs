@@ -26,7 +26,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
     
-    public class DeviceManager : SharpDX.Component
+    public class DeviceManager : SharpDX.DisposeCollector
     {
         // Direct3D Objects
         protected SharpDX.Direct3D11.Device d3dDevice;

@@ -12,7 +12,7 @@ using SharpDX.Direct3D11;
 namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 {
 
-    public class DXSprite : Component
+    public class DXSprite : DisposeCollector
     {
         Device _device;
         DeviceContext _deviceContext;
@@ -112,16 +112,16 @@ technique11 SpriteTech {
 };";
             #endregion
 
-            _compiledFX = ToDispose(ShaderBytecode.Compile(SpriteFX, "SpriteTech", "fx_5_0"));
+            _compiledFX = Collect(ShaderBytecode.Compile(SpriteFX, "SpriteTech", "fx_5_0"));
             {
                 
                 if (_compiledFX.HasErrors)
                     return false;
 
-                _effect = ToDispose(new Effect(_device, _compiledFX));
+                _effect = Collect(new Effect(_device, _compiledFX));
                 {
-                    _spriteTech = ToDispose(_effect.GetTechniqueByName("SpriteTech"));
-                    _spriteMap = ToDispose(_effect.GetVariableByName("SpriteTex").AsShaderResource());
+                    _spriteTech = Collect(_effect.GetTechniqueByName("SpriteTech"));
+                    _spriteMap = Collect(_effect.GetVariableByName("SpriteTex").AsShaderResource());
 
                     using (var pass = _spriteTech.GetPassByIndex(0))
                     {
@@ -131,7 +131,7 @@ technique11 SpriteTech {
                                                         new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 20, 0, InputClassification.PerVertexData, 0)
                                                     };
 
-                        _inputLayout = ToDispose(new InputLayout(_device, pass.Description.Signature, layoutDesc));
+                        _inputLayout = Collect(new InputLayout(_device, pass.Description.Signature, layoutDesc));
                     }
                     // Create Vertex Buffer
                     BufferDescription vbd = new BufferDescription
@@ -144,7 +144,7 @@ technique11 SpriteTech {
                         StructureByteStride = 0
                     };
 
-                    _VB = ToDispose(new SharpDX.Direct3D11.Buffer(_device, vbd));
+                    _VB = Collect(new SharpDX.Direct3D11.Buffer(_device, vbd));
 
                     // Create and initialise Index Buffer
 
@@ -160,7 +160,7 @@ technique11 SpriteTech {
                         indices[i * 6 + 5] = (short)(i * 4 + 3);
                     }
 
-                    _indexBuffer = ToDispose(new SafeHGlobal(indices.Length * Marshal.SizeOf(indices[0])));
+                    _indexBuffer = Collect(new SafeHGlobal(indices.Length * Marshal.SizeOf(indices[0])));
                     Marshal.Copy(indices, 0, _indexBuffer.DangerousGetHandle(), indices.Length);
 
                     BufferDescription ibd = new BufferDescription
@@ -173,7 +173,7 @@ technique11 SpriteTech {
                         StructureByteStride = 0
                     };
                     
-                    _IB = ToDispose(new SharpDX.Direct3D11.Buffer(_device, _indexBuffer.DangerousGetHandle(), ibd));
+                    _IB = Collect(new SharpDX.Direct3D11.Buffer(_device, _indexBuffer.DangerousGetHandle(), ibd));
 
                     BlendStateDescription transparentDesc = new BlendStateDescription()
                     {
@@ -189,7 +189,7 @@ technique11 SpriteTech {
                     transparentDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
                     transparentDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
 
-                    _transparentBS = ToDispose(new BlendState(_device, transparentDesc));
+                    _transparentBS = Collect(new BlendState(_device, transparentDesc));
                 }
             }
 
@@ -209,8 +209,8 @@ technique11 SpriteTech {
             //Debug.Assert(_initialized);
             if (!_initialized) return;
 
-            Color4 blendFactor = new Color4(1.0f);
-            Color4 backupBlendFactor;
+            SharpDX.Mathematics.Interop.RawColor4 blendFactor = new Color4(1.0f);
+            SharpDX.Mathematics.Interop.RawColor4 backupBlendFactor;
             int backupMask;
             using (var backupBlendState = _deviceContext.OutputMerger.GetBlendState(out backupBlendFactor, out backupMask))
             {
@@ -234,8 +234,8 @@ technique11 SpriteTech {
 
         public void DrawString(int X, int Y, string text, System.Drawing.Color color, DXFont F)
         {
-            Color4 blendFactor = new Color4(1.0f);
-            Color4 backupBlendFactor;
+            SharpDX.Mathematics.Interop.RawColor4 blendFactor = new Color4(1.0f);
+            SharpDX.Mathematics.Interop.RawColor4 backupBlendFactor;
             int backupMask;
             using (var backupBlendState = _deviceContext.OutputMerger.GetBlendState(out backupBlendFactor, out backupMask))
             {
@@ -302,7 +302,7 @@ technique11 SpriteTech {
             //Debug.Assert(_initialized);
             if (!_initialized) return;
 
-            ViewportF[] vp = _deviceContext.Rasterizer.GetViewports();
+            SharpDX.Mathematics.Interop.RawViewportF[] vp = _deviceContext.Rasterizer.GetViewports<SharpDX.Mathematics.Interop.RawViewportF>();
 
             _screenWidth = vp[0].Width;
             _screenHeight = vp[0].Height;

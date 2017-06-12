@@ -88,7 +88,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         #region Internal device resources
         SharpDX.Direct3D11.Device _device;
         SwapChain _swapChain;
-        SharpDX.Windows.RenderForm _renderForm;
+        SharpDX.Windows.RenderForm  _renderForm;
         //Texture2D _resolvedRTShared;
         //SharpDX.DXGI.KeyedMutex _resolvedRTSharedKeyedMutex;
         //ShaderResourceView _resolvedSharedSRV;
@@ -127,7 +127,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
                 #region Get Device and SwapChain method addresses
                 // Create temporary device + swapchain and determine method addresses
-                _renderForm = ToDispose(new SharpDX.Windows.RenderForm());
+                _renderForm = Collect(new SharpDX.Windows.RenderForm());
                 DebugMessage("Hook: Before device creation");
                 SharpDX.Direct3D11.Device.CreateWithSwapChain(
                     DriverType.Hardware,
@@ -136,8 +136,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     out _device,
                     out _swapChain);
 
-                ToDispose(_device);
-                ToDispose(_swapChain);
+                Collect(_device);
+                Collect(_swapChain);
 
                 if (_device != null && _swapChain != null)
                 {

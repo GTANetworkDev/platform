@@ -5,7 +5,7 @@ using SharpDX.Direct3D11;
 
 namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 {
-    public class DXImage : Component
+    public class DXImage : DisposeCollector
     {
         Device _device;
         DeviceContext _deviceContext;
@@ -35,7 +35,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
             get { return _device; }
         }
 
-        public DXImage(Device device, DeviceContext deviceContext): base("DXImage")
+        public DXImage(Device device, DeviceContext deviceContext)
         {
             _device = device;
             _deviceContext = deviceContext;
@@ -84,7 +84,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                 data.RowPitch = bmData.Stride;// _texWidth * 4;
                 data.SlicePitch = 0;
 
-                _tex = ToDispose(new Texture2D(_device, _textDesc, new[] { data }));
+                _tex = Collect(new Texture2D(_device, _textDesc, new[] { data }));
                 if (_tex == null)
                     return false;
 
@@ -94,7 +94,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                 _srvDesc.Texture2D.MipLevels = 1;
                 _srvDesc.Texture2D.MostDetailedMip = 0;
 
-                _texSRV = ToDispose(new ShaderResourceView(_device, _tex, _srvDesc));
+                _texSRV = Collect(new ShaderResourceView(_device, _tex, _srvDesc));
                 if (_texSRV == null)
                     return false;
             }
@@ -147,7 +147,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                     _textDesc.CpuAccessFlags = CpuAccessFlags.None;
                     _textDesc.OptionFlags = ResourceOptionFlags.None;
 
-                    _tex = ToDispose(new Texture2D(_device, _textDesc, new[] {data}));
+                    _tex = Collect(new Texture2D(_device, _textDesc, new[] {data}));
                     if (_tex == null)
                         return;
 
@@ -157,7 +157,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                     _srvDesc.Texture2D.MipLevels = 1;
                     _srvDesc.Texture2D.MostDetailedMip = 0;
 
-                    _texSRV = ToDispose(new ShaderResourceView(_device, _tex, _srvDesc));
+                    _texSRV = Collect(new ShaderResourceView(_device, _tex, _srvDesc));
                     if (_texSRV == null)
                         return;
                 }

@@ -2874,7 +2874,10 @@ namespace GTANetwork.Javascript
         public SharpDX.Size2 getScreenResolutionAccurate()
         {
             var dxgiFactory = new SharpDX.DXGI.Factory1();
-            return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Size;
+            int width = ((SharpDX.Rectangle)dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds).Width;
+            int height = ((SharpDX.Rectangle)dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds).Height;
+
+            return new SharpDX.Size2(width, height);
         }
 
         public void sendNotification(string text)
