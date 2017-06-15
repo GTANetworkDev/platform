@@ -26,7 +26,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
     // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     // THE SOFTWARE.
     
-    public abstract class RendererBase : Component
+    public abstract class RendererBase : DisposeCollector
     {
         public DeviceManager DeviceManager { get; protected set; }
         public virtual bool Show { get; set; }

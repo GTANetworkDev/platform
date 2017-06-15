@@ -88,7 +88,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
         #region Internal device resources
         SharpDX.Direct3D11.Device _device;
         SwapChain _swapChain;
-        SharpDX.Windows.RenderForm _renderForm;
+        SharpDX.Windows.RenderForm  _renderForm;
         //Texture2D _resolvedRTShared;
         //SharpDX.DXGI.KeyedMutex _resolvedRTSharedKeyedMutex;
         //ShaderResourceView _resolvedSharedSRV;
@@ -127,7 +127,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook
 
                 #region Get Device and SwapChain method addresses
                 // Create temporary device + swapchain and determine method addresses
-                _renderForm = ToDispose(new SharpDX.Windows.RenderForm());
+                _renderForm = Collect(new SharpDX.Windows.RenderForm());
                 DebugMessage("Hook: Before device creation");
                 SharpDX.Direct3D11.Device.CreateWithSwapChain(
                     DriverType.Hardware,
@@ -136,8 +136,8 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     out _device,
                     out _swapChain);
 
-                ToDispose(_device);
-                ToDispose(_swapChain);
+                Collect(_device);
+                Collect(_swapChain);
 
                 if (_device != null && _swapChain != null)
                 {
@@ -417,26 +417,23 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                     {
                         DebugMessage("ManualPresentHook:2");
                         NewSwapchain = true;
-                        List<IOverlay> oldOverlays = null;
+                        List<IOverlayElement> oldOverlays = null;
 
                         if (OverlayEngine != null)
                         {
                             DebugMessage("ManualPresentHook:3");
-                            if (OverlayEngine.Overlays != null && OverlayEngine.Overlays.Count > 0)
+                            if (OverlayEngine.Overlays.Count > 0 && OverlayEngine.Overlays[0].Elements != null)
                             {
                                 DebugMessage("ManualPresentHook:4");
-                                oldOverlays = new List<IOverlay>(OverlayEngine.Overlays);
+                                oldOverlays = new List<IOverlayElement>(OverlayEngine.Overlays[0].Elements);
 
-                                foreach (var overlay in oldOverlays)
+                                foreach (var element in oldOverlays)
                                 {
-                                    foreach (var element in overlay.Elements)
+                                    if (element is ImageElement)
                                     {
-                                        if (element is ImageElement)
-                                        {
-                                            DebugMessage("ManualPresentHook:5");
-                                            ((ImageElement)element).Image?.Dispose();
-                                            ((ImageElement)element).Image = null;
-                                        }
+                                        DebugMessage("ManualPresentHook:5");
+                                        ((ImageElement) element).Image?.Dispose();
+                                        ((ImageElement) element).Image = null;
                                     }
                                 }
                             }
@@ -452,16 +449,13 @@ namespace GTANetwork.GUI.DirectXHook.Hook
                         if (oldOverlays != null)
                         {
                             DebugMessage("ManualPresentHook:8");
-                            OverlayEngine.Overlays = oldOverlays;
+                            OverlayEngine.Overlays[0].Elements = oldOverlays;
                         }
                         DebugMessage("ManualPresentHook:9");
                         if (ObligatoryElement != null)
                         {
                             DebugMessage("ManualPresentHook:10");
-                            foreach(var overlay in OverlayEngine.Overlays)
-                            {
-                                overlay.Elements.Add(ObligatoryElement);
-                            }
+                            OverlayEngine.Overlays[0].Elements.Add(ObligatoryElement);
                         }
                         DebugMessage("ManualPresentHook:11");
                         OverlayEngine.Initialise(swapChain);

@@ -96,6 +96,19 @@ namespace GTANetwork.Streamer
         }
     }
 
+    public class UpdateInterpolations : Script
+    {
+        public UpdateInterpolations()
+        {
+            Tick += Draw;
+        }
+
+        private static void Draw(object sender, EventArgs e)
+        {
+            if (Main.IsConnected()) Main.NetEntityHandler.UpdateInterpolations();
+        }
+    }
+
     internal partial class Streamer
     {
         internal Streamer()
@@ -1438,7 +1451,7 @@ namespace GTANetwork.Streamer
         {
             var ents =
                 new List<EntityProperties>(
-                    ClientMap.Values.Where(item => item.PositionMovement != null || item.RotationMovement != null).Cast<EntityProperties>());
+                    ClientMap.Values.Where(item => item.StreamedIn && item.PositionMovement != null || item.RotationMovement != null).Cast<EntityProperties>());
 
             foreach (var ent in ents)
             {
@@ -1476,11 +1489,17 @@ namespace GTANetwork.Streamer
                         }
                     }
 
-                    if (delta >= ent.PositionMovement.Duration) ent.PositionMovement = null;
+                    if (delta >= ent.PositionMovement.Duration)
+                    {
+                        // Ensure that the position will be the one that was given
+                        ent.Position = ent.PositionMovement.EndVector;
+                        ent.PositionMovement = null;
+                    }
                 }
 
                 if (ent.RotationMovement != null)
                 {
+                    // TODO: fix rotation
                     if (ent.RotationMovement.ServerStartTime == 0) // Assume this is the first time we see the object
                         ent.RotationMovement.ServerStartTime = Util.Util.TickCount;
 
@@ -1503,15 +1522,21 @@ namespace GTANetwork.Streamer
                                     var gameEnt = NetToEntity(item);
                                     if (gameEnt != null)
                                     {
-                                        gameEnt.Quaternion = ent.Rotation.ToVector().ToQuaternion();
-                                        //gameEnt.Rotation = ent.Rotation.ToVector(); // Gimbal lock!
+                                        //gameEnt.Quaternion = ent.Rotation.ToVector().ToQuaternion();
+                                        gameEnt.Rotation = ent.Rotation.ToVector(); // Gimbal lock!
                                     }
                                 }
                                 break;
                         }
                     }
 
-                    if (delta >= ent.RotationMovement.Duration) ent.RotationMovement = null;
+                    if (delta >= ent.RotationMovement.Duration)
+                    {
+                        // Ensure that the position will be the one that was given
+                        ent.Rotation = ent.RotationMovement.EndVector;
+                        ent.RotationMovement = null;
+                    }
+                        
                 }
             }
         }

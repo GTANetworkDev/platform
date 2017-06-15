@@ -135,9 +135,9 @@ float4 PSMain(PixelIn input) : SV_Target
             //var includeHandler = new HLSLFileIncludeHandler(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "Shaders"));
 
             // Compile and create the vertex shader
-            using (var vertexShaderBytecode = ToDispose(ShaderBytecode.Compile(shaderCode, "VSMain", "vs_4_0", shaderFlags, EffectFlags.None, null, null)))
+            using (var vertexShaderBytecode = Collect(ShaderBytecode.Compile(shaderCode, "VSMain", "vs_4_0", shaderFlags, EffectFlags.None, null, null)))
             {
-                vertexShader = ToDispose(new VertexShader(device, vertexShaderBytecode));
+                vertexShader = Collect(new VertexShader(device, vertexShaderBytecode));
 
 
                 //// Layout from VertexShader input signature
@@ -170,10 +170,10 @@ float4 PSMain(PixelIn input) : SV_Target
             }
 
             // Compile and create the pixel shader
-            using (var bytecode = ToDispose(ShaderBytecode.Compile(shaderCode, "PSMain", "ps_5_0", shaderFlags, EffectFlags.None, null, null)))
-                pixelShader = ToDispose(new PixelShader(device, bytecode));
+            using (var bytecode = Collect(ShaderBytecode.Compile(shaderCode, "PSMain", "ps_5_0", shaderFlags, EffectFlags.None, null, null)))
+                pixelShader = Collect(new PixelShader(device, bytecode));
 
-            linearSampleState = ToDispose(new SamplerState(device, new SamplerStateDescription
+            linearSampleState = Collect(new SamplerState(device, new SamplerStateDescription
             {
                 Filter = Filter.MinMagMipLinear,
                 AddressU = TextureAddressMode.Wrap,
@@ -184,7 +184,7 @@ float4 PSMain(PixelIn input) : SV_Target
                 MaximumLod = float.MaxValue
             }));
 
-            pointSamplerState = ToDispose(new SamplerState(device, new SamplerStateDescription
+            pointSamplerState = Collect(new SamplerState(device, new SamplerStateDescription
             {
                 Filter = Filter.MinMagMipPoint,
                 AddressU = TextureAddressMode.Wrap,
@@ -195,7 +195,7 @@ float4 PSMain(PixelIn input) : SV_Target
                 MaximumLod = float.MaxValue
             }));
 
-            context.Rasterizer.State = ToDispose(new RasterizerState(device, new RasterizerStateDescription()
+            context.Rasterizer.State = Collect(new RasterizerState(device, new RasterizerStateDescription()
             {
                 CullMode = CullMode.None,
                 FillMode = FillMode.Solid,                
@@ -250,7 +250,7 @@ float4 PSMain(PixelIn input) : SV_Target
                 context.ClearRenderTargetView(RenderTargetView, Color.CornflowerBlue);
                 
                 // Set sampler
-                ViewportF[] viewportf = { new ViewportF(0, 0, RenderTarget.Description.Width, RenderTarget.Description.Height, 0, 1) };
+                SharpDX.Mathematics.Interop.RawViewportF[] viewportf = { new ViewportF(0, 0, RenderTarget.Description.Width, RenderTarget.Description.Height, 0, 1) };
                 context.Rasterizer.SetViewports(viewportf);
                 context.PixelShader.SetSampler(0, (UseLinearSampling ? linearSampleState : pointSamplerState));
 

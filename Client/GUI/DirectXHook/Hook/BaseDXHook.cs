@@ -12,7 +12,7 @@ using GTANetwork.Util;
 
 namespace GTANetwork.GUI.DirectXHook.Hook
 {
-    internal abstract class BaseDXHook: SharpDX.Component, IDXHook
+    internal abstract class BaseDXHook: SharpDX.DisposeCollector, IDXHook
     {
         public BaseDXHook()
         {

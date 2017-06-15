@@ -378,17 +378,6 @@ namespace GTANetwork
 
             if (!IsConnected()) return;
 
-            if (Environment.TickCount - _lastCheck > 1000)
-            {
-                _bytesSentPerSecond = BytesSent - _lastBytesSent;
-                _bytesReceivedPerSecond = BytesReceived - _lastBytesReceived;
-
-                _lastBytesReceived = BytesReceived;
-                _lastBytesSent = BytesSent;
-
-                _lastCheck = Environment.TickCount;
-            }
-
             try
             {
                 DEBUG_STEP = 1;

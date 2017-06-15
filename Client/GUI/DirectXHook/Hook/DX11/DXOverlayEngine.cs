@@ -10,7 +10,7 @@ using Device = SharpDX.Direct3D11.Device;
 
 namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 {
-    internal class DXOverlayEngine: Component
+    internal class DXOverlayEngine: DisposeCollector
     {
         public List<IOverlay> Overlays { get; set; }
         public bool DeferredContext
@@ -73,7 +73,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
                     _deviceContext = _device.ImmediateContext;
                 }
 
-                _renderTargetView = ToDispose(new RenderTargetView(_device, _renderTarget));
+                _renderTargetView = Collect(new RenderTargetView(_device, _renderTarget));
 
                 //if (DeferredContext)
                 //{
@@ -124,7 +124,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
         {
             //if (!DeferredContext)
             //{
-                ViewportF[] viewportf = { new ViewportF(0, 0, _renderTarget.Description.Width, _renderTarget.Description.Height, 0, 1) };
+                SharpDX.Mathematics.Interop.RawViewportF[] viewportf = { new ViewportF(0, 0, _renderTarget.Description.Width, _renderTarget.Description.Height, 0, 1) };
                 _deviceContext.Rasterizer.SetViewports(viewportf);
                 _deviceContext.OutputMerger.SetTargets(_renderTargetView);
             //}
@@ -190,7 +190,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
             if (!_fontCache.TryGetValue(fontKey, out result))
             {
-                result = ToDispose(new DXFont(_device, _deviceContext));
+                result = Collect(new DXFont(_device, _deviceContext));
                 result.Initialize(element.Font.Name, element.Font.Size, element.Font.Style, element.AntiAliased);
                 _fontCache[fontKey] = result;
             }
@@ -223,7 +223,7 @@ namespace GTANetwork.GUI.DirectXHook.Hook.DX11
 
             if (element.Image == null && element.Bitmap != null)
             {
-                element.Image = ToDispose(new DXImage(_device, _deviceContext));
+                element.Image = Collect(new DXImage(_device, _deviceContext));
                 element.Image.Initialise(element.Bitmap);
             }
 

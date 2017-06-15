@@ -1250,7 +1250,7 @@ namespace GTANetwork.Javascript
 
         private DateTime _last;
         private static int _fps = 30;
-        public int getGameFramerate()
+        public int getGameFramerate(Browser browser, int fps)
         {
             if (DateTime.Now.Subtract(_last).TotalMilliseconds <= 500)
             {
@@ -2874,7 +2874,10 @@ namespace GTANetwork.Javascript
         public SharpDX.Size2 getScreenResolutionAccurate()
         {
             var dxgiFactory = new SharpDX.DXGI.Factory1();
-            return dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds.Size;
+            int width = ((SharpDX.Rectangle)dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds).Width;
+            int height = ((SharpDX.Rectangle)dxgiFactory.Adapters[0].Outputs[0].Description.DesktopBounds).Height;
+
+            return new SharpDX.Size2(width, height);
         }
 
         public void sendNotification(string text)
@@ -4254,6 +4257,11 @@ namespace GTANetwork.Javascript
         public int getEntityModel(LocalHandle entity)
         {
             return new Prop(entity.Value).Model.Hash;
+        }
+
+        public int getEntityBoneIndexByName(LocalHandle entity, string boneName)
+        {
+            return Function.Call<int>(Hash.GET_ENTITY_BONE_INDEX_BY_NAME, entity.Value, boneName);
         }
 
         //public void givePlayerWeapon(int weapon, int ammo, bool equipNow, bool ammoLoaded)
