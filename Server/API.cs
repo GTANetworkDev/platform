@@ -723,42 +723,42 @@ namespace GTANetworkServer
 
         public bool isPlayerOnFire(Client player)
         {
-            return player.LastAction == (byte)PedAction.OnFire;
+            return (player.LastPedFlag & (int)PedDataFlags.OnFire) != 0;
         }
 
         public bool isPlayerParachuting(Client player)
         {
-            return player.LastAction == (byte)PedAction.ParachuteOpen;
+            return (player.LastPedFlag & (int)PedDataFlags.ParachuteOpen) != 0;
         }
 
         public bool isPlayerInFreefall(Client player)
         {
-            return player.LastAction == (byte)PedAction.InFreefall;
+            return (player.LastPedFlag & (int)PedDataFlags.InFreefall) != 0;
         }
 
         public bool isPlayerAiming(Client player)
         {
-            return player.LastAction == (byte)PedAction.Aiming;
+            return (player.LastPedFlag & (int)PedDataFlags.Aiming) != 0;
         }
 
         public bool isPlayerShooting(Client player)
         {
-            return player.LastAction == (byte)PedAction.Shooting;
+            return (player.LastPedFlag & (int)PedDataFlags.Shooting) != 0;
         }
 
         public bool isPlayerReloading(Client player)
         {
-            return player.LastAction == (byte)PedAction.IsReloading;
+            return (player.LastPedFlag & (int)PedDataFlags.IsReloading) != 0;
         }
 
         public bool isPlayerInCover(Client player)
         {
-            return player.LastAction == (byte)PedAction.IsInCover;
+            return (player.LastPedFlag & (int)PedDataFlags.IsInCover) != 0;
         }
 
         public bool isPlayerOnLadder(Client player)
         {
-            return player.LastAction == (byte)PedAction.IsOnLadder;
+            return (player.LastPedFlag & (int)PedDataFlags.IsOnLadder) != 0;
         }
 
         public Vector3 getPlayerAimingPoint(Client player)
@@ -775,7 +775,7 @@ namespace GTANetworkServer
         {
             if (player.IsInVehicle)
                 return (player.LastVehicleFlag & (int) VehicleDataFlags.PlayerDead) != 0;
-            else return player.LastAction == (byte)PedAction.PlayerDead;
+            else return (player.LastPedFlag & (int)PedDataFlags.PlayerDead) != 0;
         }
 
         public bool isPlayerRespawning(Client player)

@@ -17,7 +17,7 @@ namespace GTANetworkServer
 
         internal bool Fake { get; set; }
 
-        internal byte LastAction { get; set; }
+        internal int LastPedFlag { get; set; }
         internal int LastVehicleFlag { get; set; }
         internal NetConnection NetConnection { get; private set; }
 

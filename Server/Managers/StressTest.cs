@@ -61,7 +61,7 @@ namespace GTANetworkServer
 
             data.NetHandle = player.handle.Value;
             data.PedArmor = 0;
-            data.Action = 0;
+            data.Flag = 0;
             data.PedModelHash = (int) PedHash.Michael;
             data.PlayerHealth = 100;
             data.Quaternion = new Vector3();
