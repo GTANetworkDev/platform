@@ -79,6 +79,24 @@ namespace GTANetworkServer
 
         internal List<int> EntitiesInContact = new List<int>();
         private int _dimension;
+
+        internal static Vector3[] NormalizeEdges(Vector3 edgeA, Vector3 edgeB)
+        {
+            // Correct for inside out vectors
+            Vector3 tmp1 = edgeA.Copy(); // smaller edge
+            Vector3 tmp2 = edgeB.Copy(); // larger edge
+
+            tmp1.X = Math.Min(edgeA.X, edgeB.X);
+            tmp2.X = Math.Max(edgeA.X, edgeB.X);
+
+            tmp1.Y = Math.Min(edgeA.Y, edgeB.Y);
+            tmp2.Y = Math.Max(edgeA.Y, edgeB.Y);
+
+            tmp1.Z = Math.Min(edgeA.Z, edgeB.Z);
+            tmp2.Z = Math.Max(edgeA.Z, edgeB.Z);
+
+            return new Vector3[2] { tmp1, tmp2 };
+        }
     }
 
     public class SphereColShape : ColShape
@@ -189,30 +207,24 @@ namespace GTANetworkServer
     {
         internal Rectangle2DColShape(Vector3 start, Vector3 stop)
         {
-            X = start.X;
-            Y = start.Y;
-
-            Width = stop.X - start.X;
-            Height = stop.Y - start.Y;
+            Vector3[] edges = NormalizeEdges(start, stop);
+            Start = edges[0];
+            End = edges[1];
         }
 
-        internal Rectangle2DColShape(float x, float y, float w, float h)
+        internal Rectangle2DColShape(float x, float y, float w, float h) :
+            this(new Vector3(x, y, 0f), new Vector3(x+w, y+h, 0f))
         {
-            X = x;
-            Y = y;
-
-            Width = w;
-            Height = h;
+        
         }
 
-        public float X;
-        public float Y;
-        public float Width;
-        public float Height;
+        public Vector3 Start;
+        public Vector3 End;
 
         internal override bool Check(Vector3 pos)
         {
-            return (pos.X > X && pos.Y > Y && pos.X < X + Width && pos.Y < Y + Height);
+            return (pos.X > Start.X && pos.Y > Start.Y) && 
+                   (pos.X < End.X && pos.Y < End.X);
         }
     }
 
@@ -220,8 +232,10 @@ namespace GTANetworkServer
     {
         internal Rectangle3DColShape(Vector3 start, Vector3 end)
         {
-            Start = start;
-            End = end;
+            Vector3[] edges = NormalizeEdges(start, end);
+
+            Start = edges[0];
+            End = edges[1];
         }
 
         public Vector3 Start;
