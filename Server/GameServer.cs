@@ -551,7 +551,7 @@ namespace GTANResource
                                     error.ErrorText,
                                     error.Line,
                                     error.IsWarning ? "Warning" : "Error",
-                                    error.FileName.Substring(basePath.Length + 1)), error.IsWarning ? LogCat.Warn : LogCat.Error);
+                                    error.FileName), error.IsWarning ? LogCat.Warn : LogCat.Error);
                         }
                         Program.Output(String.Format("{3} ({0}) at {2}: {1}", error.ErrorNumber, error.ErrorText, error.Line, error.IsWarning ? "Warning" : "Error"));
 
