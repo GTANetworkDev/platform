@@ -19,11 +19,11 @@ namespace GTANetwork.Sync
     internal partial class SyncPed
     {
 
-        internal bool IsRagdoll
+       /* internal bool IsRagdoll
         {
             get { return _isRagdoll; }
             set { _isRagdoll = value; }
-        }
+        }*/
 
         public override int LocalHandle
         {
@@ -68,9 +68,12 @@ namespace GTANetwork.Sync
 
         internal string GetAnimDictionary(string ourAnim = "")
         {
-            if (IsInCover) return GetCoverIdleAnimDict();
-            if (IsOnLadder) return "laddersbase";
-            if (IsVaulting) return "move_climb";
+            switch (Action)
+            {
+                case PedAction.IsInCover: return GetCoverIdleAnimDict();
+                case PedAction.IsOnLadder: return "laddersbase";
+                case PedAction.IsVaulting: return "move_climb";
+            }
 
             if (GetAnimalAnimationDictionary(ModelHash) != null)
                 return GetAnimalAnimationDictionary(ModelHash);
@@ -88,19 +91,19 @@ namespace GTANetwork.Sync
 
         internal uint GetAnimFlag()
         {
-            if (IsVaulting && !IsOnLadder)
+            if (Action == PedAction.IsVaulting)
                 return 2 | 2147483648;
             return 1 | 2147483648; // Loop + dont move
         }
 
         internal string GetCoverIdleAnimDict()
         {
-            if (!IsInCover) return "";
-            var altitude = IsInLowCover ? "low" : "high";
+            if (Action != PedAction.IsInCover) return "";
+            var altitude = Action != PedAction.IsInLowerCover ? "low" : "high";
 
             var hands = GetWeaponHandsHeld(CurrentWeapon);
 
-            if (IsShooting && !IsAiming)
+            if (Action == PedAction.Shooting)// && !IsAiming)
             {
                 if (hands == 1) return "cover@weapon@1h";
                 if (hands == 2 || hands == 5) return "cover@weapon@2h";
@@ -246,9 +249,9 @@ namespace GTANetwork.Sync
         {
             if (inCover)
             {
-                if (IsShooting && !IsAiming)
+                if (Action == PedAction.Shooting && Action != PedAction.Aiming)
                 {
-                    if (IsInLowCover)
+                    if (Action == PedAction.IsInLowerCover)
                         return coverFacingLeft ? "blindfire_low_l_aim_med" : "blindfire_low_r_aim_med";
                     return coverFacingLeft ? "blindfire_hi_l_aim_med" : "blindfire_hi_r_aim_med";
                 }
@@ -256,7 +259,7 @@ namespace GTANetwork.Sync
                 return coverFacingLeft ? "idle_l_corner" : "idle_r_corner";
             }
 
-            if (IsOnLadder)
+            if (Action == PedAction.IsOnLadder)
             {
                 if (Math.Abs(PedVelocity.Z) < 0.5) return "base_left_hand_up";
                 else if (PedVelocity.Z > 0) return "climb_up";
@@ -268,7 +271,7 @@ namespace GTANetwork.Sync
                 }
             }
 
-            if (IsVaulting) return "standclimbup_180_low";
+            if (Action == PedAction.IsVaulting) return "standclimbup_180_low";
 
             if (GetAnimalAnimationName(ModelHash, speed) != null)
                 return GetAnimalAnimationName(ModelHash, speed);

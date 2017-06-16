@@ -41,53 +41,53 @@ namespace GTANetwork.Streamer
                 WeaponAmmo = currentWeapon.Ammo,
                 PlayerHealth = (byte) Util.Util.Clamp(0, player.Health, 255),
                 Velocity = player.Velocity.ToLVector(),
-                Flag = 0
+                Action = 0
             };
 
 
             if (player.IsRagdoll)
-                obj.Flag |= (int)PedDataFlags.Ragdoll;
-            if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, player.Handle) == 0 &&
+                obj.Action = (byte)PedAction.Ragdoll;
+            else if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, player.Handle) == 0 &&
                 player.IsInAir)
-                obj.Flag |= (int)PedDataFlags.InFreefall;
-            if (player.IsInMeleeCombat)
-                obj.Flag |= (int)PedDataFlags.InMeleeCombat;
-            if (aiming || shooting)
-                obj.Flag |= (int)PedDataFlags.Aiming;
-            if ((player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
-                obj.Flag |= (int)PedDataFlags.Shooting;
-            if (Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle))
-                obj.Flag |= (int)PedDataFlags.Jumping;
-            if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, player.Handle) == 2)
-                obj.Flag |= (int)PedDataFlags.ParachuteOpen;
-            if (player.IsInCover())
-                obj.Flag |= (int)PedDataFlags.IsInCover;
-            if (!Function.Call<bool>((Hash)0x6A03BF943D767C93, player))
-                obj.Flag |= (int)PedDataFlags.IsInLowerCover;
-            if (player.IsInCoverFacingLeft)
-                obj.Flag |= (int)PedDataFlags.IsInCoverFacingLeft;
-            if (player.IsReloading)
-                obj.Flag |= (int)PedDataFlags.IsReloading;
-            if (ForceAimData)
-                obj.Flag |= (int)PedDataFlags.HasAimData;
-            if (player.IsSubtaskActive(ESubtask.USING_LADDER))
-                obj.Flag |= (int)PedDataFlags.IsOnLadder;
-            if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player) && !player.IsSubtaskActive(ESubtask.USING_LADDER))
-                obj.Flag |= (int)PedDataFlags.IsVaulting;
-            if (Function.Call<bool>(Hash.IS_ENTITY_ON_FIRE, player))
-                obj.Flag |= (int)PedDataFlags.OnFire;
-            if (player.IsDead)
-                obj.Flag |= (int)PedDataFlags.PlayerDead;
+                obj.Action = (byte)PedAction.InFreefall;
+            else if (player.IsInMeleeCombat)
+                obj.Action = (byte)PedAction.InMeleeCombat;
+            else if (aiming || shooting)
+                obj.Action = (byte)PedAction.Aiming;
+            else if ((player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
+                obj.Action = (byte)PedAction.Shooting;
+            else if (Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle))
+                obj.Action = (byte)PedAction.Jumping;
+            else if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, player.Handle) == 2)
+                obj.Action = (byte)PedAction.ParachuteOpen;
+            else if (!Function.Call<bool>((Hash)0x6A03BF943D767C93, player))
+                obj.Action = (byte)PedAction.IsInLowerCover;
+            else if (player.IsInCover())
+                obj.Action = (byte)PedAction.IsInCover;
+            else if (player.IsInCoverFacingLeft)
+                obj.Action = (byte)PedAction.IsInCoverFacingLeft;
+           else  if (player.IsReloading)
+                obj.Action = (byte)PedAction.IsReloading;
+            /*else if (ForceAimData)
+                obj.Action = (byte)PedAction.HasAimData;*/
+            else if (player.IsSubtaskActive(ESubtask.USING_LADDER))
+                obj.Action = (byte)PedAction.IsOnLadder;
+            else if (Function.Call<bool>(Hash.IS_PED_CLIMBING, player) && !player.IsSubtaskActive(ESubtask.USING_LADDER))
+                obj.Action = (byte)PedAction.IsVaulting;
+            else if (Function.Call<bool>(Hash.IS_ENTITY_ON_FIRE, player))
+                obj.Action = (byte)PedAction.OnFire;
+            else if (player.IsDead)
+                obj.Action = (byte)PedAction.PlayerDead;
 
             if (player.IsSubtaskActive(168))
             {
-                obj.Flag |= (int)PedDataFlags.ClosingVehicleDoor;
+                obj.Action = (byte)PedAction.ClosingVehicleDoor;
             }
 
             if (player.IsSubtaskActive(161) || player.IsSubtaskActive(162) || player.IsSubtaskActive(163) ||
                 player.IsSubtaskActive(164))
             {
-                obj.Flag |= (int)PedDataFlags.EnteringVehicle;
+                obj.Action = (byte)PedAction.EnteringVehicle;
 
                 obj.VehicleTryingToEnter =
                     Main.NetEntityHandler.EntityToNet(Function.Call<int>(Hash.GET_VEHICLE_PED_IS_TRYING_TO_ENTER,

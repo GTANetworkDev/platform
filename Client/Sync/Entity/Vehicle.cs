@@ -128,7 +128,7 @@ namespace GTANetwork.Sync
 
         private bool LeaveVehicle()
         {
-            if (ExitingVehicle && !_lastExitingVehicle)
+            if (Action == PedAction.EnteringVehicle && StoredAction != PedAction.EnteringVehicle)
             {
                 Character.Task.ClearAll();
                 Character.Task.ClearSecondary();
@@ -147,16 +147,16 @@ namespace GTANetwork.Sync
                 }
             }
 
-            if (!ExitingVehicle && _lastExitingVehicle) DirtyWeapons = true;
+            if (Action != PedAction.EnteringVehicle && StoredAction == PedAction.EnteringVehicle) DirtyWeapons = true;
 
-            _lastExitingVehicle = ExitingVehicle;
+            StoredAction = PedAction.EnteringVehicle;
 
             return ExitingVehicle;
         }
 
         private void EnterVehicle()
         {
-            if (EnteringVehicle)
+            if (Action == PedAction.EnteringVehicle)
             {
                 Character.Task.EnterVehicle(MainVehicle, (VehicleSeat)VehicleSeat, -1, 2f);
                 while (Character.IsSubtaskActive(ESubtask.ENTERING_VEHICLE_GENERAL) || Character.IsSubtaskActive(ESubtask.ENTERING_VEHICLE_ENTERING))
@@ -265,7 +265,7 @@ namespace GTANetwork.Sync
 
         private bool DisplayVehicleDriveBy()
         {
-            if (!IsShooting || CurrentWeapon == 0 || VehicleSeat != -1 || !WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash) VehicleHash)) return false;
+            if (Action != PedAction.Shooting || CurrentWeapon == 0 || VehicleSeat != -1 || !WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash) VehicleHash)) return false;
 
             var isRocket = WeaponDataProvider.IsVehicleWeaponRocket(CurrentWeapon);
             if (isRocket)
@@ -324,7 +324,7 @@ namespace GTANetwork.Sync
                     _lastVehicleAimUpdate = Game.GameTime;
                 }
 
-                if (IsShooting)
+                if (Action == PedAction.Shooting)
                 {
                     if (((VehicleHash)VehicleHash == GTA.VehicleHash.Rhino &&
                          DateTime.Now.Subtract(_lastRocketshot).TotalMilliseconds > 1000) ||
@@ -404,7 +404,7 @@ namespace GTANetwork.Sync
                     Character.Weapons.Give((WeaponHash)CurrentWeapon, -1, true, true);
                 }
 
-                if (IsShooting || IsAiming)
+                if (Action == PedAction.Shooting | Action == PedAction.Aiming)
                 {
                     if (!_lastDrivebyShooting)
                     {
@@ -434,7 +434,7 @@ namespace GTANetwork.Sync
                             Character.Rotation.Y, Character.Rotation.Z, -8f, -8f, -1, 0, rightSide ? 0.6f : 0.3f, 0, 0);
                     }
 
-                    if (IsShooting)
+                    if (Action == PedAction.Shooting)
                     {
                         Function.Call(Hash.SET_PED_INFINITE_AMMO_CLIP, Character, true);
                         Function.Call(Hash.SET_PED_AMMO, Character, CurrentWeapon, 10);
@@ -472,7 +472,7 @@ namespace GTANetwork.Sync
                     }
 
                     _lastVehicleAimUpdate = Game.GameTime;
-                    _lastDrivebyShooting = IsShooting || IsAiming;
+                    _lastDrivebyShooting = Action == PedAction.Shooting || Action == PedAction.Aiming;
                     Ped PlayerChar = Game.Player.Character;
                     if (Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, PlayerChar, Character, true))
                     {
@@ -494,7 +494,7 @@ namespace GTANetwork.Sync
                     Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, PlayerChar);
                 }
 
-                if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
+                if (Action != PedAction.Shooting && Action != PedAction.Aiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
                 {
                     Character.Task.ClearAll();
                     Character.Task.ClearSecondary();

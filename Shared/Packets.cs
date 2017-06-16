@@ -114,8 +114,33 @@ namespace GTANetworkShared
         PlayerDead = 1 << 9,
         Braking = 1 << 10,
     }
-    
-    [Flags]
+
+    public enum PedAction
+    {
+        //Staying,
+        //Moving,
+
+        Aiming,
+        //AimingMoving,
+
+        Jumping, //1 << 0,
+        Shooting, //1 << 1,
+        ParachuteOpen, //1 << 3,
+        Ragdoll, //1 << 4,
+        InMeleeCombat, //1 << 5,
+        InFreefall, //1 << 6,
+        IsInCover, //1 << 7,
+        IsInLowerCover, //1 << 8,
+        IsInCoverFacingLeft, //1 << 9,
+        IsReloading, //1 << 10,
+        IsOnLadder, //1 << 12,
+        IsVaulting, //1 << 13,
+        EnteringVehicle, //1 << 14,
+        ClosingVehicleDoor, //1 << 15,
+        OnFire, //1 << 16,
+        PlayerDead, //1 << 17,
+    }
+    /*[Flags]
     public enum PedDataFlags
     {
         Jumping = 1 << 0,
@@ -136,7 +161,7 @@ namespace GTANetworkShared
         ClosingVehicleDoor = 1 << 15,
         OnFire = 1 << 16,
         PlayerDead = 1 << 17,
-    }
+    }*/
 
     public enum ConnectionChannel
     {

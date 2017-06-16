@@ -67,7 +67,7 @@ namespace GTANetworkShared
         [ProtoMember(11)]
         public byte? PedArmor { get; set; }
         [ProtoMember(12)]
-        public int? Flag { get; set; }
+        public byte? Action { get; set; }
         [ProtoMember(13)]
         public Vector3 Velocity { get; set; }
         [ProtoMember(14)]
