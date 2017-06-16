@@ -48,6 +48,10 @@ namespace GTANetwork.Streamer
         private const float MediumRange = 1000f;
         private const float CloseRange = 500f;
 
+        private const float GlobalRangeSquared = GlobalRange * GlobalRange;
+        private const float MediumRangeSquared = MediumRange * MediumRange;
+        private const float CloseRangeSquared = CloseRange * CloseRange;
+
 
         private static void StreamerCalculationsThread()
         {
@@ -61,8 +65,8 @@ namespace GTANetwork.Streamer
                 
 
                 #region Players
-                SyncPeds = rawMap.OfType<SyncPed>().OrderBy(item => item.Position.ToLVector().DistanceToSquared(position)).ToArray();
-                var streamedInPlayers = SyncPeds.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position.ToLVector(), GlobalRange)).ToArray();
+                SyncPeds = rawMap.OfType<SyncPed>().ToArray();
+                var streamedInPlayers = SyncPeds.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position.ToLVector(), GlobalRangeSquared)).ToArray();
                 lock (_itemsToStreamIn)
                 {
                     _itemsToStreamIn.AddRange(streamedInPlayers.Take(MAX_PLAYERS).Where(item => !item.StreamedIn));
@@ -73,7 +77,7 @@ namespace GTANetwork.Streamer
                 }
 
 
-                var streamedOutPlayers = SyncPeds.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRange(position, item.Position.ToLVector(), GlobalRange)) && item.StreamedIn);
+                var streamedOutPlayers = SyncPeds.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRangeSquared(position, item.Position.ToLVector(), GlobalRangeSquared)) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInPlayers.Skip(MAX_PLAYERS).Where(item => item.StreamedIn));
@@ -84,15 +88,15 @@ namespace GTANetwork.Streamer
                 var entityMap = rawMap.Where(item => item.Position != null).ToArray();
 
                 #region Vehicles
-                var Vehicles = entityMap.OfType<RemoteVehicle>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
+                var Vehicles = entityMap.OfType<RemoteVehicle>().ToArray();
 
-                StreamedInVehicles = Vehicles.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, GlobalRange)).ToArray();
+                StreamedInVehicles = Vehicles.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position, GlobalRangeSquared)).ToArray();
                 lock (_itemsToStreamIn)
                 {
                     _itemsToStreamIn.AddRange(StreamedInVehicles.Take(MAX_VEHICLES).Where(item => !item.StreamedIn));
                 }
 
-                var streamedOutVehicles = Vehicles.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRange(position, item.Position, GlobalRange) && item.StreamedIn);
+                var streamedOutVehicles = Vehicles.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRangeSquared(position, item.Position, GlobalRangeSquared) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(StreamedInVehicles.Skip(MAX_VEHICLES).Where(item => item.StreamedIn));
@@ -101,15 +105,15 @@ namespace GTANetwork.Streamer
                 #endregion
 
                 #region Objects
-                var Objects = entityMap.OfType<RemoteProp>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
+                var Objects = entityMap.OfType<RemoteProp>().ToArray();
 
-                var streamedInObjects = Objects.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, GlobalRange)).ToArray();
+                var streamedInObjects = Objects.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position, GlobalRangeSquared)).ToArray();
                 lock (_itemsToStreamIn)
                 {
                     _itemsToStreamIn.AddRange(streamedInObjects.Take(MAX_OBJECTS).Where(item => !item.StreamedIn));
                 }
 
-                var streamedOutObjects = Objects.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRange(position, item.Position, GlobalRange)) && item.StreamedIn);
+                var streamedOutObjects = Objects.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRangeSquared(position, item.Position, GlobalRangeSquared)) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInObjects.Skip(MAX_OBJECTS).Where(item => item.StreamedIn));
@@ -119,11 +123,11 @@ namespace GTANetwork.Streamer
                 #endregion
 
                 #region Other Shit
-                var Markers = entityMap.OfType<RemoteMarker>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
-                var streamedInMarkers = Markers.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, GlobalRange)).ToArray();
+                var Markers = entityMap.OfType<RemoteMarker>().ToArray();
+                var streamedInMarkers = Markers.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position, GlobalRangeSquared)).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInMarkers.Take(MAX_MARKERS).Where(item => !item.StreamedIn));
 
-                var streamedOutMarkers = Markers.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRange(position, item.Position, GlobalRange) && item.StreamedIn);
+                var streamedOutMarkers = Markers.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRangeSquared(position, item.Position, GlobalRangeSquared) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInMarkers.Skip(MAX_MARKERS).Where(item => item.StreamedIn));
@@ -131,12 +135,12 @@ namespace GTANetwork.Streamer
                 }
 
 
-                var Peds = entityMap.OfType<RemotePed>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
+                var Peds = entityMap.OfType<RemotePed>().ToArray();
                 MAX_PEDS = MAX_PLAYERS - streamedInPlayers.Take(MAX_PLAYERS).Count();
-                var streamedInPeds = Peds.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, GlobalRange)).ToArray();
+                var streamedInPeds = Peds.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position, GlobalRangeSquared)).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInPeds.Take(MAX_PEDS).Where(item => !item.StreamedIn));
 
-                var streamedOutPeds = Peds.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRange(position, item.Position, GlobalRange)) && item.StreamedIn);
+                var streamedOutPeds = Peds.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRangeSquared(position, item.Position, GlobalRangeSquared)) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInPeds.Skip(MAX_PEDS).Where(item => item.StreamedIn));
@@ -144,11 +148,11 @@ namespace GTANetwork.Streamer
                 }
 
 
-                var Labels = entityMap.OfType<RemoteTextLabel>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
-                var streamedInLabels = Labels.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, CloseRange)).ToArray();
+                var Labels = entityMap.OfType<RemoteTextLabel>().ToArray();
+                var streamedInLabels = Labels.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position, CloseRangeSquared)).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInLabels.Take(MAX_LABELS).Where(item => !item.StreamedIn));
 
-                var streamedOutLabels = Labels.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRange(position, item.Position, CloseRange)) && item.StreamedIn);
+                var streamedOutLabels = Labels.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0 || !IsInRangeSquared(position, item.Position, CloseRangeSquared)) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInLabels.Skip(MAX_LABELS).Where(item => item.StreamedIn));
@@ -156,11 +160,11 @@ namespace GTANetwork.Streamer
                 }
 
 
-                var Particles = entityMap.OfType<RemoteParticle>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
-                var streamedInParticles = Particles.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, GlobalRange)).ToArray();
+                var Particles = entityMap.OfType<RemoteParticle>().ToArray();
+                var streamedInParticles = Particles.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position, GlobalRangeSquared)).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInParticles.Take(MAX_PARTICLES).Where(item => !item.StreamedIn));
 
-                var streamedOutParticles = Particles.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRange(position, item.Position, GlobalRange) && item.StreamedIn);
+                var streamedOutParticles = Particles.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRangeSquared(position, item.Position, GlobalRangeSquared) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInParticles.Skip(MAX_PARTICLES).Where(item => item.StreamedIn));
@@ -168,11 +172,11 @@ namespace GTANetwork.Streamer
                 }
 
 
-                var Pickups = entityMap.OfType<RemotePickup>().OrderBy(item => item.Position.DistanceToSquared(position)).ToArray();
-                var streamedInPickups = Pickups.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRange(position, item.Position, MediumRange)).ToArray();
+                var Pickups = entityMap.OfType<RemotePickup>().ToArray();
+                var streamedInPickups = Pickups.Where(item => (item.Dimension == Main.LocalDimension || item.Dimension == 0) && IsInRangeSquared(position, item.Position, MediumRangeSquared)).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInPickups.Take(MAX_PICKUPS).Where(item => !item.StreamedIn));
 
-                var streamedOutPickups = Pickups.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRange(position, item.Position, MediumRange) && item.StreamedIn);
+                var streamedOutPickups = Pickups.Where(item => (item.Dimension != Main.LocalDimension && item.Dimension != 0) || !IsInRangeSquared(position, item.Position, MediumRangeSquared) && item.StreamedIn);
                 lock (_itemsToStreamOut)
                 {
                     _itemsToStreamOut.AddRange(streamedInPickups.Skip(MAX_PICKUPS).Where(item => item.StreamedIn));
@@ -180,7 +184,7 @@ namespace GTANetwork.Streamer
                 }
 
 
-                var Blips = entityMap.OfType<RemoteBlip>().OrderBy(item => item.Position.DistanceToSquared2D(position)).ToArray();
+                var Blips = entityMap.OfType<RemoteBlip>().ToArray();
                 var streamedInBlips = Blips.Where(item => item.Dimension == Main.LocalDimension || item.Dimension == 0).ToArray();
                 lock (_itemsToStreamIn) _itemsToStreamIn.AddRange(streamedInBlips.Take(MAX_BLIPS).Where(item => !item.StreamedIn));
 
@@ -231,6 +235,11 @@ namespace GTANetwork.Streamer
         private static bool IsInRange(GTANetworkShared.Vector3 center, GTANetworkShared.Vector3 dest, float range)
         {
             return center.Subtract(dest).Length() <= range;
+        }
+
+        private static bool IsInRangeSquared(GTANetworkShared.Vector3 center, GTANetworkShared.Vector3 dest, float range)
+        {
+            return center.Subtract(dest).LengthSquared() <= range;
         }
     }
 

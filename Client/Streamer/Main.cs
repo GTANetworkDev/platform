@@ -2347,42 +2347,25 @@ namespace GTANetwork.Streamer
 
         public void DrawLabels()
         {
+            Vector3 origin = GameplayCamera.Position;
             var labels = new List<RemoteTextLabel>(ClientMap.Values.OfType<RemoteTextLabel>().Where(item => item.StreamedIn));
             for (var index = labels.Count - 1; index >= 0; index--)
             {
                 var label = labels[index];
-                DrawLabel3D(label.Text, label.Position.ToVector(), label.Range, label.Size, Color.FromArgb(label.Alpha, label.Red, label.Green, label.Blue), label.EntitySeethrough);
+                DrawLabel3D(origin, label.Text, label.Position.ToVector(), label.Range, label.Size, Color.FromArgb(label.Alpha, label.Red, label.Green, label.Blue), label.EntitySeethrough);
             }
         }
 
-        internal static void DrawLabel3D(string text, Vector3 position, float range, float size)
+        private static void DrawLabel3D(Vector3 origin, string text, Vector3 position, float range, float size, Color col, bool entitySeethrough)
         {
-            DrawLabel3D(text, position, range, size, Color.White, true);
-        }
-
-        private static void DrawLabel3D(string text, Vector3 position, float range, float size, Color col, bool entitySeethrough)
-        {
-            Vector3 origin = GameplayCamera.Position;
             float distanceSquared = position.DistanceToSquared(origin);
+            float rangeSquared = range * range;
 
             if (string.IsNullOrWhiteSpace(text) ||
-                !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, position.X, position.Y, position.Z, 1f) ||
-                distanceSquared >= range * range) return;
+                distanceSquared >= rangeSquared ||
+                !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, position.X, position.Y, position.Z, 1f)) return;
 
-            float distance = position.DistanceTo(origin);
-
-            var flags = entitySeethrough
-                ? IntersectOptions.Map | IntersectOptions.Vegetation
-                : IntersectOptions.Everything;
-
-            var ray = World.Raycast(origin,
-                (position - origin).Normalized,
-                distance,
-                flags, Game.Player.Character);
-
-            if (!(ray.HitPosition.DistanceTo(origin) >= distance)) return;
-
-            var scale = Math.Max(0.3f, 1f - (distance / range));
+            var scale = Math.Max(0.3f, 1f - (distanceSquared / rangeSquared));
 
             Function.Call(Hash.SET_DRAW_ORIGIN, position.X, position.Y, position.Z);
             new UIResText(text, Point.Empty, size * scale, col)
