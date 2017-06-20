@@ -217,7 +217,15 @@ namespace GTANetworkServer
         internal void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
         {
 
-            NetHandle vehicleEntity = new NetHandle(fullPacket.NetHandle.Value);
+            NetHandle vehicleEntity;
+
+            if (fullPacket.NetHandle != null)
+            {
+                vehicleEntity = new NetHandle(fullPacket.NetHandle.Value);
+            } else
+            {
+                vehicleEntity = new NetHandle();
+            }
 
             var full = PacketOptimization.WriteUnOccupiedVehicleSync(fullPacket);
             var basic = PacketOptimization.WriteBasicUnOccupiedVehicleSync(fullPacket);
@@ -225,7 +233,7 @@ namespace GTANetworkServer
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 // skip sending a sync packet for a trailer to it's owner.
-                if (CheckUnoccupiedTrailerDriver(client, vehicleEntity)) { continue; }
+                if (vehicleEntity.Value != 0 && CheckUnoccupiedTrailerDriver(client, vehicleEntity)) { continue; }
 
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
