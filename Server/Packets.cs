@@ -202,14 +202,31 @@ namespace GTANetworkServer
             }
         }
 
+        internal bool CheckUnoccupiedTrailerDriver(Client player, NetHandle vehicle)
+        {
+            NetHandle traileredBy = Program.ServerInstance.PublicAPI.getVehicleTraileredBy(vehicle);
+
+            if (traileredBy != null)
+            {
+                return Program.ServerInstance.PublicAPI.getVehicleDriver(traileredBy) == player;
+            }
+
+            return false;
+        }
+
         internal void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
         {
+
+            NetHandle vehicleEntity = new NetHandle(fullPacket.NetHandle.Value);
 
             var full = PacketOptimization.WriteUnOccupiedVehicleSync(fullPacket);
             var basic = PacketOptimization.WriteBasicUnOccupiedVehicleSync(fullPacket);
 
             foreach (var client in exception.Streamer.GetNearClients())
             {
+                // skip sending a sync packet for a trailer to it's owner.
+                if (CheckUnoccupiedTrailerDriver(client, vehicleEntity)) { continue; }
+
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
