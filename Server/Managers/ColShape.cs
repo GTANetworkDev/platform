@@ -210,6 +210,13 @@ namespace GTANetworkServer
             Vector3[] edges = NormalizeEdges(start, stop);
             Start = edges[0];
             End = edges[1];
+
+            // API compatibility
+            Vector3 deltas = End - Start;
+            Width = deltas.X;
+            Height = deltas.Y;
+            X = Start.X;
+            Y = Start.Y;
         }
 
         internal Rectangle2DColShape(float x, float y, float w, float h) :
@@ -220,6 +227,12 @@ namespace GTANetworkServer
 
         public Vector3 Start;
         public Vector3 End;
+
+        // API compatibility
+        public float Width;
+        public float Height;
+        public float X;
+        public float Y;
 
         internal override bool Check(Vector3 pos)
         {
