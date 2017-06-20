@@ -1267,6 +1267,19 @@ namespace GTANetworkServer
             return new Client[0];
         }
 
+        public Client getVehicleDriver(NetHandle vehicle)
+        {
+            foreach (Client player in getVehicleOccupants(vehicle))
+            {
+                if (getPlayerVehicleSeat(player) == -1)
+                {
+                    return player;
+                }
+            }
+
+            return null;
+        }
+
         public int getVehicleLivery(NetHandle vehicle)
         {
             if (doesEntityExist(vehicle))
