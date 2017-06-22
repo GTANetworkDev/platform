@@ -86,6 +86,8 @@ namespace GTANetworkServer
                 msg.Write(full);
             }
 
+            List<NetConnection> connectionsNear = new List<NetConnection>();
+
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.Fake) continue;
@@ -97,20 +99,32 @@ namespace GTANetworkServer
                 {
                     if (client.Position == null) continue;
 
-                    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
+                    connectionsNear.Add(client.NetConnection);
                 }
                 else
                 {
-                    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
+                    connectionsNear.Add(client.NetConnection);
                 }
             }
 
+            if (pure)
+            {
+                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
+            }
+            else
+            {
+                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
+            }
 
             var msgBasic = Server.CreateMessage();
 
             msgBasic.Write((byte)PacketType.BasicSync);
             msgBasic.Write(basic.Length);
             msgBasic.Write(basic);
+
+            long ticks = Program.GetTicks();
+
+            List<NetConnection> connectionsFar = new List<NetConnection>();
 
             foreach (var client in exception.Streamer.GetFarClients())
             {
@@ -123,11 +137,13 @@ namespace GTANetworkServer
 
                 var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+                if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
 
-                Server.SendMessage(msgBasic, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
-                client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
+                connectionsFar.Add(client.NetConnection);
+                client.LastPacketReceived.Set(exception.handle.Value, ticks);
             }
+
+            Server.SendMessage(msgBasic, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
         }
 
         //Vehicle Packet
@@ -184,6 +200,8 @@ namespace GTANetworkServer
                 msg.Write(full);
             }
 
+            List<NetConnection> connectionsNear = new List<NetConnection>();
+
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
@@ -194,19 +212,30 @@ namespace GTANetworkServer
                 {
                     if (client.Position == null) continue;
 
-                    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
-                    //}
+                    connectionsNear.Add(client.NetConnection);
                 }
                 else
                 {
-                    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
+                    connectionsNear.Add(client.NetConnection);
                 }
+            }
+
+            if (pure)
+            {
+                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
+            }
+            else
+            {
+                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
             }
 
             var msgBasic = Server.CreateMessage();
             msgBasic.Write((byte)PacketType.BasicSync);
             msgBasic.Write(basic.Length);
             msgBasic.Write(basic);
+
+            long ticks = Program.GetTicks();
+            List<NetConnection> connectionsFar = new List<NetConnection>();
 
             foreach (var client in exception.Streamer.GetFarClients())
             {
@@ -217,11 +246,13 @@ namespace GTANetworkServer
                 if (!pure) continue;
                 var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;              
-                Server.SendMessage(msgBasic, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
+                if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
+                connectionsFar.Add(client.NetConnection);
 
-                client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
+                client.LastPacketReceived.Set(exception.handle.Value, ticks);
             }
+
+            Server.SendMessage(msgBasic, connectionsFar, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
         }
 
         internal void ResendUnoccupiedPacket(VehicleData fullPacket, Client exception)
@@ -240,7 +271,9 @@ namespace GTANetworkServer
             msgFar.Write(basic.Length);
             msgFar.Write(basic);
 
-            // todo: use one loop here
+            List<NetConnection> connectionsNear = new List<NetConnection>();
+            List<NetConnection> connectionsFar = new List<NetConnection>();
+
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
@@ -249,24 +282,26 @@ namespace GTANetworkServer
                 if (client.Position == null) continue;
                 if (client.Position.DistanceToSquared(fullPacket.Position) < 20000)
                 {
-                    Server.SendMessage(msgNear, client.NetConnection,
-                        NetDeliveryMethod.UnreliableSequenced,
-                        (int)ConnectionChannel.UnoccupiedVeh);
+                    connectionsNear.Add(client.NetConnection);
                 }
                 else
                 {
-                    Server.SendMessage(msgFar, client.NetConnection,
-                        NetDeliveryMethod.UnreliableSequenced,
-                        (int)ConnectionChannel.UnoccupiedVeh);
+                    connectionsFar.Add(client.NetConnection);
                 }
             }
 
+            Server.SendMessage(msgNear, connectionsNear,
+                NetDeliveryMethod.UnreliableSequenced,
+                (int)ConnectionChannel.UnoccupiedVeh);
+
             foreach (var client in exception.Streamer.GetFarClients())
             {
-                Server.SendMessage(msgFar, client.NetConnection,
-                    NetDeliveryMethod.UnreliableSequenced,
-                    (int)ConnectionChannel.UnoccupiedVeh);
+                connectionsFar.Add(client.NetConnection);
             }
+
+            Server.SendMessage(msgFar, connectionsFar,
+                NetDeliveryMethod.UnreliableSequenced,
+                (int)ConnectionChannel.UnoccupiedVeh);
         }
 
 
@@ -279,16 +314,20 @@ namespace GTANetworkServer
             msg.Write(full.Length);
             msg.Write(full);
 
+            List<NetConnection> connections = new List<NetConnection>();
+
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
                 //if (range && client.Position.DistanceToSquared(exception.Position) > 80000) continue;
 
-                Server.SendMessage(msg, client.NetConnection,
-                    NetDeliveryMethod.ReliableSequenced,
-                    (int)ConnectionChannel.BulletSync);
+                connections.Add(client.NetConnection);
             }
+
+            Server.SendMessage(msg, connections,
+                NetDeliveryMethod.ReliableSequenced,
+                (int)ConnectionChannel.BulletSync);
         }
 
         internal void ResendBulletPacket(int netHandle, int netHandleTarget, bool shooting, Client exception)
@@ -300,14 +339,18 @@ namespace GTANetworkServer
             msg.Write(full.Length);
             msg.Write(full);
 
+            List<NetConnection> connections = new List<NetConnection>();
+
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
                 //if (range && client.Position.DistanceToSquared(exception.Position) > 80000) continue; 
 
-                Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.BulletSync);
+                connections.Add(client.NetConnection);
             }
+
+            Server.SendMessage(msg, connections, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.BulletSync);
         }
 
 
@@ -330,14 +373,7 @@ namespace GTANetworkServer
             msg.Write(data.Length);
             msg.Write(data);
 
-            lock (Clients)
-            {
-                foreach (var client in Clients)
-                {
-                    if (client.Fake) continue;
-                    Server.SendMessage(msg, client.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
-                }
-            }
+            Server.SendToAll(msg, null, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
         }
 
         public void SendToAll(object newData, PacketType packetType, bool important, Client exclude, ConnectionChannel channel)
@@ -348,14 +384,7 @@ namespace GTANetworkServer
             msg.Write(data.Length);
             msg.Write(data);
 
-            lock (Clients)
-            {
-                foreach (var client in Clients)
-                {
-                    if (client == exclude || client.Fake) continue;
-                    Server.SendMessage(msg, client.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int) channel);
-                }
-            }
+            Server.SendToAll(msg, exclude.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
         }
 
         public void SendDeleteObject(Client player, Vector3 pos, float radius, int modelHash)
