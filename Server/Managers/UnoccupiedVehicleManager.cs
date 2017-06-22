@@ -122,9 +122,8 @@ namespace GTANetworkServer.Managers
                 if (Syncer.ContainsKey(handle))
                 {
                     Sync(Syncer[handle], handle, false);
+                    return;
                 }
-
-                return;
             }
 
             if (Syncer.ContainsKey(handle)) // This vehicle already has a syncer

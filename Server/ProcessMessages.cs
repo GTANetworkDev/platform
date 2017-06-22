@@ -881,7 +881,7 @@ namespace GTANetworkServer
                                         client.CurrentWeapon = (WeaponHash)fullPacket.WeaponHash.Value;
                                         client.Ammo = fullPacket.WeaponAmmo.Value;
                                         client.Weapons[client.CurrentWeapon] = client.Ammo;
-                                        if (fullPacket.Flag != null) client.LastPedFlag = fullPacket.Flag.Value;
+                                        if (fullPacket.Action != null) client.LastAction = (byte)fullPacket.Action;
 
                                         if (fullPacket.PlayerHealth.Value != oldHealth)
                                         {

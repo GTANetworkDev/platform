@@ -25,8 +25,8 @@ namespace GTANetworkShared
                 byteArray.Add(0x00);
             }
 
-            // Write the flag
-            byteArray.AddRange(GetBytes(data.Flag.Value));
+            // Write the action
+            byteArray.AddRange(GetBytes(data.Action.Value));
 
             // Write player's position, rotation, and velocity
             byteArray.AddRange(GetBytes(data.Position.X));
@@ -34,7 +34,7 @@ namespace GTANetworkShared
             byteArray.AddRange(GetBytes(data.Position.Z));
 
             // Only send roll & pitch if we're parachuting.
-            if (CheckBit(data.Flag.Value, PedDataFlags.ParachuteOpen))
+            if (data.Action == (byte)PedAction.ParachuteOpen)
             {
                 byteArray.AddRange(GetBytes(data.Quaternion.X));
                 byteArray.AddRange(GetBytes(data.Quaternion.Y));
@@ -57,9 +57,8 @@ namespace GTANetworkShared
             byteArray.AddRange(GetBytes(data.WeaponAmmo.Value));
 
             // Are we shooting?
-            if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, PedDataFlags.Shooting) ||
-                CheckBit(data.Flag.Value, PedDataFlags.HasAimData))
+            if ((data.Action == (byte)PedAction.Aiming) ||
+                (data.Action == (byte)PedAction.Shooting))
             {
                 // Aim coordinates
                 byteArray.AddRange(GetBytes(data.AimCoords.X));
@@ -68,7 +67,7 @@ namespace GTANetworkShared
             }
 
             // Are we entering a car?
-            if (CheckBit(data.Flag.Value, PedDataFlags.EnteringVehicle))
+            if ((data.Action == (byte)PedAction.EnteringVehicle))
             {
                 // Add the car we are trying to enter
                 byteArray.AddRange(GetBytes(data.VehicleTryingToEnter.Value));
@@ -394,7 +393,7 @@ namespace GTANetworkShared
             data.NetHandle = r.ReadInt32();
 
             // Read the flag
-            data.Flag = r.ReadInt32();
+            data.Action = r.ReadByte();
 
             // Read player position, rotation and velocity
             Vector3 position = new Vector3();
@@ -406,7 +405,7 @@ namespace GTANetworkShared
             position.Z = r.ReadSingle();
 
             // Only read pitchand roll if he's ragdolling
-            if (CheckBit(data.Flag.Value, PedDataFlags.ParachuteOpen))
+            if (data.Action == (byte)PedAction.ParachuteOpen)
             {
                 rotation.X = r.ReadSingle();
                 rotation.Y = r.ReadSingle();
@@ -432,9 +431,8 @@ namespace GTANetworkShared
             data.WeaponAmmo = r.ReadInt32();
 
             // Is the player shooting?
-            if (CheckBit(data.Flag.Value, PedDataFlags.Aiming) ||
-                CheckBit(data.Flag.Value, PedDataFlags.Shooting) ||
-                CheckBit(data.Flag.Value, PedDataFlags.HasAimData))
+            if ((data.Action == (byte)PedAction.Aiming) ||
+                (data.Action == (byte)PedAction.Shooting))
             {
                 // read where is he aiming
                 Vector3 aimPoint = new Vector3();
@@ -446,7 +444,7 @@ namespace GTANetworkShared
                 data.AimCoords = aimPoint;
             }
 
-            if (CheckBit(data.Flag.Value, PedDataFlags.EnteringVehicle))
+            if ((data.Action == (byte)PedAction.EnteringVehicle))
             {
                 data.VehicleTryingToEnter = r.ReadInt32();
 
@@ -768,10 +766,10 @@ namespace GTANetworkShared
             return (value & (int)flag) != 0;
         }
 
-        public static bool CheckBit(int value, PedDataFlags flag)
+        /*public static bool CheckBit(int value, PedDataFlags flag)
         {
             return (value & (int)flag) != 0;
-        }
+        }*/
 
         public static bool CheckBit(int value, EntityFlag flag)
         {

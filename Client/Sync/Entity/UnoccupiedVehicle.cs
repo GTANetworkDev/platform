@@ -320,15 +320,20 @@ namespace GTANetwork.Streamer
 
                 alpha = Util.Util.Clamp(0f, alpha, 1.5f);
 
-                Vector3 comp = Util.Util.Lerp(new Vector3(), NetInterpolation.vecError, alpha);
-
                 if (alpha == 1.5f)
                 {
+                    if (NetInterpolation.vecTarget.DistanceToSquared(_entity.Position) > 16.0)
+                        _entity.Position = NetInterpolation.vecTarget;
+
                     NetInterpolation.FinishTime = 0;
+                    _entity.Velocity = new Vector3();
                     HasFinished = true;
                 }
+                
+                Vector3 newPos = NetInterpolation.vecError * alpha;
 
-                var newPos = _startPos + comp;
+                newPos += _startPos;
+
                 _entity.Velocity = _velocity.ToVector() + 3 * (newPos - _entity.Position);
 
                 _entity.Quaternion = GTA.Math.Quaternion.Slerp(_startRot.ToQuaternion(), _rotation.ToQuaternion(), Math.Min(1.5f, alpha));

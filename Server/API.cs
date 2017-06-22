@@ -723,42 +723,42 @@ namespace GTANetworkServer
 
         public bool isPlayerOnFire(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.OnFire) != 0;
+            return player.LastAction == (byte)PedAction.OnFire;
         }
 
         public bool isPlayerParachuting(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.ParachuteOpen) != 0;
+            return player.LastAction == (byte)PedAction.ParachuteOpen;
         }
 
         public bool isPlayerInFreefall(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.InFreefall) != 0;
+            return player.LastAction == (byte)PedAction.InFreefall;
         }
 
         public bool isPlayerAiming(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.Aiming) != 0;
+            return player.LastAction == (byte)PedAction.Aiming;
         }
 
         public bool isPlayerShooting(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.Shooting) != 0;
+            return player.LastAction == (byte)PedAction.Shooting;
         }
 
         public bool isPlayerReloading(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.IsReloading) != 0;
+            return player.LastAction == (byte)PedAction.IsReloading;
         }
 
         public bool isPlayerInCover(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.IsInCover) != 0;
+            return player.LastAction == (byte)PedAction.IsInCover;
         }
 
         public bool isPlayerOnLadder(Client player)
         {
-            return (player.LastPedFlag & (int)PedDataFlags.IsOnLadder) != 0;
+            return player.LastAction == (byte)PedAction.IsOnLadder;
         }
 
         public Vector3 getPlayerAimingPoint(Client player)
@@ -775,7 +775,7 @@ namespace GTANetworkServer
         {
             if (player.IsInVehicle)
                 return (player.LastVehicleFlag & (int) VehicleDataFlags.PlayerDead) != 0;
-            else return (player.LastPedFlag & (int)PedDataFlags.PlayerDead) != 0;
+            else return player.LastAction == (byte)PedAction.PlayerDead;
         }
 
         public bool isPlayerRespawning(Client player)
@@ -1265,6 +1265,19 @@ namespace GTANetworkServer
             }
 
             return new Client[0];
+        }
+
+        public Client getVehicleDriver(NetHandle vehicle)
+        {
+            foreach (Client player in getVehicleOccupants(vehicle))
+            {
+                if (getPlayerVehicleSeat(player) == -1)
+                {
+                    return player;
+                }
+            }
+
+            return null;
         }
 
         public int getVehicleLivery(NetHandle vehicle)
