@@ -252,10 +252,12 @@ namespace GTANetworkServer
                                                            client.NetConnection.RemoteEndPoint.Address + "], reason: " +
                                                            reason);
 
-                                            if (client.CurrentVehicle.Value != 0 &&
-                                                VehicleOccupants.ContainsKey(client.CurrentVehicle.Value) &&
-                                                VehicleOccupants[client.CurrentVehicle.Value].Contains(client))
-                                                VehicleOccupants[client.CurrentVehicle.Value].Remove(client);
+                                            int vehValue = client.CurrentVehicle.Value;
+
+                                            if (vehValue != 0 &&
+                                                VehicleOccupants.ContainsKey(vehValue) &&
+                                                VehicleOccupants[vehValue].Contains(client))
+                                                VehicleOccupants[vehValue].Remove(client);
 
                                             Clients.Remove(client);
                                             Server.Configuration.CurrentPlayers = Clients.Count;
@@ -591,22 +593,27 @@ namespace GTANetworkServer
                                             client.Rotation = fullPacket.Quaternion;
                                             client.Velocity = fullPacket.Velocity;
 
+                                            var handlerDict = NetEntityHandler.ToDict();
+                                            int vehValue = client.CurrentVehicle.Value;
+
                                             if (!client.CurrentVehicle.IsNull &&
-                                                NetEntityHandler.ToDict()
-                                                    .ContainsKey(client.CurrentVehicle.Value))
+                                                handlerDict
+                                                    .ContainsKey(vehValue))
                                             {
-                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position
+                                                var props = handlerDict[vehValue];
+
+                                                props.Position
                                                     = fullPacket.Position;
-                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation
+                                                props.Rotation
                                                     = fullPacket.Quaternion;
-                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity
+                                                props.Velocity
                                                     = fullPacket.Velocity;
                                                 if (fullPacket.Flag.HasValue)
                                                 {
                                                     var newDead = (fullPacket.Flag &
                                                                    (byte)VehicleDataFlags.VehicleDead) > 0;
                                                     if (!((VehicleProperties)
-                                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                                props)
                                                             .IsDead && newDead)
                                                     {
                                                         lock (RunningResources)
@@ -618,14 +625,14 @@ namespace GTANetworkServer
                                                     }
 
                                                     ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                            props)
                                                         .IsDead = newDead;
                                                 }
 
                                                 if (fullPacket.VehicleHealth.HasValue)
                                                 {
                                                     if (fullPacket.VehicleHealth.Value != ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                            props)
                                                         .Health)
                                                     {
                                                         lock (RunningResources)
@@ -633,14 +640,13 @@ namespace GTANetworkServer
                                                             {
                                                                 en.InvokeVehicleHealthChange(client,
                                                                     ((VehicleProperties)
-                                                                        NetEntityHandler.ToDict()[
-                                                                            client.CurrentVehicle.Value])
+                                                                        props)
                                                                     .Health);
                                                             }));
                                                     }
 
                                                     ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                            props)
                                                         .Health = fullPacket.VehicleHealth.Value;
                                                 }
 
@@ -649,7 +655,7 @@ namespace GTANetworkServer
                                                     if ((fullPacket.Flag &
                                                          (byte)VehicleDataFlags.SirenActive) != 0 ^
                                                         ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                            props)
                                                         .Siren)
                                                     {
                                                         lock (RunningResources)
@@ -663,32 +669,38 @@ namespace GTANetworkServer
                                                     }
 
                                                     ((VehicleProperties)
-                                                            NetEntityHandler.ToDict()[client.CurrentVehicle.Value])
+                                                            props)
                                                         .Siren = (fullPacket.Flag &
                                                                   (byte)VehicleDataFlags.SirenActive) > 0;
                                                 }
                                             }
 
-                                            if (NetEntityHandler.ToDict()
-                                                .ContainsKey(fullPacket.NetHandle.Value))
+                                            int netHandleValue = fullPacket.NetHandle.Value;
+
+                                            if (handlerDict
+                                                .ContainsKey(netHandleValue))
                                             {
-                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
+                                                var props = handlerDict[netHandleValue];
+
+                                                props.Position =
                                                     fullPacket.Position;
-                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
+                                                props.Rotation =
                                                     fullPacket.Quaternion;
-                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
+                                                props.Velocity =
                                                     fullPacket.Velocity;
                                             }
                                         }
                                         else if (!client.CurrentVehicle.IsNull &&
                                                  NetEntityHandler.ToDict().ContainsKey(client.CurrentVehicle.Value))
-                                        {
+                                         {
+                                            var props = NetEntityHandler.ToDict()[client.CurrentVehicle.Value];
+
                                             var carPos =
-                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Position;
+                                                props.Position;
                                             var carRot =
-                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Rotation;
+                                                props.Rotation;
                                             var carVel =
-                                                NetEntityHandler.ToDict()[client.CurrentVehicle.Value].Velocity;
+                                                props.Velocity;
 
                                             client.Position = carPos;
                                             client.Rotation = carRot;
@@ -697,11 +709,13 @@ namespace GTANetworkServer
                                             if (NetEntityHandler.ToDict()
                                                 .ContainsKey(fullPacket.NetHandle.Value))
                                             {
-                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Position =
+                                                var playerProps = NetEntityHandler.ToDict()[fullPacket.NetHandle.Value];
+
+                                                playerProps.Position =
                                                     carPos;
-                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Rotation =
+                                                playerProps.Rotation =
                                                     carRot;
-                                                NetEntityHandler.ToDict()[fullPacket.NetHandle.Value].Velocity =
+                                                playerProps.Velocity =
                                                     carVel;
                                             }
                                         }
