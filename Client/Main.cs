@@ -524,9 +524,12 @@ namespace GTANetwork
                 case Keys.G:
                     if (IsOnServer() && !Game.Player.Character.IsInVehicle() && !Chat.IsFocused)
                     {
-                        var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
+                        //var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
+                        List<Vehicle> vehs;
+                        if (!(vehs = World.GetAllVehicles().OrderBy(v => v.Position.DistanceToSquared(Game.Player.Character.Position)).Take(1).ToList()).Any()) break;
 
-                        if (!veh.Exists()) break;
+                        Vehicle veh;
+                        if (!(veh = vehs[0]).Exists()) break;
                         if (!Game.Player.Character.IsInRangeOfEx(veh.Position, 6f)) break;
 
                         var playerChar = Game.Player.Character;
