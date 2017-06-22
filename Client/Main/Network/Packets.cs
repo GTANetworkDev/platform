@@ -10,18 +10,6 @@ namespace GTANetwork
 {
     internal partial class Main
     {
-        enum action_t
-        {
-            stay,
-            move,
-
-            aim,
-            aim_moving,         
-
-            melee,
-            ragdoll
-        }
-
 
         private void HandlePedPacket(PedData fullPacket, bool pure)
         {
@@ -44,23 +32,7 @@ namespace GTANetwork
             if (fullPacket.Velocity != null) syncPed.PedVelocity = fullPacket.Velocity.ToVector();
             if (fullPacket.WeaponAmmo != null) syncPed.Ammo = fullPacket.WeaponAmmo.Value;
 
-            if (fullPacket.Action != null)
-            {
-                syncPed.Action = (PedAction)fullPacket.Action;
-
-                if (syncPed.Action == PedAction.ClosingVehicleDoor && syncPed.MainVehicle != null && syncPed.MainVehicle.Model.Hash != (int)VehicleHash.CargoPlane)
-                {
-                    syncPed.MainVehicle.Doors[(VehicleDoorIndex)syncPed.VehicleSeat + 1].Close(true);
-                }
-
-                if (syncPed.Action == PedAction.EnteringVehicle)
-                {
-                    syncPed.VehicleNetHandle = fullPacket.VehicleTryingToEnter.Value;
-                    syncPed.VehicleSeat = fullPacket.SeatTryingToEnter.Value;
-                }
-            }
-
-            /*if (fullPacket.Flag != null)
+            if (fullPacket.Flag != null)
             {
                 syncPed.IsFreefallingWithParachute = (fullPacket.Flag.Value & (int)PedDataFlags.InFreefall) >
                                                      0;
@@ -90,7 +62,7 @@ namespace GTANetwork
                     syncPed.VehicleNetHandle = fullPacket.VehicleTryingToEnter.Value;
                     syncPed.VehicleSeat = fullPacket.SeatTryingToEnter.Value;
                 }
-            }*/
+            }
 
             if (pure)
             {
@@ -157,12 +129,8 @@ namespace GTANetwork
                 syncPed.IsVehDead = (fullData.Flag.Value & (short)VehicleDataFlags.VehicleDead) > 0;
                 syncPed.IsHornPressed = (fullData.Flag.Value & (short)VehicleDataFlags.PressingHorn) > 0;
                 syncPed.Siren = (fullData.Flag.Value & (short)VehicleDataFlags.SirenActive) > 0;
-
-                if ((fullData.Flag.Value & (short)VehicleDataFlags.Aiming) > 0)
-                    syncPed.Action = PedAction.Aiming;
-                else if ((fullData.Flag.Value & (short)VehicleDataFlags.Shooting) > 0)
-                    syncPed.Action = PedAction.Shooting;
-
+                syncPed.IsShooting = (fullData.Flag.Value & (short)VehicleDataFlags.Shooting) > 0;
+                syncPed.IsAiming = (fullData.Flag.Value & (short)VehicleDataFlags.Aiming) > 0;
                 syncPed.IsInBurnout = (fullData.Flag.Value & (short)VehicleDataFlags.BurnOut) > 0;
                 syncPed.ExitingVehicle = (fullData.Flag.Value & (short)VehicleDataFlags.ExitingVehicle) != 0;
                 syncPed.IsPlayerDead = (fullData.Flag.Value & (int)VehicleDataFlags.PlayerDead) != 0;
@@ -208,9 +176,7 @@ namespace GTANetwork
             //Util.Util.SafeNotify("Handling Bullet - " + DateTime.Now.Millisecond);
             var syncPed = NetEntityHandler.GetPlayer(netHandle);
 
-            if(shooting)
-                syncPed.Action = PedAction.Shooting;
-
+            syncPed.IsShooting = shooting;
             syncPed.AimedAtPlayer = false;
 
             if (shooting) syncPed.AimCoords = aim;
@@ -223,9 +189,7 @@ namespace GTANetwork
             var syncPedTarget = NetEntityHandler.NetToEntity(netHandleTarget);
             if (syncPed.StreamedIn && syncPedTarget != null)
             {
-                if (shooting)
-                    syncPed.Action = PedAction.Shooting;
-
+                syncPed.IsShooting = shooting;
                 syncPed.AimedAtPlayer = true;
 
                 if (shooting) syncPed.AimPlayer = new Ped(syncPedTarget.Handle);

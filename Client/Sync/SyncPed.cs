@@ -51,13 +51,12 @@ namespace GTANetwork.Sync
                     UpdateOnFootPosition();
                 }
 
-                /*_lastJumping = IsJumping;
+                _lastJumping = IsJumping;
                 _lastFreefall = IsFreefallingWithParachute;
                 _lastShooting = IsShooting;
-                _lastAiming = IsAiming;*/
-                StoredAction = Action;
+                _lastAiming = IsAiming;
                 _lastVehicle = _isInVehicle;
-                //_lastEnteringVehicle = EnteringVehicle;
+                _lastEnteringVehicle = EnteringVehicle;
             }
 
             if (Environment.TickCount - _lastTickUpdate > 500)
@@ -109,26 +108,26 @@ namespace GTANetwork.Sync
 
         internal bool _isRagdoll;
         internal Vehicle MainVehicle { get; set; }
-        /*internal bool IsInActionMode;
+        internal bool IsInActionMode;
         internal bool IsInCover;
         internal bool IsInLowCover;
         internal bool IsOnLadder;
         internal bool IsVaulting;
         internal bool IsCoveringToLeft;
         internal bool IsInMeleeCombat;
-        internal bool IsFreefallingWithParachute;*/
+        internal bool IsFreefallingWithParachute;
         private bool _lastBurnout;
         private bool _lastSwimming;
         internal float VehicleRPM;
 	    internal float SteeringScale;
 
-        //internal bool IsOnFire;
-        //private bool _lastFire;
+        internal bool IsOnFire;
+        private bool _lastFire;
         internal bool IsBeingControlledByScript;
 
-        /*internal bool EnteringVehicle;
+        internal bool EnteringVehicle;
         private bool _lastEnteringVehicle;
-        private bool _lastExitingVehicle;*/
+        private bool _lastExitingVehicle;
 
         internal int VehicleSeat;
         internal int PedHealth;
@@ -168,15 +167,13 @@ namespace GTANetwork.Sync
         internal bool IsVehDead;
         internal bool IsHornPressed;
         internal bool Siren;
-        //internal bool IsShooting;
-        //internal bool IsAiming;
+        internal bool IsShooting;
+        internal bool IsAiming;
         internal bool IsInBurnout;
         internal bool ExitingVehicle;
         internal bool IsPlayerDead;
         internal bool Braking;
 
-        internal PedAction Action;
-        internal PedAction StoredAction;
 
         private float _lastSpeed;
         internal float Speed

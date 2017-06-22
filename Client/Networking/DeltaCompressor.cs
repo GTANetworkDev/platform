@@ -35,7 +35,7 @@ namespace GTANetwork.Streamer
                 if (compPacket.NetHandle != null) fullPacket.NetHandle = compPacket.NetHandle;
                 if (compPacket.Speed != null) fullPacket.Speed = compPacket.Speed;
                 if (compPacket.PedArmor != null) fullPacket.PedArmor = compPacket.PedArmor;
-                if (compPacket.Action != null) fullPacket.Action = compPacket.Action;
+                if (compPacket.Flag != null) fullPacket.Flag = compPacket.Flag;
                 if (compPacket.Velocity != null) fullPacket.Velocity = compPacket.Velocity;
 
                 return fullPacket;
@@ -99,7 +99,7 @@ namespace GTANetwork.Streamer
                 if (full.NetHandle != comparable.NetHandle) compressed.NetHandle = full.NetHandle;
                 if (full.Speed != comparable.Speed) compressed.Speed = full.Speed;
                 if (full.PedArmor != comparable.PedArmor) compressed.PedArmor = full.PedArmor;
-                if (full.Action != comparable.Action) compressed.Action = full.Action;
+                if (full.Flag != comparable.Flag) compressed.Flag = full.Flag;
                 if (full.Velocity != comparable.Velocity) compressed.Velocity = full.Velocity;
 
                 LastSentObject = full;
