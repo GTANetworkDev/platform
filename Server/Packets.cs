@@ -204,13 +204,22 @@ namespace GTANetworkServer
 
         internal bool CheckUnoccupiedTrailerDriver(Client player, NetHandle vehicle)
         {
+            if (vehicle.IsNull)
+            {
+                Program.Output("NULL CATCH");
+                return false;
+            }
+
+
             NetHandle traileredBy = Program.ServerInstance.PublicAPI.getVehicleTraileredBy(vehicle);
 
             if (traileredBy != null)
             {
+                Program.Output("TRAILERED");
                 return Program.ServerInstance.PublicAPI.getVehicleDriver(traileredBy) == player;
             }
 
+            Program.Output("NOT TRAILERED");
             return false;
         }
 
@@ -225,7 +234,6 @@ namespace GTANetworkServer
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 // skip sending a sync packet for a trailer to it's owner.
-                if (vehicleEntity.IsNull) continue;
                 if (CheckUnoccupiedTrailerDriver(client, vehicleEntity)) continue;
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;

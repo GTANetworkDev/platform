@@ -9,7 +9,7 @@ namespace GTANetworkServer.Managers
 {
     internal class UnoccupiedVehicleManager
     {
-        private const int UPDATE_RATE = 500;
+        private const int UPDATE_RATE = 250;
         private const float SYNC_RANGE = 130;
         private const float SYNC_RANGE_SQUARED = SYNC_RANGE * SYNC_RANGE;
         private const float DROPOFF = 30;
