@@ -2690,16 +2690,7 @@ namespace GTANetworkServer
 
         public void setPlayerVelocity(Client player, Vector3 velocity)
         {
-            if (player.IsInVehicle)
-            {
-                sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.CurrentVehicle, velocity.X, velocity.Y,
-                    velocity.Z);
-            }
-            else
-            {
-                sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.handle, velocity.X, velocity.Y,
-                    velocity.Z);
-            }
+           sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.IsInVehicle ? player.CurrentVehicle : player.handle, velocity.X, velocity.Y,velocity.Z);
         }
 
         public int getPlayerVehicleSeat(Client player)
