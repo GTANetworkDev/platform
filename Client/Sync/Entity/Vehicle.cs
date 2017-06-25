@@ -186,7 +186,7 @@ namespace GTANetwork.Sync
             else if (!IsVehDead && MainVehicle.IsDead)
             {
                 MainVehicle.IsInvincible = true;
-                MainVehicle.Repair();
+                if (MainVehicle.IsDead) MainVehicle.Repair();
             }
 
             //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
@@ -495,13 +495,12 @@ namespace GTANetwork.Sync
 
                 if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
                 {
-                    Tasks task = Character.Task;
-                    task.ClearAll();
-                    task.ClearSecondary();
+                    Character.Task.ClearAll();
+                    Character.Task.ClearSecondary();
                     Function.Call(Hash.CLEAR_DRIVEBY_TASK_UNDERNEATH_DRIVING_TASK, Character);
                     //Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                     //Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, 0, 0, 0);
-                    task.ClearLookAt();
+                    Character.Task.ClearLookAt();
                     //GTA.UI.Screen.ShowNotification("Done shooting");
                     //GTA.UI.Screen.ShowSubtitle("Done Shooting1", 300);
                     _lastDrivebyShooting = false;

@@ -57,37 +57,6 @@ namespace GTANetworkServer
                 full = PacketOptimization.WriteLightSync(fullPacket);
             }
 
-            var msg = Server.CreateMessage();
-            if (pure)
-            {
-                //if (client.Position.DistanceToSquared(fullPacket.Position) > 10000) // 1km
-                //{
-                //    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
-
-                //    if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
-                //    msg.Write((byte)PacketType.BasicSync);
-                //    msg.Write(basic.Length);
-                //    msg.Write(basic);
-                //    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
-
-                //    client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
-                //}
-                //else
-                //{
-                msg.Write((byte)PacketType.PedPureSync);
-                msg.Write(full.Length);
-                msg.Write(full);
-                //}
-            }
-            else
-            {
-                msg.Write((byte)PacketType.PedLightSync);
-                msg.Write(full.Length);
-                msg.Write(full);
-            }
-
-            List<NetConnection> connectionsNear = new List<NetConnection>();
-
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.Fake) continue;
@@ -95,36 +64,38 @@ namespace GTANetworkServer
                 if (!client.ConnectionConfirmed) continue;
                 if (client == exception) continue;
 
+                var msg = Server.CreateMessage();
                 if (pure)
                 {
                     if (client.Position == null) continue;
+                    //if (client.Position.DistanceToSquared(fullPacket.Position) > 10000) // 1km
+                    //{
+                    //    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                    connectionsNear.Add(client.NetConnection);
+                    //    if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+                    //    msg.Write((byte)PacketType.BasicSync);
+                    //    msg.Write(basic.Length);
+                    //    msg.Write(basic);
+                    //    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
+
+                    //    client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
+                    //}
+                    //else
+                    //{
+                        msg.Write((byte)PacketType.PedPureSync);
+                        msg.Write(full.Length);
+                        msg.Write(full);
+                        Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
+                    //}
                 }
                 else
                 {
-                    connectionsNear.Add(client.NetConnection);
+                    msg.Write((byte)PacketType.PedLightSync);
+                    msg.Write(full.Length);
+                    msg.Write(full);
+                    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
                 }
             }
-
-            if (pure)
-            {
-                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
-            }
-            else
-            {
-                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
-            }
-
-            var msgBasic = Server.CreateMessage();
-
-            msgBasic.Write((byte)PacketType.BasicSync);
-            msgBasic.Write(basic.Length);
-            msgBasic.Write(basic);
-
-            long ticks = Program.GetTicks();
-
-            List<NetConnection> connectionsFar = new List<NetConnection>();
 
             foreach (var client in exception.Streamer.GetFarClients())
             {
@@ -133,17 +104,19 @@ namespace GTANetworkServer
                 if (!client.ConnectionConfirmed) continue;
                 if (client == exception) continue;
 
+                var msg = Server.CreateMessage();
                 if (!pure) continue;
 
                 var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
+                if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
 
-                connectionsFar.Add(client.NetConnection);
-                client.LastPacketReceived.Set(exception.handle.Value, ticks);
+                msg.Write((byte)PacketType.BasicSync);
+                msg.Write(basic.Length);
+                msg.Write(basic);
+                Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
+                client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
             }
-
-            Server.SendMessage(msgBasic, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
         }
 
         //Vehicle Packet
@@ -170,72 +143,44 @@ namespace GTANetworkServer
                 full = PacketOptimization.WriteLightSync(fullPacket);
             }
 
-            var msg = Server.CreateMessage();
-
-            if (pure)
-            {
-                //if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f) // 1 km
-                //{
-                //    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
-
-                //    if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
-                //    msg.Write((byte)PacketType.BasicSync);
-                //    msg.Write(basic.Length);
-                //    msg.Write(basic);
-                //    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
-
-                //    client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
-                //}
-                //else
-                //{
-                msg.Write((byte)PacketType.VehiclePureSync);
-                msg.Write(full.Length);
-                msg.Write(full);
-                //}
-            }
-            else
-            {
-                msg.Write((byte)PacketType.VehicleLightSync);
-                msg.Write(full.Length);
-                msg.Write(full);
-            }
-
-            List<NetConnection> connectionsNear = new List<NetConnection>();
-
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (!client.ConnectionConfirmed) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
+                var msg = Server.CreateMessage();
                 if (pure)
                 {
                     if (client.Position == null) continue;
+                    //if (client.Position.DistanceToSquared(fullPacket.Position) > 40000f) // 1 km
+                    //{
+                    //    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                    connectionsNear.Add(client.NetConnection);
+                    //    if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+                    //    msg.Write((byte)PacketType.BasicSync);
+                    //    msg.Write(basic.Length);
+                    //    msg.Write(basic);
+                    //    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
+
+                    //    client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
+                    //}
+                    //else
+                    //{
+                        msg.Write((byte)PacketType.VehiclePureSync);
+                        msg.Write(full.Length);
+                        msg.Write(full);
+                        Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
+                    //}
                 }
                 else
                 {
-                    connectionsNear.Add(client.NetConnection);
+                    msg.Write((byte)PacketType.VehicleLightSync);
+                    msg.Write(full.Length);
+                    msg.Write(full);
+                    Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
                 }
             }
-
-            if (pure)
-            {
-                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.PureSync);
-            }
-            else
-            {
-                Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
-            }
-
-            var msgBasic = Server.CreateMessage();
-            msgBasic.Write((byte)PacketType.BasicSync);
-            msgBasic.Write(basic.Length);
-            msgBasic.Write(basic);
-
-            long ticks = Program.GetTicks();
-            List<NetConnection> connectionsFar = new List<NetConnection>();
 
             foreach (var client in exception.Streamer.GetFarClients())
             {
@@ -243,16 +188,18 @@ namespace GTANetworkServer
                 if (!client.ConnectionConfirmed) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
+                var msg = Server.CreateMessage();
                 if (!pure) continue;
                 var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
-                connectionsFar.Add(client.NetConnection);
+                if (lastUpdateReceived != 0 && Program.GetTicks() - lastUpdateReceived <= 1000) continue;
+                msg.Write((byte)PacketType.BasicSync);
+                msg.Write(basic.Length);
+                msg.Write(basic);
+                Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
 
-                client.LastPacketReceived.Set(exception.handle.Value, ticks);
+                client.LastPacketReceived.Set(exception.handle.Value, Program.GetTicks());
             }
-
-            Server.SendMessage(msgBasic, connectionsFar, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
         }
 
         internal bool CheckUnoccupiedTrailerDriver(Client player, NetHandle vehicle)
@@ -284,19 +231,6 @@ namespace GTANetworkServer
             var full = PacketOptimization.WriteUnOccupiedVehicleSync(fullPacket);
             var basic = PacketOptimization.WriteBasicUnOccupiedVehicleSync(fullPacket);
 
-            var msgNear = Server.CreateMessage();
-            msgNear.Write((byte)PacketType.UnoccupiedVehSync);
-            msgNear.Write(full.Length);
-            msgNear.Write(full);
-
-            var msgFar = Server.CreateMessage();
-            msgFar.Write((byte)PacketType.BasicUnoccupiedVehSync);
-            msgFar.Write(basic.Length);
-            msgFar.Write(basic);
-
-            List<NetConnection> connectionsNear = new List<NetConnection>();
-            List<NetConnection> connectionsFar = new List<NetConnection>();
-
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 // skip sending a sync packet for a trailer to it's owner.
@@ -304,29 +238,39 @@ namespace GTANetworkServer
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
 
+                var msg = Server.CreateMessage();
                 if (client.Position == null) continue;
                 if (client.Position.DistanceToSquared(fullPacket.Position) < 20000)
                 {
-                    connectionsNear.Add(client.NetConnection);
+                    msg.Write((byte)PacketType.UnoccupiedVehSync);
+                    msg.Write(full.Length);
+                    msg.Write(full);
+                    Server.SendMessage(msg, client.NetConnection,
+                        NetDeliveryMethod.UnreliableSequenced,
+                        (int)ConnectionChannel.UnoccupiedVeh);
                 }
                 else
                 {
-                    connectionsFar.Add(client.NetConnection);
+                    msg.Write((byte)PacketType.BasicUnoccupiedVehSync);
+                    msg.Write(basic.Length);
+                    msg.Write(basic);
+                    Server.SendMessage(msg, client.NetConnection,
+                        NetDeliveryMethod.UnreliableSequenced,
+                        (int)ConnectionChannel.UnoccupiedVeh);
                 }
             }
 
-            Server.SendMessage(msgNear, connectionsNear,
-                NetDeliveryMethod.UnreliableSequenced,
-                (int)ConnectionChannel.UnoccupiedVeh);
-
             foreach (var client in exception.Streamer.GetFarClients())
             {
-                connectionsFar.Add(client.NetConnection);
-            }
+                var msg = Server.CreateMessage();
 
-            Server.SendMessage(msgFar, connectionsFar,
-                NetDeliveryMethod.UnreliableSequenced,
-                (int)ConnectionChannel.UnoccupiedVeh);
+                msg.Write((byte)PacketType.BasicUnoccupiedVehSync);
+                msg.Write(basic.Length);
+                msg.Write(basic);
+                Server.SendMessage(msg, client.NetConnection,
+                    NetDeliveryMethod.UnreliableSequenced,
+                    (int)ConnectionChannel.UnoccupiedVeh);
+            }
         }
 
 
@@ -334,37 +278,25 @@ namespace GTANetworkServer
         {
             var full = PacketOptimization.WriteBulletSync(netHandle, shooting, aim);
 
-            var msg = Server.CreateMessage();
-            msg.Write((byte)PacketType.BulletSync);
-            msg.Write(full.Length);
-            msg.Write(full);
-
-            List<NetConnection> connections = new List<NetConnection>();
-
             foreach (var client in exception.Streamer.GetNearClients())
             {
                 if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
                 //if (range && client.Position.DistanceToSquared(exception.Position) > 80000) continue;
 
-                connections.Add(client.NetConnection);
+                var msg = Server.CreateMessage();
+                msg.Write((byte)PacketType.BulletSync);
+                msg.Write(full.Length);
+                msg.Write(full);
+                Server.SendMessage(msg, client.NetConnection,
+                    NetDeliveryMethod.ReliableSequenced,
+                    (int)ConnectionChannel.BulletSync);
             }
-
-            Server.SendMessage(msg, connections,
-                NetDeliveryMethod.ReliableSequenced,
-                (int)ConnectionChannel.BulletSync);
         }
 
         internal void ResendBulletPacket(int netHandle, int netHandleTarget, bool shooting, Client exception)
         {
             var full = PacketOptimization.WriteBulletSync(netHandle, shooting, netHandleTarget);
-
-            var msg = Server.CreateMessage();
-            msg.Write((byte)PacketType.BulletPlayerSync);
-            msg.Write(full.Length);
-            msg.Write(full);
-
-            List<NetConnection> connections = new List<NetConnection>();
 
             foreach (var client in exception.Streamer.GetNearClients())
             {
@@ -372,10 +304,12 @@ namespace GTANetworkServer
                 if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
                 //if (range && client.Position.DistanceToSquared(exception.Position) > 80000) continue; 
 
-                connections.Add(client.NetConnection);
+                var msg = Server.CreateMessage();
+                msg.Write((byte)PacketType.BulletPlayerSync);
+                msg.Write(full.Length);
+                msg.Write(full);
+                Server.SendMessage(msg, client.NetConnection, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.BulletSync);
             }
-
-            Server.SendMessage(msg, connections, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.BulletSync);
         }
 
 
@@ -392,24 +326,36 @@ namespace GTANetworkServer
 
         public void SendToAll(object newData, PacketType packetType, bool important, ConnectionChannel channel)
         {
-            var data = SerializeBinary(newData);
-            var msg = Server.CreateMessage();
-            msg.Write((byte)packetType);
-            msg.Write(data.Length);
-            msg.Write(data);
-
-            Server.SendToAll(msg, null, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
+            lock (Clients)
+            {
+                foreach (var client in Clients)
+                {
+                    if (client.Fake) continue;
+                    var data = SerializeBinary(newData);
+                    var msg = Server.CreateMessage();
+                    msg.Write((byte)packetType);
+                    msg.Write(data.Length);
+                    msg.Write(data);
+                    Server.SendMessage(msg, client.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
+                }
+            }
         }
 
         public void SendToAll(object newData, PacketType packetType, bool important, Client exclude, ConnectionChannel channel)
         {
-            var data = SerializeBinary(newData);
-            var msg = Server.CreateMessage();
-            msg.Write((byte)packetType);
-            msg.Write(data.Length);
-            msg.Write(data);
-
-            Server.SendToAll(msg, exclude.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int)channel);
+            lock (Clients)
+            {
+                foreach (var client in Clients)
+                {
+                    if (client == exclude || client.Fake) continue;
+                    var data = SerializeBinary(newData);
+                    var msg = Server.CreateMessage();
+                    msg.Write((byte) packetType);
+                    msg.Write(data.Length);
+                    msg.Write(data);
+                    Server.SendMessage(msg, client.NetConnection, important ? NetDeliveryMethod.ReliableOrdered : NetDeliveryMethod.ReliableSequenced, (int) channel);
+                }
+            }
         }
 
         public void SendDeleteObject(Client player, Vector3 pos, float radius, int modelHash)
@@ -459,18 +405,16 @@ namespace GTANetworkServer
             };
 
             var bin = SerializeBinary(obj);
-
-            var msg = Server.CreateMessage();
-
-            msg.Write((byte)PacketType.NativeCall);
-            msg.Write(bin.Length);
-            msg.Write(bin);
-
-            // todo: check if there's ligdren's function to do that
             lock (Clients)
             {
                 foreach (var c in Clients)
                 {
+                    var msg = Server.CreateMessage();
+
+                    msg.Write((byte) PacketType.NativeCall);
+                    msg.Write(bin.Length);
+                    msg.Write(bin);
+
                     Server.SendMessage(msg, c.NetConnection, NetDeliveryMethod.ReliableOrdered, (int) ConnectionChannel.NativeCall);
                 }
             }
