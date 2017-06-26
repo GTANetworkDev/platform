@@ -87,8 +87,8 @@ bool sGameReloaded = false;
 PVOID sMainFib = nullptr;
 PVOID sScriptFib = nullptr;
 
-//void ForceOffline();
-//void HookGameText();
+void ForceOffline();
+void HookGameText();
 
 static void ScriptMain()
 {
@@ -137,8 +137,8 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
 			scriptRegister(hModule, &ScriptMain);
 			keyboardHandlerRegister(&ScriptKeyboardMessage);
 			presentCallbackRegister(&DXGIPresent);
-			//ForceOffline();
-			//HookGameText();
+			ForceOffline();
+			HookGameText();
 			break;
 		case DLL_PROCESS_DETACH:
 			DeleteFiber(sScriptFib);

@@ -34,6 +34,12 @@
     <Filter Include="scripting\World\Weapons">
       <UniqueIdentifier>{4de7cb45-112d-481b-811e-8d6f7e79fa27}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libs">
+      <UniqueIdentifier>{2df6157e-34fb-4289-81dd-a4ab58f821a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\minhook-master">
+      <UniqueIdentifier>{6ae00ea5-4495-4994-878f-52aaba8fb002}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\core\Main.cpp">
@@ -67,6 +73,24 @@
       <Filter>scripting\Math</Filter>
     </ClCompile>
     <ClCompile Include="source\AssemblyInfo.cpp" />
+    <ClCompile Include="source\core\Hooks.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\buffer.cpp">
+      <Filter>libs\minhook-master</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\HDE\hde32.cpp">
+      <Filter>libs\minhook-master</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\HDE\hde64.cpp">
+      <Filter>libs\minhook-master</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\hook.cpp">
+      <Filter>libs\minhook-master</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\minhook-master\src\trampoline.cpp">
+      <Filter>libs\minhook-master</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\core\Native.hpp">
@@ -101,6 +125,27 @@
     </ClInclude>
     <ClInclude Include="source\core\CallCollection.hpp">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\buffer.h">
+      <Filter>libs\minhook-master</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\hde32.h">
+      <Filter>libs\minhook-master</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\hde64.h">
+      <Filter>libs\minhook-master</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\pstdint.h">
+      <Filter>libs\minhook-master</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\table32.h">
+      <Filter>libs\minhook-master</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\HDE\table64.h">
+      <Filter>libs\minhook-master</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\minhook-master\src\trampoline.h">
+      <Filter>libs\minhook-master</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

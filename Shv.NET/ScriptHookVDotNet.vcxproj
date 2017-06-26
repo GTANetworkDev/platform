@@ -99,6 +99,11 @@
   </ItemGroup>
   <!-- Core source files -->
   <ItemGroup>
+	<ClCompile Include="libs\minhook-master\src\buffer.cpp" /> 
+    <ClCompile Include="libs\minhook-master\src\HDE\hde32.cpp" /> 
+    <ClCompile Include="libs\minhook-master\src\HDE\hde64.cpp" /> 
+    <ClCompile Include="libs\minhook-master\src\hook.cpp" /> 
+    <ClCompile Include="libs\minhook-master\src\trampoline.cpp" /> 
     <ClCompile Include="source\AssemblyInfo.cpp" />
     <ClCompile Include="source\core\Main.cpp" />
     <ClCompile Include="source\core\Native.cpp" />
@@ -108,7 +113,15 @@
     <ClCompile Include="source\core\Settings.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="libs\minhook-master\src\buffer.h" /> 
+    <ClInclude Include="libs\minhook-master\src\HDE\hde32.h" /> 
+    <ClInclude Include="libs\minhook-master\src\HDE\hde64.h" /> 
+    <ClInclude Include="libs\minhook-master\src\HDE\pstdint.h" /> 
+    <ClInclude Include="libs\minhook-master\src\HDE\table32.h" /> 
+    <ClInclude Include="libs\minhook-master\src\HDE\table64.h" /> 
+    <ClInclude Include="libs\minhook-master\src\trampoline.h" /> 
     <ClInclude Include="source\core\CallCollection.hpp" />
+	<ClCompile Include="source\core\Hooks.cpp" /> 
     <ClInclude Include="source\core\Native.hpp" />
     <ClInclude Include="source\core\NativeHashes.hpp" />
     <ClInclude Include="source\core\NativeMemory.hpp" />
