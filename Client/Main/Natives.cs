@@ -455,7 +455,7 @@ namespace GTANetwork
             if (((int)nativeType & (int)Enums.NativeType.PlayerSkinChange) > 0)
             {
                 Ped PlayerChar = Game.Player.Character;
-                PlayerChar.SetDefaultClothes();
+                PlayerChar.Style.SetDefaultClothes();
                 PlayerChar.MaxHealth = 200;
                 PlayerChar.Health = playerHealth;
             }

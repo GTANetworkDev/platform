@@ -118,7 +118,7 @@ namespace GTANetwork
                 else
                 {
                     MainMenu.TemporarilyHidden = true;
-                    obj.Password = Game.GetUserInput(256);
+                    obj.Password = Game.GetUserInput();
                     MainMenu.TemporarilyHidden = false;
                 }
             }

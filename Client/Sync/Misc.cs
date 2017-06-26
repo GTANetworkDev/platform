@@ -539,7 +539,7 @@ namespace GTANetwork.Sync
 
             if (_mainBlip != null && _mainBlip.Exists())
             {
-                _mainBlip.Remove();
+                _mainBlip.Delete();
                 _mainBlip = null;
             }
 

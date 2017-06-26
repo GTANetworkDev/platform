@@ -323,7 +323,7 @@ namespace GTANetwork
             }
             if (Function.Call<bool>(Hash.IS_PED_WALKING, ped)) output = 1;
             if (Function.Call<bool>(Hash.IS_PED_RUNNING, ped)) output = 2;
-            if (Function.Call<bool>(Hash.IS_PED_SPRINTING, ped) || ped.IsPlayer && Game.IsControlPressed(0, Control.Sprint)) output = 3;
+            if (Function.Call<bool>(Hash.IS_PED_SPRINTING, ped) || ped.IsPlayer && Game.IsControlPressed(Control.Sprint)) output = 3;
 
             //if (Function.Call<bool>(Hash.IS_PED_STRAFING, ped)) ;
 
@@ -520,7 +520,7 @@ namespace GTANetwork
                 (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
                 , ignoreEntity);
 
-            if (raycastResults.DitHit)
+            if (raycastResults.DidHit)
             {
                 return raycastResults.HitPosition;
             }
@@ -551,7 +551,7 @@ namespace GTANetwork
                 (IntersectOptions)(1 | 16 | 256 | 2 | 4 | 8)// | peds + vehicles
                 , ignoreEntity);
 
-            if (raycastResults.DitHit)
+            if (raycastResults.DidHit)
             {
                 return raycastResults.HitPosition;
             }

@@ -13,7 +13,8 @@ namespace GTANetwork.Sync
 {
     public class SyncThread : Script
     {
-        public SyncThread() { Tick += OnTick; }
+        public SyncThread() { Tick += OnTick; 
+        }
 
         public static Stopwatch sw;
 
@@ -34,7 +35,8 @@ namespace GTANetwork.Sync
 
     public class NametagThread : Script
     {
-        public NametagThread() { Tick += OnTick; }
+        public NametagThread() { Tick += OnTick;
+        }
 
         private static void OnTick(object sender, EventArgs e)
         {

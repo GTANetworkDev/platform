@@ -82,36 +82,36 @@ namespace GTANetwork.GUI
 
         public override void ProcessControls()
         {
-            if (Game.IsControlPressed(0, Control.MoveDownOnly))
+            if (Game.IsControlPressed(Control.MoveDownOnly))
             {
                 Position = new PointF(Position.X, Position.Y + (20 / Zoom));
                 _wasMouseInput = false;
             }
 
-            if (Game.IsControlPressed(0, Control.MoveUpOnly))
+            if (Game.IsControlPressed(Control.MoveUpOnly))
             {
                 Position = new PointF(Position.X, Position.Y - (20 / Zoom));
                 _wasMouseInput = false;
             }
 
-            if (Game.IsControlPressed(0, Control.MoveLeftOnly))
+            if (Game.IsControlPressed(Control.MoveLeftOnly))
             {
                 Position = new PointF(Position.X - (20 / Zoom), Position.Y);
                 _wasMouseInput = false;
             }
 
-            if (Game.IsControlPressed(0, Control.MoveRightOnly))
+            if (Game.IsControlPressed(Control.MoveRightOnly))
             {
                 Position = new PointF(Position.X + (20 / Zoom), Position.Y);
                 _wasMouseInput = false;
             }
 
-            if (Game.IsControlPressed(0, Control.CursorScrollDown))
+            if (Game.IsControlPressed(Control.CursorScrollDown))
             {
                 Zoom /= 1.1f;
             }
 
-            if (Game.IsControlPressed(0, Control.CursorScrollUp))
+            if (Game.IsControlPressed(Control.CursorScrollUp))
             {
                 Zoom *= 1.1f;
             }
@@ -132,7 +132,7 @@ namespace GTANetwork.GUI
             {
                 DrawSprite("minimap_sea_2_0", "minimap_sea_2_0", new Point(BottomRight.X - 1024, TopLeft.Y), new Size(1024, 1024));
 
-                if (Game.IsControlJustPressed(0, Control.Attack))
+                if (Game.IsControlJustPressed(Control.Attack))
                 {
                     Focused = true;
                     _justOpened_mouse = true;
@@ -142,8 +142,8 @@ namespace GTANetwork.GUI
             }
             else
             {
-                Game.EnableControlThisFrame(0, Control.CursorX);
-                Game.EnableControlThisFrame(0, Control.CursorY);
+                Game.EnableControlThisFrame(Control.CursorX);
+                Game.EnableControlThisFrame(Control.CursorY);
                 var res = UIMenu.GetScreenResolutionMantainRatio();
                 var mouseX = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.CursorX) * res.Width;
                 var mouseY = Function.Call<float>(Hash.GET_CONTROL_NORMAL, 0, (int)Control.CursorY) * res.Height;
@@ -155,14 +155,14 @@ namespace GTANetwork.GUI
                     _wasMouseInput = true;
                 }
 
-                if (Game.IsControlJustPressed(0, Control.CursorAccept))
+                if (Game.IsControlJustPressed(Control.CursorAccept))
                 {
                     _isHeldDown = true;
                     _heldDownPoint = new PointF(mouseX, mouseY);
                     _mapPosAtHelddown = Position;
                     _holdDownTime = DateTime.Now;
                 }
-                else if (Game.IsControlJustReleased(0, Control.CursorAccept))
+                else if (Game.IsControlJustReleased(Control.CursorAccept))
                 {
                     if (_justOpened_mouse)
                     {
@@ -194,7 +194,7 @@ namespace GTANetwork.GUI
                     }
                 }
 
-                if (Game.IsControlJustReleased(0, Control.FrontendAccept))
+                if (Game.IsControlJustReleased(Control.FrontendAccept))
                 {
                     if (_justOpened_kb)
                     {
@@ -343,7 +343,7 @@ namespace GTANetwork.GUI
 
                 centerPos = new Vector2(centerPos.X, centerPos.Y * -1f);
 
-                var zone = World.GetZoneName(centerPos);
+                var zone = World.GetZoneDisplayName(centerPos);
 
                 if (!string.IsNullOrEmpty(zone))
                 {
