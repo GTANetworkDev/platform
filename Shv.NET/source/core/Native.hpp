@@ -71,6 +71,14 @@ namespace GTA
 			{
 				return gcnew InputArgument(value);
 			}
+			static operator InputArgument ^ (long long value)
+			{
+				return gcnew InputArgument(value);
+			}
+			static operator InputArgument ^ (unsigned long long value)
+			{
+				return gcnew InputArgument(value);
+			}
 			static operator InputArgument ^ (float value)
 			{
 				return gcnew InputArgument(value);
@@ -103,19 +111,7 @@ namespace GTA
 			{
 				return gcnew InputArgument(value);
 			}
-			static operator InputArgument ^ (bool *value)
-			{
-				return gcnew InputArgument(System::IntPtr(value));
-			}
-			static operator InputArgument ^ (int *value)
-			{
-				return gcnew InputArgument(System::IntPtr(value));
-			}
-			static operator InputArgument ^ (unsigned int *value)
-			{
-				return gcnew InputArgument(System::IntPtr(value));
-			}
-			static operator InputArgument ^ (float *value)
+			static operator InputArgument ^ (void *value)
 			{
 				return gcnew InputArgument(System::IntPtr(value));
 			}
@@ -126,10 +122,20 @@ namespace GTA
 		public ref class OutputArgument : public InputArgument
 		{
 		public:
+			/// <summary>
+			/// Initializes a new instance of the <see cref="OutputArgument"/> class for natives that output data into pointers.
+			/// </summary>
 			OutputArgument();
+			/// <summary>
+			/// Initializes a new instance of the <see cref="OutputArgument"/> class with an initial value for natives that require the pointer to data instead of the actual data.
+			/// </summary>
+			/// <param name="initvalue">The value to set the data of this <see cref="OutputArgument"/> to.</param>
 			OutputArgument(System::Object ^initvalue);
 			~OutputArgument();
 
+			/// <summary>
+			/// Gets the value of data stored in this <see cref="OutputArgument"/>.
+			/// </summary>
 			generic <typename T>
 			T GetResult();
 
@@ -202,7 +208,7 @@ namespace GTA
 			/// <param name="value">The string to set the <see cref="GlobalVariable"/> to.</param>
 			/// <param name="maxSize">The maximum size of the string. Can be found for a given global variable by checking the decompiled scripts from the game.</param>
 			void WriteString(System::String ^value, int maxSize);
-			
+
 			/// <summary>
 			/// Set the value of a specific bit of the <see cref="GlobalVariable"/> to true.
 			/// </summary>

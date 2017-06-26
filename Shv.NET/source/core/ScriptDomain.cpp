@@ -15,9 +15,6 @@
  */
 
 #include "ScriptDomain.hpp"
-//#include "windows.h"
-//#include "string"
-#define DEBUG false
 
 using namespace System;
 using namespace System::Threading;
@@ -39,23 +36,26 @@ namespace
 	}
 }
 
-
 namespace GTA
 {
+	String ^GetScriptSupportURL(Type ^scriptType)
+	{
+		for each (ScriptAttributes ^attribute in scriptType->GetCustomAttributes(ScriptAttributes::typeid, true))
+		{
+			if (!String::IsNullOrEmpty(attribute->SupportURL))
+			{
+				return attribute->SupportURL;
+			}
+		}
+
+		return nullptr;
+	}
+
 	void Log(String ^logLevel, ... array<String ^> ^message)
 	{
 		DateTime now = DateTime::Now;
 
-		//HKEY hKey;
-		//std::wstring strValueOfBinDir;
-		//RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Rockstar Games\\Grand Theft Auto V", 0, KEY_READ, &hKey);
-		//GetStringRegKey(hKey, L"GTANetworkInstallDir", strValueOfBinDir, L"bad");
-		//String^ str = gcnew String(strValueOfBinDir.c_str());
-
-		////String ^logpath = IO::Path::ChangeExtension(Assembly::GetExecutingAssembly()->Location, ".log");
 		String ^logpath = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), "..\\logs\\ScriptHookVDotNet.log");
-        //String ^logpath = IO::Path::Combine(IO::Path::GetDirectoryName(str),"logs\\ScriptHookVDotNet.log");
-
 		logpath = logpath->Insert(logpath->IndexOf(".log"), "-" + now.ToString("yyyy-MM-dd"));
 
 		try
@@ -94,9 +94,8 @@ namespace GTA
 		{
 			if (assemblyName->Version->Major != assembly->GetName()->Version->Major)
 			{
-				Log("[WARNING]", "A script references v", assemblyName->Version->ToString(3), " which may not be compatible with the current v" + assembly->GetName()->Version->ToString(3), ".");
+				Log("[WARNING]", "A script references v", assemblyName->Version->ToString(3), " which may not be compatible with the current v" + assembly->GetName()->Version->ToString(3), " and was therefore ignored.");
 			}
-
 			return assembly;
 		}
 
@@ -112,6 +111,22 @@ namespace GTA
 		{
 			Log("[ERROR]", "Caught fatal unhandled exception:", Environment::NewLine, args->ExceptionObject->ToString());
 		}
+
+		//if (sender == nullptr || !Script::typeid->IsInstanceOfType(sender))
+		//{
+		//	return;
+		//}
+
+		//auto scriptType = sender->GetType();
+
+		//Log("[INFO]", "The exception was thrown while executing the script '", scriptType->FullName, "'.");
+
+		//String ^supportURL = GetScriptSupportURL(scriptType);
+
+		//if (supportURL != nullptr)
+		//{
+		//	Log("[INFO]", "Please check the following site for support on the issue: ", supportURL);
+		//}
 	}
 
 	ScriptDomain::ScriptDomain() : _appdomain(System::AppDomain::CurrentDomain), _executingThreadId(Thread::CurrentThread->ManagedThreadId)
@@ -122,6 +137,8 @@ namespace GTA
 		_appdomain->UnhandledException += gcnew UnhandledExceptionEventHandler(&HandleUnhandledException);
 
 		Log("[INFO]", "Created new script domain with v", ScriptDomain::typeid->Assembly->GetName()->Version->ToString(3), ".");
+
+		//_console = gcnew ConsoleScript();
 	}
 	ScriptDomain::~ScriptDomain()
 	{
@@ -130,16 +147,26 @@ namespace GTA
 
 	ScriptDomain ^ScriptDomain::Load(String ^path)
 	{
+		//if (!IO::Path::IsPathRooted(path))
+		//{
+		//	path = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), path);
+		//}
+
 		path = IO::Path::GetFullPath(path);
 
+		//// Clear log
+		//String ^logPath = IO::Path::ChangeExtension(Assembly::GetExecutingAssembly()->Location, ".log");
+
+		//try
+		//{
+		//	IO::File::WriteAllText(logPath, String::Empty);
+		//}
+		//catch (...) { }
+
+		// Create AppDomain
 		auto setup = gcnew AppDomainSetup();
 		setup->ApplicationBase = path;
-#if DEBUG
-		setup->ShadowCopyFiles = "true";
-#else
 		setup->ShadowCopyFiles = "false";
-#endif
-		
 		setup->ShadowCopyDirectories = path;
 
 		auto appdomain = System::AppDomain::CreateDomain("ScriptDomain_" + (path->GetHashCode() * Environment::TickCount).ToString("X"), nullptr, setup, gcnew Security::PermissionSet(Security::Permissions::PermissionState::Unrestricted));
@@ -153,24 +180,24 @@ namespace GTA
 		}
 		catch (Exception ^ex)
 		{
-			Log("[ERROR]", "Failed to create script domain '", appdomain->FriendlyName, "':", Environment::NewLine, ex->ToString());
+			Log("[ERROR]", "Failed to create script domain':", Environment::NewLine, ex->ToString());
 
 			System::AppDomain::Unload(appdomain);
 
 			return nullptr;
 		}
 
-		Log("[INFO]", "Loading scripts from '", path, "' into script domain '", appdomain->FriendlyName, "' ...");
+		Log("[INFO]", "Loading scripts from '", path, "' ...");
 
 		if (IO::Directory::Exists(path))
 		{
-			auto filenameScripts = gcnew List<String ^>();
+			//auto filenameScripts = gcnew List<String ^>();
 			auto filenameAssemblies = gcnew List<String ^>();
 
 			try
 			{
-				filenameScripts->AddRange(IO::Directory::GetFiles(path, "*.vb", IO::SearchOption::AllDirectories));
-				filenameScripts->AddRange(IO::Directory::GetFiles(path, "*.cs", IO::SearchOption::AllDirectories));
+				//filenameScripts->AddRange(IO::Directory::GetFiles(path, "*.vb", IO::SearchOption::AllDirectories));
+				//filenameScripts->AddRange(IO::Directory::GetFiles(path, "*.cs", IO::SearchOption::AllDirectories));
 				filenameAssemblies->AddRange(IO::Directory::GetFiles(path, "*.dll", IO::SearchOption::AllDirectories));
 			}
 			catch (Exception ^ex)
@@ -184,41 +211,44 @@ namespace GTA
 
 			for (int i = 0; i < filenameAssemblies->Count; i++)
 			{
-                try
-                {
-                    auto filename = filenameAssemblies[i];
-                    auto assemblyName = AssemblyName::GetAssemblyName(filename);
+				try
+				{
+					auto filename = filenameAssemblies[i];
+					auto assemblyName = AssemblyName::GetAssemblyName(filename);
 
-                    if (assemblyName->Name == "ScriptHookVDotNet")
-                    {
-                        Log("[WARNING]", "Removing assembly file '", IO::Path::GetFileName(filename), "'.");
+					if (assemblyName->Name == "ScriptHookVDotNet")
+					{
+						Log("[WARNING]", "Removing assembly file '", IO::Path::GetFileName(filename), "'.");
 
-                        filenameAssemblies->RemoveAt(i--);
+						filenameAssemblies->RemoveAt(i--);
 
-                        try
-                        {
-                            IO::File::Delete(filename);
-                        }
-                        catch (Exception ^ex)
-                        {
-                            Log("[ERROR]", "Failed to delete assembly file:", Environment::NewLine, ex->ToString());
-                        }
-                    }
-                }
-				catch (BadImageFormatException ^) { }
+						try
+						{
+							IO::File::Delete(filename);
+						}
+						catch (Exception ^ex)
+						{
+							Log("[ERROR]", "Failed to delete assembly file:", Environment::NewLine, ex->ToString());
+						}
+					}
+				}
+				catch (BadImageFormatException ^) {}
 				catch (Exception ^ex)
 				{
 					Log("[ERROR]", "Failed to load assembly ", filenameAssemblies[i], Environment::NewLine, ex->ToString());
 				}
 			}
 
-			for each (String ^filename in filenameScripts)
-			{
-				scriptdomain->LoadScript(filename);
-			}
+			//for each (String ^filename in filenameScripts)
+			//{
+			//	scriptdomain->LoadScript(filename);
+			//}
 			for each (String ^filename in filenameAssemblies)
 			{
-				scriptdomain->LoadAssembly(filename);
+				if (filename->Contains("GTANetwork.dll") || filename->Contains("NativeUI.dll"))
+				{
+					scriptdomain->LoadAssembly(filename);
+				}
 			}
 		}
 		else
@@ -287,13 +317,16 @@ namespace GTA
 	}
 	bool ScriptDomain::LoadAssembly(String ^filename)
 	{
+		Log("[INFO]", "Reading assembly '", IO::Path::GetFileName(filename), "' ...");
+
 		Assembly ^assembly = nullptr;
 
 		try
 		{
+			//assembly = Assembly::Load(IO::File::ReadAllBytes(filename));
 			assembly = Assembly::LoadFrom(filename);
 		}
-		catch (BadImageFormatException ^) { return false; }
+		//catch (BadImageFormatException ^) { return false; }
 		catch (Exception ^ex)
 		{
 			Log("[ERROR]", "Failed to load assembly '", IO::Path::GetFileName(filename), "':", Environment::NewLine, ex->ToString());
@@ -302,8 +335,10 @@ namespace GTA
 
 		return LoadAssembly(filename, assembly);
 	}
+
 	bool ScriptDomain::LoadAssembly(String ^filename, Assembly ^assembly)
 	{
+		//String ^version = (IO::Path::GetExtension(filename) == ".dll" ? (" v" + assembly->GetName()->Version->ToString(3)) : String::Empty);
 		unsigned int count = 0;
 
 		try
@@ -321,6 +356,15 @@ namespace GTA
 		}
 		catch (ReflectionTypeLoadException ^ex)
 		{
+			for each (auto exs in ex->LoaderExceptions)
+			{
+				Log("[ERROR]", Environment::NewLine, exs->ToString());
+			}
+			Log("[ERROR]", "Failed to load assembly '", IO::Path::GetFileName(filename), "':", Environment::NewLine, ex->ToString());
+			return false;
+		}
+		catch (Exception ^ex)
+		{
 			Log("[ERROR]", "Failed to load assembly '", IO::Path::GetFileName(filename), "':", Environment::NewLine, ex->ToString());
 
 			return false;
@@ -330,6 +374,7 @@ namespace GTA
 
 		return count != 0;
 	}
+
 	void ScriptDomain::Unload(ScriptDomain ^%domain)
 	{
 		Log("[INFO]", "Unloading script domain ...");
@@ -353,7 +398,7 @@ namespace GTA
 
 		GC::Collect();
 	}
-	Script ^ScriptDomain::InstantiateScript(Type ^scriptType)
+	GTA::Script ^ScriptDomain::InstantiateScript(Type ^scriptType)
 	{
 		if (!scriptType->IsSubclassOf(Script::typeid))
 		{
@@ -364,7 +409,7 @@ namespace GTA
 
 		try
 		{
-			return static_cast<Script ^>(Activator::CreateInstance(scriptType));
+			return static_cast<GTA::Script ^>(Activator::CreateInstance(scriptType));
 		}
 		catch (MissingMethodException ^)
 		{
@@ -432,24 +477,14 @@ namespace GTA
 
 		return true;
 	}
-    
-    void ScriptDomain::Start()
+	void ScriptDomain::Start()
 	{
 		if (_runningScripts->Count != 0 || _scriptTypes->Count == 0)
 		{
 			return;
 		}
 
-		//HKEY hKey;
-		//std::wstring strValueOfBinDir;
-		//RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Rockstar Games\\Grand Theft Auto V", 0, KEY_READ, &hKey);
-		//GetStringRegKey(hKey, L"GTANetworkInstallDir", strValueOfBinDir, L"bad");
-		//String^ str = gcnew String(strValueOfBinDir.c_str());
-
-		//String ^logpath = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), "..\\bin\\scripts");
-		//String ^assemblyPath = IO::Path::Combine(IO::Path::GetDirectoryName(str), "bin\\scripts");
 		String ^assemblyPath = IO::Path::Combine(IO::Path::GetDirectoryName(Assembly::GetExecutingAssembly()->Location), "..\\bin\\scripts");
-
 		String ^assemblyFilename = IO::Path::GetFileNameWithoutExtension(assemblyPath);
 
 		for each (String ^path in IO::Directory::GetFiles(IO::Path::GetDirectoryName(assemblyPath), "*.log"))
@@ -503,6 +538,7 @@ namespace GTA
 			_runningScripts->Add(script);
 		}
 	}
+
 	void ScriptDomain::Abort()
 	{
 		Log("[INFO]", "Stopping ", _runningScripts->Count.ToString(), " script(s) ...");
@@ -533,11 +569,14 @@ namespace GTA
 
 		Log("[INFO]", "Aborted script '", script->Name, "'.");
 	}
+
 	void ScriptDomain::DoTick()
 	{
 		// Execute scripts
-		for each (Script ^script in _runningScripts)
+		for (int i = 0; i < _runningScripts->Count; i++)
 		{
+			GTA::Script ^script = _runningScripts[i];
+
 			if (!script->_running)
 			{
 				continue;
@@ -545,7 +584,8 @@ namespace GTA
 
 			_executingScript = script;
 
-			while ((script->_running = SignalAndWait(script->_continueEvent, script->_waitEvent, 30000)) && _taskQueue->Count > 0)
+			while ((script->_running = SignalAndWait(script->_continueEvent, script->_waitEvent, 5000)) && _taskQueue->Count > 0)
+			//while ((script->_running = SignalAndWait(script->_continueEvent, script->_waitEvent, 30000)) && _taskQueue->Count > 0)
 			{
 				_taskQueue->Dequeue()->Run();
 			}
@@ -564,6 +604,7 @@ namespace GTA
 		// Clean up pinned strings
 		CleanupStrings();
 	}
+
 	void ScriptDomain::DoKeyboardMessage(WinForms::Keys key, bool status, bool statusCtrl, bool statusShift, bool statusAlt)
 	{
 		const int keycode = static_cast<int>(key);
@@ -593,21 +634,29 @@ namespace GTA
 			auto args = gcnew WinForms::KeyEventArgs(key);
 			auto eventinfo = gcnew Tuple<bool, WinForms::KeyEventArgs ^>(status, args);
 
-			for each (Script ^script in _runningScripts)
+			for each (GTA::Script ^script in _runningScripts)
 			{
 				script->_keyboardEvents->Enqueue(eventinfo);
 			}
 		}
 	}
 
-    void ScriptDomain::DoD3DCall(void *swapchain)
-    {
-        int count = _hookedScripts->Count;
-        for (int i = 0; i < count; i++)
-        {
-            _hookedScripts[i]->D3DHook(swapchain);
-        }
-    }
+	void ScriptDomain::DoD3DCall(void *swapchain)
+	{
+		int count = _hookedScripts->Count;
+		for (int i = 0; i < count; i++)
+		{
+			_hookedScripts[i]->D3DHook(swapchain);
+		}
+	}
+
+	void ScriptDomain::HookD3DScript(Script ^script)
+	{
+		if (!_hookedScripts->Contains(script))
+		{
+			_hookedScripts->Add(script);
+		}
+	}
 
 	void ScriptDomain::PauseKeyboardEvents(bool pause)
 	{
@@ -626,13 +675,7 @@ namespace GTA
 			SignalAndWait(ExecutingScript->_waitEvent, ExecutingScript->_continueEvent);
 		}
 	}
-    void ScriptDomain::HookD3DScript(Script ^script)
-    {        
-        if (!_hookedScripts->Contains(script))
-        {
-            _hookedScripts->Add(script);
-        }
-    }
+
 	IntPtr ScriptDomain::PinString(String ^string)
 	{
 		const int size = Text::Encoding::UTF8->GetByteCount(string);

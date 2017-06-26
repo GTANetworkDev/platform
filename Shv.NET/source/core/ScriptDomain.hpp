@@ -18,6 +18,7 @@
 
 #include "Script.hpp"
 
+
 namespace GTA
 {
 	private interface class IScriptTask
@@ -30,7 +31,7 @@ namespace GTA
 	public:
 		ScriptDomain();
 		~ScriptDomain();
-        void DoD3DCall(void *swapchain);        
+		void DoD3DCall(void *swapchain);
 		
 		static property Script ^ExecutingScript
 		{
@@ -69,11 +70,22 @@ namespace GTA
 				return _appdomain;
 			}
 		}
+		property array<Script ^> ^RunningScripts
+		{
+			array<Script ^> ^get()
+			{
+				return _runningScripts->ToArray();
+			}
+		}
 
-        void HookD3DScript(Script ^script);
+		void HookD3DScript(Script ^script);
 		void Start();
+		//void StartScript(System::String ^filename);
 		void Abort();
 		static void AbortScript(Script ^script);
+		//static void OnStartScript(Script ^script);
+		//static void OnAbortScript(Script ^script);
+
 		void DoTick();
 		void DoKeyboardMessage(System::Windows::Forms::Keys key, bool status, bool statusCtrl, bool statusShift, bool statusAlt);
 
@@ -102,7 +114,7 @@ namespace GTA
 		System::AppDomain ^_appdomain;
 		int _executingThreadId;
 		Script ^_executingScript;
-        System::Collections::Generic::List<Script ^> ^_hookedScripts = gcnew System::Collections::Generic::List<Script ^>();
+		System::Collections::Generic::List<Script ^> ^_hookedScripts = gcnew System::Collections::Generic::List<Script ^>();
 		System::Collections::Generic::List<Script ^> ^_runningScripts = gcnew System::Collections::Generic::List<Script ^>();
 		System::Collections::Generic::Queue<IScriptTask ^> ^_taskQueue = gcnew System::Collections::Generic::Queue<IScriptTask ^>();
 		System::Collections::Generic::List<System::IntPtr> ^_pinnedStrings = gcnew System::Collections::Generic::List<System::IntPtr>();

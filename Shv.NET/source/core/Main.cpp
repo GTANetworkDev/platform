@@ -1,4 +1,3 @@
-#define DEBUG false
 /**
  * Copyright (C) 2015 crosire
  *
@@ -33,21 +32,7 @@ namespace WinForms = System::Windows::Forms;
 ref struct ScriptHook
 {
 	static GTA::ScriptDomain ^Domain = nullptr;
-	static WinForms::Keys ReloadKey = WinForms::Keys::None;
 };
-
-//LONG GetStringRegKey(HKEY hKey, const std::wstring &strValueName, std::wstring &strValue, const std::wstring &strDefaultValue)
-//{
-//	strValue = strDefaultValue;
-//	WCHAR szBuffer[512];
-//	DWORD dwBufferSize = sizeof(szBuffer);
-//	ULONG nError = RegQueryValueExW(hKey, strValueName.c_str(), nullptr, nullptr, reinterpret_cast<LPBYTE>(szBuffer), &dwBufferSize);
-//	if (ERROR_SUCCESS == nError)
-//	{
-//		strValue = szBuffer;
-//	}
-//	return nError;
-//}
 
 bool ManagedInit()
 {
@@ -56,43 +41,23 @@ bool ManagedInit()
 		GTA::ScriptDomain::Unload(ScriptHook::Domain);
 	}
 
-	//HKEY hKey;
-	//std::wstring strValueOfBinDir;
-	//RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\WOW6432Node\\Rockstar Games\\Grand Theft Auto V", 0, KEY_READ, &hKey);
-	//GetStringRegKey(hKey, L"GTANetworkInstallDir", strValueOfBinDir, L"bad");
-	//String^ str = gcnew String(strValueOfBinDir.c_str());
-
-	//auto location = IO::Path::Combine(IO::Path::GetDirectoryName(str), "bin\\scripts");
-
 	auto location = Assembly::GetExecutingAssembly()->Location;
 	auto settings = GTA::ScriptSettings::Load(IO::Path::ChangeExtension(location, ".ini"));
 
-	//ScriptHook::Domain = GTA::ScriptDomain::Load(IO::Path::GetDirectoryName(location));
-	//ScriptHook::ReloadKey = WinForms::Keys::Insert;
-
 	ScriptHook::Domain = GTA::ScriptDomain::Load(IO::Path::Combine(IO::Path::GetDirectoryName(location), settings->GetValue(String::Empty, "ScriptsLocation", "scripts")));
-	ScriptHook::ReloadKey = settings->GetValue<WinForms::Keys>(String::Empty, "ReloadKey", WinForms::Keys::Insert);
 
-	if (Object::ReferenceEquals(ScriptHook::Domain, nullptr))
+	if (!Object::ReferenceEquals(ScriptHook::Domain, nullptr))
 	{
-		return false;
+		ScriptHook::Domain->Start();
+
+		return true;
 	}
 
-	ScriptHook::Domain->Start();
-
-	return true;
+	return false;
 }
-bool ManagedTick()
+void ManagedTick()
 {
-#if DEBUG
-	if (ScriptHook::Domain->IsKeyPressed(ScriptHook::ReloadKey))
-	{
-		return false;
-	}
-#endif
 	ScriptHook::Domain->DoTick();
-
-	return true;
 }
 void ManagedKeyboardMessage(int key, bool status, bool statusCtrl, bool statusShift, bool statusAlt)
 {
@@ -103,14 +68,14 @@ void ManagedKeyboardMessage(int key, bool status, bool statusCtrl, bool statusSh
 
 	ScriptHook::Domain->DoKeyboardMessage(static_cast<WinForms::Keys>(key), status, statusCtrl, statusShift, statusAlt);
 }
+
 void ManagedD3DCall(void *swapchain)
 {
-    if (Object::ReferenceEquals(ScriptHook::Domain, nullptr))
-    {
-        return;
-    }
-
-    ScriptHook::Domain->DoD3DCall(swapchain);
+	if (Object::ReferenceEquals(ScriptHook::Domain, nullptr))
+	{
+		return;
+	}
+	ScriptHook::Domain->DoD3DCall(swapchain);
 }
 
 #pragma unmanaged
@@ -119,55 +84,48 @@ void ManagedD3DCall(void *swapchain)
 #include <Windows.h>
 
 bool sGameReloaded = false;
-PVOID sMainFib = nullptr, sScriptFib = nullptr;
+PVOID sMainFib = nullptr;
+PVOID sScriptFib = nullptr;
 
-void ForceOffline();
-void HookGameText();
+//void ForceOffline();
+//void HookGameText();
 
-void ScriptMain()
+static void ScriptMain()
 {
-	// Set up fibers
 	sGameReloaded = true;
 	sMainFib = GetCurrentFiber();
 
 	if (sScriptFib == nullptr)
 	{
-		const auto callback = [](LPVOID)
+		const LPFIBER_START_ROUTINE FiberMain = [](LPVOID lpFiberParameter)
 		{
 			while (ManagedInit())
 			{
 				sGameReloaded = false;
-
-				// Run main loop
-				while (!sGameReloaded && ManagedTick())
+				while (!sGameReloaded)
 				{
-					// Switch back to main script fiber used by Script Hook
+					ManagedTick();
 					SwitchToFiber(sMainFib);
 				}
 			}
 		};
-
-		// Create our own fiber for the common language runtime once
-		sScriptFib = CreateFiber(0, callback, nullptr);
+		sScriptFib = CreateFiber(0, FiberMain, nullptr);
 	}
 
 	while (true)
 	{
-		// Yield execution
 		scriptWait(0);
-
-		// Switch to our own fiber and wait for it to switch back
 		SwitchToFiber(sScriptFib);
 	}
 }
-void ScriptKeyboardMessage(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, BOOL isWithAlt, BOOL wasDownBefore, BOOL isUpNow)
+static void ScriptKeyboardMessage(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, BOOL isWithAlt, BOOL wasDownBefore, BOOL isUpNow)
 {
 	ManagedKeyboardMessage(static_cast<int>(key), isUpNow == FALSE, (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0, (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0, isWithAlt != FALSE);
 }
 
 void DXGIPresent(void *swapChain)
 {
-    ManagedD3DCall(swapChain);
+	ManagedD3DCall(swapChain);
 }
 
 BOOL WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
@@ -178,17 +136,19 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
 			DisableThreadLibraryCalls(hModule);
 			scriptRegister(hModule, &ScriptMain);
 			keyboardHandlerRegister(&ScriptKeyboardMessage);
-            presentCallbackRegister(&DXGIPresent);			
-			ForceOffline();
-			HookGameText();
+			presentCallbackRegister(&DXGIPresent);
+			//ForceOffline();
+			//HookGameText();
 			break;
 		case DLL_PROCESS_DETACH:
 			DeleteFiber(sScriptFib);
 			scriptUnregister(hModule);
 			keyboardHandlerUnregister(&ScriptKeyboardMessage);
-            presentCallbackUnregister(&DXGIPresent);
+			presentCallbackUnregister(&DXGIPresent);
 			break;
 	}
 
 	return TRUE;
 }
+
+

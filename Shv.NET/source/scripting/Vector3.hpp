@@ -518,6 +518,13 @@ namespace GTA
 			virtual System::String ^ToString() override;
 
 			/// <summary>
+			/// Converts the value of the object to its equivalent string representation.
+			/// </summary>
+			/// <param name="numberFormat">The number format.</param>
+			/// <returns>The string representation of the value of this instance.</returns>
+			virtual System::String ^ToString(System::String ^numberFormat);
+
+			/// <summary>
 			/// Returns the hash code for this instance.
 			/// </summary>
 			/// <returns>A 32-bit signed integer hash code.</returns>
@@ -549,6 +556,30 @@ namespace GTA
 		private:
 			[System::Runtime::InteropServices::FieldOffset(12)]
 			float _padding;
+		};
+
+		// For natives that require pointers to vectors and are called internally in the scripting section.
+		[System::Runtime::InteropServices::StructLayout(System::Runtime::InteropServices::LayoutKind::Explicit, Size = 0x18)]
+		private value class NativeVector3
+		{
+		public:
+			[System::Runtime::InteropServices::FieldOffset(0x00)]
+			float X;
+			[System::Runtime::InteropServices::FieldOffset(0x08)]
+			float Y;
+			[System::Runtime::InteropServices::FieldOffset(0x10)]
+			float Z;
+
+			NativeVector3(float x, float y, float z) :X(x), Y(y), Z(z) {}
+
+			static operator Vector3(NativeVector3 value)
+			{
+				return Vector3(value.X, value.Y, value.Z);
+			}
+			static operator NativeVector3(Vector3 value)
+			{
+				return NativeVector3(value.X, value.Y, value.Z);
+			}
 		};
 	}
 }
