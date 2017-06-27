@@ -378,6 +378,17 @@ namespace GTANetwork
 
             if (!IsConnected()) return;
 
+            if (DateTime.Now.Subtract(_lastCheck).TotalMilliseconds > 1000)
+            {
+                _bytesSentPerSecond = BytesSent - _lastBytesSent;
+                _bytesReceivedPerSecond = BytesReceived - _lastBytesReceived;
+
+                _lastBytesReceived = BytesReceived;
+                _lastBytesSent = BytesSent;
+
+                _lastCheck = DateTime.Now;
+            }
+
             try
             {
                 DEBUG_STEP = 1;
