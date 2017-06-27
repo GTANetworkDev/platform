@@ -72,7 +72,6 @@ namespace GTANetwork.Sync
                 EnterVehicle();
             }
             _lastVehicle = true;
-            _justEnteredVeh = true;
             _enterVehicleStarted = DateTime.Now;
             return true;
         }
@@ -242,13 +241,13 @@ namespace GTANetwork.Sync
 
             thisCollection.Call(Hash.SET_VEHICLE_BRAKE_LIGHTS, MainVehicle, Braking);
 
-            if (MainVehicle.SirenActive && !Siren)
+            if (MainVehicle.IsSirenActive && !Siren)
             {
-                MainVehicle.SirenActive = Siren;
+                MainVehicle.IsSirenActive = Siren;
             }
-            else if (!MainVehicle.SirenActive && Siren)
+            else if (!MainVehicle.IsSirenActive && Siren)
             {
-                MainVehicle.SirenActive = Siren;
+                MainVehicle.IsSirenActive = Siren;
             }
 
             if (MainVehicle.ClassType == VehicleClass.Helicopters)

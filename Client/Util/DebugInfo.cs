@@ -69,13 +69,13 @@ namespace GTANetwork.Util
 
             if (PlayerDebug)
             {
-                if (Game.IsControlJustPressed(0, Control.FrontendLeft))
+                if (Game.IsControlJustPressed(Control.FrontendLeft))
                 {
                     PlayerIndex--;
                     Screen.ShowSubtitle("Player Index: " + PlayerIndex);
                 }
 
-                else if (Game.IsControlJustPressed(0, Control.FrontendRight))
+                else if (Game.IsControlJustPressed(Control.FrontendRight))
                 {
                     PlayerIndex++;
                     Screen.ShowSubtitle("Player Index: " + PlayerIndex);

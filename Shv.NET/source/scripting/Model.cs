@@ -23,8 +23,6 @@ namespace GTA
 		{
 		}
 
-		public int Hash { get; private set; }
-
 		public ulong NativeValue
 		{
 			get
@@ -37,6 +35,17 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets the hash for this <see cref="Model"/>.
+		/// </summary>
+		public int Hash { get; private set; }
+
+		/// <summary>
+		/// Returns true if this <see cref="Model"/> is valid.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Model"/> is valid; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsValid
 		{
 			get
@@ -44,6 +53,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_MODEL_VALID, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is in the cd image.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is in the cd image; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsInCdImage
 		{
 			get
@@ -51,6 +66,13 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_MODEL_IN_CDIMAGE, Hash);
 			}
 		}
+
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is loaded so it can be spawned.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Model"/> is loaded; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsLoaded
 		{
 			get
@@ -58,6 +80,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.HAS_MODEL_LOADED, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether the collision for this <see cref="Model"/> is loaded.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if the collision is loaded; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsCollisionLoaded
 		{
 			get
@@ -66,6 +94,12 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a bicycle.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a bicycle; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsBicycle
 		{
 			get
@@ -73,6 +107,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_BICYCLE, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a motorbike.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a motorbike; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsBike
 		{
 			get
@@ -80,6 +120,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_BIKE, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a boat.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a boat; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsBoat
 		{
 			get
@@ -87,6 +133,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_BOAT, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a car.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a car; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsCar
 		{
 			get
@@ -94,6 +146,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_CAR, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a cargobob.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a cargobob; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsCargobob
 		{
 			get
@@ -102,6 +160,12 @@ namespace GTA
 				return hash == VehicleHash.Cargobob || hash == VehicleHash.Cargobob2 || hash == VehicleHash.Cargobob3 || hash == VehicleHash.Cargobob4;
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a helicopter.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a helicopter; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsHelicopter
 		{
 			get
@@ -109,6 +173,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_HELI, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a ped.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a ped; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsPed
 		{
 			get
@@ -116,6 +186,12 @@ namespace GTA
 				return MemoryAccess.IsModelAPed(Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a plane.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a plane; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsPlane
 		{
 			get
@@ -123,6 +199,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_PLANE, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a prop.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a prop; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsProp
 		{
 			get
@@ -130,6 +212,12 @@ namespace GTA
 				return IsValid && !IsPed && !IsVehicle;
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a quadbike.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a quadbike; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsQuadbike
 		{
 			get
@@ -137,6 +225,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_QUADBIKE, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a train.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a train; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsTrain
 		{
 			get
@@ -144,6 +238,12 @@ namespace GTA
 				return Function.Call<bool>(Native.Hash.IS_THIS_MODEL_A_TRAIN, Hash);
 			}
 		}
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Model"/> is a vehicle.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Model"/> is a vehicle; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsVehicle
 		{
 			get
@@ -152,6 +252,10 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets the dimensions of this <see cref="Model"/>.
+		/// </summary>
+		/// <returns></returns>
 		public Vector3 GetDimensions()
 		{
 			Vector3 right, left;
@@ -159,20 +263,35 @@ namespace GTA
 
 			return Vector3.Subtract(left, right);
 		}
+		/// <summary>
+		/// Gets the dimensions of this <see cref="Model"/>.
+		/// </summary>
+		/// <param name="minimum">The minimum dimensions.</param>
+		/// <param name="maximum">The maximum dimensions.</param>
 		public void GetDimensions(out Vector3 minimum, out Vector3 maximum)
 		{
-			var minimumArg = new OutputArgument();
-			var maximumArg = new OutputArgument();
-			Function.Call(Native.Hash.GET_MODEL_DIMENSIONS, Hash, minimumArg, maximumArg);
+		    NativeVector3 min, max;
+			unsafe
+			{
+				Function.Call(Native.Hash.GET_MODEL_DIMENSIONS, Hash, &min, &max);
+			}
 
-			minimum = minimumArg.GetResult<Vector3>();
-			maximum = maximumArg.GetResult<Vector3>();
+		    minimum = min;
+		    maximum = max;
 		}
 
+		/// <summary>
+		/// Attempt to load this <see cref="Model"/> into memory.
+		/// </summary>
 		public void Request()
 		{
 			Function.Call(Native.Hash.REQUEST_MODEL, Hash);
 		}
+		/// <summary>
+		/// Attempt to load this <see cref="Model"/> into memory for a given period of time.
+		/// </summary>
+		/// <param name="timeout">The time (in milliseconds) before giving up trying to load this <see cref="Model"/></param>
+		/// <returns><c>true</c> if this <see cref="Model"/> is loaded; otherwise, <c>false</c></returns>
 		public bool Request(int timeout)
 		{
 			Request();
@@ -182,6 +301,7 @@ namespace GTA
 			while (!IsLoaded)
 			{
 				Script.Yield();
+				Request();
 
 				if (DateTime.UtcNow >= endtime)
 				{
@@ -191,6 +311,9 @@ namespace GTA
 
 			return true;
 		}
+		/// <summary>
+		/// Frees this <see cref="Model"/> from memory.
+		/// </summary>
 		public void MarkAsNoLongerNeeded()
 		{
 			Function.Call(Native.Hash.SET_MODEL_AS_NO_LONGER_NEEDED, Hash);

@@ -443,7 +443,7 @@ namespace GTANetwork
                     ipButton.Activated += (sender, args) =>
                     {
                         MainMenu.TemporarilyHidden = true;
-                        var newIp = InputboxThread.GetUserInput(_clientIp ?? "", 30, TickSpinner);
+                        var newIp = InputboxThread.GetUserInput(_clientIp ?? "", TickSpinner);
                         _clientIp = newIp;
                         ipButton.Text = string.IsNullOrWhiteSpace(newIp) ? "IP Address" : newIp;
                         MainMenu.TemporarilyHidden = false;
@@ -460,7 +460,7 @@ namespace GTANetwork
                     ipButton.Activated += (sender, args) =>
                     {
                         MainMenu.TemporarilyHidden = true;
-                        var port = InputboxThread.GetUserInput(Port.ToString(), 30, TickSpinner);
+                        var port = InputboxThread.GetUserInput(Port.ToString(), TickSpinner);
 
                         if (string.IsNullOrWhiteSpace(port)) port = "4499";
 
@@ -486,7 +486,7 @@ namespace GTANetwork
                     ipButton.Activated += (sender, args) =>
                     {
                         MainMenu.TemporarilyHidden = true;
-                        var newIp = InputboxThread.GetUserInput("", 30, TickSpinner);
+                        var newIp = InputboxThread.GetUserInput("", TickSpinner);
                         MainMenu.TemporarilyHidden = false;
                         _QCpassword = newIp;
                         ipButton.Text = string.IsNullOrWhiteSpace(newIp) ? "Password" : "*******";
@@ -525,13 +525,13 @@ namespace GTANetwork
                 _connectTab.DrawInstructionalButtons += (sender, args) =>
                 {
                     MainMenu.DrawInstructionalButton(4, Control.Jump, "Refresh");
-                    if (Game.IsControlJustPressed(0, Control.Jump)) RebuildServerBrowser();
+                    if (Game.IsControlJustPressed(Control.Jump)) RebuildServerBrowser();
 
                     #region Tabs
                     if (_connectTab.Index == (int)Tab.Verified && _connectTab.Items[(int)Tab.Verified].Focused || _connectTab.Index == (int)Tab.Internet && _connectTab.Items[(int)Tab.Internet].Focused || _connectTab.Index == (int)Tab.LAN && _connectTab.Items[(int)Tab.LAN].Focused || _connectTab.Index == (int)Tab.Recent && _connectTab.Items[(int)Tab.Recent].Focused)
                     {
                         MainMenu.DrawInstructionalButton(6, Control.NextCamera, "Sort by Players");
-                        if (Game.IsControlJustPressed(0, Control.NextCamera))
+                        if (Game.IsControlJustPressed(Control.NextCamera))
                         {
                            ListSorting = !ListSorting;
                            RebuildServerBrowser();
@@ -539,7 +539,7 @@ namespace GTANetwork
 
 
                         MainMenu.DrawInstructionalButton(5, Control.Enter, "Add to Favorites");
-                        if (Game.IsControlJustPressed(0, Control.Enter))
+                        if (Game.IsControlJustPressed(Control.Enter))
                         {
                             _favBrowser.RefreshIndex();
                             var selectedServer = _serverBrowser.Items[_serverBrowser.Index];
@@ -616,11 +616,11 @@ namespace GTANetwork
                         MainMenu.DrawInstructionalButton(6, Control.NextCamera, "Add Server");
 
                         #region Add server
-                        if (Game.IsControlJustPressed(0, Control.NextCamera))
+                        if (Game.IsControlJustPressed(Control.NextCamera))
                         {
 
                             MainMenu.TemporarilyHidden = true;
-                            var serverIp = InputboxThread.GetUserInput("Server IP(:Port)", 40, TickSpinner);
+                            var serverIp = InputboxThread.GetUserInput("Server IP(:Port)", TickSpinner);
 
                             if (serverIp.Contains("Server IP(:Port)") || string.IsNullOrWhiteSpace(serverIp))
                             {
@@ -651,7 +651,7 @@ namespace GTANetwork
                         MainMenu.DrawInstructionalButton(5, Control.Enter, "Remove");
 
                         #region Remove
-                        if (Game.IsControlJustPressed(0, Control.Enter))
+                        if (Game.IsControlJustPressed(Control.Enter))
                         {
                             var selectedServer = _favBrowser.Items[_favBrowser.Index];
                             var favItem = _favBrowser.Items.FirstOrDefault(i => i.Description == selectedServer.Description);
@@ -700,7 +700,7 @@ namespace GTANetwork
                             return;
                         }
                         MainMenu.TemporarilyHidden = true;
-                        var newName = InputboxThread.GetUserInput(PlayerSettings.DisplayName ?? "Enter a new Display Name", 32, TickSpinner);
+                        var newName = InputboxThread.GetUserInput(PlayerSettings.DisplayName ?? "Enter a new Display Name", TickSpinner);
                         if (!string.IsNullOrWhiteSpace(newName))
                         {
                             if (newName.Length > 32) newName = newName.Substring(0, 32);
@@ -750,7 +750,7 @@ namespace GTANetwork
                     nameItem.Activated += (sender, item) =>
                     {
                         MainMenu.TemporarilyHidden = true;
-                        var newName = InputboxThread.GetUserInput(PlayerSettings.UpdateChannel ?? "stable", 40, TickSpinner);
+                        var newName = InputboxThread.GetUserInput(PlayerSettings.UpdateChannel ?? "stable", TickSpinner);
                         if (!string.IsNullOrWhiteSpace(newName))
                         {
                             PlayerSettings.UpdateChannel = newName;
@@ -800,7 +800,7 @@ namespace GTANetwork
                     chatItem.Activated += (sender, item) =>
                     {
                         MainMenu.TemporarilyHidden = true;
-                        var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxXOffset.ToString(), 10, TickSpinner);
+                        var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxXOffset.ToString(), TickSpinner);
 
                         if (!int.TryParse(strInput, out int newSetting))
                         {
@@ -822,8 +822,7 @@ namespace GTANetwork
                     chatItem.Activated += (sender, item) =>
                     {
                         MainMenu.TemporarilyHidden = true;
-                        var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxYOffset.ToString(),
-                            10, TickSpinner);
+                        var strInput = InputboxThread.GetUserInput(PlayerSettings.ChatboxYOffset.ToString(), TickSpinner);
 
                         int newSetting;
                         if (!int.TryParse(strInput, out newSetting))
@@ -1256,7 +1255,7 @@ namespace GTANetwork
 
         private void PauseMenu()
         {
-            if (Game.IsControlJustPressed(0, Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping && !_mainWarning.Visible)
+            if (Game.IsControlJustPressed(Control.FrontendPauseAlternate) && !MainMenu.Visible && !_wasTyping && !_mainWarning.Visible)
             {
                 MainMenu.Visible = true;
 
@@ -1287,7 +1286,7 @@ namespace GTANetwork
                 }
                 if (!IsOnServer())
                 {
-                    Game.EnableControlThisFrame(0, Control.FrontendPause);
+                    Game.EnableControlThisFrame(Control.FrontendPause);
                 }
 
                 double aver;

@@ -1,3 +1,5 @@
+using System;
+
 namespace GTA
 {
 	public enum WeaponHash : uint
@@ -70,6 +72,29 @@ namespace GTA
 		Ball = 600439132u,
 		Flare = 1233104067u,
 		NightVision = 2803906140u,
-		Parachute = 4222310262u
+		Parachute = 4222310262u,
+		SweeperShotgun = 317205821u,
+		BattleAxe = 3441901897u,
+		CompactGrenadeLauncher = 125959754u,
+		MiniSMG = 3173288789u,
+		PipeBomb = 3125143736u,
+		PoolCue = 2484171525u,
+		Wrench = 419712736u
+	}
+
+	public enum VehicleWeaponHash
+	{
+		Invalid = -1, 
+		Tank = 1945616459,
+		SpaceRocket = -123497569,
+		PlaneRocket = -821520672,
+		PlayerLaser = -268631733,
+		PlayerBullet = 1259576109,
+		PlayerBuzzard = 1186503822,
+		PlayerHunter = -1625648674,
+		PlayerLazer = -494786007,
+		EnemyLaser = 1566990507,
+		SearchLight = -844344963,
+		Radar = -764006018
 	}
 }

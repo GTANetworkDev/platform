@@ -171,7 +171,7 @@ namespace GTANetwork
                 if (sb2.Length > 0)
                     new UIResText(sb2.ToString().Substring(0, Math.Min(sb2.Length, 198)), new Point(500, 10), 0.3f, Color.White).Draw();
 
-                if (Game.IsControlJustPressed(0, Control.InteractionMenu))
+                if (Game.IsControlJustPressed(Control.InteractionMenu))
                 {
                     var sb3 = new StringBuilder();
 
@@ -184,12 +184,12 @@ namespace GTANetwork
                     GTA.UI.Screen.ShowNotification("Written mem map!");
                 }
 
-                if (Game.IsControlPressed(0, Control.PhoneDown) && _startIndex < LastEntityMemory.Length - 4)
+                if (Game.IsControlPressed(Control.PhoneDown) && _startIndex < LastEntityMemory.Length - 4)
                 {
                     _startIndex += 1;
                 }
 
-                if (Game.IsControlPressed(0, Control.PhoneUp) && _startIndex > 0)
+                if (Game.IsControlPressed(Control.PhoneUp) && _startIndex > 0)
                 {
                     _startIndex -= 1;
                 }
@@ -323,7 +323,7 @@ namespace GTANetwork
         {
             //var currentVeh = Main.PlayerChar.CurrentVehicle;
 
-            if (Game.IsControlJustPressed(0, Control.Jump))
+            if (Game.IsControlJustPressed(Control.Jump))
             {
                 _changed = new List<int>();
 
@@ -333,18 +333,18 @@ namespace GTANetwork
                 }
             }
 
-            if (Game.IsControlJustPressed(0, Control.ThrowGrenade))
+            if (Game.IsControlJustPressed(Control.ThrowGrenade))
             {
                 _checkStay = !_checkStay;
                 _checkChange = !_checkChange;
             }
 
-            if (Game.IsControlJustPressed(0, Control.VehicleDuck))
+            if (Game.IsControlJustPressed(Control.VehicleDuck))
             {
                 _checkLastValue = !_checkLastValue;
             }
 
-            if (Game.IsControlJustPressed(0, Control.LookBehind))
+            if (Game.IsControlJustPressed(Control.LookBehind))
             {
                 for (int i = 0; i < LastEntityMemory.Length; i += 1)
                 {
@@ -454,18 +454,18 @@ namespace GTANetwork
                 if (sb2.Length > 0)
                     new UIResText(sb2.ToString().Substring(0, Math.Min(sb2.Length, 198)), new Point(500, 10), 0.3f, Color.White).Draw();
 
-                if (Game.IsControlJustPressed(0, Control.InteractionMenu))
+                if (Game.IsControlJustPressed(Control.InteractionMenu))
                 {
                     File.WriteAllText("memorymap.txt", sb2.ToString());
                     GTA.UI.Screen.ShowNotification("Written mem map!");
                 }
 
-                if (Game.IsControlPressed(0, Control.PhoneDown) && _startIndex < LastEntityMemory.Length - 4)
+                if (Game.IsControlPressed(Control.PhoneDown) && _startIndex < LastEntityMemory.Length - 4)
                 {
                     _startIndex += 4;
                 }
 
-                if (Game.IsControlPressed(0, Control.PhoneUp) && _startIndex > 0)
+                if (Game.IsControlPressed(Control.PhoneUp) && _startIndex > 0)
                 {
                     _startIndex -= 4;
                 }
@@ -599,7 +599,7 @@ namespace GTANetwork
         {
             //var currentVeh = Main.PlayerChar.CurrentVehicle;
 
-            if (Game.IsControlJustPressed(0, Control.Jump))
+            if (Game.IsControlJustPressed(Control.Jump))
             {
                 _changed = new List<int>();
 
@@ -609,18 +609,18 @@ namespace GTANetwork
                 }
             }
 
-            if (Game.IsControlJustPressed(0, Control.ThrowGrenade))
+            if (Game.IsControlJustPressed(Control.ThrowGrenade))
             {
                 _checkStay = !_checkStay;
                 _checkChange = !_checkChange;
             }
 
-            if (Game.IsControlJustPressed(0, Control.VehicleDuck))
+            if (Game.IsControlJustPressed(Control.VehicleDuck))
             {
                 _checkLastValue = !_checkLastValue;
             }
 
-            if (Game.IsControlJustPressed(0, Control.LookBehind))
+            if (Game.IsControlJustPressed(Control.LookBehind))
             {
                 for (int i = 0; i < LastEntityMemory.Length; i += 4)
                 {

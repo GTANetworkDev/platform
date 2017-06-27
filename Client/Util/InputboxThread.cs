@@ -17,13 +17,13 @@ namespace GTANetwork.Util
             };
         }
 
-        public static string GetUserInput(string defaultText, int maxLen, Action spinner)
+        public static string GetUserInput(string defaultText, Action spinner)
         {
             string output = null;
 
             ThreadJumper.Enqueue(delegate
             {
-                output = Game.GetUserInput(defaultText, maxLen);
+                output = Game.GetUserInput(defaultText);
             });
 
             Main.BlockControls = true;
@@ -39,14 +39,9 @@ namespace GTANetwork.Util
             return output;
         }
 
-        public static string GetUserInput(int maxLen, Action spinner)
-        {
-            return GetUserInput("", maxLen, spinner);
-        }
-
         public static string GetUserInput(Action spinner)
         {
-            return GetUserInput("", 40, spinner);
+            return GetUserInput("", spinner);
         }
 
         public static Queue<Action> ThreadJumper = new Queue<Action>();

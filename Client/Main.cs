@@ -257,11 +257,13 @@ namespace GTANetwork
             LogManager.RuntimeLog("Attaching OnTick loop.");
 
             Tick += OnTick;
-            
+
             KeyDown += OnKeyDown;
 
-            KeyUp += (sender, args) => {
-                if (args.KeyCode == Keys.Escape && _wasTyping) {
+            KeyUp += (sender, args) =>
+            {
+                if (args.KeyCode == Keys.Escape && _wasTyping)
+                {
                     _wasTyping = false;
                 }
             };
@@ -295,11 +297,11 @@ namespace GTANetwork
 
             //Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
 
-            Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
-            Audio.SetAudioFlag(AudioFlag.DisableBarks, true);
-            Audio.SetAudioFlag(AudioFlag.DisableFlightMusic, true);
-            Audio.SetAudioFlag(AudioFlag.PoliceScannerDisabled, true);
-            Audio.SetAudioFlag(AudioFlag.OnlyAllowScriptTriggerPoliceScanner, true);
+            Audio.SetAudioFlag(AudioFlags.LoadMPData, true);
+            Audio.SetAudioFlag(AudioFlags.DisableBarks, true);
+            Audio.SetAudioFlag(AudioFlags.DisableFlightMusic, true);
+            Audio.SetAudioFlag(AudioFlags.PoliceScannerDisabled, true);
+            Audio.SetAudioFlag(AudioFlags.OnlyAllowScriptTriggerPoliceScanner, true);
             Function.Call((Hash)0x552369F549563AD5, false); //_FORCE_AMBIENT_SIREN
 
             GlobalVariable.Get(2576573).Write(1); //Enable MP cars?
@@ -342,7 +344,7 @@ namespace GTANetwork
             var player = Game.Player.Character;
             if (player == null || player.Handle == 0 || Game.IsLoading) return;
 
-            GTA.UI.Screen.FadeOut(1);
+            GTA.UI.Screen.Fading.FadeOut(1);
             ResetPlayer();
             MainMenu.RefreshIndex();
             _init = true;
@@ -355,7 +357,7 @@ namespace GTANetwork
             Game.TimeScale = 1;
 
             GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
-            GTA.UI.Screen.FadeIn(1000);
+            GTA.UI.Screen.Fading.FadeIn(1000);
             _mainWarning = new Warning("",""){ Visible = false};
         }
 
@@ -503,7 +505,7 @@ namespace GTANetwork
                         }
                         else
                         {
-                            var message = Game.GetUserInput(255);
+                            var message = Game.GetUserInput();
                             if (string.IsNullOrEmpty(message)) break;
 
                             var obj = new ChatData { Message = message, };

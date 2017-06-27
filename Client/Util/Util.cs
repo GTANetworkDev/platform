@@ -432,7 +432,7 @@ namespace GTANetwork.Util
         {
             for (int i = 0; i < length; i++)
             {
-                MemoryAccess.WriteByte(pointer + i, value);
+                GTA.Native.MemoryAccess.WriteByte(pointer + i, value);
             }
         }
 

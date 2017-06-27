@@ -30,7 +30,7 @@ namespace GTANetwork.GUI
         {
             if (!Visible) return;
 
-            Game.DisableAllControlsThisFrame(0);
+            Game.DisableAllControlsThisFrame();
 
             var res = UIMenu.GetScreenResolutionMantainRatio();
             
@@ -60,7 +60,7 @@ namespace GTANetwork.GUI
             scaleform.CallFunction("DRAW_INSTRUCTIONAL_BUTTONS", -1);
             scaleform.Render2D();
 
-            if (Game.IsDisabledControlJustPressed(0, Control.FrontendAccept))
+            if (Game.IsDisabledControlJustPressed(Control.FrontendAccept))
             {
                 OnAccept?.Invoke();
             }

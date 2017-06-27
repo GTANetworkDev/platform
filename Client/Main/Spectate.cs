@@ -71,9 +71,9 @@ namespace GTANetwork
                             Control.LookDown,
                         };
 
-                    Game.DisableAllControlsThisFrame(0);
+                    Game.DisableAllControlsThisFrame();
                     foreach (var c in exceptions)
-                        Game.EnableControlThisFrame(0, c);
+                        Game.EnableControlThisFrame(c);
 
                     var ent = NetEntityHandler.NetToEntity(SpectatingEntity);
 
@@ -110,7 +110,7 @@ namespace GTANetwork
                     PlayerChar.IsPositionFrozen = true;
                     Game.Player.IsInvincible = true;
                     PlayerChar.IsCollisionEnabled = false;
-                    Game.DisableAllControlsThisFrame(0);
+                    Game.DisableAllControlsThisFrame();
 
                     if (CurrentSpectatingPlayer.Character == null)
                         PlayerChar.PositionNoOffset = CurrentSpectatingPlayer.Position;
@@ -119,12 +119,12 @@ namespace GTANetwork
                     else
                         PlayerChar.PositionNoOffset = CurrentSpectatingPlayer.Character.Position;
 
-                    if (Game.IsControlJustPressed(0, Control.PhoneLeft))
+                    if (Game.IsControlJustPressed(Control.PhoneLeft))
                     {
                         _currentSpectatingPlayerIndex--;
                         CurrentSpectatingPlayer = null;
                     }
-                    else if (Game.IsControlJustPressed(0, Control.PhoneRight))
+                    else if (Game.IsControlJustPressed(Control.PhoneRight))
                     {
                         _currentSpectatingPlayerIndex++;
                         CurrentSpectatingPlayer = null;

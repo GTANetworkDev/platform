@@ -55,6 +55,28 @@ namespace GTA
 		_interval = value;
 	}
 
+	//String ^Script::GetRelativeFilePath(String ^filePath)
+	//{
+	//	return System::IO::Path::Combine(BaseDirectory, filePath);
+	//}
+
+	//void Script::Start()
+	//{
+	//	_thread = gcnew Thread(gcnew ThreadStart(this, &Script::MainLoop));
+	//	_thread->Start();
+
+	//	_scriptdomain->OnStartScript(this);
+	//}
+
+	void Script::D3DHook(void *swapchain)
+	{
+		Present(gcnew IntPtr(swapchain), EventArgs::Empty);
+	}
+	void Script::AttachD3DHook()
+	{
+		_scriptdomain->HookD3DScript(this);
+	}
+
 	void Script::Abort()
 	{
 		try
@@ -66,14 +88,20 @@ namespace GTA
 			HandleUnhandledException(this, gcnew UnhandledExceptionEventArgs(ex, true));
 		}
 
+		//_running = false;
 		_waitEvent->Set();
-
 		_scriptdomain->AbortScript(this);
+
+		//if (Object::ReferenceEquals(_thread, nullptr))
+		//{
+		//	return;
+		//}
+
+		//_thread->Abort();
+		//_thread = nullptr;
+
+		//_scriptdomain->OnAbortScript(this);
 	}
-    void Script::D3DHook(void *swapchain)
-    {
-        Present(gcnew IntPtr(swapchain), EventArgs::Empty);
-    }
 	void Script::Wait(int ms)
 	{
 		Script ^script = ScriptDomain::ExecutingScript;
@@ -97,13 +125,10 @@ namespace GTA
 		Wait(0);
 	}
 
-    void Script::AttachD3DHook()
-    {
-        _scriptdomain->HookD3DScript(this);
-    }
-
 	void Script::MainLoop()
 	{
+		_running = true;
+
 		// Wait for domain to run scripts
 		_continueEvent->WaitOne();
 
