@@ -22,8 +22,6 @@
 #include "Vector2.hpp"
 #include "Vector3.hpp"
 #include "Settings.hpp"
-#include "windows.h"
-#include "string"
 
 using namespace System;
 using namespace System::Reflection;
@@ -81,7 +79,6 @@ void ManagedD3DCall(void *swapchain)
 #pragma unmanaged
 
 #include <Main.h>
-#include <Windows.h>
 
 bool sGameReloaded = false;
 PVOID sMainFib = nullptr;
