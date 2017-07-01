@@ -116,34 +116,36 @@ namespace GTANetworkServer
                 Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
             }
 
-            var msgBasic = Server.CreateMessage();
 
-            msgBasic.Write((byte)PacketType.BasicSync);
-            msgBasic.Write(basic.Length);
-            msgBasic.Write(basic);
-
-            long ticks = Program.GetTicks();
-
-            List<NetConnection> connectionsFar = new List<NetConnection>();
-
-            foreach (var client in exception.Streamer.GetFarClients())
+            if (pure)
             {
-                if (client.Fake) continue;
-                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
-                if (!client.ConnectionConfirmed) continue;
-                if (client == exception) continue;
+                var msgBasic = Server.CreateMessage();
 
-                if (!pure) continue;
+                msgBasic.Write((byte)PacketType.BasicSync);
+                msgBasic.Write(basic.Length);
+                msgBasic.Write(basic);
 
-                var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
+                long ticks = Program.GetTicks();
 
-                if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
+                List<NetConnection> connectionsFar = new List<NetConnection>();
 
-                connectionsFar.Add(client.NetConnection);
-                client.LastPacketReceived.Set(exception.handle.Value, ticks);
+                foreach (var client in exception.Streamer.GetFarClients())
+                {
+                    if (client.Fake) continue;
+                    if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                    if (!client.ConnectionConfirmed) continue;
+                    if (client == exception) continue;
+
+                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
+
+                    if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
+
+                    connectionsFar.Add(client.NetConnection);
+                    client.LastPacketReceived.Set(exception.handle.Value, ticks);
+                }
+
+                Server.SendMessage(msgBasic, connectionsFar, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
             }
-
-            Server.SendMessage(msgBasic, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
         }
 
         //Vehicle Packet
@@ -229,30 +231,32 @@ namespace GTANetworkServer
                 Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
             }
 
-            var msgBasic = Server.CreateMessage();
-            msgBasic.Write((byte)PacketType.BasicSync);
-            msgBasic.Write(basic.Length);
-            msgBasic.Write(basic);
-
-            long ticks = Program.GetTicks();
-            List<NetConnection> connectionsFar = new List<NetConnection>();
-
-            foreach (var client in exception.Streamer.GetFarClients())
+            if (pure)
             {
-                if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
-                if (!client.ConnectionConfirmed) continue;
-                if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+                var msgBasic = Server.CreateMessage();
+                msgBasic.Write((byte)PacketType.BasicSync);
+                msgBasic.Write(basic.Length);
+                msgBasic.Write(basic);
 
-                if (!pure) continue;
-                var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
+                long ticks = Program.GetTicks();
+                List<NetConnection> connectionsFar = new List<NetConnection>();
 
-                if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
-                connectionsFar.Add(client.NetConnection);
+                foreach (var client in exception.Streamer.GetFarClients())
+                {
+                    if (client.NetConnection.Status == NetConnectionStatus.Disconnected) continue;
+                    if (!client.ConnectionConfirmed) continue;
+                    if (client.NetConnection.RemoteUniqueIdentifier == exception.NetConnection.RemoteUniqueIdentifier) continue;
+                    
+                    var lastUpdateReceived = client.LastPacketReceived.Get(exception.handle.Value);
 
-                client.LastPacketReceived.Set(exception.handle.Value, ticks);
+                    if (lastUpdateReceived != 0 && ticks - lastUpdateReceived <= 1000) continue;
+                    connectionsFar.Add(client.NetConnection);
+
+                    client.LastPacketReceived.Set(exception.handle.Value, ticks);
+                }
+
+                Server.SendMessage(msgBasic, connectionsFar, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
             }
-
-            Server.SendMessage(msgBasic, connectionsFar, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
         }
 
         internal bool CheckUnoccupiedTrailerDriver(Client player, NetHandle vehicle)
