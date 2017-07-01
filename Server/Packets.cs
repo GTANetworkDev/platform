@@ -231,7 +231,7 @@ namespace GTANetworkServer
                 Server.SendMessage(msg, connectionsNear, NetDeliveryMethod.ReliableSequenced, (int)ConnectionChannel.LightSync);
             }
 
-            if (!pure)
+            if (pure)
             {
                 var msgBasic = Server.CreateMessage();
                 msgBasic.Write((byte)PacketType.BasicSync);
