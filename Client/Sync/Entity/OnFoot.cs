@@ -112,7 +112,7 @@ namespace GTANetwork.Sync
         private bool _lastJumping;
         private void UpdateOnFootAnimation()
         {
-            if (EnteringVehicle || !Character.IsRendered) return;
+            if (EnteringVehicle/* || !Character.IsRendered*/) return;
 
             if (!_init)
             {
