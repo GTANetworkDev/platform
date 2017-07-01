@@ -144,7 +144,7 @@ namespace GTANetworkServer
                     client.LastPacketReceived.Set(exception.handle.Value, ticks);
                 }
 
-                Server.SendMessage(msgBasic, connectionsNear, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
+                Server.SendMessage(msgBasic, connectionsFar, NetDeliveryMethod.UnreliableSequenced, (int)ConnectionChannel.BasicSync);
             }
         }
 
