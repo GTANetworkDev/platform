@@ -55,8 +55,8 @@ namespace GTANetwork
                 thisCol.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, -1);
                 thisCol.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
 
-                if (Main.RemoveGameEntities)
-                {
+                //if (Main.RemoveGameEntities)
+                //{
                     thisCol.Call(Hash.SET_PED_POPULATION_BUDGET, 0);
                     thisCol.Call(Hash.SET_VEHICLE_POPULATION_BUDGET, 0);
 
@@ -71,7 +71,7 @@ namespace GTANetwork
                     thisCol.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
                     thisCol.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
                     thisCol.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
-                }
+                //}
 
 
                 //Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, PlayerChar, true, true);
@@ -103,7 +103,7 @@ namespace GTANetwork
 
                 thisCol.Execute();
 
-                if (!Main.RemoveGameEntities) return;
+                //if (!Main.RemoveGameEntities) return;
 
                 if (DateTime.Now.Subtract(LastDateTime).TotalMilliseconds >= 500)
                 {

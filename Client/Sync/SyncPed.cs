@@ -41,7 +41,7 @@ namespace GTANetwork.Sync
 
             if (Character != null)
             {
-                if (!Character.IsRendered) return;
+                //if (!Character.IsRendered) return;
                 if (!Character.Exists()) return;
                 if (_isInVehicle)
                 {
@@ -76,10 +76,10 @@ namespace GTANetwork.Sync
 
                 if (Character != null && Character.Exists())
                 {
-                    if (!Character.IsRendered || !Character.IsOnScreen)
-                    {
-                        UpdatePosition(updatePosition: true, updateRotation: false, updateVelocity: false);
-                    }
+                    //if (!Character.IsRendered || !Character.IsOnScreen)
+                    //{
+                    //    UpdatePosition(updatePosition: true, updateRotation: false, updateVelocity: false);
+                    //}
 
                     Character.Health = PedHealth;
                     if (IsPlayerDead && !Character.IsDead && IsInVehicle)

@@ -10,7 +10,7 @@ namespace GTANetworkServer
 
     public abstract class ColShape
     {
-        internal abstract bool Check(Vector3 pos);
+        public abstract bool Check(Vector3 pos);
 
         public event ColShapeEvent onEntityEnterColShape;
         public event ColShapeEvent onEntityExitColShape;
@@ -126,7 +126,7 @@ namespace GTANetworkServer
             }
         }
 
-        internal override bool Check(Vector3 pos)
+        public override bool Check(Vector3 pos)
         {
             var c = Center;
 
@@ -182,7 +182,7 @@ namespace GTANetworkServer
             set { _height = value; }
         }
 
-        internal override bool Check(Vector3 pos)
+        public override bool Check(Vector3 pos)
         {
             var c = Center;
 
@@ -234,7 +234,7 @@ namespace GTANetworkServer
         public float X;
         public float Y;
 
-        internal override bool Check(Vector3 pos)
+        public override bool Check(Vector3 pos)
         {
             return (pos.X > Start.X && pos.Y > Start.Y) && 
                    (pos.X < End.X && pos.Y < End.X);
@@ -254,7 +254,7 @@ namespace GTANetworkServer
         public Vector3 Start;
         public Vector3 End;
 
-        internal override bool Check(Vector3 pos)
+        public override bool Check(Vector3 pos)
         {
             return (pos.X > Start.X && pos.Y > Start.Y && pos.Z > Start.Z) &&
                    (pos.X < End.X && pos.Y < End.Y && pos.Z < End.Z);

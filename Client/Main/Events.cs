@@ -273,7 +273,7 @@ namespace GTANetwork
                 #endregion
 
                 #region invokeonVehicleSirenToggle
-                if (Util.Util.GetResponsiblePed(playerCar).Handle == player.Handle)
+                if (Util.Util.GetResponsiblePed(playerCar, player).Handle != 0)
                 {
                     playerCar.IsInvincible = cc?.IsInvincible ?? false;
                 }

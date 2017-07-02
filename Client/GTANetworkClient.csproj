@@ -96,7 +96,7 @@
     </Reference>
     <Reference Include="NativeUI, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\NativeUI.dll</HintPath>
+      <HintPath>..\NativeUI\bin\Release\NativeUI.dll</HintPath>
     </Reference>
     <Reference Include="NAudio">
       <HintPath>..\libs\NAudio.dll</HintPath>

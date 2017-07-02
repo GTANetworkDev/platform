@@ -733,11 +733,13 @@ namespace GTANResource
             {
                 for (var i = Clients.Count - 1; i >= 0; i--) // Kick AFK players
                 {
-                    if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 70)
+                    var time = Clients[i].LastUpdate != default(DateTime) ? DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds : 0;
+
+                    if (time > 70)
                     {
                         Clients.Remove(Clients[i]);
                     }
-                    else if (Clients[i].LastUpdate != default(DateTime) && DateTime.Now.Subtract(Clients[i].LastUpdate).TotalSeconds > 10)
+                    else if (time > 10)
                     {
                         Clients[i].NetConnection.Disconnect("Timed out.");
                         //DisconnectClient(Clients[i], "Timeout");
