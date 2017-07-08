@@ -3832,6 +3832,28 @@ namespace GTANetworkServer
             }
         }
 
+        public bool getMarkerBobUpAndDown(NetHandle marker)
+        {
+            if (doesEntityExist(marker))
+            {
+                return ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).BobUpAndDown;
+            }
+
+            return false;
+        }
+
+        public void setMarkerBobUpAndDown(NetHandle marker, bool state)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).BobUpAndDown = state;
+
+                var delta = new Delta_MarkerProperties();
+                delta.BobUpAndDown = state;
+                GameServer.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
         public Vector3 getMarkerScale(NetHandle marker)
         {
             if (doesEntityExist(marker))
@@ -4118,9 +4140,9 @@ namespace GTANetworkServer
             }
         }
 
-        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
+        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0, bool bobUpAndDown = false)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension, bobUpAndDown));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return new Marker(this, ent);
         }

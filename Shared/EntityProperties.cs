@@ -241,6 +241,9 @@ namespace GTANetworkShared
 
         [ProtoMember(7)]
         public Vector3 Scale { get; set; }
+
+        [ProtoMember(8)]
+        public bool BobUpAndDown { get; set; }
     }
 
     [ProtoContract]
@@ -554,6 +557,9 @@ namespace GTANetworkShared
 
         [ProtoMember(7)]
         public Vector3 Scale { get; set; }
+
+        [ProtoMember(8)]
+        public bool? BobUpAndDown { get; set; }
     }
 
     [ProtoContract]

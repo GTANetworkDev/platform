@@ -3413,9 +3413,9 @@ namespace GTANetwork.Javascript
             return !Function.Call<bool>(Hash.IS_HUD_HIDDEN);
         }
 
-        public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
+        public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha, bool bobUpAndDown = false)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b), HandleType.LocalHandle);
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b, 0, bobUpAndDown), HandleType.LocalHandle);
         }
 
         public void setMarkerType(LocalHandle marker, int type)
@@ -3426,6 +3426,16 @@ namespace GTANetwork.Javascript
         public int getMarkerType(LocalHandle marker)
         {
             return marker.Properties<RemoteMarker>().MarkerType;
+        }
+
+        public void setMarkerBobUpAndDown(LocalHandle marker, bool state)
+        {
+            marker.Properties<RemoteMarker>().BobUpAndDown = state;
+        }
+
+        public bool getMarkerBobUpAndDown(LocalHandle marker)
+        {
+            return marker.Properties<RemoteMarker>().BobUpAndDown;
         }
 
         public void setMarkerColor(LocalHandle marker, int alpha, int r, int g, int b)

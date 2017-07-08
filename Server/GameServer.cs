@@ -410,7 +410,7 @@ namespace GTANetworkServer
                         vehicle.getElementData<float>("rotZ")),
                     new Vector3(vehicle.getElementData<float>("scaleX"), vehicle.getElementData<float>("scaleY"),
                         vehicle.getElementData<float>("scaleZ")), vehicle.getElementData<int>("alpha"),
-                    vehicle.getElementData<int>("red"), vehicle.getElementData<int>("green"), vehicle.getElementData<int>("blue"), dimension);
+                    vehicle.getElementData<int>("red"), vehicle.getElementData<int>("green"), vehicle.getElementData<int>("blue"), dimension, vehicle.getElementData<bool>("bobupanddown"));
                 res.MapEntities.Add(ent);
             }
 

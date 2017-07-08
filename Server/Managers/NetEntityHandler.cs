@@ -320,7 +320,7 @@ namespace GTANetworkServer
             return localEntityHash;
         }
 
-        public int CreateMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension)
+        public int CreateMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension, bool bobUpAndDown = false)
         {
             int localEntityHash;
             
@@ -336,6 +336,7 @@ namespace GTANetworkServer
                 Green = g,
                 Blue = b,
                 Dimension = dimension,
+                BobUpAndDown = bobUpAndDown,
                 EntityType = (byte) EntityType.Marker,
             };
 
