@@ -28,6 +28,9 @@ using Vector3 = GTANetworkShared.Vector3;
 using VehicleHash = GTANetworkShared.VehicleHash;
 using WeaponHash = GTANetworkShared.WeaponHash;
 using System.ComponentModel;
+//using WeaponComponent = GTANetwork.Util.WeaponComponent;
+using WeaponComponent = GTA.WeaponComponentHash;
+
 
 namespace GTANetwork.Javascript
 {
@@ -979,9 +982,9 @@ namespace GTANetwork.Javascript
 
             private RaycastResult wrapper;
 
-            public bool didHitAnything => wrapper.DitHit;
+            public bool didHitAnything => wrapper.DidHit;
 
-            public bool didHitEntity => wrapper.DitHitEntity;
+            public bool didHitEntity => wrapper.DidHitEntity;
 
             public LocalHandle hitEntity => new LocalHandle(wrapper.HitEntity?.Handle ?? 0);
 
@@ -1250,7 +1253,7 @@ namespace GTANetwork.Javascript
 
         private DateTime _last;
         private static int _fps = 30;
-        public int getGameFramerate(Browser browser, int fps)
+        public int getGameFramerate()
         {
             if (DateTime.Now.Subtract(_last).TotalMilliseconds <= 500)
             {
@@ -1623,7 +1626,7 @@ namespace GTANetwork.Javascript
             var veh = vehicle.Properties<RemoteVehicle>();
 
             if (veh == null) return false;
-            return veh.StreamedIn ? new Vehicle(vehicle.Value).SirenActive : veh.Siren;
+            return veh.StreamedIn ? new Vehicle(vehicle.Value).IsSirenActive : veh.Siren;
         }
 
         public bool isVehicleTyrePopped(LocalHandle vehicle, int tyre)
@@ -1824,8 +1827,8 @@ namespace GTANetwork.Javascript
             if (veh == null) return;
             if (veh.StreamedIn)
             {
-                new Vehicle(vehicle.Value).TaxiLightOn = status;
-                new Vehicle(vehicle.Value).SearchLightOn = status;
+                new Vehicle(vehicle.Value).IsTaxiLightOn = status;
+                new Vehicle(vehicle.Value).IsSearchLightOn = status;
             }
 
             if (status)
@@ -3410,9 +3413,9 @@ namespace GTANetwork.Javascript
             return !Function.Call<bool>(Hash.IS_HUD_HIDDEN);
         }
 
-        public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha)
+        public LocalHandle createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int r, int g, int b, int alpha, bool bobUpAndDown = false)
         {
-            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b), HandleType.LocalHandle);
+            return new LocalHandle(Main.NetEntityHandler.CreateLocalMarker(markerType, pos.ToVector(), dir.ToVector(), rot.ToVector(), scale.ToVector(), alpha, r, g, b, 0, bobUpAndDown), HandleType.LocalHandle);
         }
 
         public void setMarkerType(LocalHandle marker, int type)
@@ -3423,6 +3426,16 @@ namespace GTANetwork.Javascript
         public int getMarkerType(LocalHandle marker)
         {
             return marker.Properties<RemoteMarker>().MarkerType;
+        }
+
+        public void setMarkerBobUpAndDown(LocalHandle marker, bool state)
+        {
+            marker.Properties<RemoteMarker>().BobUpAndDown = state;
+        }
+
+        public bool getMarkerBobUpAndDown(LocalHandle marker)
+        {
+            return marker.Properties<RemoteMarker>().BobUpAndDown;
         }
 
         public void setMarkerColor(LocalHandle marker, int alpha, int r, int g, int b)
@@ -4037,11 +4050,11 @@ namespace GTANetwork.Javascript
             menu.Draw();
 
             if (!menu.Visible) return;
-            Game.DisableControlThisFrame(0, Control.NextCamera);
-            Game.DisableControlThisFrame(0, Control.NextWeapon);
-            Game.DisableControlThisFrame(0, Control.VehicleNextRadio);
-            Game.DisableControlThisFrame(0, Control.LookLeftRight);
-            Game.DisableControlThisFrame(0, Control.LookUpDown);
+            Game.DisableControlThisFrame(Control.NextCamera);
+            Game.DisableControlThisFrame(Control.NextWeapon);
+            Game.DisableControlThisFrame(Control.VehicleNextRadio);
+            Game.DisableControlThisFrame(Control.LookLeftRight);
+            Game.DisableControlThisFrame(Control.LookUpDown);
         }
 
         public void setMenuBannerSprite(UIMenu menu, string spritedict, string spritename)
@@ -4070,9 +4083,9 @@ namespace GTANetwork.Javascript
             menu.Subtitle.Caption = text;
         }
 
-        public string getUserInput(string defaultText, int maxlen)
+        public string getUserInput(string defaultText, int maxlen = 0)
         {
-            return Game.GetUserInput(defaultText, maxlen);
+            return Game.GetUserInput(defaultText);
         }
 
         internal PointF convertAnchorPos(float x, float y, Anchor anchor, float xOffset, float yOffset)
@@ -4139,62 +4152,62 @@ namespace GTANetwork.Javascript
 
         public bool isControlJustPressed(int control)
         {
-            return Game.IsControlJustPressed(0, (GTA.Control) control);
+            return Game.IsControlJustPressed((GTA.Control) control);
         }
 
         public bool isControlPressed(int control)
         {
-            return Game.IsControlPressed(0, (GTA.Control)control);
+            return Game.IsControlPressed((GTA.Control)control);
         }
 
         public bool isDisabledControlJustReleased(int control)
         {
-            return Game.IsDisabledControlJustReleased(0, (GTA.Control)control);
+            return Game.IsDisabledControlJustReleased((GTA.Control)control);
         }
 
         public bool isDisabledControlJustPressed(int control)
         {
-            return Game.IsDisabledControlJustPressed(0, (GTA.Control)control);
+            return Game.IsDisabledControlJustPressed((GTA.Control)control);
         }
 
         public bool isDisabledControlPressed(int control)
         {
-            return Game.IsControlPressed(0, (GTA.Control)control);
+            return Game.IsControlPressed((GTA.Control)control);
         }
 
         public bool isControlJustReleased(int control)
         {
-            return Game.IsControlJustReleased(0, (GTA.Control)control);
+            return Game.IsControlJustReleased((GTA.Control)control);
         }
 
         public void disableControlThisFrame(int control)
         {
-            Game.DisableControlThisFrame(0, (GTA.Control)control);
+            Game.DisableControlThisFrame((GTA.Control)control);
         }
 
         public void enableControlThisFrame(int control)
         {
-            Game.EnableControlThisFrame(0, (GTA.Control)control);
+            Game.EnableControlThisFrame((GTA.Control)control);
         }
 
         public void disableAllControlsThisFrame()
         {
-            Game.DisableAllControlsThisFrame(0);
+            Game.DisableAllControlsThisFrame();
         }
 
         public float getControlNormal(int control)
         {
-            return Game.GetControlNormal(0, (GTA.Control) control);
+            return Game.GetControlValueNormalized((GTA.Control) control);
         }
 
         public float getDisabledControlNormal(int control)
         {
-            return Game.GetDisabledControlNormal(0, (GTA.Control)control);
+            return Game.GetDisabledControlValueNormalized((GTA.Control)control);
         }
 
         public void setControlNormal(int control, double value)
         {
-            Game.SetControlNormal(0, (GTA.Control)control, (float)value);
+            Game.SetControlValueNormalized((GTA.Control)control, (float)value);
         }
 
         public bool isChatOpen()
@@ -4477,12 +4490,13 @@ namespace GTANetwork.Javascript
 
         public string getZoneName(Vector3 position)
         {
-            return World.GetZoneName(position.ToVector());
+            return World.GetZoneDisplayName(position.ToVector());
         }
 
+        //To Check
         public string getZoneNameLabel(Vector3 position)
         {
-            return World.GetZoneNameLabel(position.ToVector());
+            return World.GetZoneDisplayName(position.ToVector());
         }
 
         public float getGroundHeight(Vector3 position)

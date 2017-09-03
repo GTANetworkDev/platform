@@ -1267,6 +1267,19 @@ namespace GTANetworkServer
             return new Client[0];
         }
 
+        public Client getVehicleDriver(NetHandle vehicle)
+        {
+            foreach (Client player in getVehicleOccupants(vehicle))
+            {
+                if (getPlayerVehicleSeat(player) == -1)
+                {
+                    return player;
+                }
+            }
+
+            return null;
+        }
+
         public int getVehicleLivery(NetHandle vehicle)
         {
             if (doesEntityExist(vehicle))
@@ -2690,16 +2703,7 @@ namespace GTANetworkServer
 
         public void setPlayerVelocity(Client player, Vector3 velocity)
         {
-            if (player.IsInVehicle)
-            {
-                sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.CurrentVehicle, velocity.X, velocity.Y,
-                    velocity.Z);
-            }
-            else
-            {
-                sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.handle, velocity.X, velocity.Y,
-                    velocity.Z);
-            }
+           sendNativeToPlayer(player, 0x1C99BB7B6E96D16F, player.IsInVehicle ? player.CurrentVehicle : player.handle, velocity.X, velocity.Y,velocity.Z);
         }
 
         public int getPlayerVehicleSeat(Client player)
@@ -3828,6 +3832,28 @@ namespace GTANetworkServer
             }
         }
 
+        public bool getMarkerBobUpAndDown(NetHandle marker)
+        {
+            if (doesEntityExist(marker))
+            {
+                return ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).BobUpAndDown;
+            }
+
+            return false;
+        }
+
+        public void setMarkerBobUpAndDown(NetHandle marker, bool state)
+        {
+            if (doesEntityExist(marker))
+            {
+                ((MarkerProperties)Program.ServerInstance.NetEntityHandler.ToDict()[marker.Value]).BobUpAndDown = state;
+
+                var delta = new Delta_MarkerProperties();
+                delta.BobUpAndDown = state;
+                GameServer.UpdateEntityInfo(marker.Value, EntityType.Marker, delta);
+            }
+        }
+
         public Vector3 getMarkerScale(NetHandle marker)
         {
             if (doesEntityExist(marker))
@@ -4114,9 +4140,9 @@ namespace GTANetworkServer
             }
         }
 
-        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
+        public Marker createMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0, bool bobUpAndDown = false)
         {
-            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension));
+            var ent = new NetHandle(Program.ServerInstance.NetEntityHandler.CreateMarker(markerType, pos, dir, rot, scale, alpha, r, g, b, dimension, bobUpAndDown));
             lock (ResourceEntities) ResourceEntities.Add(ent);
             return new Marker(this, ent);
         }

@@ -72,7 +72,6 @@ namespace GTANetwork.Sync
                 EnterVehicle();
             }
             _lastVehicle = true;
-            _justEnteredVeh = true;
             _enterVehicleStarted = DateTime.Now;
             return true;
         }
@@ -187,7 +186,7 @@ namespace GTANetwork.Sync
             else if (!IsVehDead && MainVehicle.IsDead)
             {
                 MainVehicle.IsInvincible = true;
-                if (MainVehicle.IsDead) MainVehicle.Repair();
+                MainVehicle.Repair();
             }
 
             //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
@@ -242,13 +241,13 @@ namespace GTANetwork.Sync
 
             thisCollection.Call(Hash.SET_VEHICLE_BRAKE_LIGHTS, MainVehicle, Braking);
 
-            if (MainVehicle.SirenActive && !Siren)
+            if (MainVehicle.IsSirenActive && !Siren)
             {
-                MainVehicle.SirenActive = Siren;
+                MainVehicle.IsSirenActive = Siren;
             }
-            else if (!MainVehicle.SirenActive && Siren)
+            else if (!MainVehicle.IsSirenActive && Siren)
             {
-                MainVehicle.SirenActive = Siren;
+                MainVehicle.IsSirenActive = Siren;
             }
 
             if (MainVehicle.ClassType == VehicleClass.Helicopters)
@@ -496,12 +495,13 @@ namespace GTANetwork.Sync
 
                 if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
                 {
-                    Character.Task.ClearAll();
-                    Character.Task.ClearSecondary();
+                    Tasks task = Character.Task;
+                    task.ClearAll();
+                    task.ClearSecondary();
                     Function.Call(Hash.CLEAR_DRIVEBY_TASK_UNDERNEATH_DRIVING_TASK, Character);
                     //Function.Call(Hash.TASK_DRIVE_BY, Character, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                     //Function.Call(Hash.SET_DRIVEBY_TASK_TARGET, Character, 0, 0, 0, 0, 0);
-                    Character.Task.ClearLookAt();
+                    task.ClearLookAt();
                     //GTA.UI.Screen.ShowNotification("Done shooting");
                     //GTA.UI.Screen.ShowSubtitle("Done Shooting1", 300);
                     _lastDrivebyShooting = false;

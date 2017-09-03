@@ -141,7 +141,7 @@ namespace GTANetwork
             {
                 var msg = Main.Client.CreateMessage();
                 msg.Write((byte)PacketType.PlayerKilled);
-                var killer = Function.Call<int>(Hash._GET_PED_KILLER, Game.Player.Character);
+                var killer = Function.Call<int>(Hash.GET_PED_SOURCE_OF_DEATH, Game.Player.Character);
                 var weapon = Function.Call<int>(Hash.GET_PED_CAUSE_OF_DEATH, Game.Player.Character);
 
                 var killerEnt = Main.NetEntityHandler.EntityToNet(killer);
@@ -273,7 +273,7 @@ namespace GTANetwork
                 #endregion
 
                 #region invokeonVehicleSirenToggle
-                if (Util.Util.GetResponsiblePed(playerCar).Handle == player.Handle)
+                if (Util.Util.GetResponsiblePed(playerCar, player).Handle != 0)
                 {
                     playerCar.IsInvincible = cc?.IsInvincible ?? false;
                 }
@@ -282,7 +282,7 @@ namespace GTANetwork
                     playerCar.IsInvincible = true;
                 }
 
-                var siren = playerCar.SirenActive;
+                var siren = playerCar.IsSirenActive;
 
                 if (siren != _lastVehicleSiren)
                 {

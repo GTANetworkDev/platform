@@ -14,7 +14,7 @@ namespace GTANetwork.GUI.DirectXHook
 
             Present += (sender, args) =>
             {
-                if (CEFManager.Draw && !Main.MainMenu.Visible && !Main._mainWarning.Visible && CEFManager.DirectXHook != null) CEFManager.DirectXHook.ManualPresentHook((IntPtr) sender);
+                if (CEFManager.Draw && !Main.MainMenu.Visible && !Main._mainWarning.Visible && CEFManager.DirectXHook != null) CEFManager.DirectXHook.ManualPresentHook((IntPtr)sender);
             };
 
             Tick += (sender, args) =>

@@ -118,10 +118,10 @@ namespace GTANetwork.Streamer
             }
             _lastCar = car;
 
-            if (player.IsInVehicle() && Util.Util.GetResponsiblePed(player.CurrentVehicle).Handle == player.Handle)
+            if (player.IsInVehicle() && Util.Util.GetResponsiblePed(player.CurrentVehicle, player).Handle != 0)
             {
                 int carNetHandle = Main.NetEntityHandler.EntityToNet(car.Handle);
-                var lg = Function.Call<int>(Hash._GET_VEHICLE_LANDING_GEAR, car);
+                var lg = Function.Call<int>(Hash.GET_LANDING_GEAR_STATE, car);
                 if (lg != _lastLandingGear)
                 {
                     SendSyncEvent(SyncEventType.LandingGearChange, carNetHandle, lg);

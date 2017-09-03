@@ -1,18 +1,18 @@
 /**
- * Copyright (C) 2015 crosire
- *
- * This software is  provided 'as-is', without any express  or implied  warranty. In no event will the
- * authors be held liable for any damages arising from the use of this software.
- * Permission  is granted  to anyone  to use  this software  for  any  purpose,  including  commercial
- * applications, and to alter it and redistribute it freely, subject to the following restrictions:
- *
- *   1. The origin of this software must not be misrepresented; you must not claim that you  wrote the
- *      original  software. If you use this  software  in a product, an  acknowledgment in the product
- *      documentation would be appreciated but is not required.
- *   2. Altered source versions must  be plainly  marked as such, and  must not be  misrepresented  as
- *      being the original software.
- *   3. This notice may not be removed or altered from any source distribution.
- */
+* Copyright (C) 2015 crosire
+*
+* This software is  provided 'as-is', without any express  or implied  warranty. In no event will the
+* authors be held liable for any damages arising from the use of this software.
+* Permission  is granted  to anyone  to use  this software  for  any  purpose,  including  commercial
+* applications, and to alter it and redistribute it freely, subject to the following restrictions:
+*
+*   1. The origin of this software must not be misrepresented; you must not claim that you  wrote the
+*      original  software. If you use this  software  in a product, an  acknowledgment in the product
+*      documentation would be appreciated but is not required.
+*   2. Altered source versions must  be plainly  marked as such, and  must not be  misrepresented  as
+*      being the original software.
+*   3. This notice may not be removed or altered from any source distribution.
+*/
 
 #include "Settings.hpp"
 
@@ -37,7 +37,7 @@ namespace GTA
 		String ^line = nullptr;
 		String ^section = String::Empty;
 		IO::StreamReader ^reader = nullptr;
-		
+
 		try
 		{
 			reader = gcnew IO::StreamReader(filename);
@@ -159,77 +159,77 @@ namespace GTA
 	}
 
 	generic <typename T>
-	T ScriptSettings::GetValue(String ^section, String ^name, T defaultvalue)
-	{
-		String ^value = GetValue(section, name);
-
-		try
+		T ScriptSettings::GetValue(String ^section, String ^name, T defaultvalue)
 		{
-			if (T::typeid->IsEnum)
+			String ^value = GetValue(section, name);
+
+			try
 			{
-				return static_cast<T>(Enum::Parse(T::typeid, value, true));
+				if (T::typeid->IsEnum)
+				{
+					return static_cast<T>(Enum::Parse(T::typeid, value, true));
+				}
+				else
+				{
+					return static_cast<T>(Convert::ChangeType(value, T::typeid));
+				}
+			}
+			catch (Exception ^)
+			{
+				return defaultvalue;
+			}
+		}
+		String ^ScriptSettings::GetValue(String ^section, String ^key)
+		{
+			return GetValue(section, key, String::Empty);
+		}
+		String ^ScriptSettings::GetValue(String ^section, String ^key, String ^defaultvalue)
+		{
+			String ^lookup = String::Format("[{0}]{1}", section, key)->ToUpper(), ^value;
+
+			if (_values->TryGetValue(lookup, value))
+			{
+				return value;
 			}
 			else
 			{
-				return static_cast<T>(Convert::ChangeType(value, T::typeid));
+				return defaultvalue;
 			}
 		}
-		catch (Exception ^)
+		array<String ^> ^ScriptSettings::GetAllValues(String ^section, String ^key)
 		{
-			return defaultvalue;
-		}
-	}
-	String ^ScriptSettings::GetValue(String ^section, String ^key)
-	{
-		return GetValue(section, key, String::Empty);
-	}
-	String ^ScriptSettings::GetValue(String ^section, String ^key, String ^defaultvalue)
-	{
-		String ^lookup = String::Format("[{0}]{1}", section, key)->ToUpper(), ^value;
+			auto values = gcnew List<String ^>();
 
-		if (_values->TryGetValue(lookup, value))
-		{
-			return value;
-		}
-		else
-		{
-			return defaultvalue;
-		}
-	}
-	array<String ^> ^ScriptSettings::GetAllValues(String ^section, String ^key)
-	{
-		auto values = gcnew List<String ^>();
+			String ^value = GetValue(section, key, static_cast<String ^>(nullptr));
 
-		String ^value = GetValue(section, key, static_cast<String ^>(nullptr));
-
-		if (!ReferenceEquals(value, nullptr))
-		{
-			values->Add(value);
-
-			for (int i = 1; _values->TryGetValue(String::Format("[{0}]{1}//{2}", section, key, i)->ToUpper(), value); ++i)
+			if (!ReferenceEquals(value, nullptr))
 			{
 				values->Add(value);
+
+				for (int i = 1; _values->TryGetValue(String::Format("[{0}]{1}//{2}", section, key, i)->ToUpper(), value); ++i)
+				{
+					values->Add(value);
+				}
 			}
-		}
 
-		return values->ToArray();
-	}
-	generic <typename T>
-	void ScriptSettings::SetValue(String ^section, String ^name, T value)
-	{
-		SetValue(section, name, reinterpret_cast<Object ^>(value)->ToString());
-	}
-	void ScriptSettings::SetValue(String ^section, String ^key, String ^value)
-	{
-		String ^lookup = String::Format("[{0}]{1}", section, key)->ToUpper();
+			return values->ToArray();
+		}
+		generic <typename T>
+			void ScriptSettings::SetValue(String ^section, String ^name, T value)
+			{
+				SetValue(section, name, reinterpret_cast<Object ^>(value)->ToString());
+			}
+			void ScriptSettings::SetValue(String ^section, String ^key, String ^value)
+			{
+				String ^lookup = String::Format("[{0}]{1}", section, key)->ToUpper();
 
-		if (!_values->ContainsKey(lookup))
-		{
-			_values->Add(lookup, value);
-		}
-		else
-		{
-			_values->default[lookup] = value;
-		}
-	}
+				if (!_values->ContainsKey(lookup))
+				{
+					_values->Add(lookup, value);
+				}
+				else
+				{
+					_values->default[lookup] = value;
+				}
+			}
 }

@@ -88,19 +88,39 @@ namespace GTA
 			Function.Call(Hash.TASK_CLIMB, _ped.Handle, true);
 		}
 
+		public void ClimbLadder()
+		{
+			Function.Call(Hash.TASK_CLIMB_LADDER, _ped.Handle, 1);
+		}
+
 		public void Cower(int duration)
 		{
 			Function.Call(Hash.TASK_COWER, _ped.Handle, duration);
 		}
 
-		public void CruiseWithVehicle(Vehicle vehicle, float speed, int drivingstyle = 0)
+		public void ChaseWithGroundVehicle(Entity target)
 		{
-			Function.Call(Hash.TASK_VEHICLE_DRIVE_WANDER, _ped.Handle, vehicle.Handle, speed, drivingstyle);
+			Function.Call(Hash.TASK_VEHICLE_CHASE, _ped.Handle, target.Handle);
 		}
 
-		public void DriveTo(Vehicle vehicle, Vector3 target, float radius, float speed, int drivingstyle = 0)
+		public void ChaseWithHelicopter(Entity target, Vector3 offset)
 		{
-			Function.Call(Hash.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE, _ped.Handle, vehicle.Handle, target.X, target.Y, target.Z, speed, drivingstyle, radius);
+			Function.Call(Hash.TASK_HELI_CHASE, _ped.Handle, target.Handle, offset.X, offset.Y, offset.Z);
+		}
+
+		public void ChaseWithPlane(Entity target, Vector3 offset)
+		{
+			Function.Call(Hash.TASK_PLANE_CHASE, _ped.Handle, target.Handle, offset.X, offset.Y, offset.Z);
+		}
+
+		public void CruiseWithVehicle(Vehicle vehicle, float speed, DrivingStyle style = DrivingStyle.Normal)
+		{
+			Function.Call(Hash.TASK_VEHICLE_DRIVE_WANDER, _ped.Handle, vehicle.Handle, speed, style);
+		}
+
+		public void DriveTo(Vehicle vehicle, Vector3 target, float radius, float speed, DrivingStyle style = DrivingStyle.Normal)
+		{
+			Function.Call(Hash.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE, _ped.Handle, vehicle.Handle, target.X, target.Y, target.Z, speed, style, radius);
 		}
 
 		public void EnterAnyVehicle(VehicleSeat seat = VehicleSeat.Any, int timeout = -1, float speed = 0f, int flag = 0)
@@ -193,6 +213,15 @@ namespace GTA
 		public void HandsUp(int duration)
 		{
 			Function.Call(Hash.TASK_HANDS_UP, _ped.Handle, duration, 0, -1, false);
+		}
+
+		public void LandPlane(Vector3 startPosition, Vector3 touchdownPosition, Vehicle plane = null)
+		{
+			if (plane == null)
+			{
+				plane = _ped.CurrentVehicle;
+			}
+			Function.Call(Hash.TASK_PLANE_LAND, _ped.Handle, plane, startPosition.X, startPosition.Y, startPosition.Z, touchdownPosition.X, touchdownPosition.Y, touchdownPosition.Z);
 		}
 
 		public void LeaveVehicle(LeaveVehicleFlags flags = LeaveVehicleFlags.None)
@@ -426,10 +455,13 @@ namespace GTA
 
 		public TaskSequence()
 		{
-			var handle = new OutputArgument();
-			Function.Call(Hash.OPEN_SEQUENCE_TASK, handle);
+			int handle;
+			unsafe
+			{
+				Function.Call(Hash.OPEN_SEQUENCE_TASK, &handle);
+			}
 
-			Handle = handle.GetResult<int>();
+			Handle = handle;
 
 			if (ReferenceEquals(_nullPed, null))
 			{
@@ -448,8 +480,12 @@ namespace GTA
 
 		public void Dispose()
 		{
-			Function.Call(Hash.CLEAR_SEQUENCE_TASK, new OutputArgument(Handle));
-
+			int handle = Handle;
+			unsafe
+			{
+				Function.Call(Hash.CLEAR_SEQUENCE_TASK, &handle);
+			}
+			Handle = handle;
 			GC.SuppressFinalize(this);
 		}
 

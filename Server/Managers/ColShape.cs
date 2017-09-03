@@ -10,7 +10,7 @@ namespace GTANetworkServer
 
     public abstract class ColShape
     {
-        internal abstract bool Check(Vector3 pos);
+        public abstract bool Check(Vector3 pos);
 
         public event ColShapeEvent onEntityEnterColShape;
         public event ColShapeEvent onEntityExitColShape;
@@ -126,7 +126,7 @@ namespace GTANetworkServer
             }
         }
 
-        internal override bool Check(Vector3 pos)
+        public override bool Check(Vector3 pos)
         {
             var c = Center;
 
@@ -182,7 +182,7 @@ namespace GTANetworkServer
             set { _height = value; }
         }
 
-        internal override bool Check(Vector3 pos)
+        public override bool Check(Vector3 pos)
         {
             var c = Center;
 
@@ -210,6 +210,13 @@ namespace GTANetworkServer
             Vector3[] edges = NormalizeEdges(start, stop);
             Start = edges[0];
             End = edges[1];
+
+            // API compatibility
+            Vector3 deltas = End - Start;
+            Width = deltas.X;
+            Height = deltas.Y;
+            X = Start.X;
+            Y = Start.Y;
         }
 
         internal Rectangle2DColShape(float x, float y, float w, float h) :
@@ -221,7 +228,13 @@ namespace GTANetworkServer
         public Vector3 Start;
         public Vector3 End;
 
-        internal override bool Check(Vector3 pos)
+        // API compatibility
+        public float Width;
+        public float Height;
+        public float X;
+        public float Y;
+
+        public override bool Check(Vector3 pos)
         {
             return (pos.X > Start.X && pos.Y > Start.Y) && 
                    (pos.X < End.X && pos.Y < End.X);
@@ -241,7 +254,7 @@ namespace GTANetworkServer
         public Vector3 Start;
         public Vector3 End;
 
-        internal override bool Check(Vector3 pos)
+        public override bool Check(Vector3 pos)
         {
             return (pos.X > Start.X && pos.Y > Start.Y && pos.Z > Start.Z) &&
                    (pos.X < End.X && pos.Y < End.Y && pos.Z < End.Z);

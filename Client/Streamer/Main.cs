@@ -63,7 +63,7 @@ namespace GTANetwork.Streamer
                         World.DrawMarker((MarkerType) marker.Value.MarkerType, marker.Value.Position.ToVector(),
                             marker.Value.Direction.ToVector(), marker.Value.Rotation.ToVector(),
                             marker.Value.Scale.ToVector(),
-                            Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
+                            Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue), marker.Value.BobUpAndDown);
                     }
                 }
             }
@@ -141,422 +141,438 @@ namespace GTANetwork.Streamer
                     break;
             }
 
-            RemoteVehicle rem;
+            RemoteVehicle rem = new RemoteVehicle()
+            {
+                RemoteHandle = netHash,
+                ModelHash = model,
+                Position = position,
+                Rotation = rotation,
+                StreamedIn = false,
+                LocalOnly = false,
+                IsDead = false,
+                Health = 1000,
+                Alpha = 255,
+                Livery = 0,
+                NumberPlate = "NETWORK",
+                EntityType = (byte)EntityType.Vehicle,
+                PrimaryColor = 0,
+                SecondaryColor = 0,
+                Dimension = 0,
+                VehicleComponents = vehComp,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHash, rem = new RemoteVehicle()
-                {
-                    RemoteHandle = netHash,
-                    ModelHash = model,
-                    Position = position,
-                    Rotation = rotation,
-                    StreamedIn = false,
-                    LocalOnly = false,
-                    IsDead = false,
-                    Health = 1000,
-                    Alpha = 255,
-                    Livery = 0,
-                    NumberPlate = "NETWORK",
-                    EntityType = (byte)EntityType.Vehicle,
-                    PrimaryColor = 0,
-                    SecondaryColor = 0,
-                    Dimension = 0,
-                    VehicleComponents = vehComp,
-                });
+                ClientMap.Add(netHash, rem);
             }
             return rem;
         }
 
         public RemoteVehicle CreateVehicle(int netHandle, VehicleProperties prop)
         {
-            RemoteVehicle rem;
+            RemoteVehicle rem = new RemoteVehicle()
+            {
+                RemoteHandle = netHandle,
+
+                PrimaryColor = prop.PrimaryColor,
+                SecondaryColor = prop.SecondaryColor,
+                Health = prop.Health,
+                IsDead = prop.IsDead,
+                Mods = prop.Mods,
+                Siren = prop.Siren,
+                Doors = prop.Doors,
+                Trailer = prop.Trailer,
+                TraileredBy = prop.TraileredBy,
+                Tires = prop.Tires,
+                Livery = prop.Livery,
+                NumberPlate = prop.NumberPlate,
+                Position = prop.Position,
+                Rotation = prop.Rotation,
+                ModelHash = prop.ModelHash,
+                EntityType = prop.EntityType,
+                Dimension = prop.Dimension,
+                Alpha = prop.Alpha,
+                SyncedProperties = prop.SyncedProperties,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+                IsInvincible = prop.IsInvincible,
+                Flag = prop.Flag,
+                VehicleComponents = prop.VehicleComponents,
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+                DamageModel = prop.DamageModel,
+
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteVehicle()
-                {
-                    RemoteHandle = netHandle,
-
-                    PrimaryColor = prop.PrimaryColor,
-                    SecondaryColor = prop.SecondaryColor,
-                    Health = prop.Health,
-                    IsDead = prop.IsDead,
-                    Mods = prop.Mods,
-                    Siren = prop.Siren,
-                    Doors = prop.Doors,
-                    Trailer = prop.Trailer,
-                    TraileredBy = prop.TraileredBy,
-                    Tires = prop.Tires,
-                    Livery = prop.Livery,
-                    NumberPlate = prop.NumberPlate,
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
-                    ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
-                    Dimension = prop.Dimension,
-                    Alpha = prop.Alpha,
-                    SyncedProperties = prop.SyncedProperties,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-                    IsInvincible = prop.IsInvincible,
-                    Flag = prop.Flag,
-                    VehicleComponents = prop.VehicleComponents,
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-                    DamageModel = prop.DamageModel,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemotePed CreatePed(int netHandle, PedProperties prop)
         {
-            RemotePed rem;
+            RemotePed rem = new RemotePed()
+            {
+                RemoteHandle = netHandle,
+
+                Position = prop.Position,
+                Rotation = prop.Rotation,
+                ModelHash = prop.ModelHash,
+                EntityType = prop.EntityType,
+                Dimension = prop.Dimension,
+                Alpha = prop.Alpha,
+                SyncedProperties = prop.SyncedProperties,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+                Flag = prop.Flag,
+                IsInvincible = prop.IsInvincible,
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+
+                LoopingAnimation = prop.LoopingAnimation,
+
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemotePed()
-                {
-                    RemoteHandle = netHandle,
-
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
-                    ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
-                    Dimension = prop.Dimension,
-                    Alpha = prop.Alpha,
-                    SyncedProperties = prop.SyncedProperties,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-                    Flag = prop.Flag,
-                    IsInvincible = prop.IsInvincible,
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-
-                    LoopingAnimation = prop.LoopingAnimation,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemoteProp CreateObject(int model, Vector3 position, Vector3 rotation, bool dynamic, int netHash)
         {
-            RemoteProp rem;
+            RemoteProp rem = new RemoteProp()
+            {
+                RemoteHandle = netHash,
+                ModelHash = model,
+                EntityType = 2,
+                Position = position.ToLVector(),
+                Rotation = rotation.ToLVector(),
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHash, rem = new RemoteProp()
-                {
-                    RemoteHandle = netHash,
-                    ModelHash = model,
-                    EntityType = 2,
-                    Position = position.ToLVector(),
-                    Rotation = rotation.ToLVector(),
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHash, rem);
             }
             return rem;
         }
 
         public RemoteProp CreateObject(int netHandle, EntityProperties prop)
         {
-            RemoteProp rem;
+            RemoteProp rem = new RemoteProp()
+            {
+                RemoteHandle = netHandle,
+
+                Position = prop.Position,
+                Rotation = prop.Rotation,
+                Dimension = prop.Dimension,
+                ModelHash = prop.ModelHash,
+                EntityType = 2,
+                Alpha = prop.Alpha,
+                IsInvincible = prop.IsInvincible,
+                SyncedProperties = prop.SyncedProperties,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+                Flag = prop.Flag,
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteProp()
-                {
-                    RemoteHandle = netHandle,
-
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
-                    Dimension = prop.Dimension,
-                    ModelHash = prop.ModelHash,
-                    EntityType = 2,
-                    Alpha = prop.Alpha,
-                    IsInvincible = prop.IsInvincible,
-                    SyncedProperties = prop.SyncedProperties,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-                    Flag = prop.Flag,
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemoteBlip CreateBlip(GTANetworkShared.Vector3 pos, int netHandle)
         {
-            RemoteBlip rem;
+            RemoteBlip rem = new RemoteBlip()
+            {
+                RemoteHandle = netHandle,
+                Position = pos,
+                StreamedIn = false,
+                LocalOnly = false,
+                Alpha = 255,
+                Dimension = 0,
+                Sprite = 0,
+                Scale = 1f,
+                AttachedNetEntity = 0,
+                EntityType = (byte)EntityType.Blip,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteBlip()
-                {
-                    RemoteHandle = netHandle,
-                    Position = pos,
-                    StreamedIn = false,
-                    LocalOnly = false,
-                    Alpha = 255,
-                    Dimension = 0,
-                    Sprite = 0,
-                    Scale = 1f,
-                    AttachedNetEntity = 0,
-                    EntityType = (byte)EntityType.Blip,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemoteBlip CreateBlip(int netHandle, BlipProperties prop)
         {
-            RemoteBlip rem;
+            RemoteBlip rem = new RemoteBlip()
+            {
+                RemoteHandle = netHandle,
+                SyncedProperties = prop.SyncedProperties,
+                Sprite = prop.Sprite,
+                Scale = prop.Scale,
+                Color = prop.Color,
+                Dimension = prop.Dimension,
+                IsShortRange = prop.IsShortRange,
+                AttachedNetEntity = prop.AttachedNetEntity,
+                Position = prop.Position,
+                Rotation = prop.Rotation,
+                ModelHash = prop.ModelHash,
+                EntityType = (byte)EntityType.Blip,
+                Alpha = prop.Alpha,
+                IsInvincible = prop.IsInvincible,
+                RangedBlip = prop.RangedBlip,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+                Flag = prop.Flag,
+                Name = prop.Name,
+                RouteVisible = prop.RouteVisible,
+                RouteColor = prop.RouteColor,
+
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteBlip()
-                {
-                    RemoteHandle = netHandle,
-                    SyncedProperties = prop.SyncedProperties,
-                    Sprite = prop.Sprite,
-                    Scale = prop.Scale,
-                    Color = prop.Color,
-                    Dimension = prop.Dimension,
-                    IsShortRange = prop.IsShortRange,
-                    AttachedNetEntity = prop.AttachedNetEntity,
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
-                    ModelHash = prop.ModelHash,
-                    EntityType = (byte)EntityType.Blip,
-                    Alpha = prop.Alpha,
-                    IsInvincible = prop.IsInvincible,
-                    RangedBlip = prop.RangedBlip,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-                    Flag = prop.Flag,
-                    Name = prop.Name,
-                    RouteVisible = prop.RouteVisible,
-                    RouteColor = prop.RouteColor,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemoteBlip CreateBlip(IStreamedItem entity, int netHandle)
         {
-            RemoteBlip rem;
+            RemoteBlip rem = new RemoteBlip()
+            {
+                RemoteHandle = netHandle,
+                AttachedNetEntity = entity.RemoteHandle,
+                EntityType = (byte)EntityType.Blip,
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteBlip()
-                {
-                    RemoteHandle = netHandle,
-                    AttachedNetEntity = entity.RemoteHandle,
-                    EntityType = (byte)EntityType.Blip,
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
-        public void CreateMarker(int type, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, GTANetworkShared.Vector3 dir, GTANetworkShared.Vector3 scale, int r, int g, int b, int a, int netHandle)
+        public void CreateMarker(int type, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, GTANetworkShared.Vector3 dir, GTANetworkShared.Vector3 scale, int r, int g, int b, int a, int netHandle, bool bobUpAndDown = false)
         {
+            RemoteMarker rem = new RemoteMarker()
+            {
+                MarkerType = type,
+                Position = position,
+                Rotation = rotation,
+                Direction = dir,
+                Scale = scale,
+                Red = r,
+                Green = g,
+                Blue = b,
+                Alpha = (byte)a,
+                BobUpAndDown = bobUpAndDown,
+                RemoteHandle = netHandle,
+                EntityType = (byte)EntityType.Marker,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, new RemoteMarker()
-                {
-                    MarkerType = type,
-                    Position = position,
-                    Rotation = rotation,
-                    Direction = dir,
-                    Scale = scale,
-                    Red = r,
-                    Green = g,
-                    Blue = b,
-                    Alpha = (byte)a,
-                    RemoteHandle = netHandle,
-                    EntityType = (byte)EntityType.Marker,
-                });
+                ClientMap.Add(netHandle, rem);
             }
         }
 
         public RemoteMarker CreateMarker(int netHandle, MarkerProperties prop)
         {
-            RemoteMarker rem;
+            RemoteMarker rem = new RemoteMarker()
+            {
+                RemoteHandle = netHandle,
+
+                Direction = prop.Direction,
+                MarkerType = prop.MarkerType,
+                Red = prop.Red,
+                Green = prop.Green,
+                Blue = prop.Blue,
+                Scale = prop.Scale,
+                Position = prop.Position,
+                Rotation = prop.Rotation,
+                Dimension = prop.Dimension,
+                BobUpAndDown = prop.BobUpAndDown,
+                ModelHash = prop.ModelHash,
+                EntityType = (byte)EntityType.Marker,
+                Alpha = prop.Alpha,
+                IsInvincible = prop.IsInvincible,
+                SyncedProperties = prop.SyncedProperties,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+                Flag = prop.Flag,
+
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteMarker()
-                {
-                    RemoteHandle = netHandle,
-
-                    Direction = prop.Direction,
-                    MarkerType = prop.MarkerType,
-                    Red = prop.Red,
-                    Green = prop.Green,
-                    Blue = prop.Blue,
-                    Scale = prop.Scale,
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
-                    Dimension = prop.Dimension,
-                    ModelHash = prop.ModelHash,
-                    EntityType = (byte)EntityType.Marker,
-                    Alpha = prop.Alpha,
-                    IsInvincible = prop.IsInvincible,
-                    SyncedProperties = prop.SyncedProperties,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-                    Flag = prop.Flag,
-
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemoteTextLabel CreateTextLabel(int netHandle, TextLabelProperties prop)
         {
-            RemoteTextLabel rem;
+            RemoteTextLabel rem = new RemoteTextLabel()
+            {
+                RemoteHandle = netHandle,
+
+                Red = prop.Red,
+                Green = prop.Green,
+                Blue = prop.Blue,
+                Alpha = prop.Alpha,
+                Size = prop.Size,
+                Position = prop.Position,
+                Dimension = prop.Dimension,
+                EntityType = (byte)EntityType.TextLabel,
+                Text = prop.Text,
+                Range = prop.Range,
+                IsInvincible = prop.IsInvincible,
+                EntitySeethrough = prop.EntitySeethrough,
+                SyncedProperties = prop.SyncedProperties,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+
+                StreamedIn = false,
+                LocalOnly = false,
+                Flag = prop.Flag,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteTextLabel()
-                {
-                    RemoteHandle = netHandle,
-
-                    Red = prop.Red,
-                    Green = prop.Green,
-                    Blue = prop.Blue,
-                    Alpha = prop.Alpha,
-                    Size = prop.Size,
-                    Position = prop.Position,
-                    Dimension = prop.Dimension,
-                    EntityType = (byte)EntityType.TextLabel,
-                    Text = prop.Text,
-                    Range = prop.Range,
-                    IsInvincible = prop.IsInvincible,
-                    EntitySeethrough = prop.EntitySeethrough,
-                    SyncedProperties = prop.SyncedProperties,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                    Flag = prop.Flag,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemoteParticle CreateParticle(int netHandle, ParticleProperties prop)
         {
-            RemoteParticle rem;
+            RemoteParticle rem = new RemoteParticle()
+            {
+                RemoteHandle = netHandle,
+
+                Position = prop.Position,
+                Rotation = prop.Rotation,
+                ModelHash = prop.ModelHash,
+                EntityType = prop.EntityType,
+                Dimension = prop.Dimension,
+                Alpha = prop.Alpha,
+                SyncedProperties = prop.SyncedProperties,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+                IsInvincible = prop.IsInvincible,
+                Flag = prop.Flag,
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+                Library = prop.Library,
+                Name = prop.Name,
+                EntityAttached = prop.EntityAttached,
+                BoneAttached = prop.BoneAttached,
+                Scale = prop.Scale,
+
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemoteParticle()
-                {
-                    RemoteHandle = netHandle,
-
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
-                    ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
-                    Dimension = prop.Dimension,
-                    Alpha = prop.Alpha,
-                    SyncedProperties = prop.SyncedProperties,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-                    IsInvincible = prop.IsInvincible,
-                    Flag = prop.Flag,
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-                    Library = prop.Library,
-                    Name = prop.Name,
-                    EntityAttached = prop.EntityAttached,
-                    BoneAttached = prop.BoneAttached,
-                    Scale = prop.Scale,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemotePickup CreatePickup(Vector3 pos, Vector3 rot, int pickupHash, int amount, int netHandle)
         {
-            RemotePickup rem;
+            RemotePickup rem = new RemotePickup()
+            {
+                RemoteHandle = netHandle,
+                Position = pos.ToLVector(),
+                Rotation = rot.ToLVector(),
+                ModelHash = pickupHash,
+                Amount = amount,
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemotePickup()
-                {
-                    RemoteHandle = netHandle,
-                    Position = pos.ToLVector(),
-                    Rotation = rot.ToLVector(),
-                    ModelHash = pickupHash,
-                    Amount = amount,
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
         public RemotePickup CreatePickup(int netHandle, PickupProperties prop)
         {
-            RemotePickup rem;
+            RemotePickup rem = new RemotePickup()
+            {
+                RemoteHandle = netHandle,
+
+                Amount = prop.Amount,
+                PickedUp = prop.PickedUp,
+                Position = prop.Position,
+                Rotation = prop.Rotation,
+                ModelHash = prop.ModelHash,
+                EntityType = prop.EntityType,
+                Alpha = prop.Alpha,
+                Dimension = prop.Dimension,
+                SyncedProperties = prop.SyncedProperties,
+                AttachedTo = prop.AttachedTo,
+                Attachables = prop.Attachables,
+                IsInvincible = prop.IsInvincible,
+                CustomModel = prop.CustomModel,
+
+                PositionMovement = prop.PositionMovement,
+                RotationMovement = prop.RotationMovement,
+
+                Flag = prop.Flag,
+
+                StreamedIn = false,
+                LocalOnly = false,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new RemotePickup()
-                {
-                    RemoteHandle = netHandle,
-
-                    Amount = prop.Amount,
-                    PickedUp = prop.PickedUp,
-                    Position = prop.Position,
-                    Rotation = prop.Rotation,
-                    ModelHash = prop.ModelHash,
-                    EntityType = prop.EntityType,
-                    Alpha = prop.Alpha,
-                    Dimension = prop.Dimension,
-                    SyncedProperties = prop.SyncedProperties,
-                    AttachedTo = prop.AttachedTo,
-                    Attachables = prop.Attachables,
-                    IsInvincible = prop.IsInvincible,
-                    CustomModel = prop.CustomModel,
-
-                    PositionMovement = prop.PositionMovement,
-                    RotationMovement = prop.RotationMovement,
-
-                    Flag = prop.Flag,
-
-                    StreamedIn = false,
-                    LocalOnly = false,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
 
-        public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
+        public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0, bool bobUpAndDown = false)
         {
             var newId = --_localHandleCounter;
-            RemoteMarker mark;
-            ClientMap.Add(newId, mark = new RemoteMarker()
+            RemoteMarker mark  = new RemoteMarker()
             {
                 MarkerType = markerType,
                 Position = pos.ToLVector(),
@@ -568,11 +584,17 @@ namespace GTANetwork.Streamer
                 Green = g,
                 Blue = b,
                 Dimension = dimension,
+                BobUpAndDown = bobUpAndDown,
                 EntityType = (byte)EntityType.Marker,
                 LocalOnly = true,
                 StreamedIn = true,
                 RemoteHandle = newId,
-            });
+            };
+
+            lock (ClientMap)
+            {
+                ClientMap.Add(newId, mark);
+            }
 
             if (Count(typeof(RemoteMarker)) < StreamerThread.MAX_MARKERS)
                 StreamIn(mark);
@@ -649,8 +671,7 @@ namespace GTANetwork.Streamer
         public int CreateLocalLabel(string text, Vector3 pos, float range, float size, bool entitySeethrough, int dimension = 0)
         {
             var newId = --_localHandleCounter;
-            RemoteTextLabel label;
-            ClientMap.Add(newId, label = new RemoteTextLabel()
+            RemoteTextLabel label = new RemoteTextLabel()
             {
                 Position = pos.ToLVector(),
                 Size = size,
@@ -665,8 +686,13 @@ namespace GTANetwork.Streamer
                 Text = text,
                 Range = range,
                 EntitySeethrough = entitySeethrough,
-            });
+            };
 
+            lock (ClientMap)
+            {
+                ClientMap.Add(newId, label);
+            }
+            
             if (Count(typeof(RemoteTextLabel)) < StreamerThread.MAX_LABELS)
                 StreamIn(label);
 
@@ -1213,6 +1239,7 @@ namespace GTANetwork.Streamer
             if (prop.Green != null) veh.Green = prop.Green.Value;
             if (prop.Blue != null) veh.Blue = prop.Blue.Value;
             if (prop.Scale != null) veh.Scale = prop.Scale;
+            if (prop.BobUpAndDown != null) veh.BobUpAndDown = prop.BobUpAndDown.Value;
             if (prop.Position != null) veh.Position = prop.Position;
             if (prop.Rotation != null) veh.Rotation = prop.Rotation;
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
@@ -1687,7 +1714,7 @@ namespace GTANetwork.Streamer
                         var data = (ILocalHandleable)item;
                         JavascriptHook.InvokeStreamOutEvent(new LocalHandle(data.LocalHandle), (int)EntityType.Blip);
                         var obj = new Blip(data.LocalHandle);
-                        if (obj.Exists()) obj.Remove();
+                        if (obj.Exists()) obj.Delete();
                     }
                     break;
                 case EntityType.Pickup:
@@ -1785,7 +1812,7 @@ namespace GTANetwork.Streamer
             veh.Mods.PearlescentColor = 0;
             veh.Mods.RimColor = 0;
             veh.EngineHealth = data.Health;
-            veh.SirenActive = data.Siren;
+            veh.IsSirenActive = data.Siren;
             veh.Mods.LicensePlate = data.NumberPlate;
             veh.Mods.WheelType = 0;
             veh.Wash();
@@ -1889,13 +1916,13 @@ namespace GTANetwork.Streamer
                 }
                 else
                 {
-                    veh.TaxiLightOn = true;
+                    veh.IsTaxiLightOn = true;
                 }
             }
             else
             {
-                veh.SearchLightOn = false;
-                veh.TaxiLightOn = false;
+                veh.IsSearchLightOn = false;
+                veh.IsTaxiLightOn = false;
             }
 
 
@@ -2183,9 +2210,9 @@ namespace GTANetwork.Streamer
 
         public void AddLocalCharacter(int nethandle)
         {
+            LocalCharacter = new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true };
             lock (ClientMap)
             {
-                LocalCharacter = new RemotePlayer() { LocalHandle = -2, RemoteHandle = nethandle, StreamedIn = true };
                 ClientMap.Add(nethandle, LocalCharacter);
                 HandleMap.Add(nethandle, -2);
             }
@@ -2196,11 +2223,10 @@ namespace GTANetwork.Streamer
             lock (ClientMap)
             {
                 var streamedItem = NetToStreamedItem(netId);
+                if (streamedItem == null || !streamedItem.StreamedIn) return null;
                 var handleable = streamedItem as ILocalHandleable;
-                if (streamedItem == null) return null;
                 if (handleable == null) return new Prop(netId);
                 if (handleable.LocalHandle == -2) return Game.Player.Character;
-                if (!streamedItem.StreamedIn) return null;
                 return new Prop(handleable.LocalHandle);
             }
         }
@@ -2210,7 +2236,7 @@ namespace GTANetwork.Streamer
             lock (ClientMap)
             {
                 var handleable = netId as ILocalHandleable;
-                if (netId == null || handleable == null) return new Prop(netId?.RemoteHandle ?? 0);
+                if (handleable == null || netId == null) return new Prop(netId?.RemoteHandle ?? 0);
                 if (handleable.LocalHandle == -2) return Game.Player.Character;
                 return new Prop(handleable.LocalHandle);
             }
@@ -2275,21 +2301,23 @@ namespace GTANetwork.Streamer
             SyncPed rem = NetToStreamedItem(netHandle) as SyncPed;
             if (rem != null) return rem;
 
+            rem = new SyncPed()
+            {
+                RemoteHandle = netHandle,
+                EntityType = (byte)EntityType.Player,
+                StreamedIn = false, // change me
+                LocalOnly = false,
+
+                BlipSprite = -1,
+                BlipColor = -1,
+                BlipAlpha = 255,
+                Alpha = 255,
+                Team = -1,
+            };
+
             lock (ClientMap)
             {
-                ClientMap.Add(netHandle, rem = new SyncPed()
-                {
-                    RemoteHandle = netHandle,
-                    EntityType = (byte)EntityType.Player,
-                    StreamedIn = false, // change me
-                    LocalOnly = false,
-
-                    BlipSprite = -1,
-                    BlipColor = -1,
-                    BlipAlpha = 255,
-                    Alpha = 255,
-                    Team = -1,
-                });
+                ClientMap.Add(netHandle, rem);
             }
             return rem;
         }
@@ -2330,7 +2358,7 @@ namespace GTANetwork.Streamer
             for (var index = markers.Count - 1; index >= 0; index--)
             {
                 var marker = markers[index];
-                World.DrawMarker((MarkerType)marker.MarkerType, marker.Position.ToVector(), marker.Direction.ToVector(), marker.Rotation.ToVector(), marker.Scale.ToVector(), Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
+                World.DrawMarker((MarkerType)marker.MarkerType, marker.Position.ToVector(), marker.Direction.ToVector(), marker.Rotation.ToVector(), marker.Scale.ToVector(), Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue), marker.BobUpAndDown);
             }
 
             // TODO: Uncomment to debug stuff

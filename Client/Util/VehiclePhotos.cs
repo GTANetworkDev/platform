@@ -27,7 +27,7 @@ namespace GTANetwork.Util
 
         public void OnTick(object sender, EventArgs e)
         {
-            if (!Started && Game.IsControlJustPressed(0, Control.Context))
+            if (!Started && Game.IsControlJustPressed(Control.Context))
             {
                 Start();
             }

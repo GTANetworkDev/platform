@@ -173,6 +173,12 @@ namespace GTANetworkServer
         {
             get { return Base.getVehicleOccupants(this); }
         }
+
+        public Client driver
+        {
+            get { return Base.getVehicleDriver(this); }
+        }
+
         public float maxOccupants
         {
             get { return Base.getVehicleMaxOccupants((VehicleHash)model); }

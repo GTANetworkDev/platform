@@ -33,13 +33,13 @@ namespace GTANetwork.Streamer
 
             if (Game.Player.IsPressingHorn)
                 obj.Flag |= (byte)VehicleDataFlags.PressingHorn;
-            if (veh.SirenActive)
+            if (veh.IsSirenActive)
                 obj.Flag |= (byte)VehicleDataFlags.SirenActive;
             if (veh.IsDead)
                 obj.Flag |= (byte)VehicleDataFlags.VehicleDead;
             if (player.IsDead)
                 obj.Flag |= (short)VehicleDataFlags.PlayerDead;
-            if (Util.Util.GetResponsiblePed(veh).Handle == player.Handle)
+            if (Util.Util.GetResponsiblePed(veh, player).Handle != 0)
                 obj.Flag |= (byte)VehicleDataFlags.Driver;
             if (veh.IsInBurnout)
                 obj.Flag |= (byte)VehicleDataFlags.BurnOut;
@@ -47,7 +47,7 @@ namespace GTANetwork.Streamer
                 obj.Flag |= (byte)VehicleDataFlags.HasAimData;
             if (player.IsSubtaskActive(167) || player.IsSubtaskActive(168))
                 obj.Flag |= (short)VehicleDataFlags.ExitingVehicle;
-            if (Game.IsEnabledControlPressed(0, Control.VehicleBrake) || Game.IsEnabledControlPressed(0, Control.VehicleHandbrake))
+            if (Game.IsEnabledControlPressed(Control.VehicleBrake) || Game.IsEnabledControlPressed(Control.VehicleHandbrake))
                 obj.Flag |= (short)VehicleDataFlags.Braking;
 
             if (!WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.Util.GetPedSeat(player)) &&
@@ -57,7 +57,7 @@ namespace GTANetwork.Streamer
                 obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                 obj.AimCoords = new GTANetworkShared.Vector3(0, 0, 0);
                 obj.WeaponHash = Main.GetCurrentVehicleWeaponHash(player);
-                if (Game.IsEnabledControlPressed(0, Control.VehicleFlyAttack))
+                if (Game.IsEnabledControlPressed(Control.VehicleFlyAttack))
                     obj.Flag |= (byte)VehicleDataFlags.Shooting;
             }
             else if (WeaponDataProvider.DoesVehicleSeatHaveGunPosition((VehicleHash)veh.Model.Hash, Util.Util.GetPedSeat(player)))
@@ -65,7 +65,7 @@ namespace GTANetwork.Streamer
                 obj.Flag |= (byte)VehicleDataFlags.HasAimData;
                 obj.WeaponHash = 0;
                 obj.AimCoords = Main.RaycastEverything(new Vector2(0, 0)).ToLVector();
-                if (Game.IsEnabledControlPressed(0, Control.VehicleAttack))
+                if (Game.IsEnabledControlPressed(Control.VehicleAttack))
                     obj.Flag |= (byte)VehicleDataFlags.Shooting;
             }
             else
@@ -73,7 +73,7 @@ namespace GTANetwork.Streamer
                 bool usingVehicleWeapon = player.IsSubtaskActive(200) || player.IsSubtaskActive(190);
 
                 if (usingVehicleWeapon &&
-                    Game.IsEnabledControlPressed(0, Control.Attack) &&
+                    Game.IsEnabledControlPressed(Control.Attack) &&
                     player.Weapons.Current?.AmmoInClip != 0)
                 {
                     obj.Flag |= (byte)VehicleDataFlags.Shooting;
@@ -131,7 +131,7 @@ namespace GTANetwork.Streamer
                 obj.Trailer = trailer.Position.ToLVector();
             }
 
-            if (Util.Util.GetResponsiblePed(veh) == player)
+            if (Util.Util.GetResponsiblePed(veh, player).Handle != 0)
             {
                 obj.DamageModel = veh.GetVehicleDamageModel();
             }

@@ -129,7 +129,8 @@ namespace GTA
 		MetallicPurpleBlue,
 		MetallicSpinnakerBlue,
 		MetallicUltraBlue,
-		UtilDarkBlue = 75,
+		MetallicBrightBlue2,
+		UtilDarkBlue,
 		UtilMidnightBlue,
 		UtilBlue,
 		UtilSeaFoamBlue,
@@ -184,7 +185,8 @@ namespace GTA
 		PoliceCarBlue,
 		MatteGreen,
 		MatteBrown,
-		MatteWhite = 131,
+		WornOrange2,
+		MatteWhite,
 		WornWhite,
 		WornOliveArmyGreen,
 		PureWhite,
@@ -293,6 +295,10 @@ namespace GTA
 		{
 		}
 
+		/// <summary>
+		/// Gets the display name of this <see cref="Vehicle"/>.
+		/// <remarks>Use <see cref="Game.GetLocalizedString(string)"/> to get the localized name.</remarks>
+		/// </summary>
 		public string DisplayName
 		{
 			get
@@ -300,14 +306,21 @@ namespace GTA
 				return GetModelDisplayName(base.Model);
 			}
 		}
-		public string FriendlyName
+		/// <summary>
+		/// Gets the localized name of this <see cref="Vehicle"/>
+		/// </summary>
+		public string LocalizedName
 		{
 			get
 			{
-				return Game.GetGXTEntry(DisplayName);
+				return Game.GetLocalizedString(DisplayName);
 			}
 		}
 
+		/// <summary>
+		/// Gets the display name of this <see cref="Vehicle"/>s <see cref="VehicleClass"/>.
+		/// <remarks>Use <see cref="Game.GetLocalizedString(string)"/> to get the localized class name.</remarks>
+		/// </summary>
 		public string ClassDisplayName
 		{
 			get
@@ -316,14 +329,20 @@ namespace GTA
 			}
 		}
 
-		public string ClassFriendlyName
+		/// <summary>
+		/// Gets the localized name of this <see cref="Vehicle"/>s <see cref="VehicleClass"/>.
+		/// </summary>
+		public string ClassLocalizedName
 		{
 			get
 			{
-				return Game.GetGXTEntry(ClassDisplayName);
+				return Game.GetLocalizedString(ClassDisplayName);
 			}
 		}
 
+		/// <summary>
+		/// Gets the class of this <see cref="Vehicle"/>.
+		/// </summary>
 		public VehicleClass ClassType
 		{
 			get
@@ -332,6 +351,9 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets this <see cref="Vehicle"/>s body health.
+		/// </summary>
 		public float BodyHealth
 		{
 			get
@@ -343,6 +365,9 @@ namespace GTA
 				Function.Call(Hash.SET_VEHICLE_BODY_HEALTH, Handle, value);
 			}
 		}
+		/// <summary>
+		/// Gets or sets this <see cref="Vehicle"/> engine health.
+		/// </summary>
 		public float EngineHealth
 		{
 			get
@@ -354,6 +379,9 @@ namespace GTA
 				Function.Call(Hash.SET_VEHICLE_ENGINE_HEALTH, Handle, value);
 			}
 		}
+		/// <summary>
+		/// Gets or sets this <see cref="Vehicle"/> petrol tank health.
+		/// </summary>
 		public float PetrolTankHealth
 		{
 			get
@@ -365,6 +393,112 @@ namespace GTA
 				Function.Call(Hash.SET_VEHICLE_PETROL_TANK_HEALTH, Handle, value);
 			}
 		}
+		/// <summary>
+		/// Gets or sets the main rotor health for this heli.
+		/// </summary>
+		public float HeliMainRotorHealth
+		{
+			get
+			{
+				if (!Model.IsHelicopter)
+				{
+					return 0.0f;
+				}
+				
+				return Function.Call<float>(Hash._GET_HELI_MAIN_ROTOR_HEALTH, Handle);
+			}
+			set
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return;
+				}
+				
+				if (!Model.IsHelicopter)
+				{
+					return;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x174C : 0x173C; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x176C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x181C : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x184C : offset;
+
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+			}
+		}
+		/// <summary>
+		/// Gets or sets the tail rotor health for this heli.
+		/// </summary>
+		public float HeliTailRotorHealth
+		{
+			get
+			{
+				if (!Model.IsHelicopter)
+				{
+					return 0.0f;
+				}
+				
+				return Function.Call<float>(Hash._GET_HELI_TAIL_ROTOR_HEALTH, Handle);
+			}
+			set
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return;
+				}				
+				
+				if (!Model.IsHelicopter)
+				{
+					return;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x1750 : 0x1740; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x1770 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x1820 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x1850 : offset;
+
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+			}
+		}
+		/// <summary>
+		/// Gets or sets the engine health for this heli.
+		/// </summary>
+		public float HeliEngineHealth
+		{
+			get
+			{
+				if (!Model.IsHelicopter)
+				{
+					return 0.0f;
+				}
+				
+				return Function.Call<float>(Hash._GET_HELI_ENGINE_HEALTH, Handle);
+			}
+			set
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return;
+				}				
+				
+				if (!Model.IsHelicopter)
+				{
+					return;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x1754 : 0x1744; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x1774 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x1824 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x1854 : offset;
+
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+			}
+		}
+		
+		/// <summary>
+		/// Gets or sets this <see cref="Vehicle"/> fuel level.
+		/// </summary>
 		public float FuelLevel
 		{
 			get
@@ -375,7 +509,9 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x768 : 0x758;
-			    if (Game.Version > (GameVersion)25) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x788 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7A8 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7B8 : offset;
 
 				return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
@@ -387,24 +523,124 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x768 : 0x758;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x788 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7A8 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7B8 : offset;
 
-                MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+			}
+		}
+		/// <summary>
+		/// Gets or sets this <see cref="Vehicle"/> oil level.
+		/// </summary>
+		public float OilLevel
+		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return 0.0f;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x76C : 0x75C;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x78C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7AC : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7BC : offset;
+
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
+			}
+			set
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x76C : 0x75C;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x78C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7AC : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7BC : offset;
+
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
 			}
 		}
 
+		public float Gravity
+		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return 0.0f;
+				}
+				
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0xB2C : 0xB1C;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0xB4C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0xB7C : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0xB8C : offset;
+
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
+			}
+			set
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0xB2C : 0xB1C;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0xB4C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0xB7C : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0xB8C : offset;
+
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/>s engine is running.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Vehicle"/>s engine is running; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsEngineRunning
 		{
 			get
 			{
-				return Function.Call<bool>(Hash._IS_VEHICLE_ENGINE_ON, Handle);
+				return Function.Call<bool>(Hash.GET_IS_VEHICLE_ENGINE_RUNNING, Handle);
 			}
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_ENGINE_ON, Handle, value, true);
 			}
 		}
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/>s engine is currently starting.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Vehicle"/>s engine is starting; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsEngineStarting
+		{
+			get
+			{
+				IntPtr memoryAddress = MemoryAddress;
+				if (memoryAddress == IntPtr.Zero)
+				{
+					return false;
+				}
+				//Unsure of the exact version this switched, but all others in the rangs are the same
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x842 : 0x832;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x862 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x88A : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x89A : offset;
+
+				return MemoryAccess.IsBitSet(MemoryAddress + offset, 5);
+			}
+		}
+		/// <summary>
+		/// Turns this <see cref="Vehicle"/>s radio on or off
+		/// </summary>
 		public bool IsRadioEnabled
 		{
 			set
@@ -412,6 +648,9 @@ namespace GTA
 				Function.Call(Hash.SET_VEHICLE_RADIO_ENABLED, Handle, value);
 			}
 		}
+		/// <summary>
+		/// Sets this <see cref="Vehicle"/>s radio station.
+		/// </summary>
 		public RadioStation RadioStation
 		{
 			set
@@ -427,6 +666,12 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets this <see cref="Vehicle"/>s speed.
+		/// </summary>
+		/// <value>
+		/// The speed in m/s.
+		/// </value>
 		public float Speed
 		{
 			get
@@ -446,6 +691,9 @@ namespace GTA
 				}
 			}
 		}
+		/// <summary>
+		/// Gets the speed the drive wheels are turning at, This is the value used for the dashboard speedometers(after being converted to mph).
+		/// </summary>
 		public float WheelSpeed
 		{
 			get
@@ -457,12 +705,50 @@ namespace GTA
 
 				//old game version hasnt been tested, just following the patterns above for old game ver
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x9A4 : 0x994;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset = 0x9F0;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x9C4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x9F0 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0xA00 : offset;
 
-                return MemoryAccess.ReadFloat(MemoryAddress + offset);
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
 		}
+		/// <summary>
+		/// Gets or sets the blades speed for this heli.
+		/// </summary>
+		public float HeliBladesSpeed
+		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return 0.0f;
+				}				
+				
+				if (!Model.IsHelicopter)
+				{
+					return 0.0f;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x1740 : 0x1730; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x1760 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x1810 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x1840 : offset;
+
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
+			}
+			set
+			{
+				if (!Model.IsHelicopter)
+				{
+					return;
+				}
+				
+				Function.Call(Hash.SET_HELI_BLADES_SPEED, Handle, value);
+			}
+		}
+		/// <summary>
+		/// Gets the acceleration of this <see cref="Vehicle"/>.
+		/// </summary>
 		public float Acceleration
 		{
 			get
@@ -473,11 +759,19 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7E4 : 0x7D4;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x804 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x824 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x834 : offset;
 
-                return MemoryAccess.ReadFloat(MemoryAddress + offset);
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
 		}
+		/// <summary>
+		/// Gets or sets the current RPM of this <see cref="Vehicle"/>.
+		/// </summary>
+		/// <value>
+		/// The current RPM between <c>0.0f</c> and <c>1.0f</c>.
+		/// </value>
 		public float CurrentRPM
 		{
 			get
@@ -487,11 +781,12 @@ namespace GTA
 					return 0.0f;
 				}
 
-				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 2004 : 1988;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-			    if (Game.Version > (GameVersion)27) offset = 0x814;
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7D4 : 0x7C4;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x7F4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x814 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x824 : offset;
 
-                return MemoryAccess.ReadFloat(MemoryAddress + offset);
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
 			set
 			{
@@ -500,15 +795,16 @@ namespace GTA
 					return;
 				}
 
-				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 2004 : 1988;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset = 0x814;
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7D4 : 0x7C4;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x7F4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x814 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x824 : offset;
 
-                MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
 			}
 		}
 
-		public int HighGear
+		public byte HighGear
 		{
 			get
 			{
@@ -518,31 +814,36 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7A6 : 0x796;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                offset = (Game.Version >= (GameVersion) 27 ? 0x7E6 : offset);
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x7C6 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7E6 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7F6 : offset;
 
-                return (int)MemoryAccess.ReadByte(MemoryAddress + offset);
+				return MemoryAccess.ReadByte(MemoryAddress + offset);
 			}
 			set
 			{
-				if (value < 0 || value > byte.MaxValue)
-				{
-					throw new ArgumentOutOfRangeException("value", "Values must be between 0 and 255, inclusive.");
-				}
-
 				if (MemoryAddress == IntPtr.Zero)
 				{
 					return;
 				}
 
-				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7A6 : 0x796;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                offset = (Game.Version >= (GameVersion)27 ? 0x7C0 : offset);
+				if (value < 0 || value > 7)
+				{
+					throw new ArgumentOutOfRangeException("value", "Values must be between 0 and 7, inclusive.");
+				}
 
-                MemoryAccess.WriteByte(MemoryAddress + offset, (byte)value);
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7A6 : 0x796;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x7C6 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7E6 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7F6 : offset;
+
+				MemoryAccess.WriteByte(MemoryAddress + offset, value);
 			}
 		}
-		public int CurrentGear
+		/// <summary>
+		/// Gets the current gear this <see cref="Vehicle"/> is using.
+		/// </summary>
+		public byte CurrentGear
 		{
 			get
 			{
@@ -552,44 +853,54 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x7A0 : 0x790;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x7C0 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7E0 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7F0 : offset;
 
-                return (int)MemoryAccess.ReadByte(MemoryAddress + offset);
+				return MemoryAccess.ReadByte(MemoryAddress + offset);
 			}
 		}
 
+		/// <summary>
+		/// Gets the steering angle of this <see cref="Vehicle"/>.
+		/// </summary>
+		/// <value>
+		/// The steering angle in degrees.
+		/// </value>
 		public float SteeringAngle
 		{
-			get
-			{
-				if (MemoryAddress == IntPtr.Zero)
-				{
-					return 0.0f;
-				}
-
-				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8AC : 0x89C;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset = 0x8F4;
+            get
+            {
+                if (MemoryAddress == IntPtr.Zero)
+                {
+                    return 0.0f;
+                }
+                int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8AC : 0x89C;
+                offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x8CC : offset;
+                offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x8F4 : offset;
+                offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x904 : offset;
 
                 return (float)(MemoryAccess.ReadFloat(MemoryAddress + offset) * (180.0 / System.Math.PI));
-			}
-		    set
-		    {
-		        if (MemoryAddress == IntPtr.Zero)
-		        {
-		            return;
-		        }
-
+            }
+            set
+            {
+                if (MemoryAddress == IntPtr.Zero)
+                {
+                    return;
+                }
                 int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8AC : 0x89C;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset = 0x8F4;
+                offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x8CC : offset;
+                offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x8F4 : offset;
+                offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x904 : offset;
 
                 MemoryAccess.WriteFloat(MemoryAddress + offset, value);
-		    }
-		}
-		public float SteeringScale
-		{
+            }
+        }
+        /// <summary>
+        /// Gets or sets the steering scale of this <see cref="Vehicle"/>.
+        /// </summary>
+        public float SteeringScale
+        {
 			get
 			{
 				if (MemoryAddress == IntPtr.Zero)
@@ -598,10 +909,11 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8A4 : 0x894;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset = 0x8EC;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x8C4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x8EC : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x8FC : offset;
 
-                return MemoryAccess.ReadFloat(MemoryAddress + offset);
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
 			}
 			set
 			{
@@ -611,48 +923,149 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x8A4 : 0x894;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset = 0x8EC;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x8C4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x8EC : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x8FC : offset;
 
-                MemoryAccess.WriteFloat(MemoryAddress + offset, value);
+				MemoryAccess.WriteFloat(MemoryAddress + offset, value);
 			}
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Vehicle"/> has forks.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has forks; otherwise, <c>false</c>.
+		/// </value>
 		public bool HasForks
 		{
 			get
 			{
-				return HasBone("forks");
+				return Bones.HasBone("forks");
 			}
 		}
 
-		public bool HasAlarm
+		/// <summary>
+		/// Sets a value indicating whether this <see cref="Vehicle"/> has an alarm set.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has an alarm set; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsAlarmSet
 		{
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_ALARM, Handle, value);
 			}
+
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return false;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x998 : 0x988;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x9B8 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x9E4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x9F4 : offset;
+
+				return (ushort)MemoryAccess.ReadShort(MemoryAddress + offset) == ushort.MaxValue; //The alarm is set when the value is 0xFFFF
+			}
 		}
-		public bool AlarmActive
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Vehicle"/> is sounding its alarm.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> is sounding its alarm; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsAlarmSounding
 		{
 			get
 			{
 				return Function.Call<bool>(Hash.IS_VEHICLE_ALARM_ACTIVATED, Handle);
 			}
 		}
+		/// <summary>
+		/// Gets or sets time left before this <see cref="Vehicle"/> alarm stops.
+		/// If greater than zero, the vehicle alarm will be sounding.
+		/// the value is up to 65534.
+		/// </summary>
+		/// <value>
+		/// The time left before this <see cref="Vehicle"/> alarm stops.
+		/// </value>
+		public int AlarmTimeLeft
+		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return 0;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x998 : 0x988;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x9B8 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x9E4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x9F4 : offset;
+
+
+				ushort alarmTime = (ushort)MemoryAccess.ReadShort(MemoryAddress + offset);
+				if (alarmTime == ushort.MaxValue)
+				{
+					return 0;
+				}
+
+				return (int) alarmTime;
+			}
+			set
+			{
+				ushort alarmTime = (ushort)value;
+				if (alarmTime == ushort.MaxValue)
+				{
+					return;
+				}
+
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x998 : 0x988;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x9B8 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x9E4 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x9F4 : offset;
+
+				MemoryAccess.WriteShort(MemoryAddress + offset, (short)alarmTime);
+			}
+		}
+		/// <summary>
+		/// Starts sounding the alarm on this <see cref="Vehicle"/>.
+		/// </summary>
 		public void StartAlarm()
 		{
 			Function.Call(Hash.START_VEHICLE_ALARM, Handle);
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="Vehicle"/> has a siren.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has a siren; otherwise, <c>false</c>.
+		/// </value>
 		public bool HasSiren
 		{
 			get
 			{
-				return HasBone("siren1");
+				return Bones.HasBone("siren1");
 			}
 		}
-		public bool SirenActive
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its siren turned on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its siren turned on; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsSirenActive
 		{
 			get
 			{
@@ -663,6 +1076,12 @@ namespace GTA
 				Function.Call(Hash.SET_VEHICLE_SIREN, Handle, value);
 			}
 		}
+		/// <summary>
+		/// Sets a value indicating whether the siren on this <see cref="Vehicle"/> plays sounds.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if the siren on this <see cref="Vehicle"/> plays sounds; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsSirenSilent
 		{
 			set
@@ -671,10 +1090,20 @@ namespace GTA
 				Function.Call(Hash.DISABLE_VEHICLE_IMPACT_EXPLOSION_ACTIVATION, Handle, value);
 			}
 		}
+		/// <summary>
+		/// Sounds the horn on this <see cref="Vehicle"/>.
+		/// </summary>
+		/// <param name="duration">The duration to sound the horn for.</param>
 		public void SoundHorn(int duration)
 		{
 			Function.Call(Hash.START_VEHICLE_HORN, Handle, duration, Game.GenerateHash("HELDDOWN"), 0);
 		}
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> is wanted by the police.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> is wanted by the police; otherwise, <c>false</c>.
+		/// </value>
 		public bool IsWanted
 		{
 			get
@@ -686,11 +1115,11 @@ namespace GTA
 				}
 				//Unsure of the exact version this switched, but all others in the rangs are the same
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x84C : 0x83C;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x86C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x894 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x9A4 : offset;
 
-
-                return MemoryAccess.IsBitSet(MemoryAddress + offset, 3);
+				return MemoryAccess.IsBitSet(MemoryAddress + offset, 3);
 			}
 			set
 			{
@@ -698,6 +1127,12 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets a value indicating whether peds can use this <see cref="Vehicle"/> for cover.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if peds can use this <see cref="Vehicle"/> for cover; otherwise, <c>false</c>.
+		/// </value>
 		public bool ProvidesCover
 		{
 			get
@@ -709,10 +1144,11 @@ namespace GTA
 				}
 				//Unsure of the exact version this switched, but all others in the rangs are the same
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x83C : 0x82C;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x85C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x884 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x894 : offset;
 
-                return MemoryAccess.IsBitSet(MemoryAddress + offset, 2);
+				return MemoryAccess.IsBitSet(MemoryAddress + offset, 2);
 			}
 			set
 			{
@@ -720,6 +1156,12 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> drops money when destroyed.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Vehicle"/> drops money when destroyed; otherwise, <c>false</c>.
+		/// </value>
 		public bool DropsMoneyOnExplosion
 		{		   
 			get
@@ -732,10 +1174,9 @@ namespace GTA
 				//Unsure of the exact version this switched or if it switched over a few title updates
 				//as its shifted by 0x20 bytes where as rest are only 0x10 bytes
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0xA98 : 0xA78;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0xAC8 : offset; // just a guess
 
-                if (MemoryAccess.ReadInt(memoryAddress + offset) <= 8)
+				if (MemoryAccess.ReadInt(memoryAddress + offset) <= 8)
 				{
 					return MemoryAccess.IsBitSet(memoryAddress + 0x12F9, 1);
 				}
@@ -747,6 +1188,12 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> was previously owned by a <see cref="Player"/>.
+		/// </summary>
+		/// <value>
+		/// <c>true</c> if this <see cref="Vehicle"/> was previously owned by a <see cref="Player"/>; otherwise, <c>false</c>.
+		/// </value>
 		public bool PreviouslyOwnedByPlayer
 		{
 			get
@@ -757,10 +1204,11 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x844 : 0x834;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x864 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x88C : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x89C : offset;
 
-                return MemoryAccess.IsBitSet(MemoryAddress + offset, 1);
+				return MemoryAccess.IsBitSet(MemoryAddress + offset, 1);
 			}
 			set
 			{
@@ -768,6 +1216,12 @@ namespace GTA
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> needs to be hotwired to start.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> needs to be hotwired to start; otherwise, <c>false</c>.
+		/// </value>
 		public bool NeedsToBeHotwired
 		{
 			get
@@ -778,10 +1232,11 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x844 : 0x834;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x864 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x88C : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x89C : offset;
 
-                return MemoryAccess.IsBitSet(MemoryAddress + offset, 2);
+				return MemoryAccess.IsBitSet(MemoryAddress + offset, 2);
 			}
 			set
 			{
@@ -789,37 +1244,59 @@ namespace GTA
 			}
 		}
 
-		public bool LightsOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its lights on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its lights on; otherwise, <c>false</c>.
+		/// </value>
+		public bool AreLightsOn
 		{
 			get
 			{
-				var lightState1 = new OutputArgument();
-				var lightState2 = new OutputArgument();
-				Function.Call(Hash.GET_VEHICLE_LIGHTS_STATE, Handle, lightState1, lightState2);
+				bool lightState1, lightState2;
+				unsafe
+				{
+					Function.Call(Hash.GET_VEHICLE_LIGHTS_STATE, Handle, &lightState1, &lightState2);
+				}
 
-				return lightState1.GetResult<bool>();
+				return lightState1;
 			}
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_LIGHTS, Handle, value ? 3 : 4);
 			}
 		}
-		public bool HighBeamsOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its high beams on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its high beams on; otherwise, <c>false</c>.
+		/// </value>
+		public bool AreHighBeamsOn
 		{
 			get
 			{
-				var lightState1 = new OutputArgument();
-				var lightState2 = new OutputArgument();
-				Function.Call(Hash.GET_VEHICLE_LIGHTS_STATE, Handle);
+				bool lightState1, lightState2;
+				unsafe
+				{
+					Function.Call(Hash.GET_VEHICLE_LIGHTS_STATE, Handle, &lightState1, &lightState2);
+				}
 
-				return lightState2.GetResult<bool>();
+				return lightState2;
 			}
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_FULLBEAM, Handle, value);
 			}
 		}
-		public bool InteriorLightOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its interior lights on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its interior lights on; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsInteriorLightOn
 		{
 			get
 			{
@@ -829,17 +1306,24 @@ namespace GTA
 				}
 
 				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x841 : 0x831;
-                if (Game.Version > (GameVersion)25) offset += 0x20;
-                if (Game.Version > (GameVersion)27) offset += 0x20;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x861 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x889 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x899 : offset;
 
-                return MemoryAccess.IsBitSet(MemoryAddress + offset, 6);
+				return MemoryAccess.IsBitSet(MemoryAddress + offset, 6);
 			}
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_INTERIORLIGHT, Handle, value);
 			}
 		}
-		public bool SearchLightOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its search light on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its search light on; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsSearchLightOn
 		{
 			get
 			{
@@ -850,7 +1334,13 @@ namespace GTA
 				Function.Call(Hash.SET_VEHICLE_SEARCHLIGHT, Handle, value, 0);
 			}
 		}
-		public bool TaxiLightOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its taxi light on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its taxi light on; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsTaxiLightOn
 		{
 			get
 			{
@@ -861,28 +1351,52 @@ namespace GTA
 				Function.Call(Hash.SET_TAXI_LIGHTS, Handle, value);
 			}
 		}
-		public bool LeftIndicatorLightOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its left indicator light on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its left indicator light on; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsLeftIndicatorLightOn
 		{
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_INDICATOR_LIGHTS, Handle, true, value);
 			}
 		}
-		public bool RightIndicatorLightOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its right indicator light on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its right indicator light on; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsRightIndicatorLightOn
 		{
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_INDICATOR_LIGHTS, Handle, false, value);
 			}
 		}
-		public bool HandbrakeOn
+		/// <summary>
+		/// Sets a value indicating whether the Handbrake on this <see cref="Vehicle"/> is forced on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if the Handbrake on this <see cref="Vehicle"/> is forced on; otherwise, <c>false</c>.
+		/// </value>
+		public bool IsHandbrakeForcedOn
 		{
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_HANDBRAKE, Handle, value);
 			}
 		}
-		public bool BrakeLightsOn
+		/// <summary>
+		/// Gets or sets a value indicating whether this <see cref="Vehicle"/> has its brake light on.
+		/// </summary>
+		/// <value>
+		///   <c>true</c> if this <see cref="Vehicle"/> has its brake light on; otherwise, <c>false</c>.
+		/// </value>
+		public bool AreBrakeLightsOn
 		{
 			set
 			{
@@ -891,9 +1405,44 @@ namespace GTA
 		}
 		public float LightsMultiplier
 		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return 0.0f;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x90C : 0x8FC; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x92C : offset;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x954 : offset;
+
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
+			}
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_LIGHT_MULTIPLIER, Handle, value);
+			}
+		}
+
+		public float LodMultiplier
+		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return 0.0f;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x1204 : 0x11F4; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x1224 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x1264 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x1274 : offset;
+
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
+			}
+			set
+			{
+				Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, Handle, value);
 			}
 		}
 
@@ -934,7 +1483,7 @@ namespace GTA
 		{
 			get
 			{
-				return Function.Call<bool>(Hash._IS_HEADLIGHT_L_BROKEN, Handle);
+				return Function.Call<bool>(Hash.GET_IS_LEFT_VEHICLE_HEADLIGHT_DAMAGED, Handle);
 			}
 			set
 			{
@@ -943,18 +1492,18 @@ namespace GTA
 					return;
 				}
 
-				IntPtr address = MemoryAddress + 1916;
-                if (Game.Version > (GameVersion)25) address += 0x20;
-                if (Game.Version > (GameVersion)27) address += 0x20;
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x77C : 0x76C;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x79C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7BC : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7CC : offset;
 
-
-                if (value)
+				if (value)
 				{
-					MemoryAccess.SetBit(address, 0);
+					MemoryAccess.SetBit(MemoryAddress + offset, 0);
 				}
 				else
 				{
-					MemoryAccess.ClearBit(address, 0);
+					MemoryAccess.ClearBit(MemoryAddress + offset, 0);
 				}
 			}
 		}
@@ -962,7 +1511,7 @@ namespace GTA
 		{
 			get
 			{
-				return Function.Call<bool>(Hash._IS_HEADLIGHT_R_BROKEN, Handle);
+				return Function.Call<bool>(Hash.GET_IS_RIGHT_VEHICLE_HEADLIGHT_DAMAGED, Handle);
 			}
 			set
 			{
@@ -971,18 +1520,18 @@ namespace GTA
 					return;
 				}
 
-				IntPtr address = MemoryAddress + 1916;
-                if (Game.Version > (GameVersion)25) address += 0x20;
-                if (Game.Version > (GameVersion)27) address += 0x20;
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x77C : 0x76C;
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x79C : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x7BC : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x7CC : offset;
 
-
-                if (value)
+				if (value)
 				{
-					MemoryAccess.SetBit(address, 1);
+					MemoryAccess.SetBit(MemoryAddress + offset, 0);
 				}
 				else
 				{
-					MemoryAccess.ClearBit(address, 1);
+					MemoryAccess.ClearBit(MemoryAddress + offset, 0);
 				}
 			}
 		}
@@ -1018,6 +1567,20 @@ namespace GTA
 		}
 		public float EnginePowerMultiplier
 		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return 0.0f;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x9D0 : 0x9C0; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x9F0 : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0xA18 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0xA28 : offset;
+
+				return MemoryAccess.ReadFloat(MemoryAddress + offset);
+			}
 			set
 			{
 				Function.Call(Hash._SET_VEHICLE_ENGINE_POWER_MULTIPLIER, Handle, value);
@@ -1035,7 +1598,7 @@ namespace GTA
 		{
 			get
 			{
-				return Function.Call<VehicleLandingGearState>(Hash._GET_VEHICLE_LANDING_GEAR, Handle);
+				return Function.Call<VehicleLandingGearState>(Hash.GET_LANDING_GEAR_STATE, Handle);
 			}
 			set
 			{
@@ -1098,7 +1661,6 @@ namespace GTA
 
 		public bool IsOnAllWheels
 		{
-
 			get
 			{
 				return Function.Call<bool>(Hash.IS_VEHICLE_ON_ALL_WHEELS, Handle);
@@ -1107,7 +1669,6 @@ namespace GTA
 
 		public bool IsStopped
 		{
-
 			get
 			{
 				return Function.Call<bool>(Hash.IS_VEHICLE_STOPPED, Handle);
@@ -1115,7 +1676,6 @@ namespace GTA
 		}
 		public bool IsStoppedAtTrafficLights
 		{
-
 			get
 			{
 				return Function.Call<bool>(Hash.IS_VEHICLE_STOPPED_AT_TRAFFIC_LIGHTS, Handle);
@@ -1136,7 +1696,6 @@ namespace GTA
 
 		public bool IsConvertible
 		{
-
 			get
 			{
 				return Function.Call<bool>(Hash.IS_VEHICLE_A_CONVERTIBLE, Handle, 0);
@@ -1321,20 +1880,23 @@ namespace GTA
 		public void PlaceOnNextStreet()
 		{
 			Vector3 currentPosition = Position;
-			var headingArg = new OutputArgument();
-			var newPositionArg = new OutputArgument();
+			NativeVector3 newPosition;
+			float heading;
+			long unkn;
 
 			for (int i = 1; i < 40; i++)
 			{
-				Function.Call(Hash.GET_NTH_CLOSEST_VEHICLE_NODE_WITH_HEADING, currentPosition.X, currentPosition.Y, currentPosition.Z, i, newPositionArg, headingArg, new OutputArgument(), 1, 0x40400000, 0);
+				unsafe
+				{
+					Function.Call(Hash.GET_NTH_CLOSEST_VEHICLE_NODE_WITH_HEADING, currentPosition.X, currentPosition.Y, currentPosition.Z, i, &newPosition, &heading, &unkn, 1, 0x40400000, 0);
+				}
 
-				var newPosition = newPositionArg.GetResult<Vector3>();
 
 				if (!Function.Call<bool>(Hash.IS_POINT_OBSCURED_BY_A_MISSION_ENTITY, newPosition.X, newPosition.Y, newPosition.Z, 5.0f, 5.0f, 5.0f, 0))
 				{
 					Position = newPosition;
 					PlaceOnGround();
-					Heading = headingArg.GetResult<float>();
+					Heading = heading;
 					break;
 				}
 			}
@@ -1362,6 +1924,20 @@ namespace GTA
 		}
 		public bool CanWheelsBreak
 		{
+			get
+			{
+				if (MemoryAddress == IntPtr.Zero)
+				{
+					return false;
+				}
+
+				int offset = Game.Version >= GameVersion.v1_0_372_2_Steam ? 0x83B : 0x82B; // untested
+				offset = Game.Version >= GameVersion.v1_0_877_1_Steam ? 0x85B : offset;
+				offset = Game.Version >= GameVersion.v1_0_944_2_Steam ? 0x883 : offset;
+				offset = Game.Version >= GameVersion.v1_0_1103_2_Steam ? 0x893 : offset;
+
+				return !MemoryAccess.IsBitSet(MemoryAddress + offset, 6);
+			}
 			set
 			{
 				Function.Call(Hash.SET_VEHICLE_WHEELS_CAN_BREAK, Handle, value);
@@ -1372,21 +1948,21 @@ namespace GTA
 		{
 			get
 			{
-				return HasBone("door_hatch_l") && HasBone("door_hatch_r");
+				return Bones.HasBone("door_hatch_l") && Bones.HasBone("door_hatch_r");
 			}
 		}
 		public void OpenBombBay()
 		{
 			if (HasBombBay)
 			{
-				Function.Call(Hash._OPEN_VEHICLE_BOMB_BAY, Handle);
+				Function.Call(Hash.OPEN_BOMB_BAY_DOORS, Handle);
 			}
 		}
 		public void CloseBombBay()
 		{
 			if (HasBombBay)
 			{
-				Function.Call(Hash._CLOSE_VEHICLE_BOMB_BAY, Handle);
+				Function.Call(Hash.CLOSE_BOMB_BAY_DOORS, Handle);
 			}
 		}
 
@@ -1455,7 +2031,7 @@ namespace GTA
 		{
 			get
 			{
-				return HasBone("tow_arm");
+				return Bones.HasBone("tow_arm");
 			}
 		}
 		public float TowingCraneRaisedAmount
@@ -1490,7 +2066,7 @@ namespace GTA
 			}
 		}
 
-		public void ApplyDamage(Vector3 position, float damageAmount, float radius)
+		public void Deform(Vector3 position, float damageAmount, float radius)
 		{
 			Function.Call(Hash.SET_VEHICLE_DAMAGE, position.X, position.Y, position.Z, damageAmount, radius);
 		}
@@ -1555,6 +2131,24 @@ namespace GTA
 				allModels.AddRange(Array.ConvertAll<int, VehicleHash>(MemoryAccess.VehicleModels[i].ToArray(), item => (VehicleHash)item));
 			}
 			return allModels.ToArray();
+		}
+
+		/// <summary>
+		/// Determines whether this <see cref="Vehicle"/> exists.
+		/// </summary>
+		/// <returns><c>true</c> if this <see cref="Vehicle"/> exists; otherwise, <c>false</c></returns>
+		public new bool Exists()
+		{
+			return Function.Call<int>(Hash.GET_ENTITY_TYPE, Handle) == 2;
+		}
+		/// <summary>
+		/// Determines whether the <see cref="Vehicle"/> exists.
+		/// </summary>
+		/// <param name="vehicle">The <see cref="Vehicle"/> to check.</param>
+		/// <returns><c>true</c> if the <see cref="Vehicle"/> exists; otherwise, <c>false</c></returns>
+		public static bool Exists(Vehicle vehicle)
+		{
+			return !ReferenceEquals(vehicle, null) && vehicle.Exists();
 		}
 
 	}

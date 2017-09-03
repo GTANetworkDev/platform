@@ -204,7 +204,7 @@ namespace GTANetwork.Javascript
         {
             if (CamObj != null)
             {
-                CamObj.Destroy();
+                CamObj.Delete();
                 CamObj = null;
             }
         }

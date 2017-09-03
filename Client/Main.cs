@@ -257,11 +257,13 @@ namespace GTANetwork
             LogManager.RuntimeLog("Attaching OnTick loop.");
 
             Tick += OnTick;
-            
+
             KeyDown += OnKeyDown;
 
-            KeyUp += (sender, args) => {
-                if (args.KeyCode == Keys.Escape && _wasTyping) {
+            KeyUp += (sender, args) =>
+            {
+                if (args.KeyCode == Keys.Escape && _wasTyping)
+                {
                     _wasTyping = false;
                 }
             };
@@ -295,12 +297,15 @@ namespace GTANetwork
 
             //Function.Call(Hash.SHUTDOWN_LOADING_SCREEN);
 
-            Audio.SetAudioFlag(AudioFlag.LoadMPData, true);
-            Audio.SetAudioFlag(AudioFlag.DisableBarks, true);
-            Audio.SetAudioFlag(AudioFlag.DisableFlightMusic, true);
-            Audio.SetAudioFlag(AudioFlag.PoliceScannerDisabled, true);
-            Audio.SetAudioFlag(AudioFlag.OnlyAllowScriptTriggerPoliceScanner, true);
+            Audio.SetAudioFlag(AudioFlags.LoadMPData, true);
+            Audio.SetAudioFlag(AudioFlags.DisableBarks, true);
+            Audio.SetAudioFlag(AudioFlags.DisableFlightMusic, true);
+            Audio.SetAudioFlag(AudioFlags.PoliceScannerDisabled, true);
+            Audio.SetAudioFlag(AudioFlags.OnlyAllowScriptTriggerPoliceScanner, true);
             Function.Call((Hash)0x552369F549563AD5, false); //_FORCE_AMBIENT_SIREN
+
+            // disable fire dep dispatch service
+            Function.Call((Hash)0xDC0F817884CDD856, 4, false); // ENABLE_DISPATCH_SERVICE
 
             GlobalVariable.Get(2576573).Write(1); //Enable MP cars?
 
@@ -342,7 +347,7 @@ namespace GTANetwork
             var player = Game.Player.Character;
             if (player == null || player.Handle == 0 || Game.IsLoading) return;
 
-            GTA.UI.Screen.FadeOut(1);
+            GTA.UI.Screen.Fading.FadeOut(1);
             ResetPlayer();
             MainMenu.RefreshIndex();
             _init = true;
@@ -355,7 +360,7 @@ namespace GTANetwork
             Game.TimeScale = 1;
 
             GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
-            GTA.UI.Screen.FadeIn(1000);
+            GTA.UI.Screen.Fading.FadeIn(1000);
             _mainWarning = new Warning("",""){ Visible = false};
         }
 
@@ -377,6 +382,17 @@ namespace GTANetwork
             _mainWarning?.Draw();
 
             if (!IsConnected()) return;
+
+            if (DateTime.Now.Subtract(_lastCheck).TotalMilliseconds > 1000)
+            {
+                _bytesSentPerSecond = BytesSent - _lastBytesSent;
+                _bytesReceivedPerSecond = BytesReceived - _lastBytesReceived;
+
+                _lastBytesReceived = BytesReceived;
+                _lastBytesSent = BytesSent;
+
+                _lastCheck = DateTime.Now;
+            }
 
             try
             {
@@ -492,7 +508,7 @@ namespace GTANetwork
                         }
                         else
                         {
-                            var message = Game.GetUserInput(255);
+                            var message = Game.GetUserInput();
                             if (string.IsNullOrEmpty(message)) break;
 
                             var obj = new ChatData { Message = message, };
@@ -507,26 +523,15 @@ namespace GTANetwork
                     }
                     break;
 
-                case Keys.F:
-                    if (IsOnServer() && !Game.Player.Character.IsInVehicle() && !Chat.IsFocused)
-                    {
-                        var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
-
-
-                        if (!veh.Exists()) break;
-                        if (!Game.Player.Character.IsInRangeOfEx(veh.Position, 6f)) break;
-
-                        Game.Player.Character.Task.EnterVehicle(veh, VehicleSeat.Driver, -1, 2f);
-                        _isGoingToCar = true;
-                    }
-                    break;
-
                 case Keys.G:
                     if (IsOnServer() && !Game.Player.Character.IsInVehicle() && !Chat.IsFocused)
                     {
-                        var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
+                        //var veh = new Vehicle(StreamerThread.StreamedInVehicles[0].LocalHandle);
+                        List<Vehicle> vehs;
+                        if (!(vehs = World.GetAllVehicles().OrderBy(v => v.Position.DistanceToSquared(Game.Player.Character.Position)).Take(1).ToList()).Any()) break;
 
-                        if (!veh.Exists()) break;
+                        Vehicle veh;
+                        if (!(veh = vehs[0]).Exists()) break;
                         if (!Game.Player.Character.IsInRangeOfEx(veh.Position, 6f)) break;
 
                         var playerChar = Game.Player.Character;

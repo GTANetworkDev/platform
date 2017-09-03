@@ -51,19 +51,19 @@ namespace GTANetwork.GUI
                 return;
             }
 
-            if (Game.IsControlJustPressed(0, Control.FrontendUp) || Game.IsControlJustPressed(0, Control.MoveUpOnly))
+            if (Game.IsControlJustPressed(Control.FrontendUp) || Game.IsControlJustPressed(Control.MoveUpOnly))
             {
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET", 1);
                 Index--;
             }
 
-            else if (Game.IsControlJustPressed(0, Control.FrontendDown) || Game.IsControlJustPressed(0, Control.MoveDownOnly))
+            else if (Game.IsControlJustPressed(Control.FrontendDown) || Game.IsControlJustPressed(Control.MoveDownOnly))
             {
                 Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET", 1);
                 Index++;
             }
 
-            if (Game.IsControlJustPressed(0, Control.FrontendAccept))
+            if (Game.IsControlJustPressed(Control.FrontendAccept))
             {
                 Buttons[Index].OnActivated();
             }
@@ -83,7 +83,7 @@ namespace GTANetwork.GUI
                 var hovered = UIMenu.IsMouseInBounds(Buttons[i].Position, Buttons[i].Size);
                 Buttons[i].Hovered = hovered && Index != i;
 
-                if (hovered && Game.IsControlJustPressed(0, Control.CursorAccept))
+                if (hovered && Game.IsControlJustPressed(Control.CursorAccept))
                 {
                     if (Index != i)
                         Index = i;

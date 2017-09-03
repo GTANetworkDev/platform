@@ -20,19 +20,19 @@ namespace GTANetwork.GUI
 	{
 		public ChatThread()
 		{
-			base.Tick += (sender, args) =>
-			{
-			    if (Main.Chat == null || !Main.ChatVisible || !Main.ScriptChatVisible || Main.MainMenu == null || (Main.MainMenu.Visible && !Main.MainMenu.TemporarilyHidden)) return;
+            Tick += (sender, args) =>
+            {
+                if (Main.Chat == null || !Main.ChatVisible || !Main.ScriptChatVisible || Main.MainMenu == null || (Main.MainMenu.Visible && !Main.MainMenu.TemporarilyHidden)) return;
 
-			    Main.Chat.Tick();
-			    var count = JavascriptHook.TextElements.Count;
-			    for (var i = 0; i < count; i++)
-			    {
-			        JavascriptHook.TextElements[i].Draw();
-			    }
-			};
-		}
-	}
+                Main.Chat.Tick();
+                var count = JavascriptHook.TextElements.Count;
+                for (var i = 0; i < count; i++)
+                {
+                    JavascriptHook.TextElements[i].Draw();
+                }
+            };
+        }
+    }
 
     public class ClassicChat : IChat
     {
@@ -253,8 +253,8 @@ namespace GTANetwork.GUI
 
             DrawChatboxInput();
 
-            Game.DisableControlThisFrame(0, Control.NextCamera);
-            Game.DisableAllControlsThisFrame(0);
+            Game.DisableControlThisFrame(Control.NextCamera);
+            Game.DisableAllControlsThisFrame();
         }
 
         public void AddMessage(string sender, string msg)

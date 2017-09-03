@@ -19,7 +19,7 @@ namespace GTANetwork.Streamer
 
         private static void PedData(Ped player)
         {
-            bool aiming = player.IsSubtaskActive(ESubtask.AIMED_SHOOTING_ON_FOOT) || player.IsSubtaskActive(ESubtask.AIMING_THROWABLE); // Game.IsControlPressed(0, GTA.Control.Aim);
+            bool aiming = player.IsSubtaskActive(ESubtask.AIMED_SHOOTING_ON_FOOT) || player.IsSubtaskActive(ESubtask.AIMING_THROWABLE); // Game.IsControlPressed(GTA.Control.Aim);
             bool shooting = Function.Call<bool>(Hash.IS_PED_SHOOTING, player.Handle);
 
             GTA.Math.Vector3 aimCoord = new Vector3();
@@ -54,7 +54,7 @@ namespace GTANetwork.Streamer
                 obj.Flag |= (int)PedDataFlags.InMeleeCombat;
             if (aiming || shooting)
                 obj.Flag |= (int)PedDataFlags.Aiming;
-            if ((player.IsInMeleeCombat && Game.IsControlJustPressed(0, Control.Attack)))
+            if ((player.IsInMeleeCombat && Game.IsControlJustPressed(Control.Attack)))
                 obj.Flag |= (int)PedDataFlags.Shooting;
             if (Function.Call<bool>(Hash.IS_PED_JUMPING, player.Handle))
                 obj.Flag |= (int)PedDataFlags.Jumping;
@@ -118,7 +118,7 @@ namespace GTANetwork.Streamer
                     sendShootingPacket = (shooting && !player.IsSubtaskActive(ESubtask.AIMING_PREVENTED_BY_OBSTACLE) &&
                                           !player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) ||
                                          ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
-                                          Game.IsEnabledControlPressed(0, Control.Attack));
+                                          Game.IsEnabledControlPressed(Control.Attack));
                 }
                 else
                 {
@@ -126,9 +126,9 @@ namespace GTANetwork.Streamer
                                           !player.IsSubtaskActive(ESubtask.MELEE_COMBAT) &&
                                           !player.IsReloading &&
                                           player.Weapons.Current.AmmoInClip > 0 &&
-                                          Game.IsEnabledControlPressed(0, Control.Attack)) ||
+                                          Game.IsEnabledControlPressed(Control.Attack)) ||
                                          ((player.IsInMeleeCombat || player.IsSubtaskActive(ESubtask.MELEE_COMBAT)) &&
-                                          Game.IsEnabledControlPressed(0, Control.Attack));
+                                          Game.IsEnabledControlPressed(Control.Attack));
                 }
 
                 if (!sendShootingPacket && _lastShooting && !_lastBullet)

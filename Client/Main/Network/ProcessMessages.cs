@@ -592,7 +592,7 @@ namespace GTANetwork
                                         var state = (bool)args[2];
                                         if (veh == null) return;
                                         if (lightId == Lights.NormalLights)
-                                            new Vehicle(veh.Handle).LightsOn = state;
+                                            new Vehicle(veh.Handle).AreLightsOn = state;
                                         else if (lightId == Lights.Highbeams)
                                             Function.Call(Hash.SET_VEHICLE_FULLBEAM, veh.Handle, state);
                                     }
