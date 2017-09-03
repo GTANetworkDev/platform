@@ -63,7 +63,7 @@ namespace GTANetwork.Streamer
                         World.DrawMarker((MarkerType) marker.Value.MarkerType, marker.Value.Position.ToVector(),
                             marker.Value.Direction.ToVector(), marker.Value.Rotation.ToVector(),
                             marker.Value.Scale.ToVector(),
-                            Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue));
+                            Color.FromArgb(marker.Value.Alpha, marker.Value.Red, marker.Value.Green, marker.Value.Blue), marker.Value.BobUpAndDown);
                     }
                 }
             }
@@ -377,7 +377,7 @@ namespace GTANetwork.Streamer
             return rem;
         }
 
-        public void CreateMarker(int type, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, GTANetworkShared.Vector3 dir, GTANetworkShared.Vector3 scale, int r, int g, int b, int a, int netHandle)
+        public void CreateMarker(int type, GTANetworkShared.Vector3 position, GTANetworkShared.Vector3 rotation, GTANetworkShared.Vector3 dir, GTANetworkShared.Vector3 scale, int r, int g, int b, int a, int netHandle, bool bobUpAndDown = false)
         {
             RemoteMarker rem = new RemoteMarker()
             {
@@ -390,6 +390,7 @@ namespace GTANetwork.Streamer
                 Green = g,
                 Blue = b,
                 Alpha = (byte)a,
+                BobUpAndDown = bobUpAndDown,
                 RemoteHandle = netHandle,
                 EntityType = (byte)EntityType.Marker,
             };
@@ -415,6 +416,7 @@ namespace GTANetwork.Streamer
                 Position = prop.Position,
                 Rotation = prop.Rotation,
                 Dimension = prop.Dimension,
+                BobUpAndDown = prop.BobUpAndDown,
                 ModelHash = prop.ModelHash,
                 EntityType = (byte)EntityType.Marker,
                 Alpha = prop.Alpha,
@@ -567,7 +569,7 @@ namespace GTANetwork.Streamer
             return rem;
         }
 
-        public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0)
+        public int CreateLocalMarker(int markerType, Vector3 pos, Vector3 dir, Vector3 rot, Vector3 scale, int alpha, int r, int g, int b, int dimension = 0, bool bobUpAndDown = false)
         {
             var newId = --_localHandleCounter;
             RemoteMarker mark  = new RemoteMarker()
@@ -582,6 +584,7 @@ namespace GTANetwork.Streamer
                 Green = g,
                 Blue = b,
                 Dimension = dimension,
+                BobUpAndDown = bobUpAndDown,
                 EntityType = (byte)EntityType.Marker,
                 LocalOnly = true,
                 StreamedIn = true,
@@ -1236,6 +1239,7 @@ namespace GTANetwork.Streamer
             if (prop.Green != null) veh.Green = prop.Green.Value;
             if (prop.Blue != null) veh.Blue = prop.Blue.Value;
             if (prop.Scale != null) veh.Scale = prop.Scale;
+            if (prop.BobUpAndDown != null) veh.BobUpAndDown = prop.BobUpAndDown.Value;
             if (prop.Position != null) veh.Position = prop.Position;
             if (prop.Rotation != null) veh.Rotation = prop.Rotation;
             if (prop.ModelHash != null) veh.ModelHash = prop.ModelHash.Value;
@@ -2354,7 +2358,7 @@ namespace GTANetwork.Streamer
             for (var index = markers.Count - 1; index >= 0; index--)
             {
                 var marker = markers[index];
-                World.DrawMarker((MarkerType)marker.MarkerType, marker.Position.ToVector(), marker.Direction.ToVector(), marker.Rotation.ToVector(), marker.Scale.ToVector(), Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue));
+                World.DrawMarker((MarkerType)marker.MarkerType, marker.Position.ToVector(), marker.Direction.ToVector(), marker.Rotation.ToVector(), marker.Scale.ToVector(), Color.FromArgb(marker.Alpha, marker.Red, marker.Green, marker.Blue), marker.BobUpAndDown);
             }
 
             // TODO: Uncomment to debug stuff
