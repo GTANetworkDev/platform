@@ -6,12 +6,9 @@ using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
-using Binarysharp.MemoryManagement;
-using Binarysharp.MemoryManagement.Patterns;
 using GTANetworkShared;
 using Microsoft.Win32;
 using Ionic.Zip;
-using SigScan;
 
 namespace GTANetwork
 {
@@ -221,7 +218,7 @@ namespace GTANetwork
                 }
                 catch (WebException ex)
                 {
-                    MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    //MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
                     if (!Directory.Exists(GTANFolder + "logs")) Directory.CreateDirectory(GTANFolder + "logs");
 
                     File.AppendAllText(GTANFolder + "logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
@@ -272,7 +269,7 @@ namespace GTANetwork
                 }
                 catch (WebException ex)
                 {
-                    MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    //MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
                     if (!Directory.Exists(GTANFolder + "logs")) Directory.CreateDirectory(GTANFolder + "logs");
 
                     File.AppendAllText(GTANFolder + "logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
@@ -339,33 +336,12 @@ namespace GTANetwork
                 }
                 catch (WebException ex)
                 {
-                    MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
+                    //MessageBox.Show(splashScreen.SplashScreen, "Unable to contact master server, Please check your internet connection and try again.", "Warning");
                     if (!Directory.Exists(GTANFolder + "logs")) Directory.CreateDirectory(GTANFolder + "logs");
 
                     File.AppendAllText(GTANFolder + "logs" + "\\" + "launcher.log", "MASTER SERVER LOOKUP EXCEPTION AT " + DateTime.Now + "\n\n" + ex);
                 }
             }
-            #endregion
-
-            #region Registry checking (Obsolete)
-            //splashScreen.SetPercent(35);
-
-            //#region Check GTAN Folder Registry entry
-            //var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
-            //var GTANFolder = (string)Registry.GetValue(dictPath, "GTANetworkInstallDir", null);
-            //if (GTANFolder != AppDomain.CurrentDomain.BaseDirectory)
-            //{
-            //    try
-            //    {
-            //        Registry.SetValue(dictPath, "GTANetworkInstallDir", AppDomain.CurrentDomain.BaseDirectory);
-            //    }
-            //    catch (UnauthorizedAccessException)
-            //    {
-            //        MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues.(6)", "Unauthorized access");
-            //        return;
-            //    }
-            //}
-            //#endregion
             #endregion
 
             splashScreen.SetPercent(45);
@@ -483,53 +459,12 @@ namespace GTANetwork
             splashScreen.SetPercent(70);
 
             #region Patch Startup Settings
-            //string filePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.Create) + "\\" + "Rockstar Games" + "\\" + "GTA V" + "\\" + "Profiles";
-
-            //if (!Directory.Exists(filePath))
-            //{
-            //    MessageBox.Show(splashScreen.SplashScreen, "Missing GTA V Profile folder, Make sure to have run the game atleast once.", "Missing files");
-            //    return;
-            //}
-
-            //foreach (var dir in Directory.GetDirectories(filePath))
-            //{
-            //    var Path = dir + "\\" + "pc_settings.bin";
-            //    if (!File.Exists(Path)) continue;
-
-            //    using (Stream stream = new FileStream(Path, FileMode.Open))
-            //    {
-            //        stream.Seek(0xE4, SeekOrigin.Begin); // Startup Flow
-            //        _startupFlow = (byte)stream.ReadByte();
-
-            //        stream.Seek(0xEC, SeekOrigin.Begin); // Landing Page
-            //        _landingPage = (byte)stream.ReadByte();
-            //    }
-            //}
-
+           
             PatchStartup();
+           
             #endregion
 
             splashScreen.SetPercent(80);
-
-            #region Copy over the savegame
-            foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
-            {
-                try
-                {
-                    if (File.Exists((Path.GetDirectoryName(file) + "\\" + "SGTA50000")))
-                        MoveFile(Path.GetDirectoryName(file) + "\\" + "SGTA50000", Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak");
-
-                    if (File.Exists(GTANFolder + "savegame" + "\\" + "SGTA50000"))
-                        File.Copy(GTANFolder + "savegame" + "\\" + "SGTA50000", Path.GetDirectoryName(file) + "\\" + "SGTA50000");
-                }
-                catch (Exception e)
-                {
-                    //MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (4)", "Unauthorized access");
-                    MessageBox.Show(splashScreen.SplashScreen, e.ToString(), "Unauthorized access");
-                    return;
-                }
-            }
-            #endregion
 
             #region Create commandline
             try
@@ -568,19 +503,19 @@ namespace GTANetwork
             splashScreen.SetPercent(85);
 
             #region Launch the Game
-            if (Directory.GetFiles(settings.GamePath, "*.wow").Length == 0)
-            {
-                BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(settings.GamePath + "\\" + "GTA5.exe")));
-                br.BaseStream.Position = 0x01500000;
-                byte[] array = br.ReadBytes(0x35F757);
-                string value = BitConverter.ToString(array).Replace("-", string.Empty);
+            //if (Directory.GetFiles(settings.GamePath, "*.wow").Length == 0)
+            //{
+            //    BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(settings.GamePath + "\\" + "GTA5.exe")));
+            //    br.BaseStream.Position = 0x01500000;
+            //    byte[] array = br.ReadBytes(0x35F757);
+            //    string value = BitConverter.ToString(array).Replace("-", string.Empty);
 
-                if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); } else { Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe"); }
-            }
-            else
-            {
+            //    if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); } else { Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe"); }
+            //}
+            //else
+            //{
                 Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe");
-            }
+            //}
             #endregion
 
             splashScreen.SetPercent(90);
@@ -597,33 +532,6 @@ namespace GTANetwork
             Thread.Sleep(15000);
             InjectOurselves(gta5Process);
             #endregion
-
-            //IntPtr addr = (IntPtr)0x22E139A62E1;
-            //var sharp = new MemorySharp(gta5Process);
-
-
-
-            //var toFind = new byte[]
-            //{
-            //    0x4c, 0x6f, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x20, 0x47, 0x54, 0x41, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b
-            //};
-
-            //SigScan.Classes.SigScan scanner = new SigScan.Classes.SigScan
-            //{
-            //    Process = gta5Process,
-            //    Address = gta5Process.MainModule.BaseAddress,
-            //    Size = 5000000
-            //};
-            //IntPtr ptr = scanner.FindPattern(toFind, "xxxxxxxxxxxxxxxxxx", 18);
-
-            //var pattern = new Pattern("4c 6f 61 64 69 6e 67 20 47 54 41 4e 65 74 77 6f 72 6b", 0, false);
-            //var result = sharp[""].FindPattern(pattern);
-            //// if bool param above is true the result is rebased before being returned.
-            //var offset = result.Offset;
-
-            //SigScan.Classes.SigScan scanner = new SigScan.Classes.SigScan(gta5Process, new IntPtr(0x22E139A62E1), 0x1000);
-            //IntPtr ptr = scanner.FindPattern(, "xxxxxxxxxxxxxxxxxx", 0x06);
-            //sharp.Write(offset, 0x75);
 
             #region Terminate duplicate GTA5 processes
             var t = new Thread((ThreadStart)delegate
@@ -683,25 +591,7 @@ namespace GTANetwork
             }
             #endregion
 
-            #region Restore save game
-            foreach (var file in Directory.GetFiles(Profiles, "pc_settings.bin", SearchOption.AllDirectories))
-            {
-                try
-                {
-                    if (File.Exists((Path.GetDirectoryName(file) + "\\" + "SGTA50000")))
-                        File.Delete(Path.GetDirectoryName(file) + "\\" + "SGTA50000");
-
-                    if (File.Exists((Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak")))
-                        MoveFile(Path.GetDirectoryName(file) + "\\" + "SGTA50000.bak", Path.GetDirectoryName(file) + "\\" + "SGTA50000"); 
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues. (5)", "Unauthorized access");
-                    return;
-                }
-            }
-            #endregion
-
+            
         }
 
         public void PatchStartup(byte startupFlow = 0x00, byte landingPage = 0x00)
@@ -758,7 +648,7 @@ namespace GTANetwork
 
         public static void InjectOurselves(Process gta)
         {
-            Inject(gta, GTANFolder + "bin" + "\\" + "scripthookv.dll");
+            Inject(gta, GTANFolder + "bin" + "\\" + "ScripthookV.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "ScriptHookVDotNet.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "sharpdx_direct3d11_effects_x64.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "dinput8.dll");

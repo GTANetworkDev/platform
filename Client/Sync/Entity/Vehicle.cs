@@ -72,6 +72,7 @@ namespace GTANetwork.Sync
                 EnterVehicle();
             }
             _lastVehicle = true;
+            _justEnteredVeh = true;
             _enterVehicleStarted = DateTime.Now;
             return true;
         }
