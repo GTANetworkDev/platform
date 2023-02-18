@@ -28,7 +28,7 @@ ${If} ${FileExists} "$INSTDIR\*"
      RMDir /r "$INSTDIR"
 ${EndIf}
 
-  File /r "C:\GTA Network Prod\*"
+  File /r "C:\GTANetworkProd\*"
 
   CreateShortCut "$DESKTOP\GTA Network.lnk" "$INSTDIR\GTANLauncher.exe" ""
   WriteUninstaller "$INSTDIR\Uninstall.exe"

@@ -647,15 +647,13 @@ namespace GTANetwork.Util
             return pitchYawRoll;
         }
 
-        public static Ped GetResponsiblePed(Vehicle veh, Ped ped)
+        public static Ped GetResponsiblePed(Vehicle veh)
         {
-            Ped PedOnSeat;
+            if (veh.GetPedOnSeat(GTA.VehicleSeat.Driver).Handle != 0) return veh.GetPedOnSeat(GTA.VehicleSeat.Driver);
+
             for (int i = 0; i < veh.PassengerCapacity; i++)
             {
-                if (veh.IsSeatFree((VehicleSeat)i)) continue;
-                if (!Ped.Exists(PedOnSeat = veh.GetPedOnSeat((VehicleSeat)i))) continue;
-                if (PedOnSeat.Handle == 0) continue;
-                if (PedOnSeat.Handle == ped.Handle) return PedOnSeat;
+                if (veh.GetPedOnSeat((VehicleSeat)i).Handle != 0) return veh.GetPedOnSeat((VehicleSeat)i);
             }
             return new Ped(0);
         }

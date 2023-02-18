@@ -110,9 +110,9 @@ namespace GTANetwork.Sync
         private bool _init;
         internal bool IsJumping;
         private bool _lastJumping;
-        private void UpdateOnFootAnimation()
+        private void UpdateOnFootPosition()
         {
-            if (EnteringVehicle/* || !Character.IsRendered*/) return;
+            if (EnteringVehicle) return;
 
             if (!_init)
             {
@@ -370,15 +370,17 @@ namespace GTANetwork.Sync
                     gunEntity.Model.GetDimensions(out Vector3 min, out Vector3 max);
                     var start = gunEntity.GetOffsetInWorldCoords(min);
                     var end = gunEntity.GetOffsetInWorldCoords(max);
-                    var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
+                    var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X),
+                        IntersectOptions.Peds1, Character);
                     //Function.Call(Hash.DRAW_LINE, start.X, start.Y, start.Z, end.X, end.Y, end.Z, 255, 255, 255, 255);
                     if (ray.DidHit && ray.DidHitEntity && ray.HitEntity.Handle == PlayerChar.Handle)
                     {
                         LocalHandle them = new LocalHandle(Character.Handle, HandleType.GameHandle);
-                        JavascriptHook.InvokeCustomEvent(api => api.invokeonLocalPlayerMeleeHit(them, CurrentWeapon));
+                        JavascriptHook.InvokeCustomEvent(api =>
+                             api.invokeonLocalPlayerMeleeHit(them, CurrentWeapon));
 
-                        if (!Main.NetEntityHandler.LocalCharacter.IsInvincible) PlayerChar.ApplyDamage(25);
-
+                        if (!Main.NetEntityHandler.LocalCharacter.IsInvincible)
+                            PlayerChar.ApplyDamage(25);
                         meleeSwingDone = true;
                         meleeSwingEnd = false;
                     }
@@ -386,7 +388,7 @@ namespace GTANetwork.Sync
             }
             else if (!meleeSwingDone && CurrentWeapon == unchecked((int)WeaponHash.Unarmed))
             {
-                var rightfist = Character.GetBonePosition((int)Bone.IK_R_Hand);
+                var rightfist = Character.GetBoneCoord(Bone.IK_R_Hand);
                 var start = rightfist - new Vector3(0, 0, 0.5f);
                 var end = rightfist + new Vector3(0, 0, 0.5f);
                 var ray = World.RaycastCapsule(start, end, (int)Math.Abs(end.X - start.X), IntersectOptions.Peds1, Character);
