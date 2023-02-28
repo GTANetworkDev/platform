@@ -459,9 +459,9 @@ namespace GTANetwork
             splashScreen.SetPercent(70);
 
             #region Patch Startup Settings
-           
+            
             PatchStartup();
-           
+            
             #endregion
 
             splashScreen.SetPercent(80);
@@ -503,19 +503,19 @@ namespace GTANetwork
             splashScreen.SetPercent(85);
 
             #region Launch the Game
-            //if (Directory.GetFiles(settings.GamePath, "*.wow").Length == 0)
-            //{
-            //    BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(settings.GamePath + "\\" + "GTA5.exe")));
-            //    br.BaseStream.Position = 0x01500000;
-            //    byte[] array = br.ReadBytes(0x35F757);
-            //    string value = BitConverter.ToString(array).Replace("-", string.Empty);
+            if (Directory.GetFiles(settings.GamePath, "*.wow").Length == 0)
+            {
+                BinaryReader br = new BinaryReader(new MemoryStream(File.ReadAllBytes(settings.GamePath + "\\" + "GTA5.exe")));
+                br.BaseStream.Position = 0x01500000;
+                byte[] array = br.ReadBytes(0x35F757);
+                string value = BitConverter.ToString(array).Replace("-", string.Empty);
 
-            //    if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); } else { Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe"); }
-            //}
-            //else
-            //{
+                if (value.Contains("737465616D")) { Process.Start("steam://run/271590"); } else { Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe"); }
+            }
+            else
+            {
                 Process.Start(settings.GamePath + "\\" + "GTAVLauncher.exe");
-            //}
+            }
             #endregion
 
             splashScreen.SetPercent(90);
@@ -591,7 +591,6 @@ namespace GTANetwork
             }
             #endregion
 
-            
         }
 
         public void PatchStartup(byte startupFlow = 0x00, byte landingPage = 0x00)
@@ -648,7 +647,7 @@ namespace GTANetwork
 
         public static void InjectOurselves(Process gta)
         {
-            Inject(gta, GTANFolder + "bin" + "\\" + "ScripthookV.dll");
+            Inject(gta, GTANFolder + "bin" + "\\" + "ScriptHookV.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "ScriptHookVDotNet.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "sharpdx_direct3d11_effects_x64.dll");
             Inject(gta, GTANFolder + "bin" + "\\" + "dinput8.dll");
@@ -658,7 +657,7 @@ namespace GTANetwork
             {
                 if (string.IsNullOrWhiteSpace(file)) continue;
 
-                if (Path.GetFileName(file).ToLower().StartsWith("scripthookv")) continue;
+                if (Path.GetFileName(file).ToLower().StartsWith("ScriptHookV")) continue;
                 if (Path.GetFileName(file).ToLower().StartsWith("xmloader")) continue;
                 if (Path.GetFileName(file).ToLower().StartsWith("openiv")) continue;
 
