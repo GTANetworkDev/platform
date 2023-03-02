@@ -1,34 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Threading;
-using System.Windows.Forms;
 using GTA;
-using GTA.Math;
 using GTA.Native;
-using GTANetwork.GUI;
-using GTANetwork.Javascript;
-using GTANetwork.Misc;
 using GTANetwork.Streamer;
-using GTANetwork.Util;
-using GTANetworkShared;
-using Lidgren.Network;
-using Microsoft.Win32;
-using NativeUI;
-using NativeUI.PauseMenu;
-using Newtonsoft.Json;
-using ProtoBuf;
 using Control = GTA.Control;
-using Vector3 = GTA.Math.Vector3;
 using WeaponHash = GTA.WeaponHash;
-using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork
 {
@@ -44,20 +19,21 @@ namespace GTANetwork
 
         private static void OnTick(object sender, EventArgs e)
         {
-            if (Main.IsConnected())
-            {
-                CallCollection thisCol = new CallCollection();
+            
+               CallCollection thisCol = new CallCollection();
 
-                //thisCol.Call((Hash) 0xB96B00E976BE977F, 0.0); //_SET_WAVES_INTENSITY
+            //thisCol.Call((Hash) 0xB96B00E976BE977F, 0.0); //_SET_WAVES_INTENSITY
+
+                thisCol.Call(Hash.ADD_SCENARIO_BLOCKING_AREA, -10000.0f, -10000.0f, -1000.0f, 10000.0f, 10000.0f, 1000.0f, 0, 1, 1, 1);
 
                 thisCol.Call(Hash.SET_RANDOM_TRAINS, 0);
                 thisCol.Call(Hash.CAN_CREATE_RANDOM_COPS, false);
 
-                thisCol.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, -1);
+                thisCol.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, 0);
                 thisCol.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
 
-                //if (Main.RemoveGameEntities)
-                //{
+            if (Main.RemoveGameEntities)
+            {
                 thisCol.Call(Hash.SET_PED_POPULATION_BUDGET, 0);
                 thisCol.Call(Hash.SET_VEHICLE_POPULATION_BUDGET, 0);
 
@@ -72,13 +48,13 @@ namespace GTANetwork
                 thisCol.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
                 thisCol.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
                 thisCol.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
-                //}
+            }
 
 
-                //Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, PlayerChar, true, true);
-                //Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, PlayerChar, true);
+            //Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, PlayerChar, true, true);
+            //Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, PlayerChar, true);
 
-                thisCol.Call((Hash)0xD2B315B6689D537D, Game.Player, false); //Some secret ingredient
+            thisCol.Call((Hash)0xD2B315B6689D537D, Game.Player, false); //Some secret ingredient
 
                 //Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, playerChar, true);
 
@@ -130,7 +106,7 @@ namespace GTANetwork
                             entity.Delete();
                         }
                     }
-                }
+               
             }
         }
     }
