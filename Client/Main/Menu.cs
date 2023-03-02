@@ -426,6 +426,7 @@ namespace GTANetwork
             #region Welcome Screen
             {
                 _welcomePage = new TabWelcomeMessageItem("Welcome to GTA Network", "Join a server on the right! Weekly Updates! Donate, or whatever.");
+                _welcomePage.PromoPicturePath = GTANInstallDir + "images\\picture.png";
                 MainMenu.Tabs.Add(_welcomePage);
             }
             #endregion
