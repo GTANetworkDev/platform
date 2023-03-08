@@ -1,218 +1,187 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Threading;
+using System.Windows.Forms;
 using GTA;
+using GTA.Math;
 using GTA.Native;
+using GTANetwork.GUI;
+using GTANetwork.Javascript;
+using GTANetwork.Misc;
 using GTANetwork.Streamer;
+using GTANetwork.Util;
+using GTANetworkShared;
+using Lidgren.Network;
+using Microsoft.Win32;
+using NativeUI;
+using NativeUI.PauseMenu;
+using Newtonsoft.Json;
+using ProtoBuf;
 using Control = GTA.Control;
+using Vector3 = GTA.Math.Vector3;
 using WeaponHash = GTA.WeaponHash;
+using VehicleHash = GTA.VehicleHash;
 
 namespace GTANetwork
 {
 
     public class CleanupGame : Script
     {
-        public CleanupGame()
-        {
-            Tick += OnTick;
-        }
+        public CleanupGame() { Tick += OnTick; }
 
-        private static DateTime LastDateTime = DateTime.Now;
+        private static long _lastEntityRemoval;
 
         private static void OnTick(object sender, EventArgs e)
         {
-            
-               CallCollection thisCol = new CallCollection();
+            if (!Main.IsConnected()) return;
+            var playerChar = FrameworkData.PlayerChar.Ex();
 
-            //thisCol.Call((Hash) 0xB96B00E976BE977F, 0.0); //_SET_WAVES_INTENSITY
+            //Entities
+            Function.Call(Hash.SET_RANDOM_TRAINS, 0);
+            Function.Call(Hash.CAN_CREATE_RANDOM_COPS, false);
 
-                thisCol.Call(Hash.ADD_SCENARIO_BLOCKING_AREA, -10000.0f, -10000.0f, -1000.0f, 10000.0f, 10000.0f, 1000.0f, 0, 1, 1, 1);
+            Function.Call(Hash.SET_PED_POPULATION_BUDGET, 0);
+            Function.Call(Hash.SET_VEHICLE_POPULATION_BUDGET, 0);
 
-                thisCol.Call(Hash.SET_RANDOM_TRAINS, 0);
-                thisCol.Call(Hash.CAN_CREATE_RANDOM_COPS, false);
+            Function.Call(Hash.SUPPRESS_SHOCKING_EVENTS_NEXT_FRAME);
+            Function.Call(Hash.SUPPRESS_AGITATION_EVENTS_NEXT_FRAME);
 
-                thisCol.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, 0);
-                thisCol.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_FAR_DRAW_VEHICLES, false);
+            Function.Call((Hash)0xF796359A959DF65D, false); // Display distant vehicles
+            Function.Call(Hash.SET_ALL_LOW_PRIORITY_VEHICLE_GENERATORS_ACTIVE, false);
+            Function.Call(Hash.SET_NUMBER_OF_PARKED_VEHICLES, -1);
 
-            if (Main.RemoveGameEntities)
-            {
-                thisCol.Call(Hash.SET_PED_POPULATION_BUDGET, 0);
-                thisCol.Call(Hash.SET_VEHICLE_POPULATION_BUDGET, 0);
-
-                thisCol.Call(Hash.SUPPRESS_SHOCKING_EVENTS_NEXT_FRAME);
-                thisCol.Call(Hash.SUPPRESS_AGITATION_EVENTS_NEXT_FRAME);
-
-                thisCol.Call(Hash.SET_FAR_DRAW_VEHICLES, false);
-                thisCol.Call((Hash)0xF796359A959DF65D, false); // _DISPLAY_DISTANT_VEHICLES
-                thisCol.Call(Hash.SET_ALL_LOW_PRIORITY_VEHICLE_GENERATORS_ACTIVE, false);
-
-                thisCol.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                thisCol.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                thisCol.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
-                thisCol.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
-            }
-
+            Function.Call(Hash.SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f);
+            Function.Call(Hash.SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME, 0f, 0f);
 
             //Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, PlayerChar, true, true);
             //Function.Call(Hash.SET_PED_CAN_BE_TARGETTED, PlayerChar, true);
 
-            thisCol.Call((Hash)0xD2B315B6689D537D, Game.Player, false); //Some secret ingredient
+            //Function.Call((Hash)0xD2B315B6689D537D, Game.Player, false); //Some secret ingredient
 
-                //Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, playerChar, true);
+            //Function.Call(Hash.SET_POLICE_IGNORE_PLAYER, playerChar, true);
 
-                //Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
-                //Function.Call(Hash.SET_MISSION_FLAG, Game.Player.Character, 0);
-                ////Function.Call(Hash._RESET_LOCALPLAYER_STATE);
-                //Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
+            //Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
+            //Function.Call(Hash.SET_MISSION_FLAG, Game.Player.Character, 0);
+            ////Function.Call(Hash._RESET_LOCALPLAYER_STATE);
+            //Function.Call(Hash.SET_RANDOM_EVENT_FLAG, 0);
 
-                thisCol.Call(Hash.DESTROY_MOBILE_PHONE);
-                thisCol.Call((Hash)0x015C49A93E3E086E, true); //_DISABLE_PHONE_THIS_FRAME
-                thisCol.Call(Hash.DISPLAY_CASH, false);
+            Function.Call(Hash.DESTROY_MOBILE_PHONE);
+            Function.Call((Hash)0x015C49A93E3E086E, true); //_DISABLE_PHONE_THIS_FRAME
+            Function.Call(Hash.DISPLAY_CASH, false);
 
-                thisCol.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
+            Function.Call(Hash.SET_AUTO_GIVE_PARACHUTE_WHEN_ENTER_PLANE, Game.Player, false);
 
-                thisCol.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
-                thisCol.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f); //SET_PLAYER_HEALTH_RECHARGE_MULTIPLIER
+            Function.Call(Hash.HIDE_HELP_TEXT_THIS_FRAME);
+            Function.Call((Hash)0x5DB660B38DD98A31, Game.Player, 0f); //SET_PLAYER_HEALTH_RECHARGE_MULTIPLIER
 
-                thisCol.Call(Hash.SET_PLAYER_WANTED_LEVEL, Game.Player, 0, false);
-                thisCol.Call(Hash.SET_PLAYER_WANTED_LEVEL_NOW, Game.Player, false);
-                thisCol.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
+            FrameworkData.PlayerP.Ex().WantedLevel = 0;
+            Game.MaxWantedLevel = 0;
 
-                if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS)) thisCol.Call(Hash.CANCEL_STUNT_JUMP);
+            if (Function.Call<bool>(Hash.IS_STUNT_JUMP_IN_PROGRESS)) Function.Call(Hash.CANCEL_STUNT_JUMP);
 
-                thisCol.Execute();
+            if (Util.Util.TickCount - _lastEntityRemoval <= 500) return;
 
-                //if (!Main.RemoveGameEntities) return;
+            _lastEntityRemoval = Util.Util.TickCount;
+            foreach (var entity in World.GetAllPeds())
+            {
+                if (Main.NetEntityHandler.ContainsLocalHandle(entity.Handle) || entity == playerChar) continue;
+                entity.Kill(); //"Some special peds like Epsilon guys or seashark minigame will refuse to despawn if you don't kill them first." - Guad
+                entity.Delete();
+            }
 
-                if (DateTime.Now.Subtract(LastDateTime).TotalMilliseconds >= 500)
-                {
-                    var playerChar = Game.Player.Character;
+            foreach (var entity in World.GetAllVehicles())
+            {
+                if (entity == null) continue;
+                var veh = Main.NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteVehicle;
+                if (veh != null) continue;
+                entity.Delete();
 
-                    LastDateTime = DateTime.Now;
-                    foreach (var entity in World.GetAllPeds())
-                    {
-                        if (!Main.NetEntityHandler.ContainsLocalHandle(entity.Handle) && entity != playerChar)
-                        {
-                            entity.MarkAsNoLongerNeeded();
-                            entity.Kill(); //"Some special peds like Epsilon guys or seashark minigame will refuse to despawn if you don't kill them first." - Guad
-                            entity.Delete();
-                        }
-                    }
+                ////TO CHECK
+                //if (!Util.Util.IsVehicleEmpty(entity) || VehicleSyncManager.IsInterpolating(entity.Handle) || veh.TraileredBy != 0 || VehicleSyncManager.IsSyncing(veh) || (entity.Handle != Game.Player.LastVehicle?.Handle || !(DateTime.Now.Subtract(Events.LastCarEnter).TotalMilliseconds > 3000)) && entity.Handle == Game.Player.LastVehicle?.Handle) continue;
+                //if (!(entity.Position.DistanceToSquared(veh.Position.ToVector()) > 2f)) continue;
 
-                    foreach (var entity in World.GetAllVehicles())
-                    {
-                        var veh = Main.NetEntityHandler.NetToStreamedItem(entity.Handle, useGameHandle: true) as RemoteVehicle;
-                        if (veh == null)
-                        {
-                            entity.MarkAsNoLongerNeeded();
-                            entity.Delete();
-                        }
-                    }
-               
+                //entity.PositionNoOffset = veh.Position.ToVector();
+                //entity.Quaternion = veh.Rotation.ToVector().ToQuaternion();
+
+                //veh.Position = entity.Position.ToLVector();
+                //veh.Rotation = entity.Rotation.ToLVector();
             }
         }
     }
-
-    //public class LeeroyJenkins : Script
-    //{
-    //    public LeeroyJenkins() { Tick += OnTick; }
-
-    //    private static DateTime LastDateTime = DateTime.Now;
-
-    //    private static void OnTick(object sender, EventArgs e)
-    //    {
-    //        var proc = Process.GetProcessesByName("GameOverlayUI");
-    //        if (DateTime.Now.Subtract(LastDateTime).TotalSeconds >= 1 && proc.Any())
-    //        {
-    //            LastDateTime = DateTime.Now;
-    //            ThreadPool.QueueUserWorkItem(delegate { foreach (var process in proc) process.Kill(); });
-    //        }
-
-    //    }
-    //}
 
     public class Controls : Script
     {
-        public Controls()
-        {
-            Tick += OnTick;
-        }
+        public Controls() { Tick += OnTick; }
 
         private static void OnTick(object sender, EventArgs e)
         {
-            CallCollection thisCol = new CallCollection();
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendSocialClub, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendSocialClubSecondary, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.EnterCheatCode, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.SpecialAbility, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.SpecialAbilityPC, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.SpecialAbilitySecondary, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.CharacterWheel, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Phone, true);
-            thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Duck, true);
+            if (!Main.IsConnected()) return;
+            Ped PlayerChar = Game.Player.Character;
+            Game.DisableControlThisFrame(Control.EnterCheatCode);
+            Game.DisableControlThisFrame(Control.FrontendPause);
+            Game.DisableControlThisFrame(Control.FrontendPauseAlternate);
+            Game.DisableControlThisFrame(Control.FrontendSocialClub);
+            Game.DisableControlThisFrame(Control.FrontendSocialClubSecondary);
 
-            //Game.DisableControlThisFrame(Control.FrontendSocialClub);
-            //Game.DisableControlThisFrame(Control.FrontendSocialClubSecondary);
-            //Game.DisableControlThisFrame(Control.EnterCheatCode);
+            Game.DisableControlThisFrame(Control.SpecialAbility);
+            Game.DisableControlThisFrame(Control.SpecialAbilityPC);
+            Game.DisableControlThisFrame(Control.SpecialAbilitySecondary);
+            Game.DisableControlThisFrame(Control.CharacterWheel);
+            Game.DisableControlThisFrame(Control.Phone);
+            Game.DisableControlThisFrame(Control.Duck);
 
-            //Game.DisableControlThisFrame(Control.SpecialAbility);
-            //Game.DisableControlThisFrame(Control.SpecialAbilityPC);
-            //Game.DisableControlThisFrame(Control.SpecialAbilitySecondary);
-            //Game.DisableControlThisFrame(Control.CharacterWheel);
-            //Game.DisableControlThisFrame(Control.Phone);
-            //Game.DisableControlThisFrame(Control.Duck);
-
-            if (Main.IsConnected())
+            if (PlayerChar.IsJumping)
             {
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendPause, true);
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.FrontendPauseAlternate, true);
-                //Game.DisableControlThisFrame(Control.FrontendPause);
-                //Game.DisableControlThisFrame(Control.FrontendPauseAlternate);
+                //Game.DisableControlThisFrame(0, Control.MeleeAttack1);
+                Game.DisableControlThisFrame(Control.MeleeAttackLight);
             }
 
-            var playerChar = Game.Player.Character;
-            if (playerChar.IsJumping)
+            if (PlayerChar.IsRagdoll)
             {
-                //Game.DisableControlThisFrame(Control.MeleeAttack1);
-                //Game.DisableControlThisFrame(Control.MeleeAttackLight);
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.MeleeAttackLight, true);
-
+                Game.DisableControlThisFrame(Control.Attack);
+                Game.DisableControlThisFrame(Control.Attack2);
             }
 
-            if (playerChar.IsRagdoll)
+            if (Main._wasTyping)
             {
-                //Game.DisableControlThisFrame(Control.Attack);
-                //Game.DisableControlThisFrame(Control.Attack2);
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Attack, true);
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Attack2, true);
-
+                Game.DisableControlThisFrame(Control.FrontendPauseAlternate);
             }
 
-            if (Game.IsControlPressed(Control.Aim) && !playerChar.IsInVehicle() && playerChar.Weapons.Current.Hash != WeaponHash.Unarmed)
+            if (Game.IsControlPressed(Control.Aim) && !PlayerChar.IsInVehicle() && PlayerChar.Weapons.Current.Hash != WeaponHash.Unarmed)
             {
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Jump, true);
-                //Game.DisableControlThisFrame(Control.Jump);
+                Game.DisableControlThisFrame(Control.Jump);
             }
 
             //CRASH WORKAROUND: DISABLE PARACHUTE RUINER2
-            if (playerChar.IsInVehicle())
+            if (PlayerChar.IsInVehicle())
             {
-                if (playerChar.CurrentVehicle.IsInAir && playerChar.CurrentVehicle.Model.Hash == 941494461)
+                if (PlayerChar.CurrentVehicle.IsInAir && PlayerChar.CurrentVehicle.Model.Hash == 941494461)
                 {
-                    thisCol.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
-                    //Game.DisableAllControlsThisFrame();
+                    Game.DisableAllControlsThisFrame();
                 }
             }
 
-            if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, playerChar) == 2)
+            if (Function.Call<int>(Hash.GET_PED_PARACHUTE_STATE, PlayerChar) == 2)
             {
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Aim, true);
-                thisCol.Call(Hash.DISABLE_CONTROL_ACTION, 0, Control.Attack, true);
-
-                //Game.DisableControlThisFrame(Control.Aim);
-                //Game.DisableControlThisFrame(Control.Attack);
+                Game.DisableControlThisFrame(Control.Aim);
+                Game.DisableControlThisFrame(Control.Attack);
             }
-            thisCol.Execute();
+
         }
     }
+
 
     internal partial class Main
     {
@@ -273,8 +242,9 @@ namespace GTANetwork
 
             Util.Util.SetPlayerSkin(PedHash.Clown01SMY);
 
-            playerChar = Game.Player.Character;
-            var player = Game.Player;
+            playerChar = FrameworkData.PlayerChar.Ex();
+            var player = FrameworkData.PlayerP.Ex();
+            FrameworkData.PlayerP._recentPlayer = Game.Player;
 
             playerChar.Health = 200;
             playerChar.Style.SetDefaultClothes();
@@ -309,10 +279,10 @@ namespace GTANetwork
 
         private static void ClearStats()
         {
-            BytesReceived = 0;
-            BytesSent = 0;
-            MessagesReceived = 0;
-            MessagesSent = 0;
+            _bytesReceived = 0;
+            _bytesSent = 0;
+            _messagesReceived = 0;
+            _messagesSent = 0;
         }
     }
 }

@@ -80,6 +80,12 @@ namespace GTANetwork
 
         private Vector3 _vinewoodSign = new Vector3(827.74f, 1295.68f, 364.34f);
 
+        // STATS
+        public static int _bytesSent = 0;
+        public static int _bytesReceived = 0;
+
+        public static int _messagesSent = 0;
+        public static int _messagesReceived = 0;
 
 
         private void GetWelcomeMessage()
