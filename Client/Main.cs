@@ -151,6 +151,8 @@ namespace GTANetwork
         #endregion
 
         public static bool JustJoinedServer { get; set; }
+        private int _currentOnlinePlayers;
+        private int _currentOnlineServers;
 
 
         private Process _serverProcess;

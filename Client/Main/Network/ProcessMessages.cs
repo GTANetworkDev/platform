@@ -830,7 +830,7 @@ namespace GTANetwork
                                     var spl = i.Split(':');
                                     if (_currentServerIp == Dns.GetHostAddresses(spl[0])[0].ToString()) _currentServerIp = spl[0];
                                 }
-                                AddServerToRecent(_currentServerIp + ":" + _currentServerPort);
+                                 AddServerToRecent(_currentServerIp, "");
                                 Util.Util.SafeNotify("Connection established!");
                                 var respLen = msg.SenderConnection.RemoteHailMessage.ReadInt32();
                                 var respObj = DeserializeBinary<ConnectionResponse>(msg.SenderConnection.RemoteHailMessage.ReadBytes(respLen)) as ConnectionResponse;
@@ -931,39 +931,98 @@ namespace GTANetwork
                     case NetIncomingMessageType.DiscoveryResponse:
 
                         #region DiscoveryResponse
-                        msg.ReadByte();
+                        var discType = msg.ReadByte();
                         var len = msg.ReadInt32();
                         var bin = msg.ReadBytes(len);
                         var data = DeserializeBinary<DiscoveryResponse>(bin) as DiscoveryResponse;
                         if (data == null) return;
 
-                        var itemText = msg.SenderEndPoint.Address + ":" + data.Port;
-
-                        foreach (var i in InternetList)
+                        var itemText = msg.SenderEndPoint.Address.ToString() + ":" + data.Port;
+                        var matchedItems = new List<UIMenuItem>
                         {
-                            var spl = i.Split(':');
-                            if (msg.SenderEndPoint.Address.ToString() == Dns.GetHostAddresses(spl[0])[0].ToString()) itemText = i;
+                            _serverBrowser.Items.FirstOrDefault(
+                                i =>
+                                    Dns.GetHostAddresses(i.Description.Split(':')[0])[0].ToString() + ":" +
+                                    i.Description.Split(':')[1] == itemText),
+                            _recentBrowser.Items.FirstOrDefault(i => i.Description == itemText),
+                            _favBrowser.Items.FirstOrDefault(i => i.Description == itemText),
+                            _lanBrowser.Items.FirstOrDefault(i => i.Description == itemText)
+                        };
+
+                        matchedItems = matchedItems.Distinct().ToList();
+
+                        _currentOnlinePlayers += data.PlayerCount;
+
+                        MainMenu.Money = "Servers Online: " + ++_currentOnlineServers + " | Players Online: " + _currentOnlinePlayers;
+                        #region LAN
+                        if (data.LAN) //  && matchedItems.Count == 0
+                        {
+                            var item = new UIMenuItem(data.ServerName);
+                            var gamemode = data.Gamemode ?? "Unknown";
+
+                            item.Text = data.ServerName;
+                            item.Description = itemText;
+                            item.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
+
+                            if (data.PasswordProtected)
+                                item.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+
+                            //var lastIndx = 0;
+                            //if (_serverBrowser.Items.Count > 0)
+                            //    lastIndx = _serverBrowser.Index;
+
+                            var gMsg = msg;
+                            item.Activated += (sender, selectedItem) =>
+                            {
+                                if (IsOnServer())
+                                {
+                                    Client.Disconnect("Switching servers");
+                                    NetEntityHandler.ClearAll();
+
+                                    if (Npcs != null)
+                                    {
+                                        lock (Npcs)
+                                        {
+                                            for (var index = Npcs.ToList().Count - 1; index >= 0; index--)
+                                            {
+                                                Npcs.ToList()[index].Value.Clear();
+                                            }
+                                            Npcs.Clear();
+                                        }
+                                    }
+
+                                    while (IsOnServer()) Script.Yield();
+                                }
+                                var pass = data.PasswordProtected;
+                                _connectTab.RefreshIndex();
+                                ConnectToServer(gMsg.SenderEndPoint.Address.ToString(), data.Port, pass);
+                                MainMenu.TemporarilyHidden = true;
+                            };
+
+                            _lanBrowser.Items.Add(item);
                         }
+                        #endregion
 
-                        var gamemode = Regex.Replace(data.Gamemode, @"(~.*?~|~|'|""|∑|\\|¦)", string.Empty);
-                        var name = Regex.Replace(data.ServerName, @"(∑|¦|\\|%|$|^|')", string.Empty);
-
-                        if (string.IsNullOrWhiteSpace(gamemode)) gamemode = "freeroam";
-                        if (string.IsNullOrWhiteSpace(name)) name = "Simple GTA Network Server";
-
-                        var map = string.Empty;
-                        if (!string.IsNullOrWhiteSpace(data.Map)) map = " (" + Regex.Replace(data.Map, @"(~.*?~|~|<|>|'|""|∑|\\|¦)", string.Empty) + ")";
-
-                        var ourItem = new UIMenuItem(itemText) {  Description = itemText, Text = name };
-
-                        ourItem.SetRightLabel(gamemode + map + " - " + data.PlayerCount + "/" + data.MaxPlayers);
-
-                        if (PlayerSettings.FavoriteServers.Contains(ourItem.Description)) ourItem.SetRightBadge(UIMenuItem.BadgeStyle.Star);
-
-                        if (data.PasswordProtected) ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
-
-                        if (ourItem.Text != itemText && ourItem.Text != ourItem.Description)
+                        var count = matchedItems.Count();
+                        for (var i = 0; i < count; i++)
                         {
+                            if (matchedItems[i] == null) continue;
+                            var ourItem = matchedItems[i];
+                            var gamemode = data.Gamemode ?? "Unknown";
+
+                            ourItem.Text = data.ServerName;
+                            ourItem.SetRightLabel(gamemode + " | " + data.PlayerCount + "/" + data.MaxPlayers);
+
+                            if (PlayerSettings.FavoriteServers.Contains(ourItem.Description))
+                                ourItem.SetRightBadge(UIMenuItem.BadgeStyle.Star);
+
+                            if (data.PasswordProtected)
+                                ourItem.SetLeftBadge(UIMenuItem.BadgeStyle.Lock);
+
+                            //int lastIndx = 0;
+                            //if (_serverBrowser.Items.Count > 0)
+                            //    lastIndx = _serverBrowser.Index;
+
                             var gMsg = msg;
                             ourItem.Activated += (sender, selectedItem) =>
                             {
@@ -984,6 +1043,7 @@ namespace GTANetwork
                                             Npcs.Clear();
                                         }
                                     }
+
                                     while (IsOnServer()) Script.Yield();
                                 }
                                 var pass = data.PasswordProtected;
@@ -991,53 +1051,53 @@ namespace GTANetwork
                                 MainMenu.TemporarilyHidden = true;
                                 _connectTab.RefreshIndex();
                             };
-                        }
 
-
-                        if (!_serverBrowser.Items.Contains(ourItem))
-                        {
-                            if (_serverBrowser.Items.Any(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString())) _serverBrowser.Items.Remove(_serverBrowser.Items.First(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString()));
-                            _serverBrowser.Items.Insert(_serverBrowser.Items.Count, ourItem);
-                        }
-                        if (ListSorting)
-                        {
-                            try
+                            if (_serverBrowser.Items.Contains(ourItem))
                             {
-                                _serverBrowser.Items = _serverBrowser.Items
-                                    .OrderByDescending(o => Convert.ToInt32(o.RightLabel.GetBetween(" - ", "/")))
-                                    .ToList();
-                                
+                                _serverBrowser.Items.Remove(ourItem);
+                                _serverBrowser.Items.Insert(0, ourItem);
+                                if (_serverBrowser.Focused)
+                                    _serverBrowser.MoveDown();
+                                else
+                                    _serverBrowser.RefreshIndex();
                             }
-                            catch (FormatException)
+                            else if (_Verified.Items.Contains(ourItem))
                             {
-                                //Ignored
+                                _Verified.Items.Remove(ourItem);
+                                _Verified.Items.Insert(0, ourItem);
+                                if (_Verified.Focused)
+                                    _Verified.MoveDown();
+                                else
+                                    _Verified.RefreshIndex();
+                            }
+                            else if (_lanBrowser.Items.Contains(ourItem))
+                            {
+                                _lanBrowser.Items.Remove(ourItem);
+                                _lanBrowser.Items.Insert(0, ourItem);
+                                if (_lanBrowser.Focused)
+                                    _lanBrowser.MoveDown();
+                                else
+                                    _lanBrowser.RefreshIndex();
+                            }
+                            else if (_favBrowser.Items.Contains(ourItem))
+                            {
+                                _favBrowser.Items.Remove(ourItem);
+                                _favBrowser.Items.Insert(0, ourItem);
+                                if (_favBrowser.Focused)
+                                    _favBrowser.MoveDown();
+                                else
+                                    _favBrowser.RefreshIndex();
+                            }
+                            else if (_recentBrowser.Items.Contains(ourItem))
+                            {
+                                _recentBrowser.Items.Remove(ourItem);
+                                _recentBrowser.Items.Insert(0, ourItem);
+                                if (_recentBrowser.Focused)
+                                    _recentBrowser.MoveDown();
+                                else
+                                    _recentBrowser.RefreshIndex();
                             }
                         }
-                        _serverBrowser.RefreshIndex();
-
-                        if (!_Verified.Items.Contains(ourItem) && VerifiedList.Contains(itemText))
-                        {
-                            _Verified.Items.Insert(_Verified.Items.Count, ourItem);
-                        }
-
-                        if (PlayerSettings.FavoriteServers.Contains(itemText))
-                        {
-                            if (_favBrowser.Items.Any(i => i.Description == ourItem.Description)) _favBrowser.Items.Remove(_favBrowser.Items.FirstOrDefault(i => i.Description == ourItem.Description));
-                            _favBrowser.Items.Insert(_favBrowser.Items.Count, ourItem);
-                        }
-
-                        if (PlayerSettings.RecentServers.Contains(itemText))
-                        {
-                            if (_recentBrowser.Items.Any(i => i.Description == ourItem.Description)) _recentBrowser.Items.Remove(_recentBrowser.Items.FirstOrDefault(i => i.Description == ourItem.Description));
-                            if (_recentBrowser.Items.Any(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString())) _recentBrowser.Items.Remove(_recentBrowser.Items.FirstOrDefault(i => i.Description.GetBetween("", ":") == Dns.GetHostAddresses(ourItem.Description.GetBetween("", ":"))[0].ToString()));
-                            _recentBrowser.Items.Insert(_recentBrowser.Items.Count, ourItem);
-                        }
-
-                        if (isIPLocal(msg.SenderEndPoint.Address.ToString()) && !_lanBrowser.Items.Contains(ourItem) && _lanBrowser.Items.All(i => i.Description != ourItem.Description))
-                        {
-                            _lanBrowser.Items.Insert(_lanBrowser.Items.Count, ourItem);
-                        }
-
                         break;
 
                         #endregion
