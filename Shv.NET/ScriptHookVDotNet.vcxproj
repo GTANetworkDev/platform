@@ -12,8 +12,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{019193A7-50C0-444A-84CA-777595E702CD}</ProjectGuid>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>GTA</RootNamespace>
   </PropertyGroup>
@@ -41,6 +41,12 @@
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)' == 'NativeGen'">
     <ConfigurationType>Utility</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='NativeGen|x64'">
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <!-- Global compilation settings -->
@@ -99,11 +105,11 @@
   </ItemGroup>
   <!-- Core source files -->
   <ItemGroup>
-	<ClCompile Include="libs\minhook-master\src\buffer.cpp" /> 
-    <ClCompile Include="libs\minhook-master\src\HDE\hde32.cpp" /> 
-    <ClCompile Include="libs\minhook-master\src\HDE\hde64.cpp" /> 
-    <ClCompile Include="libs\minhook-master\src\hook.cpp" /> 
-    <ClCompile Include="libs\minhook-master\src\trampoline.cpp" /> 
+    <ClCompile Include="libs\minhook-master\src\buffer.cpp" />
+    <ClCompile Include="libs\minhook-master\src\HDE\hde32.cpp" />
+    <ClCompile Include="libs\minhook-master\src\HDE\hde64.cpp" />
+    <ClCompile Include="libs\minhook-master\src\hook.cpp" />
+    <ClCompile Include="libs\minhook-master\src\trampoline.cpp" />
     <ClCompile Include="source\AssemblyInfo.cpp" />
     <ClCompile Include="source\core\Main.cpp" />
     <ClCompile Include="source\core\Native.cpp" />
@@ -113,15 +119,15 @@
     <ClCompile Include="source\core\Settings.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libs\minhook-master\src\buffer.h" /> 
-    <ClInclude Include="libs\minhook-master\src\HDE\hde32.h" /> 
-    <ClInclude Include="libs\minhook-master\src\HDE\hde64.h" /> 
-    <ClInclude Include="libs\minhook-master\src\HDE\pstdint.h" /> 
-    <ClInclude Include="libs\minhook-master\src\HDE\table32.h" /> 
-    <ClInclude Include="libs\minhook-master\src\HDE\table64.h" /> 
-    <ClInclude Include="libs\minhook-master\src\trampoline.h" /> 
+    <ClInclude Include="libs\minhook-master\src\buffer.h" />
+    <ClInclude Include="libs\minhook-master\src\HDE\hde32.h" />
+    <ClInclude Include="libs\minhook-master\src\HDE\hde64.h" />
+    <ClInclude Include="libs\minhook-master\src\HDE\pstdint.h" />
+    <ClInclude Include="libs\minhook-master\src\HDE\table32.h" />
+    <ClInclude Include="libs\minhook-master\src\HDE\table64.h" />
+    <ClInclude Include="libs\minhook-master\src\trampoline.h" />
     <ClInclude Include="source\core\CallCollection.hpp" />
-	<ClCompile Include="source\core\Hooks.cpp" /> 
+    <ClCompile Include="source\core\Hooks.cpp" />
     <ClInclude Include="source\core\Native.hpp" />
     <ClInclude Include="source\core\NativeHashes.hpp" />
     <ClInclude Include="source\core\NativeMemory.hpp" />
