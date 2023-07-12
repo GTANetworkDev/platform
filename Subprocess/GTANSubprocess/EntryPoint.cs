@@ -6,12 +6,9 @@ using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
-using Binarysharp.MemoryManagement;
-using Binarysharp.MemoryManagement.Patterns;
 using GTANetworkShared;
 using Microsoft.Win32;
 using Ionic.Zip;
-using SigScan;
 
 namespace GTANetwork
 {
