@@ -141,6 +141,7 @@ namespace GTANetwork.Sync
 
         internal float VehicleHealth;
 
+        private DateTime _stopTime;
         internal bool Debug;
         internal int VehicleHash
         {
@@ -228,6 +229,9 @@ namespace GTANetwork.Sync
                 _vehicleMods = value;
             }
         }
+
+        private Vector3 _carPosOnUpdate;
+
         /*
         private Vector3? _lastVehiclePos;
         internal Vector3 VehiclePosition
