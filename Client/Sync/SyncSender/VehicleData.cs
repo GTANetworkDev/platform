@@ -131,7 +131,7 @@ namespace GTANetwork.Streamer
                 obj.Trailer = trailer.Position.ToLVector();
             }
 
-            if (Util.Util.GetResponsiblePed(veh, player).Handle != 0)
+            if (Util.Util.GetResponsiblePed(veh) == player)
             {
                 obj.DamageModel = veh.GetVehicleDamageModel();
             }
