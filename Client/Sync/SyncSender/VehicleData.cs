@@ -39,7 +39,7 @@ namespace GTANetwork.Streamer
                 obj.Flag |= (byte)VehicleDataFlags.VehicleDead;
             if (player.IsDead)
                 obj.Flag |= (short)VehicleDataFlags.PlayerDead;
-            if (Util.Util.GetResponsiblePed(veh, player).Handle != 0)
+            if (Util.Util.GetResponsiblePed(veh).Handle == player.Handle)
                 obj.Flag |= (byte)VehicleDataFlags.Driver;
             if (veh.IsInBurnout)
                 obj.Flag |= (byte)VehicleDataFlags.BurnOut;
