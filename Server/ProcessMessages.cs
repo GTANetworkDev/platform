@@ -159,7 +159,7 @@ namespace GTANetworkServer
                                 var duplicate = 0;
                                 var displayname = connReq.DisplayName;
 
-                                //Проверка на дубликат SocialClubName/защита от пиратки
+                                //SocialClubName checker
                                 if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
                                 {
                                     client.NetConnection.Deny("Duplicate RGSC handle.");
