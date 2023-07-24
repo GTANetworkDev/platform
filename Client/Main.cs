@@ -64,7 +64,7 @@ namespace GTANetwork
 
         public static Size screen;
 
-        public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_0_9;
+        public static readonly ScriptVersion LocalScriptVersion = ScriptVersion.VERSION_1_0;
         public static readonly string build = "exp";
 
         public static bool BlockControls;
