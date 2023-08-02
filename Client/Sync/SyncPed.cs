@@ -39,16 +39,18 @@ namespace GTANetwork.Sync
             // ** Name is not Null or Empty
             // ** ModelHash is not 0
 
-            if (Character != null && Character.Exists())
+            if (Character != null)
             {
-               
+                //if (!Character.IsRendered) return;
+                if (!Character.Exists()) return;
                 if (_isInVehicle)
                 {
                     UpdateVehiclePosition();
                 }
                 else
                 {
-                    UpdateOnFootPosition();
+                    UpdateOnFootAnimation();
+                    UpdatePosition();
                 }
 
                 _lastJumping = IsJumping;
@@ -74,6 +76,11 @@ namespace GTANetwork.Sync
 
                 if (Character != null && Character.Exists())
                 {
+                    //if (!Character.IsRendered || !Character.IsOnScreen)
+                    //{
+                    //    UpdatePosition(updatePosition: true, updateRotation: false, updateVelocity: false);
+                    //}
+
                     Character.Health = PedHealth;
                     if (IsPlayerDead && !Character.IsDead && IsInVehicle)
                     {
@@ -134,6 +141,7 @@ namespace GTANetwork.Sync
 
         internal float VehicleHealth;
 
+        private DateTime _stopTime;
         internal bool Debug;
         internal int VehicleHash
         {
@@ -221,6 +229,9 @@ namespace GTANetwork.Sync
                 _vehicleMods = value;
             }
         }
+
+        private Vector3 _carPosOnUpdate;
+
         /*
         private Vector3? _lastVehiclePos;
         internal Vector3 VehiclePosition
@@ -298,7 +309,6 @@ namespace GTANetwork.Sync
         private bool _lastShooting;
 
         private bool _blip;
-        private bool _justEnteredVeh;
         private bool _playingGetupAnim;
         private DateTime _lastHornPress = DateTime.Now;
         private DateTime? _spazzout_prevention;
@@ -319,7 +329,6 @@ namespace GTANetwork.Sync
 
         private int _playerSeat;
         private bool _lastDrivebyShooting;
-        private bool _isStreamedIn;
         private Blip _mainBlip;
         private bool _lastHorn;
         private Prop _parachuteProp;
@@ -367,7 +376,8 @@ namespace GTANetwork.Sync
         internal int CustomAnimationFlag;
         internal long CustomAnimationStartTime;
 
-      
+        private long _lastTickUpdate = Environment.TickCount;
+
 
         #region NeoSyncPed
 
@@ -394,94 +404,14 @@ namespace GTANetwork.Sync
 			if (_clothSwitch >= 750)
 				_clothSwitch = 0;
             */
+           
         }
 
 
+      
 
 
-        private int _mUiForceLocalCounter;
-        internal void StuckDetection()
-        {
-#if !DISABLE_UNDER_FLOOR_FIX
-            const int PED_INTERPOLATION_WARP_THRESHOLD = 5;
-            const int PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 5;
-
-            // Check if the distance to interpolate is too far.
-            float fThreshold = (PED_INTERPOLATION_WARP_THRESHOLD + PED_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * PedVelocity.Length());
-
-            if (Character.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold
-                /* || Character.Position.DistanceToSquared(currentInterop.vecTarget) > 25*/)
-            {
-                // Abort all interpolation
-                currentInterop.FinishTime = 0;
-                Character.PositionNoOffset = currentInterop.vecTarget;
-            }
-
-            // Calc remote movement
-            var vecRemoteMovement = Position - (_lastPosition ?? Position);
-
-            // Calc local error
-            var vecLocalError = currentInterop.vecTarget - Character.Position;
-
-            // Small remote movement + local position error = force a warp
-            bool bForceLocalZ = false;
-            bool bForceLocalXY = false;
-            if (Math.Abs(vecRemoteMovement.Z) < 0.01f)
-            {
-                float fLocalErrorZ = Math.Abs(vecLocalError.Z);
-                if (fLocalErrorZ > 0.1f && fLocalErrorZ < 10)
-                {
-                    bForceLocalZ = true;
-                }
-            }
-            /*
-             if (Math.Abs(vecRemoteMovement.X) < 0.01f)
-             {
-                 float fLocalErrorX = Math.Abs(vecLocalError.X);
-                 if (fLocalErrorX > 0.1f && fLocalErrorX < 10)
-                 {
-                     bForceLocalXY = true;
-                 }
-             }
-             if (Math.Abs(vecRemoteMovement.Y) < 0.01f)
-             {
-                 float fLocalErrorY = Math.Abs(vecLocalError.Y);
-                 if (fLocalErrorY > 0.1f && fLocalErrorY < 10)
-                 {
-                     bForceLocalXY = true;
-                 }
-             }
-             */
-
-            // Only force position if needed for at least two consecutive calls
-            if (!bForceLocalZ && !bForceLocalXY)
-                _mUiForceLocalCounter = 0;
-            else if (_mUiForceLocalCounter++ > 1)
-            {
-                Vector3 targetPos = Character.Position;
-
-                if (bForceLocalZ)
-                {
-                    targetPos = new Vector3(targetPos.X, targetPos.Y, currentInterop.vecTarget.Z);
-                    Character.Velocity = new Vector3(Character.Velocity.X, Character.Velocity.Y, 0);
-                }
-                if (bForceLocalXY)
-                {
-                    targetPos = new Vector3(currentInterop.vecTarget.X, currentInterop.vecTarget.Y, targetPos.Z);
-                }
-
-                Character.PositionNoOffset = targetPos;
-                currentInterop.FinishTime = 0;
-            }
-#endif
-
-        }
-
-        private long _seatEnterStart;
-
-        private long _lastTickUpdate = Environment.TickCount;
-
-        #endregion
+#endregion
 
     }
 

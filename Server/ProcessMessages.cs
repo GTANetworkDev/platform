@@ -159,6 +159,14 @@ namespace GTANetworkServer
                                 var duplicate = 0;
                                 var displayname = connReq.DisplayName;
 
+                                //SocialClubName checker
+                                if (Clients.Any(c => c.SocialClubName == connReq.SocialClubName))
+                                {
+                                    client.NetConnection.Deny("Duplicate RGSC handle.");
+                                     Program.Output("Player connection refused: duplicate RGSC.");
+                                     continue;
+                                }
+
                                 while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
                                 {
                                     duplicate++;

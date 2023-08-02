@@ -1,16 +1,10 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System;
 using System.Linq;
 using GTA;
-using GTA.Math;
 using GTA.Native;
 using GTANetwork.Javascript;
 using GTANetwork.Misc;
 using GTANetwork.Util;
-using GTANetwork.Streamer;
-using GTANetworkShared;
 using Vector3 = GTA.Math.Vector3;
 using WeaponHash = GTA.WeaponHash;
 using VehicleHash = GTA.VehicleHash;
@@ -72,7 +66,6 @@ namespace GTANetwork.Sync
                 EnterVehicle();
             }
             _lastVehicle = true;
-            _justEnteredVeh = true;
             _enterVehicleStarted = DateTime.Now;
             return true;
         }
@@ -91,38 +84,7 @@ namespace GTANetwork.Sync
             {
                 UpdateVehicleInternalInfo();
                 DisplayVehiclePosition();
-                if(DisplayVehicleDriveBy()) return;
-            }
-        }
-
-        private float _thislastSpeed;
-        private void DisplayVehiclePosition()
-        {
-            if (_lastPosition != null)
-            {
-                var avrLat = Math.Min(1.5f, TicksSinceLastUpdate / (float) AverageLatency);
-                var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, avrLat);
-                _thislastSpeed = Speed;
-
-                var vecDif = Position - currentInterop.vecStart; 
-                var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (thisSpeed / 250); 
-                var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (thisSpeed / 750);
-
-                //MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f);
-                MainVehicle.Velocity = VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force);
-
-                if (_lastVehicleRotation != null)
-                {
-                    MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), avrLat);
-                }
-                else
-                {
-                    MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
-                }
-            }
-            else
-            {
-                MainVehicle.PositionNoOffset = Position;
+                if (DisplayVehicleDriveBy()) return;
             }
         }
 
@@ -192,24 +154,24 @@ namespace GTANetwork.Sync
 
             //MainVehicle.PrimaryColor = (VehicleColor) VehiclePrimaryColor;
             //MainVehicle.SecondaryColor = (VehicleColor) VehicleSecondaryColor;
-            
-			//if (VehicleMods != null && _modSwitch % 50 == 0 &&
-			//	Main.PlayerChar.IsInRangeOfEx(Position, 30f))
-			//{
-			//	var id = _modSwitch / 50;
 
-			//	if (VehicleMods.ContainsKey(id) && VehicleMods[id] != MainVehicle.GetMod(id))
-			//	{
-			//		Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle.Handle, 0);
-			//		MainVehicle.SetMod(id, VehicleMods[id], false);
-			//		Function.Call(Hash.RELEASE_PRELOAD_MODS, id);
-			//	}
-			//}
-			//_modSwitch++;
-            
-			//if (_modSwitch >= 2500)
-			//	_modSwitch = 0;
-                
+            //if (VehicleMods != null && _modSwitch % 50 == 0 &&
+            //	Main.PlayerChar.IsInRangeOfEx(Position, 30f))
+            //{
+            //	var id = _modSwitch / 50;
+
+            //	if (VehicleMods.ContainsKey(id) && VehicleMods[id] != MainVehicle.GetMod(id))
+            //	{
+            //		Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle.Handle, 0);
+            //		MainVehicle.SetMod(id, VehicleMods[id], false);
+            //		Function.Call(Hash.RELEASE_PRELOAD_MODS, id);
+            //	}
+            //}
+            //_modSwitch++;
+
+            //if (_modSwitch >= 2500)
+            //	_modSwitch = 0;
+
             Function.Call(Hash.USE_SIREN_AS_HORN, MainVehicle, Siren); // No difference?
 
             if (IsHornPressed && !_lastHorn)
@@ -227,15 +189,14 @@ namespace GTANetwork.Sync
 
             if (IsInBurnout && !_lastBurnout)
             {
-                thisCollection.Call(Hash.SET_VEHICLE_BURNOUT, MainVehicle, true);
-                thisCollection.Call(Hash.TASK_VEHICLE_TEMP_ACTION, Character, MainVehicle, 23, 120000); // 30 - burnout
+                Function.Call(Hash.SET_VEHICLE_BURNOUT, MainVehicle, true);
+                Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, Character, MainVehicle, 23, 120000); // 30 - burnout
             }
 
             if (!IsInBurnout && _lastBurnout)
             {
-                thisCollection.Call(Hash.SET_VEHICLE_BURNOUT, MainVehicle, false);
-                thisCollection.Call(Hash.CLEAR_PED_TASKS, Character.Handle);
-                //Character.Task.ClearAll();
+                Function.Call(Hash.SET_VEHICLE_BURNOUT, MainVehicle, false);
+                Character.Task.ClearAll();
             }
 
             _lastBurnout = IsInBurnout;
@@ -251,21 +212,129 @@ namespace GTANetwork.Sync
                 MainVehicle.IsSirenActive = Siren;
             }
 
+            MainVehicle.CurrentRPM = VehicleRPM;
+            MainVehicle.SteeringAngle = SteeringScale.ToRadians();
             if (MainVehicle.ClassType == VehicleClass.Helicopters)
             {
-                //thisCollection.Call(Hash.SET_HELI_BLADES_FULL_SPEED, MainVehicle.GetHashCode());
-                thisCollection.Call(Hash.SET_HELI_BLADES_FULL_SPEED, MainVehicle);
+                Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, MainVehicle.GetHashCode());
+                Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, MainVehicle);
             }
 
-            thisCollection.Execute();
+        }
 
-            MainVehicle.CurrentRPM = VehicleRPM;
-            MainVehicle.SteeringAngle = Util.Util.Lerp(MainVehicle.SteeringAngle.ToRadians(), SteeringScale.ToRadians(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+        private void VehiclePos()
+        {
+            var thisSpeed = Util.Util.Lerp(_thislastSpeed, Speed, Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+            _thislastSpeed = Speed;
+
+
+            var vecDif = Position - currentInterop.vecStart; // Différence entre les deux positions (nouvelle & voiture) fin de connaitre la direction
+            var force = 1.10f + (float)Math.Sqrt(_latencyAverager.Average() / 2500) + (thisSpeed / 250); // Calcul pour connaitre la force à appliquer à partir du ping & de la vitesse
+            var forceVelo = 0.97f + (float)Math.Sqrt(_latencyAverager.Average() / 5000) + (thisSpeed / 750); // calcul de la force à appliquer au vecteur
+
+            //
+            //MainVehicle.Velocity = VehicleVelocity * forceVelo + (vecDif * 3f);
+            MainVehicle.Velocity = Vector3.Lerp(MainVehicle.Velocity, (VehicleVelocity * (forceVelo - 0.20f) + (vecDif * force)), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+
+            StuckVehicleCheck(Position);
+
+            if (_lastVehicleRotation != null)
+            {
+                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+            }
+            else
+            {
+                MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
+            }
+        }
+
+        private void StuckVehicleCheck(Vector3 newPos)
+        {
+#if !DISABLE_UNDER_FLOOR_FIX
+
+            const int VEHICLE_INTERPOLATION_WARP_THRESHOLD = 15;
+            const int VEHICLE_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED = 10;
+
+            var fThreshold = (VEHICLE_INTERPOLATION_WARP_THRESHOLD + VEHICLE_INTERPOLATION_WARP_THRESHOLD_FOR_SPEED * Speed);
+
+            if (MainVehicle.Position.DistanceToSquared(currentInterop.vecTarget) > fThreshold * fThreshold)
+            {
+                // Abort all interpolation
+                currentInterop.FinishTime = 0;
+                MainVehicle.PositionNoOffset = currentInterop.vecTarget;
+            }
+
+            // Check if we're under floor
+            var bForceLocalZ = false;
+            if (!MainVehicle.Model.IsHelicopter && !MainVehicle.Model.IsPlane)
+            {
+                // If remote z higher by too much and remote not doing any z movement, warp local z coord
+                var fDeltaZ = newPos.Z - MainVehicle.Position.Z;
+
+                if (fDeltaZ > 0.4f && fDeltaZ < 10.0f)
+                {
+                    if (Math.Abs(VehicleVelocity.Z) < 0.01f)
+                    {
+                        bForceLocalZ = true;
+                    }
+                }
+            }
+
+            // Only force z coord if needed for at least two consecutive calls
+            if (!bForceLocalZ)
+            {
+                _mUiForceLocalZCounter = 0;
+            }
+            else if (_mUiForceLocalZCounter++ > 1)
+            {
+                var t = new Vector3(MainVehicle.Position.X, MainVehicle.Position.Y, newPos.Z);
+                MainVehicle.PositionNoOffset = t;
+                currentInterop.FinishTime = 0;
+            }
+#endif
+        }
+
+        private int _mUiForceLocalZCounter;
+        private float _thislastSpeed = 0f;
+        private void DisplayVehiclePosition()
+        {
+            var spazzout = (_spazzout_prevention != null && DateTime.Now.Subtract(_spazzout_prevention.Value).TotalMilliseconds > 200);
+
+            if ((Speed > 0.2f || IsInBurnout) && currentInterop.FinishTime > 0 && _lastPosition != null && spazzout)
+            {
+                VehiclePos();
+                _stopTime = DateTime.Now;
+                _carPosOnUpdate = MainVehicle.Position;
+            }
+            else if (DateTime.Now.Subtract(_stopTime).TotalMilliseconds <= 1000 && _lastPosition != null && spazzout && currentInterop.FinishTime > 0)
+            {
+                var dir = Position - _lastPosition.Value;
+                var posTarget = Util.Util.LinearVectorLerp(_carPosOnUpdate, Position + dir, (int)DateTime.Now.Subtract(_stopTime).TotalMilliseconds, 1000);
+                Function.Call(Hash.SET_ENTITY_COORDS_NO_OFFSET, MainVehicle, posTarget.X, posTarget.Y, posTarget.Z, 0, 0, 0, 0);
+            }
+            else
+            {
+                MainVehicle.PositionNoOffset = Position;
+            }
+
+#if !DISABLE_SLERP
+
+            if (_lastVehicleRotation != null && (_lastVehicleRotation.Value - _vehicleRotation).LengthSquared() > 1f && spazzout)
+            {
+                MainVehicle.Quaternion = GTA.Math.Quaternion.Slerp(_lastVehicleRotation.Value.ToQuaternion(), _vehicleRotation.ToQuaternion(), Math.Min(1.5f, TicksSinceLastUpdate / (float)AverageLatency));
+            }
+            else
+            {
+                MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
+            }
+#else
+            MainVehicle.Quaternion = _vehicleRotation.ToQuaternion();
+#endif
         }
 
         private bool DisplayVehicleDriveBy()
         {
-            if (!IsShooting || CurrentWeapon == 0 || VehicleSeat != -1 || !WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash) VehicleHash)) return false;
+            if (!IsShooting || CurrentWeapon == 0 || VehicleSeat != -1 || !WeaponDataProvider.DoesVehicleSeatHaveMountedGuns((VehicleHash)VehicleHash)) return false;
 
             var isRocket = WeaponDataProvider.IsVehicleWeaponRocket(CurrentWeapon);
             if (isRocket)
@@ -293,9 +362,9 @@ namespace GTANetwork.Sync
             {
                 speed = 0xbf800000;
             }
-            else if ((VehicleHash) VehicleHash == GTA.VehicleHash.Savage || (VehicleHash) VehicleHash == GTA.VehicleHash.Hydra || (VehicleHash) VehicleHash == GTA.VehicleHash.Lazer)
+            else if ((VehicleHash)VehicleHash == GTA.VehicleHash.Savage || (VehicleHash)VehicleHash == GTA.VehicleHash.Hydra || (VehicleHash)VehicleHash == GTA.VehicleHash.Lazer)
             {
-                hash = unchecked((int) WeaponHash.Railgun);
+                hash = unchecked((int)WeaponHash.Railgun);
             }
             else
             {

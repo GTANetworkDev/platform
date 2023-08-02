@@ -6,6 +6,7 @@ using GTANetwork.Misc;
 using GTANetwork.Streamer;
 using GTANetwork.Sync;
 using GTANetwork.Util;
+using GTANetwork.GUI;
 using GTANetworkShared;
 using NativeUI;
 using ProtoBuf;
@@ -368,37 +369,28 @@ namespace GTANetwork
 
             GTANetworkShared.VehicleHash[] dlcCars = new GTANetworkShared.VehicleHash[]
             {
-                GTANetworkShared.VehicleHash.Trophytruck,GTANetworkShared.VehicleHash.Cliffhanger,
-                GTANetworkShared.VehicleHash.Lynx,GTANetworkShared.VehicleHash.Contender,
-                GTANetworkShared.VehicleHash.Gargoyle,GTANetworkShared.VehicleHash.Sheava,
-                GTANetworkShared.VehicleHash.Brioso,GTANetworkShared.VehicleHash.Tropos,
-                GTANetworkShared.VehicleHash.Tyrus,GTANetworkShared.VehicleHash.Rallytruck,
-                GTANetworkShared.VehicleHash.le7b,GTANetworkShared.VehicleHash.Tampa2,
-                GTANetworkShared.VehicleHash.Omnis,GTANetworkShared.VehicleHash.Trophytruck2,
-                GTANetworkShared.VehicleHash.Avarus,GTANetworkShared.VehicleHash.Blazer4,
-                GTANetworkShared.VehicleHash.Chimera,GTANetworkShared.VehicleHash.Daemon2,
-                GTANetworkShared.VehicleHash.Defiler,GTANetworkShared.VehicleHash.Esskey,
-                GTANetworkShared.VehicleHash.Faggio,GTANetworkShared.VehicleHash.Faggio3,
-                GTANetworkShared.VehicleHash.Hakuchou2,GTANetworkShared.VehicleHash.Manchez,
-                GTANetworkShared.VehicleHash.Nightblade,GTANetworkShared.VehicleHash.Raptor,
-                GTANetworkShared.VehicleHash.Ratbike,GTANetworkShared.VehicleHash.Sanctus,
-                GTANetworkShared.VehicleHash.Shotaro,GTANetworkShared.VehicleHash.Tornado6,
-                GTANetworkShared.VehicleHash.Vortex,GTANetworkShared.VehicleHash.Wolfsbane,
-                GTANetworkShared.VehicleHash.Youga2,GTANetworkShared.VehicleHash.Zombiea,
-                GTANetworkShared.VehicleHash.Zombieb, GTANetworkShared.VehicleHash.Voltic2,
-                GTANetworkShared.VehicleHash.Ruiner2, GTANetworkShared.VehicleHash.Dune4,
-                GTANetworkShared.VehicleHash.Dune5, GTANetworkShared.VehicleHash.Phantom2,
-                GTANetworkShared.VehicleHash.Technical2, GTANetworkShared.VehicleHash.Boxville5,
-                GTANetworkShared.VehicleHash.Blazer5,
-                GTANetworkShared.VehicleHash.Comet3, GTANetworkShared.VehicleHash.Diablous,
-                GTANetworkShared.VehicleHash.Diablous2, GTANetworkShared.VehicleHash.Elegy,
-                GTANetworkShared.VehicleHash.Fcr, GTANetworkShared.VehicleHash.Fcr2,
-                GTANetworkShared.VehicleHash.Italigtb, GTANetworkShared.VehicleHash.Italigtb2,
-                GTANetworkShared.VehicleHash.Nero, GTANetworkShared.VehicleHash.Nero2,
-                GTANetworkShared.VehicleHash.Penetrator, GTANetworkShared.VehicleHash.Specter,
-                GTANetworkShared.VehicleHash.Specter2, GTANetworkShared.VehicleHash.Tempesta,
-                GTANetworkShared.VehicleHash.GP1, GTANetworkShared.VehicleHash.Infernus2,
-                GTANetworkShared.VehicleHash.Ruston, GTANetworkShared.VehicleHash.Turismo2,
+                GTANetworkShared.VehicleHash.Caracara2,GTANetworkShared.VehicleHash.Drafter,
+                GTANetworkShared.VehicleHash.Dynasty,GTANetworkShared.VehicleHash.Emerus,
+                GTANetworkShared.VehicleHash.Gauntlet3,GTANetworkShared.VehicleHash.Gauntlet4,
+                GTANetworkShared.VehicleHash.Hellion,GTANetworkShared.VehicleHash.Issi7,
+                GTANetworkShared.VehicleHash.Jugular,GTANetworkShared.VehicleHash.Krieger,
+                GTANetworkShared.VehicleHash.Locust,GTANetworkShared.VehicleHash.Nebula,
+                GTANetworkShared.VehicleHash.Neo,GTANetworkShared.VehicleHash.Novak,
+                GTANetworkShared.VehicleHash.Paragon,GTANetworkShared.VehicleHash.Paragon2,
+                GTANetworkShared.VehicleHash.Peyote2,GTANetworkShared.VehicleHash.Rrocket,
+                GTANetworkShared.VehicleHash.S80,GTANetworkShared.VehicleHash.Thrax,
+                GTANetworkShared.VehicleHash.Zion3,GTANetworkShared.VehicleHash.Zorrusso,
+                GTANetworkShared.VehicleHash.Asbo,GTANetworkShared.VehicleHash.Everon,
+                GTANetworkShared.VehicleHash.Formula,GTANetworkShared.VehicleHash.Formula2,
+                GTANetworkShared.VehicleHash.Furia,GTANetworkShared.VehicleHash.Imorgon,
+                GTANetworkShared.VehicleHash.JB7002,GTANetworkShared.VehicleHash.Kanjo,
+                GTANetworkShared.VehicleHash.Komoda,GTANetworkShared.VehicleHash.MiniTank,
+                GTANetworkShared.VehicleHash.OutLaw,GTANetworkShared.VehicleHash.Rebla,
+                GTANetworkShared.VehicleHash.Retinue2, GTANetworkShared.VehicleHash.Stryder,
+                GTANetworkShared.VehicleHash.Sugoi, GTANetworkShared.VehicleHash.Sultan2,
+                GTANetworkShared.VehicleHash.Vagrant, GTANetworkShared.VehicleHash.VSTR,
+                GTANetworkShared.VehicleHash.Yosemite2, GTANetworkShared.VehicleHash.Zhaba,
+                
             };
 
 
@@ -406,9 +398,10 @@ namespace GTANetwork
         }
 
 
+        //Need Test
         private void IntegrityCheck()
         {
-#if INTEGRITYCHECK
+//#if INTEGRITYCHECK
             if (!VerifyDLC())
             {
                 _mainWarning = new Warning("alert", "Could not verify game integrity.\nPlease restart your game, or update Grand Theft Auto V.");
@@ -417,13 +410,13 @@ namespace GTANetwork
                     if (Client != null && IsOnServer()) Client.Disconnect("Quit");
                     CEFManager.Dispose();
                     CEFManager.DisposeCef();
-                    Script.Wait(1000);
+                    Wait(1000);
                     Environment.Exit(0);
-                    //Process.GetProcessesByName("GTA5")[0].Kill();
-                    //Process.GetCurrentProcess().Kill();
+                    Process.GetProcessesByName("GTA5")[0].Kill();
+                    Process.GetCurrentProcess().Kill();
                 };
             }
-#endif
+//#endif
         }
 
         public void DeleteObject(GTANetworkShared.Vector3 pos, float radius, int modelHash)
