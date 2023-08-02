@@ -137,22 +137,20 @@ namespace GTANetwork.Streamer
                     _doors[i] = isOpen;
                 }
 
-                //if (false/*car.MemoryAddress != IntPtr.Zero*/) // crash
-                //{
-                //    if (car.HighBeamsOn != _highBeams)
-                //    {
-                //        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.Highbeams, car.HighBeamsOn);
-                //    }
-
-                //    _highBeams = car.HighBeamsOn;
-                //    Main.DEBUG_STEP = 913;
-                //    if (car.LightsOn != _lights)
-                //    {
-                //        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.NormalLights, car.LightsOn);
-                //    }
-                //    _lights = car.LightsOn;
-                //}
-
+                //Fixed the synchronization of optics in the transport
+                if (car.AreHighBeamsOn != _highBeams)
+                {
+                    SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int)Lights.Highbeams, car.AreHighBeamsOn);
+                }
+                _highBeams = car.AreHighBeamsOn;
+                
+                if (car.AreLightsOn != _lights)
+                {
+                    SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int)Lights.NormalLights, car.AreLightsOn);
+                }
+                _lights = car.AreLightsOn;
+                /////////////////////////////////
+                
                 Vehicle trailer;
                 switch ((VehicleHash) car.Model.Hash)
                 {

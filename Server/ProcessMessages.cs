@@ -167,7 +167,7 @@ namespace GTANetworkServer
                                      continue;
                                 }
 
-                                    while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
+                                while (AllowDisplayNames && Clients.Any(c => c.Name == connReq.DisplayName))
                                 {
                                     duplicate++;
                                     connReq.DisplayName = displayname + " (" + duplicate + ")";
