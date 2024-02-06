@@ -57,6 +57,7 @@ namespace GTANetworkShared
         VERSION_0_7 = 3,
         VERSION_0_8_1 = 4,
         VERSION_0_9 = 5,
+        VERSION_1_0 = 6,
     }    
 
     public enum FileType
