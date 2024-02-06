@@ -24,7 +24,7 @@ namespace GTANetwork.Streamer
 
         private bool[] _doors = new bool[7];
         private bool[] _tires = new bool[8];
-        
+
         private bool _lights;
         private bool _highBeams;
         private int _radioStation;
@@ -55,9 +55,9 @@ namespace GTANetwork.Streamer
             var convertedArgs = Main.ParseNativeArguments(args);
 
             var obj = new SyncEvent();
-            obj.EventType = (byte) type;
+            obj.EventType = (byte)type;
             obj.Arguments = convertedArgs;
-            
+
             Main.SendToServer(obj, PacketType.SyncEvent, false, ConnectionChannel.SyncEvent);
         }
 
@@ -87,11 +87,11 @@ namespace GTANetwork.Streamer
                     Function.Call(Hash.REMOVE_PICKUP, pickup.LocalHandle);
                     SendSyncEvent(SyncEventType.PickupPickedUp, pickup.RemoteHandle);
                 }
-                else if((pickup.Flag & (byte)EntityFlag.Collisionless) != 0)
+                else if ((pickup.Flag & (byte)EntityFlag.Collisionless) != 0)
                 {
                     new Prop(obj).IsCollisionEnabled = false;
                 }
-                else if((pickup.Flag & (byte)EntityFlag.Collisionless) == 0 && !new Prop(obj).IsCollisionEnabled)
+                else if ((pickup.Flag & (byte)EntityFlag.Collisionless) == 0 && !new Prop(obj).IsCollisionEnabled)
                 {
                     new Prop(obj).IsCollisionEnabled = true;
                 }
@@ -132,29 +132,27 @@ namespace GTANetwork.Streamer
                     bool isOpen = false;
                     if ((isOpen = (Function.Call<float>(Hash.GET_VEHICLE_DOOR_ANGLE_RATIO, car.Handle, i) > 0.5f)) != _doors[i])
                     {
-                            SendSyncEvent(SyncEventType.DoorStateChange, carNetHandle, i, isOpen);
+                        SendSyncEvent(SyncEventType.DoorStateChange, carNetHandle, i, isOpen);
                     }
                     _doors[i] = isOpen;
                 }
 
-                //if (false/*car.MemoryAddress != IntPtr.Zero*/) // crash
-                //{
-                //    if (car.HighBeamsOn != _highBeams)
-                //    {
-                //        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.Highbeams, car.HighBeamsOn);
-                //    }
+                //Fixed the synchronization of optics in the transport
+                if (car.AreHighBeamsOn != _highBeams)
+                {
+                    SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int)Lights.Highbeams, car.AreHighBeamsOn);
+                }
+                _highBeams = car.AreHighBeamsOn;
 
-                //    _highBeams = car.HighBeamsOn;
-                //    Main.DEBUG_STEP = 913;
-                //    if (car.LightsOn != _lights)
-                //    {
-                //        SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int) Lights.NormalLights, car.LightsOn);
-                //    }
-                //    _lights = car.LightsOn;
-                //}
+                if (car.AreLightsOn != _lights)
+                {
+                    SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int)Lights.NormalLights, car.AreLightsOn);
+                }
+                _lights = car.AreLightsOn;
+                /////////////////////////////////
 
                 Vehicle trailer;
-                switch ((VehicleHash) car.Model.Hash)
+                switch ((VehicleHash)car.Model.Hash)
                 {
                     case VehicleHash.TowTruck:
                     case VehicleHash.TowTruck2:
@@ -178,7 +176,7 @@ namespace GTANetwork.Streamer
                         {
                             SendSyncEvent(SyncEventType.TrailerDeTach, false, carNetHandle);
 
-                            ((RemoteVehicle) Main.NetEntityHandler.NetToStreamedItem(carNetHandle)).Trailer = 0;
+                            ((RemoteVehicle)Main.NetEntityHandler.NetToStreamedItem(carNetHandle)).Trailer = 0;
                             if (_lastTrailer != null)
                             {
                                 var trailerH = (RemoteVehicle)Main.NetEntityHandler.EntityToStreamedItem(_lastTrailer.Handle);
@@ -214,7 +212,7 @@ namespace GTANetwork.Streamer
                     _tires[i] = isBusted;
                 }
 
-                var newStation = (int) Game.RadioStation;
+                var newStation = (int)Game.RadioStation;
 
                 if (newStation != _radioStation)
                 {
