@@ -6,12 +6,9 @@ using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 using System.Xml.Serialization;
-using Binarysharp.MemoryManagement;
-using Binarysharp.MemoryManagement.Patterns;
 using GTANetworkShared;
 using Microsoft.Win32;
 using Ionic.Zip;
-using SigScan;
 
 namespace GTANetwork
 {
@@ -348,24 +345,9 @@ namespace GTANetwork
             #endregion
 
             #region Registry checking (Obsolete)
-            //splashScreen.SetPercent(35);
+            
+            splashScreen.SetPercent(35);
 
-            //#region Check GTAN Folder Registry entry
-            //var dictPath = @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Rockstar Games\Grand Theft Auto V";
-            //var GTANFolder = (string)Registry.GetValue(dictPath, "GTANetworkInstallDir", null);
-            //if (GTANFolder != AppDomain.CurrentDomain.BaseDirectory)
-            //{
-            //    try
-            //    {
-            //        Registry.SetValue(dictPath, "GTANetworkInstallDir", AppDomain.CurrentDomain.BaseDirectory);
-            //    }
-            //    catch (UnauthorizedAccessException)
-            //    {
-            //        MessageBox.Show(splashScreen.SplashScreen, "Insufficient permissions, Please run as Admin to avoid permission issues.(6)", "Unauthorized access");
-            //        return;
-            //    }
-            //}
-            //#endregion
             #endregion
 
             splashScreen.SetPercent(45);
@@ -534,8 +516,8 @@ namespace GTANetwork
             #region Create commandline
             try
             {
-                //if (settings.OfflineMode)
-                //{
+                if (settings.OfflineMode)
+                {
                     if (File.Exists(settings.GamePath + "\\commandline.txt"))
                     {
                         string text = File.ReadAllText(settings.GamePath + "\\commandline.txt");
@@ -548,16 +530,16 @@ namespace GTANetwork
                     {
                         File.AppendAllText(settings.GamePath + "\\commandline.txt", "-scOfflineOnly");
                     }
-                //}
-                //else
-                //{
-                //    if (File.Exists(settings.GamePath + "\\commandline.txt"))
-                //    {
-                //        string text = File.ReadAllText(settings.GamePath + "\\commandline.txt");
-                //        text = text.Replace("-scOfflineOnly", "");
-                //        File.WriteAllText(settings.GamePath + "\\commandline.txt", text);
-                //    }
-                //}
+                }
+                else
+                {
+                    if (File.Exists(settings.GamePath + "\\commandline.txt"))
+                    {
+                        string text = File.ReadAllText(settings.GamePath + "\\commandline.txt");
+                        text = text.Replace("-scOfflineOnly", "");
+                        File.WriteAllText(settings.GamePath + "\\commandline.txt", text);
+                    }
+                }
             }
             catch (Exception)
             {
@@ -597,33 +579,6 @@ namespace GTANetwork
             Thread.Sleep(15000);
             InjectOurselves(gta5Process);
             #endregion
-
-            //IntPtr addr = (IntPtr)0x22E139A62E1;
-            //var sharp = new MemorySharp(gta5Process);
-
-
-
-            //var toFind = new byte[]
-            //{
-            //    0x4c, 0x6f, 0x61, 0x64, 0x69, 0x6e, 0x67, 0x20, 0x47, 0x54, 0x41, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b
-            //};
-
-            //SigScan.Classes.SigScan scanner = new SigScan.Classes.SigScan
-            //{
-            //    Process = gta5Process,
-            //    Address = gta5Process.MainModule.BaseAddress,
-            //    Size = 5000000
-            //};
-            //IntPtr ptr = scanner.FindPattern(toFind, "xxxxxxxxxxxxxxxxxx", 18);
-
-            //var pattern = new Pattern("4c 6f 61 64 69 6e 67 20 47 54 41 4e 65 74 77 6f 72 6b", 0, false);
-            //var result = sharp[""].FindPattern(pattern);
-            //// if bool param above is true the result is rebased before being returned.
-            //var offset = result.Offset;
-
-            //SigScan.Classes.SigScan scanner = new SigScan.Classes.SigScan(gta5Process, new IntPtr(0x22E139A62E1), 0x1000);
-            //IntPtr ptr = scanner.FindPattern(, "xxxxxxxxxxxxxxxxxx", 0x06);
-            //sharp.Write(offset, 0x75);
 
             #region Terminate duplicate GTA5 processes
             var t = new Thread((ThreadStart)delegate
@@ -668,13 +623,12 @@ namespace GTANetwork
                 //    File.Delete(settings.GamePath + "\\OpenIV.asi");
                 //}
 
-
                 if (File.Exists(settings.GamePath + "\\commandline.txt"))
                 {
-                    string text = File.ReadAllText(settings.GamePath + "\\commandline.txt");
-                    text = text.Replace("-scOfflineOnly", "");
-                    File.WriteAllText(settings.GamePath + "\\commandline.txt", text);
+                    File.Delete(settings.GamePath + "\\commandline.txt");
                 }
+
+
             }
             catch (Exception e)
             {
