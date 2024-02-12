@@ -27,125 +27,46 @@ using namespace System;
 using namespace System::Reflection;
 namespace WinForms = System::Windows::Forms;
 
-ref struct ScriptHook
+ref class ScriptHookVDotNet abstract
 {
-	static GTA::ScriptDomain ^Domain = nullptr;
-};
-
-bool ManagedInit()
-{
-	if (!Object::ReferenceEquals(ScriptHook::Domain, nullptr))
+public:
+	static bool Init()
 	{
-		GTA::ScriptDomain::Unload(ScriptHook::Domain);
-	}
-
-	auto location = Assembly::GetExecutingAssembly()->Location;
-	auto settings = GTA::ScriptSettings::Load(IO::Path::ChangeExtension(location, ".ini"));
-
-	ScriptHook::Domain = GTA::ScriptDomain::Load(IO::Path::Combine(IO::Path::GetDirectoryName(location), settings->GetValue(String::Empty, "ScriptsLocation", "scripts")));
-
-	if (!Object::ReferenceEquals(ScriptHook::Domain, nullptr))
-	{
-		ScriptHook::Domain->Start();
-
-		return true;
-	}
-
-	return false;
-}
-void ManagedTick()
-{
-	ScriptHook::Domain->DoTick();
-}
-void ManagedKeyboardMessage(int key, bool status, bool statusCtrl, bool statusShift, bool statusAlt)
-{
-	if (Object::ReferenceEquals(ScriptHook::Domain, nullptr))
-	{
-		return;
-	}
-
-	ScriptHook::Domain->DoKeyboardMessage(static_cast<WinForms::Keys>(key), status, statusCtrl, statusShift, statusAlt);
-}
-
-void ManagedD3DCall(void *swapchain)
-{
-	if (Object::ReferenceEquals(ScriptHook::Domain, nullptr))
-	{
-		return;
-	}
-	ScriptHook::Domain->DoD3DCall(swapchain);
-}
-
-#pragma unmanaged
-
-#include <Main.h>
-
-bool sGameReloaded = false;
-PVOID sMainFib = nullptr;
-PVOID sScriptFib = nullptr;
-
-void ForceOffline();
-void HookGameText();
-
-static void ScriptMain()
-{
-	sGameReloaded = true;
-	sMainFib = GetCurrentFiber();
-
-	if (sScriptFib == nullptr)
-	{
-		const LPFIBER_START_ROUTINE FiberMain = [](LPVOID lpFiberParameter)
+		if (Domain != nullptr)
 		{
-			while (ManagedInit())
-			{
-				sGameReloaded = false;
-				while (!sGameReloaded)
-				{
-					ManagedTick();
-					SwitchToFiber(sMainFib);
-				}
-			}
-		};
-		sScriptFib = CreateFiber(0, FiberMain, nullptr);
-	}
+			GTA::ScriptDomain::Unload(Domain);
+		}
 
-	while (true)
+		auto location = Assembly::GetExecutingAssembly()->Location;
+		auto settings = GTA::ScriptSettings::Load(IO::Path::ChangeExtension(location, ".ini"));
+
+		Domain = GTA::ScriptDomain::Load(IO::Path::Combine(IO::Path::GetDirectoryName(location), settings->GetValue(String::Empty, "ScriptsLocation", "scripts")));
+
+		if (Domain != nullptr)
+		{
+			Domain->Start();
+
+			return true;
+		}
+
+		return false;
+	}
+	static void Tick()
 	{
-		scriptWait(0);
-		SwitchToFiber(sScriptFib);
+		if (Domain != nullptr)
+		{
+			Domain->DoTick();
+		}
 	}
-}
-static void ScriptKeyboardMessage(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, BOOL isWithAlt, BOOL wasDownBefore, BOOL isUpNow)
-{
-	ManagedKeyboardMessage(static_cast<int>(key), isUpNow == FALSE, (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0, (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0, isWithAlt != FALSE);
-}
 
-void DXGIPresent(void *swapChain)
-{
-	ManagedD3DCall(swapChain);
-}
-
-BOOL WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
-{
-	switch (fdwReason)
+	static void KeyboardMessage(WinForms::Keys key, bool status, bool statusCtrl, bool statusShift, bool statusAlt)
 	{
-		case DLL_PROCESS_ATTACH:
-			DisableThreadLibraryCalls(hModule);
-			scriptRegister(hModule, &ScriptMain);
-			keyboardHandlerRegister(&ScriptKeyboardMessage);
-			presentCallbackRegister(&DXGIPresent);
-			ForceOffline();
-			HookGameText();
-			break;
-		case DLL_PROCESS_DETACH:
-			DeleteFiber(sScriptFib);
-			scriptUnregister(hModule);
-			keyboardHandlerUnregister(&ScriptKeyboardMessage);
-			presentCallbackUnregister(&DXGIPresent);
-			break;
+		if (Domain != nullptr)
+		{
+			Domain->DoKeyboardMessage(key, status, statusCtrl, statusShift, statusAlt);
+		}
 	}
 
-	return TRUE;
-}
-
-
+private:
+	static GTA::ScriptDomain^ Domain = nullptr;
+};

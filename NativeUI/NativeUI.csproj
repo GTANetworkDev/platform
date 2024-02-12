@@ -33,8 +33,7 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ScriptHookVDotNet, Version=3.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="ScriptHookVDotNet">
       <HintPath>..\Shv.NET\bin\ScriptHookVDotNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />

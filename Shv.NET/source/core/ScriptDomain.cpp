@@ -211,12 +211,11 @@ namespace GTA
 
 			for (int i = 0; i < filenameAssemblies->Count; i++)
 			{
-				try
-				{
-					auto filename = filenameAssemblies[i];
+				auto filename = filenameAssemblies[i];
+				try {
 					auto assemblyName = AssemblyName::GetAssemblyName(filename);
 
-					if (assemblyName->Name == "ScriptHookVDotNet")
+					if (assemblyName->Name->StartsWith("ScriptHookVDotNet", StringComparison::OrdinalIgnoreCase))
 					{
 						Log("[WARNING]", "Removing assembly file '", IO::Path::GetFileName(filename), "'.");
 
@@ -226,16 +225,14 @@ namespace GTA
 						{
 							IO::File::Delete(filename);
 						}
-						catch (Exception ^ex)
+						catch (Exception^ ex)
 						{
 							Log("[ERROR]", "Failed to delete assembly file:", Environment::NewLine, ex->ToString());
 						}
 					}
 				}
-				catch (BadImageFormatException ^) {}
-				catch (Exception ^ex)
-				{
-					Log("[ERROR]", "Failed to load assembly ", filenameAssemblies[i], Environment::NewLine, ex->ToString());
+				catch (Exception^ ex) {
+					Log("[ERROR]", "Failed to load " + filename + ", possibly a non .Net assembly, skipping.", Environment::NewLine, ex->ToString());
 				}
 			}
 

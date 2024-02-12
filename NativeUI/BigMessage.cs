@@ -2,7 +2,6 @@
 using System.Runtime.Remoting.Messaging;
 using GTA;
 using GTA.Native;
-using System.Drawing;
 
 namespace NativeUI
 {
@@ -11,8 +10,6 @@ namespace NativeUI
         private Scaleform _sc;
         private int _start;
         private int _timer;
-
-        public static Size ScreenResolution = GTA.UI.Screen.Resolution;
 
         public BigMessageHandler()
         {
@@ -118,7 +115,6 @@ namespace NativeUI
         public BigMessageThread()
         {
             MessageInstance = new BigMessageHandler();
-            BigMessageHandler.ScreenResolution = GTA.UI.Screen.Resolution;
 
             Tick += (sender, args) =>
             {

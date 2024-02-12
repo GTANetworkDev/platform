@@ -74,8 +74,8 @@ namespace NativeUI
             if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, TextureDict))
                 Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, TextureDict, true);
 
-            int screenw = BigMessageHandler.ScreenResolution.Width;
-            int screenh = BigMessageHandler.ScreenResolution.Height;
+            int screenw = Screen.Resolution.Width;
+            int screenh = Screen.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw/screenh;
             var width = height*ratio;
@@ -98,8 +98,8 @@ namespace NativeUI
         /// <param name="size"></param>
         public static void DrawTexture(string path, Point position, Size size, float rotation, Color color)
         {
-            int screenw = BigMessageHandler.ScreenResolution.Width;
-            int screenh = BigMessageHandler.ScreenResolution.Height;
+            int screenw = Screen.Resolution.Width;
+            int screenh = Screen.Resolution.Height;
             
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
@@ -126,8 +126,8 @@ namespace NativeUI
         /// <param name="size"></param>
         public static void DrawTexture(string path, Point position, Size size)
         {
-            int screenw = BigMessageHandler.ScreenResolution.Width;
-            int screenh = BigMessageHandler.ScreenResolution.Height;
+            int screenw = Screen.Resolution.Width;
+            int screenh = Screen.Resolution.Height;
 
             const float height = 1080f;
             float ratio = (float)screenw / screenh;

@@ -297,6 +297,90 @@ namespace GTA
 		}
 
 		/// <summary>
+		/// Gets a position directly to the left of this <see cref="Entity"/>
+		/// </summary>
+		public Vector3 LeftPosition
+		{
+			get
+			{
+				Vector3 rearBottomLeft, frontTopRight;
+				Model.GetDimensions(out rearBottomLeft, out frontTopRight);
+
+				return GetOffsetPosition(new Vector3(rearBottomLeft.X, 0, 0));
+			}
+		}
+
+		/// <summary>
+		/// Gets a position directly to the right of this <see cref="Entity"/>
+		/// </summary>
+		public Vector3 RightPosition
+		{
+			get
+			{
+				Vector3 rearBottomLeft, frontTopRight;
+				Model.GetDimensions(out rearBottomLeft, out frontTopRight);
+
+				return GetOffsetPosition(new Vector3(frontTopRight.X, 0, 0));
+			}
+		}
+
+		/// <summary>
+		/// Gets a position directly in front of this <see cref="Entity"/>
+		/// </summary>
+		public Vector3 FrontPosition
+		{
+			get
+			{
+				Vector3 rearBottomLeft, frontTopRight;
+				Model.GetDimensions(out rearBottomLeft, out frontTopRight);
+
+				return GetOffsetPosition(new Vector3(0, frontTopRight.Y, 0));
+			}
+		}
+
+		/// <summary>
+		/// Gets a position directly behind this <see cref="Entity"/>
+		/// </summary>
+		public Vector3 RearPosition
+		{
+			get
+			{
+				Vector3 rearBottomLeft, frontTopRight;
+				Model.GetDimensions(out rearBottomLeft, out frontTopRight);
+
+				return GetOffsetPosition(new Vector3(0, rearBottomLeft.Y, 0));
+			}
+		}
+
+		/// <summary>
+		/// Gets a position directly above this <see cref="Entity"/>
+		/// </summary>
+		public Vector3 AbovePosition
+		{
+			get
+			{
+				Vector3 rearBottomLeft, frontTopRight;
+				Model.GetDimensions(out rearBottomLeft, out frontTopRight);
+
+				return GetOffsetPosition(new Vector3(0, 0, frontTopRight.Z));
+			}
+		}
+
+		/// <summary>
+		/// Gets a position directly below this <see cref="Entity"/>
+		/// </summary>
+		public Vector3 BelowPosition
+		{
+			get
+			{
+				Vector3 rearBottomLeft, frontTopRight;
+				Model.GetDimensions(out rearBottomLeft, out frontTopRight);
+
+				return GetOffsetPosition(new Vector3(0, 0, rearBottomLeft.Z));
+			}
+		}
+
+		/// <summary>
 		/// Gets this <see cref="Entity"/>s matrix which stores position and rotation information.
 		/// </summary>
 		public Matrix Matrix
@@ -357,6 +441,23 @@ namespace GTA
 			get
 			{
 				return Function.Call<Vector3>(Hash.GET_ENTITY_ROTATION_VELOCITY, Handle);
+			}
+		}
+		/// <summary>
+		/// Gets or sets this <see cref="Entity"/>s speed
+		/// </summary>
+		/// <value>
+		/// The speed in m/s.
+		/// </value>
+		public float Speed
+		{
+			get
+			{
+				return Function.Call<float>(Hash.GET_ENTITY_SPEED, Handle);
+			}
+			set
+			{
+				Velocity = Velocity.Normalized * value;
 			}
 		}
 		/// <summary>
@@ -863,7 +964,7 @@ namespace GTA
 		{
 			get
 			{
-				return !Function.Call<bool>(Hash._IS_ENTITY_COLLISON_DISABLED, Handle);
+				return !Function.Call<bool>(Hash._GET_ENTITY_COLLISON_DISABLED, Handle);
 			}
 			set
 			{

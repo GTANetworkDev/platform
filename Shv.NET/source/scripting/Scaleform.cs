@@ -76,6 +76,18 @@ namespace GTA
 
 		public void CallFunction(string function, params object[] arguments)
 		{
+			this.CallFunctionHead(function, arguments);
+			Function.Call(Hash._POP_SCALEFORM_MOVIE_FUNCTION_VOID);
+		}
+
+		public int CallFunctionReturn(string function, params object[] arguments)
+		{
+			this.CallFunctionHead(function, arguments);
+			return Function.Call<int>(Hash._POP_SCALEFORM_MOVIE_FUNCTION);
+		}
+
+		internal void CallFunctionHead(string function, params object[] arguments)
+		{
 			Function.Call(Hash._PUSH_SCALEFORM_MOVIE_FUNCTION, Handle, function);
 
 			foreach (var argument in arguments)
@@ -86,15 +98,15 @@ namespace GTA
 				}
 				else if (argument is string)
 				{
-					Function.Call(Hash._BEGIN_TEXT_COMPONENT, MemoryAccess.StringPtr);
+					Function.Call(Hash.BEGIN_TEXT_COMMAND_SCALEFORM_STRING, MemoryAccess.StringPtr);
 					Function.Call(Hash.ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME, (string)argument);
-					Function.Call(Hash._END_TEXT_COMPONENT);
+					Function.Call(Hash.END_TEXT_COMMAND_SCALEFORM_STRING);
 				}
 				else if (argument is char)
 				{
-					Function.Call(Hash._BEGIN_TEXT_COMPONENT, MemoryAccess.StringPtr);
+					Function.Call(Hash.BEGIN_TEXT_COMMAND_SCALEFORM_STRING, MemoryAccess.StringPtr);
 					Function.Call(Hash.ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME, argument.ToString());
-					Function.Call(Hash._END_TEXT_COMPONENT);
+					Function.Call(Hash.END_TEXT_COMMAND_SCALEFORM_STRING);
 				}
 				else if (argument is float)
 				{
@@ -118,7 +130,6 @@ namespace GTA
 				}
 			}
 
-			Function.Call(Hash._POP_SCALEFORM_MOVIE_FUNCTION_VOID);
 		}
 
 		public void Render2D()

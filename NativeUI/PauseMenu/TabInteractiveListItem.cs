@@ -25,7 +25,7 @@ namespace NativeUI.PauseMenu
         protected const int MaxItemsPerView = 15;
         protected int _minItem;
         protected int _maxItem;
-        private bool _focused;
+        //private bool _focused;
         
         public void MoveDown()
         {

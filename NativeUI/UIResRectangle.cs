@@ -8,8 +8,8 @@ namespace NativeUI
     /// <summary>
     /// A rectangle in 1080 pixels height system.
     /// </summary>
-    public class UIResRectangle : GTA.UI.Rectangle
-    {
+    public class UIResRectangle : GTA.UI.ContainerElement
+	{
         public UIResRectangle()
         { }
 
@@ -22,8 +22,8 @@ namespace NativeUI
         public override void Draw(SizeF offset)
         {
             if (!Enabled) return;
-            int screenw = BigMessageHandler.ScreenResolution.Width;
-            int screenh = BigMessageHandler.ScreenResolution.Height;
+            int screenw = Screen.Resolution.Width;
+            int screenh = Screen.Resolution.Height;
             const float height = 1080f;
             float ratio = (float)screenw / screenh;
             var width = height * ratio;
