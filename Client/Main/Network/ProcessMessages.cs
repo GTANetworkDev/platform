@@ -561,7 +561,7 @@ namespace GTANetwork
                                         var veh = NetEntityHandler.NetToEntity((int)args[0]);
                                         var newState = (int)args[1];
                                         if (veh == null) return;
-                                        Function.Call(Hash._SET_VEHICLE_LANDING_GEAR, veh, newState);
+                                        Function.Call(Hash.CONTROL_LANDING_GEAR, veh, newState);
                                     }
                                     break;
                                 case SyncEventType.DoorStateChange:

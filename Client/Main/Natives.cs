@@ -367,7 +367,7 @@ namespace GTANetwork
                 var animDict = ((StringArgument)obj.Arguments[0]).Data;
 
                 Util.Util.LoadPtfxAsset(animDict);
-                Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, animDict);
+                Function.Call(Hash._USE_PARTICLE_FX_ASSET_NEXT_CALL, animDict);
 
                 list.RemoveAt(0);
             }

@@ -188,8 +188,8 @@ namespace GTANetwork
             }
             catch (Exception ex)
             {
-                GTA.UI.Screen.ShowNotification("FATAL ERROR WHEN PARSING MAP");
-                GTA.UI.Screen.ShowNotification(ex.Message);
+                GTA.UI.Notification.Show("FATAL ERROR WHEN PARSING MAP");
+                GTA.UI.Notification.Show(ex.Message);
                 Client.Disconnect("Map Parse Error");
 
                 LogManager.LogException(ex, "MAP PARSE");
@@ -197,7 +197,7 @@ namespace GTANetwork
                 return;
             }
 
-            World.CurrentDayTime = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
+            World.CurrentTimeOfDay = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
 
             Time = new TimeSpan(map.World.Hours, map.World.Minutes, 00);
             if (map.World.Weather >= 0 && map.World.Weather < Enums._weather.Length)
@@ -564,7 +564,7 @@ namespace GTANetwork
             var num1 = new OutputArgument();
             var num2 = new OutputArgument();
 
-            if (!Function.Call<bool>(Hash._WORLD3D_TO_SCREEN2D, worldCoords.X, worldCoords.Y, worldCoords.Z, num1, num2))
+            if (!Function.Call<bool>(Hash.GET_SCREEN_COORD_FROM_WORLD_COORD, worldCoords.X, worldCoords.Y, worldCoords.Z, num1, num2))
             {
                 screenCoords = new Vector2();
                 return false;
@@ -578,7 +578,7 @@ namespace GTANetwork
             var num1 = new OutputArgument();
             var num2 = new OutputArgument();
 
-            if (!Function.Call<bool>(Hash._WORLD3D_TO_SCREEN2D, worldCoords.X, worldCoords.Y, worldCoords.Z, num1, num2))
+            if (!Function.Call<bool>(Hash.GET_SCREEN_COORD_FROM_WORLD_COORD, worldCoords.X, worldCoords.Y, worldCoords.Z, num1, num2))
             {
                 return new PointF();
             }

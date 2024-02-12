@@ -335,7 +335,7 @@ namespace GTANetwork.Util
             {
                 try
                 {
-                    GTA.UI.Screen.ShowNotification(msg);
+                    GTA.UI.Notification.Show(msg);
                 }
                 catch (Exception)
                 {
@@ -511,12 +511,15 @@ namespace GTANetwork.Util
                 _idX = 0;
                 _lastframe = cF;
             }
-            
-            GTA.UI.CustomSprite.RawDraw(filename, 70,
-                new PointF(reduceX, reduceY),
-                new SizeF(scaleX, scaleY / ratio),
-                new PointF(0.5f, 0.5f),
-                rot, Color.FromArgb(a, r, g, b));
+
+            var customSprite = new GTA.UI.CustomSprite(filename,
+                     new SizeF(scaleX, scaleY / ratio),
+                     new PointF(reduceX, reduceY),
+                     Color.FromArgb(a, r, g, b),
+                     rot,
+                     centered);
+
+            customSprite.Draw();
         }
 
         public static void DrawSprite(string dict, string txtName, double x, double y, double width, double height, double heading,
@@ -602,7 +605,7 @@ namespace GTANetwork.Util
                 thisCol.Call(Hash.SET_TEXT_WRAP, x, xsize);
             }
 
-            thisCol.Call(Hash._SET_TEXT_ENTRY, "CELL_EMAIL_BCON");
+            thisCol.Call(Hash._SET_NOTIFICATION_TEXT_ENTRY, "CELL_EMAIL_BCON");
 
             const int maxStringLength = 99;
 
@@ -614,7 +617,7 @@ namespace GTANetwork.Util
                 //Function.Call((Hash)0x6C188BE134E074AA, caption.Substring(i, System.Math.Min(maxStringLength, caption.Length - i)));
             }
 
-            thisCol.Call(Hash._DRAW_TEXT, x, y);
+            thisCol.Call(Hash.END_TEXT_COMMAND_DISPLAY_TEXT, x, y);
             if (localCollection)
             {
                 thisCol.Execute();

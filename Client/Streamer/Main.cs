@@ -1991,7 +1991,7 @@ namespace GTANetwork.Streamer
             if ((object) data?.Position == null || (object)data.Rotation == null) return;
 
             Util.Util.LoadPtfxAsset(data.Library);
-            Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, data.Library);
+            Function.Call(Hash._USE_PARTICLE_FX_ASSET_NEXT_CALL, data.Library);
 
             int handle;
 

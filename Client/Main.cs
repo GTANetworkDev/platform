@@ -275,7 +275,7 @@ namespace GTANetwork
             _menuPool = new MenuPool();
             BuildMainMenu();
 
-            Function.Call(Hash._ENABLE_MP_DLC_MAPS, true); // _ENABLE_MP_DLC_MAPS
+            Function.Call(Hash._USE_FREEMODE_MAP_BEHAVIOR, true); // _ENABLE_MP_DLC_MAPS
             Function.Call(Hash._LOAD_MP_DLC_MAPS); // _LOAD_MP_DLC_MAPS / _USE_FREEMODE_MAP_BEHAVIOR
 
             MainMenuCamera = World.CreateCamera(new Vector3(743.76f, 1070.7f, 350.24f), new Vector3(), GameplayCamera.FieldOfView);
@@ -347,7 +347,7 @@ namespace GTANetwork
             var player = Game.Player.Character;
             if (player == null || player.Handle == 0 || Game.IsLoading) return;
 
-            GTA.UI.Screen.Fading.FadeOut(1);
+            GTA.UI.Screen.FadeOut(1);
             ResetPlayer();
             MainMenu.RefreshIndex();
             _init = true;
@@ -360,7 +360,7 @@ namespace GTANetwork
             Game.TimeScale = 1;
 
             GameScript.DisableAll(PlayerSettings.DisableRockstarEditor);
-            GTA.UI.Screen.Fading.FadeIn(1000);
+            GTA.UI.Screen.FadeIn(1000);
             _mainWarning = new Warning("",""){ Visible = false};
         }
 

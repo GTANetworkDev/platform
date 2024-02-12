@@ -45,7 +45,7 @@ namespace GTANetwork.Util
                 cD._0x53409B5163D5B846 = Function.Call<float>((Hash)0x53409B5163D5B846, (int)model);
                 cD._0xC6AD107DDC9054CC = Function.Call<float>((Hash)0xC6AD107DDC9054CC, (int)model);
                 cD._0x5AA3F878A178C4FC = Function.Call<float>((Hash)0x5AA3F878A178C4FC, (int)model);
-                cD.MaxNumberOfPassengers = Function.Call<int>(Hash._GET_VEHICLE_MODEL_MAX_NUMBER_OF_PASSENGERS, (int) model);
+                cD.MaxNumberOfPassengers = Function.Call<int>(Hash.GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS, (int) model);
                 cD.MaxOccupants = cD.MaxNumberOfPassengers + 1;
                 
                 cD.VehicleClass = Function.Call<int>(Hash.GET_VEHICLE_CLASS_FROM_NAME, (int)model);

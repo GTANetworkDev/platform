@@ -696,7 +696,7 @@ namespace GTANetwork
                     {
                         if (IsOnServer())
                         {
-                            GTA.UI.Screen.ShowNotification("You cannot change your Display Name while connected to a server.");
+                            GTA.UI.Notification.Show("You cannot change your Display Name while connected to a server.");
                             return;
                         }
                         MainMenu.TemporarilyHidden = true;

@@ -565,7 +565,7 @@ namespace GTANetwork.Sync
 
                 if (!IsShooting && !IsAiming && _lastDrivebyShooting && Game.GameTime - _lastVehicleAimUpdate > 200)
                 {
-                    Tasks task = Character.Task;
+                    TaskInvoker task = Character.Task;
                     task.ClearAll();
                     task.ClearSecondary();
                     Function.Call(Hash.CLEAR_DRIVEBY_TASK_UNDERNEATH_DRIVING_TASK, Character);

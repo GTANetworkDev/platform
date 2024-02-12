@@ -81,7 +81,7 @@ namespace GTANetwork
                 if (Main.Weather != null) Function.Call(Hash.SET_WEATHER_TYPE_NOW_PERSIST, Main.Weather);
                 if (Main.Time.HasValue)
                 {
-                    World.CurrentDayTime = new TimeSpan(Main.Time.Value.Hours, Main.Time.Value.Minutes, 00);
+                    World.CurrentTimeOfDay = new TimeSpan(Main.Time.Value.Hours, Main.Time.Value.Minutes, 00);
                 }
 
                 Function.Call(Hash.PAUSE_CLOCK, true);
