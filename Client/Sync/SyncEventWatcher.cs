@@ -61,7 +61,7 @@ namespace GTANetwork.Streamer
             Main.SendToServer(obj, PacketType.SyncEvent, false, ConnectionChannel.SyncEvent);
         }
 
-        private int _lastCheck;
+        //private int _lastCheck;//Creates a delay in the operation of transportation optics
         internal void Tick()
         {
             if (!Main.IsOnServer()) return;
@@ -97,8 +97,8 @@ namespace GTANetwork.Streamer
                 }
             }
 
-            if (Environment.TickCount - _lastCheck < 1000) return;
-            _lastCheck = Environment.TickCount;
+            //if (Environment.TickCount - _lastCheck < 1000) return;
+            //_lastCheck = Environment.TickCount;
 
             if (car != _lastCar)
             {
