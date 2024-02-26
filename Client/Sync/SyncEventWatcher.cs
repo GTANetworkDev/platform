@@ -138,6 +138,7 @@ namespace GTANetwork.Streamer
                 }
 
                 //Fixed the synchronization of optics in the transport
+                #region VehicleLights
                 if (car.AreHighBeamsOn != _highBeams)
                 {
                     SendSyncEvent(SyncEventType.BooleanLights, carNetHandle, (int)Lights.Highbeams, car.AreHighBeamsOn);
@@ -150,7 +151,8 @@ namespace GTANetwork.Streamer
                 }
                 _lights = car.AreLightsOn;
                 /////////////////////////////////
-
+                #endregion
+              
                 Vehicle trailer;
                 switch ((VehicleHash)car.Model.Hash)
                 {
